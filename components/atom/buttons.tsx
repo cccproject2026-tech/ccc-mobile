@@ -1,0 +1,207 @@
+import * as DocumentPicker from "expo-document-picker";
+import React from "react";
+import {
+  Image,
+  ImageSourcePropType,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
+
+// Define button types as a union type for better type safety
+type ButtonType = "cancel" | "submit" | "schedule" | "custom";
+
+// Interface for Button component props
+interface ButtonProps {
+  title: string;
+  onPress: () => void;
+  type: ButtonType;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
+  icon?: ImageSourcePropType | "";
+}
+
+// Interface for UploadPDFButton component props
+interface UploadPDFButtonProps {
+  title: string;
+  onPress?: () => void;
+  selectedFile: DocumentPicker.DocumentPickerResult | null;
+  setSelectedFile: (file: DocumentPicker.DocumentPickerResult) => void;
+  icon?: ImageSourcePropType | "";
+  style?: ViewStyle;
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  title,
+  onPress,
+  type,
+  style = {},
+  textStyle = {},
+  icon = "",
+}) => {
+  // Base styles for better maintainability
+  const baseButtonStyle: ViewStyle = {
+    padding: 8,
+    borderRadius: 8,
+    alignItems: "center",
+  };
+
+  const baseTextStyle: TextStyle = {
+    fontSize: 16,
+  };
+
+  if (type === "cancel") {
+    return (
+      <View
+        style={[
+          baseButtonStyle,
+          {
+            backgroundColor: "white",
+          },
+          style,
+        ]}
+      >
+        <TouchableOpacity onPress={onPress}>
+          <Text style={[baseTextStyle, { color: "#001fc1" }, textStyle]}>
+            {title}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  } else if (type === "submit") {
+    return (
+      <View
+        style={[
+          baseButtonStyle,
+          {
+            borderWidth: 1,
+            borderColor: "white",
+            backgroundColor: "#1e366e",
+          },
+          style,
+        ]}
+      >
+        <TouchableOpacity onPress={onPress}>
+          <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
+            {title}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  } else if (type === "schedule") {
+    return (
+      <View
+        style={[
+          baseButtonStyle,
+          {
+            borderWidth: 1,
+            borderColor: "white",
+            backgroundColor: "#1e366f",
+          },
+          style,
+        ]}
+      >
+        <TouchableOpacity onPress={onPress}>
+          <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
+            {title}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  } else if (type === "custom") {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        style={[
+          {
+            borderWidth: 1,
+            borderColor: "white",
+            backgroundColor: "#1e366f",
+            padding: 8,
+            borderRadius: 8,
+            flexDirection: "row",
+            gap: 10,
+            justifyContent: "center",
+            alignItems: "center",
+          },
+          style,
+        ]}
+      >
+        {icon !== "" && (
+          <Image source={icon as ImageSourcePropType} style={{ width: 15, height: 15 }} />
+        )}
+        <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
+          {title}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
+
+  // Return null if type doesn't match any condition (shouldn't happen with proper typing)
+  return null;
+};
+
+export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
+  title,
+  onPress,
+  selectedFile,
+  setSelectedFile,
+  icon = "",
+  style,
+}) => {
+  const pickDocument = async (): Promise<void> => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+        copyToCacheDirectory: true,
+      });
+
+      // Handle the result properly based on DocumentPicker's updated API
+      if (!result.canceled) {
+        setSelectedFile(result);
+        console.log("Selected PDF:", result);
+        
+        // Call onPress callback if provided
+        if (onPress) {
+          onPress();
+        }
+      }
+    } catch (error) {
+      console.error("Error picking document:", error);
+    }
+  };
+
+  return (
+    <View style={[styles.uploadContainer, { alignItems: "center", marginTop: 20, width: "100%" }]}>
+      <Button
+        title={title}
+        onPress={pickDocument}
+        type="custom"
+        icon={icon}
+        style={style}
+      />
+      
+      {/* Optional: Display selected file name */}
+      {selectedFile && !selectedFile.canceled && (
+        <Text style={styles.selectedFileText}>
+          Selected: {selectedFile.assets?.[0]?.name || "Unknown file"}
+        </Text>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  uploadContainer: {
+    // Add any specific styles for the upload container
+  },
+  selectedFileText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: "#666",
+    textAlign: "center",
+  },
+});

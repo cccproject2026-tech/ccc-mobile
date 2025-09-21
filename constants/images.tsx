@@ -1,0 +1,111 @@
+import { ImageSourcePropType } from "react-native";
+
+interface Icons {
+  myMentors: ImageSourcePropType;
+  Revitalization: ImageSourcePropType;
+  Assessments: ImageSourcePropType;
+  progress: ImageSourcePropType;
+  Appointments: ImageSourcePropType;
+  profile: ImageSourcePropType;
+  myProfile: ImageSourcePropType;
+  document: ImageSourcePropType;
+  assignment: ImageSourcePropType;
+  certificate: ImageSourcePropType;
+  microGrant: ImageSourcePropType;
+  settings: ImageSourcePropType;
+  changePass: ImageSourcePropType;
+  turnOffNotification: ImageSourcePropType;
+  changeMentor: ImageSourcePropType;
+  logout: ImageSourcePropType;
+  logo: ImageSourcePropType;
+  notification: ImageSourcePropType;
+  backgroundImage: ImageSourcePropType;
+  phone: ImageSourcePropType;
+  message: ImageSourcePropType;
+  mail: ImageSourcePropType;
+  whatsapp: ImageSourcePropType;
+  forward: ImageSourcePropType;
+  duoMeet: ImageSourcePropType;
+  googleMeet: ImageSourcePropType;
+  menuVertical: ImageSourcePropType;
+  Revitalization2: ImageSourcePropType;
+  Assessments2: ImageSourcePropType;
+  progress2: ImageSourcePropType;
+  Appointments2: ImageSourcePropType;
+  attachment: ImageSourcePropType;
+  edit: ImageSourcePropType;
+  video: ImageSourcePropType;
+  search: ImageSourcePropType;
+  edit2: ImageSourcePropType;
+  profile2: ImageSourcePropType;
+  list: ImageSourcePropType;
+  grid: ImageSourcePropType;
+  dummyUser: ImageSourcePropType;
+  dummyUser2: ImageSourcePropType;
+  dummyImage: ImageSourcePropType;
+  detailedRoadmapImage: ImageSourcePropType;
+  download: ImageSourcePropType;
+  gradientDownload: ImageSourcePropType;
+  delete: ImageSourcePropType;
+  upload: ImageSourcePropType;
+  close: ImageSourcePropType;
+  addIcon: ImageSourcePropType;
+  location: ImageSourcePropType;
+  deleteIcon: ImageSourcePropType;
+  certificateImage: ImageSourcePropType;
+}
+
+export const icons: Icons = {
+  myMentors: require("@/assets/icons/myMentors.png"),
+  Revitalization: require("@/assets/icons/revitalizationRoadmap.png"),
+  Assessments: require("@/assets/icons/assessments.png"),
+  progress: require("@/assets/icons/Positive Dynamic.png"),
+  Appointments: require("@/assets/icons/People.png"),
+  profile: require("@/assets/icons/Profile.png"),
+  myProfile: require("@/assets/icons/JOHN ROSS PROF PIC.png"),
+  document: require("@/assets/icons/Documents.png"),
+  assignment: require("@/assets/icons/assignments.png"),
+  certificate: require("@/assets/icons/Certificate.png"),
+  microGrant: require("@/assets/icons/MicroGrant.png"),
+  settings: require("@/assets/icons/Settings.png"),
+  changePass: require("@/assets/icons/changePassword.png"),
+  turnOffNotification: require("@/assets/icons/turnOffNotification.png"),
+  changeMentor: require("@/assets/icons/changeMentor.png"),
+  logout: require("@/assets/icons/Logout.png"),
+  logo: require("@/assets/logos/CCClogo.png"),
+  notification: require("@/assets/icons/Notification.png"),
+  backgroundImage: require("@/assets/icons/homeScreenBG.png"),
+  phone: require("@/assets/icons/Phone.png"),
+  message: require("@/assets/icons/message.png"),
+  mail: require("@/assets/icons/Envelope.png"),
+  whatsapp: require("@/assets/icons/WhatsApp.png"),
+  forward: require("@/assets/icons/Forward.png"),
+  duoMeet: require("@/assets/icons/ZOOM  CALL ICON.png"),
+  googleMeet: require("@/assets/icons/GOOGLEMEET CALL ICON.png"),
+  menuVertical: require("@/assets/icons/Menu Vertical.png"),
+  Revitalization2: require("@/assets/icons/revitalization2.png"),
+  Assessments2: require("@/assets/icons/assessment2.png"),
+  progress2: require("@/assets/icons/progress2.png"),
+  Appointments2: require("@/assets/icons/appointments2.png"),
+  attachment: require("@/assets/icons/attachment.png"),
+  edit: require("@/assets/icons/edit.png"),
+  video: require("@/assets/icons/VIDEO.png"),
+  search: require("@/assets/icons/Search.png"),
+  edit2: require("@/assets/icons/edit2.png"),
+  profile2: require("@/assets/icons/Profile2.png"),
+  list: require("@/assets/icons/List.png"),
+  grid: require("@/assets/icons/Grid.png"),
+  dummyUser: require("@/assets/icons/user.png"),
+  dummyUser2: require("@/assets/icons/user1.png"),
+  dummyImage: require("@/assets/icons/reviltalizationDummyImage.jpeg"),
+  detailedRoadmapImage: require("@/assets/icons/detailedRoadMapDummy.jpg"),
+  download: require("@/assets/icons/Download.png"),
+  gradientDownload: require("@/assets/icons/gradientDownload.png"),
+  delete: require("@/assets/icons/Delete.png"),
+  upload: require("@/assets/icons/upload.png"),
+  close: require("@/assets/icons/Close.png"),
+  addIcon: require("@/assets/icons/Add New.png"),
+  location: require("@/assets/icons/Location.png"),
+  deleteIcon: require("@/assets/icons/DeleteIcon.png"),
+  certificateImage: require("@/assets/icons/certificateImage.png"),
+};
