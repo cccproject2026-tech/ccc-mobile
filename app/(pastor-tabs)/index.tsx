@@ -3,12 +3,12 @@ import {
   CardBox,
   MentorCard,
   RoadMapCard,
-} from "@/components/atom/cards"
-import { PastorNavigationHeader } from "@/components/pastor/Header"
-import { Colors } from "@/constants/Colors"
-import { icons } from "@/constants/images"
-import { LinearGradient } from "expo-linear-gradient"
-import { Stack } from "expo-router"
+} from "@/components/atom/cards";
+import { PastorNavigationHeader } from "@/components/pastor/Header";
+import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
+import { LinearGradient } from "expo-linear-gradient";
+import { Stack } from "expo-router";
 import {
   Image,
   ImageBackground,
@@ -16,8 +16,8 @@ import {
   StyleSheet,
   Text,
   View,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PastorDashboard({ navigation }: { navigation: any }) {
   const users = [
@@ -57,41 +57,41 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
       location: "Beijing, China",
     },
     // Add more users as needed
-  ]
+  ];
   const getCurrentTime = () => {
-    const now = new Date()
-    let hours = now.getHours()
-    const minutes = now.getMinutes()
-    const ampm = hours >= 12 ? "PM" : "AM"
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = now.getMinutes();
+    const ampm = hours >= 12 ? "PM" : "AM";
 
     // Convert 24-hour format to 12-hour format
-    hours = hours % 12
-    hours = hours ? hours : 12 // If hour is 0, show 12
+    hours = hours % 12;
+    hours = hours ? hours : 12; // If hour is 0, show 12
 
     // Add leading zero to minutes if needed
-    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
 
-    return `${hours} : ${formattedMinutes} ${ampm}`
-  }
+    return `${hours} : ${formattedMinutes} ${ampm}`;
+  };
   const greeting = () => {
-    const currentHour = new Date().getHours()
-    let greeting
+    const currentHour = new Date().getHours();
+    let greeting;
 
     // Determine the greeting based on the current hour
     if (currentHour < 12) {
-      greeting = "Good Morning"
+      greeting = "Good Morning";
     } else if (currentHour < 18) {
-      greeting = "Good Afternoon"
+      greeting = "Good Afternoon";
     } else {
-      greeting = "Good Evening"
+      greeting = "Good Evening";
     }
-    return greeting
-  }
+    return greeting;
+  };
 
-  let greetingMessage = greeting()
+  let greetingMessage = greeting();
 
   const getCurrentDayAndDate = () => {
-    const now = new Date()
+    const now = new Date();
 
     // Arrays for days and months
     const days = [
@@ -102,7 +102,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
       "Thursday",
       "Friday",
       "Saturday",
-    ]
+    ];
     const months = [
       "Jan",
       "Feb",
@@ -116,23 +116,23 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
       "Oct",
       "Nov",
       "Dec",
-    ]
+    ];
 
     // Get day, month, and date
-    const day = days[now.getDay()]
-    const month = months[now.getMonth()]
-    const date = now.getDate()
+    const day = days[now.getDay()];
+    const month = months[now.getMonth()];
+    const date = now.getDate();
 
-    return `${day}, ${month} ${date}`
-  }
-
-  // Example usage
-  const currentDayAndDate = getCurrentDayAndDate()
-  console.log(currentDayAndDate) // e.g., "Tuesday, Sep 23"
+    return `${day}, ${month} ${date}`;
+  };
 
   // Example usage
-  const currentTime = getCurrentTime()
-  console.log(currentTime) // e.g., "12:00 PM"
+  const currentDayAndDate = getCurrentDayAndDate();
+  console.log(currentDayAndDate); // e.g., "Tuesday, Sep 23"
+
+  // Example usage
+  const currentTime = getCurrentTime();
+  console.log(currentTime); // e.g., "12:00 PM"
 
   const dummyAppointments = [
     {
@@ -149,7 +149,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
       role: "Field Mentor",
       mode: "meet",
     },
-  ]
+  ];
   const dummyRoadMaps = [
     {
       phase: "Phase 1",
@@ -166,7 +166,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
       title: "Survey",
       status: "Remaining",
     },
-  ]
+  ];
   const dummyMentors = [
     {
       name: "John Doe",
@@ -176,7 +176,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
       name: "John Doe",
       role: "Field Mentor",
     },
-  ]
+  ];
 
   return (
     <>
@@ -325,7 +325,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                     </Text>
                   </View>
                   {dummyAppointments.map((e, i) => (
-                    <AppointmentCard data={e} dataKey={i.toString()} key={i}/>
+                    <AppointmentCard data={e} dataKey={i.toString()} key={i} />
                   ))}
                 </View>
                 <View style={styles.separator} />
@@ -394,6 +394,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                   </View>
                   {dummyMentors.map((e, i) => (
                     <MentorCard
+                      key={i}
                       data={e}
                       dataKey={i.toString()}
                       navigation={navigation}
@@ -410,7 +411,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
       </SafeAreaView>
       {/* </LinearGradient> */}
     </>
-  )
+  );
 }
 const styles = StyleSheet.create({
   backgroundImage: {
@@ -598,4 +599,4 @@ const styles = StyleSheet.create({
     fontFamily: "AlbertBold", // font-albertBold
     textAlign: "center",
   },
-})
+});
