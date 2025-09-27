@@ -11,9 +11,10 @@ interface TabProps {
   tabs: string
   setTabs: (tab: string) => void
   onPress: () => void
+  className?: string | undefined;
 }
 
-export const Tab = ({ data, tabs, setTabs, onPress }: TabProps) => {
+export const Tab = ({ data, tabs, setTabs, onPress, className }: TabProps) => {
   const isActive = tabs === data.tab
 
   return (
@@ -23,6 +24,7 @@ export const Tab = ({ data, tabs, setTabs, onPress }: TabProps) => {
         isActive && styles.activeTabContainer
       ]}
       onPress={onPress}
+      className={className}
     >
       <Text
         style={[
