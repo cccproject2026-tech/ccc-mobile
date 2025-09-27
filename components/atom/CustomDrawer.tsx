@@ -1,6 +1,6 @@
-import { useData } from "@/dataContext"
-import { router } from "expo-router"
-import React from "react"
+import { useData } from "@/dataContext";
+import { router } from "expo-router";
+import React from "react";
 import {
   Image,
   ScrollView,
@@ -8,38 +8,38 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native"
-import { icons } from "../../constants/images"
-import { useDrawerStore } from "./DrawerStore"
+} from "react-native";
+import { icons } from "../../constants/images";
+import { useDrawerStore } from "./DrawerStore";
 
 interface Navigation {
-  navigate: (routeName: string) => void
-  closeDrawer?: () => void
+  navigate: (routeName: string) => void;
+  closeDrawer?: () => void;
 }
 
 interface SubTab {
-  name: string
-  navigateLocation: string
+  name: string;
+  navigateLocation: string;
 }
 
 interface DrawerItem {
-  name: string
-  iconKey: keyof typeof icons
-  navigateLocation: string
-  subTabs?: SubTab[]
+  name: string;
+  iconKey: keyof typeof icons;
+  navigateLocation: string;
+  subTabs?: SubTab[];
 }
 
 interface CustomDrawerContentProps {
-  navigation: Navigation
-  state?: any
-  descriptors?: any
+  navigation: Navigation;
+  state?: any;
+  descriptors?: any;
 }
 
 export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
-  const { currentScreen } = useData()
-  const { closeDrawer } = useDrawerStore()
+  const { currentScreen } = useData();
+  const { closeDrawer } = useDrawerStore();
 
-  console.log(currentScreen, "current Screen")
+  console.log(currentScreen, "current Screen");
   const PastorScreenDrawerContent = [
     {
       name: "My Mentors",
@@ -69,12 +69,12 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Profile",
       iconKey: "profile",
-      navigateLocation: "profile",
+      navigateLocation: "/(pastor-tabs)/profile",
       subTabs: [
         {
           name: "My Profile",
           iconKey: "myProfile",
-          navigateLocation: "profile",
+          navigateLocation: "/(pastor-tabs)/profile/my-profile",
         },
         {
           name: "Documents",
@@ -84,7 +84,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Assignments",
           iconKey: "assignment",
-          navigateLocation: "Assignment",
+          navigateLocation: "/(pastor-tabs)/profile/my-assignment/assignment",
         },
         {
           name: "Certificate",
@@ -120,7 +120,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         },
       ],
     },
-  ]
+  ];
 
   const MentorScreenDrawerContent = [
     {
@@ -202,7 +202,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         },
       ],
     },
-  ]
+  ];
 
   const DirectorScreenDrawerContent = [
     {
@@ -284,13 +284,13 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         },
       ],
     },
-  ]
+  ];
 
   const handleDrawerItemPress = (navigateLocation: string) => {
-    console.log(navigateLocation, "navigateLocation")
-    router.push(navigateLocation as any)
-    closeDrawer()
-  }
+    console.log(navigateLocation, "navigateLocation");
+    router.push(navigateLocation as any);
+    closeDrawer();
+  };
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -347,8 +347,8 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {(currentScreen == "Pastor"
           ? PastorScreenDrawerContent
           : currentScreen == "Mentor"
-            ? MentorScreenDrawerContent
-            : DirectorScreenDrawerContent
+          ? MentorScreenDrawerContent
+          : DirectorScreenDrawerContent
         ).map((e, i) => (
           <React.Fragment key={i}>
             <TouchableOpacity
@@ -441,8 +441,8 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         </View>
       </View>
     </ScrollView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   text: {
@@ -493,4 +493,4 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#ff6347", // Red color for the footer text
   },
-})
+});

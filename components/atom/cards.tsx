@@ -70,11 +70,11 @@ export const NotificationCard = ({ data }: { data: any }) => {
             data.type == "course" || data.type == "assignment"
               ? icons.Revitalization2
               : data.type == "note"
-                ? icons.edit2
-                : icons.profile2
+              ? icons.edit2
+              : icons.profile2
           }
           style={{ width: 60, height: 60 }}
-        // resizeMode={"contain"}
+          // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -122,7 +122,12 @@ export const RevitalizationCard = ({
   return (
     <TouchableOpacity
       onPress={() =>
-        data.subPhase
+        data.assignment
+          ? navigation.push({
+              pathname: "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+              params: { data: JSON.stringify(data) },
+            })
+          : data.subPhase
           ? navigation.push({
               pathname: "/(pastor-tabs)/roadmap/sub-phases",
               params: { data: JSON.stringify(data) },
@@ -219,7 +224,7 @@ export const RevitalizationCard = ({
               paddingHorizontal: 8,
               marginVertical: 4,
               borderRadius: 8,
-              maxWidth: "70%",
+              maxWidth: "80%",
             }}
           >
             <Text
@@ -347,6 +352,91 @@ export const RevitalizationCard = ({
           )}
         </View>
       </View>
+      {data?.showBothDate &&
+        data?.sessionDate &&
+        data?.status == "Not Started Yet" && (
+          <TouchableOpacity
+            style={{
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "white",
+              paddingVertical: 10,
+              marginVertical: 12,
+              borderRadius: 8,
+              width: "95%",
+            }}
+            className="flex flex-row justify-evenly mx-auto"
+          >
+            <View>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "white",
+                  fontWeight: 500,
+                  paddingBottom: 4,
+                }}
+              >
+                Session Date :{" "}
+              </Text>
+              <TouchableOpacity
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#47729b",
+                  padding: 5,
+                  marginVertical: 4,
+                  width: "100%",
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: "white",
+                    fontWeight: "300",
+                    width: "100%",
+                  }}
+                >
+                  {data?.sessionDate}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "white",
+                  fontWeight: 500,
+                  paddingBottom: 4,
+                }}
+              >
+                Session Date :{" "}
+              </Text>
+              <TouchableOpacity
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#47729b",
+                  padding: 5,
+                  marginVertical: 4,
+                  width: "100%",
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: "white",
+                    fontWeight: "300",
+                    width: "100%",
+                  }}
+                >
+                  {data?.sessionDate}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        )}
       {data?.meeting && (
         <View
           style={{
@@ -567,11 +657,11 @@ export const CommentsCard = ({
             data.type == "course" || data.type == "assignment"
               ? icons.dummyUser
               : data.type == "note"
-                ? icons.dummyUser2
-                : icons.profile2
+              ? icons.dummyUser2
+              : icons.profile2
           }
           style={{ width: 60, height: 60, borderRadius: 999999 }}
-        // resizeMode={"contain"}
+          // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -690,13 +780,13 @@ export const ListCard = ({
                   <CheckBox
                     type="circle"
                     value={false}
-                    setValue={() => { }}
+                    setValue={() => {}}
                   ></CheckBox>
                 ) : (
                   <CheckBox
                     type="square"
                     value={false}
-                    setValue={() => { }}
+                    setValue={() => {}}
                   ></CheckBox>
                 )}
                 {listImage && (
@@ -769,7 +859,7 @@ export const InputCard = ({
             icon={icons.upload}
             style={{ backgroundColor: "#1f1a79", width: "60%" }}
             selectedFile={null}
-            setSelectedFile={() => { }}
+            setSelectedFile={() => {}}
           ></UploadPDFButton>
         </View>
       )}
@@ -1083,24 +1173,24 @@ export const ProgressCard = ({
   data,
   navigation,
 }: {
-  data: any
-  navigation: any
+  data: any;
+  navigation: any;
 }) => {
   const progressPercentage =
-    (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%"
+    (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%";
 
   return (
     <TouchableOpacity
       onPress={() =>
         data.subPhase
           ? navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/sub-phases",
-            params: { data: JSON.stringify(data) }
-          })
+              pathname: "/(pastor-tabs)/roadmap/sub-phases",
+              params: { data: JSON.stringify(data) },
+            })
           : navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
-            params: { data: JSON.stringify(data) }
-          })
+              pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
+              params: { data: JSON.stringify(data) },
+            })
       }
       style={{
         width: "100%",
@@ -1156,7 +1246,7 @@ export const ProgressCard = ({
               {data?.description}
             </Text>
           )}
-          {(data.status && data.type !== "assessment") && (
+          {data.status && data.type !== "assessment" && (
             <TouchableOpacity
               style={{
                 borderWidth: 1,
@@ -1214,7 +1304,7 @@ export const ProgressCard = ({
                   color: "yellow",
                   fontSize: 12,
                   fontWeight: "500",
-                  alignSelf: "flex-start"
+                  alignSelf: "flex-start",
                 }}
               >
                 {data?.completed}
@@ -1223,7 +1313,9 @@ export const ProgressCard = ({
           )}
           {data?.progress === "1" && (
             <View>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 14 }}
+              >
                 <View
                   style={{
                     backgroundColor: "black",
@@ -1257,7 +1349,12 @@ export const ProgressCard = ({
           )}
           {data?.dueDate && (
             <Text
-              style={{ color: "#F4F2F2B5", fontSize: 12, fontWeight: "500", textAlign: "right" }}
+              style={{
+                color: "#F4F2F2B5",
+                fontSize: 12,
+                fontWeight: "500",
+                textAlign: "right",
+              }}
               ellipsizeMode="tail"
             >
               Due :{data?.dueDate}
@@ -1265,7 +1362,12 @@ export const ProgressCard = ({
           )}
           {data?.submittedDate && (
             <Text
-              style={{ color: "#F4F2F2B5", fontSize: 12, fontWeight: "500", textAlign: "right" }}
+              style={{
+                color: "#F4F2F2B5",
+                fontSize: 12,
+                fontWeight: "500",
+                textAlign: "right",
+              }}
               ellipsizeMode="tail"
             >
               Submitted :{data?.submittedDate}
@@ -1274,8 +1376,8 @@ export const ProgressCard = ({
         </View>
       </View>
     </TouchableOpacity>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   // Appointment Card Styling
