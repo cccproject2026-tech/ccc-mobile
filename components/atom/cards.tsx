@@ -1,6 +1,6 @@
-import { Colors } from "@/constants/Colors"
-import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
+import { Colors } from "@/constants/Colors";
+import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
 import {
   Image,
   StyleSheet,
@@ -8,17 +8,17 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native"
-import { icons } from "../../constants/images"
-import { UploadPDFButton } from "./buttons"
-import CheckBox from "./checkBox"
+} from "react-native";
+import { icons } from "../../constants/images";
+import { UploadPDFButton } from "./buttons";
+import CheckBox from "./checkBox";
 
 export const AppointmentCard = ({
   data,
   dataKey,
 }: {
-  data: any
-  dataKey: string
+  data: any;
+  dataKey: string;
 }) => {
   return (
     <View key={dataKey} style={styles.appointmentBox}>
@@ -57,8 +57,8 @@ export const AppointmentCard = ({
         <Image source={icons.forward} style={styles.iconStyle} />
       </TouchableOpacity>
     </View>
-  )
-}
+  );
+};
 export const NotificationCard = ({ data }: { data: any }) => {
   return (
     <View style={styles.NotificationBox}>
@@ -107,17 +107,17 @@ export const NotificationCard = ({ data }: { data: any }) => {
         <Text style={{ color: "white", fontWeight: "200" }}>{data.time}</Text>
       </View>
     </View>
-  )
-}
+  );
+};
 export const RevitalizationCard = ({
   data,
   navigation,
 }: {
-  data: any
-  navigation: any
+  data: any;
+  navigation: any;
 }) => {
   const progressPercentage =
-    (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%"
+    (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%";
 
   return (
     <TouchableOpacity
@@ -125,11 +125,11 @@ export const RevitalizationCard = ({
         data.subPhase
           ? navigation.push({
               pathname: "/(pastor-tabs)/roadmap/sub-phases",
-              params: { data: JSON.stringify(data) }
+              params: { data: JSON.stringify(data) },
             })
           : navigation.push({
               pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
-              params: { data: JSON.stringify(data) }
+              params: { data: JSON.stringify(data) },
             })
       }
       style={{
@@ -163,33 +163,31 @@ export const RevitalizationCard = ({
               source={data?.image}
               style={{ width: 110, height: 100, borderRadius: 12 }}
             />
-            {
-              data?.phase && (
-                <View
+            {data?.phase && (
+              <View
+                style={{
+                  marginHorizontal: 20,
+                }}
+              >
+                <Text
                   style={{
-                    marginHorizontal: 20,
+                    color: "black",
+                    fontWeight: "500",
+                    fontSize: 11,
+                    textAlign: "center",
+                    position: "absolute",
+                    bottom: 10,
+                    left: 0,
+                    right: 0,
+                    backgroundColor: "#F1E91A85",
+                    padding: 4,
+                    borderRadius: 8,
                   }}
                 >
-                  <Text
-                    style={{
-                      color: "black",
-                      fontWeight: "500",
-                      fontSize: 11,
-                      textAlign: "center",
-                      position: "absolute",
-                      bottom: 10,
-                      left: 0,
-                      right: 0,
-                      backgroundColor: "#F1E91A85",
-                      padding: 4,
-                      borderRadius: 8,
-                    }}
-                  >
-                    {data?.phase}
-                  </Text>
-                </View>
-              )
-            }
+                  {data?.phase}
+                </Text>
+              </View>
+            )}
           </View>
           <View className="mt-2" style={{ alignItems: "flex-start" }}>
             <Text style={{ color: "white", fontWeight: "300", fontSize: 11 }}>
@@ -363,15 +361,15 @@ export const RevitalizationCard = ({
         </View>
       )}
     </TouchableOpacity>
-  )
-}
+  );
+};
 
 export const RoadMapCard = ({
   data,
   dataKey,
 }: {
-  data: any
-  dataKey: string
+  data: any;
+  dataKey: string;
 }) => {
   return (
     <View style={styles.roadmapItem} key={dataKey}>
@@ -400,8 +398,8 @@ export const RoadMapCard = ({
         </TouchableOpacity>
       </View>
     </View>
-  )
-}
+  );
+};
 
 export const CardBox = ({ icon, title }: { icon: any; title: string }) => {
   return (
@@ -414,8 +412,8 @@ export const CardBox = ({ icon, title }: { icon: any; title: string }) => {
         {title}
       </Text>
     </LinearGradient>
-  )
-}
+  );
+};
 
 export const MentorCard = ({
   data,
@@ -423,10 +421,10 @@ export const MentorCard = ({
   navigation,
   onMenuPress,
 }: {
-  data: any
-  dataKey: string
-  navigation: any
-  onMenuPress: () => void
+  data: any;
+  dataKey: string;
+  navigation: any;
+  onMenuPress: () => void;
 }) => {
   return (
     <View style={styles.mentorCard}>
@@ -453,18 +451,18 @@ export const MentorCard = ({
         </TouchableOpacity>
       </View>
     </View>
-  )
-}
+  );
+};
 export const DetailedMentorCard = ({
   data,
   key,
   navigation,
   onMenuPress,
 }: {
-  data: any
-  key: string
-  navigation: any
-  onMenuPress: () => void
+  data: any;
+  key: string;
+  navigation: any;
+  onMenuPress: () => void;
 }) => {
   return (
     <View
@@ -547,15 +545,15 @@ export const DetailedMentorCard = ({
         <Image source={icons.whatsapp} style={styles.MentorIcon} />
       </View>
     </View>
-  )
-}
+  );
+};
 
 export const CommentsCard = ({
   data,
   navigation,
 }: {
-  data: any
-  navigation: any
+  data: any;
+  navigation: any;
 }) => {
   return (
     <View
@@ -614,17 +612,17 @@ export const CommentsCard = ({
         <Text style={{ color: "white", fontWeight: "200" }}>{data.time}</Text>
       </View>
     </View>
-  )
-}
+  );
+};
 
 export const ListCard = ({
   listImage = false,
   type = "list",
   list,
 }: {
-  listImage: boolean
-  type: string
-  list: any
+  listImage: boolean;
+  type: string;
+  list: any;
 }) => {
   return (
     <View style={styles.overlay}>
@@ -726,8 +724,8 @@ export const ListCard = ({
         {/* </View> */}
       </View>
     </View>
-  )
-}
+  );
+};
 
 export const InputCard = ({
   title,
@@ -738,13 +736,13 @@ export const InputCard = ({
   fileUpload = false,
   answer = true,
 }: {
-  title: string
-  setValue: (value: string) => void
-  value: string
-  required: boolean
-  description: string
-  fileUpload: boolean
-  answer: boolean
+  title: string;
+  setValue: (value: string) => void;
+  value: string;
+  required: boolean;
+  description: string;
+  fileUpload: boolean;
+  answer: boolean;
 }) => {
   return (
     <View
@@ -794,8 +792,292 @@ export const InputCard = ({
         </>
       )}
     </View>
-  )
-}
+  );
+};
+
+export const AssessmentCard = ({
+  data,
+  navigation,
+}: {
+  data: any;
+  navigation: any;
+}) => {
+  const progressPercentage =
+    (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%";
+
+  return (
+    <TouchableOpacity
+      onPress={() => {
+        navigation.push({
+          pathname: "/(pastor-tabs)/assessments/cma-survey-page",
+          params: { data: JSON.stringify(data) },
+        });
+      }}
+      style={{
+        width: "100%",
+        backgroundColor: "#194F82",
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
+        marginVertical: 10,
+        borderWidth: 1,
+        borderColor: "#FFFFFF73",
+      }}
+    >
+      <View
+        style={{
+          width: "100%",
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <View
+          style={{
+            maxWidth: 130,
+            width: "100%",
+            height: "100%",
+            alignItems: "center",
+          }}
+        >
+          <View style={{ position: "relative", width: "100%" }}>
+            <View
+              className=""
+              style={{
+                width: "100%",
+                minHeight: "100%",
+                maxHeight: 160,
+                backgroundColor: "#00ABAE",
+                borderWidth: 5,
+                borderColor: "#BFFEFE",
+                borderRadius: 15,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#001B4A",
+                  fontSize: 40,
+                  fontWeight: "800",
+                }}
+              >
+                {data?.type}
+              </Text>
+              <View
+                style={{
+                  height: 2,
+                  width: "80%",
+                  backgroundColor: "white",
+                  borderRadius: 1,
+                  marginTop: -6,
+                }}
+              />
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 9,
+                  fontWeight: "800",
+                  textAlign: "center",
+                  marginTop: 8,
+                  lineHeight: 18,
+                }}
+              >
+                {data?.type === "CMA"
+                  ? "CHURCH ASSESSMENT EVALUATION"
+                  : "PASTORAL MINISTRY PROFILE"}
+              </Text>
+            </View>
+          </View>
+          {data?.completionDate && (
+            <View className="mt-24" style={{ alignItems: "flex-start" }}>
+              <Text
+                style={{
+                  color: data?.status === "Due" ? "yellow" : "white",
+                  fontWeight: "700",
+                  fontSize: 12,
+                }}
+              >
+                Due:{data?.completionDate}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={{ marginLeft: 10, flex: 1, gap: 4 }}>
+          <View>
+            <Text
+              style={{ color: "white", fontSize: 16, fontWeight: "600" }}
+              ellipsizeMode="tail"
+            >
+              {data?.title}
+            </Text>
+          </View>
+          <Text
+            className="py-2"
+            style={{ color: "#F4F2F2B5", fontWeight: "400", fontSize: 14 }}
+          >
+            {data?.description}
+          </Text>
+          <TouchableOpacity
+            style={{
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "#FFFFFF33",
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              marginVertical: 4,
+              borderRadius: 8,
+              maxWidth: "70%",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                color: "white",
+                fontWeight: "500",
+              }}
+            >
+              Status{" "}
+              <Text
+                style={{
+                  color: "white",
+                  fontWeight: "900",
+                  alignItems: "center",
+                }}
+              >
+                •
+              </Text>{" "}
+              <Text
+                style={{
+                  color: data?.status == "Due" ? "yellow" : "white",
+                  fontSize: 14,
+                  fontWeight: "500",
+                }}
+              >
+                {data?.status}
+              </Text>
+            </Text>
+          </TouchableOpacity>
+          <View>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "500",
+                color: "white",
+              }}
+            >
+              Completed on :{data?.completionDate}
+            </Text>
+          </View>
+
+          {(data && data?.status === "Not Started") ||
+          data?.status === "Due" ? (
+            <TouchableOpacity
+              style={{
+                backgroundColor: "white",
+                alignItems: "center",
+                borderRadius: 10,
+                paddingVertical: 7,
+                marginVertical: 12,
+                width: "70%",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#001FC1",
+                  fontWeight: 600,
+                  paddingBottom: 4,
+                  lineHeight: 0,
+                }}
+              >
+                Start Now
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <></>
+          )}
+        </View>
+      </View>
+      {data?.type === "PMP" &&
+        (data?.status === "Submitted" ? (
+          <LinearGradient
+            colors={["#B83AF3", "#21B6E9"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              borderRadius: 10,
+              padding: 2,
+              marginVertical: 12,
+              width: "95%",
+              marginHorizontal: "auto",
+            }}
+          >
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#233A6F",
+                borderRadius: 8,
+                alignItems: "center",
+                paddingVertical: 7,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                paddingHorizontal: 10,
+                alignContent: "center",
+              }}
+            >
+              <Text
+                className="py-1"
+                style={{
+                  fontSize: 16,
+                  color: "yellow",
+                  fontWeight: "600",
+                  lineHeight: 20,
+                }}
+              >
+                Customized Development Plans
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log("Icon clicked!");
+                }}
+              >
+                <Image
+                  source={require("../../assets/icons/threeDots.png")}
+                  style={{ width: 24, height: 24, resizeMode: "contain" }}
+                />
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </LinearGradient>
+        ) : data?.status === "Completed" ? (
+          <TouchableOpacity
+            className="mx-auto"
+            style={{
+              backgroundColor: "white",
+              borderRadius: 10,
+              alignItems: "center",
+              paddingVertical: 7,
+              marginVertical: 12,
+              width: "95%",
+            }}
+          >
+            <Text
+              className="py-1"
+              style={{
+                fontSize: 16,
+                color: "#001FC1",
+                fontWeight: "600",
+                lineHeight: 20,
+              }}
+            >
+              Customized Development Plans
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <></>
+        ))}
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   // Appointment Card Styling
@@ -1025,4 +1307,4 @@ const styles = StyleSheet.create({
   //   borderWidth: 0.4,
   //   marginVertical: 4,
   // },
-})
+});

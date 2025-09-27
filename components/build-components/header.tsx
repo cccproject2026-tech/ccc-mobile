@@ -1,0 +1,85 @@
+import { icons } from "@/constants/images";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React from "react";
+
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Search } from "../atom/Search";
+
+export default function Header({
+  title = ``,
+  subTitle = ``,
+  hideSearchBar = false,
+}: {
+  title?: string | undefined;
+  subTitle?: string | undefined;
+  hideSearchBar?: boolean | undefined;
+}) {
+  const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
+    React.useState(false);
+  const [searchText, setSearchText] = React.useState("");
+  const [tabs, setTabs] = React.useState("All");
+  return (
+    <>
+      <View
+        style={{
+          width: "100%",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          paddingHorizontal: 20,
+          paddingTop: 20,
+          alignItems: "center",
+        }}
+      >
+        <TouchableOpacity onPress={() => router.back()}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <Image
+              source={icons.forward}
+              style={{
+                width: 18,
+                height: 18,
+                transform: [{ scaleX: -1 }],
+              }}
+            />
+            <View>
+              <Text className="text-white font-semibold text-[17px]">
+                {title}
+              </Text>
+              {subTitle && (
+                <Text className="text-[#F4F2F2B5] font-semibold ">
+                  {subTitle}
+                </Text>
+              )}
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
+          <Ionicons name="ellipsis-vertical" size={20} color="white" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Separator */}
+      <View className="h-[0.5px] bg-white/30 mt-3" />
+
+      {!hideSearchBar && (
+        <View style={styles.searchContainer}>
+          <Search searchText={searchText} setSearchText={setSearchText} />
+        </View>
+      )}
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  searchContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
+});

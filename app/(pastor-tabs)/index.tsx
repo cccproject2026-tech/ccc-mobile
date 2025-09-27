@@ -325,7 +325,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                     </Text>
                   </View>
                   {dummyAppointments.map((e, i) => (
-                    <AppointmentCard data={e} dataKey={i.toString()} />
+                    <AppointmentCard data={e} dataKey={i.toString()} key={i}/>
                   ))}
                 </View>
                 <View style={styles.separator} />

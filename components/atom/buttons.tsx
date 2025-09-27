@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 // Define button types as a union type for better type safety
-type ButtonType = "cancel" | "submit" | "schedule" | "custom";
+type ButtonType = "cancel" | "submit" | "schedule" | "custom" | "start";
 
 // Interface for Button component props
 interface ButtonProps {
@@ -131,7 +131,40 @@ export const Button: React.FC<ButtonProps> = ({
         ]}
       >
         {icon !== "" && (
-          <Image source={icon as ImageSourcePropType} style={{ width: 15, height: 15 }} />
+          <Image
+            source={icon as ImageSourcePropType}
+            style={{ width: 15, height: 15 }}
+          />
+        )}
+        <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
+          {title}
+        </Text>
+      </TouchableOpacity>
+    );
+  } else if (type === "start") {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        style={[
+          {
+            borderWidth: 1,
+            borderColor: "white",
+            backgroundColor: "#1e366f",
+            padding: 8,
+            borderRadius: 8,
+            flexDirection: "row",
+            gap: 10,
+            justifyContent: "center",
+            alignItems: "center",
+          },
+          style,
+        ]}
+      >
+        {icon !== "" && (
+          <Image
+            source={icon as ImageSourcePropType}
+            style={{ width: 15, height: 15 }}
+          />
         )}
         <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
           {title}
@@ -163,7 +196,7 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
       if (!result.canceled) {
         setSelectedFile(result);
         console.log("Selected PDF:", result);
-        
+
         // Call onPress callback if provided
         if (onPress) {
           onPress();
@@ -175,7 +208,12 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
   };
 
   return (
-    <View style={[styles.uploadContainer, { alignItems: "center", marginTop: 20, width: "100%" }]}>
+    <View
+      style={[
+        styles.uploadContainer,
+        { alignItems: "center", marginTop: 20, width: "100%" },
+      ]}
+    >
       <Button
         title={title}
         onPress={pickDocument}
@@ -183,7 +221,7 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
         icon={icon}
         style={style}
       />
-      
+
       {/* Optional: Display selected file name */}
       {selectedFile && !selectedFile.canceled && (
         <Text style={styles.selectedFileText}>
