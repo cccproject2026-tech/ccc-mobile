@@ -7,6 +7,9 @@ import { useDrawerStore } from "../atom/DrawerStore"
 interface HeaderProps {
   color?: string
   size?: number
+  showDrawer?: boolean
+  showNotificationIcon?: boolean
+  wrapperClass?: string
 }
 
 const image = require("@/assets/logos/CCClogo.png")
@@ -14,18 +17,25 @@ const image = require("@/assets/logos/CCClogo.png")
 export const PastorNavigationHeader: React.FC<HeaderProps> = ({
   color = "#ffffff",
   size = 30,
+  showDrawer = true,
+  showNotificationIcon = true,
+  wrapperClass = ``
 }) => {
   const { toggleDrawer } = useDrawerStore()
 
   return (
-      <View className="flex-row items-center justify-between px-8">
+      <View className={`flex-row items-center justify-between px-8 ${wrapperClass}`}>
+        {showDrawer && (
         <TouchableOpacity onPress={toggleDrawer} className="">
           <Ionicons name="menu" size={size} color={color} />
         </TouchableOpacity>
+        )}
         <View className="flex-row gap-4 items-center">
+          {showNotificationIcon && (
             <TouchableOpacity onPress={() => router.push("/(pastor-tabs)/notifications")} className="">
                 <Ionicons name="notifications-outline" size={24} color={color} />
             </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={toggleDrawer}>
             <Image
               source={image}

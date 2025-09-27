@@ -110,7 +110,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     gap: 12,
-    margin: 16
   },
 
   rowSpacing: {
@@ -127,7 +126,7 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    flexShrink: 1, // allow wrapping on multiple lines without pushing checkbox to next line
+    flexShrink: 1,
     fontSize: 16,
     lineHeight: 24,
   },

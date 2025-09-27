@@ -238,7 +238,8 @@ export const SurveyButton = ({
   icon = "",
   className = "",
   bgColor = "#1E366F",
-  textColor = "#ffffff"
+  textColor = "#ffffff",
+  disabled = false,
 }: {
   title: string;
   onPress: () => void;
@@ -246,6 +247,7 @@ export const SurveyButton = ({
   className?: string | undefined;
   bgColor?: string | undefined;
   textColor?: string | undefined;
+  disabled?: boolean | undefined;
 }) => {
 
   return (
@@ -254,7 +256,9 @@ export const SurveyButton = ({
       onPress={onPress}
       style={{
         backgroundColor: bgColor
-      }}>
+      }}
+      disabled={disabled}
+    >
       <Text
         className={`font-medium text-[15px] leading-[22px] shadow-[#00000040] text-white ${className}`}
         style={{
@@ -262,6 +266,7 @@ export const SurveyButton = ({
         }}
       >
         {title} {icon !== "" && icon}
+
       </Text>
     </TouchableOpacity>
   );

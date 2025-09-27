@@ -46,7 +46,6 @@ export function ProgressDots({
                 height: Math.max(dotSize, trackThickness) + 8,
             }}
         >
-            {/* Track line - centered behind dots */}
             <View
                 className="absolute"
                 style={{
@@ -55,11 +54,22 @@ export function ProgressDots({
                     opacity: 0.8,
                     width: "90%",
                     top: "50%",
-                    transform: [{ translateY: -trackThickness / 2 }],
+                    transform: [{ translateY: -trackThickness }],
+                }}
+            />
+            <View
+                className="absolute"
+                style={{
+                    height: trackThickness,
+                    backgroundColor: "#ffffff",
+                    width: current === 0 ? "0%" : `${(current / (total - 1)) * 90}%`,
+                    top: "50%",
+                    transform: [{ translateY: -trackThickness }],
+                    zIndex: 1,
+                    left: "5%",
                 }}
             />
 
-            {/* Dots container - centered */}
             <View
                 className="absolute flex-row items-center justify-between"
                 style={{
@@ -77,7 +87,7 @@ export function ProgressDots({
                             style={{
                                 width: dotSize,
                                 height: dotSize,
-                                backgroundColor: isActive ? "#ffffff" : "#1F2937",
+                                backgroundColor: i <= current ? "#ffffff" : "#1F2937",
                                 zIndex: 2,
                             }}
                         />

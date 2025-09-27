@@ -1,7 +1,4 @@
-import { SurveyButton } from "@/components/atom/buttons"
 import { ProgressCard } from "@/components/atom/cards"
-import { ChecklistCard } from "@/components/atom/checklistCard"
-import ProgressDots from "@/components/atom/dots"
 import { Tab } from "@/components/atom/tab"
 import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
@@ -24,14 +21,7 @@ export default function ProgressScreen() {
     const [roadmapTabs, setRoadmapTabs] = React.useState("All")
     const [assessmentTabs, setAssessmentTabs] = React.useState("All")
 
-    const [selected, setSelected] = React.useState<number[]>([]);
-    const [active, setActive] = React.useState(0)
-    const [currentPage, setCurrentPage] = React.useState(0)
-    const totalPages = 5
 
-    const handlePageChange = (newIndex: number) => {
-        setCurrentPage(newIndex)
-    }
 
 
     const dummyRoadMaps = [
@@ -161,14 +151,6 @@ export default function ProgressScreen() {
         }
     })
 
-
-    const items = [
-        'Many members are home bound due to illness',
-        'Church attendance has been dwindling, especially younger people',
-        'The church’s attendance has been increasing for the last three years',
-        'The congregation has grown significantly younger in the last few years',
-    ];
-
     return (
         <>
             <LinearGradient
@@ -253,48 +235,6 @@ export default function ProgressScreen() {
                                     />
                                 ))}
                             </ScrollView>
-
-                            <ProgressDots
-                                total={totalPages}
-                                activeIndex={currentPage} // Controlled by parent
-                                onChange={handlePageChange}
-                            />
-
-                            <View className="px-4">
-                                <View className="w-full p-5 flex justify-center items-center gap-2 rounded-[10px] bg-[#194F82]">
-                                    <View className="max-w-[105px] px-5 py-2 rounded-[15px] border border-solid border-[#FFFFFF73]">
-                                        <Text className="font-medium text-[15px] leading-[22px] text-white">
-                                            Section 1
-                                        </Text>
-                                    </View>
-                                    <Text className="font-bold text-[17px] leading-[22px] text-white text-center">
-                                        Congregational Well being
-                                    </Text>
-                                    <Text className="font-semibold text-[15px] leading-[22px] text-white text-center break-all">
-                                        (Biopsychosocial(BPS)/spiritual filter)
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <ChecklistCard
-                                items={items}
-                                selectable
-                                selectedIndices={selected}
-                                onSelectionChange={setSelected}
-                            />
-
-                            <View className="flex flex-row justify-center items-center" style={{ gap: 10 }}>
-                                <SurveyButton
-                                    title="Clear Responses"
-                                    onPress={() => handlePageChange(currentPage - 1)}
-                                    bgColor="#ffffff"
-                                    textColor="#001FC1"
-                                />
-                                <SurveyButton
-                                    title="Next Section"
-                                    onPress={() => handlePageChange(currentPage + 1)}
-                                />
-                            </View>
 
                             <View
                                 style={{

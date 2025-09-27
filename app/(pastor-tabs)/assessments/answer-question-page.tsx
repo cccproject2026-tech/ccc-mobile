@@ -4,7 +4,7 @@ import { Header, QuestionFields } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -107,7 +107,7 @@ export default function AnswerQuestionPage() {
                 }}
                 type="submit"
                 title={"Submit"}
-                onPress={() => {}}
+                onPress={() => router.push("/(pastor-tabs)/assessments/survey-form")}
               />
             </View>
           </ScrollView>
