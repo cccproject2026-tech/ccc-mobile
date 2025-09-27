@@ -232,6 +232,41 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
   );
 };
 
+export const SurveyButton = ({
+  title,
+  onPress,
+  icon = "",
+  className = "",
+  bgColor = "#1E366F",
+  textColor = "#ffffff"
+}: {
+  title: string;
+  onPress: () => void;
+  icon?: string | undefined;
+  className?: string | undefined;
+  bgColor?: string | undefined;
+  textColor?: string | undefined;
+}) => {
+
+  return (
+    <TouchableOpacity
+      className="max-w-[138px] w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] flex flew-row justify-center items-center"
+      onPress={onPress}
+      style={{
+        backgroundColor: bgColor
+      }}>
+      <Text
+        className={`font-medium text-[15px] leading-[22px] shadow-[#00000040] text-white ${className}`}
+        style={{
+          color: textColor
+        }}
+      >
+        {title} {icon !== "" && icon}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
 const styles = StyleSheet.create({
   uploadContainer: {
     // Add any specific styles for the upload container

@@ -70,11 +70,11 @@ export const NotificationCard = ({ data }: { data: any }) => {
             data.type == "course" || data.type == "assignment"
               ? icons.Revitalization2
               : data.type == "note"
-              ? icons.edit2
-              : icons.profile2
+                ? icons.edit2
+                : icons.profile2
           }
           style={{ width: 60, height: 60 }}
-          // resizeMode={"contain"}
+        // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -567,11 +567,11 @@ export const CommentsCard = ({
             data.type == "course" || data.type == "assignment"
               ? icons.dummyUser
               : data.type == "note"
-              ? icons.dummyUser2
-              : icons.profile2
+                ? icons.dummyUser2
+                : icons.profile2
           }
           style={{ width: 60, height: 60, borderRadius: 999999 }}
-          // resizeMode={"contain"}
+        // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -690,13 +690,13 @@ export const ListCard = ({
                   <CheckBox
                     type="circle"
                     value={false}
-                    setValue={() => {}}
+                    setValue={() => { }}
                   ></CheckBox>
                 ) : (
                   <CheckBox
                     type="square"
                     value={false}
-                    setValue={() => {}}
+                    setValue={() => { }}
                   ></CheckBox>
                 )}
                 {listImage && (
@@ -769,7 +769,7 @@ export const InputCard = ({
             icon={icons.upload}
             style={{ backgroundColor: "#1f1a79", width: "60%" }}
             selectedFile={null}
-            setSelectedFile={() => {}}
+            setSelectedFile={() => { }}
           ></UploadPDFButton>
         </View>
       )}
@@ -1078,6 +1078,204 @@ export const AssessmentCard = ({
     </TouchableOpacity>
   );
 };
+
+export const ProgressCard = ({
+  data,
+  navigation,
+}: {
+  data: any
+  navigation: any
+}) => {
+  const progressPercentage =
+    (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%"
+
+  return (
+    <TouchableOpacity
+      onPress={() =>
+        data.subPhase
+          ? navigation.push({
+            pathname: "/(pastor-tabs)/roadmap/sub-phases",
+            params: { data: JSON.stringify(data) }
+          })
+          : navigation.push({
+            pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
+            params: { data: JSON.stringify(data) }
+          })
+      }
+      style={{
+        width: "100%",
+        backgroundColor: "#194F82",
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
+        marginVertical: 10,
+        borderWidth: 1,
+        borderColor: "#FFFFFF73",
+      }}
+    >
+      <View
+        style={{
+          width: "100%",
+          flexDirection: "row",
+        }}
+      >
+        <View
+          style={{
+            width: 110,
+            height: "100%",
+            alignItems: "center",
+            padding: 8,
+          }}
+        >
+          <View style={{ position: "relative" }}>
+            <Image
+              source={data?.image}
+              style={{ width: 110, height: 100, borderRadius: 12 }}
+            />
+          </View>
+          <View className="mt-2" style={{ alignItems: "flex-start" }}>
+            <Text style={{ color: "white", fontWeight: "300", fontSize: 11 }}>
+              {data?.time}
+            </Text>
+          </View>
+        </View>
+        <View style={{ marginLeft: 20, flex: 1, gap: 10 }}>
+          <View>
+            <Text
+              style={{ color: "white", fontSize: 16, fontWeight: "600" }}
+              ellipsizeMode="tail"
+            >
+              {data?.title}
+            </Text>
+          </View>
+          {data?.description && (
+            <Text
+              className="py-2"
+              style={{ color: "#F4F2F2B5", fontWeight: "400", fontSize: 14 }}
+            >
+              {data?.description}
+            </Text>
+          )}
+          {(data.status && data.type !== "assessment") && (
+            <TouchableOpacity
+              style={{
+                borderWidth: 1,
+                borderColor: "#FFFFFF33",
+                paddingVertical: 4,
+                paddingHorizontal: 8,
+                marginVertical: 4,
+                borderRadius: 10,
+                alignSelf: "flex-start",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "white",
+                  fontWeight: "500",
+                }}
+              >
+                Status{" "}
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "900",
+                    alignItems: "center",
+                  }}
+                >
+                  •
+                </Text>{" "}
+                <Text
+                  style={{
+                    color: data?.status == "Due" ? "yellow" : "white",
+                    fontSize: 14,
+                    fontWeight: "500",
+                  }}
+                >
+                  {data?.status}
+                </Text>
+              </Text>
+            </TouchableOpacity>
+          )}
+          {data.type === "assessment" && data.completed && (
+            <TouchableOpacity
+              style={{
+                borderWidth: 1,
+                borderColor: "#FFFFFF33",
+                paddingVertical: 4,
+                paddingHorizontal: 8,
+                marginVertical: 4,
+                borderRadius: 10,
+                alignSelf: "flex-start",
+              }}
+            >
+              <Text
+                style={{
+                  color: "yellow",
+                  fontSize: 12,
+                  fontWeight: "500",
+                  alignSelf: "flex-start"
+                }}
+              >
+                {data?.completed}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {data?.progress === "1" && (
+            <View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                <View
+                  style={{
+                    backgroundColor: "black",
+                    borderRadius: 10,
+                    width: "80%",
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: "white",
+                      width: "70%",
+                      height: 8,
+                      borderRadius: 10,
+                    }}
+                  ></View>
+                </View>
+                <Text className="text-white text-xs leading-[18px] font-medium">
+                  {" "}
+                  6/8
+                </Text>
+              </View>
+              <Text className="font-medium text-sm leading-[18px] text-[#F4F2F2B5]">
+                Tasks Completed
+              </Text>
+            </View>
+          )}
+          {data.completedTime && (
+            <Text className="font-medium text-sm leading-[18px] text-[#F4F2F2B5]">
+              Completed on : {data?.completedTime}
+            </Text>
+          )}
+          {data?.dueDate && (
+            <Text
+              style={{ color: "#F4F2F2B5", fontSize: 12, fontWeight: "500", textAlign: "right" }}
+              ellipsizeMode="tail"
+            >
+              Due :{data?.dueDate}
+            </Text>
+          )}
+          {data?.submittedDate && (
+            <Text
+              style={{ color: "#F4F2F2B5", fontSize: 12, fontWeight: "500", textAlign: "right" }}
+              ellipsizeMode="tail"
+            >
+              Submitted :{data?.submittedDate}
+            </Text>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  )
+}
 
 const styles = StyleSheet.create({
   // Appointment Card Styling

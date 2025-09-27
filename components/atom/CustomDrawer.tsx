@@ -38,7 +38,7 @@ interface CustomDrawerContentProps {
 export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
   const { currentScreen } = useData()
   const { closeDrawer } = useDrawerStore()
-  
+
   console.log(currentScreen, "current Screen")
   const PastorScreenDrawerContent = [
     {
@@ -59,7 +59,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Progress",
       iconKey: "progress",
-      navigateLocation: "Progress",
+      navigateLocation: "/(pastor-tabs)/progress/progress",
     },
     {
       name: "Appointments",
@@ -347,8 +347,8 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {(currentScreen == "Pastor"
           ? PastorScreenDrawerContent
           : currentScreen == "Mentor"
-          ? MentorScreenDrawerContent
-          : DirectorScreenDrawerContent
+            ? MentorScreenDrawerContent
+            : DirectorScreenDrawerContent
         ).map((e, i) => (
           <React.Fragment key={i}>
             <TouchableOpacity
