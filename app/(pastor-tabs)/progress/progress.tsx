@@ -21,9 +21,6 @@ export default function ProgressScreen() {
     const [roadmapTabs, setRoadmapTabs] = React.useState("All")
     const [assessmentTabs, setAssessmentTabs] = React.useState("All")
 
-
-
-
     const dummyRoadMaps = [
         {
             title: "Self Revitalizaiton Phase",

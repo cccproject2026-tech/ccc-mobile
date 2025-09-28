@@ -240,6 +240,7 @@ export const SurveyButton = ({
   bgColor = "#1E366F",
   textColor = "#ffffff",
   disabled = false,
+  wrapperClass = ``
 }: {
   title: string;
   onPress: () => void;
@@ -248,11 +249,12 @@ export const SurveyButton = ({
   bgColor?: string | undefined;
   textColor?: string | undefined;
   disabled?: boolean | undefined;
+  wrapperClass?: string | undefined;
 }) => {
 
   return (
     <TouchableOpacity
-      className="max-w-[138px] w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] flex flew-row justify-center items-center"
+      className={`max-w-[138px] w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] flex flew-row justify-center items-center ${wrapperClass}`}
       onPress={onPress}
       style={{
         backgroundColor: bgColor
