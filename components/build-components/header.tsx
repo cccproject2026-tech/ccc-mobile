@@ -5,15 +5,20 @@ import React from "react";
 
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Search } from "../atom/Search";
+import { Button } from "../atom/buttons";
 
 export default function Header({
   title = ``,
   subTitle = ``,
   hideSearchBar = false,
+  showSettings = true,
+  showNewMeeting = false,
 }: {
   title?: string | undefined;
   subTitle?: string | undefined;
   hideSearchBar?: boolean | undefined;
+  showSettings?: boolean | undefined;
+  showNewMeeting?: boolean | undefined;
 }) {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
@@ -60,9 +65,35 @@ export default function Header({
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
-          <Ionicons name="ellipsis-vertical" size={20} color="white" />
-        </TouchableOpacity>
+        {showSettings && (
+          <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
+            <Ionicons name="ellipsis-vertical" size={20} color="white" />
+          </TouchableOpacity>
+        )}
+
+        {showNewMeeting && (
+          <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
+            {/* <Ionicons name="add" size={20} color="white" /> */}
+            <Button
+              type="custom"
+              title="New Meeting"
+              icon={icons.plusIcon}
+              onPress={() => {}}
+              style={{
+                width: 160,
+                backgroundColor: "rgba(255, 255, 255, 0.16)",
+              }}
+              textStyle={{
+                fontSize: 16,
+                lineHeight: 22,
+                fontWeight: "600",
+              }}
+              iconStyles={{
+                width: 20,
+              }}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Separator */}

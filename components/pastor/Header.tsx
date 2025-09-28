@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -21,7 +22,7 @@ const image = require("@/assets/logos/CCClogo.png");
 
 export const PastorNavigationHeader: React.FC<HeaderProps> = ({
   color = "#ffffff",
-  size = 30,
+  size = 36,
   showDrawer = true,
   showNotificationIcon = true,
   wrapperClass = ``,
@@ -46,10 +47,11 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
             borderWidth: 0,
             paddingHorizontal: 12,
           }}
+          icon={icons.forward}
+          iconStyles={{ transform: [{ scaleX: -1 }] }}
           textStyle={{ color: "white", fontWeight: 600 }}
           onPress={() => router.back()}
           type={"custom"}
-          // icon={require("@/assets/icons/arrow-left.png")}
         />
       ) : (
         <></>
@@ -95,7 +97,7 @@ const styles = StyleSheet.create({
   innerContainer: {
     backgroundColor: Colors.lightBlueGradientOne,
     borderRadius: 10,
-    paddingVertical: 12,
+    paddingVertical: 9,
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",

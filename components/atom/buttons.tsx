@@ -3,6 +3,8 @@ import React from "react";
 import {
   Image,
   ImageSourcePropType,
+  ImageStyle,
+  StyleProp,
   StyleSheet,
   Text,
   TextStyle,
@@ -22,6 +24,7 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   icon?: ImageSourcePropType | "";
+  iconStyles?: StyleProp<ImageStyle>;
 }
 
 // Interface for UploadPDFButton component props
@@ -41,6 +44,7 @@ export const Button: React.FC<ButtonProps> = ({
   style = {},
   textStyle = {},
   icon = "",
+  iconStyles={},
 }) => {
   // Base styles for better maintainability
   const baseButtonStyle: ViewStyle = {
@@ -133,7 +137,7 @@ export const Button: React.FC<ButtonProps> = ({
         {icon !== "" && (
           <Image
             source={icon as ImageSourcePropType}
-            style={{ width: 15, height: 15 }}
+            style={[{ width: 15, height: 15 }, iconStyles]}
           />
         )}
         <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
@@ -249,24 +253,22 @@ export const SurveyButton = ({
   textColor?: string | undefined;
   disabled?: boolean | undefined;
 }) => {
-
   return (
     <TouchableOpacity
       className="max-w-[138px] w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] flex flew-row justify-center items-center"
       onPress={onPress}
       style={{
-        backgroundColor: bgColor
+        backgroundColor: bgColor,
       }}
       disabled={disabled}
     >
       <Text
         className={`font-medium text-[15px] leading-[22px] shadow-[#00000040] text-white ${className}`}
         style={{
-          color: textColor
+          color: textColor,
         }}
       >
         {title} {icon !== "" && icon}
-
       </Text>
     </TouchableOpacity>
   );

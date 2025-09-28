@@ -64,7 +64,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Appointments",
       iconKey: "Appointments",
-      navigateLocation: "Appointments",
+      navigateLocation: "/(pastor-tabs)/appointments/my-appointments",
     },
     {
       name: "Profile",
@@ -104,12 +104,12 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Change Password",
           iconKey: "changePass",
-          navigateLocation: "Profile",
+          navigateLocation: "/(pastor-tabs)/profile/my-profile",
         },
         {
           name: "Turn Off Notifications",
           iconKey: "turnOffNotification",
-          navigateLocation: "Notification",
+          navigateLocation: "/(pastor-tabs)/notifications",
         },
         {
           name: "Change Mentor",
@@ -196,7 +196,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Turn Off Notifications",
           iconKey: "turnOffNotification",
-          navigateLocation: "Notification",
+          navigateLocation: "/(pastor-tabs)/notifications",
         },
       ],
     },

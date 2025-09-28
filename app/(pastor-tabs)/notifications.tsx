@@ -1,16 +1,14 @@
 import { NotificationCard } from "@/components/atom/cards"
+import { Header } from "@/components/build-components"
+import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
-import { icons } from "@/constants/images"
 import { LinearGradient } from "expo-linear-gradient"
-import { router, Stack } from "expo-router"
+import { Stack } from "expo-router"
 import React from "react"
 import {
-  Image,
   ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+  View
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
@@ -58,45 +56,15 @@ export default function NotificationScreen({
         style={{ flex: 1 }}
       >
         <SafeAreaView style={styles.scrollContainer}>
+          <PastorNavigationHeader />
           <View
             style={{
               width: "100%",
               alignItems: "center",
-              marginTop: 30,
             }}
           >
-            <View
-              style={{
-                width: "100%",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingHorizontal: 10,
-              }}
-            >
-              <TouchableOpacity onPress={() => router.back()}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginTop: 30,
-                  }}
-                >
-                  <Image
-                    source={icons.forward}
-                    style={{
-                      width: 18,
-                      height: 18,
-                      transform: [{ scaleX: -1 }],
-                    }}
-                  />
-                  <Text className="text-white font-semibold text-[17px]">
-                    {" "}
-                    Notifications
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+            {/* Header */}
+            <Header title="Notifications" hideSearchBar={true} showSettings={false} />
             <View style={{ width: "100%" }}>
               <View style={styles.separator} />
             </View>
@@ -129,7 +97,6 @@ export default function NotificationScreen({
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    justifyContent: "space-between",
     // alignItems: "center",
   },
   text: {
@@ -140,7 +107,7 @@ const styles = StyleSheet.create({
     height: 2,
     backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
     // marginHorizontal: 16,
-    marginVertical: 18,
+    marginVertical: 8,
   },
   container: {
     alignItems: "center",

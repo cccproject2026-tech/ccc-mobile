@@ -1,22 +1,23 @@
-import { Ionicons } from "@expo/vector-icons"
-import React from "react"
-import {
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native"
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, TextInput, View } from "react-native";
 
 interface SearchProps {
-  searchText: string
-  setSearchText: (text: string) => void
+  searchText?: string;
+  setSearchText?: (text: string) => void;
+  placeholder?: string;
 }
 
-export const Search = ({ searchText, setSearchText }: SearchProps) => {
+export const Search = ({
+  searchText,
+  setSearchText,
+  placeholder,
+}: SearchProps) => {
   return (
     <View style={styles.searchBox}>
       <TextInput
         style={styles.searchInput}
-        placeholder="Search"
+        placeholder={placeholder || "Search"}
         placeholderTextColor="white"
         value={searchText}
         onChangeText={setSearchText}
@@ -28,8 +29,8 @@ export const Search = ({ searchText, setSearchText }: SearchProps) => {
         style={styles.searchIcon}
       />
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   searchBox: {
@@ -51,4 +52,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "400",
   },
-})
+});

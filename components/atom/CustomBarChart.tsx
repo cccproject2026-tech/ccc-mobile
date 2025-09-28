@@ -1,13 +1,13 @@
 import React from "react";
 import { Dimensions, StyleSheet, Text, View, ViewStyle } from "react-native";
 import Svg, {
-    Defs,
-    G,
-    Line,
-    Rect,
-    Stop,
-    LinearGradient as SvgLinearGradient,
-    Text as SvgText,
+  Defs,
+  G,
+  Line,
+  Rect,
+  Stop,
+  LinearGradient as SvgLinearGradient,
+  Text as SvgText,
 } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
@@ -103,7 +103,7 @@ const CustomBarChart: React.FC<CustomBarChartProps> = ({
       <G key={i}>
         {/* Horizontal Grid Lines */}
         <Line
-          x1={20} // Start grid lines after the y-axis labels
+          x1={40} // Start grid lines after the y-axis labels
           y1={(customChartHeight / (customGridLineCount - 1)) * i}
           x2={customChartWidth}
           y2={(customChartHeight / (customGridLineCount - 1)) * i}
@@ -112,7 +112,7 @@ const CustomBarChart: React.FC<CustomBarChartProps> = ({
         />
         {/* Y-Axis Labels */}
         <SvgText
-          x={10} // Position labels to the left of the grid lines
+          x={30} // Position labels to the left of the grid lines
           y={(customChartHeight / (customGridLineCount - 1)) * i + 8} // Adjusted y-coordinate with offset
           fill="white"
           fontSize="10"

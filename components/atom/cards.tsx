@@ -18,7 +18,7 @@ export const AppointmentCard = ({
   dataKey,
 }: {
   data: any;
-  dataKey: string;
+  dataKey: string | number;
 }) => {
   return (
     <View key={dataKey} style={styles.appointmentBox}>
@@ -80,7 +80,7 @@ export const NotificationCard = ({ data }: { data: any }) => {
       <View style={styles.appointmentDetails}>
         <View>
           <Text
-            style={{ color: "white", fontSize: 16, fontWeight: "400" }}
+            style={{ color: "white", fontSize: 16, fontWeight: "600" ,lineHeight:22 }}
             ellipsizeMode="tail"
           >
             {data.title.toUpperCase()}
