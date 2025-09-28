@@ -124,7 +124,8 @@ export const RevitalizationCard = ({
       onPress={() =>
         data.assignment
           ? navigation.push({
-              pathname: "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+              pathname:
+                "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
               params: { data: JSON.stringify(data) },
             })
           : data.subPhase
@@ -831,8 +832,8 @@ export const InputCard = ({
   value: string;
   required: boolean;
   description: string;
-  fileUpload: boolean;
-  answer: boolean;
+  fileUpload?: boolean;
+  answer?: boolean;
 }) => {
   return (
     <View
@@ -847,9 +848,17 @@ export const InputCard = ({
         borderWidth: 1,
         borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
         marginBottom: 16,
+        gap: 10,
       }}
     >
-      <Text style={{ color: "white" }}>
+      <Text
+        style={{
+          color: "white",
+          fontSize: 16,
+          lineHeight: 22,
+          fontWeight: 500,
+        }}
+      >
         {title} {required && <Text style={{ color: "yellow" }}>*</Text>}
       </Text>
       {fileUpload && (
@@ -864,7 +873,15 @@ export const InputCard = ({
         </View>
       )}
       {description !== "" && (
-        <Text style={{ color: "#b4c7d6", paddingVertical: 5, fontSize: 13 }}>
+        <Text
+          style={{
+            color: "#b4c7d6",
+            paddingVertical: 5,
+            fontSize: 15,
+            lineHeight: 22,
+            fontWeight: 500,
+          }}
+        >
           {description}
         </Text>
       )}

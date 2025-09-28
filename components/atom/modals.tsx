@@ -1,29 +1,30 @@
-import { Colors } from "@/constants/Colors"
-import { icons } from "@/constants/images"
-import { LinearGradient } from "expo-linear-gradient"
-import React from "react"
+import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
+import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
 import {
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
-} from "react-native"
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
+import { Button } from "./buttons";
 
 interface OptionsModalProps {
-  isMenuVisible: boolean
-  closeMenu: () => void
-  onPressForFirstOption: () => void
-  onPressForSecondOption: () => void
-  onPressForThirdOption?: () => void
-  onPressForFourthOption?: () => void
-  firstOptionLabel: string
-  secondOptionLabel: string
-  thirdOptionLabel?: string
-  fourthOptionLabel?: string
+  isMenuVisible: boolean;
+  closeMenu: () => void;
+  onPressForFirstOption: () => void;
+  onPressForSecondOption: () => void;
+  onPressForThirdOption?: () => void;
+  onPressForFourthOption?: () => void;
+  firstOptionLabel: string;
+  secondOptionLabel: string;
+  thirdOptionLabel?: string;
+  fourthOptionLabel?: string;
 }
 
 export const OptionsModal = ({
@@ -94,20 +95,20 @@ export const OptionsModal = ({
         </View>
       </TouchableWithoutFeedback>
     </Modal>
-  )
-}
+  );
+};
 
 interface RoadMapOutcomeModalProps {
-  isMenuVisible: boolean
-  closeMenu: () => void
-  onPressForFirstOption: () => void
-  onPressForSecondOption: () => void
-  onPressForThirdOption?: () => void
-  onPressForFourthOption?: () => void
-  firstOptionLabel: string
-  secondOptionLabel: string
-  thirdOptionLabel?: string
-  fourthOptionLabel?: string
+  isMenuVisible: boolean;
+  closeMenu: () => void;
+  onPressForFirstOption: () => void;
+  onPressForSecondOption: () => void;
+  onPressForThirdOption?: () => void;
+  onPressForFourthOption?: () => void;
+  firstOptionLabel: string;
+  secondOptionLabel: string;
+  thirdOptionLabel?: string;
+  fourthOptionLabel?: string;
 }
 
 export const RoadMapOutcomeModal = ({
@@ -146,7 +147,7 @@ export const RoadMapOutcomeModal = ({
       outcome:
         "Church members will begin to feel a sense of hope for the future and begin expecting God to do something exciting in their church.",
     },
-  ]
+  ];
 
   return (
     <Modal
@@ -317,8 +318,65 @@ export const RoadMapOutcomeModal = ({
         </View>
       </TouchableWithoutFeedback>
     </Modal>
-  )
+  );
+};
+
+interface ResponseModalProps {
+  responseText: string;
+  isModalVisible: boolean;
+  closeMenu: () => void;
+  buttonText: string;
+  buttonPress: () => void;
 }
+
+export const ResponseModal: React.FC<ResponseModalProps> = ({
+  responseText,
+  isModalVisible,
+  closeMenu,
+  buttonText,
+  buttonPress,
+}) => {
+  return (
+    <Modal
+      visible={isModalVisible}
+      transparent={true}
+      onRequestClose={closeMenu}
+    >
+      <TouchableWithoutFeedback onPress={closeMenu}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback>
+            <View
+              style={[
+                styles.modalContainer,
+                {
+                  justifyContent: "center",
+                  alignItems: "center",
+                },
+              ]}
+            >
+              <View style={styles.option}>
+                <View style={styles.optionRow}>
+                  <Text style={[styles.optionText, { textAlign: "center" }]}>
+                    {responseText}
+                  </Text>
+                </View>
+              </View>
+              {buttonText !== "" && (
+                <View style={{ paddingVertical: 10 }}>
+                  <Button
+                    title={buttonText}
+                    type="schedule"
+                    onPress={buttonPress}
+                  />
+                </View>
+              )}
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
+};
 
 const styles = StyleSheet.create({
   overlay: {
@@ -354,4 +412,4 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     paddingVertical: 8,
   },
-})
+});

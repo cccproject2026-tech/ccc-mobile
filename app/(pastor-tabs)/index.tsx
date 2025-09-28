@@ -342,7 +342,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                   </View>
                   <View className="gap-2">
                     {dummyRoadMaps.map((e, i) => (
-                      <RoadMapCard data={e} dataKey={i.toString()} />
+                      <RoadMapCard data={e} dataKey={i.toString()} key={i} />
                     ))}
                   </View>
                 </View>

@@ -1,7 +1,14 @@
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Image, Text, TextStyle, TouchableOpacity, View, ViewStyle } from "react-native";
+import {
+  Image,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 import { icons } from "../../constants/images";
 
 interface Navigation {
@@ -15,13 +22,16 @@ interface HeaderRightProps {
 }
 
 interface HeaderTitleProps {
-  navigation: Navigation;
+  navigation?: Navigation;
   title?: string;
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
 
-export const HeaderRight: React.FC<HeaderRightProps> = ({ navigation, hideBell = true }) => (
+export const HeaderRight: React.FC<HeaderRightProps> = ({
+  navigation,
+  hideBell = true,
+}) => (
   <View
     style={{
       flexDirection: "row",
@@ -58,10 +68,7 @@ export const HeaderTitle: React.FC<HeaderTitleProps> = ({
   textStyle = {},
 }) => (
   <LinearGradient
-    colors={[
-      Colors.lightBlueGradientFour,
-      Colors.darkBlueGradientFour,
-    ]}
+    colors={[Colors.lightBlueGradientFour, Colors.darkBlueGradientFour]}
     start={{ x: 0, y: 0 }}
     end={{ x: 1, y: 1 }}
     style={{
@@ -83,8 +90,10 @@ export const HeaderTitle: React.FC<HeaderTitleProps> = ({
       <Text
         style={[
           {
-            fontSize: 15,
-            fontWeight: "100",
+            fontSize: 20,
+            lineHeight: 30,
+            fontWeight: "700",
+            paddingVertical: 27,
             fontFamily: "AlbertSans-Medium",
             color: Colors.customWhiteEighty,
             textAlign: "center",

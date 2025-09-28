@@ -1,3 +1,9 @@
+import { Tab } from "@/components/atom/tab"
+import { PastorNavigationHeader } from "@/components/pastor/Header"
+import { Colors } from "@/constants/Colors"
+import { icons } from "@/constants/images"
+import { LinearGradient } from "expo-linear-gradient"
+import { Stack, router, useLocalSearchParams } from "expo-router"
 import React from "react"
 import {
   Image,
@@ -7,12 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
-import { Colors } from "@/constants/Colors"
-import { LinearGradient } from "expo-linear-gradient"
-import { icons } from "@/constants/images"
-import { PastorNavigationHeader } from "@/components/pastor/Header"
-import { Tab } from "@/components/atom/tab"
-import { Stack, router, useLocalSearchParams } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function QueriesScreen() {
@@ -33,7 +33,7 @@ export default function QueriesScreen() {
       "New": "/(pastor-tabs)/roadmap/queries/new",
       "Answered": "/(pastor-tabs)/roadmap/queries/answered", 
       "Pending": "/(pastor-tabs)/roadmap/queries/pending"
-    }
+    } as const;
     
     router.push({
       pathname: routeMap[tabName as keyof typeof routeMap],
@@ -101,7 +101,7 @@ export default function QueriesScreen() {
                         fontWeight: "200",
                       }}
                     >
-                      Revitalization Roadmap > {data?.title}
+                      Revitalization Roadmap {data?.title}
                     </Text>
                   </View>
                 </View>

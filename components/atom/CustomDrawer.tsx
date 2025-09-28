@@ -69,7 +69,6 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Profile",
       iconKey: "profile",
-      navigateLocation: "/(pastor-tabs)/profile",
       subTabs: [
         {
           name: "My Profile",
@@ -79,7 +78,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Documents",
           iconKey: "document",
-          navigateLocation: "Profile",
+          navigateLocation: "/(pastor-tabs)/profile/my-profile",
         },
         {
           name: "Assignments",
@@ -89,19 +88,18 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Certificate",
           iconKey: "certificate",
-          navigateLocation: "Certificate",
+          navigateLocation: "/(pastor-tabs)/profile/certificate",
         },
         {
           name: "Micro Grant",
           iconKey: "microGrant",
-          navigateLocation: "MicroGrant",
+          navigateLocation: "/(pastor-tabs)/profile/grant",
         },
       ],
     },
     {
       name: "Settings",
       iconKey: "settings",
-      navigateLocation: "Settings",
       subTabs: [
         {
           name: "Change Password",
@@ -353,7 +351,11 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           <React.Fragment key={i}>
             <TouchableOpacity
               style={styles.drawerItem}
-              onPress={() => handleDrawerItemPress(e.navigateLocation)}
+              onPress={() => {
+                if (!e.subTabs) {
+                  handleDrawerItemPress(e.navigateLocation);
+                }
+              }}
             >
               <Image
                 source={icons[e.iconKey as keyof typeof icons]}

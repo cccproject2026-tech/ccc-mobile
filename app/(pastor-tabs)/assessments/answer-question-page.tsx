@@ -6,7 +6,13 @@ import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface AssessmentData {
@@ -61,56 +67,64 @@ export default function AnswerQuestionPage() {
 
   return (
     <>
+      <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
-        <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
-          <ScrollView
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: 40,
-            }}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
           >
-            <PastorNavigationHeader />
-            {/* Header Section */}
-            <Header
-              title="Church Assessment Evaluation(CMA)"
-              subTitle="Assessment"
-              hideSearchBar={true}
-            />
-
-            {/* Question Fields */}
-            <QuestionFields
-              questions={questions}
-              onAnswersChange={handleAnswersChange}
-              onSubmit={handleSubmit}
-              wrapperClass="pt-[30%]"
-            />
-
-            {/* Form  Buttons */}
-            <View className="flex flex-row mx-auto justify-center items-center gap-6">
-              <Button
-                style={{
-                  maxWidth: 87,
-                  width: "100%",
-                }}
-                type="cancel"
-                title={"Cancel"}
-                onPress={() => {}}
+            <ScrollView
+              contentContainerStyle={{
+                paddingBottom: 80,
+                paddingHorizontal: 10,
+                width: "100%",
+              }}
+            >
+              <PastorNavigationHeader showNameTag={true} />
+              {/* Header Section */}
+              <Header
+                title="Church Assessment Evaluation(CMA)"
+                subTitle="Assessment"
+                hideSearchBar={true}
               />
-              <Button
-                style={{
-                  maxWidth: 87,
-                  width: "100%",
-                }}
-                type="submit"
-                title={"Submit"}
-                onPress={() => router.push("/(pastor-tabs)/assessments/survey-form")}
+
+              {/* Question Fields */}
+              <QuestionFields
+                questions={questions}
+                onAnswersChange={handleAnswersChange}
+                onSubmit={handleSubmit}
+                wrapperClass="pt-[30%]"
               />
-            </View>
-          </ScrollView>
+
+              {/* Form  Buttons */}
+              <View className="flex flex-row mx-auto justify-center items-center gap-6">
+                <Button
+                  style={{
+                    maxWidth: 87,
+                    width: "100%",
+                  }}
+                  type="cancel"
+                  title={"Cancel"}
+                  onPress={() => {}}
+                />
+                <Button
+                  style={{
+                    maxWidth: 87,
+                    width: "100%",
+                  }}
+                  type="submit"
+                  title={"Submit"}
+                  onPress={() =>
+                    router.push("/(pastor-tabs)/assessments/survey-form")
+                  }
+                />
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
 
         {/* Modal */}

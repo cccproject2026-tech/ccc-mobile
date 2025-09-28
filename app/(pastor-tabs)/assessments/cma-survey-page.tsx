@@ -145,7 +145,7 @@ export default function CmaSurvey() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
+            <PastorNavigationHeader showNameTag={true} />
 
             {/* Header Section */}
             <Header

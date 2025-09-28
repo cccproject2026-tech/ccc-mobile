@@ -119,7 +119,7 @@ export default function Survey() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
+            <PastorNavigationHeader showNameTag={true} />
 
             {/* Header Section */}
             <Header title="Assessment" />
