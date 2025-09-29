@@ -49,7 +49,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Revitalization RoadMap",
       iconKey: "Revitalization",
-      navigateLocation: "/(pastor-tabs)/roadmap/revitalization-roadmap",
+      navigateLocation: "/(pastor-tabs)/roadmap/phase-1/revitalization-roadmap",
     },
     {
       name: "Assessments",
@@ -347,8 +347,8 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {(currentScreen == "Pastor"
           ? PastorScreenDrawerContent
           : currentScreen == "Mentor"
-          ? MentorScreenDrawerContent
-          : DirectorScreenDrawerContent
+            ? MentorScreenDrawerContent
+            : DirectorScreenDrawerContent
         ).map((e, i) => (
           <React.Fragment key={i}>
             <TouchableOpacity
