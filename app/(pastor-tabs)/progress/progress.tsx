@@ -171,7 +171,7 @@ export default function ProgressScreen() {
                 // paddingVertical: 10,
                 paddingBottom: 10,
                 marginHorizontal: 15,
-                marginVertical:10
+                marginVertical: 10
               }}
             >
               <Text style={{ color: "white", fontSize: 17, fontWeight: "500" }}>

@@ -11,6 +11,7 @@ type ProgressDotsProps = {
     className?: string
     dotSize?: number // px
     trackThickness?: number // px
+    wrapperClass?: string
 }
 
 export function ProgressDots({
@@ -21,6 +22,7 @@ export function ProgressDots({
     className,
     dotSize = 14,
     trackThickness = 2,
+    wrapperClass = ``
 }: ProgressDotsProps) {
     const isControlled = activeIndex !== undefined
     const [index, setIndex] = React.useState(defaultIndex)
@@ -41,7 +43,7 @@ export function ProgressDots({
             aria-valuemin={1}
             aria-valuemax={total}
             aria-valuenow={current + 1}
-            className="relative max-w-[244px] w-full items-center justify-center m-auto"
+            className={`relative max-w-[244px] w-full items-center justify-center m-auto ${wrapperClass}`}
             style={{
                 height: Math.max(dotSize, trackThickness) + 8,
             }}

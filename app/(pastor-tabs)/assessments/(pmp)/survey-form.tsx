@@ -36,10 +36,10 @@ export default function SurveyForm() {
     };
 
     const items = [
-        'Many members are home bound due to illness',
-        'Church attendance has been dwindling, especially younger people',
-        'The church’s attendance has been increasing for the last three years',
-        'The congregation has grown significantly younger in the last few years',
+        'Feeling physically drained most of the time.',
+        'Often feeling drained',
+        'Feeling mostly energized and engaged',
+        'Feeling fully energized and enjoying life',
     ];
 
     const RenderFormData = ({ title, subTitle, subTitle2, description = "" }: { title: string; subTitle: string; subTitle2?: string; description?: string }) => {
@@ -111,25 +111,24 @@ export default function SurveyForm() {
                             {formTab === 0 && (
                                 <RenderFormData
                                     title="Section 1"
-                                    subTitle="Congregational Well being"
-                                    subTitle2="(biopsychosocial(BPS)/financial/spiritual filter)"
-                                    description="Select the option that most accurately reflects the health of your church and its community engagement."
+                                    subTitle="Personal Well-Being"
+                                    subTitle2="(Biopsychosocial(BPS)/spiritual filter)"
+                                    description="Select the option that most accurately reflects how you feel and who you are, as this self-assessment is designed to help you gain a deeper understanding of yourself. The more precise you are, the better support and guidance we can offer"
                                 />
                             )}
 
                             {formTab === 1 && (
                                 <RenderFormData
                                     title="Section 2"
-                                    subTitle="Leadership Style"
-                                    subTitle2="(Elders, Church Board, etc)"
-                                    description="Select the option in each box that most accurately reflects the health of your church and its community engagement."
+                                    subTitle="Professional Development/ Leadership style"
+                                    description="Select the option that most accurately reflects how you feel and who you are, as this self-assessment is designed to help you gain a deeper understanding of yourself. The more precise you are, the better support and guidance we can offer"
                                 />
                             )}
 
                             {formTab === 2 && (
                                 <RenderFormData
                                     title="Section 3"
-                                    subTitle="Community Engagement History"
+                                    subTitle="Community Engagement (CE) Experience "
                                     description="Select the option in each box that most accurately reflects the health of your church and its community engagement."
                                 />
                             )}
@@ -137,7 +136,7 @@ export default function SurveyForm() {
                             {formTab === 3 && (
                                 <RenderFormData
                                     title="Section 4"
-                                    subTitle="Pastoral Leadership"
+                                    subTitle="Congregational Health "
                                     description="Select the option in each box that most accurately reflects the health of the pastor. This  section can be given to an individual or a pastoral team to complete."
                                 />
                             )}
@@ -145,7 +144,7 @@ export default function SurveyForm() {
                             {formTab === 4 && (
                                 <RenderFormData
                                     title="Section 5"
-                                    subTitle="Christ's Method Alone (CMA) and Cycle of Evangelism"
+                                    subTitle="Continuing Education"
                                     description="Select the option in each box that relates to how Christ Method Alone is being practiced in your community."
                                 />
                             )}
@@ -161,7 +160,7 @@ export default function SurveyForm() {
                                     onPress={() => {
                                         if (formTab === totalPages - 1) {
                                             // setIsVisible(true)
-                                            router.push("/(pastor-tabs)/assessments/(pmp)/pmp-survey-page")
+                                            router.push("/(pastor-tabs)/assessments/(pmp)/submit")
                                         } else {
                                             handlePageChange(formTab + 1)
                                         }
