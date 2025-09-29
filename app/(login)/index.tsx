@@ -1,0 +1,417 @@
+import { Button } from "@/components/atom/buttons";
+import { VideoCard } from "@/components/atom/cards";
+import { PastorNavigationHeader } from "@/components/pastor/Header";
+import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, Stack } from "expo-router";
+import React, { useState } from "react";
+import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { SafeAreaView } from "react-native-safe-area-context";
+
+interface ProfileData {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  email: string;
+  profileSummary: string;
+  church1: {
+    name: string;
+    phone: string;
+    website: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  church2: {
+    name: string;
+    phone: string;
+    website: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  } | null;
+  title: string;
+  yearsInMinistry: string;
+  conference: string;
+  communityServiceProjects: string;
+  interests: string;
+  comments: string;
+}
+
+export default function Login() {
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [hasChurch2, setHasChurch2] = useState(true);
+  const [tabs, setTabs] = React.useState("All");
+
+  const [profileData, setProfileData] = useState<ProfileData>({
+    firstName: "John",
+    lastName: "Ross",
+    phoneNumber: "098461313976",
+    email: "johnross@gmail.com",
+    profileSummary:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing eip ex ea commodo consequat. Duis",
+    church1: {
+      name: "Loma linda University Church",
+      phone: "098461313976",
+      website: "johnross@gmail.com",
+      address: "Loma linda University Church,CA",
+      city: "Oakland",
+      state: "North American",
+      zipCode: "00000",
+      country: "USA",
+    },
+    church2: {
+      name: "Loma linda University Church",
+      phone: "098461313976",
+      website: "johnross@gmail.com",
+      address: "Loma linda University Church,CA",
+      city: "Oakland",
+      state: "North American",
+      zipCode: "00000",
+      country: "USA",
+    },
+    title: "Pastor",
+    yearsInMinistry: "11",
+    conference: "Oakland",
+    communityServiceProjects: "11",
+    interests:
+      "I would like to find out more about the Center for Community Change",
+    comments:
+      "I am a conference administrator and would like to find out more about partnering with the cent I conference administrator and would like to find out more about partnering with the center",
+  });
+
+  const [profileImage, setProfileImage] = useState(icons.myProfile);
+
+  const handleImagePicker = () => {
+    Alert.alert("Change Profile Picture", "Choose an option", [
+      {
+        text: "Camera",
+        onPress: () => {
+          // Mock camera functionality
+          Alert.alert("Camera", "Camera functionality would open here");
+        },
+      },
+      {
+        text: "Photo Library",
+        onPress: () => {
+          // Mock photo library functionality
+          Alert.alert("Photo Library", "Photo library would open here");
+        },
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]);
+  };
+
+  const titleOptions = [
+    { label: "Pastor", value: "Pastor" },
+    { label: "Associate Pastor", value: "Associate Pastor" },
+    { label: "Youth Pastor", value: "Youth Pastor" },
+    { label: "Senior Pastor", value: "Senior Pastor" },
+    { label: "Elder", value: "Elder" },
+  ];
+
+  const conferenceOptions = [
+    { label: "Oakland", value: "Oakland" },
+    { label: "Northern California", value: "Northern California" },
+    { label: "Southern California", value: "Southern California" },
+    { label: "Central California", value: "Central California" },
+  ];
+
+  const handleEditPress = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    // Reset to original data if needed
+  };
+
+  const handleSavePress = () => {
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmSave = () => {
+    setShowConfirmation(false);
+    setIsEditMode(false);
+    setShowSuccessToast(true);
+    // Here you would typically save the data to your backend
+  };
+
+  const handleAddChurch = () => {
+    if (!profileData.church2) {
+      setProfileData({
+        ...profileData,
+        church2: {
+          name: "",
+          phone: "",
+          website: "",
+          address: "",
+          city: "",
+          state: "",
+          zipCode: "",
+          country: "",
+        },
+      });
+      setHasChurch2(true);
+    }
+  };
+
+  const handleRemoveChurch2 = () => {
+    setProfileData({
+      ...profileData,
+      church2: null,
+    });
+    setHasChurch2(false);
+  };
+
+  const dummyRoadMaps = [
+    {
+      title: "Jump-start",
+      description: "Attend a two-day revitalization jump-start session",
+      time: "Completion Time Months 1 - 2",
+      type: "course",
+      read: false,
+      sessionDate: "10 / 11 / 24",
+      status: "Not Started",
+      completionDate: "20 Oct 2024",
+      taskStatus: {
+        notStarted: true,
+        started: false,
+        inProgress: 0,
+        toComplete: 0,
+        completed: false,
+      },
+      image: require("@/assets/images/jumpstart.png"),
+    },
+    {
+      title: "Self Revitalization Phase",
+      description:
+        "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
+      time: "Completion Time Months 1 - 2",
+      type: "note",
+      read: false,
+      subPhase: true,
+      status: "Not Started",
+      taskStatus: {
+        notStarted: true,
+        started: false,
+        inProgress: 0,
+        toComplete: 8,
+        completed: false,
+      },
+      image: require("@/assets/images/roadmap.jpg"),
+      phase: "Phase 1",
+    },
+  ];
+
+  const filteredRoadMaps = dummyRoadMaps.filter((item) => {
+    if (tabs === "All") return true;
+    return item.status === tabs;
+  });
+  return (
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingBottom: 40,
+            }}
+          >
+            <PastorNavigationHeader />
+
+            <View className="py-2 px-3 flex gap-1 border border-white rounded-[10px] mx-5 mt-6  bg-white/20">
+              <Text className="text-base font-medium leading-[22px] text-white">
+                Contact Information
+              </Text>
+              <View className="flex-row">
+                <Image source={icons.phone} style={{ width: 17, height: 17 }} />
+                <Text className="text-white text-[14px] leading-[22px] font-medium">
+                  {" "}
+                  : 269-471-6159
+                </Text>
+              </View>
+              <View className="flex-row">
+                <Image
+                  source={icons.message}
+                  style={{ width: 17, height: 17 }}
+                />
+                <Text className="text-white text-[14px] leading-[22px] font-medium">
+                  {" "}
+                  : communitychange@andrews.edu
+                </Text>
+              </View>
+            </View>
+
+            <View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="w-full"
+                contentContainerStyle={{
+                  paddingHorizontal: 20,
+                  gap: 16,
+                  paddingVertical: 10,
+                  marginTop: 8,
+                }}
+              >
+                <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden relative">
+                  <Image
+                    source={icons.video}
+                    className="w-full h-full rounded-[25px]"
+                    resizeMode="cover"
+                  />
+                  <View className="absolute bottom-5 left-5 z-50">
+                    <Text className="text-[24px] text-white font-extrabold leading-[22px]">
+                      Welcome !
+                    </Text>
+                    <Text className="text-base text-white font-medium">
+                      Learn more about CCC
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
+                  <Image
+                    source={icons.video}
+                    className="w-full h-full rounded-[25px]"
+                    resizeMode="cover"
+                  />
+                  <View className="absolute bottom-5 left-5 z-50">
+                    <Text className="text-[24px] text-white font-extrabold leading-[22px]">
+                      Welcome !
+                    </Text>
+                    <Text className="text-base text-white font-medium">
+                      Learn more about CCC
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
+                  <Image
+                    source={icons.video}
+                    className="w-full h-full rounded-[25px]"
+                    resizeMode="cover"
+                  />
+                  <View className="absolute bottom-5 left-5 z-50">
+                    <Text className="text-[24px] text-white font-extrabold leading-[22px]">
+                      Welcome !
+                    </Text>
+                    <Text className="text-base text-white font-medium">
+                      Learn more about CCC
+                    </Text>
+                  </View>
+                </View>
+              </ScrollView>
+            </View>
+
+            <View className="my-7 max-w-[95%] mx-4" style={styles.separator} />
+
+            {filteredRoadMaps.map((e, i) => (
+              <React.Fragment key={i}>
+                <VideoCard data={e} navigation={router} />
+                {i < filteredRoadMaps.length - 1 && (
+                  <View className="h-[0.5px] bg-white/30 my-4" />
+                )}
+              </React.Fragment>
+            ))}
+
+            <View className="my-7 max-w-[95%] mx-4" style={styles.separator} />
+
+            <Button
+              title="Log In"
+              onPress={() => {}}
+              style={{
+                backgroundColor: "white",
+                maxWidth: "95%",
+                marginHorizontal: "auto",
+                width: "100%",
+                marginVertical: 50,
+              }}
+              type={"cancel"}
+            />
+
+            <View className="my-7 max-w-[95%] mx-4" style={styles.separator} />
+
+            <View className="max-w-[95%] mt-12 w-full mx-auto rounded-[10px] border border-white">
+              <View className="rounded-2xl overflow-hidden">
+                <LinearGradient
+                  colors={["#7C3AED", "#3B82F6", "#1E40AF"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: 23,
+                  }}
+                  className="rounded-[20px] border h-full border-white"
+                >
+                  <TouchableOpacity onPress={() => {}} activeOpacity={0.8}>
+                    <Text className="text-base leading-[22px] font-medium text-white py-3">
+                      New User {">>"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity onPress={() => {}} activeOpacity={0.8}>
+                    <Text className="text-base leading-[22px] font-medium text-white py-3">
+                      Submit Interest
+                    </Text>
+                  </TouchableOpacity>
+                </LinearGradient>
+              </View>
+            </View>
+
+            <View className="mx-auto mt-12">
+              <Image className="w-auto mt-auto" source={icons.universityIcon} />
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+        {/* Modals */}
+        {/* <ConfirmationModal
+          isVisible={showConfirmation}
+          onClose={() => setShowConfirmation(false)}
+          onConfirm={handleConfirmSave}
+        />
+
+        <SuccessToast
+          isVisible={showSuccessToast}
+          onClose={() => setShowSuccessToast(false)}
+        /> */}
+      </LinearGradient>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+   separator: {
+    height: 2,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    // marginVertical: 18,
+  },
+});
+
+ 

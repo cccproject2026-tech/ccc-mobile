@@ -80,7 +80,12 @@ export const NotificationCard = ({ data }: { data: any }) => {
       <View style={styles.appointmentDetails}>
         <View>
           <Text
-            style={{ color: "white", fontSize: 16, fontWeight: "600" ,lineHeight:22 }}
+            style={{
+              color: "white",
+              fontSize: 16,
+              fontWeight: "600",
+              lineHeight: 22,
+            }}
             ellipsizeMode="tail"
           >
             {data.title.toUpperCase()}
@@ -703,6 +708,72 @@ export const CommentsCard = ({
         <Text style={{ color: "white", fontWeight: "200" }}>{data.time}</Text>
       </View>
     </View>
+  );
+};
+
+export const VideoCard = ({
+  data,
+  navigation,
+}: {
+  data: any;
+  navigation: any;
+}) => {
+  return (
+    <TouchableOpacity
+      style={{
+        width: "100%",
+        backgroundColor: "#194F82",
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
+        marginVertical: 10,
+        borderWidth: 1,
+        borderColor: "#FFFFFF73",
+        maxWidth:"95%",
+        marginHorizontal:"auto"
+      }}
+    >
+      <View
+        style={{
+          width: "100%",
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <View
+          style={{
+            width: 200,
+            height: "100%",
+            alignItems: "center",
+            paddingVertical: 8,
+            paddingHorizontal:15,
+          }}
+        >
+          <View>
+            <Image
+              source={data?.image}
+              style={{ width: 180, height: 90, borderRadius: 12 }}
+            />
+          </View>
+        </View>
+        <View style={{ marginLeft: 10, flex: 1, gap: 4 }}>
+          <View>
+            <Text
+              style={{ color: "white", fontSize: 16, fontWeight: "600" }}
+              ellipsizeMode="tail"
+            >
+              {data?.title}
+            </Text>
+          </View>
+          <Text
+            className="py-2"
+            style={{ color: "#F4F2F2B5", fontWeight: "400", fontSize: 14 }}
+          >
+            {data?.description}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 };
 

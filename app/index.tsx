@@ -19,6 +19,9 @@ export default function index() {
             case 'director':
                 router.push('/(director-tabs)')
                 break
+                 case 'login':
+                router.push('/(login)')
+                break
             default:
                 console.log('Unknown role:', role)
         }
@@ -62,6 +65,16 @@ export default function index() {
             <Pressable
               style={{ padding: 10, backgroundColor: "yellow" }}
               onPress={() => onSelect("director")}
+            >
+              <Text>Director</Text>
+            </Pressable>
+          </View>
+
+           <View>
+
+            <Pressable
+              style={{ padding: 10, backgroundColor: "yellow" }}
+              onPress={() => onSelect("login")}
             >
               <Text>Director</Text>
             </Pressable>
