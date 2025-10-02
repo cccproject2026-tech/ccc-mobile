@@ -65,6 +65,13 @@ export default function index() {
             >
               <Text>Director</Text>
             </Pressable>
+
+            <Pressable
+              style={{ padding: 10, backgroundColor: "yellow" }}
+              onPress={() => router.push("/(auth)/login")}
+            >
+              <Text>Admin</Text>
+            </Pressable>
           </View>
         </View>
       </View>
