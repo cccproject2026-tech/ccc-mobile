@@ -8,7 +8,7 @@ import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import {
   Image,
   ImageBackground,
@@ -208,6 +208,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
               <Text
                 className="font-bold"
                 style={[styles.text, { ...{ paddingVertical: 10 } }]}
+                onPress={() => router.push("/(auth)/password")}
               >
                 {greetingMessage}
               </Text>

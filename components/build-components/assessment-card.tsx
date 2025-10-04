@@ -4,11 +4,15 @@ import { Text, View } from "react-native";
 export default function AssessmentCard({
   type = ``,
   dueDate = ``,
-  dueDateClass=``,
+  dueDateClass = ``,
+  wrapperClass = ``,
+  submitDate = ``
 }: {
   type?: string | undefined;
   dueDate?: string | undefined;
   dueDateClass?: string | undefined;
+  wrapperClass?: string | undefined;
+  submitDate?: string | undefined;
 }) {
   return (
     <View>
@@ -18,6 +22,7 @@ export default function AssessmentCard({
           paddingHorizontal: 16,
           width: "100%",
         }}
+        className={wrapperClass}
       >
         <View
           className=""
@@ -68,8 +73,13 @@ export default function AssessmentCard({
           </Text>
         </View>
       </View>
-      <View className="mt-10 px-5">
-        <Text className={`text-xs leading-[18px] font-bold ${dueDateClass}`}>Due :{dueDate}</Text>
+      <View className="flex flex-row justify-between">
+        <View className="mt-10 px-5">
+          <Text className={`text-xs leading-[18px] font-bold ${dueDateClass}`}>Due :{dueDate}</Text>
+        </View>
+        <View className="mt-10 px-5">
+          <Text className={`text-xs leading-[18px] font-bold ${dueDateClass}`}>Submitted :{submitDate}</Text>
+        </View>
       </View>
     </View>
   );
