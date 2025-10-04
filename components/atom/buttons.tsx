@@ -44,7 +44,7 @@ export const Button: React.FC<ButtonProps> = ({
   style = {},
   textStyle = {},
   icon = "",
-  iconStyles={},
+  iconStyles = {},
 }) => {
   // Base styles for better maintainability
   const baseButtonStyle: ViewStyle = {
@@ -59,61 +59,61 @@ export const Button: React.FC<ButtonProps> = ({
 
   if (type === "cancel") {
     return (
-      <View
+      <TouchableOpacity
+        onPress={onPress}
         style={[
           baseButtonStyle,
           {
             backgroundColor: "white",
+            justifyContent: "center",
           },
           style,
         ]}
       >
-        <TouchableOpacity onPress={onPress}>
-          <Text style={[baseTextStyle, { color: "#001fc1" }, textStyle]}>
-            {title}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        <Text style={[baseTextStyle, { color: "#001fc1" }, textStyle]}>
+          {title}
+        </Text>
+      </TouchableOpacity>
     );
   } else if (type === "submit") {
     return (
-      <View
+      <TouchableOpacity
+        onPress={onPress}
         style={[
           baseButtonStyle,
           {
             borderWidth: 1,
             borderColor: "white",
             backgroundColor: "#1e366e",
+            justifyContent: "center",
           },
           style,
         ]}
       >
-        <TouchableOpacity onPress={onPress}>
-          <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
-            {title}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
+          {title}
+        </Text>
+      </TouchableOpacity>
     );
   } else if (type === "schedule") {
     return (
-      <View
+      <TouchableOpacity
+        onPress={onPress}
         style={[
           baseButtonStyle,
           {
             borderWidth: 1,
             borderColor: "white",
             backgroundColor: "#1e366f",
+            justifyContent: "center",
           },
           style,
         ]}
       >
-        <TouchableOpacity onPress={onPress}>
-          <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
-            {title}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
+          {title}
+        </Text>
+      </TouchableOpacity>
     );
   } else if (type === "custom") {
     return (
@@ -244,7 +244,7 @@ export const SurveyButton = ({
   bgColor = "#1E366F",
   textColor = "#ffffff",
   disabled = false,
-  wrapperClass = ``
+  wrapperClass = ``,
 }: {
   title: string;
   onPress: () => void;

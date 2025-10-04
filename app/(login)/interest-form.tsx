@@ -1,5 +1,4 @@
 import { Button } from "@/components/atom/buttons";
-import CustomDropdown from "@/components/atom/dropDown";
 import { DropDrawer, TextArea } from "@/components/build-components";
 import InputField from "@/components/build-components/input-field";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
@@ -12,13 +11,19 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function InterestForm() {
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
-  const dropdownItems = [
-    { label: "Morning", value: "morning" },
-    { label: "Afternoon", value: "afternoon" },
-    { label: "Evening", value: "evening" },
+  const CountryItems = [
+    { label: "USA", value: "usa" },
+    { label: "Canada", value: "canada" },
+    { label: "Mexico", value: "mexico" },
+    { label: "Brazil", value: "brazil" },
+  ];
+
+   const TitleItems = [
+    { label: "Pastor", value: "pastor" },
+    { label: "Layleader", value: "layleader" },
+    { label: "Seminarian", value: "seminarian" },
   ];
 
   const interestItems = [
@@ -47,11 +52,11 @@ export default function InterestForm() {
         <SafeAreaView style={{ flex: 1 }}>
           <KeyboardAwareScrollView
             enableOnAndroid
-            extraScrollHeight={100} 
+            extraScrollHeight={100}
             keyboardOpeningTime={0}
             contentContainerStyle={{
               flexGrow: 1,
-              paddingBottom: 150, 
+              paddingBottom: 150,
             }}
             showsVerticalScrollIndicator={false}
           >
@@ -106,17 +111,17 @@ export default function InterestForm() {
                   <InputField keyboardType="default" label="City" />
                   <InputField keyboardType="default" label="State" />
                 </View>
-                <View className="flex-row justify-center items-center gap-2">
-                  <View className="flex-1">
+                <View className="flex-row justify-center items-start gap-3 min-h-[34px] px-1">
+                  <View className="w-1/2" style={{ height: 34 }}>
                     <InputField keyboardType="default" label="Zip Code" />
                   </View>
-                  <View className="flex-1">
-                    <CustomDropdown
-                      selectedValue={selectedOption}
-                      setSelectedValue={setSelectedOption}
-                      items={dropdownItems}
+                  <View className="w-1/2">
+                    <DropDrawer
+                      selectedValues={selectedInterests}
+                      setSelectedValues={setSelectedInterests}
+                      items={CountryItems}
                       placeholder="Country"
-                      containerStyle={{ height: 34 }}
+                      useCircleIndicator={true}
                     />
                   </View>
                 </View>
@@ -144,12 +149,11 @@ export default function InterestForm() {
                   Other Information
                 </Text>
                 <View className="flex-1">
-                  <CustomDropdown
-                    selectedValue={selectedOption}
-                    setSelectedValue={setSelectedOption}
-                    items={dropdownItems}
-                    placeholder="Country"
-                    containerStyle={{ height: 34 }}
+                  <DropDrawer
+                    selectedValues={selectedInterests}
+                    setSelectedValues={setSelectedInterests}
+                    items={TitleItems}
+                    placeholder="Title"
                   />
                 </View>
                 <View className="flex-row justify-center items-center gap-[10px]">

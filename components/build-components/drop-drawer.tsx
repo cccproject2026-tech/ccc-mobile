@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import { Animated } from "react-native";
-
+import React, { useRef, useState } from "react";
 import {
+    Animated,
     Platform,
     StyleSheet,
     Text,
@@ -12,6 +11,7 @@ import {
     ViewStyle,
 } from "react-native";
 
+// Enable layout animation for Android
 if (Platform.OS === "android") {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -29,33 +29,38 @@ interface CustomDrawerDropdownProps {
   items?: DrawerItem[];
   placeholder?: string;
   containerStyle?: ViewStyle;
+  useCircleIndicator?: boolean;
 }
+
+const defaultItems = [
+  {
+    label:
+      "I would like to find out more about the Center for Community Change",
+    value: "option1",
+  },
+  {
+    label: "I am interested in receiving mentoring in community engagement",
+    value: "option2",
+  },
+  { label: "I would like to talk to one of the mentors", value: "option3" },
+  {
+    label:
+      "I am a conference administrator and would like to find out more about partnering with the center",
+    value: "option4",
+  },
+];
 
 const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
   selectedValues,
   setSelectedValues,
-  items = [
-    {
-      label:
-        "I would like to find out more about the Center for Community Change",
-      value: "option1",
-    },
-    {
-      label: "I am interested in receiving mentoring in community engagement",
-      value: "option2",
-    },
-    { label: "I would like to talk to one of the mentors", value: "option3" },
-    {
-      label:
-        "I am a conference administrator and would like to find out more about partnering with the center",
-      value: "option4",
-    },
-  ],
+  items = defaultItems,
+  useCircleIndicator = false,
   placeholder = "Interests",
   containerStyle,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [animation] = useState(new Animated.Value(0));
+  const [contentHeightValue, setContentHeightValue] = useState(0);
+  const animation = useRef(new Animated.Value(0)).current;
 
   const toggleItem = (value: string) => {
     if (selectedValues.includes(value)) {
@@ -66,19 +71,20 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
   };
 
   const toggleExpanded = () => {
-    const finalValue = isExpanded ? 0 : 1; 
+    const finalValue = isExpanded ? 0 : 1;
     Animated.timing(animation, {
       toValue: finalValue,
       duration: 300,
-      useNativeDriver: false, 
+      useNativeDriver: false,
     }).start();
     setIsExpanded(!isExpanded);
   };
 
   const isSelected = (value: string) => selectedValues.includes(value);
-  const contentHeight = animation.interpolate({
+
+  const animatedHeight = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, items.length * 74], 
+    outputRange: [0, contentHeightValue || 0],
   });
 
   return (
@@ -92,15 +98,18 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
         <Text style={styles.headerText}>{placeholder}</Text>
         <Ionicons
           name={isExpanded ? "chevron-up" : "chevron-down"}
-          size={24}
+          size={14}
           color="white"
         />
       </TouchableOpacity>
 
-      {/* Expandable Content */}
-      {isExpanded && (
-        <Animated.View
-          style={[styles.contentContainer, { height: contentHeight }]}
+      {/* Animated Dropdown Content */}
+      <Animated.View
+        style={[styles.contentContainer, { height: animatedHeight }]}
+      >
+        <View
+          style={styles.hiddenMeasureContainer}
+          onLayout={(e) => setContentHeightValue(e.nativeEvent.layout.height)}
         >
           {items.map((item, index) => (
             <TouchableOpacity
@@ -112,21 +121,63 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
               onPress={() => toggleItem(item.value)}
               activeOpacity={0.7}
             >
+              {/* Indicator circle or checkbox in hidden measure container */}
               <View
                 style={[
-                  styles.checkbox,
-                  isSelected(item.value) && styles.checkboxSelected,
+                  useCircleIndicator ? styles.circleIndicator : styles.checkbox,
+                  isSelected(item.value) &&
+                    (useCircleIndicator
+                      ? styles.circleSelected
+                      : styles.checkboxSelected),
                 ]}
               >
-                {isSelected(item.value) && (
-                  <Ionicons name="checkmark" size={18} color="white" />
-                )}
+                {isSelected(item.value) &&
+                  (useCircleIndicator ? (
+                    <Ionicons name="radio-button-on" size={14} color="white" />
+                  ) : (
+                    <Ionicons name="checkmark" size={14} color="white" />
+                  ))}
+              </View>
+
+              <Text style={styles.itemText}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Visible content */}
+        <View style={styles.visibleContent}>
+          {items.map((item, index) => (
+            <TouchableOpacity
+              key={item.value}
+              style={[
+                styles.itemContainer,
+                index === items.length - 1 && styles.lastItem,
+              ]}
+              onPress={() => toggleItem(item.value)}
+              activeOpacity={0.7}
+            >
+              {/* Indicator circle or checkbox */}
+              <View
+                style={[
+                  useCircleIndicator ? styles.circleIndicator : styles.checkbox,
+                  isSelected(item.value) &&
+                    (useCircleIndicator
+                      ? styles.circleSelected
+                      : styles.checkboxSelected),
+                ]}
+              >
+                {/* {isSelected(item.value) &&
+                  (useCircleIndicator ? (
+                    <Ionicons name="radio-button-on" size={14} color="white" />
+                  ) : (
+                    <Ionicons name="checkmark" size={14} color="white" />
+                  ))} */}
               </View>
               <Text style={styles.itemText}>{item.label}</Text>
             </TouchableOpacity>
           ))}
-        </Animated.View>
-      )}
+        </View>
+      </Animated.View>
     </View>
   );
 };
@@ -142,24 +193,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    backgroundColor: "transparent",
+    paddingHorizontal: 15,
+    paddingVertical: 7,
   },
   headerText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: "white",
   },
   contentContainer: {
+    overflow: "hidden",
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.8)",
+  },
+  hiddenMeasureContainer: {
+    position: "absolute",
+    opacity: 0,
+    zIndex: -1,
+  },
+  visibleContent: {
     backgroundColor: "transparent",
   },
   itemContainer: {
     flexDirection: "row",
-    justifyContent:"center",
-    alignContent:"center",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 16,
@@ -180,14 +236,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 2,
   },
+  circleIndicator: {
+    width: 18,
+    height: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.8)",
+    backgroundColor: "white",
+    borderRadius: 9,
+    marginRight: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 2,
+  },
   checkboxSelected: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: "white",
+  },
+  circleSelected: {
+    backgroundColor: "transparent",
     borderColor: "white",
   },
   itemText: {
     flex: 1,
     fontSize: 16,
-    fontWeight:"500",
+    fontWeight: "500",
     color: "white",
     lineHeight: 22,
   },

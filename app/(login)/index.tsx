@@ -244,7 +244,7 @@ export default function Login() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
+            <PastorNavigationHeader showDrawer={false} />
 
             <View className="flex-row gap-4 items-center">
               <View
