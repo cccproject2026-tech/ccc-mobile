@@ -16,8 +16,8 @@ interface CustomDropdownProps {
   containerStyle?: ViewStyle;
 }
 
-const CustomDropdown: React.FC<CustomDropdownProps> = ({ 
-  selectedValue, 
+const CustomDropdown: React.FC<CustomDropdownProps> = ({
+  selectedValue,
   setSelectedValue,
   items = [
     { label: "Option 1", value: "option1" },
@@ -25,14 +25,14 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
     { label: "Option 3", value: "option3" },
   ],
   placeholder = "Preferred Meeting Option",
-  containerStyle
+  containerStyle,
 }) => {
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[containerStyle]}>
       <RNPickerSelect
         onValueChange={(value: string | null) => setSelectedValue(value)}
         items={items}
-        placeholder={{ label: placeholder, value: null }}
+        placeholder={{ label: placeholder, value: null, color: "black" }}
         style={pickerSelectStyles}
         value={selectedValue}
         Icon={() => {
@@ -44,12 +44,12 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 0,
-    borderWidth: 1,
-    borderColor: "white",
-    borderRadius: 10,
-  },
+  // container: {
+  //   padding: 0,
+  //   borderWidth: 1,
+  //   borderColor: "white",
+  //   borderRadius: 10,
+  // },
 });
 
 interface PickerSelectStyles {
@@ -61,9 +61,11 @@ interface PickerSelectStyles {
 const pickerSelectStyles: PickerSelectStyles = {
   inputIOS: {
     fontSize: 16,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    maxHeight: 34,
+    height: "100%",
     borderWidth: 1,
-    borderColor: "white",
+    borderColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 10,
     color: "white",
     backgroundColor: "transparent",
@@ -78,7 +80,7 @@ const pickerSelectStyles: PickerSelectStyles = {
     backgroundColor: "transparent",
   },
   iconContainer: {
-    top: 12,
+    top: 6,
     right: 10,
   },
 };

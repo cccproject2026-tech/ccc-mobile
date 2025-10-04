@@ -33,8 +33,6 @@ export default function RootLayout() {
     AlbertSans_700Bold,
   })
 
-
-
   if (!loaded || !fontsLoaded) {
     // Async font loading only occurs in development.
     return null

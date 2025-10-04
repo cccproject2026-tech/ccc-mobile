@@ -16,6 +16,7 @@ interface HeaderProps {
   wrapperClass?: string;
   showNameTag?: boolean;
   showBackButton?: boolean;
+  tagName?: string;
 }
 
 const image = require("@/assets/logos/CCClogo.png");
@@ -27,6 +28,7 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
   showNotificationIcon = true,
   wrapperClass = ``,
   showNameTag = false,
+  tagName = `John Ross`,
   showBackButton = false,
 }) => {
   const { toggleDrawer } = useDrawerStore();
@@ -54,7 +56,7 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
           type={"custom"}
         />
       ) : (
-        <></>
+        <View className="h-10 w-10"></View>
       )}
       {showNameTag && (
         <LinearGradient
@@ -64,7 +66,7 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
           style={styles.gradientBorder}
         >
           <View style={styles.innerContainer}>
-            <Text style={styles.text}>John Ross</Text>
+            <Text style={styles.text}>{tagName}</Text>
           </View>
         </LinearGradient>
       )}

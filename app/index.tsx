@@ -76,7 +76,7 @@ export default function index() {
               style={{ padding: 10, backgroundColor: "yellow" }}
               onPress={() => onSelect("login")}
             >
-              <Text>Director</Text>
+              <Text>Login</Text>
             </Pressable>
           </View>
         </View>

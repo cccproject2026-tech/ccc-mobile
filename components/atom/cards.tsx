@@ -729,8 +729,8 @@ export const VideoCard = ({
         marginVertical: 10,
         borderWidth: 1,
         borderColor: "#FFFFFF73",
-        maxWidth:"95%",
-        marginHorizontal:"auto"
+        maxWidth: "95%",
+        marginHorizontal: "auto",
       }}
     >
       <View
@@ -738,25 +738,33 @@ export const VideoCard = ({
           width: "100%",
           flexDirection: "row",
           alignItems: "center",
+          height: 112,
+          gap: 8,
         }}
       >
         <View
           style={{
-            width: 200,
+            width: 130,
             height: "100%",
-            alignItems: "center",
-            paddingVertical: 8,
-            paddingHorizontal:15,
           }}
         >
-          <View>
+          <View className="h-full">
             <Image
               source={data?.image}
-              style={{ width: 180, height: 90, borderRadius: 12 }}
+              style={{ width: 130, height: "100%", borderRadius: 12 }}
             />
           </View>
         </View>
-        <View style={{ marginLeft: 10, flex: 1, gap: 4 }}>
+        <View style={{ marginLeft: 0, flex: 1, gap: 3, width: "100%" }}>
+          <View className="w-full">
+            <Text
+              className="font-medium text-white/70"
+              style={{ fontSize: 14, fontWeight: "500" }}
+              ellipsizeMode="tail"
+            >
+              introduction . 11 min
+            </Text>
+          </View>
           <View>
             <Text
               style={{ color: "white", fontSize: 16, fontWeight: "600" }}
@@ -766,7 +774,7 @@ export const VideoCard = ({
             </Text>
           </View>
           <Text
-            className="py-2"
+            className="py-2 line-clamp-3"
             style={{ color: "#F4F2F2B5", fontWeight: "400", fontSize: 14 }}
           >
             {data?.description}

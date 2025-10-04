@@ -4,11 +4,13 @@ import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, Stack } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
+
 import {
   Alert,
   Image,
+  ImageSourcePropType,
   ScrollView,
   StyleSheet,
   Text,
@@ -58,6 +60,9 @@ export default function Login() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [hasChurch2, setHasChurch2] = useState(true);
   const [tabs, setTabs] = React.useState("All");
+  const { flag } = useLocalSearchParams();
+
+  console.log("11", flag);
 
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: "John",
@@ -243,27 +248,56 @@ export default function Login() {
           >
             <PastorNavigationHeader />
 
-            <View className="py-2 px-3 flex gap-1 border border-white rounded-[10px] mx-5 mt-6  bg-white/20">
-              <Text className="text-base font-medium leading-[22px] text-white">
-                Contact Information
-              </Text>
-              <View className="flex-row">
-                <Image source={icons.phone} style={{ width: 17, height: 17 }} />
-                <Text className="text-white text-[14px] leading-[22px] font-medium">
-                  {" "}
-                  : 269-471-6159
+            <View className="flex-row gap-4 items-center">
+              <View
+                className={`py-2 px-3 flex gap-1 border border-white rounded-[10px] ${
+                  flag === "interest-form" ? "ml-5" : "mx-5 flex-1" 
+                } mt-6  bg-white/20 `}
+              >
+                <Text className="text-base font-medium leading-[22px] text-white">
+                  Contact Information
                 </Text>
+                <View className="flex-row">
+                  <Image
+                    source={icons.phone}
+                    style={{ width: 17, height: 17 }}
+                  />
+                  <Text className="text-white text-[14px] leading-[22px] font-medium">
+                    {" "}
+                    : 269-471-6159
+                  </Text>
+                </View>
+                <View className="flex-row">
+                  <Image
+                    source={icons.message}
+                    style={{ width: 17, height: 17 }}
+                  />
+                  <Text className="text-white text-[14px] leading-[22px] font-medium">
+                    {" "}
+                    : communitychange@andrews.edu
+                  </Text>
+                </View>
               </View>
-              <View className="flex-row">
-                <Image
-                  source={icons.message}
-                  style={{ width: 17, height: 17 }}
-                />
-                <Text className="text-white text-[14px] leading-[22px] font-medium">
-                  {" "}
-                  : communitychange@andrews.edu
-                </Text>
-              </View>
+              <LinearGradient
+                colors={["#5B4FB5", "#2B7AB5", "#3BADC5"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="justify-center items-center"
+              >
+                {flag === "interest-form" && (
+                  <View className="flex-row items-center  py-[7px] px-10 shadow-2xl">
+                    <Image
+                      source={icons.forward as ImageSourcePropType}
+                      style={[
+                        { width: 15, height: 15, transform: [{ scaleX: -1 }] },
+                      ]}
+                    />
+                    <Text className="text-base py-1 leading-[22px] text-white font-medium">
+                      Status
+                    </Text>
+                  </View>
+                )}
+              </LinearGradient>
             </View>
 
             <View>
@@ -330,6 +364,17 @@ export default function Login() {
 
             <View className="my-7 max-w-[95%] mx-4" style={styles.separator} />
 
+            <View className="flex-row justify-between items-center mx-6">
+              <Text className="text-white text-base  leading-[22px] font-semibold">
+                More Videos
+              </Text>
+              <TouchableOpacity>
+                <Text className="text-white text-base leading-[22px] font-semibold">
+                  Show all
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             {filteredRoadMaps.map((e, i) => (
               <React.Fragment key={i}>
                 <VideoCard data={e} navigation={router} />
@@ -343,7 +388,9 @@ export default function Login() {
 
             <Button
               title="Log In"
-              onPress={() => {}}
+              onPress={() => {
+                router.push("/(login)/interest-form");
+              }}
               style={{
                 backgroundColor: "white",
                 maxWidth: "95%",
@@ -407,11 +454,9 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-   separator: {
+  separator: {
     height: 2,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     // marginVertical: 18,
   },
 });
-
- 
