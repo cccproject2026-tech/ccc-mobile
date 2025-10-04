@@ -62,8 +62,6 @@ export default function Login() {
   const [tabs, setTabs] = React.useState("All");
   const { flag } = useLocalSearchParams();
 
-  console.log("11", flag);
-
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: "John",
     lastName: "Ross",

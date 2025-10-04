@@ -32,7 +32,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       <RNPickerSelect
         onValueChange={(value: string | null) => setSelectedValue(value)}
         items={items}
-        placeholder={{ label: placeholder, value: null, color: "black" }}
+        placeholder={{ label: placeholder, value: null, color: "white" }}
         style={pickerSelectStyles}
         value={selectedValue}
         Icon={() => {
@@ -73,8 +73,9 @@ const pickerSelectStyles: PickerSelectStyles = {
   inputAndroid: {
     fontSize: 16,
     paddingHorizontal: 12,
+    maxHeight: 34,
     borderWidth: 1,
-    borderColor: "white",
+    borderColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 10,
     color: "white",
     backgroundColor: "transparent",

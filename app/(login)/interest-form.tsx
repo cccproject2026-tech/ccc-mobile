@@ -7,17 +7,11 @@ import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React, { useState } from "react";
-import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function Login() {
+export default function InterestForm() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
@@ -51,17 +45,28 @@ export default function Login() {
         style={{ flex: 1 }}
       >
         <SafeAreaView style={{ flex: 1 }}>
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            // keyboardVerticalOffset={90}
-            behavior={Platform.OS === "ios" ? "position" : "height"}
+          <KeyboardAwareScrollView
+            enableOnAndroid
+            extraScrollHeight={100} 
+            keyboardOpeningTime={0}
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingBottom: 150, 
+            }}
+            showsVerticalScrollIndicator={false}
           >
-            <PastorNavigationHeader showNameTag showDrawer={false} showNotificationIcon={false} tagName="Interest Form" />
+            <PastorNavigationHeader
+              showNameTag
+              showDrawer={false}
+              showNotificationIcon={false}
+              tagName="Interest Form"
+            />
             <ScrollView
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{
-                paddingBottom: 50,
+                flexGrow: 1,
+                paddingBottom: 100,
                 paddingHorizontal: 25,
               }}
             >
@@ -183,7 +188,7 @@ export default function Login() {
                 />
               </View>
             </ScrollView>
-          </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
         </SafeAreaView>
         {/* Modals */}
         {/* <ConfirmationModal
