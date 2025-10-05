@@ -257,7 +257,7 @@ export const SurveyButton = ({
 }) => {
   return (
     <TouchableOpacity
-      className={`flex-row max-w-[148px] w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] justify-center items-center ${wrapperClass}`}
+      className={`flex-row w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] justify-center items-center ${wrapperClass}`}
       onPress={onPress}
       style={{
         backgroundColor: bgColor,
