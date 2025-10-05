@@ -170,7 +170,7 @@ export default function SurveyForm() {
                 />
               )}
               <View
-                className="flex flex-row justify-center items-center"
+                className="flex flex-row justify-center items-center max-w-[40%] mx-auto"
                 style={{ gap: 10 }}
               >
                 <SurveyButton
