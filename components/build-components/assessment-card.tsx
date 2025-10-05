@@ -2,11 +2,11 @@ import React from "react";
 import { Text, View } from "react-native";
 
 export default function AssessmentCard({
-  type = ``,
+  type = `PMP`,
   dueDate = ``,
   dueDateClass = ``,
   wrapperClass = ``,
-  submitDate = ``
+  submitDate = ``,
 }: {
   type?: string | undefined;
   dueDate?: string | undefined;
@@ -75,10 +75,22 @@ export default function AssessmentCard({
       </View>
       <View className="flex flex-row justify-between">
         <View className="mt-10 px-5">
-          <Text className={`text-xs leading-[18px] font-bold ${dueDateClass}`}>Due :{dueDate}</Text>
+          {dueDate && (
+            <Text
+              className={`text-xs leading-[18px] font-bold ${dueDateClass}`}
+            >
+              Due :{dueDate}
+            </Text>
+          )}
         </View>
         <View className="mt-10 px-5">
-          <Text className={`text-xs leading-[18px] font-bold ${dueDateClass}`}>Submitted :{submitDate}</Text>
+          {submitDate && (
+            <Text
+              className={`text-xs leading-[18px] font-bold ${dueDateClass}`}
+            >
+              Submitted :{submitDate}
+            </Text>
+          )}
         </View>
       </View>
     </View>

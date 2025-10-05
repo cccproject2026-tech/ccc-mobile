@@ -25,6 +25,7 @@ interface ButtonProps {
   textStyle?: TextStyle;
   icon?: ImageSourcePropType | "";
   iconStyles?: StyleProp<ImageStyle>;
+  textColor?: string;
 }
 
 // Interface for UploadPDFButton component props
@@ -44,7 +45,8 @@ export const Button: React.FC<ButtonProps> = ({
   style = {},
   textStyle = {},
   icon = "",
-  iconStyles={},
+  iconStyles = {},
+  textColor = ""
 }) => {
   // Base styles for better maintainability
   const baseButtonStyle: ViewStyle = {
@@ -59,61 +61,61 @@ export const Button: React.FC<ButtonProps> = ({
 
   if (type === "cancel") {
     return (
-      <View
+      <TouchableOpacity
+        onPress={onPress}
         style={[
           baseButtonStyle,
           {
             backgroundColor: "white",
+            justifyContent: "center",
           },
           style,
         ]}
       >
-        <TouchableOpacity onPress={onPress}>
-          <Text style={[baseTextStyle, { color: "#001fc1" }, textStyle]}>
-            {title}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        <Text style={[baseTextStyle, { color: textColor || "#001fc1" }, textStyle]}>
+          {title}
+        </Text>
+      </TouchableOpacity>
     );
   } else if (type === "submit") {
     return (
-      <View
+      <TouchableOpacity
+        onPress={onPress}
         style={[
           baseButtonStyle,
           {
             borderWidth: 1,
             borderColor: "white",
             backgroundColor: "#1e366e",
+            justifyContent: "center",
           },
           style,
         ]}
       >
-        <TouchableOpacity onPress={onPress}>
-          <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
-            {title}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
+          {title}
+        </Text>
+      </TouchableOpacity>
     );
   } else if (type === "schedule") {
     return (
-      <View
+      <TouchableOpacity
+        onPress={onPress}
         style={[
           baseButtonStyle,
           {
             borderWidth: 1,
             borderColor: "white",
             backgroundColor: "#1e366f",
+            justifyContent: "center",
           },
           style,
         ]}
       >
-        <TouchableOpacity onPress={onPress}>
-          <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
-            {title}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        <Text style={[baseTextStyle, { color: "white" }, textStyle]}>
+          {title}
+        </Text>
+      </TouchableOpacity>
     );
   } else if (type === "custom") {
     return (
@@ -239,16 +241,16 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
 export const SurveyButton = ({
   title,
   onPress,
-  icon = "",
+  icon,
   className = "",
   bgColor = "#1E366F",
   textColor = "#ffffff",
   disabled = false,
-  wrapperClass = ``
+  wrapperClass = ``,
 }: {
   title: string;
   onPress: () => void;
-  icon?: string | undefined;
+  icon?: ImageSourcePropType | undefined;
   className?: string | undefined;
   bgColor?: string | undefined;
   textColor?: string | undefined;
@@ -257,10 +259,12 @@ export const SurveyButton = ({
 }) => {
   return (
     <TouchableOpacity
-      className={`max-w-[138px] w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] flex flew-row justify-center items-center ${wrapperClass}`}
+      className={`flex-row w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] justify-center items-center ${wrapperClass}`}
       onPress={onPress}
       style={{
         backgroundColor: bgColor,
+        alignItems: "center",
+        justifyContent: "center",
       }}
       disabled={disabled}
     >
@@ -268,10 +272,23 @@ export const SurveyButton = ({
         className={`font-medium text-[15px] leading-[22px] shadow-[#00000040] text-white ${className}`}
         style={{
           color: textColor,
+          marginRight: icon ? 4 : 0,
         }}
       >
-        {title} {icon !== "" && icon}
+        {title}
       </Text>
+      {icon && (
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Image
+            source={icon as ImageSourcePropType}
+            style={{ width: 14, height: 14, marginLeft: 2 }}
+          />
+          <Image
+            source={icon as ImageSourcePropType}
+            style={{ width: 14, height: 14, marginLeft: -5 }}
+          />
+        </View>
+      )}
     </TouchableOpacity>
   );
 };

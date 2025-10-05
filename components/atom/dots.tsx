@@ -26,7 +26,6 @@ export function ProgressDots({
 }: ProgressDotsProps) {
     const isControlled = activeIndex !== undefined
     const [index, setIndex] = React.useState(defaultIndex)
-
     const current = isControlled ? (activeIndex as number) : index
 
     const handleDotPress = (i: number) => {
