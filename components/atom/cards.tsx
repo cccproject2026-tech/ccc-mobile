@@ -138,6 +138,11 @@ export const RevitalizationCard = ({
               pathname: "/(pastor-tabs)/roadmap/sub-phases",
               params: { data: JSON.stringify(data) },
             })
+          : data.empowerment
+          ? navigation.push({
+              pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
+              params: { data: JSON.stringify(data) },
+            })
           : navigation.push({
               pathname: "/(pastor-tabs)/roadmap/phase-1/detailed-roadmap",
               params: { data: JSON.stringify(data) },
@@ -939,7 +944,7 @@ export const InputCard = ({
         flexDirection: "column",
         alignItems: "flex-start",
         borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.8)", 
+        borderColor: "rgba(255, 255, 255, 0.8)",
         marginBottom: 16,
         gap: 10,
       }}

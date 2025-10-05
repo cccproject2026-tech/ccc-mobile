@@ -67,6 +67,7 @@ interface Icons {
   prevPlayer: ImageSourcePropType;
   nextPlayer: ImageSourcePropType;
   loader: ImageSourcePropType;
+  attachPin: ImageSourcePropType;
 }
 
 export const icons: Icons = {
@@ -135,5 +136,6 @@ export const icons: Icons = {
   playButton: require("@/assets/images/play-button.png"),
   prevPlayer: require("@/assets/images/prev-player.png"),
   nextPlayer: require("@/assets/images/next-player.png"),
-  loader: require("@/assets/images/loader.png")
+  loader: require("@/assets/images/loader.png"),
+  attachPin: require("@/assets/images/attach-pin.png"),
 };
