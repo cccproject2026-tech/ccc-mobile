@@ -6,13 +6,8 @@ import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface AssessmentData {
@@ -32,8 +27,6 @@ interface AssessmentData {
 export default function AnswerQuestionPage() {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
-  const [searchText, setSearchText] = React.useState("");
-  const [tabs, setTabs] = React.useState("All");
 
   const questions = [
     {
@@ -73,9 +66,15 @@ export default function AnswerQuestionPage() {
         style={{ flex: 1 }}
       >
         <SafeAreaView style={styles.scrollContainer}>
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          <KeyboardAwareScrollView
+            enableOnAndroid
+            extraScrollHeight={100}
+            keyboardOpeningTime={0}
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingBottom: 150,
+            }}
+            showsVerticalScrollIndicator={false}
           >
             <ScrollView
               contentContainerStyle={{
@@ -90,6 +89,7 @@ export default function AnswerQuestionPage() {
                 title="Church Assessment Evaluation(CMA)"
                 subTitle="Assessment"
                 hideSearchBar={true}
+                showSettings={false}
               />
 
               {/* Question Fields */}
@@ -124,7 +124,7 @@ export default function AnswerQuestionPage() {
                 />
               </View>
             </ScrollView>
-          </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
         </SafeAreaView>
 
         {/* Modal */}

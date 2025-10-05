@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.8)",
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     justifyContent: "center",
     maxHeight: 34,
   },
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   },
   labelContainer: {
     position: "absolute",
-    left: 8,
+    left: 3,
     backgroundColor: "transparent",
     paddingHorizontal: 4,
   },

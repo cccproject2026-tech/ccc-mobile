@@ -30,9 +30,6 @@ interface AssessmentData {
 export default function CmaSurvey() {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
-  const [searchText, setSearchText] = React.useState("");
-  const [tabs, setTabs] = React.useState("All");
-
   const params = useLocalSearchParams();
 
   // Parse the data safely
@@ -41,95 +38,6 @@ export default function CmaSurvey() {
     : undefined;
 
   console.log("data", dataItems?.type);
-
-  const dummyRoadMaps = [
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description: "Review the overall health of your church",
-      type: "CMA",
-      status: "Due",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Pastoral Ministry Profile (PMP)",
-      description: "Take a deeper look into your ministry",
-      type: "PMP",
-      status: "Not Started",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 8,
-        completed: false,
-      },
-    },
-    {
-      title: "Church Empowerment PhasePastoral Ministry Profile (PMP)",
-      description: "Take a deeper look into your ministry",
-      type: "PMP",
-      status: "Submitted",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 18,
-        completed: false,
-      },
-    },
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description: "Review the overall health of your church ",
-      type: "CMA",
-      status: "Completed",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Pastoral Ministry Profile (PMP)",
-      description: "Take a deeper look into your ministry",
-      type: "PMP",
-      status: "Completed",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-  ];
-
-  const availableTabs = [
-    { tab: "All" },
-    { tab: "Due" },
-    { tab: "Not Started" },
-    { tab: "In Progress" },
-    { tab: "Completed" },
-    { tab: "Overdue" },
-    { tab: "Pending Review" },
-    { tab: "On Hold" },
-  ];
-
-  const filteredRoadMaps = dummyRoadMaps.filter((item) => {
-    if (tabs === "All") return true;
-    return item.status === tabs;
-  });
 
   return (
     <>

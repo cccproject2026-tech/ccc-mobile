@@ -80,6 +80,7 @@ export default function Submit() {
                             My Responses
                         </Text>
                         <View className="max-w-[190px] h-[34px] rounded-[10px] border border-solid border-white bg-[#233A6F] px-5 py-1 flex flex-row justify-center items-center gap-2">
+                            <Image source={icons.loadingIcon} style={{width:15,height:15 }}/>
                             <Text className="text-[#999999] font-medium text-sm leading-[18px]">
                                 Waiting for Response
                             </Text>

@@ -166,12 +166,13 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
                       : styles.checkboxSelected),
                 ]}
               >
-                {/* {isSelected(item.value) &&
+                {isSelected(item.value) &&
                   (useCircleIndicator ? (
-                    <Ionicons name="radio-button-on" size={14} color="white" />
+                    // <Ionicons name="radio-button-on" size={14} color="white" />
+                    <></>
                   ) : (
                     <Ionicons name="checkmark" size={14} color="white" />
-                  ))} */}
+                  ))}
               </View>
               <Text style={styles.itemText}>{item.label}</Text>
             </TouchableOpacity>

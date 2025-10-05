@@ -55,6 +55,7 @@ interface Icons {
   certificateImage: ImageSourcePropType;
   plusIcon: ImageSourcePropType;
   universityIcon: ImageSourcePropType;
+  loadingIcon: ImageSourcePropType;
 }
 
 export const icons: Icons = {
@@ -112,4 +113,5 @@ export const icons: Icons = {
   certificateImage: require("@/assets/icons/certificateImage.png"),
   plusIcon: require("@/assets/icons/plus-icon.png"),
   universityIcon: require("@/assets/images/university.png"),
+  loadingIcon: require("@/assets/images/loading.png"),
 };

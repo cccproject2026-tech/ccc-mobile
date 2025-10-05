@@ -70,11 +70,11 @@ export const NotificationCard = ({ data }: { data: any }) => {
             data.type == "course" || data.type == "assignment"
               ? icons.Revitalization2
               : data.type == "note"
-                ? icons.edit2
-                : icons.profile2
+              ? icons.edit2
+              : icons.profile2
           }
           style={{ width: 60, height: 60 }}
-        // resizeMode={"contain"}
+          // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -129,16 +129,16 @@ export const RevitalizationCard = ({
       onPress={() =>
         data.assignment
           ? navigation.push({
-            pathname:
-              "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-            params: { data: JSON.stringify(data) },
-          })
+              pathname:
+                "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+              params: { data: JSON.stringify(data) },
+            })
           : data.subPhase
-            ? navigation.push({
+          ? navigation.push({
               pathname: "/(pastor-tabs)/roadmap/sub-phases",
               params: { data: JSON.stringify(data) },
             })
-            : navigation.push({
+          : navigation.push({
               pathname: "/(pastor-tabs)/roadmap/phase-1/detailed-roadmap",
               params: { data: JSON.stringify(data) },
             })
@@ -663,11 +663,11 @@ export const CommentsCard = ({
             data.type == "course" || data.type == "assignment"
               ? icons.dummyUser
               : data.type == "note"
-                ? icons.dummyUser2
-                : icons.profile2
+              ? icons.dummyUser2
+              : icons.profile2
           }
           style={{ width: 60, height: 60, borderRadius: 999999 }}
-        // resizeMode={"contain"}
+          // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -756,13 +756,28 @@ export const VideoCard = ({
           </View>
         </View>
         <View style={{ marginLeft: 0, flex: 1, gap: 3, width: "100%" }}>
-          <View className="w-full">
+          <View className="w-full flex-row items-center">
             <Text
               className="font-medium text-white/70"
               style={{ fontSize: 14, fontWeight: "500" }}
               ellipsizeMode="tail"
             >
-              introduction . 11 min
+              introduction
+            </Text>
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 6,
+                backgroundColor: "white",
+                marginHorizontal: 8,
+              }}
+            />
+            <Text
+              className="font-medium text-white/70"
+              style={{ fontSize: 14, fontWeight: "500" }}
+            >
+              11 min
             </Text>
           </View>
           <View>
@@ -860,13 +875,13 @@ export const ListCard = ({
                   <CheckBox
                     type="circle"
                     value={false}
-                    setValue={() => { }}
+                    setValue={() => {}}
                   ></CheckBox>
                 ) : (
                   <CheckBox
                     type="square"
                     value={false}
-                    setValue={() => { }}
+                    setValue={() => {}}
                   ></CheckBox>
                 )}
                 {listImage && (
@@ -918,14 +933,13 @@ export const InputCard = ({
     <View
       style={{
         width: "100%",
-        // backgroundColor: "#176192", // customBlueOne
         borderRadius: 10,
         paddingVertical: 18,
         paddingHorizontal: 12,
         flexDirection: "column",
         alignItems: "flex-start",
         borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
+        borderColor: "rgba(255, 255, 255, 0.8)", 
         marginBottom: 16,
         gap: 10,
       }}
@@ -947,7 +961,7 @@ export const InputCard = ({
             icon={icons.upload}
             style={{ backgroundColor: "#1f1a79", width: "60%" }}
             selectedFile={null}
-            setSelectedFile={() => { }}
+            setSelectedFile={() => {}}
           ></UploadPDFButton>
         </View>
       )}
@@ -1157,7 +1171,7 @@ export const AssessmentCard = ({
           </View>
 
           {(data && data?.status === "Not Started") ||
-            data?.status === "Due" ? (
+          data?.status === "Due" ? (
             <TouchableOpacity
               style={{
                 backgroundColor: "white",
@@ -1174,7 +1188,7 @@ export const AssessmentCard = ({
                   color: "#001FC1",
                   fontWeight: 600,
                   paddingBottom: 4,
-                  lineHeight: 0,
+                  lineHeight: 22,
                 }}
               >
                 Start Now
@@ -1280,13 +1294,13 @@ export const ProgressCard = ({
       onPress={() =>
         data.subPhase
           ? navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/sub-phases",
-            params: { data: JSON.stringify(data) },
-          })
+              pathname: "/(pastor-tabs)/roadmap/sub-phases",
+              params: { data: JSON.stringify(data) },
+            })
           : navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
-            params: { data: JSON.stringify(data) },
-          })
+              pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
+              params: { data: JSON.stringify(data) },
+            })
       }
       style={{
         width: "100%",

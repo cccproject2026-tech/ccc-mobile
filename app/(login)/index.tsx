@@ -5,10 +5,9 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 
 import {
-  Alert,
   Image,
   ImageSourcePropType,
   ScrollView,
@@ -55,136 +54,8 @@ interface ProfileData {
 }
 
 export default function Login() {
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [hasChurch2, setHasChurch2] = useState(true);
   const [tabs, setTabs] = React.useState("All");
   const { flag } = useLocalSearchParams();
-
-  const [profileData, setProfileData] = useState<ProfileData>({
-    firstName: "John",
-    lastName: "Ross",
-    phoneNumber: "098461313976",
-    email: "johnross@gmail.com",
-    profileSummary:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing eip ex ea commodo consequat. Duis",
-    church1: {
-      name: "Loma linda University Church",
-      phone: "098461313976",
-      website: "johnross@gmail.com",
-      address: "Loma linda University Church,CA",
-      city: "Oakland",
-      state: "North American",
-      zipCode: "00000",
-      country: "USA",
-    },
-    church2: {
-      name: "Loma linda University Church",
-      phone: "098461313976",
-      website: "johnross@gmail.com",
-      address: "Loma linda University Church,CA",
-      city: "Oakland",
-      state: "North American",
-      zipCode: "00000",
-      country: "USA",
-    },
-    title: "Pastor",
-    yearsInMinistry: "11",
-    conference: "Oakland",
-    communityServiceProjects: "11",
-    interests:
-      "I would like to find out more about the Center for Community Change",
-    comments:
-      "I am a conference administrator and would like to find out more about partnering with the cent I conference administrator and would like to find out more about partnering with the center",
-  });
-
-  const [profileImage, setProfileImage] = useState(icons.myProfile);
-
-  const handleImagePicker = () => {
-    Alert.alert("Change Profile Picture", "Choose an option", [
-      {
-        text: "Camera",
-        onPress: () => {
-          // Mock camera functionality
-          Alert.alert("Camera", "Camera functionality would open here");
-        },
-      },
-      {
-        text: "Photo Library",
-        onPress: () => {
-          // Mock photo library functionality
-          Alert.alert("Photo Library", "Photo library would open here");
-        },
-      },
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-    ]);
-  };
-
-  const titleOptions = [
-    { label: "Pastor", value: "Pastor" },
-    { label: "Associate Pastor", value: "Associate Pastor" },
-    { label: "Youth Pastor", value: "Youth Pastor" },
-    { label: "Senior Pastor", value: "Senior Pastor" },
-    { label: "Elder", value: "Elder" },
-  ];
-
-  const conferenceOptions = [
-    { label: "Oakland", value: "Oakland" },
-    { label: "Northern California", value: "Northern California" },
-    { label: "Southern California", value: "Southern California" },
-    { label: "Central California", value: "Central California" },
-  ];
-
-  const handleEditPress = () => {
-    setIsEditMode(true);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-    // Reset to original data if needed
-  };
-
-  const handleSavePress = () => {
-    setShowConfirmation(true);
-  };
-
-  const handleConfirmSave = () => {
-    setShowConfirmation(false);
-    setIsEditMode(false);
-    setShowSuccessToast(true);
-    // Here you would typically save the data to your backend
-  };
-
-  const handleAddChurch = () => {
-    if (!profileData.church2) {
-      setProfileData({
-        ...profileData,
-        church2: {
-          name: "",
-          phone: "",
-          website: "",
-          address: "",
-          city: "",
-          state: "",
-          zipCode: "",
-          country: "",
-        },
-      });
-      setHasChurch2(true);
-    }
-  };
-
-  const handleRemoveChurch2 = () => {
-    setProfileData({
-      ...profileData,
-      church2: null,
-    });
-    setHasChurch2(false);
-  };
 
   const dummyRoadMaps = [
     {
@@ -249,13 +120,13 @@ export default function Login() {
             <View className="flex-row gap-4 items-center">
               <View
                 className={`py-2 px-3 flex gap-1 border border-white rounded-[10px] ${
-                  flag === "interest-form" ? "ml-5" : "mx-5 flex-1" 
+                  flag === "interest-form" ? "ml-5" : "mx-5 flex-1"
                 } mt-6  bg-white/20 `}
               >
                 <Text className="text-base font-medium leading-[22px] text-white">
                   Contact Information
                 </Text>
-                <View className="flex-row">
+                <View className="flex-row items-center">
                   <Image
                     source={icons.phone}
                     style={{ width: 17, height: 17 }}
@@ -265,7 +136,7 @@ export default function Login() {
                     : 269-471-6159
                   </Text>
                 </View>
-                <View className="flex-row">
+                <View className="flex-row items-center">
                   <Image
                     source={icons.message}
                     style={{ width: 17, height: 17 }}
@@ -276,28 +147,41 @@ export default function Login() {
                   </Text>
                 </View>
               </View>
-              <LinearGradient
-                colors={["#5B4FB5", "#2B7AB5", "#3BADC5"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="justify-center items-center"
+              <View
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 8, // For Android
+                }}
               >
-                {flag === "interest-form" && (
-                  <View className="flex-row items-center  py-[7px] px-10 shadow-2xl">
-                    <Image
-                      source={icons.forward as ImageSourcePropType}
-                      style={[
-                        { width: 15, height: 15, transform: [{ scaleX: -1 }] },
-                      ]}
-                    />
-                    <Text className="text-base py-1 leading-[22px] text-white font-medium">
-                      Status
-                    </Text>
-                  </View>
-                )}
-              </LinearGradient>
+                <LinearGradient
+                  colors={["#5B4FB5", "#2B7AB5", "#3BADC5"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  className="justify-center items-center"
+                >
+                  {flag === "interest-form" && (
+                    <View className="flex-row items-center py-[7px] px-10">
+                      <Image
+                        source={icons.forward as ImageSourcePropType}
+                        style={[
+                          {
+                            width: 15,
+                            height: 15,
+                            transform: [{ scaleX: -1 }],
+                          },
+                        ]}
+                      />
+                      <Text className="text-base py-1 leading-[22px] text-white font-medium">
+                        Status
+                      </Text>
+                    </View>
+                  )}
+                </LinearGradient>
+              </View>
             </View>
-
             <View>
               <ScrollView
                 horizontal

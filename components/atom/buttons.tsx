@@ -239,7 +239,7 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
 export const SurveyButton = ({
   title,
   onPress,
-  icon = "",
+  icon,
   className = "",
   bgColor = "#1E366F",
   textColor = "#ffffff",
@@ -248,7 +248,7 @@ export const SurveyButton = ({
 }: {
   title: string;
   onPress: () => void;
-  icon?: string | undefined;
+  icon?: ImageSourcePropType | undefined;
   className?: string | undefined;
   bgColor?: string | undefined;
   textColor?: string | undefined;
@@ -257,10 +257,12 @@ export const SurveyButton = ({
 }) => {
   return (
     <TouchableOpacity
-      className={`max-w-[138px] w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] flex flew-row justify-center items-center ${wrapperClass}`}
+      className={`flex-row max-w-[148px] w-full border border-solid border-white/60 shadow-[#00000040] rounded-[10px] h-[44px] justify-center items-center ${wrapperClass}`}
       onPress={onPress}
       style={{
         backgroundColor: bgColor,
+        alignItems: "center",
+        justifyContent: "center",
       }}
       disabled={disabled}
     >
@@ -268,10 +270,23 @@ export const SurveyButton = ({
         className={`font-medium text-[15px] leading-[22px] shadow-[#00000040] text-white ${className}`}
         style={{
           color: textColor,
+          marginRight: icon ? 4 : 0,
         }}
       >
-        {title} {icon !== "" && icon}
+        {title}
       </Text>
+      {icon && (
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Image
+            source={icon as ImageSourcePropType}
+            style={{ width: 14, height: 14, marginLeft: 2 }}
+          />
+          <Image
+            source={icon as ImageSourcePropType}
+            style={{ width: 14, height: 14, marginLeft: -5 }}
+          />
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
