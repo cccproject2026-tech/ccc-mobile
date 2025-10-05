@@ -69,6 +69,7 @@ interface Icons {
   loader: ImageSourcePropType;
   media2: ImageSourcePropType;
   videoMedia: ImageSourcePropType
+  attachPin: ImageSourcePropType;
 }
 
 export const icons: Icons = {
@@ -139,5 +140,6 @@ export const icons: Icons = {
   nextPlayer: require("@/assets/images/next-player.png"),
   loader: require("@/assets/images/loader.png"),
   media2: require("@/assets/images/media-2.png"),
-  videoMedia: require("@/assets/images/VIDEO.png")
+  videoMedia: require("@/assets/images/VIDEO.png"),
+  attachPin: require("@/assets/images/attach-pin.png"),
 };

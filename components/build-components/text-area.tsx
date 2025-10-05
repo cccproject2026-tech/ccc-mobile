@@ -1,31 +1,33 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View, ViewStyle } from "react-native";
 
 export default function TextAreaField({
   label = "Comments",
   numberOfLines = 4,
   maxLength,
-  inputClass = ``,
+  inputClassName = ``,
   containerClass = ``,
-  boxClass = ``
+  boxClass = ``,
+  inputClass,
 }: {
   label?: string;
   numberOfLines?: number;
   maxLength?: number;
-  inputClass?: string;
+  inputClassName?: string;
   containerClass?: string;
   boxClass?: string;
+  inputClass?: ViewStyle;
 }) {
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
 
   return (
     <View style={styles.container} className={containerClass}>
-      <View style={[styles.box, focused && styles.boxFocused]} className={boxClass}>
+      <View style={[styles.box, inputClass, focused && styles.boxFocused]} className={boxClass}>
         {!focused && !value && <Text style={styles.label}>{label}</Text>}
         <TextInput
           style={styles.input}
-          className={inputClass}
+          className={inputClassName}
           value={value}
           onChangeText={setValue}
           onFocus={() => setFocused(true)}

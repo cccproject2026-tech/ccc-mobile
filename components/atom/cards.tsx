@@ -160,10 +160,15 @@ export const RevitalizationCard = ({
                 pathname: "/(pastor-tabs)/roadmap/sub-phases",
                 params: { data: JSON.stringify(data) },
               })
-              : navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
-                params: { data: JSON.stringify(data) },
-              })
+              : data.empowerment
+                ? navigation.push({
+                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
+                  params: { data: JSON.stringify(data) },
+                })
+                : navigation.push({
+                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
+                  params: { data: JSON.stringify(data) },
+                })
         } else {
           if (data.phase === "Phase 1") {
             router.push("/roadmap/phase-1/revitalization-roadmap")

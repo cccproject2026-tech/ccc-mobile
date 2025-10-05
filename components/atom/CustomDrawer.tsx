@@ -114,7 +114,8 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Change Mentor",
           iconKey: "changeMentor",
-          navigateLocation: "/(pastor-tabs)/profile/my-profile",
+          navigateLocation: "/(pastor-tabs)/roadmap/phase-2/empowerment-cards",
+          // navigateLocation: "/(pastor-tabs)/profile/my-profile",
         },
       ],
     },

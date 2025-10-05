@@ -249,7 +249,7 @@ export default function DetailedRoadMap() {
                           <View>
                             <View style={styles.sectionMargin}>
                               <Text style={styles.whiteText}>Events for Community Engagement Event 1 </Text>
-                              <TextAreaField inputClass="!bg-[#15517C]" containerClass="!bg-[#15517C]" label="List here..." />
+                              <TextAreaField inputClassName="!bg-[#15517C]" containerClass="!bg-[#15517C]" label="List here..." />
                             </View>
                           </View>
                           <View className="flex flex-row items-center justify-center w-full gap-3">
