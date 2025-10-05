@@ -25,6 +25,7 @@ interface ButtonProps {
   textStyle?: TextStyle;
   icon?: ImageSourcePropType | "";
   iconStyles?: StyleProp<ImageStyle>;
+  textColor?: string;
 }
 
 // Interface for UploadPDFButton component props
@@ -45,6 +46,7 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle = {},
   icon = "",
   iconStyles = {},
+  textColor = ""
 }) => {
   // Base styles for better maintainability
   const baseButtonStyle: ViewStyle = {
@@ -70,7 +72,7 @@ export const Button: React.FC<ButtonProps> = ({
           style,
         ]}
       >
-        <Text style={[baseTextStyle, { color: "#001fc1" }, textStyle]}>
+        <Text style={[baseTextStyle, { color: textColor || "#001fc1" }, textStyle]}>
           {title}
         </Text>
       </TouchableOpacity>

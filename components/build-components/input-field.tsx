@@ -6,9 +6,11 @@ import { Animated, StyleSheet, TextInput, View } from "react-native"
 export default function InputField({
   label = "label",
   keyboardType = "default",
+  boxClass = "",
 }: {
   label?: string
   keyboardType?: "default" | "numeric" | "phone-pad" | "email-address"
+  boxClass?: string
 }) {
   const [value, setValue] = useState("")
   const [focused, setFocused] = useState(false)
@@ -42,7 +44,7 @@ export default function InputField({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.box, focused && styles.boxFocused]}>
+      <View style={[styles.box, focused && styles.boxFocused]} className={boxClass}>
         <Animated.View style={[styles.labelContainer, labelStyle]}>
           <Animated.Text style={styles.label}>{label}</Animated.Text>
         </Animated.View>
