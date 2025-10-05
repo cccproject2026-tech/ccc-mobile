@@ -7,10 +7,12 @@ export default function InputField({
   label = "label",
   keyboardType = "default",
   boxClass = "",
+  labelTop =24,
 }: {
   label?: string
   keyboardType?: "default" | "numeric" | "phone-pad" | "email-address"
   boxClass?: string
+  labelTop?:number;
 }) {
   const [value, setValue] = useState("")
   const [focused, setFocused] = useState(false)
@@ -30,7 +32,7 @@ export default function InputField({
       {
         translateY: labelPosition.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, -24],
+          outputRange: [0, -`${labelTop}`],
         }),
       },
       {
