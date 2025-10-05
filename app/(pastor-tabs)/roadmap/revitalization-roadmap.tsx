@@ -26,6 +26,7 @@ export default function RevitalizationScreen() {
 
   const dummyRoadMaps = [
     {
+      id: 1,
       title: "Jump-start",
       description: "Attend a two-day revitalization jump-start session",
       time: "Completion Time Months 1 - 2",
@@ -44,6 +45,7 @@ export default function RevitalizationScreen() {
       image: require("@/assets/images/jumpstart.png"),
     },
     {
+      id: 2,
       title: "Self Revitalization Phase",
       description:
         "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
@@ -63,6 +65,7 @@ export default function RevitalizationScreen() {
       phase: "Phase 1",
     },
     {
+      id: 3,
       title: "Church Empowerment Phase",
       description:
         "Create community to empower your church and make a long-term impact on coordinated community service programs.",
@@ -81,6 +84,7 @@ export default function RevitalizationScreen() {
       phase: "Phase 2",
     },
     {
+      id: 4,
       title: "Community Revitalization and Multiplication Phase",
       description:
         "Review community service outcomes and empower others as you explore opportunities for further growth.",
@@ -116,6 +120,7 @@ export default function RevitalizationScreen() {
     return item.status === tabs
   })
 
+
   return (
     <>
       <LinearGradient
@@ -131,7 +136,7 @@ export default function RevitalizationScreen() {
             }}
           >
             <PastorNavigationHeader />
-            
+
             {/* Header Section */}
             <View
               style={{
@@ -164,7 +169,7 @@ export default function RevitalizationScreen() {
                   </Text>
                 </View>
               </TouchableOpacity>
-              
+
               <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
                 <Ionicons name="ellipsis-vertical" size={20} color="white" />
               </TouchableOpacity>
@@ -175,7 +180,7 @@ export default function RevitalizationScreen() {
 
             {/* Search Section */}
             <View style={styles.searchContainer}>
-              <Search 
+              <Search
                 searchText={searchText}
                 setSearchText={setSearchText}
               />

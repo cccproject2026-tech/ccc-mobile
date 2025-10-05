@@ -6,7 +6,7 @@ import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -188,8 +188,7 @@ export default function SurveyForm() {
                   onPress={() => {
                     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
                     if (formTab === totalPages - 1) {
-                      // setIsVisible(true)
-                      router.push("/(pastor-tabs)/assessments/(pmp)/submit");
+                      setIsVisible(true)
                     } else {
                       handlePageChange(formTab + 1);
                     }

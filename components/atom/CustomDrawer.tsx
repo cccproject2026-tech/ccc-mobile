@@ -49,7 +49,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Revitalization RoadMap",
       iconKey: "Revitalization",
-      navigateLocation: "/(pastor-tabs)/roadmap/phase-1/revitalization-roadmap",
+      navigateLocation: "/(pastor-tabs)/roadmap/revitalization-roadmap",
     },
     {
       name: "Assessments",

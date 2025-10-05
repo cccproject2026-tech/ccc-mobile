@@ -1,6 +1,7 @@
 import { SurveyButton } from "@/components/atom/buttons";
 import { ChecklistCard } from "@/components/atom/checklistCard";
 import ProgressDots from "@/components/atom/dots";
+import { SurveyModal } from "@/components/atom/surveyModal";
 import { AssessmentCard } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
@@ -10,13 +11,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface AssessmentData {
@@ -40,6 +41,7 @@ export default function Submit() {
   const [formTab, setFormTab] = React.useState(0);
   const scrollViewRef = React.useRef<ScrollView>(null);
   const totalPages = 5;
+  const [isVisible, setIsVisible] = React.useState(false);
   const params = useLocalSearchParams();
 
   // Parse the data safely
@@ -257,10 +259,7 @@ export default function Submit() {
                     onPress={() => {
                       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
                       if (formTab === totalPages - 1) {
-                        // setIsVisible(true)
-                        router.push(
-                          "/(pastor-tabs)/assessments/(pmp)/pmp-survey-page"
-                        );
+                        setIsVisible(true)
                       } else {
                         handlePageChange(formTab + 1);
                       }
@@ -269,6 +268,10 @@ export default function Submit() {
                 )}
               </View>
             </View>
+            <SurveyModal
+              isMenuVisible={isVisible}
+              closeMenu={() => setIsVisible(false)}
+            />
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
