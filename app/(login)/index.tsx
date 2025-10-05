@@ -1,6 +1,7 @@
 import { Button } from "@/components/atom/buttons";
 import { VideoCard } from "@/components/atom/cards";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { LinearGradient } from "expo-linear-gradient";
@@ -246,57 +247,102 @@ export default function Login() {
           >
             <PastorNavigationHeader />
 
-            <View className="flex-row gap-4 items-center">
-              <View
-                className={`py-2 px-3 flex gap-1 border border-white rounded-[10px] ${
-                  flag === "interest-form" ? "ml-5" : "mx-5 flex-1" 
-                } mt-6  bg-white/20 `}
-              >
-                <Text className="text-base font-medium leading-[22px] text-white">
-                  Contact Information
-                </Text>
-                <View className="flex-row">
-                  <Image
-                    source={icons.phone}
-                    style={{ width: 17, height: 17 }}
-                  />
-                  <Text className="text-white text-[14px] leading-[22px] font-medium">
-                    {" "}
-                    : 269-471-6159
+            {flag !== "waiting-approval" ? (
+              <View className="flex-row gap-4 items-center">
+                <View
+                  className={`py-2 px-3 flex gap-1 border border-white rounded-[10px] ${flag === "interest-form" ? "ml-5" : "mx-5 flex-1"
+                    } mt-6  bg-white/20 `}
+                >
+                  <Text className="text-base font-medium leading-[22px] text-white">
+                    Contact Information
                   </Text>
-                </View>
-                <View className="flex-row">
-                  <Image
-                    source={icons.message}
-                    style={{ width: 17, height: 17 }}
-                  />
-                  <Text className="text-white text-[14px] leading-[22px] font-medium">
-                    {" "}
-                    : communitychange@andrews.edu
-                  </Text>
-                </View>
-              </View>
-              <LinearGradient
-                colors={["#5B4FB5", "#2B7AB5", "#3BADC5"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="justify-center items-center"
-              >
-                {flag === "interest-form" && (
-                  <View className="flex-row items-center  py-[7px] px-10 shadow-2xl">
+                  <View className="flex-row">
                     <Image
-                      source={icons.forward as ImageSourcePropType}
-                      style={[
-                        { width: 15, height: 15, transform: [{ scaleX: -1 }] },
-                      ]}
+                      source={icons.phone}
+                      style={{ width: 17, height: 17 }}
                     />
-                    <Text className="text-base py-1 leading-[22px] text-white font-medium">
-                      Status
+                    <Text className="text-white text-[14px] leading-[22px] font-medium">
+                      {" "}
+                      : 269-471-6159
                     </Text>
                   </View>
-                )}
+                  <View className="flex-row">
+                    <Image
+                      source={icons.message}
+                      style={{ width: 17, height: 17 }}
+                    />
+                    <Text className="text-white text-[14px] leading-[22px] font-medium">
+                      {" "}
+                      : communitychange@andrews.edu
+                    </Text>
+                  </View>
+                </View>
+                <LinearGradient
+                  colors={["#5B4FB5", "#2B7AB5", "#3BADC5"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  className="justify-center items-center"
+                >
+                  {flag === "interest-form" && (
+                    <View className="flex-row items-center  py-[7px] px-10 shadow-2xl">
+                      <Image
+                        source={icons.forward as ImageSourcePropType}
+                        style={[
+                          { width: 15, height: 15, transform: [{ scaleX: -1 }] },
+                        ]}
+                      />
+                      <Text className="text-base py-1 leading-[22px] text-white font-medium">
+                        Status
+                      </Text>
+                    </View>
+                  )}
+                </LinearGradient>
+              </View>
+            ) : (
+
+              <LinearGradient
+                colors={["#B83AF3", "#21B6E9"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  borderTopLeftRadius: 8,
+                  borderBottomLeftRadius: 8,
+                  padding: 2,
+                  marginVertical: 12,
+                  width: 300,
+                  alignSelf: "flex-end"
+                }}
+              >
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#176192",
+                    borderTopLeftRadius: 8,
+                    borderBottomLeftRadius: 8,
+                    alignItems: "center",
+                    paddingVertical: 7,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    paddingHorizontal: 10,
+                    alignContent: "center",
+                  }}
+                >
+                  <Image
+                    source={icons.loader}
+                    style={{ width: 42, height: 26 }}
+                  />
+                  <Text className="font-medium text-[16px] leading-[22px] text-white">
+                    Waiting for Approval
+                  </Text>
+                  <IconSymbol
+                    name="chevron.right"
+                    size={24}
+                    weight="medium"
+                    color={"#FFFFFFCC"}
+                  />
+                </TouchableOpacity>
               </LinearGradient>
-            </View>
+            )}
+
 
             <View>
               <ScrollView
@@ -415,13 +461,19 @@ export default function Login() {
                   }}
                   className="rounded-[20px] border h-full border-white"
                 >
-                  <TouchableOpacity onPress={() => {}} activeOpacity={0.8}>
+                  <TouchableOpacity onPress={() => { }} activeOpacity={0.8}>
                     <Text className="text-base leading-[22px] font-medium text-white py-3">
                       New User {">>"}
                     </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity onPress={() => {}} activeOpacity={0.8}>
+                  <TouchableOpacity onPress={() => {
+                    if (flag === "waiting-approval") {
+                      router.push("/(auth)/password")
+                    } else {
+                      router.push("/(auth)/approval")
+                    }
+                  }} activeOpacity={0.8}>
                     <Text className="text-base leading-[22px] font-medium text-white py-3">
                       Submit Interest
                     </Text>

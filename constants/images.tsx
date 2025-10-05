@@ -55,6 +55,17 @@ interface Icons {
   certificateImage: ImageSourcePropType;
   plusIcon: ImageSourcePropType;
   universityIcon: ImageSourcePropType;
+  communityImage: ImageSourcePropType;
+  profileUpload: ImageSourcePropType;
+  gradientClip: ImageSourcePropType;
+  gradientUpload: ImageSourcePropType;
+  church2: ImageSourcePropType;
+  church1: ImageSourcePropType;
+  player: ImageSourcePropType;
+  playButton: ImageSourcePropType;
+  prevPlayer: ImageSourcePropType;
+  nextPlayer: ImageSourcePropType;
+  loader: ImageSourcePropType;
 }
 
 export const icons: Icons = {
@@ -112,4 +123,15 @@ export const icons: Icons = {
   certificateImage: require("@/assets/icons/certificateImage.png"),
   plusIcon: require("@/assets/icons/plus-icon.png"),
   universityIcon: require("@/assets/images/university.png"),
+  communityImage: require("@/assets/images/community.png"),
+  profileUpload: require("@/assets/images/Profile.png"),
+  gradientClip: require("@/assets/images/gradient-clip.png"),
+  gradientUpload: require("@/assets/images/gradient-upload.png"),
+  church2: require("@/assets/images/church-2.png"),
+  church1: require("@/assets/images/church-1.png"),
+  player: require("@/assets/images/player.png"),
+  playButton: require("@/assets/images/play-button.png"),
+  prevPlayer: require("@/assets/images/prev-player.png"),
+  nextPlayer: require("@/assets/images/next-player.png"),
+  loader: require("@/assets/images/loader.png")
 };
