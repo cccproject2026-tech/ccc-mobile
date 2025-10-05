@@ -5,20 +5,27 @@ export default function TextAreaField({
   label = "Comments",
   numberOfLines = 4,
   maxLength,
+  inputClass = ``,
+  containerClass = ``,
+  boxClass = ``
 }: {
   label?: string;
   numberOfLines?: number;
   maxLength?: number;
+  inputClass?: string;
+  containerClass?: string;
+  boxClass?: string;
 }) {
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.box, focused && styles.boxFocused]}>
+    <View style={styles.container} className={containerClass}>
+      <View style={[styles.box, focused && styles.boxFocused]} className={boxClass}>
         {!focused && !value && <Text style={styles.label}>{label}</Text>}
         <TextInput
           style={styles.input}
+          className={inputClass}
           value={value}
           onChangeText={setValue}
           onFocus={() => setFocused(true)}

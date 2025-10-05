@@ -3,9 +3,9 @@ import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
 import { LinearGradient } from "expo-linear-gradient"
-import { Stack } from "expo-router"
+import { router, Stack } from "expo-router"
 import React from "react"
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
 export default function Media() {
     const [tabActive, setTabActive] = React.useState<string>("photos");
@@ -35,9 +35,14 @@ export default function Media() {
                         />
 
                         <View className="flex gap-[18px] px-4 mt-5">
-                            <View className="border border-solid border-[#FFFFFF73] w-full h-[43px] rounded-[10px] flex justify-center items-center">
+                            <TouchableOpacity onPress={() => router.push({
+                                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
+                                params: {
+                                    flag: 'submit-media'
+                                }
+                            })} className="border border-solid border-[#FFFFFF73] w-full h-[43px] rounded-[10px] flex justify-center items-center">
                                 <Text className="text-base leading-[22px] text-white">Shared Media</Text>
-                            </View>
+                            </TouchableOpacity>
 
                             <View className="flex flex-row justify-center items-center gap-1">
                                 <SurveyButton

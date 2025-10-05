@@ -3,6 +3,7 @@ import { Button } from "@/components/atom/buttons"
 import { OptionsModal } from "@/components/atom/modals"
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal"
 import { Tab } from "@/components/atom/tab"
+import InputField from "@/components/build-components/input-field"
 import TextAreaField from "@/components/build-components/text-area"
 import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
@@ -21,7 +22,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function DetailedRoadMap() {
-  const { data: dataParam } = useLocalSearchParams()
+  const { data: dataParam, flag } = useLocalSearchParams()
   const data = dataParam ? JSON.parse(dataParam as string) : null
 
   const [isModalVisible, setIsModalVisible] = React.useState(false)
@@ -37,6 +38,7 @@ export default function DetailedRoadMap() {
 
   const [tabs, setTabs] = React.useState("Over View")
   const [surveyGuideLines, setSurveyGuideLines] = React.useState(false)
+  const [showCommunity, setShowCommunity] = React.useState(false)
 
   const handleTabPress = (tabName: string) => {
     if (tabName === "Over View") {
@@ -241,40 +243,144 @@ export default function DetailedRoadMap() {
                       <View className="h-[0.5px] bg-white/30 my-6" />
 
 
-                      <View className="flex gap-[54px] mt-12">
-                        <View className="flex flex-row items-center justify-center w-full gap-3">
-                          <Text className="text-sm leading-[22px] text-white">
-                            Project Date:
-                          </Text>
-                          <View className="border border-solid border-[#FFFFFF73] rounded-[10px] h-[33px] max-w-[194px] w-full justify-center items-center">
-                            <Text className="text-sm leading-[22px] text-white">
-                              20 / 11 / 24
-                            </Text>
+                      {flag === "submit-media" ? (
+                        // showCommunity ? (
+                        <View className="p-3 flex gap-8 border border-solid border-white/20 rounded-[10px]">
+                          <View>
+                            <View style={styles.sectionMargin}>
+                              <Text style={styles.whiteText}>Events for Community Engagement Event 1 </Text>
+                              <TextAreaField inputClass="!bg-[#15517C]" containerClass="!bg-[#15517C]" label="List here..." />
+                            </View>
                           </View>
-                        </View>
-                        <Text onPress={() => router.push("/(pastor-tabs)/roadmap/phase-2/media")} className="font-medium text-sm leading-[22px] text-[#D9D9D9] underline text-center">
-                          View your Shared Media
-                        </Text>
-                      </View>
+                          <View className="flex flex-row items-center justify-center w-full gap-3">
+                            <Text className="text-sm leading-[22px] text-white flex-1">
+                              Community Engagement Event 1 Date:
+                            </Text>
+                            <View className="border border-solid border-[#FFFFFF73] rounded-[10px] max-w-[142px] w-full justify-center items-center flex-1 h-[45px]">
+                              <Text className="text-sm leading-[22px] text-white">
+                                20 / 11 / 24
+                              </Text>
+                            </View>
+                          </View>
+                          <View className="p-3 flex gap-8 border border-solid border-white/20 rounded-[10px] w-full">
+                            <View className="flex flex-row justify-between items-center">
+                              <Text className="text-semibold leading-[22px] text-white">
+                                Follow up Events
+                              </Text>
+                              <TouchableOpacity className="rounded-[10px] border border-solid border-[#FFFFFFCC] bg-[#1E366F]  max-w-[88px] w-full flex justify-center items-center">
+                                <Text className="text-medium leading-[22px] text-white">Add</Text>
+                              </TouchableOpacity>
+                            </View>
+                            <Text className="text-semibold leading-[22px] text-[#D9D9D9]">
+                              Follow up Events
+                            </Text>
+                            <InputField keyboardType="phone-pad" label="Choose your Follow up Event 1" boxClass="!max-h-[44px] !h-full" />
+                            <View className="flex flex-row items-center justify-center w-full gap-3">
+                              <Text className="text-sm leading-[22px] text-white">
+                                Follow up Event Date 1 :
+                              </Text>
+                              <View className="border border-solid border-[#FFFFFF73] rounded-[10px] h-[33px] max-w-[137px] w-full justify-center items-center">
+                                <Text className="text-sm leading-[22px] text-white">
+                                  20 / 11 / 24
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                          <Button
+                            type="cancel"
+                            title={"Upload Videos / Pictures"}
+                            onPress={() => {
+                              data?.survey ? setSurveyGuideLines(true) : null
+                              if (flag === "submit-media") {
+                                router.push("/assessments/pmp-survey-page")
+                              } else {
+                                router.push("/assessments/pmp-survey-page")
+                              }
+                            }
+                            }
+                            style={{ width: 235, margin: "auto" }}
+                          />
 
-                      <View
-                        style={{
-                          width: "100%",
-                          alignItems: "center",
-                          marginVertical: 64,
-                        }}
-                      >
-                        <Button
-                          type="cancel"
-                          title={"Submit"}
-                          onPress={() => {
-                            data?.survey ? setSurveyGuideLines(true) : null
-                            router.push("/assessments/pmp-survey-page")
-                          }
-                          }
-                          style={{ width: 200 }}
-                        />
-                      </View>
+                          <View className="h-[0.5px] bg-white/30 my-6" />
+
+                          <Button
+                            type="cancel"
+                            title={"Submit"}
+                            onPress={() => {
+                              data?.survey ? setSurveyGuideLines(true) : null
+                              if (flag === "submit-media") {
+                                router.push("/assessments/pmp-survey-page")
+                              } else {
+                                router.push("/assessments/pmp-survey-page")
+                              }
+                            }
+                            }
+                            style={{ width: 162, margin: "auto", marginBottom: 45 }}
+                          />
+                        </View>
+                        // ) : (
+                        //   <View className="flex gap-9">
+                        //     <View>
+                        //       <View style={styles.sectionMargin}>
+                        //         <Text style={styles.whiteText}>Adjustments you have made</Text>
+                        //       </View>
+                        //       <TextAreaField />
+                        //     </View>
+                        //     <View className="flex flex-row items-center justify-center w-full gap-3">
+                        //       <Text className="text-sm leading-[22px] text-white">
+                        //         Facility Review Date :
+                        //       </Text>
+                        //       <View className="border border-solid border-[#FFFFFF73] rounded-[10px] h-[33px] max-w-[194px] w-full justify-center items-center">
+                        //         <Text className="text-sm leading-[22px] text-white">
+                        //           20 / 11 / 24
+                        //         </Text>
+                        //       </View>
+                        //     </View>
+                        //     <View className="h-[0.5px] bg-white/30 my-6" />
+                        //   </View>
+                        // )
+                      ) : (
+                        <View className="flex gap-[54px] mt-12">
+                          <View className="flex flex-row items-center justify-center w-full gap-3">
+                            <Text className="text-sm leading-[22px] text-white">
+                              Project Date:
+                            </Text>
+                            <View className="border border-solid border-[#FFFFFF73] rounded-[10px] h-[33px] max-w-[194px] w-full justify-center items-center">
+                              <Text className="text-sm leading-[22px] text-white">
+                                20 / 11 / 24
+                              </Text>
+                            </View>
+                          </View>
+                          <Text onPress={() => router.push("/(pastor-tabs)/roadmap/phase-2/media")} className="font-medium text-sm leading-[22px] text-[#D9D9D9] underline text-center">
+                            View your Shared Media
+                          </Text>
+                        </View>
+                      )}
+
+                      {flag !== "submit-media" && (
+                        <View
+                          style={{
+                            width: "100%",
+                            alignItems: "center",
+                            marginVertical: 32,
+                          }}
+                        >
+                          <Button
+                            type="cancel"
+                            title={"Submit"}
+                            onPress={() => {
+                              data?.survey ? setSurveyGuideLines(true) : null
+                              if (flag === "submit-media") {
+                                router.push({ pathname: "/assessments/pmp-survey-page" })
+                              } else {
+                                router.push("/assessments/pmp-survey-page")
+                              }
+                            }
+                            }
+                            style={{ width: 200 }}
+                          />
+                        </View>
+                      )}
                     </View>
                   </View>
                 ) : (
