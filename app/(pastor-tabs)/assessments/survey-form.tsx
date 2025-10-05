@@ -4,6 +4,7 @@ import ProgressDots from "@/components/atom/dots";
 import { SurveyModal } from "@/components/atom/surveyModal";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
 import React from "react";
@@ -178,7 +179,7 @@ export default function SurveyForm() {
                   bgColor="#ffffff"
                   textColor="#001FC1"
                 />
-                {/* <SurveyButton
+                <SurveyButton
                   title={
                     formTab === totalPages - 1
                       ? "Submit Survey"
@@ -193,7 +194,7 @@ export default function SurveyForm() {
                       handlePageChange(formTab + 1);
                     }
                   }}
-                /> */}
+                />
               </View>
             </View>
 
