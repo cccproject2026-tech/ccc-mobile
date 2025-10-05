@@ -8,13 +8,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React from "react";
 import {
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Head from "./(components)/head";
@@ -111,7 +111,7 @@ export default function Password() {
                     <Button
                       title="Submit"
                       onPress={() => {
-                        router.push("/(auth)/login");
+                        router.push("/(login)/login");
                       }}
                       style={{
                         maxWidth: "100%",

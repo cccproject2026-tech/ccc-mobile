@@ -9,7 +9,6 @@ import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, Vi
 import Head from "./(components)/head"
 
 export default function Login() {
-    const [otpValue, setOtpValue] = React.useState<string>("");
     return (
         <>
             <LinearGradient
@@ -29,7 +28,6 @@ export default function Login() {
                             showNotificationIcon={false}
                             wrapperClass="!justify-end"
                         />
-
                         <View className="flex flex-1 gap-6">
                             <Head showTitle={false} />
                             <View className="flex gap-[60px]">
@@ -38,7 +36,7 @@ export default function Login() {
                                         <InputField keyboardType="email-address" label="Email or User Name" boxClass="!max-h-[52px] !h-full" labelTop={34} />
                                         <InputField keyboardType="default" label="Password" boxClass="!max-h-[52px] !h-full" labelTop={34} />
                                         <View className="flex gap-[9px] mt-[5px]">
-                                            <TouchableOpacity className="h-[44px] bg-white rounded-[10px] border border-solid border-white flex flex-row justify-center items-center" onPress={() => router.push("/(auth)/profile")}>
+                                            <TouchableOpacity className="h-[44px] bg-white rounded-[10px] border border-solid border-white flex flex-row justify-center items-center" onPress={() => router.push("/(login)/profile")}>
                                                 <Text className={"font-semibold text-base leading-[22px] text-[#001FC1]"} style={{ fontFamily: "AlbertBold" }}>
                                                     Login
                                                 </Text>
@@ -69,7 +67,7 @@ export default function Login() {
                                                 </Text>
                                             </TouchableOpacity>
 
-                                            <TouchableOpacity onPress={() => router.push("/(auth)/approval")} activeOpacity={0.8}>
+                                            <TouchableOpacity onPress={() => router.push("/(login)/approval")} activeOpacity={0.8}>
                                                 <Text className="text-base leading-[22px] font-medium text-white py-3">
                                                     Submit Interest
                                                 </Text>

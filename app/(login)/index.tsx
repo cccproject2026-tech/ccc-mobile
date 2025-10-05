@@ -121,8 +121,9 @@ export default function Login() {
             {flag !== "waiting-approval" ? (
               <View className="flex-row gap-4 items-center w-full max-w-[92%]">
                 <View
-                  className={`py-2 px-3 flex gap-1 border border-white rounded-[10px] ${flag === "interest-form" ? "ml-5" : "mx-5 w-full"
-                    } mt-6  bg-white/20 `}
+                  className={`py-2 px-3 flex gap-1 border border-white rounded-[10px] ${
+                    flag === "interest-form" ? "ml-5" : "mx-5 w-full"
+                  } mt-6  bg-white/20 `}
                 >
                   <Text className="text-base font-medium leading-[22px] text-white">
                     Contact Information
@@ -168,7 +169,11 @@ export default function Login() {
                         <Image
                           source={icons.forward as ImageSourcePropType}
                           style={[
-                            { width: 15, height: 15, transform: [{ scaleX: -1 }] },
+                            {
+                              width: 15,
+                              height: 15,
+                              transform: [{ scaleX: -1 }],
+                            },
                           ]}
                         />
                         <Text className="text-base py-1 leading-[22px] text-white font-medium">
@@ -190,7 +195,7 @@ export default function Login() {
                   padding: 2,
                   marginVertical: 12,
                   width: 300,
-                  alignSelf: "flex-end"
+                  alignSelf: "flex-end",
                 }}
               >
                 <TouchableOpacity
@@ -311,7 +316,9 @@ export default function Login() {
             <Button
               title="Log In"
               onPress={() => {
-                router.push("/(login)/interest-form");
+                flag === "interest-form"
+                  ? router.push("/(login)/approval")
+                  : router.push("/(login)/interest-form");
               }}
               style={{
                 backgroundColor: "white",
@@ -339,19 +346,22 @@ export default function Login() {
                   }}
                   className="rounded-[20px] border h-full border-white"
                 >
-                  <TouchableOpacity onPress={() => { }} activeOpacity={0.8}>
+                  <TouchableOpacity onPress={() => {}} activeOpacity={0.8}>
                     <Text className="text-base leading-[22px] font-medium text-white py-3">
                       New User {">>"}
                     </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity onPress={() => {
-                    if (flag === "waiting-approval") {
-                      router.push("/(auth)/password")
-                    } else {
-                      router.push("/(auth)/approval")
-                    }
-                  }} activeOpacity={0.8}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (flag === "waiting-approval") {
+                        router.push("/(login)/password");
+                      } else {
+                        router.push("/(login)/approval");
+                      }
+                    }}
+                    activeOpacity={0.8}
+                  >
                     <Text className="text-base leading-[22px] font-medium text-white py-3">
                       Submit Interest
                     </Text>
