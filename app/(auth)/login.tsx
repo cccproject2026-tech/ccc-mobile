@@ -35,8 +35,8 @@ export default function Login() {
                             <View className="flex gap-[60px]">
                                 <View className="p-5 flex gap-8 border border-solid border-white/20 rounded-[10px] mx-5">
                                     <View className="flex gap-[25px] py-8">
-                                        <InputField keyboardType="phone-pad" label="Email or User Name" boxClass="!max-h-[52px] !h-full" />
-                                        <InputField keyboardType="phone-pad" label="Password" boxClass="!max-h-[52px] !h-full" />
+                                        <InputField keyboardType="email-address" label="Email or User Name" boxClass="!max-h-[52px] !h-full" labelTop={34} />
+                                        <InputField keyboardType="default" label="Password" boxClass="!max-h-[52px] !h-full" labelTop={34} />
                                         <View className="flex gap-[9px] mt-[5px]">
                                             <TouchableOpacity className="h-[44px] bg-white rounded-[10px] border border-solid border-white flex flex-row justify-center items-center" onPress={() => router.push("/(auth)/profile")}>
                                                 <Text className={"font-semibold text-base leading-[22px] text-[#001FC1]"} style={{ fontFamily: "AlbertBold" }}>

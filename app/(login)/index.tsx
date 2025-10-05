@@ -119,9 +119,9 @@ export default function Login() {
             <PastorNavigationHeader showDrawer={false} />
 
             {flag !== "waiting-approval" ? (
-              <View className="flex-row gap-4 items-center">
+              <View className="flex-row gap-4 items-center w-full max-w-[92%]">
                 <View
-                  className={`py-2 px-3 flex gap-1 border border-white rounded-[10px] ${flag === "interest-form" ? "ml-5" : "mx-5 flex-1"
+                  className={`py-2 px-3 flex gap-1 border border-white rounded-[10px] ${flag === "interest-form" ? "ml-5" : "mx-5 w-full"
                     } mt-6  bg-white/20 `}
                 >
                   <Text className="text-base font-medium leading-[22px] text-white">
@@ -215,16 +215,13 @@ export default function Login() {
                   </Text>
                   <IconSymbol
                     name="chevron.right"
-                    size={24}
+                    size={15}
                     weight="medium"
                     color={"#FFFFFFCC"}
                   />
                 </TouchableOpacity>
               </LinearGradient>
             )}
-
-
-
             <View>
               <ScrollView
                 horizontal
