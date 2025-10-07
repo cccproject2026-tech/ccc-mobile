@@ -68,7 +68,7 @@ export default function CommentsScreen() {
             }}
           >
             <PastorNavigationHeader />
-            
+
             {/* Header Section */}
             <View
               style={{
@@ -113,7 +113,7 @@ export default function CommentsScreen() {
                         fontWeight: "200",
                       }}
                     >
-                      Revitalization Roadmap  {data?.title}
+                      Revitalization Roadmap {">"} {data?.title}
                     </Text>
                   </View>
                 </View>
@@ -131,20 +131,20 @@ export default function CommentsScreen() {
                   {comment.isHighlighted && (
                     <View style={styles.highlightDot} />
                   )}
-                  
+
                   {/* Main Content Row */}
                   <View style={styles.mainContentRow}>
                     {/* Avatar */}
                     <Image source={comment.avatar} style={styles.avatar} />
-                    
+
                     {/* Right Content */}
                     <View style={styles.rightContent}>
                       {/* User Name */}
                       <Text style={styles.userName}>{comment.user}</Text>
-                      
+
                       {/* Message */}
                       <Text style={styles.messageText}>{comment.message}</Text>
-                      
+
                       {/* Action Icons */}
                       <View style={styles.actionIcons}>
                         <TouchableOpacity style={styles.iconButton}>
@@ -162,7 +162,7 @@ export default function CommentsScreen() {
                       </View>
                     </View>
                   </View>
-                  
+
                   {/* Timestamp */}
                   <Text style={styles.timestamp}>{comment.timestamp}</Text>
                 </View>

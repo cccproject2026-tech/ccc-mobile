@@ -1220,6 +1220,12 @@ export const AssessmentCard = ({
                 marginVertical: 12,
                 width: "70%",
               }}
+              onPress={() => {
+                navigation.push({
+                  pathname: "/(pastor-tabs)/assessments/cma-survey-page",
+                  params: { data: JSON.stringify(data) },
+                });
+              }}
             >
               <Text
                 style={{

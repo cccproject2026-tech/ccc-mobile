@@ -26,23 +26,21 @@ export default function RevitalizationScreen() {
 
   const dummyRoadMaps = [
     {
-      id: 1,
-      title: "Jump-start",
-      description: "Attend a two-day revitalization jump-start session",
+      title: "Self Revitalization Phase",
+      description:
+        "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
       time: "Completion Time Months 1 - 2",
-      type: "course",
-      read: false,
-      sessionDate: "10 / 11 / 24",
+      type: "assignment",
+      read: true,
       status: "Not Started",
-      completionDate: "20 Oct 2024",
       taskStatus: {
         notStarted: true,
         started: false,
         inProgress: 0,
-        toComplete: 0,
+        toComplete: 18,
         completed: false,
       },
-      image: require("@/assets/images/jumpstart.png"),
+      image: require("@/assets/images/roadmap.jpg"),
     },
     {
       id: 2,

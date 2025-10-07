@@ -166,7 +166,7 @@ export default function PmpSurvey() {
               }}
               style={{ maxHeight: 50 }}
             >
-             
+
             </ScrollView>
 
             {/* Content Section */}
@@ -192,9 +192,9 @@ export default function PmpSurvey() {
                 maxWidth: "50%",
                 width: "100%",
                 marginHorizontal: "auto",
-                marginTop:42
+                marginTop: 42
               }}
-              onPress={()=>{
+              onPress={() => {
                 router.push("/(pastor-tabs)/assessments/(pmp)/survey-form")
               }}
             />

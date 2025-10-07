@@ -30,15 +30,14 @@ export default function RevitalizationScreen() {
       description:
         "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
       time: "Completion Time Months 1 - 2",
-      type: "note",
-      read: false,
-      subPhase: true,
+      type: "assignment",
+      read: true,
       status: "Not Started",
       taskStatus: {
         notStarted: true,
         started: false,
         inProgress: 0,
-        toComplete: 8,
+        toComplete: 18,
         completed: false,
       },
       image: require("@/assets/images/roadmap.jpg"),

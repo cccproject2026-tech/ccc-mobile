@@ -327,14 +327,12 @@ export default function Grant() {
                     <InputCard
                       title={"Name of the church:"}
                       setValue={setInputValue}
+                      description=""
                       value={inputValue}
                       required={true}
-                      description={""}
-                      fileUpload={false}
-                      answer={false}
                     ></InputCard>
                     <InputCard
-                      title={"Name of the church:"}
+                      title={"Name of the project/program: * "}
                       setValue={setInputValue}
                       description="[provide a name for the project /program you are seeking for the grant for]"
                       value={inputValue}

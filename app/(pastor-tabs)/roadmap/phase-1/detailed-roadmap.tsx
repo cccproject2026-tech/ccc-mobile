@@ -174,7 +174,16 @@ export default function DetailedRoadMap() {
               {!surveyGuideLines ? (
                 tabs == "Over View" ? (
                   <View style={{ width: "100%" }}>
-                    <View style={{ width: "100%", paddingHorizontal: 10 }}>
+                    <View style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "flex-start",
+                      width: "100%",
+                      paddingHorizontal: 10,
+                      position: "relative",
+                      overflow: "hidden",  // Clip children to bounds
+                      borderRadius: 20      // Match the image's border radius
+                    }}>
                       <Image
                         source={icons.detailedRoadmapImage}
                         style={{ width: "100%", height: 181, borderRadius: 20 }}
@@ -184,7 +193,7 @@ export default function DetailedRoadMap() {
                         style={{
                           position: "absolute",
                           bottom: 15,
-                          left: 20,
+                          left: 16,
                           backgroundColor: "#233C7896",
                           paddingHorizontal: 10,
                           paddingVertical: 5,
@@ -194,6 +203,7 @@ export default function DetailedRoadMap() {
                           shadowRadius: 10,
                           elevation: 5,
                           borderRadius: 5,
+                          width: "90%"
                         }}
                       >
                         <Text
