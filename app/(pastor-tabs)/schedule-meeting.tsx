@@ -6,12 +6,12 @@ import { LinearGradient } from "expo-linear-gradient"
 import { Stack, router, useLocalSearchParams } from "expo-router"
 import React from "react"
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 const ScheduleMeeting = () => {
@@ -44,7 +44,7 @@ const ScheduleMeeting = () => {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
+            <PastorNavigationHeader showNameTag />
             <View
               style={{
                 width: "100%",

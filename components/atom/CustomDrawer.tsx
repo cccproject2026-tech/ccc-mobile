@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { icons } from "../../constants/images";
 import { useDrawerStore } from "./DrawerStore";
+const image = require("@/assets/logos/CCClogo.png");
 
 interface Navigation {
   navigate: (routeName: string) => void;
@@ -19,14 +20,24 @@ interface Navigation {
 
 interface SubTab {
   name: string;
+  iconKey: keyof typeof icons;
   navigateLocation: string;
+  iconSize?: { width: number; height: number };
 }
+
+type SubTabItem = {
+  name: string;
+  iconKey: string;
+  navigateLocation: string;
+  iconSize?: { width: number; height: number };
+};
 
 interface DrawerItem {
   name: string;
   iconKey: keyof typeof icons;
-  navigateLocation: string;
+  navigateLocation?: string;
   subTabs?: SubTab[];
+  iconSize?: { width: number; height: number };
 }
 
 interface CustomDrawerContentProps {
@@ -47,7 +58,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
       navigateLocation: "/(pastor-tabs)/my-mentors",
     },
     {
-      name: "Revitalization RoadMap",
+      name: "Revitalization Roadmap",
       iconKey: "Revitalization",
       navigateLocation: "/(pastor-tabs)/roadmap/revitalization-roadmap",
     },
@@ -74,6 +85,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           name: "My Profile",
           iconKey: "myProfile",
           navigateLocation: "/(pastor-tabs)/profile/my-profile",
+          iconSize: { width: 25, height: 20 },
         },
         {
           name: "Documents",
@@ -86,7 +98,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           navigateLocation: "/(pastor-tabs)/profile/my-assignment/assignment",
         },
         {
-          name: "Certificate",
+          name: "Certificates",
           iconKey: "certificate",
           navigateLocation: "/(pastor-tabs)/profile/certificate",
         },
@@ -328,6 +340,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
             height: 40,
             borderRadius: 10000,
             paddingRight: 10,
+            paddingTop: 7,
           }}
         >
           {/* <Image
@@ -336,7 +349,12 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
             resizeMode="contain"
           /> */}
           <TouchableOpacity onPress={closeDrawer}>
-            <Text>X</Text>
+            {/* <Text>X</Text> */}
+            <Image
+              source={image}
+              style={{ width: 25, height: 25 }}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -346,8 +364,8 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {(currentScreen == "Pastor"
           ? PastorScreenDrawerContent
           : currentScreen == "Mentor"
-            ? MentorScreenDrawerContent
-            : DirectorScreenDrawerContent
+          ? MentorScreenDrawerContent
+          : DirectorScreenDrawerContent
         ).map((e, i) => (
           <React.Fragment key={i}>
             <TouchableOpacity
@@ -361,13 +379,13 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
               <Image
                 source={icons[e.iconKey as keyof typeof icons]}
                 style={{ width: 20, height: 20 }}
-              ></Image>
+              />
               <Text style={styles.drawerText}>{e.name}</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
             {/* <View style={styles.separator} /> */}
             {(e.name == "Profile" || e.name == "Settings") &&
-              e.subTabs?.map((ee, index) => (
+              e.subTabs?.map((ee: SubTabItem, index) => (
                 <View style={{ width: "70%", marginLeft: 90 }} key={index}>
                   <TouchableOpacity
                     style={[styles.drawerItem, { ...{} }]}
@@ -375,8 +393,13 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
                   >
                     <Image
                       source={icons[ee.iconKey as keyof typeof icons]}
-                      style={{ width: 20, height: 20 }}
-                    ></Image>
+                      style={{
+                        width: ee.iconSize?.width || 20,
+                        height: ee.iconSize?.height || 20,
+                        objectFit:"contain"
+                      }}
+
+                    />
                     <Text style={styles.drawerText}>{ee.name}</Text>
                   </TouchableOpacity>
                   <View style={styles.separator} />
