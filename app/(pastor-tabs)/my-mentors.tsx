@@ -1,11 +1,11 @@
-import { DetailedMentorCard, MentorCard } from "@/components/atom/cards"
-import { PastorNavigationHeader } from "@/components/pastor/Header"
-import { Colors } from "@/constants/Colors"
-import { icons } from "@/constants/images"
-import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
-import { Stack, router } from "expo-router"
-import React, { useState } from "react"
+import { DetailedMentorCard, MentorCard } from "@/components/atom/cards";
+import { PastorNavigationHeader } from "@/components/pastor/Header";
+import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { Stack, router } from "expo-router";
+import React, { useState } from "react";
 import {
   Image,
   ScrollView,
@@ -14,13 +14,13 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Mentor {
-  name: string
-  role: string
-  description: string
+  name: string;
+  role: string;
+  description: string;
 }
 
 const dummyMentors: Mentor[] = [
@@ -53,19 +53,19 @@ const dummyMentors: Mentor[] = [
     name: "John Doe",
     role: "Field Mentor",
     description: "Sub text area write something here. That you can read more",
-  }
-]
+  },
+];
 
 export default function MyMentorsScreen() {
-  const [listToggle, setListToggle] = useState(false)
-  const [searchText, setSearchText] = useState("")
+  const [listToggle, setListToggle] = useState(false);
+  const [searchText, setSearchText] = useState("");
 
   const handleMenuPress = (mentor: Mentor) => {
     router.push({
       pathname: "/(pastor-tabs)/schedule-meeting",
-      params: { mentorData: JSON.stringify(mentor) }
-    })
-  }
+      params: { mentorData: JSON.stringify(mentor) },
+    });
+  };
   return (
     <>
       <LinearGradient
@@ -83,7 +83,7 @@ export default function MyMentorsScreen() {
             >
               <View>
                 {/* Header Section */}
-                <PastorNavigationHeader />
+                <PastorNavigationHeader showNameTag />
                 <View style={styles.headerContainer}>
                   <View style={styles.headerContent}>
                     <TouchableOpacity
@@ -135,21 +135,58 @@ export default function MyMentorsScreen() {
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.quickAccessScroll}
+                    contentContainerStyle={{...styles.quickAccessScroll,gap:10}}
                   >
                     {dummyMentors.slice(0, 8).map((mentor, index) => (
-                      <View key={index} style={styles.quickAccessItem}>
-                        <View style={styles.avatarContainer}>
-                          <Image
-                            source={
-                              mentor.name === "John Doe"
-                                ? icons.myProfile
-                                : icons.myProfile
-                            }
-                            style={styles.avatar}
-                          />
-                        </View>
-                        <Text className="text-white font-medium text-[12px] text-center mt-2">
+                      <View key={index} style={{ alignItems: "center" }}>
+                        <LinearGradient
+                          colors={["#8B5CF6", "#3B82F6"]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 0, y: 1 }}
+                          style={{
+                            width: 60,
+                            height: 60,
+                            borderRadius: 48,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap:10
+                          }}
+                        >
+                          <View
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              // borderRadius: 20,
+                              padding: 3,
+                              alignItems: "center",
+                              justifyContent: "center",
+
+                            }}
+                          >
+                            <Image
+                              source={
+                                mentor.name === "John Doe"
+                                  ? icons.myProfile
+                                  : icons.myProfile
+                              }
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: 44,
+                              }}
+                              resizeMode="cover"
+                            />
+                          </View>
+                        </LinearGradient>
+                        <Text
+                          style={{
+                            color: "white",
+                            fontWeight: "500",
+                            fontSize: 12,
+                            textAlign: "center",
+                            marginTop: 8,
+                          }}
+                        >
                           {mentor.name}
                         </Text>
                       </View>
@@ -236,7 +273,7 @@ export default function MyMentorsScreen() {
                             data={mentor}
                             dataKey={index.toString()}
                             navigation={router}
-                              onMenuPress={() => handleMenuPress(mentor)}
+                            onMenuPress={() => handleMenuPress(mentor)}
                           />
                         )}
                       </View>
@@ -249,7 +286,7 @@ export default function MyMentorsScreen() {
         </SafeAreaView>
       </LinearGradient>
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -335,8 +372,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.3)",
   },
   avatar: {
-    width: 50,
-    height: 50,
+    width: "100%",
+    height: "100%",
     borderRadius: 20,
   },
   mentorsListContainer: {
@@ -361,4 +398,4 @@ const styles = StyleSheet.create({
   detailedMentorCard: {
     marginBottom: 12,
   },
-})
+});
