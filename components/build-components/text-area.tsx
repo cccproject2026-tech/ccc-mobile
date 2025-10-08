@@ -9,6 +9,9 @@ export default function TextAreaField({
   containerClass = ``,
   boxClass = ``,
   inputClass,
+  editable = true,
+  value,
+  onChangeText,
 }: {
   label?: string;
   numberOfLines?: number;
@@ -17,19 +20,25 @@ export default function TextAreaField({
   containerClass?: string;
   boxClass?: string;
   inputClass?: ViewStyle;
+  editable?: boolean;
+  value?: string;
+  onChangeText?: (text: string) => void;
 }) {
-  const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
 
   return (
     <View style={styles.container} className={containerClass}>
-      <View style={[styles.box, inputClass, focused && styles.boxFocused]} className={boxClass}>
+      <View
+        style={[styles.box, inputClass, focused && styles.boxFocused]}
+        className={boxClass}
+      >
         {!focused && !value && <Text style={styles.label}>{label}</Text>}
         <TextInput
           style={styles.input}
           className={inputClassName}
           value={value}
-          onChangeText={setValue}
+          onChangeText={onChangeText}
+          editable={!editable}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           multiline
