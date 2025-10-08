@@ -67,7 +67,7 @@ export default function CommentsScreen() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
+            <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
 
             {/* Header Section */}
             <View

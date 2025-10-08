@@ -73,12 +73,13 @@ export default function MyMentorsScreen() {
         style={{ flex: 1 }}
       >
         <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView>
-          <ScrollView>
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView style={{ flex: 1 }}>
             <View
               style={{
                 height: "100%",
                 width: "100%",
+                flex: 1
               }}
             >
               <View>
@@ -236,7 +237,7 @@ export default function MyMentorsScreen() {
                             data={mentor}
                             dataKey={index.toString()}
                             navigation={router}
-                              onMenuPress={() => handleMenuPress(mentor)}
+                            onMenuPress={() => handleMenuPress(mentor)}
                           />
                         )}
                       </View>

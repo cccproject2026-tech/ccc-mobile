@@ -31,7 +31,8 @@ export default function Media() {
                         <PastorNavigationHeader
                             showDrawer={false}
                             showNotificationIcon={false}
-                            wrapperClass="!justify-end"
+                            wrapperClass="!justify-end mt-5"
+                            showNameTag={true}
                         />
 
                         <View className="flex gap-[18px] px-4 mt-5">

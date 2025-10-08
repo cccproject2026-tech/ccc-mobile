@@ -123,7 +123,7 @@ export default function EmpowermentCards() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader showNameTag />
+            <PastorNavigationHeader showNameTag={true} wrapperClass="mt-5" />
 
             {/* Header Section */}
             <Header

@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, usePathname } from "expo-router";
 import React from "react";
@@ -31,32 +32,40 @@ export const AppointmentCard = ({
         />
       </View>
       <View style={styles.appointmentDetails}>
-        <View>
+        <View className="flex flex-row justify-between">
           <Text style={styles.dateTimeText}>
             {data.date} <Text style={styles.timeText}> Time </Text>
             {data.time}
           </Text>
+          <TouchableOpacity onPress={() => { }}>
+            <Ionicons name="ellipsis-vertical" size={20} color="white" />
+          </TouchableOpacity>
         </View>
-        <View style={styles.mentorInfoContainer}>
-          <Image source={icons.myProfile} style={styles.mentorImage} />
-          <Text style={styles.mentorNameText}>John Ross - {data.role}</Text>
-        </View>
-        <Text style={styles.modeText}>
-          Mode:{" "}
-          <Text style={styles.modeBoldText}>
-            {data.mode == "duo" ? "Duo" : "Google Meet"}
-          </Text>
-        </Text>
-        <View style={styles.iconRow}>
-          <Image source={icons.phone} style={styles.iconStyle} />
-          <Image source={icons.message} style={styles.iconStyle} />
-          <Image source={icons.mail} style={styles.iconStyle} />
-          <Image source={icons.whatsapp} style={styles.iconStyle} />
+        <View className="flex flex-row justify-between items-center ">
+          <View>
+            <View style={styles.mentorInfoContainer}>
+              <Image source={icons.myProfile} style={styles.mentorImage} />
+              <Text style={styles.mentorNameText}>John Ross - {data.role}</Text>
+            </View>
+            <Text style={styles.modeText}>
+              Mode:{" "}
+              <Text style={styles.modeBoldText}>
+                {data.mode == "duo" ? "Duo" : "Google Meet"}
+              </Text>
+            </Text>
+            <View style={styles.iconRow}>
+              <Image source={icons.phone} style={styles.iconStyle} />
+              <Image source={icons.message} style={styles.iconStyle} />
+              <Image source={icons.mail} style={styles.iconStyle} />
+              <Image source={icons.whatsapp} style={styles.iconStyle} />
+            </View>
+          </View>
+          <TouchableOpacity>
+            <Image source={icons.forward} style={styles.iconStyle} />
+          </TouchableOpacity>
         </View>
       </View>
-      <TouchableOpacity>
-        <Image source={icons.forward} style={styles.iconStyle} />
-      </TouchableOpacity>
+
     </View>
   );
 };
@@ -118,9 +127,11 @@ export const NotificationCard = ({ data }: { data: any }) => {
 export const RevitalizationCard = ({
   data,
   navigation,
+  wrapperClass = ``
 }: {
   data: any;
   navigation: any;
+  wrapperClass?: string;
 }) => {
   const progressPercentage =
     (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%";
@@ -194,6 +205,7 @@ export const RevitalizationCard = ({
       }}
     >
       <View
+        className={`${wrapperClass}`}
         style={{
           width: "100%",
           flexDirection: "row",
@@ -245,7 +257,7 @@ export const RevitalizationCard = ({
             </Text>
           </View>
         </View>
-        <View style={{ marginLeft: 10, flex: 1, gap: 4 }}>
+        <View style={{ marginLeft: 10, flex: 1, gap: 4, marginTop: 4 }}>
           <View>
             <Text
               style={{ color: "white", fontSize: 16, fontWeight: "600" }}
@@ -1573,6 +1585,7 @@ const styles = StyleSheet.create({
   mentorInfoContainer: {
     flexDirection: "row",
     alignItems: "center",
+    borderRadius: "50%"
   },
   mentorNameText: {
     color: "#FFFFFF",
@@ -1687,9 +1700,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   mentorImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 2, // rounded-md
+    width: 20,
+    height: 20,
+    borderRadius: "50%", // rounded-md
     marginHorizontal: 8, // mx-2
   },
   mentorText: {

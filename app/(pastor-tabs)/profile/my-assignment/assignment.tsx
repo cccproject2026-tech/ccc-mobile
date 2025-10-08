@@ -127,7 +127,7 @@ export default function Assignment() {
             <PastorNavigationHeader />
 
             {/* Header Section */}
-            <Header title="Assignments" />
+            <Header title="Assignments" showSettings={false} />
 
             {/* Tabs Section */}
             <ScrollView
@@ -164,7 +164,7 @@ export default function Assignment() {
             >
               {filteredRoadMaps.map((e, i) => (
                 <React.Fragment key={i}>
-                  <RevitalizationCard data={e} navigation={router} />
+                  <RevitalizationCard data={e} navigation={router} wrapperClass="!items-start" />
                   {i < filteredRoadMaps.length - 1 && (
                     <View className="h-[0.5px] bg-white/30 my-4" />
                   )}

@@ -171,7 +171,7 @@ export default function SurveyForm() {
               )}
               <View
                 className="flex flex-row justify-center items-center max-w-[40%] mx-auto"
-                style={{ gap: 10 }}
+                style={{ gap: 10, marginBottom: 20 }}
               >
                 <SurveyButton
                   title="Clear Responses"

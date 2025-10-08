@@ -10,7 +10,7 @@ import { NavigationProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useNavigation } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface ProfileData {
@@ -98,6 +98,8 @@ export default function Grant() {
     message: "",
     buttonText: "",
   });
+  const [isVisible, setIsVisible] = React.useState(false);
+
 
   const dummyAppointments = [
     {
@@ -195,23 +197,21 @@ export default function Grant() {
         style={{ flex: 1 }}
       >
         <SafeAreaView style={{ flex: 1 }}>
-          <PastorNavigationHeader showDrawer={false} showBackButton={true} />
+          <PastorNavigationHeader showDrawer={false} showBackButton={true} wrapperClass="mt-5" />
           <View
             style={{
               width: "100%",
               alignItems: "center",
               marginTop: 24,
               // padding: 10,
+              flex: 1,
             }}
           >
             <ScrollView
               contentContainerStyle={{
-                // marginVertical: 10,
-                // paddingTop: 20,
                 paddingBottom: 80,
                 paddingHorizontal: 10,
-                flexDirection: "row",
-                width: "100%",
+                flex: 1,
               }}
             >
               <View
@@ -224,7 +224,7 @@ export default function Grant() {
               >
                 <HeaderTitle
                   title="The Center for Community Change Micro-Grant Application"
-                  textStyle={{ fontWeight: "800" }}
+                  textStyle={{ fontWeight: "700", color: "#ffffff", fontFamily: "AlbertBold" }}
                 ></HeaderTitle>
 
                 <View
@@ -603,7 +603,7 @@ export default function Grant() {
                             title={"Check Status"}
                             type={"cancel"}
                             style={{ width: "40%" }}
-                            onPress={() => setStep(1)}
+                            onPress={() => setIsVisible(true)}
                           ></Button>
                         </View>
                       </View>
@@ -651,6 +651,22 @@ export default function Grant() {
             ></ResponseModal>
           </View>
         </SafeAreaView>
+        <Modal
+          visible={isVisible}
+          transparent={true}
+          onRequestClose={() => setIsVisible(false)}
+        >
+          <View className="flex-1 justify-center items-center bg-black/50">
+            <View className="bg-white rounded-lg p-4 gap-2  max-w-[229px]">
+              <Text className="font-semibold text-sm leading-[22px] text-[#176192] text-center">
+                Application has Submitted Successfully.
+              </Text>
+              <Text className="font-semibold text-sm leading-[22px] text-[#1E366F] text-center">
+                Check your status for further info.
+              </Text>
+            </View>
+          </View>
+        </Modal>
       </LinearGradient>
     </>
   );

@@ -9,14 +9,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -282,14 +282,14 @@ export default function Certificate() {
               subTitle={`Mentor > John Doe > Mentee >Profile`}
               hideSearchBar={true}
             />
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
               <View
                 style={{
-                  flexDirection: "row",
                   gap: 20,
                   alignItems: "center",
                   justifyContent: "center",
-                  marginTop:20
+                  marginTop: 20,
+                  flex: 1
                 }}
               >
                 <LinearGradient
@@ -461,13 +461,13 @@ export default function Certificate() {
                       title={"Not Interested"}
                       type={"cancel"}
                       style={{ width: "50%" }}
-                      onPress={() => {}}
+                      onPress={() => { }}
                     ></Button>
                     <Button
                       title={"Accept"}
                       type={"submit"}
                       style={{ width: "50%" }}
-                      onPress={() => {}}
+                      onPress={() => { }}
                     ></Button>
                   </View>
                 </View>
@@ -981,6 +981,7 @@ const styles = StyleSheet.create({
   mainContainer: {
     width: "100%",
     paddingBottom: 80,
+    flex: 1
   },
   headerContainer: {
     width: "100%",
