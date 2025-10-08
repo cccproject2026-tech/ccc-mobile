@@ -35,11 +35,11 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
 
   return (
     <View
-      className={`flex-row items-center justify-between px-8 ${wrapperClass}`}
+      className={`flex-row items-center justify-between px-4 ${wrapperClass}`}
     >
       {showDrawer ? (
-        <TouchableOpacity onPress={toggleDrawer} className="">
-          {<Ionicons name="menu" size={size} color={color} />}
+        <TouchableOpacity onPress={toggleDrawer}>
+          <Ionicons name="menu" size={size} color={color} />
         </TouchableOpacity>
       ) : showBackButton ? (
         <Button

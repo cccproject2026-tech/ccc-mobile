@@ -1,10 +1,10 @@
-import CustomDropdown from "@/components/atom/dropDown"
-import { PastorNavigationHeader } from "@/components/pastor/Header"
-import { Colors } from "@/constants/Colors"
-import { icons } from "@/constants/images"
-import { LinearGradient } from "expo-linear-gradient"
-import { router, Stack } from "expo-router"
-import React, { useState } from "react"
+import CustomDropdown from "@/components/atom/dropDown";
+import { PastorNavigationHeader } from "@/components/pastor/Header";
+import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, Stack } from "expo-router";
+import React, { useState } from "react";
 import {
   Alert,
   Image,
@@ -14,49 +14,49 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native"
+} from "react-native";
 
-import { SafeAreaView } from "react-native-safe-area-context"
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface ProfileData {
-  firstName: string
-  lastName: string
-  phoneNumber: string
-  email: string
-  profileSummary: string
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  email: string;
+  profileSummary: string;
   church1: {
-    name: string
-    phone: string
-    website: string
-    address: string
-    city: string
-    state: string
-    zipCode: string
-    country: string
-  }
+    name: string;
+    phone: string;
+    website: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
   church2: {
-    name: string
-    phone: string
-    website: string
-    address: string
-    city: string
-    state: string
-    zipCode: string
-    country: string
-  } | null
-  title: string
-  yearsInMinistry: string
-  conference: string
-  communityServiceProjects: string
-  interests: string
-  comments: string
+    name: string;
+    phone: string;
+    website: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  } | null;
+  title: string;
+  yearsInMinistry: string;
+  conference: string;
+  communityServiceProjects: string;
+  interests: string;
+  comments: string;
 }
 
 export default function ProfileScreen() {
-  const [isEditMode, setIsEditMode] = useState(false)
-  const [showConfirmation, setShowConfirmation] = useState(false)
-  const [showSuccessToast, setShowSuccessToast] = useState(false)
-  const [hasChurch2, setHasChurch2] = useState(true)
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [hasChurch2, setHasChurch2] = useState(true);
 
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: "John",
@@ -93,9 +93,9 @@ export default function ProfileScreen() {
       "I would like to find out more about the Center for Community Change",
     comments:
       "I am a conference administrator and would like to find out more about partnering with the cent I conference administrator and would like to find out more about partnering with the center",
-  })
+  });
 
-  const [profileImage, setProfileImage] = useState(icons.myProfile)
+  const [profileImage, setProfileImage] = useState(icons.myProfile);
 
   const handleImagePicker = () => {
     Alert.alert("Change Profile Picture", "Choose an option", [
@@ -103,22 +103,22 @@ export default function ProfileScreen() {
         text: "Camera",
         onPress: () => {
           // Mock camera functionality
-          Alert.alert("Camera", "Camera functionality would open here")
+          Alert.alert("Camera", "Camera functionality would open here");
         },
       },
       {
         text: "Photo Library",
         onPress: () => {
           // Mock photo library functionality
-          Alert.alert("Photo Library", "Photo library would open here")
+          Alert.alert("Photo Library", "Photo library would open here");
         },
       },
       {
         text: "Cancel",
         style: "cancel",
       },
-    ])
-  }
+    ]);
+  };
 
   const titleOptions = [
     { label: "Pastor", value: "Pastor" },
@@ -126,34 +126,34 @@ export default function ProfileScreen() {
     { label: "Youth Pastor", value: "Youth Pastor" },
     { label: "Senior Pastor", value: "Senior Pastor" },
     { label: "Elder", value: "Elder" },
-  ]
+  ];
 
   const conferenceOptions = [
     { label: "Oakland", value: "Oakland" },
     { label: "Northern California", value: "Northern California" },
     { label: "Southern California", value: "Southern California" },
     { label: "Central California", value: "Central California" },
-  ]
+  ];
 
   const handleEditPress = () => {
-    setIsEditMode(true)
-  }
+    setIsEditMode(true);
+  };
 
   const handleCancelEdit = () => {
-    setIsEditMode(false)
+    setIsEditMode(false);
     // Reset to original data if needed
-  }
+  };
 
   const handleSavePress = () => {
-    setShowConfirmation(true)
-  }
+    setShowConfirmation(true);
+  };
 
   const handleConfirmSave = () => {
-    setShowConfirmation(false)
-    setIsEditMode(false)
-    setShowSuccessToast(true)
+    setShowConfirmation(false);
+    setIsEditMode(false);
+    setShowSuccessToast(true);
     // Here you would typically save the data to your backend
-  }
+  };
 
   const handleAddChurch = () => {
     if (!profileData.church2) {
@@ -169,18 +169,18 @@ export default function ProfileScreen() {
           zipCode: "",
           country: "",
         },
-      })
-      setHasChurch2(true)
+      });
+      setHasChurch2(true);
     }
-  }
+  };
 
   const handleRemoveChurch2 = () => {
     setProfileData({
       ...profileData,
       church2: null,
-    })
-    setHasChurch2(false)
-  }
+    });
+    setHasChurch2(false);
+  };
 
   const updateProfileData = (
     field: string,
@@ -196,7 +196,7 @@ export default function ProfileScreen() {
             ...profileData.church2,
             [churchField]: value,
           },
-        })
+        });
       } else if (church === "church1") {
         setProfileData({
           ...profileData,
@@ -204,15 +204,15 @@ export default function ProfileScreen() {
             ...profileData.church1,
             [churchField]: value,
           },
-        })
+        });
       }
     } else {
       setProfileData({
         ...profileData,
         [field]: value,
-      })
+      });
     }
-  }
+  };
 
   const renderEditableText = (
     value: string,
@@ -237,10 +237,10 @@ export default function ProfileScreen() {
           textAlignVertical={multiline ? "top" : "center"}
           placeholderTextColor="rgba(255, 255, 255, 0.6)"
         />
-      )
+      );
     }
-    return <Text style={styles.whiteText}>{value}</Text>
-  }
+    return <Text style={styles.whiteText}>{value}</Text>;
+  };
 
   const renderDropdown = (
     value: string,
@@ -256,14 +256,14 @@ export default function ProfileScreen() {
           placeholder={`Select ${field}`}
           containerStyle={styles.dropdownContainer}
         />
-      )
+      );
     }
     return (
       <Text style={styles.whiteText}>
         {field} : {value}
       </Text>
-    )
-  }
+    );
+  };
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -272,7 +272,7 @@ export default function ProfileScreen() {
         style={{ flex: 1 }}
       >
         <SafeAreaView style={{ flex: 1 }}>
-          <PastorNavigationHeader />
+          <PastorNavigationHeader showNameTag />
           <View style={styles.mainContainer}>
             <View style={styles.headerContainer}>
               <TouchableOpacity onPress={() => router.back()}>
@@ -300,15 +300,15 @@ export default function ProfileScreen() {
                       onPress={handleImagePicker}
                     >
                       <Image
-                        source={icons.edit2}
-                        style={styles.editIconImage}
+                        source={icons.edit}
+                        style={{ width: 17, height: 17 }}
                       />
                     </TouchableOpacity>
                   )}
                 </View>
 
                 {/* Edit Profile Pencil Icon - Top Right */}
-                {isEditMode && (
+                {/* {isEditMode && (
                   <TouchableOpacity
                     style={styles.topEditIcon}
                     onPress={() => {
@@ -318,7 +318,7 @@ export default function ProfileScreen() {
                   >
                     <Image source={icons.edit2} style={styles.editIconImage} />
                   </TouchableOpacity>
-                )}
+                )} */}
 
                 <View style={styles.profileInfo}>
                   <Text className="font-semibold" style={styles.greetingText}>
@@ -328,13 +328,22 @@ export default function ProfileScreen() {
                 </View>
               </View>
               <View style={styles.divider} />
-              {/* <View style={styles.progressContainer}>
-                <Text style={styles.progressText}>Progress</Text>
+              <View
+                style={{
+                  ...styles.progressContainer,
+                  marginTop: 20,
+                  maxWidth: 220,
+                  marginHorizontal: "auto",
+                }}
+              >
+                <Text className="text-base leading-[22px] font-medium text-white">
+                  Progress
+                </Text>
                 <View style={styles.progressBarBackground}>
                   <View style={styles.progressBarFill} />
                 </View>
-                <Text style={styles.progressPercent}>70%</Text>
-              </View> */}
+                <Text className="text-xs font-bold text-white ">70%</Text>
+              </View>
               <View style={styles.actionsContainer}>
                 <View style={styles.actionButton}>
                   <Text style={styles.actionText}>Upload documents</Text>
@@ -840,7 +849,7 @@ export default function ProfileScreen() {
         /> */}
       </LinearGradient>
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -875,7 +884,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    overflow: "hidden",
+    // overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#fff2",
@@ -1056,16 +1065,14 @@ const styles = StyleSheet.create({
   },
   profileEditIcon: {
     position: "absolute",
-    bottom: -5,
-    right: -5,
+    bottom: -10,
+    right: -30,
     backgroundColor: "rgba(0, 75, 135, 0.8)",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
+    borderRadius: 9,
+    width: 42,
+    height: 32,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "black",
   },
   topEditIcon: {
     position: "absolute",
@@ -1170,4 +1177,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
-})
+});
