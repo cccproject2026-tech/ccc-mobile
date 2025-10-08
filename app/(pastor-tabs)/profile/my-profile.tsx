@@ -1,9 +1,16 @@
+import { Button } from "@/components/atom/buttons";
 import CustomDropdown from "@/components/atom/dropDown";
+import {
+  DropDrawer,
+  Header,
+  TextArea,
+  TextInput as TextInputField,
+} from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -15,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -53,7 +61,7 @@ interface ProfileData {
 }
 
 export default function ProfileScreen() {
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [hasChurch2, setHasChurch2] = useState(true);
@@ -96,6 +104,7 @@ export default function ProfileScreen() {
   });
 
   const [profileImage, setProfileImage] = useState(icons.myProfile);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   const handleImagePicker = () => {
     Alert.alert("Change Profile Picture", "Choose an option", [
@@ -136,7 +145,7 @@ export default function ProfileScreen() {
   ];
 
   const handleEditPress = () => {
-    setIsEditMode(true);
+    setIsEditMode(false);
   };
 
   const handleCancelEdit = () => {
@@ -264,6 +273,30 @@ export default function ProfileScreen() {
       </Text>
     );
   };
+
+  // Generic handler
+  const handleInputChange = (
+    field: keyof ProfileData,
+    value: string,
+    church?: "church1" | "church2",
+    churchField?: keyof ProfileData["church1"]
+  ) => {
+    if (church && churchField) {
+      setProfileData({
+        ...profileData,
+        [church]: {
+          ...profileData[church]!,
+          [churchField]: value,
+        },
+      });
+    } else {
+      setProfileData({
+        ...profileData,
+        [field]: value,
+      });
+    }
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -272,568 +305,475 @@ export default function ProfileScreen() {
         style={{ flex: 1 }}
       >
         <SafeAreaView style={{ flex: 1 }}>
-          <PastorNavigationHeader showNameTag />
-          <View style={styles.mainContainer}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity onPress={() => router.back()}>
-                <View style={styles.backButtonContainer}>
-                  <Image source={icons.forward} style={styles.backIcon} />
-                  <Text className="text-white font-semibold text-[17px]">
-                    Profile
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View className="h-[1px] bg-white/20 w-full my-2" />
-              <View style={styles.profileSection}>
-                <View style={styles.profileImageContainer}>
-                  <Image
-                    source={profileImage}
-                    style={styles.profileImage}
-                    resizeMode="cover"
-                  />
-                  {isEditMode && (
-                    <TouchableOpacity
-                      style={styles.profileEditIcon}
-                      onPress={handleImagePicker}
-                    >
-                      <Image
-                        source={icons.edit}
-                        style={{ width: 17, height: 17 }}
-                      />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Edit Profile Pencil Icon - Top Right */}
-                {/* {isEditMode && (
-                  <TouchableOpacity
-                    style={styles.topEditIcon}
-                    onPress={() => {
-                      // Handle profile section edit
-                      console.log("Edit profile section")
-                    }}
-                  >
-                    <Image source={icons.edit2} style={styles.editIconImage} />
-                  </TouchableOpacity>
-                )} */}
-
-                <View style={styles.profileInfo}>
-                  <Text className="font-semibold" style={styles.greetingText}>
-                    Good Morning John Ross
-                  </Text>
-                  <Text style={styles.roleText}>Pastor</Text>
-                </View>
-              </View>
-              <View style={styles.divider} />
-              <View
-                style={{
-                  ...styles.progressContainer,
-                  marginTop: 20,
-                  maxWidth: 220,
-                  marginHorizontal: "auto",
-                }}
+          <KeyboardAwareScrollView
+            enableOnAndroid
+            extraScrollHeight={100}
+            keyboardOpeningTime={0}
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingBottom: 150,
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            <PastorNavigationHeader showNameTag />
+            <View style={styles.mainContainer}>
+              <Header title="Profile" showSettings={false} hideSearchBar />
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
               >
-                <Text className="text-base leading-[22px] font-medium text-white">
-                  Progress
-                </Text>
-                <View style={styles.progressBarBackground}>
-                  <View style={styles.progressBarFill} />
+                <View style={styles.profileSection}>
+                  <View style={styles.profileImageContainer}>
+                    <Image
+                      source={profileImage}
+                      style={styles.profileImage}
+                      resizeMode="cover"
+                    />
+                    {!isEditMode && (
+                      <TouchableOpacity
+                        style={styles.profileEditIcon}
+                        onPress={handleImagePicker}
+                      >
+                        <Image
+                          source={icons.edit}
+                          style={{ width: 17, height: 17 }}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <View style={styles.profileInfo}>
+                    <Text className="font-semibold" style={styles.greetingText}>
+                      Good Morning John Ross
+                    </Text>
+                    <Text style={styles.roleText}>Pastor</Text>
+                  </View>
                 </View>
-                <Text className="text-xs font-bold text-white ">70%</Text>
-              </View>
-              <View style={styles.actionsContainer}>
-                <View style={styles.actionButton}>
-                  <Text style={styles.actionText}>Upload documents</Text>
-                  <Image source={icons.attachment} style={styles.icon} />
-                </View>
-                <TouchableOpacity
-                  onPress={handleEditPress}
-                  style={styles.actionButton}
+                <View style={styles.divider} />
+                <View
+                  style={{
+                    ...styles.progressContainer,
+                    marginTop: 20,
+                    maxWidth: 220,
+                    marginHorizontal: "auto",
+                  }}
                 >
-                  <Text style={styles.actionText}>Edit Profile</Text>
-                  <Image source={icons.edit} style={styles.icon} />
-                </TouchableOpacity>
-              </View>
-              <View className="px-[10px]">
-                <View style={styles.sectionMargin}>
-                  <Text style={styles.whiteText}>Profile Information</Text>
+                  <Text className="text-base leading-[22px] font-medium text-white">
+                    Progress
+                  </Text>
+                  <View style={styles.progressBarBackground}>
+                    <View style={styles.progressBarFill} />
+                  </View>
+                  <Text className="text-xs font-bold text-white ">70%</Text>
                 </View>
-
-                {/* Intro Summary */}
-                <View style={styles.summaryContainer}>
-                  {renderEditableText(
+                <View style={styles.actionsContainer}>
+                  <View style={styles.actionButton}>
+                    <Text style={styles.actionText}>Upload documents</Text>
+                    <Image source={icons.attachment} style={styles.icon} />
+                  </View>
+                  <TouchableOpacity
+                    onPress={handleEditPress}
+                    style={styles.actionButton}
+                  >
+                    <Text style={styles.actionText}>Edit Profile</Text>
+                    <Image source={icons.edit} style={styles.icon} />
+                  </TouchableOpacity>
+                </View>
+                <View className="px-[10px]">
+                  <View style={styles.sectionMargin}>
+                    <Text style={styles.whiteText}>Profile Information</Text>
+                  </View>
+                  <View>
+                    <TextArea
+                      label="profileSummary"
+                      value={profileData.profileSummary}
+                      onChangeText={(text) =>
+                        handleInputChange("profileSummary", text)
+                      }
+                      editable={isEditMode}
+                    />
+                    {/* {renderEditableText(
                     profileData.profileSummary,
                     "profileSummary",
                     undefined,
                     undefined,
                     true
-                  )}
-                </View>
-
-                {/* Detailed Personal Info */}
-                <View style={styles.detailedContainer}>
-                  <View className="gap-3 mt-2">
-                    <Text style={styles.whiteText}>Personal Information</Text>
-                    <View style={styles.rowContainer}>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(profileData.firstName, "firstName")
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            First Name : {profileData.firstName}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(profileData.lastName, "lastName")
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            Last Name : {profileData.lastName}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    <View style={styles.rowContainer}>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(
-                            profileData.phoneNumber,
-                            "phoneNumber"
-                          )
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            Phone Number : {profileData.phoneNumber}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(profileData.email, "email")
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            Email : {profileData.email}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
+                  )} */}
                   </View>
-                  <View style={styles.divider} />
 
-                  {/* Church-1 Personal Info */}
-                  <View className="gap-3">
-                    <View
-                      style={[
-                        styles.sectionMargin,
-                        styles.churchHeaderContainer,
-                      ]}
-                    >
-                      <Text style={styles.whiteText}>
-                        Current Church -1 Information
-                      </Text>
-                      {isEditMode && !profileData.church2 && (
-                        <TouchableOpacity
-                          onPress={handleAddChurch}
-                          style={styles.addChurchButton}
-                        >
-                          <Text style={styles.addChurchText}>Add Church</Text>
-                          <Image
-                            source={icons.addIcon}
-                            style={styles.addIcon}
-                          />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    <View style={styles.infoBox}>
-                      {isEditMode ? (
-                        renderEditableText(
-                          profileData.church1.name,
-                          "name",
-                          "church1",
-                          "name"
-                        )
-                      ) : (
-                        <Text style={styles.whiteText}>
-                          Church Name : {profileData.church1.name}
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.rowContainer}>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(
-                            profileData.church1.phone,
-                            "phone",
-                            "church1",
-                            "phone"
-                          )
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            Church Phone : {profileData.church1.phone}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(
-                            profileData.church1.website,
-                            "website",
-                            "church1",
-                            "website"
-                          )
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            Church Website : {profileData.church1.website}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    <View style={styles.infoBox}>
-                      {isEditMode ? (
-                        renderEditableText(
-                          profileData.church1.address,
-                          "address",
-                          "church1",
-                          "address"
-                        )
-                      ) : (
-                        <Text style={styles.whiteText}>
-                          Church Address : {profileData.church1.address}
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.rowContainer}>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(
-                            profileData.church1.city,
-                            "city",
-                            "church1",
-                            "city"
-                          )
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            City : {profileData.church1.city}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(
-                            profileData.church1.state,
-                            "state",
-                            "church1",
-                            "state"
-                          )
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            State : {profileData.church1.state}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    <View style={styles.rowContainer}>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(
-                            profileData.church1.zipCode,
-                            "zipCode",
-                            "church1",
-                            "zipCode"
-                          )
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            Zip Code : {profileData.church1.zipCode}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(
-                            profileData.church1.country,
-                            "country",
-                            "church1",
-                            "country"
-                          )
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            Country : {profileData.church1.country}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                  </View>
-                  <View style={styles.divider} />
-
-                  {/* church 2 Information */}
-                  {profileData.church2 && (
-                    <View className="gap-3">
-                      <View
-                        style={[
-                          styles.sectionMargin,
-                          styles.churchHeaderContainer,
-                        ]}
-                      >
-                        <Text style={styles.whiteText}>
-                          Current Church -2 Information
-                        </Text>
-                        {isEditMode && (
-                          <TouchableOpacity
-                            onPress={handleRemoveChurch2}
-                            style={styles.removeChurchButton}
-                          >
-                            <Text style={styles.removeChurchText}>
-                              Remove Church
-                            </Text>
-                            <Image
-                              source={icons.deleteIcon}
-                              style={styles.deleteIcon}
-                            />
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(
-                            profileData.church2?.name || "",
-                            "name",
-                            "church2",
-                            "name"
-                          )
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            Church Name : {profileData.church2?.name}
-                          </Text>
-                        )}
-                      </View>
+                  {/* Detailed Personal Info */}
+                  <View style={styles.detailedContainer}>
+                    <View className="gap-6 mt-2">
+                      <Text style={styles.whiteText}>Personal Information</Text>
                       <View style={styles.rowContainer}>
-                        <View style={styles.infoBox}>
-                          {isEditMode ? (
-                            renderEditableText(
-                              profileData.church2?.phone || "",
-                              "phone",
-                              "church2",
-                              "phone"
-                            )
-                          ) : (
-                            <Text style={styles.whiteText}>
-                              Church Phone : {profileData.church2?.phone}
-                            </Text>
-                          )}
-                        </View>
-                        <View style={styles.infoBox}>
-                          {isEditMode ? (
-                            renderEditableText(
-                              profileData.church2?.website || "",
-                              "website",
-                              "church2",
-                              "website"
-                            )
-                          ) : (
-                            <Text style={styles.whiteText}>
-                              Church Website : {profileData.church2?.website}
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                      <View style={styles.infoBox}>
-                        {isEditMode ? (
-                          renderEditableText(
-                            profileData.church2?.address || "",
-                            "address",
-                            "church2",
-                            "address"
-                          )
-                        ) : (
-                          <Text style={styles.whiteText}>
-                            Church Address : {profileData.church2?.address}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={styles.rowContainer}>
-                        <View style={styles.infoBox}>
-                          {isEditMode ? (
-                            renderEditableText(
-                              profileData.church2?.city || "",
-                              "city",
-                              "church2",
-                              "city"
-                            )
-                          ) : (
-                            <Text style={styles.whiteText}>
-                              City : {profileData.church2?.city}
-                            </Text>
-                          )}
-                        </View>
-                        <View style={styles.infoBox}>
-                          {isEditMode ? (
-                            renderEditableText(
-                              profileData.church2?.state || "",
-                              "state",
-                              "church2",
-                              "state"
-                            )
-                          ) : (
-                            <Text style={styles.whiteText}>
-                              State : {profileData.church2?.state}
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                      <View style={styles.rowContainer}>
-                        <View style={styles.infoBox}>
-                          {isEditMode ? (
-                            renderEditableText(
-                              profileData.church2?.zipCode || "",
-                              "zipCode",
-                              "church2",
-                              "zipCode"
-                            )
-                          ) : (
-                            <Text style={styles.whiteText}>
-                              Zip Code : {profileData.church2?.zipCode}
-                            </Text>
-                          )}
-                        </View>
-                        <View style={styles.infoBox}>
-                          {isEditMode ? (
-                            renderEditableText(
-                              profileData.church2?.country || "",
-                              "country",
-                              "church2",
-                              "country"
-                            )
-                          ) : (
-                            <Text style={styles.whiteText}>
-                              Country : {profileData.church2?.country}
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                    </View>
-                  )}
-
-                  <View style={styles.divider} />
-                  {/* Other Information */}
-                  <View style={styles.sectionMargin}>
-                    <Text style={styles.whiteText}>Other Information</Text>
-                  </View>
-
-                  {/* Title */}
-                  <View style={styles.infoBox}>
-                    {isEditMode ? (
-                      <CustomDropdown
-                        selectedValue={profileData.title}
-                        setSelectedValue={(val) =>
-                          updateProfileData("title", val || "")
-                        }
-                        items={titleOptions}
-                        placeholder="Select Title"
-                        containerStyle={styles.dropdownContainer}
-                      />
-                    ) : (
-                      <Text style={styles.whiteText}>
-                        Title : {profileData.title}
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Years in Ministry and Conference */}
-                  <View style={styles.rowContainer}>
-                    <View style={styles.infoBox}>
-                      {isEditMode ? (
-                        renderEditableText(
-                          profileData.yearsInMinistry,
-                          "yearsInMinistry"
-                        )
-                      ) : (
-                        <Text style={styles.whiteText}>
-                          Years in Ministry : {profileData.yearsInMinistry}
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.infoBox}>
-                      {isEditMode ? (
-                        <CustomDropdown
-                          selectedValue={profileData.conference}
-                          setSelectedValue={(val) =>
-                            updateProfileData("conference", val || "")
+                        <TextInputField
+                          label="First Name"
+                          value={profileData.firstName}
+                          editable={isEditMode}
+                          onChangeText={(text) =>
+                            handleInputChange("firstName", text)
                           }
-                          items={conferenceOptions}
-                          placeholder="Select Conference"
-                          containerStyle={styles.dropdownContainer}
                         />
-                      ) : (
+                        <TextInputField
+                          label="Last Name"
+                          value={profileData.lastName}
+                          editable={isEditMode}
+                          onChangeText={(text) =>
+                            handleInputChange("lastName", text)
+                          }
+                        />
+                      </View>
+                      <View style={styles.rowContainer}>
+                        <TextInputField
+                          label="Phone Number"
+                          value={profileData.phoneNumber}
+                          editable={isEditMode}
+                          onChangeText={(text) =>
+                            handleInputChange("phoneNumber", text)
+                          }
+                        />
+                        <TextInputField
+                          label="Email"
+                          value={profileData.email}
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.divider} />
+
+                    {/* Church-1 Personal Info */}
+                    <View className="flex-1 gap-3">
+                      <View className="flex-row items-center justify-between">
                         <Text style={styles.whiteText}>
-                          Conference : {profileData.conference}
+                          Current Church -1 Information
                         </Text>
-                      )}
+                        {!isEditMode && (
+                          <Button
+                            title="Add Church"
+                            textStyle={{
+                              fontSize: 12,
+                              color: "white",
+                              fontWeight: 500,
+                            }}
+                            style={{
+                              maxWidth: 120,
+                              borderRadius: 50,
+                            }}
+                            onPress={() => {
+                              {
+                              }
+                            }}
+                            type={"custom"}
+                          />
+                        )}
+                      </View>
+
+                      <View className="gap-6 mt-4">
+                        <View>
+                          <TextInputField
+                            label="Church Name"
+                            value={profileData.church1.name}
+                            editable={isEditMode}
+                            onChangeText={(text) =>
+                              handleInputChange(
+                                "church1",
+                                text,
+                                "church1",
+                                "name"
+                              )
+                            }
+                          />
+                        </View>
+                        <View style={styles.rowContainer} className="">
+                          <TextInputField
+                            label="Church Phone"
+                            value={profileData.church1.phone}
+                            editable={isEditMode}
+                            onChangeText={(text) =>
+                              handleInputChange(
+                                "church1",
+                                text,
+                                "church1",
+                                "phone"
+                              )
+                            }
+                          />
+                          <TextInputField
+                            label="Church Website"
+                            value={profileData.church1.website}
+                            editable={isEditMode}
+                            onChangeText={(text) =>
+                              handleInputChange(
+                                "church1",
+                                text,
+                                "church1",
+                                "website"
+                              )
+                            }
+                          />
+                        </View>
+                        <View>
+                          <TextInputField
+                            label="Church Address"
+                            value={profileData.church1.address}
+                            editable={isEditMode}
+                            onChangeText={(text) =>
+                              handleInputChange(
+                                "church1",
+                                text,
+                                "church1",
+                                "address"
+                              )
+                            }
+                          />
+                        </View>
+                        <View style={styles.rowContainer}>
+                          <TextInputField
+                            label="City"
+                            value={profileData.church1.city}
+                            editable={isEditMode}
+                            onChangeText={(text) =>
+                              handleInputChange(
+                                "church1",
+                                text,
+                                "church1",
+                                "city"
+                              )
+                            }
+                          />
+                          <TextInputField
+                            label="State"
+                            value={profileData.church1.state}
+                            editable={isEditMode}
+                            onChangeText={(text) =>
+                              handleInputChange(
+                                "church1",
+                                text,
+                                "church1",
+                                "state"
+                              )
+                            }
+                          />
+                        </View>
+                        <View style={styles.rowContainer}>
+                          <TextInputField
+                            label="Zip Code"
+                            value={profileData.church1.zipCode}
+                            editable={isEditMode}
+                            onChangeText={(text) =>
+                              handleInputChange(
+                                "church1",
+                                text,
+                                "church1",
+                                "zipCode"
+                              )
+                            }
+                          />
+                          <TextInputField
+                            label="Country"
+                            value={profileData.church1.country}
+                            editable={isEditMode}
+                            onChangeText={(text) =>
+                              handleInputChange(
+                                "church1",
+                                text,
+                                "church1",
+                                "country"
+                              )
+                            }
+                          />
+                        </View>
+                      </View>
+                    </View>
+                    <View style={styles.divider} />
+
+                    {/* church 2 Information */}
+                    {profileData.church2 && (
+                      <View className="gap-3">
+                        <View className="flex-row justify-between items-center">
+                          <Text style={styles.whiteText}>
+                            Current Church -2 Information
+                          </Text>
+                          {!isEditMode && (
+                            <Button
+                              title="Remove Church"
+                              textStyle={{
+                                fontSize: 12,
+                                color: "white",
+                                fontWeight: 500,
+                              }}
+                              style={{
+                                maxWidth: 120,
+                                borderRadius: 50,
+                              }}
+                              onPress={() => {
+                                {
+                                }
+                              }}
+                              type={"custom"}
+                            />
+                          )}
+                        </View>
+                        <View className="gap-6 mt-4">
+                          <View>
+                            <TextInputField
+                              label="Church Name"
+                              value={profileData.church2.name}
+                            />
+                          </View>
+                          <View style={styles.rowContainer}>
+                            <TextInputField
+                              label="Church Phone"
+                              value={profileData.church2.phone}
+                            />
+                            <TextInputField
+                              label="Church Website"
+                              value={profileData.church2.website}
+                            />
+                          </View>
+                          <View>
+                            <TextInputField
+                              label="Church Address"
+                              value={profileData.church2.address}
+                            />
+                          </View>
+                          <View style={styles.rowContainer}>
+                            <TextInputField
+                              label="City"
+                              value={profileData.church2.city}
+                            />
+                            <TextInputField
+                              label="State"
+                              value={profileData.church2.state}
+                            />
+                          </View>
+                          <View style={styles.rowContainer}>
+                            <TextInputField
+                              label="Zip Code"
+                              value={profileData.church2.zipCode}
+                            />
+                            <TextInputField
+                              label="Country"
+                              value={profileData.church2.country}
+                            />
+                          </View>
+                        </View>
+                      </View>
+                    )}
+
+                    <View style={styles.divider} />
+                    {/* Other Information */}
+                    <View style={styles.sectionMargin}>
+                      <Text style={styles.whiteText}>Other Information</Text>
+                    </View>
+
+                    {/* Title */}
+                    <View className="gap-6">
+                      <View>
+                        <DropDrawer
+                          selectedValues={selectedInterests}
+                          setSelectedValues={setSelectedInterests}
+                          items={titleOptions}
+                          placeholder="Select Title"
+                          useCircleIndicator={true}
+                          editable={!isEditMode}
+                        />
+                      </View>
+                      <View style={styles.rowContainer}>
+                        <TextInputField
+                          label="Years in Ministry"
+                          value={profileData.yearsInMinistry}
+                          onChangeText={(text) =>
+                            handleInputChange("yearsInMinistry", text)
+                          }
+                          editable={isEditMode}
+                        />
+                        <TextInputField
+                          label="Conference"
+                          value={profileData.conference}
+                          onChangeText={(text) =>
+                            handleInputChange("conference", text)
+                          }
+                          editable={isEditMode}
+                        />
+                      </View>
+                      <View>
+                        <TextInputField
+                          label="Current Community Service Projects "
+                          value={profileData.communityServiceProjects}
+                          onChangeText={(text) =>
+                            handleInputChange("communityServiceProjects", text)
+                          }
+                          editable={isEditMode}
+                        />
+                      </View>
+                      <View>
+                        {profileData.interests && (
+                          <Text className="text-white text-[13px] pl-8">
+                            interests
+                          </Text>
+                        )}
+                        <TextArea
+                          label="Interest"
+                          value={profileData.interests}
+                          onChangeText={(text) =>
+                            handleInputChange("interests", text)
+                          }
+                          editable={isEditMode}
+                        />
+                      </View>
+                      <View>
+                        {profileData.comments && (
+                          <Text className="text-white text-[13px] pl-8">
+                            Comments
+                          </Text>
+                        )}
+                        <TextArea
+                          label="Comments"
+                          value={profileData.comments}
+                          onChangeText={(text) =>
+                            handleInputChange("comments", text)
+                          }
+                          editable={isEditMode}
+                        />
+                      </View>
                     </View>
                   </View>
-
-                  {/* Current Community Service Projects */}
-                  <View style={styles.infoBox}>
-                    {isEditMode ? (
-                      renderEditableText(
-                        profileData.communityServiceProjects,
-                        "communityServiceProjects"
-                      )
-                    ) : (
-                      <Text style={styles.whiteText}>
-                        Current Community Service Projects :{" "}
-                        {profileData.communityServiceProjects}
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Interests */}
-                  <View style={styles.interestsContainer}>
-                    <Text style={styles.whiteText}>Interests :</Text>
-                    {renderEditableText(
-                      profileData.interests,
-                      "interests",
-                      undefined,
-                      undefined,
-                      true
-                    )}
-                  </View>
-
-                  {/* Comments */}
-                  <View style={styles.commentsContainer}>
-                    <Text style={styles.whiteText}>Comments :</Text>
-                    {renderEditableText(
-                      profileData.comments,
-                      "comments",
-                      undefined,
-                      undefined,
-                      true
-                    )}
-                  </View>
                 </View>
-              </View>
-            </ScrollView>
-
-            {/* Save/Cancel Buttons */}
-            {isEditMode && (
-              <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity
-                  onPress={handleCancelEdit}
-                  style={styles.cancelButton}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleSavePress}
-                  style={styles.saveButton}
-                >
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
+                {!isEditMode && (
+                  <View className="flex-row justify-center items-center gap-5 my-10">
+                    <Button
+                      title="Cancel"
+                      textStyle={{
+                        fontSize: 12,
+                        color: "#001FC1",
+                        fontWeight: 500,
+                      }}
+                      style={{
+                        borderRadius: 10,
+                        backgroundColor: "white",
+                        width: 87,
+                      }}
+                      onPress={() => {}}
+                      type={"custom"}
+                    />
+                    <Button
+                      title="Save"
+                      textStyle={{
+                        fontSize: 12,
+                        color: "white",
+                        fontWeight: 500,
+                      }}
+                      style={{
+                        borderRadius: 10,
+                        width: 87,
+                      }}
+                      onPress={() => {}}
+                      type={"custom"}
+                    />
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          </KeyboardAwareScrollView>
         </SafeAreaView>
 
         {/* Modals */}
@@ -1017,6 +957,7 @@ const styles = StyleSheet.create({
   detailedContainer: {
     borderRadius: 8,
     padding: 8,
+    paddingBottom: 40,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.45)",
     marginTop: 16,
