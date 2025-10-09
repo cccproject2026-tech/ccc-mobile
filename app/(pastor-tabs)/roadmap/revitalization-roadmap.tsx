@@ -1,11 +1,10 @@
-import { RevitalizationCard } from "@/components/atom/cards";
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Tab } from "@/components/atom/tab";
-import { Header } from "@/components/build-components";
+import { Header, RoadmapCard } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
+import { router, Stack } from "expo-router";
 import React from "react";
 import {
   ScrollView,
@@ -30,10 +29,11 @@ export default function RevitalizationScreen() {
       read: false,
       sessionDate: "10 / 11 / 24",
       status: "Not Started",
+      showBothDate:true,
       completionDate: "20 Oct 2024",
       taskStatus: {
         notStarted: true,
-        started: false,
+        started: true,
         inProgress: 0,
         toComplete: 0,
         completed: false,
@@ -170,12 +170,13 @@ export default function RevitalizationScreen() {
             >
               {filteredRoadMaps.map((e, i) => (
                 <React.Fragment key={i}>
-                  <RevitalizationCard data={e} navigation={router} />
+                  <RoadmapCard data={e} navigation={router} />
                   {i < filteredRoadMaps.length - 1 && (
                     <View className="h-[0.5px] bg-white/30 my-4" />
                   )}
                 </React.Fragment>
               ))}
+              
             </View>
           </ScrollView>
         </SafeAreaView>

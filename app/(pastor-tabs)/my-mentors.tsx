@@ -1,4 +1,5 @@
 import { DetailedMentorCard, MentorCard } from "@/components/atom/cards";
+import { MentorDetailedCard, MentorShortCard } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
@@ -219,14 +220,14 @@ export default function MyMentorsScreen() {
                         }
                       >
                         {listToggle ? (
-                          <DetailedMentorCard
+                          <MentorDetailedCard
                             data={mentor}
                             key={index.toString()}
                             navigation={router}
                             onMenuPress={() => handleMenuPress(mentor)}
                           />
                         ) : (
-                          <MentorCard
+                          <MentorShortCard
                             data={mentor}
                             dataKey={index.toString()}
                             navigation={router}
