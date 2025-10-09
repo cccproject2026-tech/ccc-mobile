@@ -1,5 +1,5 @@
 import { Button } from "@/components/atom/buttons";
-import { VideoCard } from "@/components/atom/cards";
+import { VideoCard } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";

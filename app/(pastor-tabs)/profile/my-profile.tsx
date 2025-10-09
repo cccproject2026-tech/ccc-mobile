@@ -617,42 +617,114 @@ export default function ProfileScreen() {
                             <TextInputField
                               label="Church Name"
                               value={profileData.church2.name}
+                              editable={isEditMode}
+                              onChangeText={(text) =>
+                                handleInputChange(
+                                  "church1",
+                                  text,
+                                  "church1",
+                                  "address"
+                                )
+                              }
                             />
                           </View>
                           <View style={styles.rowContainer}>
                             <TextInputField
                               label="Church Phone"
                               value={profileData.church2.phone}
+                              editable={isEditMode}
+                              onChangeText={(text) =>
+                                handleInputChange(
+                                  "church1",
+                                  text,
+                                  "church1",
+                                  "address"
+                                )
+                              }
                             />
                             <TextInputField
                               label="Church Website"
                               value={profileData.church2.website}
+                              editable={isEditMode}
+                              onChangeText={(text) =>
+                                handleInputChange(
+                                  "church1",
+                                  text,
+                                  "church1",
+                                  "address"
+                                )
+                              }
                             />
                           </View>
                           <View>
                             <TextInputField
                               label="Church Address"
                               value={profileData.church2.address}
+                              editable={isEditMode}
+                              onChangeText={(text) =>
+                                handleInputChange(
+                                  "church1",
+                                  text,
+                                  "church1",
+                                  "address"
+                                )
+                              }
                             />
                           </View>
                           <View style={styles.rowContainer}>
                             <TextInputField
                               label="City"
                               value={profileData.church2.city}
+                              editable={isEditMode}
+                              onChangeText={(text) =>
+                                handleInputChange(
+                                  "church1",
+                                  text,
+                                  "church1",
+                                  "address"
+                                )
+                              }
                             />
                             <TextInputField
                               label="State"
                               value={profileData.church2.state}
+                              editable={isEditMode}
+                              onChangeText={(text) =>
+                                handleInputChange(
+                                  "church1",
+                                  text,
+                                  "church1",
+                                  "address"
+                                )
+                              }
                             />
                           </View>
                           <View style={styles.rowContainer}>
                             <TextInputField
                               label="Zip Code"
                               value={profileData.church2.zipCode}
+                              editable={isEditMode}
+                              onChangeText={(text) =>
+                                handleInputChange(
+                                  "church1",
+                                  text,
+                                  "church1",
+                                  "address"
+                                )
+                              }
                             />
                             <TextInputField
                               label="Country"
                               value={profileData.church2.country}
+                              editable={isEditMode}
+                              onChangeText={(text) =>
+                                handleInputChange(
+                                  "church1",
+                                  text,
+                                  "church1",
+                                  "address"
+                                )
+                              }
                             />
                           </View>
                         </View>
