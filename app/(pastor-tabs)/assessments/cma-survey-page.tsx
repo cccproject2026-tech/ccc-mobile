@@ -1,9 +1,9 @@
 import { Button } from "@/components/atom/buttons";
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import {
-  AssessmentCard,
+  AssessmentMainCard,
   GuidelinesPoints,
-  Header,
+  Header
 } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
@@ -78,7 +78,7 @@ export default function CmaSurvey() {
             </ScrollView>
 
             {/* Content Section */}
-            <AssessmentCard
+            <AssessmentMainCard
               type={dataItems?.type}
               dueDate={dataItems?.completionDate}
               dueDateClass="text-yellow-500"

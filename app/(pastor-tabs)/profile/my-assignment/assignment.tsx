@@ -1,13 +1,12 @@
-import { RevitalizationCard } from "@/components/atom/cards";
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Tab } from "@/components/atom/tab";
-import { Header } from "@/components/build-components";
+import { RoadmapCard as AssignmentCard, Header } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Assignment() {
@@ -117,7 +116,7 @@ export default function Assignment() {
         style={{ flex: 1 }}
       >
         <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={styles.scrollContainer}>
+        <SafeAreaView className="flex-1">
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
@@ -164,7 +163,7 @@ export default function Assignment() {
             >
               {filteredRoadMaps.map((e, i) => (
                 <React.Fragment key={i}>
-                  <RevitalizationCard data={e} navigation={router} />
+                  <AssignmentCard data={e} navigation={router} />
                   {i < filteredRoadMaps.length - 1 && (
                     <View className="h-[0.5px] bg-white/30 my-4" />
                   )}
@@ -184,17 +183,3 @@ export default function Assignment() {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-  },
-  searchContainer: {
-    marginHorizontal: 16,
-    marginTop: 16,
-  },
-  separator: {
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    marginVertical: 18,
-  },
-});
