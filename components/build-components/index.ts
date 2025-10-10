@@ -1,4 +1,3 @@
-export { default as AssessmentCard } from "./assessment-card";
 export { default as DatePicker } from "./date-picker";
 export { default as DropDrawer } from "./drop-drawer";
 export { default as GuidelinesPoints } from "./guidelines-card";
@@ -11,6 +10,8 @@ export {default as Button} from "./button"
 export {default as ScreenLayout} from "./screen-layout"
 
 // Cards
+export { default as AssessmentCard } from "./assessment-card";
+export { default as AssessmentMainCard } from "./assessment-main-card";
 export { default as CommentCard } from "./cards/comment-card";
 export { default as MentorDetailedCard } from "./cards/mentor-detailed-card";
 export { default as MentorShortCard } from "./cards/mentor-short-card";

@@ -69,8 +69,8 @@ export default function RevitalizationCard({
       }}
       className="w-full bg-[#194F82] rounded-[10px] p-4 my-2.5 border border-white/45"
     >
-      <View className="w-full flex-row items-center">
-        <View className="w-[110px] h-full items-center ">
+      <View className="w-full flex-row">
+        <View className="w-[110px] h-full items-center">
           <View className="relative">
             <Image
               source={data?.image}
@@ -91,7 +91,7 @@ export default function RevitalizationCard({
           </View>
         </View>
 
-        <View className="ml-2.5 flex-1 gap-0.5 pt-1">
+        <View className="ml-2.5 flex-1 gap-0.5">
           <View>
             <Text
               className="text-white text-base font-semibold"
