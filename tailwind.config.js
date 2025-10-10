@@ -162,6 +162,8 @@ module.exports = {
           info: 'rgb(var(--color-background-info)/<alpha-value>)',
           light: '#FBFBFB',
           dark: '#181719',
+          primary: "#1E366F",
+          blue_shade: "#001FC1"
         },
         indicator: {
           primary: 'rgb(var(--color-indicator-primary)/<alpha-value>)',
@@ -196,6 +198,8 @@ module.exports = {
         'soft-2': '0px 0px 20px rgba(38, 38, 38, 0.2)',
         'soft-3': '0px 0px 30px rgba(38, 38, 38, 0.1)',
         'soft-4': '0px 0px 40px rgba(38, 38, 38, 0.1)',
+        'button': '0px 4px 4px 0px #00000040',
+        'button-text': '0px 4px 4px 0px #00000040'
       },
     },
   },

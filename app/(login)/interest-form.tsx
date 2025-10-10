@@ -1,14 +1,8 @@
-import { Button } from "@/components/atom/buttons";
-import { DropDrawer, TextArea } from "@/components/build-components";
+import { Button, DropDrawer, ScreenLayout, TextArea } from "@/components/build-components";
 import InputField from "@/components/build-components/input-field";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, Text, View } from "react-native";
 
 export default function InterestForm() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
@@ -20,7 +14,7 @@ export default function InterestForm() {
     { label: "Brazil", value: "brazil" },
   ];
 
-   const TitleItems = [
+  const TitleItems = [
     { label: "Pastor", value: "pastor" },
     { label: "Layleader", value: "layleader" },
     { label: "Seminarian", value: "seminarian" },
@@ -45,157 +39,118 @@ export default function InterestForm() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
+      <ScreenLayout
+        navigationTagName="Interest Form"
+        showNameTag={true} showDrawer={false}
+        showNotificationIcon={false}
       >
-        <SafeAreaView style={{ flex: 1 }}>
-          <KeyboardAwareScrollView
-            enableOnAndroid
-            extraScrollHeight={100}
-            keyboardOpeningTime={0}
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: 150,
-            }}
-            showsVerticalScrollIndicator={false}
-          >
-            <PastorNavigationHeader
-              showNameTag
-              showDrawer={false}
-              showNotificationIcon={false}
-              tagName="Interest Form"
+        <View className="flex gap-5 pt-5">
+          <Text className="text-base font-semibold leading-[22px] text-white">
+            Personal Information
+          </Text>
+          <View className="flex-row justify-center items-center gap-[10px]">
+            <InputField keyboardType="default" label="First Name" />
+            <InputField keyboardType="default" label="Last Name" />
+          </View>
+          <View className="flex-row justify-center items-center gap-[10px]">
+            <InputField keyboardType="phone-pad" label="Phone Number" />
+            <InputField keyboardType="email-address" label="Email" />
+          </View>
+        </View>
+
+        <View
+          className="my-7 max-w-[95%] mx-4"
+          style={styles.separator}
+        />
+
+        <View className="flex gap-5">
+          <Text className="text-base font-semibold leading-[22px] text-white">
+            Current Church Information
+          </Text>
+          <InputField keyboardType="default" label="Church Name" />
+          <View className="flex-row justify-center items-center gap-[10px]">
+            <InputField keyboardType="phone-pad" label="Church Phone" />
+            <InputField
+              keyboardType="email-address"
+              label="Church Website"
             />
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{
-                flexGrow: 1,
-                paddingBottom: 100,
-                paddingHorizontal: 25,
-              }}
-            >
-              <View className="flex gap-5 pt-5">
-                <Text className="text-base font-semibold leading-[22px] text-white">
-                  Personal Information
-                </Text>
-                <View className="flex-row justify-center items-center gap-[10px]">
-                  <InputField keyboardType="default" label="First Name" />
-                  <InputField keyboardType="default" label="Last Name" />
-                </View>
-                <View className="flex-row justify-center items-center gap-[10px]">
-                  <InputField keyboardType="phone-pad" label="Phone Number" />
-                  <InputField keyboardType="email-address" label="Email" />
-                </View>
-              </View>
-
-              <View
-                className="my-7 max-w-[95%] mx-4"
-                style={styles.separator}
+          </View>
+          <InputField keyboardType="default" label="Church Address" />
+          <View className="flex-row justify-center items-center gap-[10px]">
+            <InputField keyboardType="default" label="City" />
+            <InputField keyboardType="default" label="State" />
+          </View>
+          <View className="flex-row justify-center items-start gap-3 min-h-[34px] px-1">
+            <View className="w-1/2" style={{ height: 34 }}>
+              <InputField keyboardType="default" label="Zip Code" />
+            </View>
+            <View className="w-1/2">
+              <DropDrawer
+                selectedValues={selectedInterests}
+                setSelectedValues={setSelectedInterests}
+                items={CountryItems}
+                placeholder="Country"
+                useCircleIndicator={true}
               />
+            </View>
+          </View>
+          <Button
+            wrapperClass="flex items-end"
+            variant="primary"
+          >
+            Add more Church
+          </Button>
+        </View>
 
-              <View className="flex gap-5">
-                <Text className="text-base font-semibold leading-[22px] text-white">
-                  Current Church Information
-                </Text>
-                <InputField keyboardType="default" label="Church Name" />
-                <View className="flex-row justify-center items-center gap-[10px]">
-                  <InputField keyboardType="phone-pad" label="Church Phone" />
-                  <InputField
-                    keyboardType="email-address"
-                    label="Church Website"
-                  />
-                </View>
-                <InputField keyboardType="default" label="Church Address" />
-                <View className="flex-row justify-center items-center gap-[10px]">
-                  <InputField keyboardType="default" label="City" />
-                  <InputField keyboardType="default" label="State" />
-                </View>
-                <View className="flex-row justify-center items-start gap-3 min-h-[34px] px-1">
-                  <View className="w-1/2" style={{ height: 34 }}>
-                    <InputField keyboardType="default" label="Zip Code" />
-                  </View>
-                  <View className="w-1/2">
-                    <DropDrawer
-                      selectedValues={selectedInterests}
-                      setSelectedValues={setSelectedInterests}
-                      items={CountryItems}
-                      placeholder="Country"
-                      useCircleIndicator={true}
-                    />
-                  </View>
-                </View>
-                <Button
-                  title="Add more Church"
-                  onPress={() => {
-                    router.push("/(login)/interest-form");
-                  }}
-                  style={{
-                    maxWidth: "40%",
-                    marginLeft: "auto",
-                    width: "100%",
-                  }}
-                  type={"custom"}
-                />
-              </View>
+        <View
+          className="my-7 max-w-[95%] mx-4"
+          style={styles.separator}
+        />
 
-              <View
-                className="my-7 max-w-[95%] mx-4"
-                style={styles.separator}
-              />
-
-              <View className="flex gap-5">
-                <Text className="text-base font-semibold leading-[22px] text-white">
-                  Other Information
-                </Text>
-                <View className="flex-1">
-                  <DropDrawer
-                    selectedValues={selectedInterests}
-                    setSelectedValues={setSelectedInterests}
-                    items={TitleItems}
-                    placeholder="Title"
-                  />
-                </View>
-                <View className="flex-row justify-center items-center gap-[10px]">
-                  <InputField
-                    keyboardType="phone-pad"
-                    label="Years in Ministry"
-                  />
-                  <InputField keyboardType="email-address" label="Conference" />
-                </View>
-                <InputField
-                  keyboardType="default"
-                  label="Current Community Service Projects"
-                />
-                <DropDrawer
-                  selectedValues={selectedInterests}
-                  setSelectedValues={setSelectedInterests}
-                  items={interestItems}
-                  placeholder="Interests"
-                />
-                <TextArea />
-
-                <Button
-                  title="Submit"
-                  onPress={() => {
-                    router.push({
-                      pathname: "/(login)",
-                      params: { flag: "interest-form" },
-                    });
-                  }}
-                  style={{
-                    maxWidth: "50%",
-                    marginHorizontal: "auto",
-                    width: "100%",
-                  }}
-                  type={"cancel"}
-                />
-              </View>
-            </ScrollView>
-          </KeyboardAwareScrollView>
-        </SafeAreaView>
-        {/* Modals */}
-        {/* <ConfirmationModal
+        <View className="flex gap-5">
+          <Text className="text-base font-semibold leading-[22px] text-white">
+            Other Information
+          </Text>
+          <View className="flex-1">
+            <DropDrawer
+              selectedValues={selectedInterests}
+              setSelectedValues={setSelectedInterests}
+              items={TitleItems}
+              placeholder="Title"
+            />
+          </View>
+          <View className="flex-row justify-center items-center gap-[10px]">
+            <InputField
+              keyboardType="phone-pad"
+              label="Years in Ministry"
+            />
+            <InputField keyboardType="email-address" label="Conference" />
+          </View>
+          <InputField
+            keyboardType="default"
+            label="Current Community Service Projects"
+          />
+          <DropDrawer
+            selectedValues={selectedInterests}
+            setSelectedValues={setSelectedInterests}
+            items={interestItems}
+            placeholder="Interests"
+          />
+          <TextArea />
+          <Button
+            onPress={() => router.push({
+              pathname: "/(login)",
+              params: { flag: "interest-form" }
+            })}
+            buttonClass="!max-w-[200px] !h-11"
+            variant="secondary"
+          >
+            Submit
+          </Button>
+        </View>
+      </ScreenLayout>
+      {/* Modals */}
+      {/* <ConfirmationModal
           isVisible={showConfirmation}
           onClose={() => setShowConfirmation(false)}
           onConfirm={handleConfirmSave}
@@ -205,7 +160,6 @@ export default function InterestForm() {
           isVisible={showSuccessToast}
           onClose={() => setShowSuccessToast(false)}
         /> */}
-      </LinearGradient>
     </>
   );
 }
