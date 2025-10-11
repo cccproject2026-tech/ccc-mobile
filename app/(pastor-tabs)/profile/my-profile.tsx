@@ -61,7 +61,7 @@ interface ProfileData {
 }
 
 export default function ProfileScreen() {
-  const [isEditMode, setIsEditMode] = useState<boolean>(true);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [hasChurch2, setHasChurch2] = useState(true);
@@ -145,7 +145,7 @@ export default function ProfileScreen() {
   ];
 
   const handleEditPress = () => {
-    setIsEditMode(false);
+    setIsEditMode(true);
   };
 
   const handleCancelEdit = () => {
@@ -329,7 +329,7 @@ export default function ProfileScreen() {
                       style={styles.profileImage}
                       resizeMode="cover"
                     />
-                    {!isEditMode && (
+                    {isEditMode && (
                       <TouchableOpacity
                         style={styles.profileEditIcon}
                         onPress={handleImagePicker}
@@ -445,7 +445,7 @@ export default function ProfileScreen() {
                         <Text style={styles.whiteText}>
                           Current Church -1 Information
                         </Text>
-                        {!isEditMode && (
+                        {isEditMode && (
                           <Button
                             title="Add Church"
                             textStyle={{
@@ -592,7 +592,7 @@ export default function ProfileScreen() {
                           <Text style={styles.whiteText}>
                             Current Church -2 Information
                           </Text>
-                          {!isEditMode && (
+                          {isEditMode && (
                             <Button
                               title="Remove Church"
                               textStyle={{
@@ -746,7 +746,7 @@ export default function ProfileScreen() {
                           items={titleOptions}
                           placeholder="Select Title"
                           useCircleIndicator={true}
-                          editable={!isEditMode}
+                          editable={isEditMode}
                         />
                       </View>
                       <View style={styles.rowContainer}>
@@ -810,7 +810,7 @@ export default function ProfileScreen() {
                     </View>
                   </View>
                 </View>
-                {!isEditMode && (
+                {isEditMode && (
                   <View className="flex-row justify-center items-center gap-5 my-10">
                     <Button
                       title="Cancel"

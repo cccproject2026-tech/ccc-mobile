@@ -51,7 +51,7 @@ const ScreenLayout = ({
                         contentContainerStyle={{
                             flexGrow: 1,
                             paddingBottom: 26,
-                            paddingHorizontal: 25,
+                            paddingHorizontal: 16,
                         }}
                     >
                         {children}

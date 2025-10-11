@@ -63,7 +63,7 @@ export default function InputField({
           onChangeText={onChangeText}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          editable={!editable}
+          editable={editable}
           keyboardType={keyboardType}
           placeholderTextColor="rgba(255,255,255,0.5)"
         />

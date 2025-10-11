@@ -38,7 +38,7 @@ export default function TextAreaField({
           className={inputClassName}
           value={value}
           onChangeText={onChangeText}
-          editable={!editable}
+          editable={editable}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           multiline
