@@ -135,7 +135,7 @@ export default function AssessmentCard({
                 }}
               >
                 <Image
-                  source={require("../../assets/icons/threeDots.png")}
+                  source={require("../../../assets/icons/threeDots.png")}
                   style={{ width: 24, height: 24, resizeMode: "contain" }}
                 />
               </TouchableOpacity>
