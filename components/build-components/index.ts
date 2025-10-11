@@ -7,12 +7,14 @@ export { default as TextInput } from "./input-field";
 export { default as QueryForm } from "./query-form";
 export { default as QuestionFields } from "./question-fields";
 export { default as ScreenLayout } from "./screen-layout";
+export { default as Separator } from "./separator";
 export { default as TextArea } from "./text-area";
 
 // Cards
 export { default as AssessmentCard } from "./cards/assessment-card";
 export { default as AssessmentMainCard } from "./cards/assessment-main-card";
 export { default as CommentCard } from "./cards/comment-card";
+export { default as ContactInformationCard } from "./cards/contact-information-card";
 export { default as MentorDetailedCard } from "./cards/mentor-detailed-card";
 export { default as MentorShortCard } from "./cards/mentor-short-card";
 export { default as QueriesCard } from "./cards/queries-card";

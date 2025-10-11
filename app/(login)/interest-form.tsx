@@ -1,8 +1,8 @@
-import { Button, DropDrawer, ScreenLayout, TextArea } from "@/components/build-components";
+import { Button, DropDrawer, ScreenLayout, Separator, TextArea } from "@/components/build-components";
 import InputField from "@/components/build-components/input-field";
 import { router, Stack } from "expo-router";
 import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 export default function InterestForm() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
@@ -43,6 +43,7 @@ export default function InterestForm() {
         navigationTagName="Interest Form"
         showNameTag={true} showDrawer={false}
         showNotificationIcon={false}
+        enableScrollView={false}
       >
         <View className="flex gap-5 pt-5">
           <Text className="text-base font-semibold leading-[22px] text-white">
@@ -58,10 +59,7 @@ export default function InterestForm() {
           </View>
         </View>
 
-        <View
-          className="my-7 max-w-[95%] mx-4"
-          style={styles.separator}
-        />
+        <Separator/>
 
         <View className="flex gap-5">
           <Text className="text-base font-semibold leading-[22px] text-white">
@@ -102,10 +100,7 @@ export default function InterestForm() {
           </Button>
         </View>
 
-        <View
-          className="my-7 max-w-[95%] mx-4"
-          style={styles.separator}
-        />
+         <Separator/>
 
         <View className="flex gap-5">
           <Text className="text-base font-semibold leading-[22px] text-white">
@@ -163,11 +158,3 @@ export default function InterestForm() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  separator: {
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    // marginVertical: 18,
-  },
-});

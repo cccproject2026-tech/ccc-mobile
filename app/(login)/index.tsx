@@ -1,4 +1,9 @@
-import { Button, ScreenLayout, VideoCard } from "@/components/build-components";
+import {
+  Button,
+  ContactInformationCard,
+  ScreenLayout,
+  VideoCard,
+} from "@/components/build-components";
 import Separator from "@/components/build-components/separator";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { icons } from "@/constants/images";
@@ -6,49 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 
-import {
-  Image,
-  ImageSourcePropType,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
-
-
-interface ProfileData {
-  firstName: string;
-  lastName: string;
-  phoneNumber: string;
-  email: string;
-  profileSummary: string;
-  church1: {
-    name: string;
-    phone: string;
-    website: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-  church2: {
-    name: string;
-    phone: string;
-    website: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  } | null;
-  title: string;
-  yearsInMinistry: string;
-  conference: string;
-  communityServiceProjects: string;
-  interests: string;
-  comments: string;
-}
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function Login() {
   const [tabs, setTabs] = React.useState("All");
@@ -102,71 +65,15 @@ export default function Login() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <ScreenLayout showDrawer={false}>
-        {flag !== "waiting-approval" ? (
-          <View className="flex-row gap-4 items-center w-full max-w-[92%]">
-            <View
-              className={`py-2 px-3 flex gap-1 border border-white rounded-[10px] ${flag === "interest-form" ? "ml-5" : "mx-5 w-full"
-                } mt-6  bg-white/20 `}
-            >
-              <Text className="text-base font-medium leading-[22px] text-white">
-                Contact Information
-              </Text>
-              <View className="flex-row items-center">
-                <Image
-                  source={icons.phone}
-                  style={{ width: 17, height: 17 }}
-                />
-                <Text className="text-white text-[14px] leading-[22px] font-medium">
-                  {" "}
-                  : 269-471-6159
-                </Text>
-              </View>
-              <View className="flex-row items-center">
-                <Image
-                  source={icons.message}
-                  style={{ width: 17, height: 17 }}
-                />
-                <Text className="text-white text-[14px] leading-[22px] font-medium">
-                  {" "}
-                  : communitychange@andrews.edu
-                </Text>
-              </View>
-            </View>
-            <View
-              style={{
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 8, // For Android
-              }}
-            >
-              <LinearGradient
-                colors={["#5B4FB5", "#2B7AB5", "#3BADC5"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="justify-center items-center"
-              >
-                {flag === "interest-form" && (
-                  <View className="flex-row items-center  py-[7px] px-10 shadow-2xl">
-                    <Image
-                      source={icons.forward as ImageSourcePropType}
-                      style={[
-                        {
-                          width: 15,
-                          height: 15,
-                          transform: [{ scaleX: -1 }],
-                        },
-                      ]}
-                    />
-                    <Text className="text-base py-1 leading-[22px] text-white font-medium">
-                      Status
-                    </Text>
-                  </View>
-                )}
-              </LinearGradient>
-            </View>
-          </View>
+          {flag !== "waiting-approval" ? (
+          <ContactInformationCard
+            phone="269-471-6159"
+            email="communitychange@andrews.edu"
+            phoneIcon={icons.phone}
+            messageIcon={icons.message}
+            forwardIcon={icons.forward}
+            flag={flag === "interest-form" ? true : false}
+          />
         ) : (
           <LinearGradient
             colors={["#B83AF3", "#21B6E9"]}
@@ -175,7 +82,8 @@ export default function Login() {
             style={{
               borderTopLeftRadius: 8,
               borderBottomLeftRadius: 8,
-              padding: 2,
+              paddingVertical: 2,
+              paddingLeft:2,
               marginVertical: 12,
               width: 300,
               alignSelf: "flex-end",
@@ -194,10 +102,7 @@ export default function Login() {
                 alignContent: "center",
               }}
             >
-              <Image
-                source={icons.loader}
-                style={{ width: 42, height: 26 }}
-              />
+              <Image source={icons.loader} style={{ width: 42, height: 26 }} />
               <Text className="font-medium text-[16px] leading-[22px] text-white">
                 Waiting for Approval
               </Text>
@@ -304,7 +209,7 @@ export default function Login() {
           }}
           variant="secondary"
           buttonStyle={{
-            maxWidth: "95%"
+            maxWidth: "95%",
           }}
         >
           Log In
@@ -326,7 +231,7 @@ export default function Login() {
               }}
               className="rounded-[20px] border h-full border-white"
             >
-              <TouchableOpacity onPress={() => { }} activeOpacity={0.8}>
+              <TouchableOpacity onPress={()=> router.push("/(login)/password")} activeOpacity={0.8}>
                 <Text className="text-base leading-[22px] font-medium text-white py-3">
                   New User {">>"}
                 </Text>
@@ -334,11 +239,7 @@ export default function Login() {
 
               <TouchableOpacity
                 onPress={() => {
-                  if (flag === "waiting-approval") {
-                    router.push("/(login)/password");
-                  } else {
                     router.push("/(login)/approval");
-                  }
                 }}
                 activeOpacity={0.8}
               >

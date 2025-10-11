@@ -11,7 +11,7 @@ export default function VideoCard({
     <TouchableOpacity className="w-full bg-transparent rounded-[10px] py-2 px-2 my-2.5 border border-white/80 max-w-[95%] mx-auto">
       <View className="w-full flex-row items-start gap-2">
         {/* Thumbnail */}
-        <View className="w-[130px]">
+        <View className="w-[130px] my-auto">
           <Image
             source={data?.image}
             className="w-[130px] h-[90px] rounded-xl"
@@ -44,7 +44,7 @@ export default function VideoCard({
 
           <Text
             className="py-2 text-[#F4F2F2B5] text-sm font-normal"
-            numberOfLines={0}
+            numberOfLines={2}
           >
             {data?.description}
           </Text>
