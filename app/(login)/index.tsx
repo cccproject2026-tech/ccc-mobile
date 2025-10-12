@@ -210,6 +210,7 @@ export default function Login() {
           variant="secondary"
           buttonStyle={{
             maxWidth: "95%",
+            marginHorizontal:"auto"
           }}
         >
           Log In

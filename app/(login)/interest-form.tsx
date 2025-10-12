@@ -40,7 +40,7 @@ export default function InterestForm() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <ScreenLayout
-        navigationTagName="Interest Form"
+        tagName="Interest Form"
         showNameTag={true} showDrawer={false}
         showNotificationIcon={false}
         enableScrollView={false}
@@ -93,7 +93,8 @@ export default function InterestForm() {
             </View>
           </View>
           <Button
-            wrapperClass="flex items-end"
+            wrapperClass="items-end"
+            buttonClass="max-w-[146px]"
             variant="primary"
           >
             Add more Church
@@ -137,7 +138,8 @@ export default function InterestForm() {
               pathname: "/(login)",
               params: { flag: "interest-form" }
             })}
-            buttonClass="!max-w-[200px] !h-11"
+            wrapperClass="mx-auto"
+            buttonClass="!w-[200px] !w-full !h-11"
             variant="secondary"
           >
             Submit

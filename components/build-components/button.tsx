@@ -57,10 +57,10 @@ const Button = ({
 
 
     return (
-        <View className={`flex justify-center items-center w-full ${wrapperClass}`}>
+        <View className={`${wrapperClass}`}>
             <TouchableOpacity
                 onPress={onPress}
-                className={`max-w-[146px] w-full h-10 shadow-button rounded-[10px] flex justify-center items-center ${buttonClass}`}
+                className={`w-full h-10 shadow-button rounded-[10px] flex justify-center items-center ${buttonClass}`}
                 style={[{
                     backgroundColor: variantStyles.bgColor,
                     borderWidth: variantStyles.borderWidth,

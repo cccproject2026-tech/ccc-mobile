@@ -7,22 +7,24 @@ import { PastorNavigationHeader } from "../pastor/Header";
 
 interface ScreenLayoutProps {
   children: React.ReactNode;
-  navigationTagName?: string;
   showDrawer?: boolean;
   showNotificationIcon?: boolean;
   showNameTag?: boolean;
+  tagName?: string;
   enableScrollView?: boolean;
   enablePastorHeader?: boolean;
+  paddingX?: number;
 }
 
 const ScreenLayout = ({
   children,
-  navigationTagName = "",
   showDrawer = true,
   showNotificationIcon = true,
   showNameTag = false,
+  tagName = "John Ross",
   enableScrollView = true,
   enablePastorHeader = true,
+  paddingX = 16,
 }: ScreenLayoutProps) => {
   return (
     <LinearGradient
@@ -46,7 +48,7 @@ const ScreenLayout = ({
               showNameTag={showNameTag}
               showDrawer={showDrawer}
               showNotificationIcon={showNotificationIcon}
-              tagName={navigationTagName}
+              tagName={tagName}
               wrapperClass="mt-4"
             />
           )}
@@ -58,13 +60,19 @@ const ScreenLayout = ({
               contentContainerStyle={{
                 flexGrow: 1,
                 paddingBottom: 26,
-                paddingHorizontal: 16,
+                paddingHorizontal: paddingX,
               }}
             >
               {children}
             </ScrollView>
           ) : (
-            <View style={{ flex: 1, paddingHorizontal: 16, paddingBottom: 26 }}>
+            <View
+              style={{
+                flex: 1,
+                paddingHorizontal: paddingX,
+                paddingBottom: 26,
+              }}
+            >
               {children}
             </View>
           )}
