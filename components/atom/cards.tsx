@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from "react-native";
 import { icons } from "../../constants/images";
 import { UploadPDFButton } from "./buttons";
@@ -18,9 +19,11 @@ import CheckBox from "./checkBox";
 export const AppointmentCard = ({
   data,
   dataKey,
+  type,
 }: {
   data: any;
   dataKey: string | number;
+  type?: string;
 }) => {
   return (
     <View key={dataKey} style={styles.appointmentBox}>
@@ -37,9 +40,15 @@ export const AppointmentCard = ({
             {data.date} <Text style={styles.timeText}> Time </Text>
             {data.time}
           </Text>
-          <TouchableOpacity onPress={() => { }}>
-            <Ionicons name="ellipsis-vertical" size={20} color="white" />
-          </TouchableOpacity>
+          {type === "mentor" ? (
+            <TouchableOpacity>
+              <Image source={icons.forward} style={styles.iconStyle} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => {}}>
+              <Ionicons name="ellipsis-vertical" size={20} color="white" />
+            </TouchableOpacity>
+          )}
         </View>
         <View className="flex flex-row justify-between items-center ">
           <View>
@@ -60,31 +69,46 @@ export const AppointmentCard = ({
               <Image source={icons.whatsapp} style={styles.iconStyle} />
             </View>
           </View>
-          <TouchableOpacity>
-            <Image source={icons.forward} style={styles.iconStyle} />
-          </TouchableOpacity>
+          {type !== "mentor" && (
+            <TouchableOpacity>
+              <Image source={icons.forward} style={styles.iconStyle} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-
     </View>
   );
 };
-export const NotificationCard = ({ data }: { data: any }) => {
+export const NotificationCard = ({
+  data,
+  type,
+  iconsStyles,
+}: {
+  data: any;
+  type?: string;
+  iconsStyles?: ViewStyle;
+}) => {
   return (
     <View style={styles.NotificationBox}>
       <View
-        style={{ width: 100, height: "100%", alignItems: "center", padding: 8 }}
+        style={[
+          { width: 100, height: "100%", alignItems: "center", padding: 8 },
+          iconsStyles,
+        ]}
       >
         <Image
           source={
             data.type == "course" || data.type == "assignment"
               ? icons.Revitalization2
               : data.type == "note"
-                ? icons.edit2
-                : icons.profile2
+              ? icons.edit2
+              : icons.profile2
           }
-          style={{ width: 60, height: 60 }}
-        // resizeMode={"contain"}
+          style={{
+            width: type === "mentor" ? 40 : 60,
+            height: type === "mentor" ? 45 : 60,
+          }}
+          // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -101,6 +125,18 @@ export const NotificationCard = ({ data }: { data: any }) => {
             {data.title.toUpperCase()}
           </Text>
         </View>
+        {type === "mentor" && (
+          <View className="flex flex-row items-center text-base font-medium text-white/70 gap-[6px]">
+            <Image
+              source={icons.myProfile} // Replace with actual user profile image URL
+              style={{ width: 20, height: 20, borderRadius: "50%" }}
+              resizeMode="contain"
+            />
+            <Text style={{ color: "white", fontWeight: "200" }}>
+              Pr. John Doe
+            </Text>
+          </View>
+        )}
         <Text style={{ color: "white", fontWeight: "200" }}>
           {data.description}
         </Text>
@@ -124,10 +160,88 @@ export const NotificationCard = ({ data }: { data: any }) => {
     </View>
   );
 };
+
+export const NotificationMentorCard = ({
+  data,
+  type,
+  iconsStyles,
+}: {
+  data: any;
+  type?: string;
+  iconsStyles?: ViewStyle;
+}) => {
+  return (
+    <View style={styles.NotificationBox}>
+      <View style={[{ width: "auto", height: "100%" }, iconsStyles]}>
+        <Image
+          source={
+            data.type == "course" || data.type == "assignment"
+              ? icons.Revitalization2
+              : data.type == "note"
+              ? icons.edit2
+              : icons.profile2
+          }
+          style={{
+            width: type === "mentor" ? 40 : 60,
+            height: type === "mentor" ? 45 : 60,
+          }}
+          // resizeMode={"contain"}
+        />
+      </View>
+      <View style={{ ...styles.appointmentDetails, marginLeft: 12 }}>
+        <View>
+          <Text
+            style={{
+              color: "white",
+              fontSize: 16,
+              fontWeight: "600",
+              lineHeight: 22,
+            }}
+            ellipsizeMode="tail"
+          >
+            {data.title.toUpperCase()}
+          </Text>
+        </View>
+        {type === "mentor" && (
+          <View className="flex flex-row items-center text-base font-medium text-white/70 gap-[6px]">
+            <Image
+              source={icons.myProfile} // Replace with actual user profile image URL
+              style={{ width: 20, height: 20, borderRadius: "50%" }}
+              resizeMode="contain"
+            />
+            <Text style={{ color: "white", fontWeight: "200" }}>
+              Pr. John Doe
+            </Text>
+          </View>
+        )}
+        <Text style={{ color: "white", fontWeight: "200" }}>
+          {data.description}
+        </Text>
+      </View>
+      {!data.read && (
+        <View
+          style={{
+            width: 8,
+            height: 8,
+            backgroundColor: "yellow",
+            borderRadius: 999999,
+            position: "absolute",
+            top: 16,
+            right: 16,
+          }}
+        ></View>
+      )}
+      <View style={{ position: "absolute", bottom: 3, right: 6 }}>
+        <Text style={{ color: "white", fontWeight: "200" }}>{data.time}</Text>
+      </View>
+    </View>
+  );
+};
+
 export const RevitalizationCard = ({
   data,
   navigation,
-  wrapperClass = ``
+  wrapperClass = ``,
 }: {
   data: any;
   navigation: any;
@@ -146,40 +260,40 @@ export const RevitalizationCard = ({
         if (pathname === "/roadmap/phase-1/revitalization-roadmap") {
           typeof data.assignment !== "undefined" && data.assignment
             ? navigation.push({
-              pathname:
-                "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-              params: { data: JSON.stringify(data) },
-            })
+                pathname:
+                  "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+                params: { data: JSON.stringify(data) },
+              })
             : typeof data.subPhase !== "undefined" && data.subPhase
-              ? navigation.push({
+            ? navigation.push({
                 pathname: "/(pastor-tabs)/roadmap/sub-phases",
                 params: { data: JSON.stringify(data) },
               })
-              : navigation.push({
+            : navigation.push({
                 pathname: "/(pastor-tabs)/roadmap/phase-1/detailed-roadmap",
                 params: { data: JSON.stringify(data) },
               });
         } else if (pathname === "/roadmap/phase-2/revitalization-roadmap") {
           typeof data.assignment !== "undefined" && data.assignment
             ? navigation.push({
-              pathname:
-                "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-              params: { data: JSON.stringify(data) },
-            })
+                pathname:
+                  "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+                params: { data: JSON.stringify(data) },
+              })
             : typeof data.subPhase !== "undefined" && data.subPhase
-              ? navigation.push({
+            ? navigation.push({
                 pathname: "/(pastor-tabs)/roadmap/sub-phases",
                 params: { data: JSON.stringify(data) },
               })
-              : data.empowerment
-                ? navigation.push({
-                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
-                  params: { data: JSON.stringify(data) },
-                })
-                : navigation.push({
-                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
-                  params: { data: JSON.stringify(data) },
-                });
+            : data.empowerment
+            ? navigation.push({
+                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
+                params: { data: JSON.stringify(data) },
+              })
+            : navigation.push({
+                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
+                params: { data: JSON.stringify(data) },
+              });
         } else {
           if (data.phase === "Phase 1") {
             router.push("/roadmap/phase-1/revitalization-roadmap");
@@ -524,9 +638,12 @@ export const RoadMapCard = ({
           }
           style={{ width: 22, height: 22 }}
         />
-        <Text style={styles.roadmapText}>
-          {data.phase} – {data.title}
-        </Text>
+        <View className="flex flex-col gap-2.5">
+          <Text style={styles.roadmapText}>
+            {data.phase} – {data.title}
+          </Text>
+          <Text style={styles.roadmapText}>Task : {data.title}</Text>
+        </View>
       </View>
       <View style={[styles.leftContent, { marginLeft: "auto" }]}>
         <Text
@@ -545,11 +662,19 @@ export const RoadMapCard = ({
   );
 };
 
-export const CardBox = ({ icon, title }: { icon: any; title: string }) => {
+export const CardBox = ({
+  icon,
+  title,
+  cardStyle,
+}: {
+  icon: any;
+  title: string;
+  cardStyle?: ViewStyle;
+}) => {
   return (
     <LinearGradient
       colors={[Colors.darkBlueGradientTwo, Colors.lightBlueGradientTwo]}
-      style={styles.gradientContainer}
+      style={[styles.gradientContainer, cardStyle]}
     >
       <Image source={icon} style={styles.icon} />
       <Text className="text-white font-medium text-[16px] text-center">
@@ -727,11 +852,11 @@ export const CommentsCard = ({
             data.type == "course" || data.type == "assignment"
               ? icons.dummyUser
               : data.type == "note"
-                ? icons.dummyUser2
-                : icons.profile2
+              ? icons.dummyUser2
+              : icons.profile2
           }
           style={{ width: 60, height: 60, borderRadius: 999999 }}
-        // resizeMode={"contain"}
+          // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -939,13 +1064,13 @@ export const ListCard = ({
                   <CheckBox
                     type="circle"
                     value={false}
-                    setValue={() => { }}
+                    setValue={() => {}}
                   ></CheckBox>
                 ) : (
                   <CheckBox
                     type="square"
                     value={false}
-                    setValue={() => { }}
+                    setValue={() => {}}
                   ></CheckBox>
                 )}
                 {listImage && (
@@ -1025,7 +1150,7 @@ export const InputCard = ({
             icon={icons.upload}
             style={{ backgroundColor: "#1f1a79", width: "60%" }}
             selectedFile={null}
-            setSelectedFile={() => { }}
+            setSelectedFile={() => {}}
           ></UploadPDFButton>
         </View>
       )}
@@ -1235,7 +1360,7 @@ export const AssessmentCard = ({
           </View>
 
           {(data && data?.status === "Not Started") ||
-            data?.status === "Due" ? (
+          data?.status === "Due" ? (
             <TouchableOpacity
               style={{
                 backgroundColor: "white",
@@ -1364,13 +1489,13 @@ export const ProgressCard = ({
       onPress={() =>
         data.subPhase
           ? navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/sub-phases",
-            params: { data: JSON.stringify(data) },
-          })
+              pathname: "/(pastor-tabs)/roadmap/sub-phases",
+              params: { data: JSON.stringify(data) },
+            })
           : navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
-            params: { data: JSON.stringify(data) },
-          })
+              pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
+              params: { data: JSON.stringify(data) },
+            })
       }
       style={{
         width: "100%",
@@ -1598,7 +1723,7 @@ const styles = StyleSheet.create({
   mentorInfoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: "50%"
+    borderRadius: "50%",
   },
   mentorNameText: {
     color: "#FFFFFF",
@@ -1639,7 +1764,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
@@ -1647,7 +1772,7 @@ const styles = StyleSheet.create({
   leftContent: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   roadmapText: {
     color: "#FFFFFF", // white
