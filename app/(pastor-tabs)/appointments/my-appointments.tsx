@@ -96,7 +96,7 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
       >
         <SafeAreaView style={styles.scrollContainer}>
           <PastorNavigationHeader />
-          <View style={{ width: "100%", alignItems: "center", flex: 1 }}>
+          <View style={{ width: "100%", alignItems: "center" }}>
             {/* Header */}
             <Header
               title="Appointments"
@@ -119,8 +119,8 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
                 paddingTop: 20,
                 paddingBottom: 150,
                 paddingHorizontal: 10,
+                flexDirection: "row",
                 width: "100%",
-                flex: 1
               }}
             >
               <View
@@ -155,7 +155,6 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
                   <GradientCalendar
                     selected={selected}
                     setSelected={setSelected}
-                    showDateTime={false}
                   />
                 </View>
 

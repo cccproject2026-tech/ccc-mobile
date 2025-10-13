@@ -1,11 +1,14 @@
 import React from "react";
 
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { ScrollView, View } from "react-native";
 
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Tab } from "@/components/atom/tab";
 import { RoadmapCard, ScreenLayout } from "@/components/build-components";
+import { Colors } from "@/constants/Colors";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Landing() {
     const [activeTab, setActiveTab] = React.useState("New");
@@ -111,6 +114,12 @@ export default function Landing() {
     });
 
     return (
+         <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={{flex: 1}}>
         <ScreenLayout
             enablePastorHeader={true}
             showNameTag={true}
@@ -119,6 +128,7 @@ export default function Landing() {
             headerTitle="Revitalization Roadmap"
             headerSubTitle="My Mentee > John Doe"
             showSettings={true}
+            paddingX={0}
         >
             <View className="">
                 <ScrollView
@@ -126,7 +136,8 @@ export default function Landing() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{
                         gap: 8,
-                        marginTop: 16
+                        marginTop: 16,
+                        paddingHorizontal: 16,
                     }}
                 >
                     {availableTabs.map((e, i) => (
@@ -164,5 +175,7 @@ export default function Landing() {
                 closeMenu={() => setIsRoadmapModalVisible(false)}
             />
         </ScreenLayout>
+        </SafeAreaView>
+        </LinearGradient>
     )
 }

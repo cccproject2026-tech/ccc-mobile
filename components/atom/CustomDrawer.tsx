@@ -137,7 +137,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "My Mentees",
       iconKey: "myMentors",
-      navigateLocation: "Mentors",
+      navigateLocation: "/(mentor-tabs)/my-mentors",
     },
     {
       name: "Courses",
@@ -152,37 +152,37 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Assessments",
       iconKey: "Assessments",
-      navigateLocation: "Home",
+      navigateLocation: "/(mentor-tabs)/assessments/survey",
     },
     {
       name: "Track Progress",
       iconKey: "progress",
-      navigateLocation: "Progress",
+      navigateLocation:  "/(mentor-tabs)/progress/progress",
     },
     {
       name: "Schedule",
       iconKey: "Appointments",
-      navigateLocation: "Appointments",
+      navigateLocation: "/(mentor-tabs)/progress/progress",
     },
     {
       name: "Profile",
       iconKey: "profile",
-      navigateLocation: "profile",
+      navigateLocation: "/(mentor-tabs)/profile/my-profile",
       subTabs: [
         {
           name: "My Profile",
           iconKey: "myProfile",
-          navigateLocation: "profile",
+          navigateLocation: "/(mentor-tabs)/profile/my-profile",
         },
         {
           name: "Documents",
           iconKey: "document",
-          navigateLocation: "Profile",
+           navigateLocation: "/(mentor-tabs)/profile/my-profile",
         },
         {
           name: "Certificate",
           iconKey: "certificate",
-          navigateLocation: "Certificate",
+           navigateLocation: "/(mentor-tabs)/profile/certificate",
         },
         {
           name: "Notes",
@@ -192,7 +192,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Micro Grant",
           iconKey: "microGrant",
-          navigateLocation: "MicroGrant",
+          navigateLocation: "/(mentor-tabs)/profile/grant",
         },
       ],
     },
@@ -204,12 +204,12 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Change Password",
           iconKey: "changePass",
-          navigateLocation: "Profile",
+          navigateLocation: "/(mentor-tabs)/profile/my-profile",
         },
         {
           name: "Turn Off Notifications",
           iconKey: "turnOffNotification",
-          navigateLocation: "/(pastor-tabs)/notifications",
+          navigateLocation: "/(mentor-tabs)/notifications",
         },
       ],
     },

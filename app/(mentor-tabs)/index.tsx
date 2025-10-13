@@ -4,11 +4,14 @@ import {
   MentorCard,
   RoadMapCard,
 } from "@/components/atom/cards";
+import { Search } from "@/components/atom/Search";
+import { Button } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
+import React from "react";
 import {
   Image,
   ImageBackground,
@@ -19,7 +22,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function PastorDashboard({ navigation }: { navigation: any }) {
+export default function MentorDashboard({ navigation }: { navigation: any }) {
+  const [searchText, setSearchText] = React.useState("");
+
   const users = [
     // India
     {
@@ -193,7 +198,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
             resizeMode="cover"
           >
             <View className="mt-4">
-              <PastorNavigationHeader />
+              <PastorNavigationHeader route="/(mentor-tabs)/notifications" />
             </View>
             <View style={styles.contentContainer}>
               <Text className="text-white text-[22px] leading-[22px] font-semibold">
@@ -225,7 +230,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
               >
                 <Image
                   source={icons.myProfile} // Replace with actual user profile image URL
-                  style={{ width: 60, height: 60 }}
+                  style={{ width: 60, height: 60, borderRadius: 30 }}
                   resizeMode="contain"
                 />
                 <View style={{ paddingHorizontal: 10, gap: 10 }}>
@@ -233,9 +238,9 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                     className="font-semibold"
                     style={[styles.text, { ...{ fontSize: 16 } }]}
                   >
-                    John Ross, Welcome Aboard!
+                    John Doe, Welcome !
                   </Text>
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  {/* <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <Text className="font-medium text-white text-[16px]">
                       Progress{" "}
                     </Text>
@@ -261,7 +266,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                       {" "}
                       70%
                     </Text>
-                  </View>
+                  </View> */}
                 </View>
               </View>
             </View>
@@ -318,14 +323,19 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                 <View style={styles.appointmentsContainer}>
                   <View style={styles.rowBetween}>
                     <Text className="text-white font-bold text-[17px]">
-                      Upcoming Appointments
+                      Today's Appointments
                     </Text>
                     <Text className="text-white font-medium text-[16px]">
                       See all
                     </Text>
                   </View>
                   {dummyAppointments.map((e, i) => (
-                    <AppointmentCard data={e} dataKey={i.toString()} key={i} />
+                    <AppointmentCard
+                      data={e}
+                      dataKey={i.toString()}
+                      type={"mentor"}
+                      key={i}
+                    />
                   ))}
                 </View>
                 <View style={styles.separator} />
@@ -334,7 +344,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                 <View style={styles.RoadMapContainer}>
                   <View style={styles.RoadMapHeaderRow}>
                     <Text className="text-white font-bold text-[17px]">
-                      Today's Roadmap List
+                      Roadmap List
                     </Text>
                     <Text className="text-white font-medium text-[16px]">
                       See all
@@ -344,6 +354,15 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                     {dummyRoadMaps.map((e, i) => (
                       <RoadMapCard data={e} dataKey={i.toString()} key={i} />
                     ))}
+                  </View>
+                  <View className="w-full">
+                    <Button
+                      buttonClass="max-w-[130px] ml-auto"
+                      bgColor="white"
+                      textColor="#001FC1"
+                    >
+                      Add New Entry
+                    </Button>
                   </View>
                 </View>
                 <View style={styles.separator} />
@@ -358,17 +377,37 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                   </View>
 
                   <View className="py-5 px-2 w-full justify-center items-center">
-                    <View className="flex-row gap-4">
+                    <View className="flex-row gap-3">
                       <CardBox
-                        title="Revitalization Roadmap"
+                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                        title="Mentees"
                         icon={icons.Revitalization2}
                       />
-                      <CardBox title="Assessments" icon={icons.Assessments2} />
-                    </View>
-                    <View className="flex-row gap-4">
-                      <CardBox title="Progress" icon={icons.progress2} />
                       <CardBox
-                        title="Appointments"
+                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                        title="Track Progress"
+                        icon={icons.Assessments2}
+                      />
+                      <CardBox
+                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                        title="Revitalization Roadmap"
+                        icon={icons.Assessments2}
+                      />
+                    </View>
+                    <View className="flex-row gap-3">
+                      <CardBox
+                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                        title="Assessments"
+                        icon={icons.progress2}
+                      />
+                      <CardBox
+                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                        title="Schedule"
+                        icon={icons.Appointments2}
+                      />
+                      <CardBox
+                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                        title="Courses"
                         icon={icons.Appointments2}
                       />
                     </View>
@@ -398,11 +437,21 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                       data={e}
                       dataKey={i.toString()}
                       navigation={navigation}
-                      onMenuPress={() => { }}
+                      onMenuPress={() => {}}
                     />
                   ))}
                 </View>
                 <View style={styles.separator} />
+
+                <View style={styles.searchContainer}>
+                  <Search
+                    searchText={searchText}
+                    setSearchText={setSearchText}
+                  />
+                </View>
+                <View className="max-w-[410px] h-[415px] rounded-[10px] bg-white/80 flex justify-center items-center my-2.5 mx-5 mb-32">
+                  <Text>Map Integration</Text>
+                </View>
               </View>
             </LinearGradient>
             {/* other content  */}
@@ -414,6 +463,10 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
   );
 }
 const styles = StyleSheet.create({
+  searchContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
   backgroundImage: {
     // ...StyleSheet.absoluteFillObject,
     width: "100%",
