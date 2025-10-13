@@ -1,19 +1,16 @@
+import { RevitalizationCard } from "@/components/atom/cards";
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Tab } from "@/components/atom/tab";
-import { Header, RoadmapCard } from "@/components/build-components";
+import { Header } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  View
-} from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function RevitalizationScreen() {
+export default function EmpowermentCards() {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
   const [searchText, setSearchText] = React.useState("");
@@ -21,27 +18,28 @@ export default function RevitalizationScreen() {
 
   const dummyRoadMaps = [
     {
-      title: "Self Revitalization Phase",
-      description:
-        "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
+      title: "God's Vision Team",
+      empowerment: true,
+      description: "Finalize the teams vision for the church",
       time: "Completion Time Months 1 - 2",
-      type: "assignment",
-      read: true,
+      type: "course",
+      read: false,
       status: "Not Started",
+      completionDate: "20 Oct 2024",
       taskStatus: {
         notStarted: true,
-        started: true,
+        started: false,
         inProgress: 0,
-        toComplete: 18,
+        toComplete: 0,
         completed: false,
       },
       image: require("@/assets/images/roadmap.jpg"),
     },
     {
-      id: 2,
-      title: "Self Revitalization Phase",
+      title: "Calendar",
       description:
-        "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
+        "Finalize a vision team meeting schedule through the end of the year   ",
+      empowerment: true,
       time: "Completion Time Months 1 - 2",
       type: "note",
       read: false,
@@ -55,13 +53,12 @@ export default function RevitalizationScreen() {
         completed: false,
       },
       image: require("@/assets/images/roadmap.jpg"),
-      phase: "Phase 1",
     },
     {
-      id: 3,
-      title: "Church Empowerment Phase",
+      title: "Prayer",
       description:
-        "Create community to empower your church and make a long-term impact on coordinated community service programs.",
+        "Prioritize church prayer times and meet consistently for prayer with your congregation",
+      empowerment: true,
       time: "Completion Time Months 3 - 9",
       type: "assignment",
       read: true,
@@ -74,13 +71,13 @@ export default function RevitalizationScreen() {
         completed: false,
       },
       image: require("@/assets/images/roadmap.jpg"),
-      phase: "Phase 2",
     },
     {
-      id: 4,
-      title: "Community Revitalization and Multiplication Phase",
-      description:
-        "Review community service outcomes and empower others as you explore opportunities for further growth.",
+      title: "Mentoring Conversations",
+      description: "Schedule two mentoring conversations with your mentor",
+      empowerment: true,
+      showBothDate: true,
+      sessionDate: "10 / 11 / 24",
       time: "Completion Time Months 10 - 12",
       type: "profile",
       read: true,
@@ -93,7 +90,6 @@ export default function RevitalizationScreen() {
         completed: false,
       },
       image: require("@/assets/images/roadmap.jpg"),
-      phase: "Phase 3",
     },
   ];
 
@@ -127,10 +123,13 @@ export default function RevitalizationScreen() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
+            <PastorNavigationHeader showNameTag={true} wrapperClass="mt-5" />
 
             {/* Header Section */}
-            <Header title="Revitalization Roadmap" />
+            <Header
+              title="Church Empowerment Phase"
+              subTitle="Revitalization Roadmap"
+            />
 
             {/* Tabs Section */}
             <ScrollView
@@ -167,13 +166,12 @@ export default function RevitalizationScreen() {
             >
               {filteredRoadMaps.map((e, i) => (
                 <React.Fragment key={i}>
-                  <RoadmapCard data={e} navigation={router} />
+                  <RevitalizationCard data={e} navigation={router} />
                   {i < filteredRoadMaps.length - 1 && (
                     <View className="h-[0.5px] bg-white/30 my-4" />
                   )}
                 </React.Fragment>
               ))}
-
             </View>
           </ScrollView>
         </SafeAreaView>

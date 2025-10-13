@@ -12,6 +12,7 @@ export default function TextAreaField({
   editable = true,
   value,
   onChangeText,
+  containerStyle = {}
 }: {
   label?: string;
   numberOfLines?: number;
@@ -23,11 +24,12 @@ export default function TextAreaField({
   editable?: boolean;
   value?: string;
   onChangeText?: (text: string) => void;
+  containerStyle?: ViewStyle
 }) {
   const [focused, setFocused] = useState(false);
 
   return (
-    <View style={styles.container} className={containerClass}>
+    <View style={[styles.container, containerStyle]} className={containerClass}>
       <View
         style={[styles.box, inputClass, focused && styles.boxFocused]}
         className={boxClass}
@@ -54,7 +56,7 @@ export default function TextAreaField({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     justifyContent: "center",
   },
   box: {

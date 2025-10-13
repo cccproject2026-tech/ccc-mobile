@@ -1,16 +1,16 @@
 import { icons } from "@/constants/images";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
-export default function CommentCard({ comment }: { comment: any }) {
+export default function CommentCard({ comment, wrapperStyle = {} }: { comment: any, wrapperStyle?: ViewStyle | undefined; }) {
   return (
-    <View className="bg-[#1A4882] rounded-[10px] px-4 py-2.5 mx-4 mb-4 border border-white/80 relative">
+    <View className={`bg-[#1A4882] rounded-[10px] px-4 py-2.5 mb-4 border border-white/80 relative`} style={[wrapperStyle]}>
       {comment.isHighlighted && (
         <View className="w-3 h-3 rounded-full bg-[#E9E010] absolute top-4 right-4" />
       )}
       <View className="flex-row items-center">
         <Image
           source={comment.avatar}
-          className="w-12 h-12 rounded-full mr-4"
+          className="!w-12 !h-12 rounded-full mr-4"
         />
         <View className="flex-1 pr-5">
           <Text className="text-white/80 text-base font-medium mb-2">

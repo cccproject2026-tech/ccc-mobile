@@ -19,44 +19,64 @@ export default function RevitalizationCard({
   return (
     <TouchableOpacity
       onPress={() => {
-        console.log(data.subPhase);
         if (pathname === "/roadmap/phase-1/revitalization-roadmap") {
           typeof data.assignment !== "undefined" && data.assignment
             ? navigation.push({
-                pathname:
-                  "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-                params: { data: JSON.stringify(data) },
-              })
+              pathname:
+                "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+              params: { data: JSON.stringify(data) },
+            })
             : typeof data.subPhase !== "undefined" && data.subPhase
-            ? navigation.push({
+              ? navigation.push({
                 pathname: "/(pastor-tabs)/roadmap/sub-phases",
                 params: { data: JSON.stringify(data) },
               })
-            : navigation.push({
+              : navigation.push({
                 pathname: "/(pastor-tabs)/roadmap/phase-1/detailed-roadmap",
                 params: { data: JSON.stringify(data) },
               });
         } else if (pathname === "/roadmap/phase-2/revitalization-roadmap") {
           typeof data.assignment !== "undefined" && data.assignment
             ? navigation.push({
-                pathname:
-                  "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-                params: { data: JSON.stringify(data) },
-              })
+              pathname:
+                "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+              params: { data: JSON.stringify(data) },
+            })
             : typeof data.subPhase !== "undefined" && data.subPhase
-            ? navigation.push({
+              ? navigation.push({
                 pathname: "/(pastor-tabs)/roadmap/sub-phases",
                 params: { data: JSON.stringify(data) },
               })
-            : data.empowerment
+              : data.empowerment
+                ? navigation.push({
+                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
+                  params: { data: JSON.stringify(data) },
+                })
+                : navigation.push({
+                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
+                  params: { data: JSON.stringify(data) },
+                });
+        } else if (pathname === "/roadmap/landing/landing") {
+          typeof data.assignment !== "undefined" && data.assignment
             ? navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
+              pathname:
+                "/(mentor-tabs)/profile/my-assignment/detailed-assignment",
+              params: { data: JSON.stringify(data) },
+            })
+            : typeof data.subPhase !== "undefined" && data.subPhase
+              ? navigation.push({
+                pathname: "/(mentor-tabs)/roadmap/sub-phases",
                 params: { data: JSON.stringify(data) },
               })
-            : navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
-                params: { data: JSON.stringify(data) },
-              });
+              : data.empowerment
+                ? navigation.push({
+                  pathname: "/(mentor-tabs)/roadmap/phase-2/detailed-empowerment",
+                  params: { data: JSON.stringify(data) },
+                })
+                : navigation.push({
+                  pathname: "/(mentor-tabs)/roadmap/phase-2/detailed-roadmap",
+                  params: { data: JSON.stringify(data) },
+                });
         } else {
           if (data.phase === "Phase 1") {
             router.push("/roadmap/phase-1/revitalization-roadmap");
@@ -70,11 +90,11 @@ export default function RevitalizationCard({
       className="w-full bg-[#194F82] rounded-[10px] p-4 my-2.5 border border-white/45"
     >
       <View className="w-full flex-row">
-        <View className="w-[110px] h-full items-center">
+        <View className="!w-[110px] !h-[100px] items-center">
           <View className="relative">
             <Image
               source={data?.image}
-              className="w-[110px] h-[100px] rounded-xl"
+              className="!w-[110px] !h-[100px] rounded-xl"
             />
             {data?.phase && (
               <View className="mx-5">
@@ -109,9 +129,8 @@ export default function RevitalizationCard({
               Status{" "}
               <Text className="text-white font-black items-center">•</Text>{" "}
               <Text
-                className={`text-sm font-medium ${
-                  data?.status == "Due" ? "text-yellow-400" : "text-white"
-                }`}
+                className={`text-sm font-medium ${data?.status == "Due" ? "text-yellow-400" : "text-white"
+                  }`}
               >
                 {data?.status}
               </Text>

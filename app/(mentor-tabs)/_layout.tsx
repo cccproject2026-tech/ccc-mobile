@@ -1,13 +1,10 @@
-import { Tabs } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { View } from 'react-native';
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
+import { DrawerOverlay } from '@/components/atom/DrawerOverlay';
 import { useData } from '@/dataContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Stack } from 'expo-router';
 
 export default function MentorTabLayout() {
   const colorScheme = useColorScheme();
@@ -18,48 +15,50 @@ export default function MentorTabLayout() {
   }, [setCurrentScreenState]);
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
+    <View style={{ flex: 1 }}>
+      <Stack />
+      {/* <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: '#FFFFFF',
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
+          headerShown: false,
+          tabBarButton: HapticTab,
+          tabBarStyle: {
+            backgroundColor: '#221C70',
+            borderTopWidth: 0,
+            height: 80,
+            paddingBottom: 8,
+            paddingTop: 8,
           },
-          default: {},
-        }),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="mentees"
-        options={{
-          title: 'Mentees',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.2.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="sessions"
-        options={{
-          title: 'Sessions',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="resources"
-        options={{
-          title: 'Resources',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="folder.fill" color={color} />,
-        }}
-      />
-    </Tabs>
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: '500',
+          },
+        }}>
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="discover"
+          options={{
+            title: 'Discover',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="magnifyingglass" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.circle.fill" color={color} />,
+          }}
+        />
+      </Tabs> */}
+      <DrawerOverlay />
+    </View>
   );
 }
+

@@ -1,19 +1,15 @@
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Tab } from "@/components/atom/tab";
-import { Header, RoadmapCard } from "@/components/build-components";
+import { RoadmapCard as AssignmentCard, Header } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  View
-} from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function RevitalizationScreen() {
+export default function Assignment() {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
   const [searchText, setSearchText] = React.useState("");
@@ -21,70 +17,15 @@ export default function RevitalizationScreen() {
 
   const dummyRoadMaps = [
     {
-      title: "Self Revitalization Phase",
-      description:
-        "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
+      title: "Prayer and Visitation Strategy",
+      assignment: true,
+      description: "Finalize the teams vision for the church",
       time: "Completion Time Months 1 - 2",
-      type: "assignment",
-      read: true,
-      status: "Not Started",
-      taskStatus: {
-        notStarted: true,
-        started: true,
-        inProgress: 0,
-        toComplete: 18,
-        completed: false,
-      },
-      image: require("@/assets/images/roadmap.jpg"),
-    },
-    {
-      id: 2,
-      title: "Self Revitalization Phase",
-      description:
-        "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
-      time: "Completion Time Months 1 - 2",
-      type: "note",
+      type: "course",
       read: false,
-      subPhase: true,
-      status: "Not Started",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 8,
-        completed: false,
-      },
-      image: require("@/assets/images/roadmap.jpg"),
-      phase: "Phase 1",
-    },
-    {
-      id: 3,
-      title: "Church Empowerment Phase",
-      description:
-        "Create community to empower your church and make a long-term impact on coordinated community service programs.",
-      time: "Completion Time Months 3 - 9",
-      type: "assignment",
-      read: true,
-      status: "Not Started",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 18,
-        completed: false,
-      },
-      image: require("@/assets/images/roadmap.jpg"),
-      phase: "Phase 2",
-    },
-    {
-      id: 4,
-      title: "Community Revitalization and Multiplication Phase",
-      description:
-        "Review community service outcomes and empower others as you explore opportunities for further growth.",
-      time: "Completion Time Months 10 - 12",
-      type: "profile",
-      read: true,
-      status: "Not Started",
+      sessionDate: "10 / 11 / 24",
+      status: "Not Started Yet",
+      completionDate: "20 Oct 2024",
       taskStatus: {
         notStarted: true,
         started: false,
@@ -93,7 +34,62 @@ export default function RevitalizationScreen() {
         completed: false,
       },
       image: require("@/assets/images/roadmap.jpg"),
-      phase: "Phase 3",
+    },
+    {
+      assignment: true,
+      title: "Calendar",
+      description:
+        "Finalize a vision team meeting schedule through the end of the year ",
+      type: "note",
+      time: "Completion Time Months 1 - 2",
+      read: false,
+      subPhase: true,
+      status: "Not Started Yet",
+      taskStatus: {
+        notStarted: true,
+        started: false,
+        inProgress: 0,
+        toComplete: 8,
+        completed: false,
+      },
+      image: require("@/assets/images/roadmap.jpg"),
+    },
+    {
+      assignment: true,
+      title: "Prayer",
+      description:
+        " Prioritize church prayer times and meet consistently for prayer with your congregation",
+      time: "Completion Time Months 10 - 12",
+      type: "profile",
+      read: true,
+      status: "Not Started Yet",
+      taskStatus: {
+        notStarted: true,
+        started: false,
+        inProgress: 0,
+        toComplete: 0,
+        completed: false,
+      },
+      image: require("@/assets/images/roadmap.jpg"),
+    },
+    {
+      assignment: true,
+      title: "Mentoring Conversations",
+      description: "Schedule two mentoring conversations with your mentor",
+      time: "Completion Time Months 3 - 9",
+      showBothDate: true,
+      sessionDate: "10 / 11 / 24",
+      type: "assignment",
+      read: true,
+      status: "Not Started Yet",
+      taskStatus: {
+        notStarted: true,
+        started: false,
+        inProgress: 0,
+        toComplete: 18,
+        completed: false,
+      },
+      image: require("@/assets/images/roadmap.jpg"),
     },
   ];
 
@@ -120,17 +116,17 @@ export default function RevitalizationScreen() {
         style={{ flex: 1 }}
       >
         <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={styles.scrollContainer}>
+        <SafeAreaView className="flex-1">
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
+            <PastorNavigationHeader />
 
             {/* Header Section */}
-            <Header title="Revitalization Roadmap" />
+            <Header title="Assignments" showSettings={false} />
 
             {/* Tabs Section */}
             <ScrollView
@@ -167,13 +163,12 @@ export default function RevitalizationScreen() {
             >
               {filteredRoadMaps.map((e, i) => (
                 <React.Fragment key={i}>
-                  <RoadmapCard data={e} navigation={router} />
+                  <AssignmentCard data={e} navigation={router} />
                   {i < filteredRoadMaps.length - 1 && (
                     <View className="h-[0.5px] bg-white/30 my-4" />
                   )}
                 </React.Fragment>
               ))}
-
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -188,17 +183,3 @@ export default function RevitalizationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-  },
-  searchContainer: {
-    marginHorizontal: 16,
-    marginTop: 16,
-  },
-  separator: {
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    marginVertical: 18,
-  },
-});

@@ -4,6 +4,7 @@ import React from "react";
 import { SafeAreaView, ScrollView, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { PastorNavigationHeader } from "../pastor/Header";
+import Header from "./header";
 
 interface ScreenLayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,11 @@ interface ScreenLayoutProps {
   enableScrollView?: boolean;
   enablePastorHeader?: boolean;
   paddingX?: number;
+  enableHeader?: boolean;
+  showSettings?: boolean;
+  headerTitle?: string;
+  headerSubTitle?: string;
+  hideSearchBar?: boolean;
 }
 
 const ScreenLayout = ({
@@ -25,6 +31,12 @@ const ScreenLayout = ({
   enableScrollView = true,
   enablePastorHeader = true,
   paddingX = 16,
+  enableHeader = false,
+  showSettings = false,
+  headerTitle = ``,
+  headerSubTitle = ``,
+  hideSearchBar = false,
+
 }: ScreenLayoutProps) => {
   return (
     <LinearGradient
@@ -52,7 +64,14 @@ const ScreenLayout = ({
               wrapperClass="mt-4"
             />
           )}
-
+          {enableHeader && (
+            <Header
+              title={headerTitle}
+              subTitle={headerSubTitle}
+              hideSearchBar={hideSearchBar}
+              showSettings={showSettings}
+            />
+          )}
           {enableScrollView ? (
             <ScrollView
               keyboardShouldPersistTaps="handled"
