@@ -10,13 +10,13 @@ import { LinearGradient } from "expo-linear-gradient"
 import { Stack, router, useLocalSearchParams } from "expo-router"
 import React from "react"
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
@@ -68,7 +68,7 @@ export default function DetailedRoadMap() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
+            <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
 
             {/* Header Section */}
             <View
@@ -393,8 +393,8 @@ export default function DetailedRoadMap() {
                             data?.signature
                               ? "Signature Required here"
                               : data?.survey
-                              ? "Take PMP Survey"
-                              : `${data?.title + " Completed"}`
+                                ? "Take PMP Survey"
+                                : `${data?.title + " Completed"}`
                           }
                           onPress={() =>
                             data?.survey ? setSurveyGuideLines(true) : null

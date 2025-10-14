@@ -48,7 +48,7 @@ export default function UploadSection() {
     };
 
     return (
-        <View className='flex justify-center' style={{ width: "95%", margin: "auto", borderRadius: 10 }}>
+        <View className='flex justify-center' style={{ width: "100%", margin: "auto", borderRadius: 10 }}>
             <View className='border border-solid w-full rounded-[10px] flex justify-center items-center' style={{ paddingVertical: 52, gap: 38, borderColor: "#FFFFFF26" }}>
                 {/* Profile Avatar */}
                 <View>

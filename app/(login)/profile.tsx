@@ -15,17 +15,13 @@ export default function Profile() {
         >
             <Stack.Screen options={{ headerShown: false }} />
             <SafeAreaView style={styles.scrollContainer}>
+                <PastorNavigationHeader showNameTag />
                 <ScrollView
                     contentContainerStyle={{
                         flexGrow: 1,
                         paddingBottom: 40,
                     }}
                 >
-                    <PastorNavigationHeader
-                        showDrawer={false}
-                        showNotificationIcon={false}
-                        wrapperClass="!justify-end"
-                    />
                     <View style={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -59,7 +55,8 @@ export default function Profile() {
                                     flexDirection: "row",
                                     justifyContent: "center",
                                     alignItems: "center",
-                                    width: 93
+                                    width: 93,
+                                    gap:5,
                                 }}>
                                     <Text style={{
                                         fontSize: 16,
@@ -71,7 +68,7 @@ export default function Profile() {
                                     </Text>
                                     <IconSymbol
                                         name="chevron.right"
-                                        size={24}
+                                        size={12}
                                         weight="medium"
                                         color={"#FFFFFFCC"}
                                     />

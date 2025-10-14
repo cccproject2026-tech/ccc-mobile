@@ -36,6 +36,7 @@ interface UploadPDFButtonProps {
   setSelectedFile: (file: DocumentPicker.DocumentPickerResult) => void;
   icon?: ImageSourcePropType | "";
   style?: ViewStyle;
+  textStyle?:TextStyle;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -190,6 +191,7 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
   setSelectedFile,
   icon = "",
   style,
+  textStyle,
 }) => {
   const pickDocument = async (): Promise<void> => {
     try {
@@ -226,6 +228,7 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
         type="custom"
         icon={icon}
         style={style}
+        textStyle={textStyle}
       />
 
       {/* Optional: Display selected file name */}

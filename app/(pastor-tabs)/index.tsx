@@ -196,10 +196,10 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
               <PastorNavigationHeader />
             </View>
             <View style={styles.contentContainer}>
-              <Text style={styles.text} className="font-semibold">
+              <Text  className="text-white text-[22px] leading-[22px] font-semibold">
                 {currentTime}
               </Text>
-              <Text style={[styles.text]} className="font-semibold">
+              <Text className="text-base leading-[22px] text-white font-semibold">
                 {currentDayAndDate}
               </Text>
             </View>

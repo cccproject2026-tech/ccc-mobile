@@ -67,6 +67,9 @@ interface Icons {
   prevPlayer: ImageSourcePropType;
   nextPlayer: ImageSourcePropType;
   loader: ImageSourcePropType;
+  media2: ImageSourcePropType;
+  videoMedia: ImageSourcePropType
+  attachPin: ImageSourcePropType;
   certificateBadge: ImageSourcePropType;
   documentsIcon: ImageSourcePropType;
   fieldMentorIcon: ImageSourcePropType;
@@ -139,6 +142,9 @@ export const icons: Icons = {
   prevPlayer: require("@/assets/images/prev-player.png"),
   nextPlayer: require("@/assets/images/next-player.png"),
   loader: require("@/assets/images/loader.png"),
+  media2: require("@/assets/images/media-2.png"),
+  videoMedia: require("@/assets/images/VIDEO.png"),
+  attachPin: require("@/assets/images/attach-pin.png"),
   certificateBadge: require("@/assets/icons/certificate-badge.png"),
   documentsIcon: require("@/assets/icons/documents-icon.png"),
   fieldMentorIcon: require("@/assets/icons/field-mentor-icon.png"),

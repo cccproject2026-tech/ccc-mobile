@@ -17,7 +17,7 @@ export default function ProgressScreen() {
 
   const dummyRoadMaps = [
     {
-      title: "Self Revitalizaiton Phase",
+      title: "Self Revitalization Phase",
       time: "Completion Time Months 1 - 2",
       status: "Due",
       image: require("@/assets/images/jumpstart.png"),

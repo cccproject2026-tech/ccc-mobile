@@ -7,7 +7,7 @@ export default function Head({
     showTitle?: boolean | undefined
 }) {
     return (
-        <View className={"flex flex-1 gap-8 w-full justify-center items-center px-5 mt-[15px]"}>
+        <View className={"flex flex-1 gap-8 w-full justify-center items-center mt-[15px]"}>
             {showTitle && (
                 <Text className="font-bold leading-[22px] text-white" style={{
                     fontSize: 26,

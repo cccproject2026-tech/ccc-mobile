@@ -1,49 +1,44 @@
-import { RevitalizationCard } from "@/components/atom/cards"
-import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal"
-import { Search } from "@/components/atom/Search"
-import { Tab } from "@/components/atom/tab"
-import { PastorNavigationHeader } from "@/components/pastor/Header"
-import { Colors } from "@/constants/Colors"
-import { icons } from "@/constants/images"
-import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
-import { Stack, router } from "expo-router"
-import React from "react"
+import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
+import { Tab } from "@/components/atom/tab";
+import { Header, RoadmapCard } from "@/components/build-components";
+import { PastorNavigationHeader } from "@/components/pastor/Header";
+import { Colors } from "@/constants/Colors";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, Stack } from "expo-router";
+import React from "react";
 import {
-  Image,
   ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+  View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RevitalizationScreen() {
-  const [isRoadmapModalVisible, setIsRoadmapModalVisible] = React.useState(false)
-  const [searchText, setSearchText] = React.useState("")
-  const [tabs, setTabs] = React.useState("All")
+  const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
+    React.useState(false);
+  const [searchText, setSearchText] = React.useState("");
+  const [tabs, setTabs] = React.useState("All");
 
   const dummyRoadMaps = [
     {
-      title: "Jump-start",
-      description: "Attend a two-day revitalization jump-start session",
+      title: "Self Revitalization Phase",
+      description:
+        "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
       time: "Completion Time Months 1 - 2",
-      type: "course",
-      read: false,
-      sessionDate: "10 / 11 / 24",
+      type: "assignment",
+      read: true,
       status: "Not Started",
-      completionDate: "20 Oct 2024",
       taskStatus: {
         notStarted: true,
-        started: false,
+        started: true,
         inProgress: 0,
-        toComplete: 0,
+        toComplete: 18,
         completed: false,
       },
-      image: require("@/assets/images/jumpstart.png"),
+      image: require("@/assets/images/roadmap.jpg"),
     },
     {
+      id: 2,
       title: "Self Revitalization Phase",
       description:
         "Take a deeper look into your ministry to bring conflict resolution and theory of change.",
@@ -63,6 +58,7 @@ export default function RevitalizationScreen() {
       phase: "Phase 1",
     },
     {
+      id: 3,
       title: "Church Empowerment Phase",
       description:
         "Create community to empower your church and make a long-term impact on coordinated community service programs.",
@@ -81,6 +77,7 @@ export default function RevitalizationScreen() {
       phase: "Phase 2",
     },
     {
+      id: 4,
       title: "Community Revitalization and Multiplication Phase",
       description:
         "Review community service outcomes and empower others as you explore opportunities for further growth.",
@@ -98,7 +95,7 @@ export default function RevitalizationScreen() {
       image: require("@/assets/images/roadmap.jpg"),
       phase: "Phase 3",
     },
-  ]
+  ];
 
   const availableTabs = [
     { tab: "All" },
@@ -109,12 +106,12 @@ export default function RevitalizationScreen() {
     { tab: "Overdue" },
     { tab: "Pending Review" },
     { tab: "On Hold" },
-  ]
+  ];
 
   const filteredRoadMaps = dummyRoadMaps.filter((item) => {
-    if (tabs === "All") return true
-    return item.status === tabs
-  })
+    if (tabs === "All") return true;
+    return item.status === tabs;
+  });
 
   return (
     <>
@@ -130,56 +127,10 @@ export default function RevitalizationScreen() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
-            
+            <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
+
             {/* Header Section */}
-            <View
-              style={{
-                width: "100%",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingHorizontal: 20,
-                paddingTop: 20,
-                alignItems: "center",
-              }}
-            >
-              <TouchableOpacity onPress={() => router.back()}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <Image
-                    source={icons.forward}
-                    style={{
-                      width: 18,
-                      height: 18,
-                      transform: [{ scaleX: -1 }],
-                    }}
-                  />
-                  <Text className="text-white font-semibold text-[17px]">
-                    Revitalization Roadmap
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              
-              <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
-                <Ionicons name="ellipsis-vertical" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Separator */}
-            <View className="h-[0.5px] bg-white/30 mt-3" />
-
-            {/* Search Section */}
-            <View style={styles.searchContainer}>
-              <Search 
-                searchText={searchText}
-                setSearchText={setSearchText}
-              />
-            </View>
+            <Header title="Revitalization Roadmap" />
 
             {/* Tabs Section */}
             <ScrollView
@@ -200,7 +151,7 @@ export default function RevitalizationScreen() {
                   tabs={tabs}
                   setTabs={setTabs}
                   onPress={() => {
-                    setTabs(e.tab)
+                    setTabs(e.tab);
                   }}
                 />
               ))}
@@ -216,12 +167,13 @@ export default function RevitalizationScreen() {
             >
               {filteredRoadMaps.map((e, i) => (
                 <React.Fragment key={i}>
-                  <RevitalizationCard data={e} navigation={router} />
+                  <RoadmapCard data={e} navigation={router} />
                   {i < filteredRoadMaps.length - 1 && (
                     <View className="h-[0.5px] bg-white/30 my-4" />
                   )}
                 </React.Fragment>
               ))}
+
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -233,7 +185,7 @@ export default function RevitalizationScreen() {
         />
       </LinearGradient>
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -249,4 +201,4 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     marginVertical: 18,
   },
-})
+});

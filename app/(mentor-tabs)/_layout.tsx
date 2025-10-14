@@ -1,24 +1,23 @@
-import { Tabs } from 'expo-router';
-import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
+import React, { useEffect } from "react";
+import { View } from "react-native";
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useData } from '@/dataContext';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { DrawerOverlay } from "@/components/atom/DrawerOverlay";
+import { useData } from "@/dataContext";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { Stack } from "expo-router";
 
 export default function MentorTabLayout() {
   const colorScheme = useColorScheme();
   const { setCurrentScreenState } = useData();
 
   useEffect(() => {
-    setCurrentScreenState('Mentor');
+    setCurrentScreenState("Mentor");
   }, [setCurrentScreenState]);
 
   return (
-    <Tabs
+    <View style={{ flex: 1 }}>
+      <Stack />
+      {/* <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
@@ -60,6 +59,10 @@ export default function MentorTabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="folder.fill" color={color} />,
         }}
       />
-    </Tabs>
+    </Tabs> */}
+
+      <DrawerOverlay />
+    </View>
   );
 }
+

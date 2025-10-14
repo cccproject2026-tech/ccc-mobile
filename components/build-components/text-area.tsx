@@ -1,26 +1,46 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View, ViewStyle } from "react-native";
 
 export default function TextAreaField({
   label = "Comments",
   numberOfLines = 4,
   maxLength,
+  inputClassName = ``,
+  containerClass = ``,
+  boxClass = ``,
+  inputClass,
+  editable = true,
+  value,
+  onChangeText,
+  containerStyle = {}
 }: {
   label?: string;
   numberOfLines?: number;
   maxLength?: number;
+  inputClassName?: string;
+  containerClass?: string;
+  boxClass?: string;
+  inputClass?: ViewStyle;
+  editable?: boolean;
+  value?: string;
+  onChangeText?: (text: string) => void;
+  containerStyle?: ViewStyle
 }) {
-  const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.box, focused && styles.boxFocused]}>
+    <View style={[styles.container, containerStyle]} className={containerClass}>
+      <View
+        style={[styles.box, inputClass, focused && styles.boxFocused]}
+        className={boxClass}
+      >
         {!focused && !value && <Text style={styles.label}>{label}</Text>}
         <TextInput
           style={styles.input}
+          className={inputClassName}
           value={value}
-          onChangeText={setValue}
+          onChangeText={onChangeText}
+          editable={editable}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           multiline
@@ -36,7 +56,7 @@ export default function TextAreaField({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     justifyContent: "center",
   },
   box: {

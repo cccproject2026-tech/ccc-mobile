@@ -30,6 +30,7 @@ interface CustomDrawerDropdownProps {
   placeholder?: string;
   containerStyle?: ViewStyle;
   useCircleIndicator?: boolean;
+  editable?: boolean;
 }
 
 const defaultItems = [
@@ -57,20 +58,30 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
   useCircleIndicator = false,
   placeholder = "Interests",
   containerStyle,
+  editable = true,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [contentHeightValue, setContentHeightValue] = useState(0);
   const animation = useRef(new Animated.Value(0)).current;
 
   const toggleItem = (value: string) => {
+    if (!editable) return;
     if (selectedValues.includes(value)) {
       setSelectedValues(selectedValues.filter((v) => v !== value));
     } else {
       setSelectedValues([...selectedValues, value]);
     }
+    // Close dropdown after selection
+    Animated.timing(animation, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+    setIsExpanded(false);
   };
 
   const toggleExpanded = () => {
+    if (!editable) return;
     const finalValue = isExpanded ? 0 : 1;
     Animated.timing(animation, {
       toValue: finalValue,
@@ -95,7 +106,9 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
         onPress={toggleExpanded}
         activeOpacity={0.7}
       >
-        <Text style={styles.headerText}>{placeholder}</Text>
+        <Text style={styles.headerText}>
+          {selectedValues.length > 0 ? selectedValues.join(", ") : placeholder}
+        </Text>
         <Ionicons
           name={isExpanded ? "chevron-up" : "chevron-down"}
           size={14}

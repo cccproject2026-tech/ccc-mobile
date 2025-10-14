@@ -26,15 +26,15 @@ export default function GuidelinesCard({
 
   return (
     <View className="w-full mt-4" style={{
-      maxWidth:"93%",
-      marginHorizontal:12
+      maxWidth: "93%",
+      marginHorizontal: 12
     }}>
       {/* Header */}
       <View className="text-center mb-7">
         <Text className="text-white text-base font-semibold mb-2 text-center">{title}</Text>
         {showSubtitle && (
           <Text className="inline-block  text-white px-4 py-1 rounded-md text-sm font-medium">
-            {subtitle}
+            {subtitle === "173 x 22" ? "" : subtitle}
           </Text>
         )}
       </View>

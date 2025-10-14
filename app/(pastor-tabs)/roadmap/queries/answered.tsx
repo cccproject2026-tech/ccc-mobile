@@ -45,10 +45,10 @@ export default function AnsweredQueriesScreen() {
     setActiveTab(tabName)
     const routeMap = {
       "New": "/(pastor-tabs)/roadmap/queries/new",
-      "Answered": "/(pastor-tabs)/roadmap/queries/answered", 
+      "Answered": "/(pastor-tabs)/roadmap/queries/answered",
       "Pending": "/(pastor-tabs)/roadmap/queries/pending"
     }
-    
+
     router.push({
       pathname: routeMap[tabName as keyof typeof routeMap] as any,
       params: { data: JSON.stringify(data) }
@@ -69,8 +69,8 @@ export default function AnsweredQueriesScreen() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
-            
+            <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
+
             {/* Header Section */}
             <View
               style={{
