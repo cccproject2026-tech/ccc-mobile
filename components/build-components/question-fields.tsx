@@ -79,7 +79,7 @@ export default function AnswerQuestion({
                 position: "absolute",
                 left: 13,
                 right: 13,
-                bottom: "26%",
+                bottom: "22%",
                 height: 1,
               }}
             />

@@ -1,38 +1,39 @@
-import { Tab } from "@/components/atom/tab"
-import { PastorNavigationHeader } from "@/components/pastor/Header"
-import { Colors } from "@/constants/Colors"
-import { icons } from "@/constants/images"
-import { LinearGradient } from "expo-linear-gradient"
-import { Stack, router, useLocalSearchParams } from "expo-router"
-import React from "react"
+import { Tab } from "@/components/atom/tab";
+import { PastorNavigationHeader } from "@/components/pastor/Header";
+import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
+import { LinearGradient } from "expo-linear-gradient";
+import { Stack, router, useLocalSearchParams } from "expo-router";
+import React from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PendingQueriesScreen() {
-  const { data: dataParam } = useLocalSearchParams()
-  const data = dataParam ? JSON.parse(dataParam as string) : null
+  const { data: dataParam } = useLocalSearchParams();
+  const data = dataParam ? JSON.parse(dataParam as string) : null;
 
-  const [activeTab, setActiveTab] = React.useState("Pending")
+  const [activeTab, setActiveTab] = React.useState("Pending");
 
   const availableTabs = [
     { tab: "New" },
     { tab: "Answered" },
     { tab: "Pending" },
-  ]
+  ];
 
   const pendingQueries = [
     {
       id: 1,
       user: "Me",
       avatar: icons.dummyUser,
-      question: "Is it possible for you to get me a letter stating that my volunteering is part of this course to submit to my church committee?",
+      question:
+        "Is it possible for you to get me a letter stating that my volunteering is part of this course to submit to my church committee?",
       timestamp: "23/01/2024",
       status: "Waiting for response",
     },
@@ -40,25 +41,26 @@ export default function PendingQueriesScreen() {
       id: 2,
       user: "Me",
       avatar: icons.dummyUser,
-      question: "Is it possible for you to get me a letter stating that my volunteering is part of this course to submit to my church committee?",
+      question:
+        "Is it possible for you to get me a letter stating that my volunteering is part of this course to submit to my church committee?",
       timestamp: "23/01/2024",
       status: "Waiting for response",
     },
-  ]
+  ];
 
   const handleTabPress = (tabName: string) => {
-    setActiveTab(tabName)
+    setActiveTab(tabName);
     const routeMap = {
-      "New": "/(pastor-tabs)/roadmap/queries/new",
-      "Answered": "/(pastor-tabs)/roadmap/queries/answered", 
-      "Pending": "/(pastor-tabs)/roadmap/queries/pending"
-    }
-    
+      New: "/(pastor-tabs)/roadmap/queries/new",
+      Answered: "/(pastor-tabs)/roadmap/queries/answered",
+      Pending: "/(pastor-tabs)/roadmap/queries/pending",
+    };
+
     // router.push({
     //   pathname: routeMap[tabName as keyof typeof routeMap],
     //   params: { data: JSON.stringify(data) }
     // })
-  }
+  };
 
   return (
     <>
@@ -74,8 +76,8 @@ export default function PendingQueriesScreen() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
-            
+            <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
+
             {/* Header Section */}
             <View
               style={{
@@ -163,16 +165,26 @@ export default function PendingQueriesScreen() {
                       <View style={styles.userDetails}>
                         <View style={styles.nameTimeRow}>
                           <Text style={styles.userName}>{query.user}</Text>
-                          <Text style={styles.timestamp}>{query.timestamp}</Text>
+                          <Text style={styles.timestamp}>
+                            {query.timestamp}
+                          </Text>
                         </View>
                       </View>
                     </View>
-                    <Text className="font-medium" style={styles.questionText}>{query.question}</Text>
+                    <Text className="font-medium" style={styles.questionText}>
+                      {query.question}
+                    </Text>
                   </View>
 
                   {/* Answer Section */}
                   <View style={styles.answerContainer}>
-                    <Text className="font-medium text-[#FFFFFFCC] text-[16px]">Waiting for response</Text>
+                    <Image
+                      source={icons.loadingIcon}
+                      style={{ width: 15, height: 15 }}
+                    />
+                    <Text className="font-medium text-[#FFFFFFCC] text-[16px]">
+                      Waiting for response
+                    </Text>
                   </View>
                 </View>
               ))}
@@ -181,7 +193,7 @@ export default function PendingQueriesScreen() {
         </SafeAreaView>
       </LinearGradient>
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -284,4 +296,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
   },
-})
+});

@@ -8,13 +8,15 @@ interface GradientCalendarProps {
   setSelected: (date: string) => void;
   containerStyle?: ViewStyle;
   gradientColors?: string[];
+  showDateTime?: boolean;
 }
 
-const GradientCalendar: React.FC<GradientCalendarProps> = ({ 
-  selected, 
+const GradientCalendar: React.FC<GradientCalendarProps> = ({
+  selected,
   setSelected,
   containerStyle,
-  gradientColors = ["#244889", "#0D255E"]
+  gradientColors = ["#244889", "#0D255E"],
+  showDateTime = true
 }) => {
   const handleDayPress = (day: DateData): void => {
     setSelected(day.dateString);
@@ -46,7 +48,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
                 customStyles: {
                   container: {
                     borderWidth: 2,
-                    borderColor: "white", // Circle border color
+                    borderColor: "white",
                     borderRadius: 20,
                   },
                   text: { color: "white", fontWeight: "bold" },
@@ -60,12 +62,16 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
               selectedDayBackgroundColor: "#FFD700",
               todayTextColor: "#FFD700",
               dayTextColor: "#fff",
-              arrowColor: "#fff",
+              arrowColor: "transparent",
               monthTextColor: "#FFD700",
               textDisabledColor: "rgba(255,255,255,0.5)",
             }}
-            renderHeader={renderHeader}
-            
+            renderHeader={() => showDateTime ? renderHeader() : null}
+            hideArrows={true}
+            disableArrowLeft={true}
+            disableArrowRight={true}
+            hideDayNames={false}
+            hideExtraDays={true}
           />
         </View>
       </LinearGradient>
@@ -74,30 +80,15 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 5, 
-    borderRadius: 10 
+  container: {
+    flex: 1,
+    padding: 5,
+    borderRadius: 10
   },
-  header: { 
-    alignItems: "center", 
-    marginBottom: 10 
-  },
-  headerText: { 
-    fontSize: 20, 
-    color: "#fff", 
-    fontWeight: "bold" 
-  },
-  calendarWrapper: { 
-    flex: 1, 
-    borderRadius: 10, 
-    overflow: "hidden" 
-  }, // Ensures proper layout
-  dateText: { 
-    marginTop: 20, 
-    fontSize: 16, 
-    color: "#fff", 
-    textAlign: "center" 
+  calendarWrapper: {
+    flex: 1,
+    borderRadius: 10,
+    overflow: "hidden"
   },
   monthHeader: {
     paddingVertical: 8,
@@ -108,10 +99,10 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     backgroundColor: "#213a73",
   },
-  monthText: { 
-    fontSize: 18, 
-    fontWeight: "bold", 
-    color: "#fff" 
+  monthText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fff"
   },
 });
 

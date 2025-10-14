@@ -16,6 +16,8 @@ interface HeaderProps {
   wrapperClass?: string;
   showNameTag?: boolean;
   showBackButton?: boolean;
+  tagName?: string;
+  route?:string
 }
 
 const image = require("@/assets/logos/CCClogo.png");
@@ -27,17 +29,23 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
   showNotificationIcon = true,
   wrapperClass = ``,
   showNameTag = false,
+  tagName = `John Ross`,
   showBackButton = false,
+  route ='/(pastor-tabs)/notifications'
 }) => {
   const { toggleDrawer } = useDrawerStore();
 
+   const handlePress = () => {
+    router.push(route as any);
+  };
+
   return (
     <View
-      className={`flex-row items-center justify-between px-8 ${wrapperClass}`}
+      className={`flex-row items-center justify-between px-4 ${wrapperClass}`}
     >
       {showDrawer ? (
-        <TouchableOpacity onPress={toggleDrawer} className="">
-          {<Ionicons name="menu" size={size} color={color} />}
+        <TouchableOpacity onPress={toggleDrawer}>
+          <Ionicons name="menu" size={size} color={color} />
         </TouchableOpacity>
       ) : showBackButton ? (
         <Button
@@ -54,7 +62,7 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
           type={"custom"}
         />
       ) : (
-        <></>
+        <View className="h-10 w-10"></View>
       )}
       {showNameTag && (
         <LinearGradient
@@ -64,14 +72,14 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
           style={styles.gradientBorder}
         >
           <View style={styles.innerContainer}>
-            <Text style={styles.text}>John Ross</Text>
+            <Text style={styles.text}>{tagName}</Text>
           </View>
         </LinearGradient>
       )}
       <View className="flex-row gap-4 items-center">
         {showNotificationIcon && (
           <TouchableOpacity
-            onPress={() => router.push("/(pastor-tabs)/notifications")}
+            onPress={() => handlePress()}
             className=""
           >
             <Ionicons name="notifications-outline" size={24} color={color} />

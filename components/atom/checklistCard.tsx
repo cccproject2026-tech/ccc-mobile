@@ -1,4 +1,3 @@
-// ChecklistCard.tsx
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
@@ -66,7 +65,7 @@ export function ChecklistCard({
             disabled={!selectable}
             accessibilityRole="checkbox"
             accessibilityState={{ checked }}
-            className='flex flex-row items-start'
+            className='flex flex-row items-center'
           >
             {/* Checkbox */}
             <View
@@ -116,9 +115,9 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
+    width: 23,
+    height: 21,
+    borderRadius: 3,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',

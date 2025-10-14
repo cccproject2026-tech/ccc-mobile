@@ -1,5 +1,7 @@
 import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { router, usePathname } from "expo-router";
 import React from "react";
 import {
   Image,
@@ -8,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from "react-native";
 import { icons } from "../../constants/images";
 import { UploadPDFButton } from "./buttons";
@@ -16,9 +19,11 @@ import CheckBox from "./checkBox";
 export const AppointmentCard = ({
   data,
   dataKey,
+  type,
 }: {
   data: any;
   dataKey: string | number;
+  type?: string;
 }) => {
   return (
     <View key={dataKey} style={styles.appointmentBox}>
@@ -30,62 +35,108 @@ export const AppointmentCard = ({
         />
       </View>
       <View style={styles.appointmentDetails}>
-        <View>
+        <View className="flex flex-row justify-between">
           <Text style={styles.dateTimeText}>
             {data.date} <Text style={styles.timeText}> Time </Text>
             {data.time}
           </Text>
+          {type === "mentor" ? (
+            <TouchableOpacity>
+              <Image source={icons.forward} style={styles.iconStyle} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => {}}>
+              <Ionicons name="ellipsis-vertical" size={20} color="white" />
+            </TouchableOpacity>
+          )}
         </View>
-        <View style={styles.mentorInfoContainer}>
-          <Image source={icons.myProfile} style={styles.mentorImage} />
-          <Text style={styles.mentorNameText}>John Ross - {data.role}</Text>
-        </View>
-        <Text style={styles.modeText}>
-          Mode:{" "}
-          <Text style={styles.modeBoldText}>
-            {data.mode == "duo" ? "Duo" : "Google Meet"}
-          </Text>
-        </Text>
-        <View style={styles.iconRow}>
-          <Image source={icons.phone} style={styles.iconStyle} />
-          <Image source={icons.message} style={styles.iconStyle} />
-          <Image source={icons.mail} style={styles.iconStyle} />
-          <Image source={icons.whatsapp} style={styles.iconStyle} />
+        <View className="flex flex-row justify-between items-center ">
+          <View>
+            <View style={styles.mentorInfoContainer}>
+              <Image source={icons.myProfile} style={styles.mentorImage} />
+              <Text style={styles.mentorNameText}>John Ross - {data.role}</Text>
+            </View>
+            <Text style={styles.modeText}>
+              Mode:{" "}
+              <Text style={styles.modeBoldText}>
+                {data.mode == "duo" ? "Duo" : "Google Meet"}
+              </Text>
+            </Text>
+            <View style={styles.iconRow}>
+              <Image source={icons.phone} style={styles.iconStyle} />
+              <Image source={icons.message} style={styles.iconStyle} />
+              <Image source={icons.mail} style={styles.iconStyle} />
+              <Image source={icons.whatsapp} style={styles.iconStyle} />
+            </View>
+          </View>
+          {type !== "mentor" && (
+            <TouchableOpacity>
+              <Image source={icons.forward} style={styles.iconStyle} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-      <TouchableOpacity>
-        <Image source={icons.forward} style={styles.iconStyle} />
-      </TouchableOpacity>
     </View>
   );
 };
-export const NotificationCard = ({ data }: { data: any }) => {
+export const NotificationCard = ({
+  data,
+  type,
+  iconsStyles,
+}: {
+  data: any;
+  type?: string;
+  iconsStyles?: ViewStyle;
+}) => {
   return (
     <View style={styles.NotificationBox}>
       <View
-        style={{ width: 100, height: "100%", alignItems: "center", padding: 8 }}
+        style={[
+          { width: 100, height: "100%", alignItems: "center", padding: 8 },
+          iconsStyles,
+        ]}
       >
         <Image
           source={
             data.type == "course" || data.type == "assignment"
               ? icons.Revitalization2
               : data.type == "note"
-                ? icons.edit2
-                : icons.profile2
+              ? icons.edit2
+              : icons.profile2
           }
-          style={{ width: 60, height: 60 }}
-        // resizeMode={"contain"}
+          style={{
+            width: type === "mentor" ? 40 : 60,
+            height: type === "mentor" ? 45 : 60,
+          }}
+          // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
         <View>
           <Text
-            style={{ color: "white", fontSize: 16, fontWeight: "600", lineHeight: 22 }}
+            style={{
+              color: "white",
+              fontSize: 16,
+              fontWeight: "600",
+              lineHeight: 22,
+            }}
             ellipsizeMode="tail"
           >
             {data.title.toUpperCase()}
           </Text>
         </View>
+        {type === "mentor" && (
+          <View className="flex flex-row items-center text-base font-medium text-white/70 gap-[6px]">
+            <Image
+              source={icons.myProfile} // Replace with actual user profile image URL
+              style={{ width: 20, height: 20, borderRadius: "50%" }}
+              resizeMode="contain"
+            />
+            <Text style={{ color: "white", fontWeight: "200" }}>
+              Pr. John Doe
+            </Text>
+          </View>
+        )}
         <Text style={{ color: "white", fontWeight: "200" }}>
           {data.description}
         </Text>
@@ -109,35 +160,150 @@ export const NotificationCard = ({ data }: { data: any }) => {
     </View>
   );
 };
+
+export const NotificationMentorCard = ({
+  data,
+  type,
+  iconsStyles,
+}: {
+  data: any;
+  type?: string;
+  iconsStyles?: ViewStyle;
+}) => {
+  return (
+    <View style={styles.NotificationBox}>
+      <View style={[{ width: "auto", height: "100%" }, iconsStyles]}>
+        <Image
+          source={
+            data.type == "course" || data.type == "assignment"
+              ? icons.Revitalization2
+              : data.type == "note"
+              ? icons.edit2
+              : icons.profile2
+          }
+          style={{
+            width: type === "mentor" ? 40 : 60,
+            height: type === "mentor" ? 45 : 60,
+          }}
+          // resizeMode={"contain"}
+        />
+      </View>
+      <View style={{ ...styles.appointmentDetails, marginLeft: 12 }}>
+        <View>
+          <Text
+            style={{
+              color: "white",
+              fontSize: 16,
+              fontWeight: "600",
+              lineHeight: 22,
+            }}
+            ellipsizeMode="tail"
+          >
+            {data.title.toUpperCase()}
+          </Text>
+        </View>
+        {type === "mentor" && (
+          <View className="flex flex-row items-center text-base font-medium text-white/70 gap-[6px]">
+            <Image
+              source={icons.myProfile} // Replace with actual user profile image URL
+              style={{ width: 20, height: 20, borderRadius: "50%" }}
+              resizeMode="contain"
+            />
+            <Text style={{ color: "white", fontWeight: "200" }}>
+              Pr. John Doe
+            </Text>
+          </View>
+        )}
+        <Text style={{ color: "white", fontWeight: "200" }}>
+          {data.description}
+        </Text>
+      </View>
+      {!data.read && (
+        <View
+          style={{
+            width: 8,
+            height: 8,
+            backgroundColor: "yellow",
+            borderRadius: 999999,
+            position: "absolute",
+            top: 16,
+            right: 16,
+          }}
+        ></View>
+      )}
+      <View style={{ position: "absolute", bottom: 3, right: 6 }}>
+        <Text style={{ color: "white", fontWeight: "200" }}>{data.time}</Text>
+      </View>
+    </View>
+  );
+};
+
 export const RevitalizationCard = ({
   data,
   navigation,
+  wrapperClass = ``,
 }: {
   data: any;
   navigation: any;
+  wrapperClass?: string;
 }) => {
   const progressPercentage =
     (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%";
+  const [hasVisited, setHasVisited] = React.useState(false);
+  const pathname = usePathname();
+  console.log(pathname, "paht");
 
   return (
     <TouchableOpacity
-      onPress={() =>
-        data.assignment
-          ? navigation.push({
-            pathname:
-              "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-            params: { data: JSON.stringify(data) },
-          })
-          : data.subPhase
+      onPress={() => {
+        console.log(data.subPhase);
+        if (pathname === "/roadmap/phase-1/revitalization-roadmap") {
+          typeof data.assignment !== "undefined" && data.assignment
             ? navigation.push({
-              pathname: "/(pastor-tabs)/roadmap/sub-phases",
-              params: { data: JSON.stringify(data) },
-            })
+                pathname:
+                  "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+                params: { data: JSON.stringify(data) },
+              })
+            : typeof data.subPhase !== "undefined" && data.subPhase
+            ? navigation.push({
+                pathname: "/(pastor-tabs)/roadmap/sub-phases",
+                params: { data: JSON.stringify(data) },
+              })
             : navigation.push({
-              pathname: "/(pastor-tabs)/roadmap/phase-1/detailed-roadmap",
-              params: { data: JSON.stringify(data) },
-            })
-      }
+                pathname: "/(pastor-tabs)/roadmap/phase-1/detailed-roadmap",
+                params: { data: JSON.stringify(data) },
+              });
+        } else if (pathname === "/roadmap/phase-2/revitalization-roadmap") {
+          typeof data.assignment !== "undefined" && data.assignment
+            ? navigation.push({
+                pathname:
+                  "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+                params: { data: JSON.stringify(data) },
+              })
+            : typeof data.subPhase !== "undefined" && data.subPhase
+            ? navigation.push({
+                pathname: "/(pastor-tabs)/roadmap/sub-phases",
+                params: { data: JSON.stringify(data) },
+              })
+            : data.empowerment
+            ? navigation.push({
+                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
+                params: { data: JSON.stringify(data) },
+              })
+            : navigation.push({
+                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
+                params: { data: JSON.stringify(data) },
+              });
+        } else {
+          if (data.phase === "Phase 1") {
+            router.push("/roadmap/phase-1/revitalization-roadmap");
+          } else if (data.phase === "Phase 2") {
+            router.push("/roadmap/phase-2/revitalization-roadmap");
+          } else {
+            router.push("/roadmap/phase-1/revitalization-roadmap");
+          }
+        }
+      }}
       style={{
         width: "100%",
         backgroundColor: "#194F82",
@@ -150,6 +316,7 @@ export const RevitalizationCard = ({
       }}
     >
       <View
+        className={`${wrapperClass}`}
         style={{
           width: "100%",
           flexDirection: "row",
@@ -201,7 +368,7 @@ export const RevitalizationCard = ({
             </Text>
           </View>
         </View>
-        <View style={{ marginLeft: 10, flex: 1, gap: 4 }}>
+        <View style={{ marginLeft: 10, flex: 1, gap: 4, marginTop: 4 }}>
           <View>
             <Text
               style={{ color: "white", fontSize: 16, fontWeight: "600" }}
@@ -471,9 +638,12 @@ export const RoadMapCard = ({
           }
           style={{ width: 22, height: 22 }}
         />
-        <Text style={styles.roadmapText}>
-          {data.phase} – {data.title}
-        </Text>
+        <View className="flex flex-col gap-2.5">
+          <Text style={styles.roadmapText}>
+            {data.phase} – {data.title}
+          </Text>
+          <Text style={styles.roadmapText}>Task : {data.title}</Text>
+        </View>
       </View>
       <View style={[styles.leftContent, { marginLeft: "auto" }]}>
         <Text
@@ -492,11 +662,19 @@ export const RoadMapCard = ({
   );
 };
 
-export const CardBox = ({ icon, title }: { icon: any; title: string }) => {
+export const CardBox = ({
+  icon,
+  title,
+  cardStyle,
+}: {
+  icon: any;
+  title: string;
+  cardStyle?: ViewStyle;
+}) => {
   return (
     <LinearGradient
       colors={[Colors.darkBlueGradientTwo, Colors.lightBlueGradientTwo]}
-      style={styles.gradientContainer}
+      style={[styles.gradientContainer, cardStyle]}
     >
       <Image source={icon} style={styles.icon} />
       <Text className="text-white font-medium text-[16px] text-center">
@@ -576,15 +754,45 @@ export const DetailedMentorCard = ({
       {/* Main content */}
       <View style={{ flexDirection: "row" }}>
         {/* Profile Image */}
-        <View style={{ marginRight: 16 }}>
+        <View style={{ marginRight: 16, width: "35%" }}>
           <Image
             source={icons.dummyUser}
             style={{
-              width: 100,
-              height: 85,
+              width: "90%",
+              height: 95,
               borderRadius: 10,
             }}
           />
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: 16,
+              gap: 13,
+              width: "90%",
+              justifyContent: "space-between",
+            }}
+          >
+            <Image
+              source={icons.phone}
+              style={[styles.MentorIcon, { flex: 1 }]}
+              resizeMode="contain"
+            />
+            <Image
+              source={icons.message}
+              style={[styles.MentorIcon, { flex: 1 }]}
+              resizeMode="contain"
+            />
+            <Image
+              source={icons.mail}
+              style={[styles.MentorIcon, { flex: 1 }]}
+              resizeMode="contain"
+            />
+            <Image
+              source={icons.whatsapp}
+              style={[styles.MentorIcon, { flex: 1 }]}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         {/* Text content */}
@@ -621,20 +829,6 @@ export const DetailedMentorCard = ({
           </Text>
         </View>
       </View>
-
-      {/* Contact icons - bottom left */}
-      <View
-        style={{
-          flexDirection: "row",
-          marginTop: 16,
-          gap: 16,
-        }}
-      >
-        <Image source={icons.phone} style={styles.MentorIcon} />
-        <Image source={icons.message} style={styles.MentorIcon} />
-        <Image source={icons.mail} style={styles.MentorIcon} />
-        <Image source={icons.whatsapp} style={styles.MentorIcon} />
-      </View>
     </View>
   );
 };
@@ -658,11 +852,11 @@ export const CommentsCard = ({
             data.type == "course" || data.type == "assignment"
               ? icons.dummyUser
               : data.type == "note"
-                ? icons.dummyUser2
-                : icons.profile2
+              ? icons.dummyUser2
+              : icons.profile2
           }
           style={{ width: 60, height: 60, borderRadius: 999999 }}
-        // resizeMode={"contain"}
+          // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -703,6 +897,95 @@ export const CommentsCard = ({
         <Text style={{ color: "white", fontWeight: "200" }}>{data.time}</Text>
       </View>
     </View>
+  );
+};
+
+export const VideoCard = ({
+  data,
+  navigation,
+}: {
+  data: any;
+  navigation: any;
+}) => {
+  return (
+    <TouchableOpacity
+      style={{
+        width: "100%",
+        backgroundColor: "#194F82",
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
+        marginVertical: 10,
+        borderWidth: 1,
+        borderColor: "#FFFFFF73",
+        maxWidth: "95%",
+        marginHorizontal: "auto",
+      }}
+    >
+      <View
+        style={{
+          width: "100%",
+          flexDirection: "row",
+          alignItems: "center",
+          height: 112,
+          gap: 8,
+        }}
+      >
+        <View
+          style={{
+            width: 130,
+            height: "100%",
+          }}
+        >
+          <View className="h-full">
+            <Image
+              source={data?.image}
+              style={{ width: 130, height: "100%", borderRadius: 12 }}
+            />
+          </View>
+        </View>
+        <View style={{ marginLeft: 0, flex: 1, gap: 3, width: "100%" }}>
+          <View className="w-full flex-row items-center">
+            <Text
+              className="font-medium text-white/70"
+              style={{ fontSize: 14, fontWeight: "500" }}
+              ellipsizeMode="tail"
+            >
+              introduction
+            </Text>
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 6,
+                backgroundColor: "white",
+                marginHorizontal: 8,
+              }}
+            />
+            <Text
+              className="font-medium text-white/70"
+              style={{ fontSize: 14, fontWeight: "500" }}
+            >
+              11 min
+            </Text>
+          </View>
+          <View>
+            <Text
+              style={{ color: "white", fontSize: 16, fontWeight: "600" }}
+              ellipsizeMode="tail"
+            >
+              {data?.title}
+            </Text>
+          </View>
+          <Text
+            className="py-2 line-clamp-3"
+            style={{ color: "#F4F2F2B5", fontWeight: "400", fontSize: 14 }}
+          >
+            {data?.description}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 };
 
@@ -781,13 +1064,13 @@ export const ListCard = ({
                   <CheckBox
                     type="circle"
                     value={false}
-                    setValue={() => { }}
+                    setValue={() => {}}
                   ></CheckBox>
                 ) : (
                   <CheckBox
                     type="square"
                     value={false}
-                    setValue={() => { }}
+                    setValue={() => {}}
                   ></CheckBox>
                 )}
                 {listImage && (
@@ -839,14 +1122,13 @@ export const InputCard = ({
     <View
       style={{
         width: "100%",
-        // backgroundColor: "#176192", // customBlueOne
         borderRadius: 10,
         paddingVertical: 18,
         paddingHorizontal: 12,
         flexDirection: "column",
         alignItems: "flex-start",
         borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
+        borderColor: "rgba(255, 255, 255, 0.8)",
         marginBottom: 16,
         gap: 10,
       }}
@@ -868,7 +1150,7 @@ export const InputCard = ({
             icon={icons.upload}
             style={{ backgroundColor: "#1f1a79", width: "60%" }}
             selectedFile={null}
-            setSelectedFile={() => { }}
+            setSelectedFile={() => {}}
           ></UploadPDFButton>
         </View>
       )}
@@ -1078,7 +1360,7 @@ export const AssessmentCard = ({
           </View>
 
           {(data && data?.status === "Not Started") ||
-            data?.status === "Due" ? (
+          data?.status === "Due" ? (
             <TouchableOpacity
               style={{
                 backgroundColor: "white",
@@ -1088,6 +1370,12 @@ export const AssessmentCard = ({
                 marginVertical: 12,
                 width: "70%",
               }}
+              onPress={() => {
+                navigation.push({
+                  pathname: "/(pastor-tabs)/assessments/cma-survey-page",
+                  params: { data: JSON.stringify(data) },
+                });
+              }}
             >
               <Text
                 style={{
@@ -1095,7 +1383,7 @@ export const AssessmentCard = ({
                   color: "#001FC1",
                   fontWeight: 600,
                   paddingBottom: 4,
-                  lineHeight: 0,
+                  lineHeight: 22,
                 }}
               >
                 Start Now
@@ -1201,13 +1489,13 @@ export const ProgressCard = ({
       onPress={() =>
         data.subPhase
           ? navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/sub-phases",
-            params: { data: JSON.stringify(data) },
-          })
+              pathname: "/(pastor-tabs)/roadmap/sub-phases",
+              params: { data: JSON.stringify(data) },
+            })
           : navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
-            params: { data: JSON.stringify(data) },
-          })
+              pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
+              params: { data: JSON.stringify(data) },
+            })
       }
       style={{
         width: "100%",
@@ -1435,6 +1723,7 @@ const styles = StyleSheet.create({
   mentorInfoContainer: {
     flexDirection: "row",
     alignItems: "center",
+    borderRadius: "50%",
   },
   mentorNameText: {
     color: "#FFFFFF",
@@ -1475,7 +1764,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
@@ -1483,7 +1772,7 @@ const styles = StyleSheet.create({
   leftContent: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   roadmapText: {
     color: "#FFFFFF", // white
@@ -1549,9 +1838,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   mentorImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 2, // rounded-md
+    width: 20,
+    height: 20,
+    borderRadius: "50%", // rounded-md
     marginHorizontal: 8, // mx-2
   },
   mentorText: {

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { icons } from "../../constants/images";
 import { useDrawerStore } from "./DrawerStore";
+const image = require("@/assets/logos/CCClogo.png");
 
 interface Navigation {
   navigate: (routeName: string) => void;
@@ -19,14 +20,24 @@ interface Navigation {
 
 interface SubTab {
   name: string;
+  iconKey: keyof typeof icons;
   navigateLocation: string;
+  iconSize?: { width: number; height: number };
 }
+
+type SubTabItem = {
+  name: string;
+  iconKey: string;
+  navigateLocation: string;
+  iconSize?: { width: number; height: number };
+};
 
 interface DrawerItem {
   name: string;
   iconKey: keyof typeof icons;
-  navigateLocation: string;
+  navigateLocation?: string;
   subTabs?: SubTab[];
+  iconSize?: { width: number; height: number };
 }
 
 interface CustomDrawerContentProps {
@@ -47,9 +58,9 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
       navigateLocation: "/(pastor-tabs)/my-mentors",
     },
     {
-      name: "Revitalization RoadMap",
+      name: "Revitalization Roadmap",
       iconKey: "Revitalization",
-      navigateLocation: "/(pastor-tabs)/roadmap/phase-1/revitalization-roadmap",
+      navigateLocation: "/(pastor-tabs)/roadmap/revitalization-roadmap",
     },
     {
       name: "Assessments",
@@ -74,6 +85,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           name: "My Profile",
           iconKey: "myProfile",
           navigateLocation: "/(pastor-tabs)/profile/my-profile",
+          iconSize: { width: 25, height: 20 },
         },
         {
           name: "Documents",
@@ -86,7 +98,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           navigateLocation: "/(pastor-tabs)/profile/my-assignment/assignment",
         },
         {
-          name: "Certificate",
+          name: "Certificates",
           iconKey: "certificate",
           navigateLocation: "/(pastor-tabs)/profile/certificate",
         },
@@ -114,7 +126,8 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Change Mentor",
           iconKey: "changeMentor",
-          navigateLocation: "Profile",
+          navigateLocation: "/(pastor-tabs)/roadmap/phase-2/empowerment-cards",
+          // navigateLocation: "/(pastor-tabs)/profile/my-profile",
         },
       ],
     },
@@ -124,7 +137,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "My Mentees",
       iconKey: "myMentors",
-      navigateLocation: "Mentors",
+      navigateLocation: "/(mentor-tabs)/my-mentors",
     },
     {
       name: "Courses",
@@ -134,42 +147,42 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Revitalization RoadMap",
       iconKey: "Revitalization",
-      navigateLocation: "Revitalization",
+      navigateLocation: "/(mentor-tabs)/roadmap/landing/landing",
     },
     {
       name: "Assessments",
       iconKey: "Assessments",
-      navigateLocation: "Home",
+      navigateLocation: "/(mentor-tabs)/assessments/survey",
     },
     {
       name: "Track Progress",
       iconKey: "progress",
-      navigateLocation: "Progress",
+      navigateLocation:  "/(mentor-tabs)/progress/progress",
     },
     {
       name: "Schedule",
       iconKey: "Appointments",
-      navigateLocation: "Appointments",
+      navigateLocation: "/(mentor-tabs)/progress/progress",
     },
     {
       name: "Profile",
       iconKey: "profile",
-      navigateLocation: "profile",
+      navigateLocation: "/(mentor-tabs)/profile/my-profile",
       subTabs: [
         {
           name: "My Profile",
           iconKey: "myProfile",
-          navigateLocation: "profile",
+          navigateLocation: "/(mentor-tabs)/profile/my-profile",
         },
         {
           name: "Documents",
           iconKey: "document",
-          navigateLocation: "Profile",
+           navigateLocation: "/(mentor-tabs)/profile/my-profile",
         },
         {
           name: "Certificate",
           iconKey: "certificate",
-          navigateLocation: "Certificate",
+           navigateLocation: "/(mentor-tabs)/profile/certificate",
         },
         {
           name: "Notes",
@@ -179,7 +192,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Micro Grant",
           iconKey: "microGrant",
-          navigateLocation: "MicroGrant",
+          navigateLocation: "/(mentor-tabs)/profile/grant",
         },
       ],
     },
@@ -191,12 +204,12 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Change Password",
           iconKey: "changePass",
-          navigateLocation: "Profile",
+          navigateLocation: "/(mentor-tabs)/profile/my-profile",
         },
         {
           name: "Turn Off Notifications",
           iconKey: "turnOffNotification",
-          navigateLocation: "/(pastor-tabs)/notifications",
+          navigateLocation: "/(mentor-tabs)/notifications",
         },
       ],
     },
@@ -327,6 +340,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
             height: 40,
             borderRadius: 10000,
             paddingRight: 10,
+            paddingTop: 7,
           }}
         >
           {/* <Image
@@ -335,7 +349,12 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
             resizeMode="contain"
           /> */}
           <TouchableOpacity onPress={closeDrawer}>
-            <Text>X</Text>
+            {/* <Text>X</Text> */}
+            <Image
+              source={image}
+              style={{ width: 25, height: 25 }}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -360,13 +379,13 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
               <Image
                 source={icons[e.iconKey as keyof typeof icons]}
                 style={{ width: 20, height: 20 }}
-              ></Image>
+              />
               <Text style={styles.drawerText}>{e.name}</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
             {/* <View style={styles.separator} /> */}
             {(e.name == "Profile" || e.name == "Settings") &&
-              e.subTabs?.map((ee, index) => (
+              e.subTabs?.map((ee: SubTabItem, index) => (
                 <View style={{ width: "70%", marginLeft: 90 }} key={index}>
                   <TouchableOpacity
                     style={[styles.drawerItem, { ...{} }]}
@@ -374,8 +393,13 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
                   >
                     <Image
                       source={icons[ee.iconKey as keyof typeof icons]}
-                      style={{ width: 20, height: 20 }}
-                    ></Image>
+                      style={{
+                        width: ee.iconSize?.width || 20,
+                        height: ee.iconSize?.height || 20,
+                        objectFit: "contain"
+                      }}
+
+                    />
                     <Text style={styles.drawerText}>{ee.name}</Text>
                   </TouchableOpacity>
                   <View style={styles.separator} />
