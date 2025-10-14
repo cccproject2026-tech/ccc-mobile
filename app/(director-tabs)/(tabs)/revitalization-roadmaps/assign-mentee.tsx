@@ -139,12 +139,6 @@ export default function AssignMenteeScreen() {
 
     const filterOptions = useMemo(() => getFilterOptions(), []);
 
-    const getFilterDisplayText = () => {
-        if (STATES.includes(selectedFilter)) {
-            return `State : ${selectedFilter}`;
-        }
-        return selectedFilter || 'Latest Join';
-    };
 
     const filteredMentees = useMemo(() => {
         return mockMentees.filter(mentee =>

@@ -23,7 +23,6 @@ export default function CreateRoadmapScreen() {
     const { bottom } = useSafeAreaInsets();
     const params = useLocalSearchParams();
 
-    // Initialize fresh form for phase creation
     const [formData, setFormData] = useState<{
         name: string;
         subheading: string;
@@ -35,7 +34,7 @@ export default function CreateRoadmapScreen() {
         subheading: '',
         completionTime: '',
         bannerImage: null,
-        selectedDivision: 'Church' // Default selection
+        selectedDivision: 'Church'
     });
 
     const handleImagePicker = async () => {

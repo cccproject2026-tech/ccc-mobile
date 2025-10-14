@@ -199,18 +199,7 @@ export default function InterestFormScreen() {
         },
     ];
 
-    const handleAddSection = (afterSectionId: string) => {
-        const sectionIndex = sections.findIndex(s => s.id === afterSectionId);
-        const newSection: FormSection = {
-            id: `section_${Date.now()}`,
-            title: 'New Section',
-            fields: [],
-        };
-        const newSections = [...sections];
-        newSections.splice(sectionIndex + 1, 0, newSection);
-        setSections(newSections);
-        setActiveMenuSection(null);
-    };
+
 
     const handleDeleteSection = (sectionId: string) => {
         setSections(prevSections => prevSections.filter(s => s.id !== sectionId));

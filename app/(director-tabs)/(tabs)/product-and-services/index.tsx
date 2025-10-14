@@ -185,8 +185,7 @@ export default function ProductAndServices() {
                 }, 300);
             }
         },
-        // The following two items were incorrectly wired to the assign/remove mentor routes.
-        // Keep them as placeholders to avoid accidental navigation until proper routes are available.
+
         { icon: 'person-add-outline', label: 'Assessments', onPress: () => console.log('Assessments') },
         { icon: 'person-remove-outline', label: 'Assignments', onPress: () => console.log('Assignments') },
         { icon: 'clipboard-outline', label: 'Roadmaps of Mentees', onPress: () => console.log('Roadmaps of Mentees') },
