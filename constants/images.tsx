@@ -70,6 +70,9 @@ interface Icons {
   media2: ImageSourcePropType;
   videoMedia: ImageSourcePropType
   attachPin: ImageSourcePropType;
+  certificateBadge: ImageSourcePropType;
+  documentsIcon: ImageSourcePropType;
+  fieldMentorIcon: ImageSourcePropType;
 }
 
 export const icons: Icons = {
@@ -142,4 +145,7 @@ export const icons: Icons = {
   media2: require("@/assets/images/media-2.png"),
   videoMedia: require("@/assets/images/VIDEO.png"),
   attachPin: require("@/assets/images/attach-pin.png"),
+  certificateBadge: require("@/assets/icons/certificate-badge.png"),
+  documentsIcon: require("@/assets/icons/documents-icon.png"),
+  fieldMentorIcon: require("@/assets/icons/field-mentor-icon.png"),
 };

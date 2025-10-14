@@ -140,7 +140,7 @@ export default function Approval() {
                             </View>
 
                             <View className="max-w-[90%] mt-12 w-full mx-auto rounded-[10px] border border-white">
-                                <View className="rounded-2xl overflow-hidden">
+                                <View className="overflow-hidden rounded-2xl">
                                     <LinearGradient
                                         colors={["#7C3AED", "#3B82F6", "#1E40AF"]}
                                         start={{ x: 0, y: 0 }}

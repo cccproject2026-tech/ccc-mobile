@@ -74,6 +74,46 @@ export default function CommentsScreen() {
             <View className="flex-1 mt-4">
               {dummyComments.map((comment) => (
                 <CommentCard key={comment.id} comment={comment} />
+                <View key={comment.id} style={styles.commentContainer}>
+                  {/* Highlight Dot */}
+                  {comment.isHighlighted && (
+                    <View style={styles.highlightDot} />
+                  )}
+
+                  {/* Main Content Row */}
+                  <View style={styles.mainContentRow}>
+                    {/* Avatar */}
+                    <Image source={comment.avatar} style={styles.avatar} />
+
+                    {/* Right Content */}
+                    <View style={styles.rightContent}>
+                      {/* User Name */}
+                      <Text style={styles.userName}>{comment.user}</Text>
+
+                      {/* Message */}
+                      <Text style={styles.messageText}>{comment.message}</Text>
+
+                      {/* Action Icons */}
+                      <View style={styles.actionIcons}>
+                        <TouchableOpacity style={styles.iconButton}>
+                          <Image source={icons.phone} style={styles.actionIcon} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconButton}>
+                          <Image source={icons.message} style={styles.actionIcon} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconButton}>
+                          <Image source={icons.mail} style={styles.actionIcon} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconButton}>
+                          <Image source={icons.whatsapp} style={styles.actionIcon} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Timestamp */}
+                  <Text style={styles.timestamp}>{comment.timestamp}</Text>
+                </View>
               ))}
             </View>
           </ScrollView>

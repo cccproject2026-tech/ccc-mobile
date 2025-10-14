@@ -383,7 +383,7 @@ export default function ProgressScreen() {
               style={{ marginTop: 20 }}
             >
               <Text
-                className="text-white px-4"
+                className="px-4 text-white"
                 style={{ fontWeight: 600, fontSize: 16 }}
               >
                 Revitalization Roadmap Progress
@@ -409,7 +409,7 @@ export default function ProgressScreen() {
                     onPress={() => {
                       setRoadmapTabs(e.tab);
                     }}
-                    className=" flex-1 w-full"
+                    className="flex-1 w-full "
                   />
                 ))}
               </ScrollView>
@@ -438,7 +438,7 @@ export default function ProgressScreen() {
               style={{ marginTop: 20 }}
             >
               <Text
-                className="text-white px-4"
+                className="px-4 text-white"
                 style={{ fontWeight: 600, fontSize: 16 }}
               >
                 Assessment Progress
@@ -464,7 +464,7 @@ export default function ProgressScreen() {
                     onPress={() => {
                       setAssessmentTabs(e.tab);
                     }}
-                    className=" flex-1 w-full"
+                    className="flex-1 w-full "
                   />
                 ))}
               </ScrollView>
