@@ -10,6 +10,7 @@ import {
   AlbertSans_700Bold,
   useFonts,
 } from "@expo-google-fonts/albert-sans"
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import {
   DarkTheme,
   DefaultTheme,
@@ -17,6 +18,7 @@ import {
 } from "@react-navigation/native"
 import { Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 import "react-native-reanimated"
 
 export default function RootLayout() {
@@ -40,21 +42,25 @@ export default function RootLayout() {
 
   return (
     <DataProvider>
-      <GluestackUIProvider mode="light">
-        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(pastor-tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="(mentor-tabs)" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="(director-tabs)"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen name="+not-found" />
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </GluestackUIProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <BottomSheetModalProvider>
+          <GluestackUIProvider mode="light">
+            <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+              <Stack>
+                <Stack.Screen name="(pastor-tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(mentor-tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="(director-tabs)"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen name="+not-found" />
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+              </Stack>
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </GluestackUIProvider>
+        </BottomSheetModalProvider>
+      </GestureHandlerRootView>
     </DataProvider>
   )
 }

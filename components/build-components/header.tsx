@@ -78,7 +78,7 @@ export default function Header({
               type="custom"
               title="New Meeting"
               icon={icons.plusIcon}
-              onPress={() => {}}
+              onPress={() => { }}
               style={{
                 width: 160,
                 backgroundColor: "rgba(255, 255, 255, 0.16)",

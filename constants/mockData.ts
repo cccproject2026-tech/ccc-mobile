@@ -1,0 +1,429 @@
+import { Mentee } from "@/components/director/MenteeCard";
+import { icons } from "./images";
+
+export const appointments = [
+    {
+        id: '1',
+        date: '04 Aug 24',
+        time: '11:30',
+        tz: 'EST',
+        person: 'Pr. John Ross',
+        mode: 'Duo',
+        icon: icons.duoMeet,
+    },
+    {
+        id: '2',
+        date: '11 Aug 24',
+        time: '11:30',
+        tz: 'EST',
+        person: 'Pr. John Ross',
+        mode: 'Google Meet',
+        icon: icons.googleMeet,
+    },
+];
+
+
+export const newInterests = [
+    {
+        id: '1',
+        name: 'John Ross',
+        role: 'Pastor',
+        time: '9:43 am',
+    },
+    {
+        id: '2',
+        name: 'John Ross',
+        role: 'Pastor',
+        time: '9:43 am',
+    },
+    {
+        id: '3',
+        name: 'John Ross',
+        role: 'Pastor',
+        time: '9:43 am',
+    },
+];
+
+export const exploreItems = [
+    { id: '1', icon: icons.progress, title: 'Track Progress' },
+    { id: '2', icon: icons.Assessments, title: 'Schedule' },
+    { id: '3', icon: icons.microGrant, title: 'Microgrant' },
+    { id: '4', icon: icons.Revitalization, title: 'Revitalization Roadmap' },
+    { id: '5', icon: icons.Assessments, title: 'Assessment' },
+    { id: '6', icon: icons.assignment, title: 'Assignment' },
+];
+
+export const stats = [
+    { id: '1', label: 'Total Mentors', value: '501' },
+    { id: '2', label: 'Total Pastors', value: '501' },
+    { id: '3', label: 'Pastors Completed', value: '501' },
+];
+
+
+export const mockMentees: Mentee[] = [
+    // STATE 1: Progress < 100% - Show phase + progress bar ONLY
+    {
+        id: '1',
+        name: 'John Doe',
+        role: 'Pastor',
+        description: 'Sub text area write something here. That you can read more about him',
+        lastContacted: '5 Days Ago',
+        totalMentors: 5,
+        phase: 'Church Empowerment',
+        phaseNumber: 2,
+        progress: 70,
+        isCompleted: false,
+        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
+    },
+    {
+        id: '2',
+        name: 'Jane Smith',
+        role: 'Pastor',
+        description: 'Sub text area write something here. That you can read more about him',
+        lastContacted: '3 Days Ago',
+        totalMentors: 5,
+        phase: 'Self Revitalization',
+        phaseNumber: 3,
+        progress: 45,
+        isCompleted: false,
+        profileImage: 'https://randomuser.me/api/portraits/women/44.jpg',
+    },
+
+    // STATE 2: Progress = 100% but NOT marked complete - Show "Mark as Complete" button
+    {
+        id: '3',
+        name: 'John Ross',
+        role: 'Pastor',
+        description: 'Sub text area write something here. That you can read more about him',
+        lastContacted: '5 Days Ago',
+        totalMentors: 5,
+        phase: 'Community Revitalization and Multiplication',
+        phaseNumber: 1,
+        progress: 100,
+        isCompleted: false,
+        profileImage: 'https://randomuser.me/api/portraits/men/33.jpg',
+    },
+
+    // STATE 3: Marked complete but NO certificate - Show "Issue Certificate" button
+    {
+        id: '4',
+        name: 'Sarah Johnson',
+        role: 'Pastor',
+        description: 'Sub text area write something here. That you can read more about him',
+        totalMentors: 5,
+        isCompleted: true,
+        completedOn: '20 Oct 2024',
+        hasCertificate: false,
+        isFieldMentor: false,
+        profileImage: 'https://randomuser.me/api/portraits/women/45.jpg',
+    },
+    {
+        id: '5',
+        name: 'Michael Brown',
+        role: 'Pator',
+        description: 'Sub text area write something here. That you can read more about him',
+        totalMentors: 5,
+        isCompleted: true,
+        completedOn: '15 Oct 2024',
+        hasCertificate: false,
+        isFieldMentor: false,
+        profileImage: 'https://randomuser.me/api/portraits/men/34.jpg',
+    },
+
+    // STATE 4: Certificate issued but NOT field mentor - Show "Invite as Field Mentor" button + certificate badge
+    {
+        id: '6',
+        name: 'David Wilson',
+        role: 'Pastor',
+        description: 'Sub text area write something here. That you can read more about him',
+        totalMentors: 5,
+        isCompleted: true,
+        completedOn: '10 Oct 2024',
+        hasCertificate: true,
+        isFieldMentor: false,
+        profileImage: 'https://randomuser.me/api/portraits/men/35.jpg',
+    },
+    {
+        id: '7',
+        name: 'Emily Davis',
+        role: 'Pastor',
+        description: 'Sub text area write something here. That you can read more about him',
+        totalMentors: 5,
+        isCompleted: true,
+        completedOn: '12 Oct 2024',
+        hasCertificate: true,
+        isFieldMentor: false,
+        profileImage: 'https://randomuser.me/api/portraits/women/46.jpg',
+    },
+
+    // STATE 5: Both certificate AND field mentor - Show only badges, no button
+    {
+        id: '8',
+        name: 'Robert Taylor',
+        role: 'Pastor',
+        description: 'Sub text area write something here. That you can read more about him',
+        totalMentors: 5,
+        isCompleted: true,
+        completedOn: '5 Oct 2024',
+        hasCertificate: true,
+        isFieldMentor: true,
+        profileImage: 'https://randomuser.me/api/portraits/men/36.jpg',
+    },
+    {
+        id: '9',
+        name: 'Lisa Anderson',
+        role: 'Pastor',
+        description: 'Sub text area write something here. That you can read more about him',
+        totalMentors: 5,
+        isCompleted: true,
+        completedOn: '8 Oct 2024',
+        hasCertificate: true,
+        isFieldMentor: true,
+        profileImage: 'https://randomuser.me/api/portraits/women/47.jpg',
+    },
+];
+
+export const STATES = ['North American', 'Canada', 'Mexico', 'Brazil'];
+
+
+
+import { ImageSourcePropType } from 'react-native';
+
+export interface TaskStatus {
+    notStarted: boolean;
+    started: boolean;
+    inProgress: number;
+    toComplete: number;
+    completed: boolean;
+}
+
+export interface RoadmapProgress {
+    title: string;
+    description?: string;
+    time?: string;
+    status: 'Due' | 'In Progress' | 'Not Started Yet' | 'Completed';
+    image: ImageSourcePropType;
+    progress: string;
+    taskStatus: TaskStatus;
+    completedTime?: string;
+    type?: 'roadmap';
+    dueDate?: string;
+}
+
+export interface AssessmentProgress {
+    title: string;
+    description?: string;
+    image: ImageSourcePropType;
+    progress: string;
+    taskStatus: TaskStatus;
+    dueDate?: string;
+    submittedDate?: string;
+    status: 'Due' | 'Completed' | 'due';
+    type: 'assessment';
+    completed?: string;
+}
+
+export type ProgressCardData = RoadmapProgress | AssessmentProgress;
+
+
+export const dummyRoadMapsCompleted = [
+    {
+        title: "Jump-start",
+        description: "Interested in receiving mentoring in community engagement",
+        time: "Completion Time Months 3 - 9",
+        type: "roadmap",
+        read: true,
+        status: "Completed",
+        image: require("@/assets/images/roadmap.jpg"),
+        progress: "0",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 0,
+            toComplete: 0,
+            completed: false,
+        },
+        completedTime: "20 Oct 2024",
+    },
+    {
+        title: "Self Revitalizaiton Phase",
+        description: "Interested in receiving mentoring in community engagement",
+        time: "Completion Time Months 1 - 2",
+        completedTime: "20 Oct 2024",
+        status: "Completed",
+        type: "roadmap",
+        image: require("@/assets/images/jumpstart.png"),
+        progress: "0",
+        taskStatus: {
+            notStarted: false,
+            started: false,
+            inProgress: 0,
+            toComplete: 0,
+            completed: false,
+        },
+    },
+]
+
+export const dummyRoadMaps = [
+    {
+        title: "Self Revitalizaiton Phase",
+        time: "Completion Time Months 1 - 2",
+        description: "Interested in receiving mentoring in community engagement",
+        status: "Due",
+        type: "roadmap",
+        image: require("@/assets/images/jumpstart.png"),
+        progress: "1",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 1,
+            toComplete: 0,
+            completed: false,
+        },
+    },
+    {
+        title: "Church Empowerment Phase",
+        time: "Completion Time Months 3 - 9",
+        description: "Interested in receiving mentoring in community engagement",
+        status: "In Progress",
+        image: require("@/assets/images/roadmap.jpg"),
+        type: "roadmap",
+
+        progress: "1",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 2,
+            toComplete: 0,
+            completed: false,
+        },
+    },
+    {
+        title: " Community Revitalization and Multiplication Phase",
+        time: "Completion Time Months 3 - 9",
+        description: "Interested in receiving mentoring in community engagement",
+        read: true,
+        status: "Not Started Yet",
+        type: "roadmap",
+
+        image: require("@/assets/images/roadmap.jpg"),
+        progress: "0",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 0,
+            toComplete: 0,
+            completed: false,
+        },
+    },
+    {
+        title: "Jump-start",
+        description: "Interested in receiving mentoring in community engagement",
+        time: "Completion Time Months 3 - 9",
+        type: "roadmap",
+        read: true,
+        status: "Completed",
+        image: require("@/assets/images/roadmap.jpg"),
+        progress: "0",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 0,
+            toComplete: 0,
+            completed: false,
+        },
+        completedTime: "20 Oct 2024",
+    },
+];
+
+export const dummyAssessment = [
+    {
+        title: "Church Assessment Evaluation(CMA)",
+        description:
+            "Interested in receiving mentoring in community engagement   ",
+        image: require("@/assets/images/jumpstart.png"),
+        progress: "0",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 0,
+            toComplete: 0,
+            completed: false,
+        },
+        submittedDate: "20 Oct 2024",
+        status: "Completed",
+        type: "assessment",
+    },
+    {
+        title: "Church Assessment Evaluation(CMA)",
+        description:
+            "Interested in receiving mentoring in community engagement   ",
+        image: require("@/assets/images/jumpstart.png"),
+        progress: "0",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 0,
+            toComplete: 0,
+            completed: false,
+        },
+        submittedDate: "20 Oct 2024",
+        status: "Completed",
+        type: "assessment",
+    },
+    {
+        title: "Church Assessment Evaluation(CMA)",
+        description:
+            "Interested in receiving mentoring in community engagement   ",
+        image: require("@/assets/images/jumpstart.png"),
+        progress: "0",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 0,
+            toComplete: 0,
+            completed: false,
+        },
+        dueDate: "20 Oct 2024",
+        status: "due",
+        type: "assessment",
+    },
+];
+
+
+export const dummyAssessmentCompleted = [
+    {
+        title: "Church Assessment Evaluation(CMA)",
+        description:
+            "Interested in receiving mentoring in community engagement   ",
+        image: require("@/assets/images/jumpstart.png"),
+        progress: "0",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 0,
+            toComplete: 0,
+            completed: false,
+        },
+        submittedDate: "20 Oct 2024",
+        status: "Completed",
+        type: "assessment",
+    },
+    {
+        title: "Church Assessment Evaluation(CMA)",
+        description:
+            "Interested in receiving mentoring in community engagement   ",
+        image: require("@/assets/images/jumpstart.png"),
+        progress: "0",
+        taskStatus: {
+            notStarted: true,
+            started: false,
+            inProgress: 0,
+            toComplete: 0,
+            completed: false,
+        },
+        submittedDate: "20 Oct 2024",
+        status: "Completed",
+        type: "assessment",
+    },
+]

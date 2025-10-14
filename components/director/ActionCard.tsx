@@ -1,0 +1,149 @@
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+
+interface ActionCardProps {
+    icon: 'ribbon-outline' | 'school-outline';
+    title: string;
+    count?: number;
+    onPress?: () => void;
+}
+
+const ActionCard: React.FC<ActionCardProps> = ({
+    icon,
+    title,
+    count,
+    onPress,
+}) => {
+    const { width } = Dimensions.get('window');
+    const isSmallDevice = width < 375;
+
+    return (
+        <Pressable
+            onPress={onPress}
+            style={styles.container}
+        >
+            <View style={styles.leftContent}>
+                <View style={styles.iconContainer}>
+                    <Ionicons
+                        name={icon}
+                        size={isSmallDevice ? 18 : 20}
+                        color="#A5C9E3"
+                    />
+                </View>
+                <Text style={[styles.title, isSmallDevice && styles.titleSmall]}>
+                    {title}
+                </Text>
+            </View>
+            <View style={styles.rightContent}>
+                {count !== undefined && (
+                    <View style={[styles.badge, isSmallDevice && styles.badgeSmall]}>
+                        <Text style={[styles.badgeText, isSmallDevice && styles.badgeTextSmall]}>
+                            {count}
+                        </Text>
+                    </View>
+                )}
+                <Ionicons
+                    name="chevron-forward"
+                    size={isSmallDevice ? 16 : 18}
+                    color="#E8F4FF"
+                />
+                <Ionicons
+                    name="chevron-forward"
+                    size={isSmallDevice ? 16 : 18}
+                    color="#E8F4FF"
+                    style={{ marginLeft: isSmallDevice ? -6 : -8 }}
+                />
+            </View>
+        </Pressable>
+    );
+};
+
+const ActionCardList: React.FC = () => {
+    return (
+        <View style={styles.listContainer}>
+            <ActionCard
+                icon="ribbon-outline"
+                title="Course Completed"
+                count={5}
+                onPress={() => console.log('Course Completed pressed')}
+            />
+            <ActionCard
+                icon="school-outline"
+                title="Invite to be a Field Mentor"
+                onPress={() => console.log('Field Mentor pressed')}
+            />
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    listContainer: {
+        gap: 8,
+        paddingHorizontal: 16,
+    },
+    container: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#1B3062',
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255,255,255,0.5)',
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        height: 44,
+        marginHorizontal: 0,
+    },
+    leftContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        gap: 10,
+    },
+    iconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 6,
+        backgroundColor: 'rgba(165, 201, 227, 0.18)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    title: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#FFFFFF',
+        flex: 1,
+    },
+    titleSmall: {
+        fontSize: 14,
+    },
+    rightContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+    },
+    badge: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        width: 24,
+        height: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    badgeSmall: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+    },
+    badgeText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#1B3062',
+    },
+    badgeTextSmall: {
+        fontSize: 11,
+    },
+});
+
+export default ActionCardList;
