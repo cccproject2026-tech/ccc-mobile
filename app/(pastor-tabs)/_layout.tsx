@@ -3,11 +3,9 @@ import { View } from 'react-native';
 
 import { DrawerOverlay } from '@/components/atom/DrawerOverlay';
 import { useData } from '@/dataContext';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { Stack } from 'expo-router';
 
 export default function PastorTabLayout() {
-  const colorScheme = useColorScheme();
   const { setCurrentScreenState } = useData();
 
   useEffect(() => {

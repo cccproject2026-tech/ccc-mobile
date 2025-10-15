@@ -20,44 +20,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PastorDashboard({ navigation }: { navigation: any }) {
-  const users = [
-    // India
-    {
-      name: "Aarav",
-      profilePic: "https://example.com/profiles/aarav.jpg", // Replace with actual image URL
-      lat: 28.6139,
-      lng: 77.209,
-      color: "#FF5733",
-      location: "New Delhi, India",
-    },
-    {
-      name: "Priya",
-      profilePic: "https://example.com/profiles/priya.jpg",
-      lat: 19.076,
-      lng: 72.8777,
-      color: "#33FF57",
-      location: "Mumbai, India",
-    },
-    // Pakistan
-    {
-      name: "Ali",
-      profilePic: "https://example.com/profiles/ali.jpg",
-      lat: 24.8607,
-      lng: 67.0011,
-      color: "#F39C12",
-      location: "Karachi, Pakistan",
-    },
-    // China
-    {
-      name: "Wei",
-      profilePic: "https://example.com/profiles/wei.jpg",
-      lat: 39.9042,
-      lng: 116.4074,
-      color: "#E74C3C",
-      location: "Beijing, China",
-    },
-    // Add more users as needed
-  ];
+
   const getCurrentTime = () => {
     const now = new Date();
     let hours = now.getHours();
@@ -196,7 +159,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
               <PastorNavigationHeader />
             </View>
             <View style={styles.contentContainer}>
-              <Text  className="text-white text-[22px] leading-[22px] font-semibold">
+              <Text className="text-white text-[22px] leading-[22px] font-semibold">
                 {currentTime}
               </Text>
               <Text className="text-base leading-[22px] text-white font-semibold">
@@ -357,7 +320,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                     </Text>
                   </View>
 
-                  <View className="py-5 px-2 w-full justify-center items-center">
+                  <View className="items-center justify-center w-full px-2 py-5">
                     <View className="flex-row gap-4">
                       <CardBox
                         title="Revitalization Roadmap"
