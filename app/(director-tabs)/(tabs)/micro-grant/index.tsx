@@ -1,8 +1,7 @@
 import ActionBottomSheet from '@/components/director/ActionSheetModal';
-import MenteeCard, { Mentee } from '@/components/director/MenteeCard';
+import InterestCard, { Interest } from '@/components/director/InterestCard';
 import SearchBar from '@/components/director/SearchBar';
 import TopBar from '@/components/director/TopBar';
-import { mockMentees } from '@/constants/mockData';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,13 +11,88 @@ import { Dimensions, Pressable, ScrollView, Text, TouchableOpacity, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
+const mockInterests: (Interest & { status: 'new' | 'pending' | 'approved' })[] = [
+    {
+        id: '1',
+        name: 'John Doe',
+        role: 'Pastor',
+        time: '5 Days Ago',
+        status: 'new',
+        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
+    },
+    {
+        id: '2',
+        name: 'Jane Smith',
+        role: 'Pastor',
+        time: '3 Days Ago',
+        status: 'pending',
+        profileImage: 'https://randomuser.me/api/portraits/women/44.jpg',
+    },
+    {
+        id: '3',
+        name: 'John Ross',
+        role: 'Pastor',
+        time: '5 Days Ago',
+        status: 'new',
+        profileImage: 'https://randomuser.me/api/portraits/men/33.jpg',
+    },
+    {
+        id: '4',
+        name: 'Sarah Johnson',
+        role: 'Pastor',
+        time: '1 Week Ago',
+        status: 'approved',
+        profileImage: 'https://randomuser.me/api/portraits/women/45.jpg',
+    },
+    {
+        id: '5',
+        name: 'Michael Brown',
+        role: 'Pastor',
+        time: '2 Days Ago',
+        status: 'pending',
+        profileImage: 'https://randomuser.me/api/portraits/men/34.jpg',
+    },
+    {
+        id: '6',
+        name: 'David Wilson',
+        role: 'Pastor',
+        time: '4 Days Ago',
+        status: 'approved',
+        profileImage: 'https://randomuser.me/api/portraits/men/35.jpg',
+    },
+    {
+        id: '7',
+        name: 'Emily Davis',
+        role: 'Pastor',
+        time: '6 Days Ago',
+        status: 'new',
+        profileImage: 'https://randomuser.me/api/portraits/women/46.jpg',
+    },
+    {
+        id: '8',
+        name: 'Robert Taylor',
+        role: 'Pastor',
+        time: '1 Week Ago',
+        status: 'pending',
+        profileImage: 'https://randomuser.me/api/portraits/men/36.jpg',
+    },
+    {
+        id: '9',
+        name: 'Lisa Anderson',
+        role: 'Pastor',
+        time: '3 Days Ago',
+        status: 'approved',
+        profileImage: 'https://randomuser.me/api/portraits/women/47.jpg',
+    },
+];
+
 export default function MicroGrant() {
     const router = useRouter();
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<'new' | 'pending' | 'approved'>('new');
     const { bottom } = useSafeAreaInsets();
     const { height } = Dimensions.get('window');
-    const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
+    const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
 
     const menuItems = [
         {
@@ -69,8 +143,8 @@ export default function MicroGrant() {
 
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
-    const handleMenuPress = useCallback((mentee: Mentee) => {
-        setSelectedMentee(mentee);
+    const handleMenuPress = useCallback((interest: Interest) => {
+        setSelectedInterest(interest);
         setTimeout(() => {
             bottomSheetModalRef.current?.present();
         }, 0);
@@ -79,7 +153,7 @@ export default function MicroGrant() {
     const handleCloseModal = useCallback(() => {
         bottomSheetModalRef.current?.dismiss();
         setTimeout(() => {
-            setSelectedMentee(null);
+            setSelectedInterest(null);
         }, 300);
     }, []);
 
@@ -87,23 +161,23 @@ export default function MicroGrant() {
         setActiveTab(tab);
     };
 
-    const filteredMentees = useMemo(() => {
-        let filtered = mockMentees;
+    const filteredInterests = useMemo(() => {
+        let filtered = mockInterests;
 
         if (search) {
-            filtered = filtered.filter((mentee) =>
-                mentee.name.toLowerCase().includes(search.toLowerCase())
+            filtered = filtered.filter((interest) =>
+                interest.name.toLowerCase().includes(search.toLowerCase())
             );
         }
 
         // Filter by status
-        filtered = filtered.filter((mentee) => mentee.status === activeTab);
+        filtered = filtered.filter((interest) => interest.status === activeTab);
 
         return filtered;
     }, [search, activeTab]);
 
-    const newCount = mockMentees.filter((m) => m.status === 'new').length;
-    const pendingCount = mockMentees.filter((m) => m.status === 'pending').length;
+    const newCount = mockInterests.filter((m) => m.status === 'new').length;
+    const pendingCount = mockInterests.filter((m) => m.status === 'pending').length;
 
     return (
         <LinearGradient
@@ -185,20 +259,17 @@ export default function MicroGrant() {
                         </Pressable>
                     </View>
 
-                    {/* Mentees List */}
+                    {/* Interests List */}
                     <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-                        {filteredMentees.map((mentee) => (
-                            <MenteeCard
-                                key={mentee.id}
-                                data={mentee}
-                                layout={'list'}
+                        {filteredInterests.map((interest) => (
+                            <InterestCard
+                                key={interest.id}
+                                data={interest}
                                 onPress={() => router.push(`/(director-tabs)/(tabs)/micro-grant/micro-grand-application`)}
-                                onCall={() => console.log('Call', mentee.name)}
-                                onChat={() => console.log('Chat', mentee.name)}
-                                onMail={() => console.log('Mail', mentee.name)}
-                                onWhatsApp={() => console.log('WhatsApp', mentee.name)}
-                                onMenuPress={() => handleMenuPress(mentee)}
-                                onMarkComplete={() => console.log('Mark complete', mentee.name)}
+                                onCall={() => console.log('Call', interest.name)}
+                                onChat={() => console.log('Chat', interest.name)}
+                                onMail={() => console.log('Mail', interest.name)}
+                                onWhatsApp={() => console.log('WhatsApp', interest.name)}
                             />
                         ))}
                     </ScrollView>
@@ -206,8 +277,8 @@ export default function MicroGrant() {
 
                 <ActionBottomSheet
                     ref={bottomSheetModalRef}
-                    title={selectedMentee?.name || ''}
-                    image={selectedMentee?.profileImage}
+                    title={selectedInterest?.name || ''}
+                    image={undefined}
                     actions={menuItems}
                     onClose={handleCloseModal}
                 />

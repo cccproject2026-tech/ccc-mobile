@@ -5,10 +5,10 @@ import React from 'react';
 import { Platform } from 'react-native';
 
 
-export default function DirectorTabLayout() {
+export default function DirectorDrawerLayout() {
   return (
     <Drawer
-      drawerContent={(props) => <CustomDrawerContent menuItems={MENU_ITEMS} {...props} />}
+      drawerContent={(props) => <CustomDrawerContent userRole="director" menuItems={MENU_ITEMS} {...props} />}
       screenOptions={{
         drawerType: 'front',
         drawerStyle: {

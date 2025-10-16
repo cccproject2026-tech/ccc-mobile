@@ -10,12 +10,54 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CustomDrawerProps extends DrawerContentComponentProps {
     menuItems: MenuItem[];
+    expandAllByDefault?: boolean;
+    userRole?: 'director' | 'pastor' | 'mentor';
+
 }
 
 
 export default function CustomDrawerContent(props: CustomDrawerProps) {
     const router = useRouter();
-    const [expandedItems, setExpandedItems] = useState<{ [key: string]: boolean }>({});
+    const initializeExpandedItems = (items: MenuItem[], expandAll: boolean) => {
+        const result: { [key: string]: boolean } = {};
+
+        const traverse = (menuItems: MenuItem[]) => {
+            menuItems.forEach(item => {
+                if (item.children && item.children.length > 0) {
+                    result[item.id] = expandAll; // set based on prop
+                    traverse(item.children);
+                }
+            });
+        };
+
+        traverse(items);
+        return result;
+    };
+
+    const handleLogoPress = () => {
+        // Close the drawer first
+        props.navigation.closeDrawer();
+
+        // Navigate based on user role
+        switch (props.userRole) {
+            case 'director':
+                router.replace('/(director-tabs)/(tabs)');
+                break;
+            case 'pastor':
+                router.replace('/(pastor-tabs)/(tabs)');
+                break;
+            case 'mentor':
+                router.replace('/(mentor-tabs)');
+                break;
+            default:
+                // Fallback: navigate to home page
+                router.replace('/');
+        }
+    };
+
+    const [expandedItems, setExpandedItems] = useState(() =>
+        initializeExpandedItems(props.menuItems, !!props.expandAllByDefault)
+    );
     const { bottom } = useSafeAreaInsets();
 
     const toggleExpand = (id: string) => {
@@ -40,11 +82,13 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                     }}
                 >
                     <View style={styles.drawerItemLeft}>
-                        {item.iconType === 'image' ? (
-                            <Image source={item.icon} style={styles.itemIcon} />
-                        ) : (
-                            <Ionicons name={item.icon as any} size={Platform.OS === 'android' ? 20 : 22} color="#0A5A8A" />
-                        )}
+                        <View style={styles.iconContainer}>
+                            {item.iconType === 'image' ? (
+                                <Image source={item.icon} style={styles.itemIcon} />
+                            ) : (
+                                <Ionicons name={item.icon as any} size={Platform.OS === 'android' ? 20 : 22} color="#0A5A8A" />
+                            )}
+                        </View>
                         <Text style={styles.drawerLabel}>{item.label}</Text>
                         {item.badge !== undefined && item.badge > 0 && (
                             <View style={styles.badge}>
@@ -89,7 +133,7 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                     <Image source={icons.myProfile} style={styles.avatar} />
                 </View>
                 <Text style={styles.userName}>David Roe</Text>
-                <TouchableOpacity style={styles.logoButton}>
+                <TouchableOpacity style={styles.logoButton} onPress={handleLogoPress}>
                     <Image
                         source={require('@/assets/logos/CCClogo.png')}
                         style={styles.logoImage}
@@ -193,10 +237,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flex: 1,
     },
+    iconContainer: {
+        width: Platform.OS === 'android' ? 24 : 26,
+        height: Platform.OS === 'android' ? 24 : 26,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     itemIcon: {
         width: Platform.OS === 'android' ? 20 : 22,
         height: Platform.OS === 'android' ? 20 : 22,
-        borderRadius: Platform.OS === 'android' ? 10 : 11,
+        // borderRadius: Platform.OS === 'android' ? 10 : 5,
     },
     drawerLabel: {
         fontSize: Platform.OS === 'android' ? 14 : 15,

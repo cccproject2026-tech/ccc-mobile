@@ -1,6 +1,9 @@
+import { getFontSize, getImageSize, getSpacing, isMediumDevice, isSmallDevice } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due';
 
@@ -71,7 +74,7 @@ export const RoadmapCard: React.FC<Props> = ({ data,
                         <Image source={data.image} style={styles.image} />
                         {isCompleted && (
                             <View style={styles.checkmarkOverlay}>
-                                <Ionicons name="checkmark" size={40} color="#fff" />
+                                <Ionicons name="checkmark" size={isSmallDevice ? 32 : 40} color="#fff" />
                             </View>
                         )}
                     </View>
@@ -91,22 +94,27 @@ export const RoadmapCard: React.FC<Props> = ({ data,
                         <Text style={styles.title} numberOfLines={2}>
                             {data.title}
                         </Text>
-                        <View style={{ flexDirection: 'column', alignItems: 'center', position: 'absolute', right: 0, top: 0, gap: 8 }}>
+                        <View style={styles.actionsContainer}>
 
                             {showMenu && onMenuPress && (
                                 <TouchableOpacity onPress={onMenuPress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                                     <Ionicons
                                         name="ellipsis-vertical"
-                                        size={24}
+                                        size={isSmallDevice ? 20 : 24}
                                         color="rgba(255,255,255,0.6)"
-                                        style={styles.arrowIcon}
+                                        style={{
+                                            marginLeft: 8,
+                                            // marginTop: 2,
+                                            flexShrink: 0,
+
+                                        }}
                                     />
                                 </TouchableOpacity>
                             )}
                             {showArrow && (
                                 <Ionicons
                                     name="chevron-forward"
-                                    size={24}
+                                    size={isSmallDevice ? 20 : 24}
                                     color="rgba(255,255,255,0.6)"
                                     style={styles.arrowIcon}
                                 />
@@ -179,22 +187,24 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.12)',
         overflow: 'hidden',
-        marginBottom: 18,
-        padding: 12,
+        marginBottom: getSpacing(18),
+        padding: getSpacing(12),
     },
     inner: {
         flexDirection: 'row',
         alignItems: 'flex-start',
+        minWidth: 0, // Prevent overflow
     },
     left: {
-        width: 96,
-        marginRight: 16,
+        width: getImageSize(isSmallDevice ? 80 : isMediumDevice ? 90 : 96),
+        marginRight: getSpacing(16),
         alignItems: 'flex-start',
+        flexShrink: 0,
     },
     imageContainer: {
         position: 'relative',
-        width: 96,
-        height: 96,
+        width: getImageSize(isSmallDevice ? 80 : isMediumDevice ? 90 : 96),
+        height: getImageSize(isSmallDevice ? 80 : isMediumDevice ? 90 : 96),
     },
     image: {
         width: '100%',
@@ -204,10 +214,10 @@ const styles = StyleSheet.create({
     },
     checkmarkOverlay: {
         position: 'absolute',
-        bottom: 8,
+        // bottom: 8,
         right: 8,
-        width: 44,
-        height: 44,
+        width: isSmallDevice ? 36 : 44,
+        // height: isSmallDevice ? 36 : 44,
         borderRadius: 8,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
@@ -215,64 +225,84 @@ const styles = StyleSheet.create({
     },
     completionTime: {
         color: 'rgba(255,255,255,0.8)',
-        fontSize: 13,
+        fontSize: getFontSize(13),
         fontWeight: '400',
-        lineHeight: 16,
-        marginTop: 12,
+        lineHeight: getFontSize(16),
+        marginTop: getSpacing(12),
     },
     right: {
         flex: 1,
-        minWidth: 0,
+        minWidth: 0, // Prevent overflow
     },
     titleRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
-        marginBottom: 6,
+        marginBottom: getSpacing(6),
+        minWidth: 0, // Prevent overflow
     },
     title: {
         flex: 1,
-        fontSize: 17,
+        fontSize: getFontSize(isSmallDevice ? 15 : 17),
         fontWeight: '700',
         color: '#FFFFFF',
-        lineHeight: 23,
+        lineHeight: getFontSize(isSmallDevice ? 20 : 23),
+        paddingRight: getSpacing(40), // Account for action buttons
+        minWidth: 0, // Prevent overflow
+    },
+    actionsContainer: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        gap: 12,
+        flexShrink: 0,
+        width: 32,
+        height: '100%',
     },
     arrowIcon: {
         marginLeft: 8,
-        marginTop: 2,
+        // marginTop: 2,
         flexShrink: 0,
     },
     description: {
-        fontSize: 13.5,
+        fontSize: getFontSize(isSmallDevice ? 12.5 : 13.5),
         fontWeight: '400',
         color: 'rgba(255, 255, 255, 0.75)',
-        marginBottom: 10,
-        lineHeight: 18,
+        marginBottom: getSpacing(10),
+        lineHeight: getFontSize(18),
+        paddingRight: getSpacing(40), // Account for action buttons
+        minWidth: 0, // Prevent overflow
     },
     statusRow: {
-        marginTop: 6,
+        marginTop: getSpacing(6),
+        paddingRight: getSpacing(40), // Account for action buttons
     },
     statusPill: {
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.2)',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: getSpacing(12),
+        paddingVertical: getSpacing(8),
         borderRadius: 12,
         alignSelf: 'flex-start',
         backgroundColor: 'rgba(0,0,0,0.08)',
+        flexShrink: 1,
     },
     statusPillText: {
-        fontSize: 13,
+        fontSize: getFontSize(13),
         fontWeight: '600',
     },
     progressSection: {
-        marginTop: 12,
+        marginTop: getSpacing(12),
+        paddingRight: getSpacing(40), // Account for action buttons
     },
     progressRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 6,
+        marginBottom: getSpacing(6),
+        minWidth: 0, // Prevent overflow
     },
     progressTrack: {
         flex: 1,
@@ -280,7 +310,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.9)',
         borderRadius: 8,
         overflow: 'hidden',
-        marginRight: 12,
+        marginRight: getSpacing(12),
+        minWidth: 50, // Minimum track width
     },
     progressFill: {
         height: '100%',
@@ -288,28 +319,32 @@ const styles = StyleSheet.create({
     },
     progressFraction: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: getFontSize(14),
         fontWeight: '600',
         flexShrink: 0,
+        minWidth: 40, // Minimum width for fraction text
     },
     progressLabel: {
         color: 'rgba(255,255,255,0.7)',
-        fontSize: 12,
+        fontSize: getFontSize(12),
         fontWeight: '400',
     },
     completedDate: {
         color: 'rgba(255,255,255,0.8)',
-        marginTop: 10,
-        fontSize: 13,
+        marginTop: getSpacing(10),
+        fontSize: getFontSize(13),
         fontWeight: '400',
+        paddingRight: getSpacing(40), // Account for action buttons
+        minWidth: 0, // Prevent overflow
     },
     completionTimeText: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         fontWeight: '400',
         color: 'rgba(255,255,255,0.8)',
-        lineHeight: 18,
-        marginTop: 6,
-        width: '100%',
+        lineHeight: getFontSize(18),
+        marginTop: getSpacing(6),
+        paddingRight: getSpacing(40), // Account for action buttons
+        minWidth: 0, // Prevent overflow
     },
 });
 

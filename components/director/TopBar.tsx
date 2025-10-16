@@ -18,6 +18,7 @@ type Props = {
     size?: number;
     color?: string;
     onProfilePress?: () => void;
+    role?: string;
 };
 
 const TopBar: React.FC<Props> = ({
@@ -30,13 +31,22 @@ const TopBar: React.FC<Props> = ({
     size = 36,
     color = "#fff",
     onProfilePress,
+    role
 }) => {
     const { top } = useSafeAreaInsets();
     const navigation = useNavigation();
     const router = useRouter();
 
     const onMenuPress = () => navigation.dispatch(DrawerActions.openDrawer());
-    const handleNotificationsPress = () => router.push('/(director-tabs)/(tabs)/notification');
+    const handleNotificationsPress = () => {
+        if (role === 'director') {
+            router.push('/(director-tabs)/(tabs)/notification');
+        } else if (role === 'pastor') {
+            router.push('/(pastor-tabs)/(tabs)/notifications');
+        } else {
+            router.push('/(pastor-tabs)/(tabs)/notifications');
+        }
+    }
 
     return (
         <View style={[styles.headerRow, { paddingTop: top + 10, minHeight: top + 54 }]}>

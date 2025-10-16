@@ -485,3 +485,117 @@ export const MENU_ITEMS: MenuItem[] = [
     },
     { id: 'logout', label: 'Log out', icon: 'log-out-outline', route: '/' },
 ];
+
+
+
+export const PastorMenuItems: MenuItem[] = [
+    {
+        id: 'myMentors',
+        label: 'My Mentors',
+        icon: icons.myMentors,
+        iconType: 'image',
+        route: '/(pastor-tabs)/my-mentors',
+    },
+    {
+        id: 'revitalizationRoadmap',
+        label: 'Revitalization Roadmap',
+        icon: icons.Revitalization,
+        iconType: 'image',
+        route: '/(pastor-tabs)/roadmap/revitalization-roadmap',
+    },
+    {
+        id: 'assessments',
+        label: 'Assessments',
+        icon: icons.Assessments,
+        iconType: 'image',
+        route: '/(pastor-tabs)/assessments/survey',
+    },
+    {
+        id: 'progress',
+        label: 'Progress',
+        icon: icons.progress,
+        iconType: 'image',
+        route: '/(pastor-tabs)/progress/progress',
+    },
+    {
+        id: 'appointments',
+        label: 'Appointments',
+        icon: icons.Appointments,
+        iconType: 'image',
+        route: '/(pastor-tabs)/appointments/my-appointments',
+    },
+    {
+        id: 'profile',
+        label: 'Profile',
+        icon: icons.profile,
+        iconType: 'image',
+        showChevron: true,
+        children: [
+            {
+                id: 'myProfile',
+                label: 'My Profile',
+                icon: icons.myProfile,
+                iconType: 'image',
+                route: '/(pastor-tabs)/profile/my-profile',
+            },
+            {
+                id: 'documents',
+                label: 'Documents',
+                icon: icons.document,
+                iconType: 'image',
+                route: '/(pastor-tabs)/profile/my-profile',
+            },
+            {
+                id: 'assignments',
+                label: 'Assignments',
+                icon: icons.assignment,
+                iconType: 'image',
+                route: '/(pastor-tabs)/profile/my-assignment/assignment',
+            },
+            {
+                id: 'certificates',
+                label: 'Certificates',
+                icon: icons.certificate,
+                iconType: 'image',
+                route: '/(pastor-tabs)/profile/certificate',
+            },
+            {
+                id: 'microGrant',
+                label: 'Micro Grant',
+                icon: icons.microGrant,
+                iconType: 'image',
+                route: '/(pastor-tabs)/profile/grant',
+            },
+        ],
+    },
+    {
+        id: 'settings',
+        label: 'Settings',
+        icon: icons.settings,
+        iconType: 'image',
+        showChevron: true,
+        children: [
+            {
+                id: 'changePassword',
+                label: 'Change Password',
+                icon: icons.changePass,
+                iconType: 'image',
+                route: '/(pastor-tabs)/profile/my-profile',
+            },
+            {
+                id: 'turnOffNotifications',
+                label: 'Turn Off Notifications',
+                icon: icons.turnOffNotification,
+                iconType: 'image',
+                route: '/(pastor-tabs)/notifications',
+            },
+            {
+                id: 'changeMentor',
+                label: 'Change Mentor',
+                icon: icons.changeMentor,
+                iconType: 'image',
+                route: '/(pastor-tabs)/roadmap/phase-2/empowerment-cards',
+            },
+        ],
+    },
+];

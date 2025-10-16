@@ -3,6 +3,8 @@ import { Button } from "@/components/atom/buttons"
 import { OptionsModal } from "@/components/atom/modals"
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal"
 import { Tab } from "@/components/atom/tab"
+import InputField from "@/components/build-components/input-field"
+import TextAreaField from "@/components/build-components/text-area"
 import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
@@ -14,14 +16,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function DetailedRoadMap() {
-  const { data: dataParam } = useLocalSearchParams()
+  const { data: dataParam, flag } = useLocalSearchParams()
   const data = dataParam ? JSON.parse(dataParam as string) : null
 
   const [isModalVisible, setIsModalVisible] = React.useState(false)
@@ -37,6 +38,7 @@ export default function DetailedRoadMap() {
 
   const [tabs, setTabs] = React.useState("Over View")
   const [surveyGuideLines, setSurveyGuideLines] = React.useState(false)
+  const [showCommunity, setShowCommunity] = React.useState(false)
 
   const handleTabPress = (tabName: string) => {
     if (tabName === "Over View") {
@@ -174,16 +176,7 @@ export default function DetailedRoadMap() {
               {!surveyGuideLines ? (
                 tabs == "Over View" ? (
                   <View style={{ width: "100%" }}>
-                    <View style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "flex-start",
-                      width: "100%",
-                      paddingHorizontal: 10,
-                      position: "relative",
-                      overflow: "hidden",  // Clip children to bounds
-                      borderRadius: 20      // Match the image's border radius
-                    }}>
+                    <View style={{ width: "100%", paddingHorizontal: 10 }}>
                       <Image
                         source={icons.detailedRoadmapImage}
                         style={{ width: "100%", height: 181, borderRadius: 20 }}
@@ -193,7 +186,7 @@ export default function DetailedRoadMap() {
                         style={{
                           position: "absolute",
                           bottom: 15,
-                          left: 16,
+                          left: 20,
                           backgroundColor: "#233C7896",
                           paddingHorizontal: 10,
                           paddingVertical: 5,
@@ -203,7 +196,6 @@ export default function DetailedRoadMap() {
                           shadowRadius: 10,
                           elevation: 5,
                           borderRadius: 5,
-                          width: "90%"
                         }}
                       >
                         <Text
@@ -233,187 +225,162 @@ export default function DetailedRoadMap() {
                       {/* Separator */}
                       <View className="h-[0.5px] bg-white/30 mt-3" />
 
-                      <View style={styles.sectionMargin}>
-                        <Text style={styles.whiteText}>Roadmap</Text>
-                      </View>
 
                       {/* Intro Summary */}
-                      <View style={styles.summaryContainer}>
-                        <Text style={styles.whiteText}>
-                          {data?.title == "Jump-start"
-                            ? "Attend a Jump-start Session in your area"
-                            : data?.title}
-                        </Text>
+                      <View style={styles.sectionMargin}>
+                        <Text style={styles.whiteText}>Church Roadmap</Text>
                       </View>
+                      <TextAreaField />
+
+
+                      {/* Description List */}
                       <View style={styles.sectionMargin}>
                         <Text style={styles.whiteText}>Description</Text>
                       </View>
+                      <TextAreaField />
 
-                      {/* Description List */}
-                      <View
-                        style={[
-                          styles.summaryContainer,
-                          {
-                            flexDirection: "column",
-                          },
-                        ]}
-                      >
-                        <Text style={styles.whiteText}>
-                          1. Christ Method Alone (Why & How)
-                        </Text>
-                        <Text style={styles.whiteText}>2. Self—Leadership</Text>
-                        <Text style={styles.whiteText}>
-                          3.Dealing with Resistance
-                        </Text>
-                        <Text style={styles.whiteText}>
-                          4. Empower Others-Spiritual Renewal
-                        </Text>
-                        <Text style={styles.whiteText}>
-                          5. Community Engagement - Need Assessments
-                        </Text>
-                        <Text style={styles.whiteText}>
-                          6. Cycle of Evangelism & Discipleship
-                        </Text>
-                      </View>
 
                       <View className="h-[0.5px] bg-white/30 my-6" />
 
-                      {data?.signature ? (
-                        <>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Text
-                              style={[
-                                styles.whiteText,
-                                {
-                                  textDecorationLine: "underline",
-                                  fontWeight: "200",
-                                },
-                              ]}
-                            >
-                              View 12 MONTHS MENTORING TIMELINE MONTHS
-                            </Text>
+
+                      {flag === "submit-media" ? (
+                        // showCommunity ? (
+                        <View className="p-3 flex gap-8 border border-solid border-white/20 rounded-[10px]">
+                          <View>
+                            <View style={styles.sectionMargin}>
+                              <Text style={styles.whiteText}>Events for Community Engagement Event 1 </Text>
+                              <TextAreaField inputClassName="!bg-[#15517C]" containerClass="!bg-[#15517C]" label="List here..." />
+                            </View>
                           </View>
-                          <View className="h-[0.5px] bg-white/30 mt-3" />
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                            }}
-                          >
-                            {/* <View>
-                              <CheckBox style={{ padding: 10 }} />
-                            </View> */}
-                            <View style={{ width: "80%" }}>
-                              <Text
-                                style={[
-                                  styles.whiteText,
-                                  {
-                                    fontWeight: "200",
-                                  },
-                                ]}
-                              >
-                                I agree to participate in the 12-month
-                                revitalization mentoring and church growth
-                                roadmap provided by The Center for Community
-                                Change
+                          <View className="flex flex-row items-center justify-center w-full gap-3">
+                            <Text className="text-sm leading-[22px] text-white flex-1">
+                              Community Engagement Event 1 Date:
+                            </Text>
+                            <View className="border border-solid border-[#FFFFFF73] rounded-[10px] max-w-[142px] w-full justify-center items-center flex-1 h-[45px]">
+                              <Text className="text-sm leading-[22px] text-white">
+                                20 / 11 / 24
                               </Text>
                             </View>
                           </View>
-                        </>
-                      ) : (
-                        <>
-                          <View style={styles.sectionMargin}>
-                            <Text style={styles.whiteText}>View 12 MONTHS MENTORING TIMELINE MONTHS</Text>
-                          </View>
-
-                          {/* Notes Input */}
-                          <View className="h-32 p-2 bg-transparent border rounded-lg border-white/40">
-                            <TextInput
-                              placeholder="Write Your Notes here..."
-                              placeholderTextColor="#D9D9D9"
-                              multiline={true}
-                              style={{ color: "white", width: "100%" }}
-                            />
-                          </View>
-                        </>
-                      )}
-
-                      {data?.sessionDate && (
-                        <>
-                          <View
-                            style={{
-                              alignItems: "center",
-                              paddingVertical: 2,
-                              marginVertical: 18,
-                              flexDirection: "row",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Text
-                              style={{
-                                fontSize: 14,
-                                color: "white",
-                                fontWeight: "500",
-                              }}
-                            >
-                              Session Date {" "}
-                            </Text>
-                            <View
-                              style={{
-                                alignItems: "center",
-                                borderWidth: 1,
-                                borderColor: "#47729b",
-                                paddingVertical: 2,
-                                marginVertical: 4,
-                                width: 110,
-                                borderRadius: 8,
-                                marginLeft: 10,
-                              }}
-                            >
-                              <Text
-                                style={{
-                                  fontSize: 12,
-                                  color: "white",
-                                  fontWeight: "300",
-                                }}
-                              >
-                                {data?.sessionDate}
+                          <View className="p-3 flex gap-8 border border-solid border-white/20 rounded-[10px] w-full">
+                            <View className="flex flex-row items-center justify-between">
+                              <Text className="text-semibold leading-[22px] text-white">
+                                Follow up Events
                               </Text>
+                              <TouchableOpacity className="rounded-[10px] border border-solid border-[#FFFFFFCC] bg-[#1E366F]  max-w-[88px] w-full flex justify-center items-center">
+                                <Text className="text-medium leading-[22px] text-white">Add</Text>
+                              </TouchableOpacity>
+                            </View>
+                            <Text className="text-semibold leading-[22px] text-[#D9D9D9]">
+                              Follow up Events
+                            </Text>
+                            <InputField keyboardType="phone-pad" label="Choose your Follow up Event 1" boxClass="!max-h-[44px] !h-full" />
+                            <View className="flex flex-row items-center justify-center w-full gap-3">
+                              <Text className="text-sm leading-[22px] text-white">
+                                Follow up Event Date 1 :
+                              </Text>
+                              <View className="border border-solid border-[#FFFFFF73] rounded-[10px] h-[33px] max-w-[137px] w-full justify-center items-center">
+                                <Text className="text-sm leading-[22px] text-white">
+                                  20 / 11 / 24
+                                </Text>
+                              </View>
                             </View>
                           </View>
+                          <Button
+                            type="cancel"
+                            title={"Upload Videos / Pictures"}
+                            onPress={() => {
+                              data?.survey ? setSurveyGuideLines(true) : null
+                              if (flag === "submit-media") {
+                                router.push("/assessments/pmp-survey-page")
+                              } else {
+                                router.push("/assessments/pmp-survey-page")
+                              }
+                            }
+                            }
+                            style={{ width: 235, margin: "auto" }}
+                          />
+
                           <View className="h-[0.5px] bg-white/30 my-6" />
-                        </>
+
+                          <Button
+                            type="cancel"
+                            title={"Submit"}
+                            onPress={() => {
+                              data?.survey ? setSurveyGuideLines(true) : null
+                              if (flag === "submit-media") {
+                                router.push("/assessments/pmp-survey-page")
+                              } else {
+                                router.push("/assessments/pmp-survey-page")
+                              }
+                            }
+                            }
+                            style={{ width: 162, margin: "auto", marginBottom: 45 }}
+                          />
+                        </View>
+                        // ) : (
+                        //   <View className="flex gap-9">
+                        //     <View>
+                        //       <View style={styles.sectionMargin}>
+                        //         <Text style={styles.whiteText}>Adjustments you have made</Text>
+                        //       </View>
+                        //       <TextAreaField />
+                        //     </View>
+                        //     <View className="flex flex-row items-center justify-center w-full gap-3">
+                        //       <Text className="text-sm leading-[22px] text-white">
+                        //         Facility Review Date :
+                        //       </Text>
+                        //       <View className="border border-solid border-[#FFFFFF73] rounded-[10px] h-[33px] max-w-[194px] w-full justify-center items-center">
+                        //         <Text className="text-sm leading-[22px] text-white">
+                        //           20 / 11 / 24
+                        //         </Text>
+                        //       </View>
+                        //     </View>
+                        //     <View className="h-[0.5px] bg-white/30 my-6" />
+                        //   </View>
+                        // )
+                      ) : (
+                        <View className="flex gap-[54px] mt-12">
+                          <View className="flex flex-row items-center justify-center w-full gap-3">
+                            <Text className="text-sm leading-[22px] text-white">
+                              Project Date:
+                            </Text>
+                            <View className="border border-solid border-[#FFFFFF73] rounded-[10px] h-[33px] max-w-[194px] w-full justify-center items-center">
+                              <Text className="text-sm leading-[22px] text-white">
+                                20 / 11 / 24
+                              </Text>
+                            </View>
+                          </View>
+                          <Text onPress={() => router.push("/(pastor-tabs)/(tabs)/roadmap/phase-2/media")} className="font-medium text-sm leading-[22px] text-[#D9D9D9] underline text-center">
+                            View your Shared Media
+                          </Text>
+                        </View>
                       )}
 
-                      <View
-                        style={{
-                          width: "100%",
-                          alignItems: "center",
-                          marginVertical: 20,
-                        }}
-                      >
-                        <Button
-                          type="cancel"
-                          title={
-                            data?.signature
-                              ? "Signature Required here"
-                              : data?.survey
-                                ? "Take PMP Survey"
-                                : `${data?.title + " Completed"}`
-                          }
-                          onPress={() => {
-                            data?.survey ? setSurveyGuideLines(true) : null
-                            router.push("/assessments/pmp-survey-page")
-                          }
-                          }
-                          style={{ width: 200 }}
-                        />
-                      </View>
+                      {flag !== "submit-media" && (
+                        <View
+                          style={{
+                            width: "100%",
+                            alignItems: "center",
+                            marginVertical: 32,
+                          }}
+                        >
+                          <Button
+                            type="cancel"
+                            title={"Submit"}
+                            onPress={() => {
+                              data?.survey ? setSurveyGuideLines(true) : null
+                              if (flag === "submit-media") {
+                                router.push({ pathname: "/assessments/pmp-survey-page" })
+                              } else {
+                                router.push("/assessments/pmp-survey-page")
+                              }
+                            }
+                            }
+                            style={{ width: 200 }}
+                          />
+                        </View>
+                      )}
                     </View>
                   </View>
                 ) : (

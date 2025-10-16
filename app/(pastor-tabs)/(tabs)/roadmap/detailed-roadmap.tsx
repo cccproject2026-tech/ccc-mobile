@@ -1,58 +1,58 @@
-import { Button } from "@/components/atom/buttons";
+import { Button } from "@/components/atom/buttons"
 // import { CheckBox } from "@/components/atom/checkBox"
-import { OptionsModal } from "@/components/atom/modals";
-import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
-import { Tab } from "@/components/atom/tab";
-import { Header } from "@/components/build-components";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
-import { icons } from "@/constants/images";
-import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router, useLocalSearchParams } from "expo-router";
-import React from "react";
+import { OptionsModal } from "@/components/atom/modals"
+import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal"
+import { Tab } from "@/components/atom/tab"
+import { PastorNavigationHeader } from "@/components/pastor/Header"
+import { Colors } from "@/constants/Colors"
+import { icons } from "@/constants/images"
+import { LinearGradient } from "expo-linear-gradient"
+import { Stack, router, useLocalSearchParams } from "expo-router"
+import React from "react"
 import {
   Image,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+  TouchableOpacity,
+  View,
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
-export default function DetailedAssignment() {
-  const { data: dataParam } = useLocalSearchParams();
-  const data = dataParam ? JSON.parse(dataParam as string) : null;
+export default function DetailedRoadMap() {
+  const { data: dataParam } = useLocalSearchParams()
+  const data = dataParam ? JSON.parse(dataParam as string) : null
 
-  const [isModalVisible, setIsModalVisible] = React.useState(false);
-  const [selectedFile, setSelectedFile] = React.useState();
+  const [isModalVisible, setIsModalVisible] = React.useState(false)
+  const [selectedFile, setSelectedFile] = React.useState()
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
-    React.useState(false);
+    React.useState(false)
 
   const availableTabs = [
     { tab: "Over View" },
     { tab: "Comments" },
     { tab: "Queries" },
-  ];
+  ]
 
-  const [tabs, setTabs] = React.useState("Over View");
-  const [surveyGuideLines, setSurveyGuideLines] = React.useState(false);
+  const [tabs, setTabs] = React.useState("Over View")
+  const [surveyGuideLines, setSurveyGuideLines] = React.useState(false)
 
   const handleTabPress = (tabName: string) => {
     if (tabName === "Over View") {
-      setTabs(tabName);
+      setTabs(tabName)
     } else if (tabName === "Comments") {
       router.push({
         pathname: "/(pastor-tabs)/(tabs)/roadmap/comments",
         params: { data: JSON.stringify(data) },
-      });
+      })
     } else if (tabName === "Queries") {
       router.push({
         pathname: "/(pastor-tabs)/(tabs)/roadmap/queries",
         params: { data: JSON.stringify(data) },
-      });
+      })
     }
-  };
+  }
 
   return (
     <>
@@ -68,10 +68,75 @@ export default function DetailedAssignment() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
+            <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
 
             {/* Header Section */}
-            <Header title="Assignment" />
+            <View
+              style={{
+                width: "100%",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                paddingHorizontal: 20,
+                paddingTop: 20,
+                alignItems: "center",
+              }}
+            >
+              <TouchableOpacity onPress={() => router.back()}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Image
+                    source={icons.forward}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      transform: [{ scaleX: -1 }],
+                    }}
+                  />
+                  <View style={{ flexDirection: "column" }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: "white",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {data?.navigatedFrom == "assignment"
+                        ? "Assignments"
+                        : data?.title}
+                    </Text>
+                    {data?.navigatedFrom == "assignment" ? (
+                      <></>
+                    ) : (
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          color: "white",
+                          fontWeight: "200",
+                        }}
+                      >
+                        {" "}
+                        Revitalization Roadmap
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setIsModalVisible(true)}>
+                <Image
+                  source={icons.menuVertical}
+                  style={{ width: 20, height: 20 }}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Separator */}
+            <View style={styles.separator} />
 
             {/* Tabs Section */}
             {!surveyGuideLines && (
@@ -286,7 +351,7 @@ export default function DetailedAssignment() {
                                 fontWeight: "500",
                               }}
                             >
-                              Session Date{" "}
+                              Session Date {" "}
                             </Text>
                             <View
                               style={{
@@ -324,15 +389,13 @@ export default function DetailedAssignment() {
                       >
                         <Button
                           type="cancel"
-                          // title={
-                          //   data?.signature
-                          //     ? "Signature Required here"
-                          //     : data?.survey
-                          //     ? "Take PMP Survey"
-                          //     : `${data?.title + " Completed"}`
-                          // }
-                          title='Upload Strategy'
-                          icon={icons.upload}
+                          title={
+                            data?.signature
+                              ? "Signature Required here"
+                              : data?.survey
+                                ? "Take PMP Survey"
+                                : `${data?.title + " Completed"}`
+                          }
                           onPress={() =>
                             data?.survey ? setSurveyGuideLines(true) : null
                           }
@@ -438,8 +501,8 @@ export default function DetailedAssignment() {
           isMenuVisible={isModalVisible}
           closeMenu={() => setIsModalVisible(false)}
           onPressForFirstOption={() => {
-            setIsRoadmapModalVisible(true);
-            setIsModalVisible(false);
+            setIsRoadmapModalVisible(true)
+            setIsModalVisible(false)
           }}
           onPressForSecondOption={() => console.log("pressed 2 ")}
           firstOptionLabel={"Expected outcome - 4 Months"}
@@ -459,7 +522,7 @@ export default function DetailedAssignment() {
         />
       </LinearGradient>
     </>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -485,4 +548,4 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: "#138BB6",
   },
-});
+})

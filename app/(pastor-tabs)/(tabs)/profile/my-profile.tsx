@@ -27,6 +27,9 @@ interface ProfileData {
   conference: string;
   profileInfo: string;
   churches: ChurchInfo[];
+  communityServiceProjects: string;
+  interests: string;
+  comments: string;
 }
 
 interface ChurchInfo {
@@ -43,7 +46,7 @@ interface ChurchInfo {
 export default function ProfileScreen() {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
-  const [hasProfile, setHasProfile] = useState(false);
+  const [hasProfile, setHasProfile] = useState(true); // Set to true to show filled profile by default
   const { bottom } = useSafeAreaInsets();
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
@@ -52,7 +55,7 @@ export default function ProfileScreen() {
     lastName: 'Ross',
     phone: '09878564398',
     email: 'johnross@gmail.com',
-    title: 'Mentor',
+    title: 'Pastor',
     yearsInMinistry: '11',
     conference: 'Oakland',
     profileInfo: 'Lorem ipsum dolor sit amet, consectetur adipiscing eip ex ea commodo consequat. Duis',
@@ -78,7 +81,21 @@ export default function ProfileScreen() {
         country: 'USA',
       },
     ],
+    communityServiceProjects: '11',
+    interests: 'I would like to find out more about the Center for Community Change',
+    comments: 'I am a conference administrator and would like to find out more about partnering with the center',
   });
+
+  const titleOptions = [
+    'Pastor',
+    'Associate Pastor',
+    'Youth Pastor',
+    'Senior Pastor',
+    'Elder'
+  ];
+
+  const [selectedTitle, setSelectedTitle] = useState(profileData.title);
+  const [showTitleDropdown, setShowTitleDropdown] = useState(false);
 
   const updateField = (field: keyof ProfileData, value: any) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
@@ -94,7 +111,6 @@ export default function ProfileScreen() {
 
   const pickImage = async () => {
     try {
-      // Request permission first
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (status !== 'granted') {
@@ -106,9 +122,8 @@ export default function ProfileScreen() {
         return;
       }
 
-      // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'], // Restrict to images only
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -165,211 +180,14 @@ export default function ProfileScreen() {
     setHasProfile(true);
   };
 
-  // STATE 1: Empty Profile (No profile created yet)
-  if (!hasProfile && !isEditing) {
-    return (
-      <LinearGradient
-        colors={['#176192', '#1D548D', '#264387']}
-        style={{ flex: 1 }}
-      >
-        <TopBar
-          userName="David Roe"
-          showUserName={true}
-          showNotifications={true}
-          notifications={3}
-          showDrawer={true}
-          showBackButton={false}
-        />
-        <TouchableOpacity onPress={() => router.back()} className="flex-row items-center px-4 py-4 border-b border-white/30 ">
-          <Ionicons name="chevron-back" size={28} color="#fff" />
-          <Text className="ml-2 text-xl font-semibold text-white">My Profile</Text>
-        </TouchableOpacity>
-        <KeyboardAwareScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom }]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Profile Header - No Image */}
-          <View style={styles.profileHeader}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.emptyAvatar}>
-                {/* <Ionicons name="person-outline" size={50} color="rgba(255,255,255,0.6)" /> */}
-                <Image source={icons.profileUpload} style={{ width: 100, height: 100 }} />
-              </View>
-              <TouchableOpacity
-                style={styles.editAvatarBadge}
-                onPress={pickImage}
-              >
-                <Image source={icons.upload} style={{ width: 14, height: 14, tintColor: '#fff' }} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.greeting}>Good Morning David Roe</Text>
-            <Text style={styles.role}>Director</Text>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity onPress={() => router.push('/(director-tabs)/(tabs)/documents')} style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Upload documents</Text>
-              <Image source={icons.attachment} style={{ width: 20, height: 20 }} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => setIsEditing(true)}
-            >
-              <Text style={styles.actionButtonText}>Edit Profile</Text>
-              <Image source={icons.edit} style={{ width: 20, height: 18 }} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Profile Information Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Profile Information</Text>
-            <TextInput
-              style={styles.textArea}
-              placeholder="Profile Information..."
-              placeholderTextColor="rgba(255,255,255,0.5)"
-              multiline
-              numberOfLines={3}
-            />
-          </View>
-          <View>
-            {/* Personal Information Section */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Personal Information</Text>
-              <View style={styles.row}>
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="First Name : John"
-                  placeholderTextColor="rgba(255,255,255,0.6)"
-                />
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="Last Name : Ross"
-                  placeholderTextColor="rgba(255,255,255,0.6)"
-                />
-              </View>
-              <View style={styles.row}>
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="Phone Number :"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  keyboardType="phone-pad"
-                />
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="Email :"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  keyboardType="email-address"
-                />
-              </View>
-            </View>
-
-            {/* Current Church Information Section */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Current Church Information</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Church Name"
-                placeholderTextColor="rgba(255,255,255,0.5)"
-              />
-              <View style={styles.row}>
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="Church Phone"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  keyboardType="phone-pad"
-                />
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="Church Website"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                />
-              </View>
-              <TextInput
-                style={styles.input}
-                placeholder="Church Address"
-                placeholderTextColor="rgba(255,255,255,0.5)"
-              />
-              <View style={styles.row}>
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="City"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                />
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="State"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                />
-              </View>
-              <View style={styles.row}>
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="Zip Code"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  keyboardType="numeric"
-                />
-                <View style={[styles.input, styles.halfInput, styles.dropdownInput]}>
-                  <Text style={styles.dropdownPlaceholder}>Country</Text>
-                  <Ionicons name="chevron-down" size={18} color="rgba(255,255,255,0.7)" />
-                </View>
-              </View>
-              <TouchableOpacity style={styles.addChurchButtonStyle}>
-                <Text style={styles.addChurchButtonText}>Add a Church</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Other Information Section */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Other Information</Text>
-              <View style={[styles.input, styles.dropdownInput]}>
-                <Text style={styles.dropdownPlaceholder}>Title</Text>
-                <Ionicons name="chevron-down" size={18} color="rgba(255,255,255,0.7)" />
-              </View>
-              <View style={styles.row}>
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="Years in Ministry"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  keyboardType="numeric"
-                />
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  placeholder="Conference"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                />
-              </View>
-            </View>
-
-            {/* Submit Button */}
-            <TouchableOpacity style={[styles.submitButton, {
-              width: '50%',
-              alignSelf: 'center',
-            }]} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>Submit</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAwareScrollView>
-      </LinearGradient >
-    );
-  }
-
-  // STATE 2: Filled Profile (View Mode)
+  // STATE 1: Filled Profile (View Mode) - Default state
   if (hasProfile && !isEditing) {
     return (
       <LinearGradient
         colors={['#176192', '#1D548D', '#264387']}
         style={{ flex: 1 }}
       >
-        <TopBar
-          userName="David Roe"
-          showUserName={true}
-          showNotifications={true}
-          notifications={3}
-          showDrawer={true}
-          showBackButton={false}
-        />
+        <TopBar role='pastor' />
         <TouchableOpacity onPress={() => router.back()} className="flex-row items-center px-4 py-4 border-b border-white/30 ">
           <Ionicons name="chevron-back" size={28} color="#fff" />
           <Text className="ml-2 text-xl font-semibold text-white">My Profile</Text>
@@ -388,13 +206,22 @@ export default function ProfileScreen() {
                 <Image source={icons.myProfile} style={styles.avatarImage} />
               )}
             </View>
-            <Text style={styles.greeting}>Good Morning David Roe</Text>
-            <Text style={styles.role}>Director</Text>
+            <Text style={styles.greeting}>Good Morning John Ross</Text>
+            <Text style={styles.role}>Pastor</Text>
+          </View>
+
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressLabel}>Progress</Text>
+            <View style={styles.progressBarContainer}>
+              <View style={styles.progressBar} />
+            </View>
+            <Text style={styles.progressText}>70%</Text>
           </View>
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/(director-tabs)/(tabs)/documents')} >
+            <TouchableOpacity style={styles.actionButton}>
               <Text style={styles.actionButtonText}>Documents</Text>
               <Image source={icons.attachment} style={{ width: 20, height: 20 }} />
             </TouchableOpacity>
@@ -516,6 +343,15 @@ export default function ProfileScreen() {
                   <Text style={styles.viewFieldText}>Conference : {profileData.conference}</Text>
                 </View>
               </View>
+              <View style={styles.viewField}>
+                <Text style={styles.viewFieldText}>Community Service Projects : {profileData.communityServiceProjects}</Text>
+              </View>
+              <View style={styles.viewField}>
+                <Text style={styles.viewFieldText}>Interests : {profileData.interests}</Text>
+              </View>
+              <View style={styles.viewField}>
+                <Text style={styles.viewFieldText}>Comments : {profileData.comments}</Text>
+              </View>
             </View>
           </View>
         </KeyboardAwareScrollView>
@@ -523,20 +359,12 @@ export default function ProfileScreen() {
     );
   }
 
-  // STATE 3: Edit Mode
+  // STATE 2: Edit Mode
   return (
     <LinearGradient
       colors={['#176192', '#1D548D', '#264387']}
       style={{ flex: 1 }}
     >
-      <TopBar
-        userName="David Roe"
-        showUserName={true}
-        showNotifications={true}
-        notifications={3}
-        showDrawer={true}
-        showBackButton={false}
-      />
       <TouchableOpacity onPress={handleCancel} className="flex-row items-center px-4 py-4 border-b border-white/30 ">
         <Ionicons name="chevron-back" size={28} color="#fff" />
         <Text className="ml-2 text-xl font-semibold text-white">Edit Profile</Text>
@@ -756,12 +584,32 @@ export default function ProfileScreen() {
             <Text style={styles.sectionTitle}>Other Information</Text>
             <View style={styles.editFieldContainer}>
               <Text style={styles.fieldLabel}>Title :</Text>
-              <TextInput
-                style={styles.editInput}
-                value={profileData.title}
-                onChangeText={(text) => updateField('title', text)}
-                placeholderTextColor="rgba(255,255,255,0.5)"
-              />
+              <TouchableOpacity
+                style={[styles.editInput, styles.dropdownInput]}
+                onPress={() => setShowTitleDropdown(!showTitleDropdown)}
+              >
+                <Text style={{ color: '#fff', fontSize: 13 }}>
+                  {selectedTitle || 'Select Title'}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="rgba(255,255,255,0.7)" />
+              </TouchableOpacity>
+              {showTitleDropdown && (
+                <View style={styles.dropdownContainer}>
+                  {titleOptions.map((option, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.dropdownOption}
+                      onPress={() => {
+                        setSelectedTitle(option);
+                        updateField('title', option);
+                        setShowTitleDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownOptionText}>{option}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
             <View style={styles.row}>
               <View style={[styles.editFieldContainer, styles.halfInput]}>
@@ -783,6 +631,35 @@ export default function ProfileScreen() {
                   placeholderTextColor="rgba(255,255,255,0.5)"
                 />
               </View>
+            </View>
+            <View style={styles.editFieldContainer}>
+              <Text style={styles.fieldLabel}>Community Service Projects :</Text>
+              <TextInput
+                style={styles.editInput}
+                value={profileData.communityServiceProjects}
+                onChangeText={(text) => updateField('communityServiceProjects', text)}
+                placeholderTextColor="rgba(255,255,255,0.5)"
+              />
+            </View>
+            <View style={styles.editFieldContainer}>
+              <Text style={styles.fieldLabel}>Interests :</Text>
+              <TextInput
+                style={[styles.editInput, { minHeight: 60 }]}
+                value={profileData.interests}
+                onChangeText={(text) => updateField('interests', text)}
+                multiline
+                placeholderTextColor="rgba(255,255,255,0.5)"
+              />
+            </View>
+            <View style={styles.editFieldContainer}>
+              <Text style={styles.fieldLabel}>Comments :</Text>
+              <TextInput
+                style={[styles.editInput, { minHeight: 60 }]}
+                value={profileData.comments}
+                onChangeText={(text) => updateField('comments', text)}
+                multiline
+                placeholderTextColor="rgba(255,255,255,0.5)"
+              />
             </View>
           </View>
         </View>
@@ -810,7 +687,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: Colors.lightBlueGradientOne,
   },
   scrollView: {
     flex: 1,
@@ -871,6 +747,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
   },
+  progressContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    marginTop: 8,
+    marginHorizontal: 72,
+    marginBottom: 16,
+  },
+  progressLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#fff',
+  },
+  progressBarContainer: {
+    flex: 1,
+    backgroundColor: '#182c5b',
+    height: 8,
+    borderRadius: 4,
+  },
+  progressBar: {
+    backgroundColor: '#fff',
+    height: 8,
+    borderRadius: 4,
+    width: '70%',
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
   actionButtons: {
     flexDirection: 'row',
     gap: 12,
@@ -894,28 +800,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   section: {
-    // backgroundColor: 'rgba(58, 124, 165, 0.25)',
-    // borderWidth: 1,
-    // borderColor: 'rgba(255,255,255,0.4)',
-    // borderRadius: 12,
-    // padding: 16,
     marginBottom: 16,
   },
   viewSection: {
-    // backgroundColor: 'rgba(58, 124, 165, 0.25)',
-    // borderWidth: 1,
-    // borderColor: 'rgba(255,255,255,0.4)',
-    // borderRadius: 12,
-    // padding: 16,
     marginBottom: 16,
   },
-
   editSection: {
-    // backgroundColor: 'rgba(58, 124, 165, 0.25)',
-    // borderWidth: 1,
-    // borderColor: 'rgba(255,255,255,0.6)',
-    // borderRadius: 12,
-    // padding: 16,
     borderBottomColor: '#ccc',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomStartRadius: 50,
@@ -945,7 +835,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   profileInputContainer: {
-    // backgroundColor: 'rgba(0, 0, 0, 0.25)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.6)',
     borderRadius: 12,
@@ -964,22 +853,12 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
-
-  // editSection: {
-  //   marginBottom: 16,
-  // },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 12,
   },
-  // editSectionHeader: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   alignItems: 'center',
-  //   marginBottom: 12,
-  // },
   input: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -1019,6 +898,28 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.5)',
     fontSize: 13,
   },
+  dropdownContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#1E366F',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+    zIndex: 1000,
+    marginTop: 4,
+  },
+  dropdownOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.2)',
+  },
+  dropdownOptionText: {
+    color: '#fff',
+    fontSize: 13,
+  },
   addChurchButtonStyle: {
     backgroundColor: '#1E366F',
     borderWidth: 1,
@@ -1041,7 +942,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   viewField: {
-    // backgroundColor: 'rgba(58, 124, 165, 0.4)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.6)',
     borderRadius: 8,
@@ -1077,7 +977,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   editInput: {
-    // backgroundColor: 'rgba(0, 0, 0, 0.2)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.6)',
     borderRadius: 8,
@@ -1119,7 +1018,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 24,
-
   },
   submitButtonText: {
     color: '#1a5b77',
@@ -1169,5 +1067,48 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     marginBottom: 8,
+  },
+  divider: {
+    height: 0.5,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    marginHorizontal: 50,
+  },
+  icon: {
+    width: 18,
+    height: 18,
+    marginHorizontal: 16,
+  },
+  rowContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    marginVertical: 8,
+  },
+  profileEditIcon: {
+    position: "absolute",
+    bottom: -10,
+    right: -30,
+    backgroundColor: "rgba(0, 75, 135, 0.8)",
+    borderRadius: 9,
+    width: 42,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#233A6F",
+  },
+  profileInformationIcon: {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    backgroundColor: "rgba(0, 75, 135, 0.8)",
+    borderRadius: 9,
+    width: 42,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#233A6F",
   },
 });

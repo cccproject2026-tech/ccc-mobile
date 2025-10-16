@@ -46,12 +46,12 @@ export default function DetailedRoadMap() {
       setTabs(tabName)
     } else if (tabName === "Comments") {
       router.push({
-        pathname: "/(pastor-tabs)/roadmap/comments",
+        pathname: "/(pastor-tabs)/(tabs)/roadmap/comments",
         params: { data: JSON.stringify(data) },
       })
     } else if (tabName === "Queries") {
       router.push({
-        pathname: "/(pastor-tabs)/roadmap/queries",
+        pathname: "/(pastor-tabs)/(tabs)/roadmap/queries",
         params: { data: JSON.stringify(data) },
       })
     }
@@ -269,7 +269,7 @@ export default function DetailedRoadMap() {
                             </View>
                           </View>
                           <View className="p-3 flex gap-8 border border-solid border-white/20 rounded-[10px] w-full">
-                            <View className="flex flex-row justify-between items-center">
+                            <View className="flex flex-row items-center justify-between">
                               <Text className="text-semibold leading-[22px] text-white">
                                 Follow up Events
                               </Text>

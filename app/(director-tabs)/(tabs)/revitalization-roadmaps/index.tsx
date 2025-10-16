@@ -421,7 +421,7 @@ export default function RevitalizationRoadmap() {
     return (
         <LinearGradient
             colors={['#176192', '#1D548D', '#264387']}
-            style={{ flex: 1, paddingBottom: bottom }}
+            style={{ flex: 1, }}
         >
             <View className="flex-1">
                 <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />

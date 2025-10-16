@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, usePathname } from "expo-router";
 import React from "react";
 import {
+  Dimensions,
   Image,
   StyleSheet,
   Text,
@@ -13,8 +14,17 @@ import {
   ViewStyle,
 } from "react-native";
 import { icons } from "../../constants/images";
+import { getFontSize, getSpacing, isSmallDevice, moderateScale } from "../../utils/responsive";
 import { UploadPDFButton } from "./buttons";
 import CheckBox from "./checkBox";
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Dynamic responsive calculations
+const getResponsiveCardPadding = () => SCREEN_WIDTH * 0.03; // 3% of screen width
+const getResponsiveIconSize = () => Math.max(16, SCREEN_WIDTH * 0.055); // Min 16px, max ~5.5% of width
+const getResponsiveFontSize = (baseSize: number) => Math.max(10, SCREEN_WIDTH * (baseSize / 375)); // Base on 375px width
+const getResponsiveSpacing = (baseSpacing: number) => SCREEN_WIDTH * (baseSpacing / 375);
 
 export const AppointmentCard = ({
   data,
@@ -45,12 +55,12 @@ export const AppointmentCard = ({
               <Image source={icons.forward} style={styles.iconStyle} />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => { }}>
               <Ionicons name="ellipsis-vertical" size={20} color="white" />
             </TouchableOpacity>
           )}
         </View>
-        <View className="flex flex-row justify-between items-center ">
+        <View className="flex flex-row items-center justify-between ">
           <View>
             <View style={styles.mentorInfoContainer}>
               <Image source={icons.myProfile} style={styles.mentorImage} />
@@ -101,14 +111,14 @@ export const NotificationCard = ({
             data.type == "course" || data.type == "assignment"
               ? icons.Revitalization2
               : data.type == "note"
-              ? icons.edit2
-              : icons.profile2
+                ? icons.edit2
+                : icons.profile2
           }
           style={{
             width: type === "mentor" ? 40 : 60,
             height: type === "mentor" ? 45 : 60,
           }}
-          // resizeMode={"contain"}
+        // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -178,14 +188,14 @@ export const NotificationMentorCard = ({
             data.type == "course" || data.type == "assignment"
               ? icons.Revitalization2
               : data.type == "note"
-              ? icons.edit2
-              : icons.profile2
+                ? icons.edit2
+                : icons.profile2
           }
           style={{
             width: type === "mentor" ? 40 : 60,
             height: type === "mentor" ? 45 : 60,
           }}
-          // resizeMode={"contain"}
+        // resizeMode={"contain"}
         />
       </View>
       <View style={{ ...styles.appointmentDetails, marginLeft: 12 }}>
@@ -260,40 +270,40 @@ export const RevitalizationCard = ({
         if (pathname === "/roadmap/phase-1/revitalization-roadmap") {
           typeof data.assignment !== "undefined" && data.assignment
             ? navigation.push({
-                pathname:
-                  "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-                params: { data: JSON.stringify(data) },
-              })
+              pathname:
+                "/(pastor-tabs)/(tabs)/profile/my-assignment/detailed-assignment",
+              params: { data: JSON.stringify(data) },
+            })
             : typeof data.subPhase !== "undefined" && data.subPhase
-            ? navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/sub-phases",
+              ? navigation.push({
+                pathname: "/(pastor-tabs)/(tabs)/roadmap/sub-phases",
                 params: { data: JSON.stringify(data) },
               })
-            : navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/phase-1/detailed-roadmap",
+              : navigation.push({
+                pathname: "/(pastor-tabs)/(tabs)/roadmap/phase-1/detailed-roadmap",
                 params: { data: JSON.stringify(data) },
               });
         } else if (pathname === "/roadmap/phase-2/revitalization-roadmap") {
           typeof data.assignment !== "undefined" && data.assignment
             ? navigation.push({
-                pathname:
-                  "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-                params: { data: JSON.stringify(data) },
-              })
+              pathname:
+                "/(pastor-tabs)/(tabs)/profile/my-assignment/detailed-assignment",
+              params: { data: JSON.stringify(data) },
+            })
             : typeof data.subPhase !== "undefined" && data.subPhase
-            ? navigation.push({
+              ? navigation.push({
                 pathname: "/(pastor-tabs)/roadmap/sub-phases",
                 params: { data: JSON.stringify(data) },
               })
-            : data.empowerment
-            ? navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
-                params: { data: JSON.stringify(data) },
-              })
-            : navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
-                params: { data: JSON.stringify(data) },
-              });
+              : data.empowerment
+                ? navigation.push({
+                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
+                  params: { data: JSON.stringify(data) },
+                })
+                : navigation.push({
+                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
+                  params: { data: JSON.stringify(data) },
+                });
         } else {
           if (data.phase === "Phase 1") {
             router.push("/roadmap/phase-1/revitalization-roadmap");
@@ -533,7 +543,7 @@ export const RevitalizationCard = ({
               borderRadius: 8,
               width: "95%",
             }}
-            className="flex flex-row justify-evenly mx-auto"
+            className="flex flex-row mx-auto justify-evenly"
           >
             <View>
               <Text
@@ -629,33 +639,77 @@ export const RoadMapCard = ({
   data: any;
   dataKey: string;
 }) => {
+  // Dynamic styles based on screen width
+  const dynamicStyles = {
+    cardPadding: getResponsiveCardPadding(),
+    iconSize: getResponsiveIconSize(),
+    fontSize: getResponsiveFontSize(14),
+    statusFontSize: getResponsiveFontSize(12),
+    spacing: getResponsiveSpacing(8),
+  };
+
   return (
-    <View style={styles.roadmapItem} key={dataKey}>
-      <View style={styles.leftContent}>
+    <View style={[styles.roadmapItem, {
+      paddingHorizontal: dynamicStyles.cardPadding,
+      paddingVertical: dynamicStyles.cardPadding * 0.8,
+    }]} key={dataKey}>
+      <View style={[styles.leftContent, { marginRight: dynamicStyles.spacing }]}>
         <Image
           source={
             data.title == "Survey" ? icons.Assessments2 : icons.Revitalization2
           }
-          style={{ width: 22, height: 22 }}
+          style={{
+            width: dynamicStyles.iconSize,
+            height: dynamicStyles.iconSize,
+            flexShrink: 0
+          }}
         />
-        <View className="flex flex-col gap-2.5">
-          <Text style={styles.roadmapText}>
+        <View style={[styles.textContainer, { marginLeft: dynamicStyles.spacing }]}>
+          <Text
+            style={[styles.roadmapText, { fontSize: dynamicStyles.fontSize }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.7}
+          >
             {data.phase} – {data.title}
           </Text>
-          <Text style={styles.roadmapText}>Task : {data.title}</Text>
+          <Text
+            style={[styles.roadmapText, { fontSize: dynamicStyles.fontSize }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.7}
+          >
+            Task : {data.title}
+          </Text>
         </View>
       </View>
-      <View style={[styles.leftContent, { marginLeft: "auto" }]}>
+      <View style={styles.rightContent}>
         <Text
           style={[
             styles.statusTextWhite,
-            { ...{ color: data.status == "Due" ? "yellow" : "white" } },
+            {
+              color: data.status == "Due" ? "yellow" : "white",
+              fontSize: dynamicStyles.statusFontSize,
+              paddingHorizontal: dynamicStyles.spacing * 0.5,
+            },
           ]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          adjustsFontSizeToFit={true}
+          minimumFontScale={0.6}
         >
           {data.status}
         </Text>
-        <TouchableOpacity style={styles.arrowButton}>
-          <Image source={icons.forward} style={styles.iconStyle} />
+        <TouchableOpacity style={[styles.arrowButton, {
+          padding: dynamicStyles.spacing * 0.5,
+          marginLeft: dynamicStyles.spacing * 0.3,
+        }]}>
+          <Image source={icons.forward} style={{
+            width: dynamicStyles.iconSize * 0.8,
+            height: dynamicStyles.iconSize * 0.8,
+          }} />
         </TouchableOpacity>
       </View>
     </View>
@@ -852,11 +906,11 @@ export const CommentsCard = ({
             data.type == "course" || data.type == "assignment"
               ? icons.dummyUser
               : data.type == "note"
-              ? icons.dummyUser2
-              : icons.profile2
+                ? icons.dummyUser2
+                : icons.profile2
           }
           style={{ width: 60, height: 60, borderRadius: 999999 }}
-          // resizeMode={"contain"}
+        // resizeMode={"contain"}
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -945,7 +999,7 @@ export const VideoCard = ({
           </View>
         </View>
         <View style={{ marginLeft: 0, flex: 1, gap: 3, width: "100%" }}>
-          <View className="w-full flex-row items-center">
+          <View className="flex-row items-center w-full">
             <Text
               className="font-medium text-white/70"
               style={{ fontSize: 14, fontWeight: "500" }}
@@ -1064,13 +1118,13 @@ export const ListCard = ({
                   <CheckBox
                     type="circle"
                     value={false}
-                    setValue={() => {}}
+                    setValue={() => { }}
                   ></CheckBox>
                 ) : (
                   <CheckBox
                     type="square"
                     value={false}
-                    setValue={() => {}}
+                    setValue={() => { }}
                   ></CheckBox>
                 )}
                 {listImage && (
@@ -1150,7 +1204,7 @@ export const InputCard = ({
             icon={icons.upload}
             style={{ backgroundColor: "#1f1a79", width: "60%" }}
             selectedFile={null}
-            setSelectedFile={() => {}}
+            setSelectedFile={() => { }}
           ></UploadPDFButton>
         </View>
       )}
@@ -1360,7 +1414,7 @@ export const AssessmentCard = ({
           </View>
 
           {(data && data?.status === "Not Started") ||
-          data?.status === "Due" ? (
+            data?.status === "Due" ? (
             <TouchableOpacity
               style={{
                 backgroundColor: "white",
@@ -1489,13 +1543,13 @@ export const ProgressCard = ({
       onPress={() =>
         data.subPhase
           ? navigation.push({
-              pathname: "/(pastor-tabs)/roadmap/sub-phases",
-              params: { data: JSON.stringify(data) },
-            })
+            pathname: "/(pastor-tabs)/roadmap/sub-phases",
+            params: { data: JSON.stringify(data) },
+          })
           : navigation.push({
-              pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
-              params: { data: JSON.stringify(data) },
-            })
+            pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
+            params: { data: JSON.stringify(data) },
+          })
       }
       style={{
         width: "100%",
@@ -1746,8 +1800,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconStyle: {
-    width: 18,
-    height: 18,
+    width: moderateScale(isSmallDevice ? 14 : 18),
+    height: moderateScale(isSmallDevice ? 14 : 18),
   },
   separator: {
     height: 2,
@@ -1763,22 +1817,33 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
+    minHeight: Math.max(50, SCREEN_WIDTH * 0.15), // Dynamic minimum height
   },
   leftContent: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
+    flex: 1,
+    minWidth: 0, // Important for text truncation
+  },
+  textContainer: {
+    flex: 1,
+    minWidth: 0, // Important for text truncation
+    justifyContent: "center",
+  },
+  rightContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 0,
+    maxWidth: SCREEN_WIDTH * 0.35, // Limit right content to 35% of screen
   },
   roadmapText: {
     color: "#FFFFFF", // white
     fontFamily: "AlbertMedium",
-    fontSize: 14,
-    paddingHorizontal: 4,
+    lineHeight: 18,
+    marginVertical: 1,
   },
   statusText: {
     color: "#FFD700", // customYellow
@@ -1789,11 +1854,15 @@ const styles = StyleSheet.create({
   statusTextWhite: {
     color: "#FFFFFF", // white
     fontFamily: "AlbertMedium",
-    fontSize: 12,
-    padding: 8,
+    fontSize: getFontSize(isSmallDevice ? 10 : 12),
+    paddingHorizontal: getSpacing(isSmallDevice ? 4 : 8),
+    paddingVertical: getSpacing(isSmallDevice ? 2 : 4),
+    textAlign: "right",
+    flexShrink: 1,
   },
   arrowButton: {
-    padding: 4,
+    padding: getSpacing(isSmallDevice ? 2 : 4),
+    marginLeft: getSpacing(isSmallDevice ? 2 : 4),
   },
   divider: {
     height: 0.5,

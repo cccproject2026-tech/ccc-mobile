@@ -2,7 +2,7 @@ import { Colors } from '@/constants/Colors';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
@@ -12,6 +12,7 @@ export type Interest = {
     name: string;
     role: string;
     time: string;
+    profileImage?: string;
 };
 
 type Props = {
@@ -41,13 +42,21 @@ const InterestCard: React.FC<Props> = ({
 
     return (
         <Pressable onPress={handleCardPress} style={styles.card}>
-            {/* Avatar Icon */}
+            {/* Avatar Icon or Image */}
             <View style={styles.avatarCircle}>
-                <Ionicons
-                    name="person-outline"
-                    size={isSmallDevice ? 16 : 18}
-                    color="#EAF7FF"
-                />
+                {data.profileImage ? (
+                    <Image
+                        source={{ uri: data.profileImage }}
+                        style={styles.avatarImage}
+                        resizeMode="cover"
+                    />
+                ) : (
+                    <Ionicons
+                        name="person-outline"
+                        size={isSmallDevice ? 16 : 18}
+                        color="#EAF7FF"
+                    />
+                )}
             </View>
 
             {/* Name and Role */}
@@ -130,6 +139,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.3)',
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: isSmallDevice ? 22 : 24,
     },
     infoBlock: {
         flex: 1,

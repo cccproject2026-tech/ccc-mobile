@@ -157,7 +157,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Track Progress",
       iconKey: "progress",
-      navigateLocation:  "/(mentor-tabs)/progress/progress",
+      navigateLocation: "/(mentor-tabs)/progress/progress",
     },
     {
       name: "Schedule",
@@ -177,12 +177,12 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Documents",
           iconKey: "document",
-           navigateLocation: "/(mentor-tabs)/profile/my-profile",
+          navigateLocation: "/(mentor-tabs)/profile/my-profile",
         },
         {
           name: "Certificate",
           iconKey: "certificate",
-           navigateLocation: "/(mentor-tabs)/profile/certificate",
+          navigateLocation: "/(mentor-tabs)/profile/certificate",
         },
         {
           name: "Notes",

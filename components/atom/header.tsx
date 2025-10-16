@@ -93,7 +93,7 @@ export const HeaderTitle: React.FC<HeaderTitleProps> = ({
             fontSize: 20,
             lineHeight: 30,
             fontWeight: "700",
-            paddingVertical: 27,
+            paddingVertical: 10,
             fontFamily: "AlbertSans-Medium",
             color: Colors.customWhiteEighty,
             textAlign: "center",
