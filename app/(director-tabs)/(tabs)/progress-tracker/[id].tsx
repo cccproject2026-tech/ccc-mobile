@@ -217,7 +217,7 @@ export default function ProgressDetails() {
     return (
         <LinearGradient
             colors={['#176192', '#1D548D', '#264387']}
-            style={{ flex: 1, paddingBottom: bottom + height * 0.05 }}
+            style={{ flex: 1, }}
         >
             <View className="flex-1">
                 <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
@@ -278,7 +278,7 @@ export default function ProgressDetails() {
 
                     <ScrollView
                         style={{ flex: 1 }}
-                        contentContainerStyle={{ paddingBottom: bottom + height * 0.05 }}
+                        contentContainerStyle={{ paddingBottom: bottom }}
                         showsVerticalScrollIndicator={false}
                     >
                         {/* Pie Chart Section */}

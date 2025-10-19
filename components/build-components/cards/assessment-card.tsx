@@ -1,4 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
@@ -9,11 +10,7 @@ export default function AssessmentCard({
   data: any;
   navigation: any;
 }) {
-  const progressPercentage =
-    ((data?.taskStatus?.inProgress ?? 0) /
-      (data?.taskStatus?.toComplete ?? 1)) *
-      100 +
-    "%";
+  const router = useRouter()
 
   return (
     <TouchableOpacity
@@ -25,7 +22,7 @@ export default function AssessmentCard({
       }}
       className="w-full bg-[#194F82] rounded-[10px] py-2 px-2 my-2.5 border border-[#FFFFFF73]"
     >
-      <View className="w-full flex-row items-start">
+      <View className="flex-row items-start w-full">
         <View className="w-[130px] items-center">
           <View className="w-full h-[138px] bg-[#00ABAE] border-[5px] border-[#BFFEFE] rounded-[15px] items-center justify-center">
             <Text className="text-[#001B4A] text-[40px] font-extrabold">
@@ -39,11 +36,10 @@ export default function AssessmentCard({
             </Text>
           </View>
           {data?.completionDate && (
-            <View className="mt-3 w-full items-center">
+            <View className="items-center w-full mt-3">
               <Text
-                className={`text-xs font-bold ${
-                  data?.status === "Due" ? "text-yellow-400" : "text-white"
-                }`}
+                className={`text-xs font-bold ${data?.status === "Due" ? "text-yellow-400" : "text-white"
+                  }`}
               >
                 Due :{data?.completionDate}
               </Text>
@@ -64,13 +60,12 @@ export default function AssessmentCard({
             {data?.description}
           </Text>
           <TouchableOpacity className="items-center border border-[#FFFFFF33] py-1 px-2 my-1 rounded-lg max-w-[70%]">
-            <Text className="text-sm text-white font-medium">
+            <Text className="text-sm font-medium text-white">
               Status{" "}
-              <Text className="text-white font-black items-center">•</Text>{" "}
+              <Text className="items-center font-black text-white">•</Text>{" "}
               <Text
-                className={`text-sm font-medium ${
-                  data?.status == "Due" ? "text-yellow-400" : "text-white"
-                }`}
+                className={`text-sm font-medium ${data?.status == "Due" ? "text-yellow-400" : "text-white"
+                  }`}
               >
                 {data?.status}
               </Text>
@@ -83,8 +78,10 @@ export default function AssessmentCard({
           </View>
 
           {(data && data?.status === "Not Started") ||
-          data?.status === "Due" ? (
-            <TouchableOpacity className="bg-white items-center rounded-[10px] py-[5px] my-3 w-[70%]">
+            data?.status === "Due" ? (
+            <TouchableOpacity className="bg-white items-center rounded-[10px] py-[5px] my-3 w-[70%]" onPress={() => {
+              router.push("/(pastor-tabs)/(tabs)/assessments/answer-question-page")
+            }}>
               <Text className="text-base text-[#001FC1] font-semibold pb-1 leading-[22px]">
                 Start Now
               </Text>

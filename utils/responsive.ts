@@ -34,43 +34,43 @@ export const platformScale = (iosSize: number, androidSize: number): number => {
 // Responsive font sizes
 export const getFontSize = (baseSize: number): number => {
     if (isAndroid) {
-        // Android tends to render fonts larger, so reduce by 10-15%
-        return moderateScale(baseSize * 0.9);
+        // Android tends to render fonts larger, so reduce by 15-20%
+        return moderateScale(baseSize * 0.85, 0.3);
     }
-    return moderateScale(baseSize);
+    return moderateScale(baseSize, 0.3);
 };
 
 // Responsive spacing
 export const getSpacing = (baseSpacing: number): number => {
     if (isAndroid) {
-        // Reduce spacing on Android to make things more compact
-        return moderateScale(baseSpacing * 0.85);
+        // Reduce spacing more on Android to make things more compact
+        return moderateScale(baseSpacing * 0.8, 0.3);
     }
-    return moderateScale(baseSpacing);
+    return moderateScale(baseSpacing, 0.3);
 };
 
 // Responsive image sizes
 export const getImageSize = (baseSize: number): number => {
     if (isAndroid) {
-        return moderateScale(baseSize * 0.9);
+        return moderateScale(baseSize * 0.85, 0.3);
     }
-    return moderateScale(baseSize);
+    return moderateScale(baseSize, 0.3);
 };
 
 // Button heights
 export const getButtonHeight = (baseHeight: number): number => {
     if (isAndroid) {
-        return moderateScale(baseHeight * 0.85);
+        return moderateScale(baseHeight * 0.8, 0.3);
     }
-    return moderateScale(baseHeight);
+    return moderateScale(baseHeight, 0.3);
 };
 
 // Icon sizes
 export const getIconSize = (baseSize: number): number => {
     if (isAndroid) {
-        return Math.round(baseSize * 0.9);
+        return Math.round(baseSize * 0.85);
     }
-    return baseSize;
+    return Math.round(baseSize * 0.9);
 };
 
 // Device type helper
@@ -82,9 +82,9 @@ export const getDeviceType = () => {
 
 // Responsive card sizes
 export const getCardImageSize = (): number => {
-    const baseSize = SCREEN_WIDTH * 0.28;
+    const baseSize = SCREEN_WIDTH * 0.25; // Reduced from 0.28
     if (isAndroid) {
-        return baseSize * 0.85; // Make images smaller on Android
+        return baseSize * 0.8; // Make images smaller on Android
     }
     return baseSize;
 };
@@ -92,7 +92,7 @@ export const getCardImageSize = (): number => {
 // List item heights
 export const getListItemHeight = (): number => {
     if (isAndroid) {
-        return isSmallDevice ? 60 : 65;
+        return isSmallDevice ? 50 : 55; // Reduced heights
     }
-    return isSmallDevice ? 68 : 75;
+    return isSmallDevice ? 58 : 65; // Reduced heights
 };

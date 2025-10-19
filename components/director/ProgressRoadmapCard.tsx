@@ -1,4 +1,4 @@
-import { getFontSize, getImageSize, getSpacing, isMediumDevice, isSmallDevice } from '@/utils/responsive';
+import { getFontSize, getSpacing, isSmallDevice } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Dimensions, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -20,7 +20,6 @@ export interface RoadmapCardData {
     };
     showArrow?: boolean;
     showCheckmark?: boolean;
-
 }
 
 interface Props {
@@ -196,15 +195,15 @@ const styles = StyleSheet.create({
         minWidth: 0, // Prevent overflow
     },
     left: {
-        width: getImageSize(isSmallDevice ? 80 : isMediumDevice ? 90 : 96),
+        width: 90,
         marginRight: getSpacing(16),
         alignItems: 'flex-start',
         flexShrink: 0,
     },
     imageContainer: {
         position: 'relative',
-        width: getImageSize(isSmallDevice ? 80 : isMediumDevice ? 90 : 96),
-        height: getImageSize(isSmallDevice ? 80 : isMediumDevice ? 90 : 96),
+        width: 90,
+        height: 90,
     },
     image: {
         width: '100%',
@@ -225,10 +224,10 @@ const styles = StyleSheet.create({
     },
     completionTime: {
         color: 'rgba(255,255,255,0.8)',
-        fontSize: getFontSize(13),
+        fontSize: 13,
         fontWeight: '400',
-        lineHeight: getFontSize(16),
-        marginTop: getSpacing(12),
+        lineHeight: 16,
+        marginTop: 12,
     },
     right: {
         flex: 1,

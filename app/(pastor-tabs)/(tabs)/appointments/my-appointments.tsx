@@ -1,16 +1,21 @@
 import GradientCalendar from "@/components/atom/calendar";
-import { AppointmentCard } from "@/components/atom/cards";
-import { ResponseModal } from "@/components/atom/modals";
-import { Search } from "@/components/atom/Search";
+import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
+import AppointmentCard from "@/components/director/AppointmentCard";
+import ScheduleMeetingBottomSheet, { Mentor } from "@/components/director/ScheduleMeetingBottomSheet";
+import SearchBar from "@/components/director/SearchBar";
+import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
+import { appointments } from "@/constants/mockData";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+const SimpleSuccessModalAny = SimpleSuccessModal as unknown as React.ComponentType<any>;
 
 type RootStackParamList = {
   Home: undefined;
@@ -22,14 +27,6 @@ interface AppointmentsProps {
   navigation: NativeStackNavigationProp<RootStackParamList, "Appointments">;
 }
 
-interface Appointment {
-  date: string;
-  time: string;
-  name: string;
-  role: string;
-  mode: string;
-}
-
 interface ResponseModalState {
   visible: boolean;
   message: string;
@@ -37,29 +34,90 @@ interface ResponseModalState {
 }
 
 const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
-  const [selected, setSelected] = React.useState<string>("");
+  const today = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = React.useState<string>(today);
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [responseModal, setResponseModal] = React.useState<ResponseModalState>({
     visible: false,
     message: "",
     buttonText: "",
   });
+  const { bottom } = useSafeAreaInsets();
 
-  const dummyAppointments: Appointment[] = [
+  // Bottom sheet ref
+  const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
+
+  // Mock mentors data
+  const mockMentors: Mentor[] = [
     {
-      date: "04 Aug 24",
-      time: "11:30 hrs EST",
-      name: "John Ross",
-      role: "Mentor",
-      mode: "duo",
+      id: '1',
+      name: 'John Ross',
+      role: 'Mentor',
+      profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
     },
     {
-      date: "11 Aug 24",
-      time: "11:30 hrs EST",
-      name: "John Ross",
-      role: "Field Mentor",
-      mode: "meet",
+      id: '2',
+      name: 'John Ross',
+      role: 'Field Mentor',
+      profileImage: 'https://randomuser.me/api/portraits/men/2.jpg',
+    },
+    {
+      id: '3',
+      name: 'John Ross',
+      role: 'Mentor',
+      profileImage: 'https://randomuser.me/api/portraits/men/3.jpg',
+    },
+    {
+      id: '4',
+      name: 'John Ross',
+      role: 'Mentor',
+      profileImage: 'https://randomuser.me/api/portraits/men/4.jpg',
+    },
+    {
+      id: '5',
+      name: 'John Ross',
+      role: 'Field Mentor',
+      profileImage: 'https://randomuser.me/api/portraits/men/5.jpg',
+    },
+    {
+      id: '6',
+      name: 'John Ross',
+      role: 'Field Mentor',
+      profileImage: 'https://randomuser.me/api/portraits/men/6.jpg',
     },
   ];
+
+  // Helper function to format date for display
+  const formatDisplayDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[date.getMonth()];
+    const year = date.getFullYear().toString().slice(-2);
+
+    return `${day} ${month} ${year}`;
+  };
+
+  // Helper function to check if date is today
+  const isToday = (dateString: string) => {
+    return dateString === today;
+  };
+
+  // Filter appointments based on selected date
+  const getAppointmentsForDate = (dateString: string) => {
+    // For demo purposes, we'll show appointments on specific dates
+    // In real app, you'd filter based on actual appointment dates
+    if (dateString === today) {
+      return appointments; // Show real appointments for today
+    } else if (dateString === '2025-10-20' || dateString === '2025-10-23' || dateString === '2025-10-21') {
+      // Show some appointments for these demo dates
+      return appointments.slice(0, 2);
+    }
+    return []; // No appointments for other dates
+  };
+
+  const selectedDateAppointments = getAppointmentsForDate(selectedDate);
 
   const scheduleMeeting = () => {
     navigation.navigate("scheduleMeeting", {
@@ -68,60 +126,113 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
     });
   };
 
-  const onsubmitPress = () => {
-    setResponseModal((prev) => ({
-      ...prev,
+  const handleViewDetails = (appointment: any) => {
+    console.log('View details', appointment);
+    // Navigate to appointment details
+  };
+
+  const handleReschedule = (appointment: any) => {
+    console.log('Reschedule appointment', appointment);
+    // Navigate to reschedule screen
+  };
+
+  const handleCancel = (appointment: any) => {
+    Alert.alert(
+      'Cancel Meeting',
+      'Are you sure you want to cancel this meeting?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: () => {
+            // Place your cancel logic here
+            console.log('Meeting cancelled:', appointment);
+            // Optionally show a success message or update state
+          },
+        },
+      ]
+    );
+  };
+
+  // Handle new meeting button press
+  const handleNewMeeting = () => {
+    scheduleMeetingBottomSheetRef.current?.present();
+  };
+
+  // Handle schedule meeting
+  const handleScheduleMeeting = (data: any) => {
+    console.log('Scheduling meeting:', data);
+    // Here you would typically make an API call to schedule the meeting
+    setResponseModal({
       visible: true,
-      buttonText: "",
-      message: "Survey Submitted Successfully",
-    }));
-    setTimeout(() => {
-      setResponseModal((prev) => ({
-        ...prev,
-        visible: true,
-        buttonText: "Schedule Meeting",
-        message:
-          "On completion of the PMP and CMA assessment tools please schedule a meeting with your mentor.",
-      }));
-    }, 2000);
+      message: `Meeting scheduled with ${data.selectedMentor.name} on ${formatDisplayDate(data.selectedDate)} at ${data.selectedTime.label}`,
+      buttonText: "OK",
+    });
+  };
+
+  // Handle close bottom sheet
+  const handleCloseScheduleBottomSheet = () => {
+    scheduleMeetingBottomSheetRef.current?.dismiss();
+  };
+
+  const [changeModeModalVisible, setChangeModeModalVisible] = React.useState(false);
+  const [selectedMode, setSelectedMode] = React.useState('Zoom');
+  const [showModeSuccess, setShowModeSuccess] = React.useState(false);
+  const [modeSuccessText, setModeSuccessText] = React.useState('');
+  const meetingModes = [
+    'Zoom',
+    'Google Meet',
+    'Teams',
+    'Whatsapp',
+    'Phone call',
+  ];
+
+  const handleChangeMode = (appointment: any) => {
+    setChangeModeModalVisible(true);
+  };
+
+  const handleChooseMode = () => {
+    setChangeModeModalVisible(false);
+    setModeSuccessText(`Meeting Mode has been\nChanged to ${selectedMode}`);
+    setShowModeSuccess(true);
   };
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      {/* <View style={styles.scrollContainer}> */}
       <LinearGradient
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
-        <SafeAreaView style={styles.scrollContainer}>
-          <PastorNavigationHeader />
-          <View style={{ width: "100%", alignItems: "center" }}>
+        <>
+          <View style={{ paddingBottom: 10 }}>
+            <TopBar role="pastor" />
+          </View>
+          <View style={{ flex: 1 }}>
             {/* Header */}
             <Header
               title="Appointments"
               hideSearchBar={true}
               showSettings={false}
               showNewMeeting={true}
+              onNewMeetingPress={handleNewMeeting}
             />
 
-            <View style={{ width: "100%" }}>
-              <View style={styles.separator} />
-            </View>
-
-            <View style={{ width: "95%", marginTop: 25 }}>
-              <Search placeholder={"Enter a date (dd-mm-yyyy)"} />
+            <View style={{ paddingHorizontal: 16, marginVertical: 10 }}>
+              <SearchBar
+                backgroundColor="transparent"
+                value={searchQuery}
+                onChangeValue={setSearchQuery}
+                placeholder="Enter a date (dd-mm-yyyy)"
+              />
             </View>
 
             {/* Main content */}
             <ScrollView
-              contentContainerStyle={{
-                paddingTop: 20,
-                paddingBottom: 150,
-                paddingHorizontal: 10,
-                flexDirection: "row",
-                width: "100%",
-              }}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: bottom }}
+              showsVerticalScrollIndicator={false}
             >
               <View
                 style={{
@@ -129,113 +240,278 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
                   flexDirection: "column",
                   justifyContent: "center",
                   alignItems: "center",
+                  paddingHorizontal: 16,
+                  paddingTop: 20,
                 }}
               >
                 {/* Calendar */}
-                <View
-                  style={{
-                    width: "100%",
-                    borderWidth: 1,
-                    borderColor: "white",
-                    paddingVertical: 20,
-                    paddingHorizontal: 10,
-                    borderRadius: 10,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: "white",
-                      fontWeight: "500",
-                      marginBottom: 10,
-                    }}
-                  >
-                    Monthly Meeting Calendar
-                  </Text>
-                  <GradientCalendar
-                    selected={selected}
-                    setSelected={setSelected}
-                  />
-                </View>
-
-                {/* Today's appointments */}
-                <View style={styles.appointmentsContainer}>
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.upcomingText}>
-                      You have {dummyAppointments.length} Appointments Today
+                <View style={styles.calendarContainer}>
+                  {/* Heading with Icon */}
+                  <View style={styles.calendarHeader}>
+                    <Image source={icons.calendarIcon} style={{ width: 24, height: 24 }} />
+                    <Text style={styles.calendarTitle}>
+                      Monthly Meeting Calendar
                     </Text>
                   </View>
-                  {dummyAppointments.map((e, i) => (
-                    <AppointmentCard key={i} data={e} dataKey={i} />
-                  ))}
+
+                  {/* Calendar Component */}
+                  <View style={{
+                    minHeight: 400,
+                  }}>
+                    <GradientCalendar
+                      selected={selectedDate}
+                      setSelected={setSelectedDate}
+                      recurringAvailability={{
+                        type: 'weekly',
+                        daysOfWeek: [1, 2, 3, 4, 5, 6],
+                      }}
+                      unavailableDates={[
+                        '2025-10-30',
+                        '2025-10-22',
+                        '2025-10-25',
+                      ]}
+                      availableDates={[
+                        today,
+                        '2025-10-20',
+                        '2025-10-21',
+                        '2025-10-23',
+                        '2025-10-24',
+                        '2025-10-27',
+                        '2025-10-28',
+                        '2025-10-29',
+                      ]}
+                      showHeader={false}
+                      disablePastDates={true}
+                      markToday={false}
+                    />
+                  </View>
                 </View>
 
-                {/* New appointments */}
-                <View style={styles.appointmentsContainer}>
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.upcomingText}>New Appointment</Text>
+                {/* Selected Date Appointments */}
+                {selectedDateAppointments.length > 0 && (
+                  <View style={styles.appointmentsContainer}>
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.upcomingText}>
+                        {isToday(selectedDate)
+                          ? `You have ${selectedDateAppointments.length} Appointments Today`
+                          : `You have ${selectedDateAppointments.length} Appointments on ${formatDisplayDate(selectedDate)}`
+                        }
+                      </Text>
+                    </View>
+                    <View style={{ gap: 10 }}>
+                      {selectedDateAppointments.map((appointment, i) => (
+                        <AppointmentCard
+                          key={i}
+                          date={appointment.date}
+                          time={appointment.time}
+                          tz={appointment.tz}
+                          person={appointment.person}
+                          role={appointment.role}
+                          mode={appointment.mode}
+                          platformIcon={appointment.icon}
+                          menuItems={[
+                            {
+                              key: 'reschedule',
+                              title: 'Reschedule Meeting',
+                              icon: { ios: 'calendar.badge.clock', android: 'ic_event_available' },
+                              onSelect: () => handleReschedule(appointment)
+                            },
+                            {
+                              key: 'change_mode',
+                              title: 'Change Mode',
+                              icon: { ios: 'arrow.2.circlepath', android: 'ic_sync' },
+                              onSelect: () => handleChangeMode(appointment)
+                            },
+                            {
+                              key: 'cancel',
+                              title: 'Cancel Meeting',
+                              destructive: true,
+                              icon: { ios: 'trash', android: 'ic_menu_delete' },
+                              onSelect: () => handleCancel(appointment)
+                            }
+                          ]}
+                        />
+                      ))}
+                    </View>
                   </View>
-                  {dummyAppointments.map((e, i) => (
-                    <AppointmentCard key={i} data={e} dataKey={i} />
-                  ))}
-                </View>
+                )}
+
+                {/* No appointments message */}
+                {selectedDateAppointments.length === 0 && (
+                  <View style={styles.appointmentsContainer}>
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.upcomingText}>
+                        {isToday(selectedDate)
+                          ? "No Appointments Today"
+                          : `No Appointments on ${formatDisplayDate(selectedDate)}`
+                        }
+                      </Text>
+                    </View>
+                    <View style={styles.noAppointmentsContainer}>
+                      <Text style={styles.noAppointmentsText}>
+                        Select a different date to view appointments or schedule a new meeting.
+                      </Text>
+                    </View>
+                  </View>
+                )}
               </View>
             </ScrollView>
-
-            {/* Response Modal */}
-            <ResponseModal
-              buttonText={responseModal.buttonText}
-              buttonPress={scheduleMeeting}
-              isModalVisible={responseModal.visible}
-              responseText={responseModal.message}
-              closeMenu={() =>
-                setResponseModal((prev) => ({
-                  ...prev,
-                  visible: false,
-                  message: "",
-                }))
-              }
-            />
           </View>
-        </SafeAreaView>
+        </>
       </LinearGradient>
-      {/* </View> */}
+
+      {/* Schedule Meeting Bottom Sheet */}
+      <ScheduleMeetingBottomSheet
+        ref={scheduleMeetingBottomSheetRef}
+        mentors={mockMentors}
+        onClose={handleCloseScheduleBottomSheet}
+        onSchedule={handleScheduleMeeting}
+        colorScheme={{
+          background: Colors.darkBlueGradientOne,
+          text: '#FFFFFF',
+          accent: '#FFC107',
+          cardBackground: 'rgba(255, 255, 255, 0.1)',
+        }}
+      />
+
+      {/* Change Meeting Mode Modal */}
+      <Modal
+        visible={changeModeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setChangeModeModalVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+          <LinearGradient
+            colors={['#264387', '#1D548D', '#176192']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={{
+              borderRadius: 24,
+              width: Math.min(Dimensions.get('window').width * 0.92, 400),
+              paddingHorizontal: 20,
+              paddingVertical: 28,
+              alignSelf: 'center',
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+              <Text style={{ color: 'white', fontSize: 22, fontWeight: '700', flex: 1, textAlign: 'center' }}>
+                Choose your meeting option
+              </Text>
+              <Pressable onPress={() => setChangeModeModalVisible(false)} style={{ marginLeft: 8 }}>
+                <Text style={{ color: 'white', fontSize: 28, fontWeight: '400' }}>×</Text>
+              </Pressable>
+            </View>
+            {meetingModes.map((mode) => (
+              <Pressable
+                key={mode}
+                onPress={() => setSelectedMode(mode)}
+                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, minHeight: 36 }}
+              >
+                <View style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 13,
+                  borderWidth: 2,
+                  borderColor: selectedMode === mode ? '#3CA1F0' : '#B0B8D1',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 16,
+                }}>
+                  {selectedMode === mode && (
+                    <View style={{ width: 13, height: 13, borderRadius: 6.5, backgroundColor: '#3CA1F0' }} />
+                  )}
+                </View>
+                <Text style={{ color: selectedMode === mode ? '#EAF7FF' : '#B0B8D1', fontSize: 19, fontWeight: '500' }}>{mode}</Text>
+              </Pressable>
+            ))}
+            <Pressable
+              onPress={handleChooseMode}
+              style={{ backgroundColor: 'white', borderRadius: 12, paddingVertical: 14, marginTop: 10, marginBottom: 2 }}
+            >
+              <Text style={{ color: '#1535A8', fontSize: 19, fontWeight: '700', textAlign: 'center' }}>Choose</Text>
+            </Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+      {/* Success Modal for Meeting Mode Change */}
+      <SimpleSuccessModalAny
+        visible={showModeSuccess}
+        onClose={() => setShowModeSuccess(false)}
+      >
+        <Text style={{ color: '#264387', fontSize: 20, fontWeight: '600', textAlign: 'center' }}>{modeSuccessText}</Text>
+      </SimpleSuccessModalAny>
     </>
   );
-};
+}
 
 export default Appointments;
-
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-    justifyContent: "space-between",
+  // Calendar Container
+  calendarContainer: {
+    width: "100%",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "white",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
-  separator: {
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    marginVertical: 8,
+
+  // Calendar Header with Icon
+  calendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
   },
+
+  calendarTitle: {
+    fontSize: 16,
+    color: "white",
+    fontWeight: "500",
+  },
+
+  // Wrapper to control calendar height
+  calendarWrapper: {
+    maxHeight: 340, // Reduced from default height
+    overflow: 'hidden',
+  },
+
+  // Appointments Container
   appointmentsContainer: {
-    marginHorizontal: 16,
     marginTop: 16,
     position: "relative",
     width: "100%",
     borderWidth: 1,
-    borderColor: "white",
+    borderColor: "rgba(255, 255, 255, 0.09)",
     paddingVertical: 20,
     paddingHorizontal: 10,
     borderRadius: 10,
   },
+
   rowBetween: {
     marginVertical: 10,
     flexDirection: "row",
     justifyContent: "space-between",
   },
+
   upcomingText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontFamily: "AlbertSans-Bold",
     textAlign: "center",
+  },
+
+  noAppointmentsContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    alignItems: "center",
+  },
+
+  noAppointmentsText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 12,
+    textAlign: "center",
+    lineHeight: 18,
   },
 });

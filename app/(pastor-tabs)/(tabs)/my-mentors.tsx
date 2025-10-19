@@ -1,11 +1,11 @@
-import { DetailedMentorCard, MentorCard } from "@/components/atom/cards";
-import { MentorDetailedCard, MentorShortCard } from "@/components/build-components";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
+import MentorCard, { MentorData } from "@/components/director/MentorCard";
+import MentorProfileSwiper from "@/components/director/MentorProfileSwiper";
+import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Image,
@@ -16,56 +16,83 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
-interface Mentor {
-  name: string;
-  role: string;
-  description: string;
-}
-
-const dummyMentors: Mentor[] = [
+const dummyMentors: MentorData[] = [
   {
+    id: "1",
     name: "John Doe",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
+    profileImage: "https://randomuser.me/api/portraits/men/32.jpg",
   },
   {
+    id: "2",
     name: "John Ross",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
+    profileImage: "https://randomuser.me/api/portraits/men/45.jpg",
   },
   {
-    name: "John Doe",
+    id: "3",
+    name: "Sarah Johnson",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
+    profileImage: "https://randomuser.me/api/portraits/women/68.jpg",
   },
   {
-    name: "John Ross",
+    id: "4",
+    name: "Michael Brown",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
+    profileImage: "https://randomuser.me/api/portraits/men/22.jpg",
   },
   {
-    name: "John Doe",
+    id: "5",
+    name: "Emily Davis",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
+    profileImage: "https://randomuser.me/api/portraits/women/44.jpg",
   },
   {
-    name: "John Doe",
+    id: "6",
+    name: "David Wilson",
     role: "Field Mentor",
     description: "Sub text area write something here. That you can read more",
+    profileImage: "https://randomuser.me/api/portraits/men/58.jpg",
   },
 ];
 
 export default function MyMentorsScreen() {
   const [listToggle, setListToggle] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
 
-  const handleMenuPress = (mentor: Mentor) => {
+  const handleCardPress = (mentor: MentorData) => {
     router.push({
-      pathname: "/(pastor-tabs)/(tabs)/schedule-meeting",
+      pathname: "/(pastor-tabs)/(tabs)/mentors/schedule-meeting",
       params: { mentorData: JSON.stringify(mentor) },
     });
+  };
+
+  const handleCall = (mentor: MentorData) => {
+    console.log("Calling", mentor.name);
+    // Implement call functionality
+  };
+
+  const handleChat = (mentor: MentorData) => {
+    console.log("Chatting with", mentor.name);
+    // Implement chat functionality
+  };
+
+  const handleMail = (mentor: MentorData) => {
+    console.log("Emailing", mentor.name);
+    // Implement email functionality
+  };
+
+  const handleWhatsApp = (mentor: MentorData) => {
+    console.log("WhatsApp", mentor.name);
+    // Implement WhatsApp functionality
   };
   return (
     <>
@@ -73,219 +100,125 @@ export default function MyMentorsScreen() {
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
-        <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={{ flex: 1 }}>
-          <ScrollView style={{ flex: 1 }}>
-            <View
-              style={{
-                height: "100%",
-                width: "100%",
-                flex: 1
-              }}
-            >
-              <View>
-                {/* Header Section */}
-                <PastorNavigationHeader showNameTag />
-                <View style={styles.headerContainer}>
-                  <View style={styles.headerContent}>
-                    <TouchableOpacity
-                      onPress={() => router.back()}
-                      style={styles.backButton}
-                    >
-                      <Image source={icons.forward} style={styles.backIcon} />
-                      <Text className="text-white font-semibold text-[17px]">
-                        My Mentors
-                      </Text>
-                    </TouchableOpacity>
+        <>
+          <View style={{ paddingBottom: 10 }}>
+            <TopBar role="pastor" userName="John Ross" showUserName />
+          </View>
+          <View style={{ flex: 1 }}>
+            {/* Header Section */}
+            <View style={styles.headerContainer}>
+              <View style={styles.headerContent}>
+                <TouchableOpacity
+                  onPress={() => router.back()}
+                  style={styles.backButton}
+                >
+                  <Image source={icons.forward} style={styles.backIcon} />
+                  <Text className="text-white font-semibold text-[17px]">
+                    My Mentors
+                  </Text>
+                </TouchableOpacity>
 
-                    <TouchableOpacity
-                      onPress={() => setListToggle(!listToggle)}
-                      style={styles.toggleButton}
-                    >
-                      <Image
-                        source={listToggle ? icons.list : icons.grid}
-                        style={styles.toggleIcon}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Separator */}
-                <View className="h-[0.5px] bg-white/30 mt-1" />
-
-                {/* Search Section */}
-                <View style={styles.searchContainer} className="mt-4">
-                  <View style={styles.searchBox}>
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="Search"
-                      placeholderTextColor="white"
-                      value={searchText}
-                      onChangeText={setSearchText}
-                    />
-                    <Ionicons
-                      name="search"
-                      size={20}
-                      color="rgba(255, 255, 255, 0.6)"
-                      style={styles.searchIcon}
-                    />
-                  </View>
-                </View>
-
-                {/* Quick Access Mentors */}
-                <View style={styles.quickAccessContainer}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ ...styles.quickAccessScroll, gap: 10 }}
-                  >
-                    {dummyMentors.slice(0, 8).map((mentor, index) => (
-                      <View key={index} style={{ alignItems: "center" }}>
-                        <LinearGradient
-                          colors={["#8B5CF6", "#3B82F6"]}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 0, y: 1 }}
-                          style={{
-                            width: 60,
-                            height: 60,
-                            borderRadius: 48,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 10
-                          }}
-                        >
-                          <View
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              // borderRadius: 20,
-                              padding: 3,
-                              alignItems: "center",
-                              justifyContent: "center",
-
-                            }}
-                          >
-                            <Image
-                              source={
-                                mentor.name === "John Doe"
-                                  ? icons.myProfile
-                                  : icons.myProfile
-                              }
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                borderRadius: 44,
-                              }}
-                              resizeMode="cover"
-                            />
-                          </View>
-                        </LinearGradient>
-                        <Text
-                          style={{
-                            color: "white",
-                            fontWeight: "500",
-                            fontSize: 12,
-                            textAlign: "center",
-                            marginTop: 8,
-                          }}
-                        >
-                          {mentor.name}
-                        </Text>
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
-                {/* Separator */}
-                <View className="h-[0.5px] bg-white/20 mx-14" />
-
-                {/* Mentors List */}
-                <View style={styles.mentorsListContainer} className="mt-4">
-                  <View style={styles.mentorsHeader}>
-                    <Text className="text-white  font-medium text-[16px]">
-                      Current Mentors
-                    </Text>
-                  </View>
-
-                  <View
-                    style={
-                      listToggle ? styles.mentorsListView : styles.mentorsGrid
-                    }
-                  >
-                    {dummyMentors.map((mentor, index) => (
-                      <View
-                        key={index}
-                        style={
-                          listToggle
-                            ? styles.detailedMentorCard
-                            : styles.mentorCard
-                        }
-                      >
-                        {listToggle ? (
-                          <MentorDetailedCard
-                            data={mentor}
-                            key={index.toString()}
-                            navigation={router}
-                            onMenuPress={() => handleMenuPress(mentor)}
-                          />
-                        ) : (
-                          <MentorShortCard
-                            data={mentor}
-                            dataKey={index.toString()}
-                            navigation={router}
-                            onMenuPress={() => handleMenuPress(mentor)}
-                          />
-                        )}
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
-                {/* Prior Mentors */}
-                {/* Mentors List */}
-                <View style={styles.mentorsListContainer} className="mt-4">
-                  <View style={styles.mentorsHeader}>
-                    <Text className="text-white  font-medium text-[16px]">
-                      Prior Mentors
-                    </Text>
-                  </View>
-
-                  <View
-                    style={
-                      listToggle ? styles.mentorsListView : styles.mentorsGrid
-                    }
-                  >
-                    {dummyMentors.map((mentor, index) => (
-                      <View
-                        key={index}
-                        style={
-                          listToggle
-                            ? styles.detailedMentorCard
-                            : styles.mentorCard
-                        }
-                      >
-                        {listToggle ? (
-                          <DetailedMentorCard
-                            data={mentor}
-                            key={index.toString()}
-                            navigation={router}
-                            onMenuPress={() => handleMenuPress(mentor)}
-                          />
-                        ) : (
-                          <MentorCard
-                            data={mentor}
-                            dataKey={index.toString()}
-                            navigation={router}
-                            onMenuPress={() => handleMenuPress(mentor)}
-                          />
-                        )}
-                      </View>
-                    ))}
-                  </View>
-                </View>
+                <TouchableOpacity
+                  onPress={() => setListToggle(!listToggle)}
+                  style={styles.toggleButton}
+                >
+                  <Image
+                    source={listToggle ? icons.list : icons.grid}
+                    style={styles.toggleIcon}
+                  />
+                </TouchableOpacity>
               </View>
             </View>
-          </ScrollView>
-        </SafeAreaView>
+
+            {/* Separator */}
+            <View className="h-[0.5px] bg-white/30 mt-1" />
+
+            {/* Search Section */}
+            <View style={styles.searchContainer} className="mt-4">
+              <View style={styles.searchBox}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search"
+                  placeholderTextColor="white"
+                  value={searchText}
+                  onChangeText={setSearchText}
+                />
+                <Ionicons
+                  name="search"
+                  size={20}
+                  color="rgba(255, 255, 255, 0.6)"
+                  style={styles.searchIcon}
+                />
+              </View>
+            </View>
+
+            {/* Quick Access Mentors */}
+            <View style={styles.quickAccessContainer}>
+              <MentorProfileSwiper />
+            </View>
+
+            {/* Mentors List */}
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.mentorsListContainer} className="mt-4">
+                <View style={styles.mentorsHeader}>
+                  <Text className="text-white  font-medium text-[16px]">
+                    Current Mentors
+                  </Text>
+                </View>
+
+                <View
+                  style={
+                    listToggle ? styles.mentorsListView : styles.mentorsGrid
+                  }
+                >
+                  {dummyMentors.map((mentor) => (
+                    <MentorCard
+                      key={mentor.id}
+                      mentor={mentor}
+                      layout={listToggle ? 'list' : 'card'}
+                      onCall={() => handleCall(mentor)}
+                      onChat={() => handleChat(mentor)}
+                      onMail={() => handleMail(mentor)}
+                      onWhatsApp={() => handleWhatsApp(mentor)}
+                      onPress={() => handleCardPress(mentor)}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              {/* Prior Mentors */}
+              <View style={styles.mentorsListContainer} className="mt-4">
+                <View style={styles.mentorsHeader}>
+                  <Text className="text-white  font-medium text-[16px]">
+                    Prior Mentors
+                  </Text>
+                </View>
+
+                <View
+                  style={
+                    listToggle ? styles.mentorsListView : styles.mentorsGrid
+                  }
+                >
+                  {dummyMentors.map((mentor) => (
+                    <MentorCard
+                      key={mentor.id}
+                      mentor={mentor}
+                      layout={listToggle ? 'list' : 'card'}
+                      onCall={() => handleCall(mentor)}
+                      onChat={() => handleChat(mentor)}
+                      onMail={() => handleMail(mentor)}
+                      onWhatsApp={() => handleWhatsApp(mentor)}
+                    />
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        </>
       </LinearGradient>
     </>
   );
@@ -331,7 +264,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     marginHorizontal: 16,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   searchBox: {
     backgroundColor: "#14517D",
@@ -353,8 +286,8 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   quickAccessContainer: {
-    marginHorizontal: 16,
-    marginBottom: 20,
+    // marginHorizontal: 16,
+    // marginBottom: 20,
   },
   quickAccessScroll: {
     paddingRight: 20,
@@ -389,15 +322,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   mentorsGrid: {
-    gap: 12,
+    gap: 0,
   },
   mentorsListView: {
-    gap: 16,
-  },
-  mentorCard: {
-    marginBottom: 8,
-  },
-  detailedMentorCard: {
-    marginBottom: 12,
+    gap: 0,
   },
 });

@@ -2,17 +2,29 @@ import { Colors } from '@/constants/Colors';
 import { icons } from '@/constants/images';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as DropdownMenu from 'zeego/dropdown-menu';
+
+export interface MenuItem {
+    key: string;
+    title: string;
+    destructive?: boolean;
+    icon?: { ios?: string; android?: string };
+    onSelect: () => void;
+}
 
 type Props = {
     date: string;
     time: string;
     tz: string;
     person: string;
+    role?: string;
     mode: string;
     platformIcon: any;
     avatar?: any;
     onPressChevron?: () => void;
+    onPressMenu?: () => void;
+    menuItems?: MenuItem[]; // OPTIONAL: If provided, shows Zeego menu. If not, uses onPressMenu
     onCall?: () => void;
     onChat?: () => void;
     onMail?: () => void;
@@ -23,10 +35,13 @@ const AppointmentCard: React.FC<Props> = ({
     time,
     tz,
     person,
+    role,
     mode,
     platformIcon,
     avatar = icons.myProfile,
     onPressChevron,
+    onPressMenu,
+    menuItems,
     onCall,
     onChat,
     onMail,
@@ -46,15 +61,61 @@ const AppointmentCard: React.FC<Props> = ({
                                 <Text style={styles.timeHighlight}>Time</Text> {time} hrs {tz}
                             </Text>
                         </View>
-                        <Pressable onPress={onPressChevron} hitSlop={12}>
-                            <Ionicons name="chevron-forward" size={20} color="#EAF7FF" />
-                        </Pressable>
+                    </View>
+
+                    {/* Absolutely positioned right icons */}
+                    <View style={styles.rightIconsContainer}>
+                        {(onPressMenu || menuItems) && (
+                            menuItems ? (
+                                // Use Zeego menu if menuItems provided
+                                <DropdownMenu.Root>
+                                    <DropdownMenu.Trigger>
+                                        <Pressable hitSlop={12} style={styles.iconButton}>
+                                            <Ionicons name="ellipsis-vertical" size={20} color="#EAF7FF" />
+                                        </Pressable>
+                                    </DropdownMenu.Trigger>
+                                    <DropdownMenu.Content >
+                                        {menuItems.map((item) => (
+                                            item.key.startsWith('separator') ? (
+                                                <DropdownMenu.Separator key={item.key} />
+                                            ) : (
+                                                <DropdownMenu.Item
+                                                    key={item.key}
+                                                    destructive={item.destructive}
+                                                    onSelect={item.onSelect}
+                                                >
+                                                    <DropdownMenu.ItemTitle>{item.title}</DropdownMenu.ItemTitle>
+                                                    {item.icon && (
+                                                        <DropdownMenu.ItemIcon
+                                                            ios={{
+                                                                name: Platform.OS === 'android' ? item.icon.android || 'ic_menu_view' : item.icon.ios || 'circle',
+                                                                destructive: item.destructive,
+                                                            }}
+                                                        />
+                                                    )}
+                                                </DropdownMenu.Item>
+                                            )
+                                        ))}
+                                    </DropdownMenu.Content>
+                                </DropdownMenu.Root>
+                            ) : (
+                                // Use regular Pressable if only onPressMenu provided (backward compatible)
+                                <Pressable onPress={onPressMenu} hitSlop={12} style={styles.iconButton}>
+                                    <Ionicons name="ellipsis-vertical" size={20} color="#EAF7FF" />
+                                </Pressable>
+                            )
+                        )}
+                        {onPressChevron && (
+                            <Pressable onPress={onPressChevron} hitSlop={12} style={styles.iconButton}>
+                                <Ionicons name="chevron-forward" size={20} color="#EAF7FF" />
+                            </Pressable>
+                        )}
                     </View>
 
                     <View style={styles.personRow}>
                         <Image source={avatar} style={styles.avatar} />
                         <Text style={styles.personName} numberOfLines={1}>
-                            {person}
+                            {person}{role ? ` - ${role}` : ''}
                         </Text>
                     </View>
 
@@ -89,6 +150,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.5)',
         borderRadius: 16,
         padding: 8,
+        marginBottom: 12,
     },
     cardInner: {
         flexDirection: 'row',
@@ -106,11 +168,13 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         justifyContent: 'space-between',
+        position: 'relative',
     },
     topRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        paddingRight: 32,
     },
     dateTime: {
         color: '#EAF7FF',
@@ -121,11 +185,23 @@ const styles = StyleSheet.create({
         color: '#d7f96c',
         fontWeight: '700',
     },
+    rightIconsContainer: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 12,
+    },
+    iconButton: {
+        padding: 2,
+    },
     personRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
         marginTop: 8,
+        paddingRight: 32,
     },
     avatar: {
         width: 24,
@@ -142,6 +218,7 @@ const styles = StyleSheet.create({
     },
     modeRow: {
         marginTop: 6,
+        paddingRight: 32,
     },
     modeLabel: {
         color: '#CFE9F3',

@@ -1,6 +1,6 @@
 import { NotificationCard } from "@/components/atom/cards"
 import { Header } from "@/components/build-components"
-import { PastorNavigationHeader } from "@/components/pastor/Header"
+import TopBar from "@/components/director/TopBar"
 import { Colors } from "@/constants/Colors"
 import { LinearGradient } from "expo-linear-gradient"
 import { Stack } from "expo-router"
@@ -10,7 +10,6 @@ import {
   StyleSheet,
   View
 } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
 
 const dummyNotifications = [
   {
@@ -55,8 +54,9 @@ export default function NotificationScreen({
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
-        <SafeAreaView style={styles.scrollContainer}>
-          <PastorNavigationHeader />
+        <View style={styles.scrollContainer}>
+          {/* <PastorNavigationHeader /> */}
+          <TopBar showNotifications={false} />
           <View
             style={{
               width: "100%",
@@ -88,7 +88,7 @@ export default function NotificationScreen({
               ))}
             </ScrollView>
           </View>
-        </SafeAreaView>
+        </View>
       </LinearGradient>
     </>
   )

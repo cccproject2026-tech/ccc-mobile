@@ -1,4 +1,3 @@
-import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Tab } from "@/components/atom/tab";
 import { AssessmentCard, Header } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
@@ -169,10 +168,10 @@ export default function Survey() {
         </SafeAreaView>
 
         {/* Modal */}
-        <RoadMapOutcomeModal
+        {/* <RoadMapOutcomeModal
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}
-        />
+        /> */}
       </LinearGradient>
     </>
   );

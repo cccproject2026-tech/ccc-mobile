@@ -6,11 +6,12 @@ import { ResponseModal } from "@/components/atom/modals";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { customColors } from "@/constants/config/customColors";
+import { getFontSize, getSpacing, isSmallDevice } from "@/utils/responsive";
 import { NavigationProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "expo-router";
 import React from "react";
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ProfileData {
@@ -93,9 +94,18 @@ export default function Grant() {
     buttonText: "",
   });
   const [isVisible, setIsVisible] = React.useState(false);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
 
+  const handleSubmit = () => {
+    // Show success modal first
+    setShowSuccessModal(true);
 
-
+    // After 2 seconds, hide modal and move to next step
+    setTimeout(() => {
+      setShowSuccessModal(false);
+      setStep(step + 1);
+    }, 2000);
+  };
 
   const scheduleMeeting = () => {
     navigation.navigate("scheduleMeeting", {
@@ -152,7 +162,7 @@ export default function Grant() {
             <ScrollView
               contentContainerStyle={{
                 paddingBottom: Platform.OS === 'android' ? bottom : bottom * 1.5,
-                paddingHorizontal: 16,
+                paddingHorizontal: getSpacing(16),
                 flexGrow: 1,
               }}
               style={{ width: "100%" }}
@@ -171,7 +181,7 @@ export default function Grant() {
                     fontWeight: "700",
                     color: "#ffffff",
                     fontFamily: "AlbertBold",
-                    fontSize: 18,
+                    fontSize: getFontSize(isSmallDevice ? 16 : 18),
                     textAlign: "center",
                   }}
                 />
@@ -179,14 +189,14 @@ export default function Grant() {
                 <View
                   style={{
                     width: "100%",
-                    paddingVertical: 8,
+                    paddingVertical: getSpacing(8),
                   }}
                 >
                   <Text
                     style={{
                       color: "white",
-                      fontSize: 14,
-                      lineHeight: 20,
+                      fontSize: getFontSize(14),
+                      lineHeight: getFontSize(20),
                       fontWeight: "500",
                       textAlign: "left",
                     }}
@@ -200,26 +210,26 @@ export default function Grant() {
                     style={{
                       borderWidth: 1,
                       borderColor: "white",
-                      borderRadius: 10,
+                      borderRadius: getSpacing(10),
                       backgroundColor: "#14517d",
-                      marginVertical: 16,
-                      paddingVertical: 16,
-                      paddingHorizontal: 16,
+                      marginVertical: getSpacing(16),
+                      paddingVertical: getSpacing(16),
+                      paddingHorizontal: getSpacing(16),
                       width: "100%",
                     }}
                   >
                     <View
                       style={{
                         flexDirection: "column",
-                        gap: 8,
+                        gap: getSpacing(8),
                         justifyContent: "flex-start",
                       }}
                     >
                       <Text
                         style={{
                           color: "white",
-                          fontSize: 16,
-                          lineHeight: 20,
+                          fontSize: getFontSize(16),
+                          lineHeight: getFontSize(20),
                           fontWeight: "600",
                         }}
                       >
@@ -230,10 +240,10 @@ export default function Grant() {
                         <Text
                           style={{
                             color: "white",
-                            fontSize: 14,
-                            lineHeight: 18,
+                            fontSize: getFontSize(14),
+                            lineHeight: getFontSize(18),
                             fontWeight: "500",
-                            marginTop: 4,
+                            marginTop: getSpacing(4),
                           }}
                         >
                           Please answer the questions succinctly following
@@ -248,14 +258,14 @@ export default function Grant() {
                     style={{
                       width: "100%",
                       alignItems: "flex-end",
-                      paddingVertical: 8,
+                      paddingVertical: getSpacing(8),
                     }}
                   >
                     <Text
                       style={{
                         color: "yellow",
-                        fontSize: 14,
-                        lineHeight: 18,
+                        fontSize: getFontSize(14),
+                        lineHeight: getFontSize(18),
                         fontWeight: "500",
                       }}
                     >
@@ -554,25 +564,33 @@ export default function Grant() {
                 {step <= 2 && (
                   <View
                     style={{
-                      flexDirection: "row",
+                      flexDirection: isSmallDevice ? "column" : "row",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 16,
-                      marginTop: 24,
-                      paddingHorizontal: 16,
+                      gap: getSpacing(16),
+                      marginTop: getSpacing(24),
+                      paddingHorizontal: getSpacing(16),
                     }}
                   >
                     <Button
                       title={"Clear Form"}
                       type={"cancel"}
                       onPress={() => setStep(1)}
-                      style={{ flex: 1 }}
+                      style={{
+                        flex: isSmallDevice ? undefined : 1,
+                        width: isSmallDevice ? "100%" : undefined,
+                        minHeight: getSpacing(44)
+                      }}
                     ></Button>
                     <Button
-                      onPress={() => setStep(step + 1)}
+                      onPress={() => step == 2 ? handleSubmit() : setStep(step + 1)}
                       title={step == 2 ? "Submit" : "Next"}
                       type={"submit"}
-                      style={{ flex: 1 }}
+                      style={{
+                        flex: isSmallDevice ? undefined : 1,
+                        width: isSmallDevice ? "100%" : undefined,
+                        minHeight: getSpacing(44)
+                      }}
                     ></Button>
                   </View>
                 )}
@@ -593,6 +611,75 @@ export default function Grant() {
             ></ResponseModal>
           </View>
         </View>
+
+        {/* Success Modal */}
+        <Modal
+          visible={showSuccessModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowSuccessModal(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: getSpacing(16),
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+            }}
+            onPress={() => setShowSuccessModal(false)}
+          >
+            <Pressable
+              style={{
+                width: "90%",
+                maxWidth: 400,
+                gap: getSpacing(12),
+                padding: getSpacing(24),
+                backgroundColor: "white",
+                borderRadius: getSpacing(12),
+                alignItems: "center",
+              }}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  top: getSpacing(12),
+                  right: getSpacing(12),
+                  padding: getSpacing(8),
+                }}
+                onPress={() => setShowSuccessModal(false)}
+              >
+                <Text style={{ fontSize: getFontSize(18), color: "#666" }}>✕</Text>
+              </TouchableOpacity>
+
+              <Text
+                style={{
+                  fontWeight: "600",
+                  fontSize: getFontSize(18),
+                  lineHeight: getFontSize(24),
+                  color: "#176192",
+                  textAlign: "center",
+                  marginTop: getSpacing(20),
+                }}
+              >
+                Application has Submitted Successfully.
+              </Text>
+              <Text
+                style={{
+                  fontWeight: "500",
+                  fontSize: getFontSize(14),
+                  lineHeight: getFontSize(20),
+                  color: "#1E366F",
+                  textAlign: "center",
+                }}
+              >
+                Check your status for further info.
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
         <Modal
           visible={isVisible}
           transparent={true}

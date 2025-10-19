@@ -1,16 +1,18 @@
 import { CardBox, MentorCard } from "@/components/atom/cards";
 import RoadMapCardNew from '@/components/atom/RoadMapCard';
+import AppointmentCard from '@/components/director/AppointmentCard';
 import HeaderHero from "@/components/director/HeroHeader";
 import WelcomeCard from "@/components/director/WelcomeCard";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { appointments } from '@/constants/mockData';
 import { formatClock, formatDate } from "@/utils/date";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import {
-  Image, ScrollView, StyleSheet,
+  Image, Pressable, ScrollView, StyleSheet,
   Text,
   View
 } from "react-native";
@@ -404,6 +406,45 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
             </View>
             <View style={styles.separator} />
 
+            {/* Upcoming Appointments Section */}
+            <View style={{ paddingHorizontal: 16, marginTop: 14, marginBottom: 20 }}>
+              <View
+                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <Text style={{
+                  fontSize: 15,
+                  color: '#e7f6fc',
+                  fontWeight: '700',
+                }}>
+                  Upcoming Appointments
+                </Text>
+                <Pressable>
+                  <Text style={{ color: '#cfe9f3', fontWeight: '600', fontSize: 13 }}>
+                    See all
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={{ marginTop: 10, gap: 12, borderBottomColor: '#ffffff22', borderBottomWidth: 1, paddingBottom: 18 }}>
+                {appointments.map((a) => (
+                  <AppointmentCard
+                    key={a.id}
+                    date={a.date}
+                    time={a.time}
+                    tz={a.tz}
+                    person={a.person}
+                    role={a.role}
+                    mode={a.mode}
+                    platformIcon={a.icon}
+                    avatar={icons.myProfile}
+                    onPressChevron={() => { }}
+                    onCall={() => { }}
+                    onChat={() => { }}
+                    onMail={() => { }}
+                  />
+                ))}
+              </View>
+            </View>
+
             <View style={styles.RoadMapContainer}>
               <View style={styles.RoadMapHeaderRow}>
                 <Text className="text-white font-bold text-[17px]">
@@ -456,7 +497,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
               }}
             />
 
-            <View style={styles.mentorContainer}>
+            <View style={[styles.mentorContainer, { marginBottom: 24 }]}>
               <View style={styles.mentorHeaderContainer}>
                 <Text className="text-white font-bold text-[17px]">
                   My Mentors

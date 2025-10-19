@@ -89,7 +89,7 @@ export default function RevitalizationCard({
       }}
       className="w-full bg-[#194F82] rounded-[10px] p-4 my-2.5 border border-white/45"
     >
-      <View className="w-full flex-row">
+      <View className="flex-row w-full">
         <View className="!w-[110px] !h-[100px] items-center">
           <View className="relative">
             <Image
@@ -104,7 +104,7 @@ export default function RevitalizationCard({
               </View>
             )}
           </View>
-          <View className="mt-2 items-start">
+          <View className="items-start mt-2">
             <Text className="text-white font-semibold leading-[22px] text-xs">
               {data?.time}
             </Text>
@@ -114,7 +114,7 @@ export default function RevitalizationCard({
         <View className="ml-2.5 flex-1 gap-0.5">
           <View>
             <Text
-              className="text-white text-base font-semibold"
+              className="text-base font-semibold text-white"
               ellipsizeMode="tail"
             >
               {data?.title}
@@ -125,9 +125,9 @@ export default function RevitalizationCard({
           </Text>
 
           <TouchableOpacity className="items-center border border-white/20 py-1 px-2 my-1 rounded-lg max-w-[80%]">
-            <Text className="text-sm text-white font-medium">
+            <Text className="text-sm font-medium text-white">
               Status{" "}
-              <Text className="text-white font-black items-center">•</Text>{" "}
+              <Text className="items-center font-black text-white">•</Text>{" "}
               <Text
                 className={`text-sm font-medium ${data?.status == "Due" ? "text-yellow-400" : "text-white"
                   }`}
@@ -139,11 +139,11 @@ export default function RevitalizationCard({
 
           {data?.sessionDate && data?.status == "Not Started" ? (
             <TouchableOpacity className="items-center border border-white py-2.5 my-3 rounded-lg w-[80%]">
-              <Text className="text-sm text-white font-medium pb-1">
+              <Text className="pb-1 text-sm font-medium text-white">
                 Session Date :{" "}
               </Text>
               <TouchableOpacity className="border border-[#47729b] p-1.5 my-1 w-[75%] rounded-lg">
-                <Text className="text-center text-xs text-white font-light w-full">
+                <Text className="w-full text-xs font-light text-center text-white">
                   {data?.sessionDate}
                 </Text>
               </TouchableOpacity>
@@ -157,18 +157,18 @@ export default function RevitalizationCard({
                     style={{ width: 50 }}
                   />
                 </View>
-                <Text className="text-white text-xs font-light pl-1">
+                <Text className="pl-1 text-xs font-light text-white">
                   {" "}
                   {data?.taskStatus?.inProgress} /{" "}
                   {data?.taskStatus?.toComplete}
                 </Text>
               </View>
-              <Text className="text-white text-xs font-light">
+              <Text className="text-xs font-light text-white">
                 Tasks Completed
               </Text>
             </>
           ) : data.status == "Completed" ? (
-            <Text className="text-xs text-white font-light">
+            <Text className="text-xs font-light text-white">
               {" "}
               Completed on : {data.completionDate}
             </Text>
@@ -183,21 +183,21 @@ export default function RevitalizationCard({
         data?.status == "Not Started Yet" && (
           <TouchableOpacity className="items-center border border-white py-2.5 my-3 rounded-lg w-[95%] flex-row justify-evenly mx-auto">
             <View>
-              <Text className="text-sm text-white font-medium pb-1">
+              <Text className="pb-1 text-sm font-medium text-white">
                 Session Date :{" "}
               </Text>
               <TouchableOpacity className="border border-[#47729b] p-1.5 my-1 w-full rounded-lg">
-                <Text className="text-center text-xs text-white font-light w-full">
+                <Text className="w-full text-xs font-light text-center text-white">
                   {data?.sessionDate}
                 </Text>
               </TouchableOpacity>
             </View>
             <View>
-              <Text className="text-sm text-white font-medium pb-1">
+              <Text className="pb-1 text-sm font-medium text-white">
                 Session Date :{" "}
               </Text>
               <TouchableOpacity className="border border-[#47729b] p-1.5 my-1 w-full rounded-lg">
-                <Text className="text-center text-xs text-white font-light w-full">
+                <Text className="w-full text-xs font-light text-center text-white">
                   {data?.sessionDate}
                 </Text>
               </TouchableOpacity>

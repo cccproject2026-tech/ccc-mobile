@@ -9,15 +9,24 @@ import {
 } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as DropdownMenu from 'zeego/dropdown-menu';
 
 export interface MentorData {
     id: string;
     name: string;
     role: string;
-    menteesCount: number;
+    menteesCount?: number;
     description: string;
     profileImage?: string;
+}
+
+export interface MenuItem {
+    key: string;
+    title: string;
+    destructive?: boolean;
+    icon?: { ios?: string; android?: string };
+    onSelect: () => void;
 }
 
 interface MentorCardProps {
@@ -28,11 +37,112 @@ interface MentorCardProps {
     onMail?: () => void;
     onWhatsApp?: () => void;
     onMenuPress?: () => void;
+    menuItems?: MenuItem[]; // Optional: If provided, shows custom menu. If not, uses onMenuPress
     selectable?: boolean;
     isSelected?: boolean;
     onToggleSelect?: () => void;
     onPress?: () => void;
 }
+
+// Reusable ContactIcons component
+interface ContactIconsProps {
+    layout: 'card' | 'list';
+    onCall?: () => void;
+    onChat?: () => void;
+    onMail?: () => void;
+    onWhatsApp?: () => void;
+}
+
+const ContactIcons: React.FC<ContactIconsProps> = ({ layout, onCall, onChat, onMail, onWhatsApp }) => {
+    const isCardLayout = layout === 'card';
+
+    if (isCardLayout) {
+        return (
+            <View style={styles.contactIcons}>
+                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onCall && onCall(); }}>
+                    <Ionicons name="call-outline" size={getIconSize(isSmallDevice ? 18 : 20)} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onChat && onChat(); }}>
+                    <Ionicons name="chatbubble-outline" size={getIconSize(isSmallDevice ? 18 : 20)} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onMail && onMail(); }}>
+                    <Ionicons name="mail-outline" size={getIconSize(isSmallDevice ? 18 : 20)} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onWhatsApp && onWhatsApp(); }}>
+                    <Ionicons name="logo-whatsapp" size={getIconSize(isSmallDevice ? 18 : 20)} color="#fff" />
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    return (
+        <>
+            <TouchableOpacity style={styles.listIconButton} onPress={onCall}>
+                <Ionicons name="call-outline" size={getIconSize(16)} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.listIconButton} onPress={onChat}>
+                <Ionicons name="chatbubble-outline" size={getIconSize(16)} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.listIconButton} onPress={onMail}>
+                <Ionicons name="mail-outline" size={getIconSize(16)} color="#fff" />
+            </TouchableOpacity>
+        </>
+    );
+};
+
+// Zeego Dropdown Menu Component
+const ZeegoDropdownMenu: React.FC<{
+    menuItems?: MenuItem[];
+    onPressMenu?: () => void;
+}> = ({ menuItems, onPressMenu }) => {
+    const handleMenuPress = () => {
+        if (!menuItems && onPressMenu) {
+            onPressMenu();
+        }
+    };
+
+    if (menuItems) {
+        return (
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                    <Pressable hitSlop={12} style={styles.menuButton}>
+                        <Ionicons name="ellipsis-vertical" size={getIconSize(20)} color="#fff" />
+                    </Pressable>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content>
+                    {menuItems.map((item) => (
+                        item.key.startsWith('separator') ? (
+                            <DropdownMenu.Separator key={item.key} />
+                        ) : (
+                            <DropdownMenu.Item
+                                key={item.key}
+                                destructive={item.destructive}
+                                onSelect={item.onSelect}
+                            >
+                                <DropdownMenu.ItemTitle>{item.title}</DropdownMenu.ItemTitle>
+                                {item.icon && (
+                                    <DropdownMenu.ItemIcon
+                                        ios={{
+                                            name: Platform.OS === 'android' ? item.icon.android || 'ic_menu_view' : item.icon.ios || 'circle',
+                                            destructive: item.destructive,
+                                        }}
+                                    />
+                                )}
+                            </DropdownMenu.Item>
+                        )
+                    ))}
+                </DropdownMenu.Content>
+            </DropdownMenu.Root>
+        );
+    }
+
+    // Fallback to regular TouchableOpacity for onPressMenu
+    return (
+        <TouchableOpacity style={styles.menuButton} onPress={(e) => { e.stopPropagation(); handleMenuPress(); }}>
+            <Ionicons name="ellipsis-vertical" size={getIconSize(20)} color="#fff" />
+        </TouchableOpacity>
+    );
+};
 
 export default function MentorCard({
     mentor,
@@ -42,13 +152,14 @@ export default function MentorCard({
     onMail,
     onWhatsApp,
     onMenuPress,
+    menuItems,
     selectable = false,
     isSelected = false,
     onToggleSelect,
     onPress
 }: MentorCardProps) {
     const isSelectionMode = onToggleSelect !== undefined;
-    const imageSize = getCardImageSize();
+    const imageSize = getCardImageSize() * 0.8; // Make image 20% smaller
     const listHeight = getListItemHeight();
 
     if (layout === 'list') {
@@ -78,23 +189,23 @@ export default function MentorCard({
                         <Text style={styles.listName} numberOfLines={1}>
                             {mentor.name}
                         </Text>
-                        <View style={styles.listMenteesContainer}>
-                            <View style={styles.menteeDot} />
-                            <Text style={styles.listMenteesText}>{mentor.menteesCount} Mentees</Text>
-                        </View>
+                        {mentor.menteesCount !== undefined && mentor.menteesCount > 0 && (
+                            <View style={styles.listMenteesContainer}>
+                                <View style={styles.menteeDot} />
+                                <Text style={styles.listMenteesText}>{mentor.menteesCount} Mentees</Text>
+                            </View>
+                        )}
                     </View>
 
 
-                    <TouchableOpacity style={styles.listIconButton} onPress={onCall}>
-                        <Ionicons name="call-outline" size={getIconSize(18)} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.listIconButton} onPress={onChat}>
-                        <Ionicons name="chatbubble-outline" size={getIconSize(18)} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.listIconButton} onPress={onMail}>
-                        <Ionicons name="mail-outline" size={getIconSize(18)} color="#fff" />
-                    </TouchableOpacity>
-                    {isSelectionMode && !onMenuPress ? (
+                    <ContactIcons
+                        layout="list"
+                        onCall={onCall}
+                        onChat={onChat}
+                        onMail={onMail}
+                    />
+
+                    {isSelectionMode && !onMenuPress && !menuItems ? (
 
                         <View style={[styles.listIconButton, {
                             marginLeft: getSpacing(5)
@@ -105,9 +216,12 @@ export default function MentorCard({
                         </View>
 
                     ) : (
-                        <TouchableOpacity style={styles.listMenuButton} onPress={onMenuPress}>
-                            <Ionicons name="ellipsis-vertical" size={getIconSize(18)} color="#fff" />
-                        </TouchableOpacity>
+                        <View style={styles.listMenuButton}>
+                            <ZeegoDropdownMenu
+                                menuItems={menuItems}
+                                onPressMenu={onMenuPress}
+                            />
+                        </View>
                     )}
                 </Pressable>
             );
@@ -135,25 +249,26 @@ export default function MentorCard({
                     <Text style={styles.listName} numberOfLines={1}>
                         {mentor.name}
                     </Text>
-                    <View style={styles.listMenteesContainer}>
-                        <View style={styles.menteeDot} />
-                        <Text style={styles.listMenteesText}>{mentor.menteesCount} Mentees</Text>
-                    </View>
+                    {mentor.menteesCount !== undefined && mentor.menteesCount > 0 && (
+                        <View style={styles.listMenteesContainer}>
+                            <View style={styles.menteeDot} />
+                            <Text style={styles.listMenteesText}>{mentor.menteesCount} Mentees</Text>
+                        </View>
+                    )}
                 </View>
 
 
-                <TouchableOpacity style={styles.listIconButton} onPress={onCall}>
-                    <Ionicons name="call-outline" size={getIconSize(18)} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.listIconButton} onPress={onChat}>
-                    <Ionicons name="chatbubble-outline" size={getIconSize(18)} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.listIconButton} onPress={onMail}>
-                    <Ionicons name="mail-outline" size={getIconSize(18)} color="#fff" />
-                </TouchableOpacity>
+                <ContactIcons
+                    layout="list"
+                    onCall={onCall}
+                    onChat={onChat}
+                    onMail={onMail}
+                />
 
-
-                {isSelectionMode && !onMenuPress ? (
+                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onWhatsApp && onWhatsApp(); }}>
+                    <Ionicons name="logo-whatsapp" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
+                </TouchableOpacity>
+                {isSelectionMode && !onMenuPress && !menuItems ? (
 
                     <View style={[styles.listIconButton, {
                         marginLeft: getSpacing(5)
@@ -164,9 +279,12 @@ export default function MentorCard({
                     </View>
 
                 ) : (
-                    <TouchableOpacity style={styles.listMenuButton} onPress={onMenuPress}>
-                        <Ionicons name="ellipsis-vertical" size={getIconSize(18)} color="#fff" />
-                    </TouchableOpacity>
+                    <View style={styles.listMenuButton}>
+                        <ZeegoDropdownMenu
+                            menuItems={menuItems}
+                            onPressMenu={onMenuPress}
+                        />
+                    </View>
                 )}
             </View>
         );
@@ -206,12 +324,14 @@ export default function MentorCard({
                             <Text style={styles.mentorName} numberOfLines={1}>
                                 {mentor.name}
                             </Text>
-                            <View style={styles.menteesContainer}>
-                                <View style={styles.menteeDot} />
-                                <Text style={styles.menteesText}>
-                                    {mentor.menteesCount} Mentees
-                                </Text>
-                            </View>
+                            {mentor.menteesCount !== undefined && mentor.menteesCount > 0 && (
+                                <View style={styles.menteesContainer}>
+                                    <View style={styles.menteeDot} />
+                                    <Text style={styles.menteesText}>
+                                        {mentor.menteesCount} Mentees
+                                    </Text>
+                                </View>
+                            )}
                         </View>
 
                         <Text style={styles.roleText} numberOfLines={1}>
@@ -223,33 +343,27 @@ export default function MentorCard({
                         </Text>
                     </View>
 
-                    {isSelectionMode && !onMenuPress ? (
+                    {isSelectionMode && !onMenuPress && !menuItems ? (
                         <View style={styles.checkboxContainer}>
                             <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
                                 {isSelected && <Ionicons name="checkmark" size={getIconSize(18)} color="#1A4882" />}
                             </View>
                         </View>
                     ) : (
-                        <TouchableOpacity style={styles.menuButton} onPress={(e) => { e.stopPropagation(); onMenuPress && onMenuPress(); }}>
-                            <Ionicons name="ellipsis-vertical" size={getIconSize(20)} color="#fff" />
-                        </TouchableOpacity>
+                        <ZeegoDropdownMenu
+                            menuItems={menuItems}
+                            onPressMenu={onMenuPress}
+                        />
                     )}
                 </View>
 
-                <View style={styles.contactIcons}>
-                    <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onCall && onCall(); }}>
-                        <Ionicons name="call-outline" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onChat && onChat(); }}>
-                        <Ionicons name="chatbubble-outline" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onMail && onMail(); }}>
-                        <Ionicons name="mail-outline" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onWhatsApp && onWhatsApp(); }}>
-                        <Ionicons name="logo-whatsapp" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
-                    </TouchableOpacity>
-                </View>
+                <ContactIcons
+                    layout="card"
+                    onCall={onCall}
+                    onChat={onChat}
+                    onMail={onMail}
+                    onWhatsApp={onWhatsApp}
+                />
             </TouchableOpacity>
         );
     }
@@ -281,12 +395,14 @@ export default function MentorCard({
                         <Text style={styles.mentorName} numberOfLines={1}>
                             {mentor.name}
                         </Text>
-                        <View style={styles.menteesContainer}>
-                            <View style={styles.menteeDot} />
-                            <Text style={styles.menteesText}>
-                                {mentor.menteesCount} Mentees
-                            </Text>
-                        </View>
+                        {mentor.menteesCount !== undefined && mentor.menteesCount > 0 && (
+                            <View style={styles.menteesContainer}>
+                                <View style={styles.menteeDot} />
+                                <Text style={styles.menteesText}>
+                                    {mentor.menteesCount} Mentees
+                                </Text>
+                            </View>
+                        )}
                     </View>
 
                     <Text style={styles.roleText} numberOfLines={1}>
@@ -299,34 +415,28 @@ export default function MentorCard({
                 </View>
 
 
-                {isSelectionMode && !onMenuPress ? (
+                {isSelectionMode && !onMenuPress && !menuItems ? (
                     <View style={styles.checkboxContainer}>
                         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
                             {isSelected && <Ionicons name="checkmark" size={getIconSize(18)} color="#1A4882" />}
                         </View>
                     </View>
                 ) : (
-                    <TouchableOpacity style={styles.menuButton} onPress={(e) => { e.stopPropagation(); onMenuPress && onMenuPress(); }}>
-                        <Ionicons name="ellipsis-vertical" size={getIconSize(18)} color="#fff" />
-                    </TouchableOpacity>
+                    <ZeegoDropdownMenu
+                        menuItems={menuItems}
+                        onPressMenu={onMenuPress}
+                    />
                 )}
             </View>
 
 
-            <View style={styles.contactIcons}>
-                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onCall && onCall(); }}>
-                    <Ionicons name="call-outline" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onChat && onChat(); }}>
-                    <Ionicons name="chatbubble-outline" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onMail && onMail(); }}>
-                    <Ionicons name="mail-outline" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onWhatsApp && onWhatsApp(); }}>
-                    <Ionicons name="logo-whatsapp" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
-                </TouchableOpacity>
-            </View>
+            <ContactIcons
+                layout="card"
+                onCall={onCall}
+                onChat={onChat}
+                onMail={onMail}
+                onWhatsApp={onWhatsApp}
+            />
         </View>
     );
 }
@@ -335,11 +445,11 @@ const styles = StyleSheet.create({
     // Card Layout Styles
     card: {
         backgroundColor: 'rgba(33, 58, 115, 1)',
-        borderRadius: getSpacing(16),
+        borderRadius: getSpacing(12),
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.3)',
-        padding: getSpacing(16),
-        marginBottom: getSpacing(16),
+        padding: getSpacing(12),
+        marginBottom: getSpacing(12),
     },
     selectedCard: {
         borderColor: '#38BDF8',
@@ -347,12 +457,12 @@ const styles = StyleSheet.create({
     },
     cardContent: {
         flexDirection: 'row',
-        marginBottom: getSpacing(16),
+        marginBottom: getSpacing(12),
     },
     profileImageContainer: {
-        borderRadius: getSpacing(12),
+        borderRadius: getSpacing(10),
         overflow: 'hidden',
-        marginRight: getSpacing(12),
+        marginRight: getSpacing(10),
         flexShrink: 0,
     },
     profileImage: {
@@ -417,12 +527,11 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
     },
     contactIcons: {
-        flexDirection: 'row',
-        gap: getSpacing(8),
+        flexDirection: 'row'
     },
     iconButton: {
-        width: isAndroid ? getSpacing(32) : getSpacing(isSmallDevice ? 36 : 40),
-        height: isAndroid ? getSpacing(32) : getSpacing(isSmallDevice ? 36 : 40),
+        width: isAndroid ? getSpacing(28) : getSpacing(isSmallDevice ? 30 : 32),
+        height: isAndroid ? getSpacing(28) : getSpacing(isSmallDevice ? 30 : 32),
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -432,19 +541,19 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(24, 68, 123, 1)',
-        borderRadius: getSpacing(16),
+        borderRadius: getSpacing(12),
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.3)',
-        padding: getSpacing(10),
-        marginBottom: getSpacing(10),
-        minHeight: isAndroid ? getSpacing(58) : getSpacing(68),
+        padding: getSpacing(8),
+        marginBottom: getSpacing(8),
+        minHeight: isAndroid ? getSpacing(50) : getSpacing(56),
     },
     listImageContainer: {
-        width: isAndroid ? getSpacing(42) : getSpacing(48),
-        height: isAndroid ? getSpacing(42) : getSpacing(48),
-        borderRadius: getSpacing(12),
+        width: isAndroid ? getSpacing(36) : getSpacing(40),
+        height: isAndroid ? getSpacing(36) : getSpacing(40),
+        borderRadius: getSpacing(10),
         overflow: 'hidden',
-        marginRight: getSpacing(10),
+        marginRight: getSpacing(8),
         flexShrink: 0,
     },
     listInfoSection: {
@@ -473,8 +582,8 @@ const styles = StyleSheet.create({
         marginLeft: getSpacing(8),
     },
     listIconButton: {
-        width: isAndroid ? getSpacing(24) : getSpacing(28),
-        height: isAndroid ? getSpacing(24) : getSpacing(28),
+        width: isAndroid ? getSpacing(20) : getSpacing(24),
+        height: isAndroid ? getSpacing(20) : getSpacing(24),
         alignItems: 'center',
         justifyContent: 'center',
     },

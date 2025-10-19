@@ -238,14 +238,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     iconContainer: {
-        width: Platform.OS === 'android' ? 24 : 26,
-        height: Platform.OS === 'android' ? 24 : 26,
+        width: Platform.OS === 'android' ? 28 : 30,
+        height: Platform.OS === 'android' ? 28 : 30,
         justifyContent: 'center',
         alignItems: 'center',
     },
     itemIcon: {
-        width: Platform.OS === 'android' ? 20 : 22,
-        height: Platform.OS === 'android' ? 20 : 22,
+        width: Platform.OS === 'android' ? 22 : 24,
+        height: Platform.OS === 'android' ? 22 : 24,
+        alignSelf: 'center',
         // borderRadius: Platform.OS === 'android' ? 10 : 5,
     },
     drawerLabel: {

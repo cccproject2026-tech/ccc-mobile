@@ -13,12 +13,14 @@ export default function Header({
   hideSearchBar = false,
   showSettings = true,
   showNewMeeting = false,
+  onNewMeetingPress,
 }: {
   title?: string | undefined;
   subTitle?: string | undefined;
   hideSearchBar?: boolean | undefined;
   showSettings?: boolean | undefined;
   showNewMeeting?: boolean | undefined;
+  onNewMeetingPress?: () => void;
 }) {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
@@ -72,13 +74,13 @@ export default function Header({
         )}
 
         {showNewMeeting && (
-          <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
+          <TouchableOpacity onPress={onNewMeetingPress}>
             {/* <Ionicons name="add" size={20} color="white" /> */}
             <Button
               type="custom"
               title="New Meeting"
               icon={icons.plusIcon}
-              onPress={() => { }}
+              onPress={onNewMeetingPress || (() => { })}
               style={{
                 width: 160,
                 backgroundColor: "rgba(255, 255, 255, 0.16)",

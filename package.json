@@ -19,6 +19,8 @@
     "@gluestack-ui/toast": "^1.0.9",
     "@gorhom/bottom-sheet": "^5.2.6",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-community/datetimepicker": "8.4.1",
+    "@react-native-menu/menu": "^2.0.0",
     "@react-native-picker/picker": "^2.11.1",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/drawer": "^7.5.7",
@@ -53,6 +55,8 @@
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-gifted-charts": "^1.4.64",
+    "react-native-ios-context-menu": "^3.2.1",
+    "react-native-ios-utilities": "^5.2.0",
     "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-keyboard-controller": "^1.19.1",
     "react-native-maps": "^1.20.1",
@@ -70,6 +74,7 @@
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
     "tailwindcss": "^3.4.17",
+    "zeego": "^3.0.6",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

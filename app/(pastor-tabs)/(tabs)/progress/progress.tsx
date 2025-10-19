@@ -1,19 +1,25 @@
 import { ProgressCard } from "@/components/atom/cards";
-import CustomBarChart from "@/components/atom/CustomBarChart";
-import CustomPieChart from "@/components/atom/CustomPieChart";
 import { Tab } from "@/components/atom/tab";
 import { Header } from "@/components/build-components";
+import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarChart";
+import { ProgressPieChart } from "@/components/director/ProgressPieChart";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProgressScreen() {
   const [roadmapTabs, setRoadmapTabs] = React.useState("All");
   const [assessmentTabs, setAssessmentTabs] = React.useState("All");
+  const [showCompleted, setShowCompleted] = React.useState(false);
+
+  const [progress, setProgress] = React.useState<{ completedPercentage: number; remainingPercentage: number }>({
+    completedPercentage: 62.5,
+    remainingPercentage: 37.5,
+  });
 
   const dummyRoadMaps = [
     {
@@ -144,6 +150,38 @@ export default function ProgressScreen() {
     }
   });
 
+  // Chart data for completed and in-progress states
+  const completedData: ChartData = {
+    roadmapsTotal: 5,
+    roadmapsCompleted: 5,
+    assessmentsTotal: 3,
+    assessmentsCompleted: 3,
+  };
+
+  const inProgressData: ChartData = {
+    roadmapsTotal: 5,
+    roadmapsCompleted: 3,
+    roadmapsRemaining: 2,
+    assessmentsTotal: 3,
+    assessmentsCompleted: 2,
+    assessmentsRemaining: 1,
+  };
+
+  const currentData = showCompleted ? completedData : inProgressData;
+  const currentTitle = showCompleted
+    ? "Individual - Roadmaps, Assessments"
+    : "Individual - Assignment, Survey";
+
+  const handleSwitchProgress = (progressType: 'completed' | 'inprogress') => {
+    if (progressType === 'completed') {
+      setProgress({ completedPercentage: 100, remainingPercentage: 0 });
+      setShowCompleted(true);
+    } else {
+      setProgress({ completedPercentage: 62.5, remainingPercentage: 37.5 });
+      setShowCompleted(false);
+    }
+  };
+
   return (
     <>
       <LinearGradient
@@ -162,220 +200,56 @@ export default function ProgressScreen() {
             {/* Header Section */}
             <Header title="My Progress" showSettings={false} hideSearchBar={true} />
 
-            <View
-              style={{
-                width: "100%",
-                flexDirection: "row",
-                justifyContent: "flex-start",
-                alignItems: "center",
-                // paddingVertical: 10,
-                paddingBottom: 10,
-                marginHorizontal: 15,
-                marginVertical: 10
-              }}
-            >
-              <Text style={{ color: "white", fontSize: 17, fontWeight: "500" }}>
-                Overall Progress - Roadmap & Assessments
-              </Text>
-            </View>
-            <View
-              style={{
-                width: "95%",
-                borderWidth: 1,
-                borderColor: "white",
-                //   backgroundColor: "red",
-                paddingVertical: 20,
-                paddingHorizontal: 10,
-                borderRadius: 10,
-                flexDirection: "row",
-                gap: 20,
-                justifyContent: "space-evenly",
-                marginHorizontal: "auto",
-              }}
-            >
-              <View style={{ width: 150 }}>
-                <CustomPieChart />
-              </View>
-              <View
-                style={{
-                  flexDirection: "column",
-                  gap: 20,
-                  justifyContent: "center",
-                }}
+            {/* Toggle Buttons */}
+            <View style={styles.toggleContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  !showCompleted && styles.toggleButtonActive,
+                  styles.toggleButtonLeft,
+                ]}
+                onPress={() => handleSwitchProgress('inprogress')}
               >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 20,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 30,
-                      height: 20,
-                      backgroundColor: "#182c5b",
-                      borderRadius: 5,
-                    }}
-                  ></View>
-                  <Text
-                    style={{
-                      color: "white",
-                      fontSize: 16,
-                      fontWeight: "500",
-                    }}
-                  >
-                    Completed
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 20,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 30,
-                      height: 20,
-                      backgroundColor: "#d9d9d9",
-                      borderRadius: 5,
-                    }}
-                  ></View>
-                  <Text
-                    style={{
-                      color: "white",
-                      fontSize: 16,
-                      fontWeight: "500",
-                    }}
-                  >
-                    Remaining
-                  </Text>
-                </View>
-              </View>
+                <Text style={[
+                  styles.toggleButtonText,
+                  !showCompleted && styles.toggleButtonTextActive
+                ]}>
+                  Inprogress
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  showCompleted && styles.toggleButtonActive,
+                  styles.toggleButtonRight,
+                ]}
+                onPress={() => handleSwitchProgress('completed')}
+              >
+                <Text style={[
+                  styles.toggleButtonText,
+                  showCompleted && styles.toggleButtonTextActive
+                ]}>
+                  Completed
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            <View
-              style={{
-                width: "100%",
-                flexDirection: "row",
-                justifyContent: "flex-start",
-                alignItems: "center",
-                paddingVertical: 10,
-                marginHorizontal: 15,
-                marginTop: 24,
-              }}
-            >
-              <Text style={{ color: "white", fontSize: 17, fontWeight: "500" }}>
-                Individual - Roadmap ,Assessments
-              </Text>
-            </View>
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: "white",
-                borderRadius: 10,
-                marginHorizontal: 16,
-                // marginTop: 16,
-                paddingVertical: 10,
-                // width:"100%"
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 20,
-                  justifyContent: "flex-end",
-                  paddingVertical: 10,
-                  paddingRight: 10,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 5,
-                  }}
-                >
-                  <LinearGradient
-                    colors={["#183476", "#FFFFFF"]}
-                    style={{
-                      width: 30,
-                      height: 20,
-                      backgroundColor: "#182c5b",
-                      borderRadius: 5,
-                    }}
-                  ></LinearGradient>
-                  <Text
-                    style={{
-                      color: "white",
-                      fontSize: 10,
-                      fontWeight: "500",
-                    }}
-                  >
-                    Total
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 5,
-                  }}
-                >
-                  <LinearGradient
-                    colors={["#1535A8", "#FFFFFF"]}
-                    style={{
-                      width: 30,
-                      height: 20,
-                      backgroundColor: "#182c5b",
-                      borderRadius: 5,
-                    }}
-                  ></LinearGradient>
-                  <Text
-                    style={{
-                      color: "white",
-                      fontSize: 10,
-                      fontWeight: "500",
-                    }}
-                  >
-                    Completed
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 5,
-                  }}
-                >
-                  <LinearGradient
-                    colors={["#118FBA", "#FFFFFF"]}
-                    style={{
-                      width: 30,
-                      height: 20,
-                      backgroundColor: "#182c5b",
-                      borderRadius: 5,
-                    }}
-                  ></LinearGradient>
-                  <Text
-                    style={{
-                      color: "white",
-                      fontSize: 10,
-                      fontWeight: "500",
-                    }}
-                  >
-                    Remaining
-                  </Text>
-                </View>
+            {/* Pie Chart Section */}
+            <ProgressPieChart
+              data={progress}
+              title="Overall Progress - Roadmaps & Assessments"
+            />
+
+            {/* Bar Chart Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{currentTitle}</Text>
+
+              <View style={styles.chartWrapper}>
+                <ProgressBarChart
+                  data={currentData}
+                  showRemaining={!showCompleted}
+                />
               </View>
-              <CustomBarChart />
             </View>
 
             <View
@@ -498,11 +372,62 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     marginHorizontal: 16,
-    marginTop: 16,
+    marginTop: 10,
   },
   separator: {
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    marginVertical: 18,
+    height: 20,
+    backgroundColor: "transparent",
+    marginVertical: 10,
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginBottom: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 25,
+    overflow: "hidden",
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  toggleButtonActive: {
+    backgroundColor: "#ffffff",
+  },
+  toggleButtonLeft: {
+    borderTopLeftRadius: 25,
+    borderBottomLeftRadius: 25,
+  },
+  toggleButtonRight: {
+    borderTopRightRadius: 25,
+    borderBottomRightRadius: 25,
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.7)",
+  },
+  toggleButtonTextActive: {
+    color: "#1535A8",
+  },
+  section: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    color: "white",
+    fontSize: 17,
+    fontWeight: "500",
+    marginBottom: 10,
+  },
+  chartWrapper: {
+    borderWidth: 1,
+    borderColor: "white",
+    borderRadius: 10,
+    paddingVertical: 20,
+    paddingLeft: 16,
+    paddingRight: 10,
   },
 });

@@ -6,6 +6,8 @@ interface SearchBarProps extends Omit<TextInputProps, 'onChange'> {
     value: string;
     onChangeValue: (q: string) => void;
     placeholder?: string;
+    style?: object;
+    backgroundColor?: string;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -13,9 +15,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
     onChangeValue,
     placeholder = "Search",
     style,
+    backgroundColor = '#14517D',
     ...inputProps
 }) => (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { backgroundColor }]}>
         <TextInput
             value={value}
             onChangeText={onChangeValue}
@@ -33,7 +36,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderRadius: Platform.OS === 'android' ? 12 : 16,
-        backgroundColor: '#14517D',
+        // backgroundColor: '#14517D',
         borderColor: '#d0edf8',
         borderWidth: 1,
         paddingHorizontal: Platform.OS === 'android' ? 14 : 18,

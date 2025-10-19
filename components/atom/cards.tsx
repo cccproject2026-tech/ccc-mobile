@@ -1176,33 +1176,37 @@ export const InputCard = ({
     <View
       style={{
         width: "100%",
-        borderRadius: 10,
-        paddingVertical: 18,
-        paddingHorizontal: 12,
+        borderRadius: getSpacing(10),
+        paddingVertical: getSpacing(18),
+        paddingHorizontal: getSpacing(12),
         flexDirection: "column",
         alignItems: "flex-start",
         borderWidth: 1,
         borderColor: "rgba(255, 255, 255, 0.8)",
-        marginBottom: 16,
-        gap: 10,
+        marginBottom: getSpacing(16),
+        gap: getSpacing(10),
       }}
     >
       <Text
         style={{
           color: "white",
-          fontSize: 16,
-          lineHeight: 22,
-          fontWeight: 500,
+          fontSize: getFontSize(16),
+          lineHeight: getFontSize(22),
+          fontWeight: "500",
         }}
       >
         {title} {required && <Text style={{ color: "yellow" }}>*</Text>}
       </Text>
       {fileUpload && (
-        <View style={{ paddingVertical: 10, width: "100%" }}>
+        <View style={{ paddingVertical: getSpacing(10), width: "100%" }}>
           <UploadPDFButton
             title={"Upload File"}
             icon={icons.upload}
-            style={{ backgroundColor: "#1f1a79", width: "60%" }}
+            style={{
+              backgroundColor: "#1f1a79",
+              width: isSmallDevice ? "70%" : "60%",
+              minHeight: getSpacing(44)
+            }}
             selectedFile={null}
             setSelectedFile={() => { }}
           ></UploadPDFButton>
@@ -1212,10 +1216,10 @@ export const InputCard = ({
         <Text
           style={{
             color: "#b4c7d6",
-            paddingVertical: 5,
-            fontSize: 15,
-            lineHeight: 22,
-            fontWeight: 500,
+            paddingVertical: getSpacing(5),
+            fontSize: getFontSize(isSmallDevice ? 14 : 15),
+            lineHeight: getFontSize(isSmallDevice ? 20 : 22),
+            fontWeight: "500",
           }}
         >
           {description}
@@ -1228,9 +1232,20 @@ export const InputCard = ({
             placeholderTextColor={"#b4c7d6"}
             value={value}
             onChangeText={(val) => setValue(val)}
+            style={{
+              fontSize: getFontSize(15),
+              color: "white",
+              minHeight: getSpacing(40),
+              width: "100%",
+            }}
           ></TextInput>
           <View
-            style={{ borderWidth: 0.5, borderColor: "#b4c7d6", width: "100%" }}
+            style={{
+              borderWidth: 0.5,
+              borderColor: "#b4c7d6",
+              width: "100%",
+              marginTop: getSpacing(5)
+            }}
           ></View>
         </>
       )}

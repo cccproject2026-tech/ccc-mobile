@@ -73,6 +73,9 @@ interface Icons {
   certificateBadge: ImageSourcePropType;
   documentsIcon: ImageSourcePropType;
   fieldMentorIcon: ImageSourcePropType;
+  calendarIcon: ImageSourcePropType;
+  changeModeIcon: ImageSourcePropType;
+  rescheduleIcon: ImageSourcePropType;
 }
 
 export const icons: Icons = {
@@ -148,4 +151,7 @@ export const icons: Icons = {
   certificateBadge: require("@/assets/icons/certificate-badge.png"),
   documentsIcon: require("@/assets/icons/documents-icon.png"),
   fieldMentorIcon: require("@/assets/icons/field-mentor-icon.png"),
+  calendarIcon: require("@/assets/icons/calendar.png"),
+  changeModeIcon: require("@/assets/icons/change_mode.png"),
+  rescheduleIcon: require("@/assets/icons/reschedule.png"),
 };

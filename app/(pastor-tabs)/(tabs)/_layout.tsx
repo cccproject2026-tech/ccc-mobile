@@ -4,6 +4,7 @@ import { Dimensions, Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { RoadmapProgressProvider } from '@/context/RoadmapProgressContext';
 import { StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -92,97 +93,100 @@ export default function PastorTabLayout() {
 
 
     return (
-        <Tabs
-            screenOptions={{
-                tabBarActiveTintColor: '#fff',
-                headerShown: false,
-                tabBarButton: HapticTab,
-                tabBarStyle: {
-                    backgroundColor: '#221C70',
-                    borderTopWidth: 0,
-                    elevation: 0,
-                    display: tabBarVisible ? undefined : 'none',
-                    height: tabBarConfig.height,
-                    paddingBottom: tabBarConfig.paddingBottom,
-                    paddingTop: 8,
-                },
-                tabBarLabelStyle: {
-                    fontSize: 12,
-                    fontWeight: '600',
-                    marginTop: 4,
-                    marginBottom: 4,
-                },
-            }}>
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: 'Dashboard',
-                    tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-                }}
-            />
-            <Tabs.Screen
-                name="discover"
-                options={{
-                    title: 'Discover',
-                    tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
-                }}
-            />
-            <Tabs.Screen
-                name="profile"
-                options={{
-                    title: 'Profile',
-                    tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
-                }}
-            />
-            <Tabs.Screen
-                name="appointments"
-                options={{
-                    title: '',
-                    href: null,
-                }}
-            />
-            <Tabs.Screen
-                name="assessments"
-                options={{
-                    title: '',
-                    href: null,
-                }}
-            />
-            <Tabs.Screen
-                name="progress"
-                options={{
-                    title: '',
-                    href: null,
-                }}
-            />
-            <Tabs.Screen
-                name="roadmap"
-                options={{
-                    title: '',
-                    href: null,
-                }}
-            />
-            <Tabs.Screen
-                name="my-mentors"
-                options={{
-                    title: '',
-                    href: null,
-                }}
-            />
-            <Tabs.Screen
-                name="notifications"
-                options={{
-                    title: '',
-                    href: null,
-                }}
-            />
-            <Tabs.Screen
-                name="schedule-meeting"
-                options={{
-                    title: '',
-                    href: null,
-                }}
-            />
-        </Tabs>
+        <RoadmapProgressProvider>
+
+            <Tabs
+                screenOptions={{
+                    tabBarActiveTintColor: '#fff',
+                    headerShown: false,
+                    tabBarButton: HapticTab,
+                    tabBarStyle: {
+                        backgroundColor: '#221C70',
+                        borderTopWidth: 0,
+                        elevation: 0,
+                        display: tabBarVisible ? undefined : 'none',
+                        height: tabBarConfig.height,
+                        paddingBottom: tabBarConfig.paddingBottom,
+                        paddingTop: 8,
+                    },
+                    tabBarLabelStyle: {
+                        fontSize: 12,
+                        fontWeight: '600',
+                        marginTop: 4,
+                        marginBottom: 4,
+                    },
+                }}>
+                <Tabs.Screen
+                    name="index"
+                    options={{
+                        title: 'Dashboard',
+                        tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="discover"
+                    options={{
+                        title: 'Discover',
+                        tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="profile"
+                    options={{
+                        title: 'Profile',
+                        tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="appointments"
+                    options={{
+                        title: '',
+                        href: null,
+                    }}
+                />
+                <Tabs.Screen
+                    name="assessments"
+                    options={{
+                        title: '',
+                        href: null,
+                    }}
+                />
+                <Tabs.Screen
+                    name="progress"
+                    options={{
+                        title: '',
+                        href: null,
+                    }}
+                />
+                <Tabs.Screen
+                    name="roadmap"
+                    options={{
+                        title: '',
+                        href: null,
+                    }}
+                />
+                <Tabs.Screen
+                    name="my-mentors"
+                    options={{
+                        title: '',
+                        href: null,
+                    }}
+                />
+                <Tabs.Screen
+                    name="notifications"
+                    options={{
+                        title: '',
+                        href: null,
+                    }}
+                />
+                <Tabs.Screen
+                    name="schedule-meeting"
+                    options={{
+                        title: '',
+                        href: null,
+                    }}
+                />
+            </Tabs>
+        </RoadmapProgressProvider>
     );
 }

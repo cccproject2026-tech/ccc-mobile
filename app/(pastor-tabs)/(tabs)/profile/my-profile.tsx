@@ -221,7 +221,10 @@ export default function ProfileScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push('/(pastor-tabs)/(tabs)/profile/documents')}
+            >
               <Text style={styles.actionButtonText}>Documents</Text>
               <Image source={icons.attachment} style={{ width: 20, height: 20 }} />
             </TouchableOpacity>
@@ -365,6 +368,7 @@ export default function ProfileScreen() {
       colors={['#176192', '#1D548D', '#264387']}
       style={{ flex: 1 }}
     >
+      <TopBar role='pastor' />
       <TouchableOpacity onPress={handleCancel} className="flex-row items-center px-4 py-4 border-b border-white/30 ">
         <Ionicons name="chevron-back" size={28} color="#fff" />
         <Text className="ml-2 text-xl font-semibold text-white">Edit Profile</Text>
