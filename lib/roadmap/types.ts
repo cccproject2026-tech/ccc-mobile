@@ -5,7 +5,12 @@ export type Status = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
 export interface Program { id: string; title: string; phases: string[]; }
 export interface Phase { id: string; code: PhaseCode; title: string; subtitle?: string; estMonthsMin?: number; estMonthsMax?: number; coverImage?: string; items: string[]; }
 
-export interface BaseItem { id: string; phaseId: string; kind: ItemKind; title: string; description?: string; status: Status; dueDate?: string; sessionDate?: string; tags?: string[]; meta?: Record<string, any>; }
+export interface DescriptionItem {
+    type: 'text' | 'ordered' | 'unordered';
+    content: string | string[]; // string for text, array for lists
+}
+
+export interface BaseItem { id: string; phaseId: string; kind: ItemKind; title: string; description?: string; descriptionRich?: DescriptionItem; status: Status; dueDate?: string; sessionDate?: string; tags?: string[]; meta?: Record<string, any>; }
 
 export interface ChildRoadmap extends BaseItem { kind: 'CHILD_ROADMAP'; steps: { id: string; title: string; notes?: string; done: boolean; }[]; }
 

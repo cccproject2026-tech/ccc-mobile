@@ -374,7 +374,7 @@ export const mockRevitalization: RevitalizationData = {
             subtitle: 'Attend a two–day revitalization jump–start session',
             estMonthsMin: 1,
             estMonthsMax: 2,
-            coverImage: 'https://example.com/jump.jpg',
+            coverImage: require("@/assets/images/jumpstart.png"),
             items: ['jump-start-session'],
         },
         'phase-1': {
@@ -384,7 +384,7 @@ export const mockRevitalization: RevitalizationData = {
             subtitle: 'Conflict resolution and theory of change',
             estMonthsMin: 1,
             estMonthsMax: 2,
-            coverImage: 'https://example.com/p1.jpg',
+            coverImage: require("@/assets/images/roadmap.jpg"),
             items: [
                 'p1-sign-roadmap',           // ✅ was 'p1-sign-covenant'
                 'p1-prayer-strategy',        // ✅ was 'p1-upload-strategy'
@@ -404,7 +404,7 @@ export const mockRevitalization: RevitalizationData = {
             subtitle: 'Community programs and long-term impact',
             estMonthsMin: 3,
             estMonthsMax: 9,
-            coverImage: 'https://example.com/p2.jpg',
+            coverImage: require("@/assets/images/roadmap.jpg"),
             items: [
                 'p2-mou-with-ngos',
                 'p2-upload-calendar',
@@ -420,7 +420,7 @@ export const mockRevitalization: RevitalizationData = {
             subtitle: 'Review outcomes and empower others',
             estMonthsMin: 10,
             estMonthsMax: 12,
-            coverImage: 'https://example.com/p3.jpg',
+            coverImage: require("@/assets/images/roadmap.jpg"),
             items: [
                 'p3-train-new-coaches',
                 'p3-plant-microgroups',
@@ -436,7 +436,17 @@ export const mockRevitalization: RevitalizationData = {
             phaseId: 'jump-start',
             kind: 'CHILD_ROADMAP',
             title: 'Jump–start',
-            description: 'Attend a two–day revitalization jump–start session',
+            descriptionRich: {
+                type: 'ordered',
+                content: [
+                    'Christ Method Alone (Why & How)',
+                    'Self-Leadership',
+                    'Dealing with Resistance',
+                    'Empower Others-Spiritual Renewal',
+                    'Community Engagement - Need Assessments',
+                    'Cycle of Evangelism & Discipleship'
+                ]
+            },
             status: 'NOT_STARTED',
             sessionDate: '2024-10-11',
             steps: [
@@ -447,7 +457,10 @@ export const mockRevitalization: RevitalizationData = {
                 { id: 's5', title: 'Community Engagement - Need Assessments', done: false },
                 { id: 's6', title: 'Cycle of Evangelism & Discipleship', done: false },
             ],
-            meta: { hasOverviewTab: true },
+            meta: {
+                hasOverviewTab: true,
+                coverImage: require("@/assets/images/roadmap.jpg")
+            },
         },
 
         // Phase 1 tasks

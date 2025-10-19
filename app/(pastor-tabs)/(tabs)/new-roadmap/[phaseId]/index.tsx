@@ -1,12 +1,8 @@
-// app/(pastor-tabs)/(tabs)/new-roadmap/[phaseId]/index.tsx
 import { mockRevitalization } from '@/lib/roadmap/mock';
 import { selectItems, selectPhase } from '@/lib/roadmap/selectors';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-
-// Import your ItemCard component (smaller card for tasks)
-// If you don't have one, create it or reuse RoadmapCard with different styling
 
 
 // components/roadmap/ItemCard.tsx

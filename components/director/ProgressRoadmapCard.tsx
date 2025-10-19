@@ -1,14 +1,14 @@
 import { getFontSize, getSpacing, isSmallDevice } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Dimensions, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due';
 
 export interface RoadmapCardData {
-    image: ImageSourcePropType;
+    image?: string | number;
     title: string;
     description?: string;
     completionTime?: string;
@@ -34,6 +34,7 @@ export const RoadmapCard: React.FC<Props> = ({ data,
     showMenu,
     onMenuPress
 }) => {
+
     const isCompleted = data.status === 'completed';
     const hasProgress = data.taskProgress && data.status !== 'completed';
     const showArrow = data.showArrow && !isCompleted;
@@ -70,7 +71,15 @@ export const RoadmapCard: React.FC<Props> = ({ data,
                 {/* Left Section - Image + Completion Time */}
                 <View style={styles.left}>
                     <View style={styles.imageContainer}>
-                        <Image source={data.image} style={styles.image} />
+                        <Image
+                            source={
+                                typeof data.image === 'number'
+                                    ? data.image // ← local asset ID
+                                    : { uri: data.image || 'https://via.placeholder.com/300x200?text=No+Image' } // ← remote URL or fallback
+                            }
+                            style={styles.image}
+                            resizeMode="cover"
+                        />
                         {isCompleted && (
                             <View style={styles.checkmarkOverlay}>
                                 <Ionicons name="checkmark" size={isSmallDevice ? 32 : 40} color="#fff" />
