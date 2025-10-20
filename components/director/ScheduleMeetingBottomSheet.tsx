@@ -477,7 +477,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                 <SimpleSuccessModal
                     visible={showSuccessModal}
                     onClose={() => setShowSuccessModal(false)}
-                    actionType={actionType}
+                    title={actionType === 'scheduled' ? 'Appointment has been Scheduled' : 'Appointment has been Rescheduled'}
                 />
             </>
         );

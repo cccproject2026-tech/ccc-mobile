@@ -433,7 +433,7 @@ const ScheduleMeeting = () => {
       <SimpleSuccessModal
         visible={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        actionType="scheduled"
+        title={selectedDate && selectedTime ? `Your meeting on ${selectedDate} at ${selectedTime.label} has been scheduled.` : 'Your meeting has been scheduled.'}
       />
     </>
   )

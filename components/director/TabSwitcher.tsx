@@ -89,13 +89,13 @@ const styles = StyleSheet.create({
     },
     tabButton: {
         paddingHorizontal: getSpacing(isAndroid ? 16 : 20),
-        paddingVertical: getSpacing(isAndroid ? 12 : 14),
+        paddingVertical: getSpacing(12),
         borderRadius: getSpacing(isAndroid ? 12 : 14),
         borderWidth: 1.5,
         borderColor: 'rgba(255,255,255,0.5)',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: getSpacing(isAndroid ? 44 : 48),
+        // minHeight: getSpacing(isAndroid ? 44 : 48),
     },
     tabMarginLeft: {
         marginLeft: getSpacing(8),

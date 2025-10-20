@@ -5,13 +5,13 @@ import {
   GuidelinesPoints,
   Header
 } from "@/components/build-components";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
+import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface AssessmentData {
   type: string;
@@ -28,6 +28,7 @@ interface AssessmentData {
 }
 
 export default function CmaSurvey() {
+  const { bottom } = useSafeAreaInsets();
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
   const params = useLocalSearchParams();
@@ -45,16 +46,15 @@ export default function CmaSurvey() {
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
-        <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={styles.scrollContainer}>
+        <View style={styles.scrollContainer}>
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
-              paddingBottom: 40,
+              paddingBottom: bottom + 20,
             }}
           >
-            <PastorNavigationHeader showNameTag={true} />
-
+            {/* <PastorNavigationHeader showNameTag={true} /> */}
+            <TopBar role="pastor" />
             {/* Header Section */}
             <Header
               title="Church Assessment Evaluation(CMA)"
@@ -103,11 +103,17 @@ export default function CmaSurvey() {
                 marginTop: 42
               }}
               onPress={() => {
-                router.push("/(pastor-tabs)/(tabs)/assessments/answer-question-page")
+                router.push({
+                  pathname: "/(pastor-tabs)/(tabs)/assessments/answer-question-page",
+                  params: {
+                    returnTo: params?.returnTo,
+                    surveyFieldId: params?.surveyFieldId,
+                  },
+                })
               }}
             />
           </ScrollView>
-        </SafeAreaView>
+        </View>
 
         {/* Modal */}
         <RoadMapOutcomeModal

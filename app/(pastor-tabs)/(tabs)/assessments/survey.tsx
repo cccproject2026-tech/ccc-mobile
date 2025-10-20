@@ -1,107 +1,47 @@
-import { Tab } from "@/components/atom/tab";
-import { AssessmentCard, Header } from "@/components/build-components";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
+import { AssessmentCard } from "@/components/build-components";
+import SearchBar from "@/components/director/SearchBar";
+import { TabSwitcher } from "@/components/director/TabSwitcher";
+import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
+import { dummyRoadMaps } from "@/lib/assessments/mock";
+
+
+import { Assessment } from "@/lib/assessments/types";
+import { getFontSize, getIconSize, getSpacing } from "@/utils/responsive";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, Stack } from "expo-router";
+import { router } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const availableTabs = [
+  { key: "All", label: "All" },
+  { key: "Due", label: "Due", badge: 1 },
+  { key: "Not Started", label: "Not Started" },
+  { key: "In Progress", label: "In Progress" },
+  { key: "Completed", label: "Completed" },
+  { key: "Overdue", label: "Overdue" },
+  { key: "Pending Review", label: "Pending Review" },
+  { key: "On Hold", label: "On Hold" },
+];
+
 
 export default function Survey() {
-  const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
-    React.useState(false);
-  const [searchText, setSearchText] = React.useState("");
+  const [search, setSearch] = React.useState("");
   const [tabs, setTabs] = React.useState("All");
-
-  const dummyRoadMaps = [
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description: "Review the overall health of your church",
-      type: "CMA",
-      status: "Due",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Pastoral Ministry Profile (PMP)",
-      description: "Take a deeper look into your ministry",
-      type: "PMP",
-      status: "Not Started",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 8,
-        completed: false,
-      },
-    },
-    {
-      title: "Church Empowerment PhasePastoral Ministry Profile (PMP)",
-      description: "Take a deeper look into your ministry",
-      type: "PMP",
-      status: "Submitted",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 18,
-        completed: false,
-      },
-    },
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description: "Review the overall health of your church ",
-      type: "CMA",
-      status: "Completed",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Pastoral Ministry Profile (PMP)",
-      description: "Take a deeper look into your ministry",
-      type: "PMP",
-      status: "Completed",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-  ];
-
-  const availableTabs = [
-    { tab: "All" },
-    { tab: "Due" },
-    { tab: "Not Started" },
-    { tab: "In Progress" },
-    { tab: "Completed" },
-    { tab: "Overdue" },
-    { tab: "Pending Review" },
-    { tab: "On Hold" },
-  ];
+  const { bottom } = useSafeAreaInsets();
 
   const filteredRoadMaps = dummyRoadMaps.filter((item) => {
     if (tabs === "All") return true;
     return item.status === tabs;
   });
+  const handleCardPress = (data: Assessment) => {
+    router.push({
+      pathname: "/assessments/survey-guidelines",
+      params: { data: JSON.stringify(data) },
+    });
+  };
 
   return (
     <>
@@ -109,55 +49,54 @@ export default function Survey() {
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
-        <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={styles.scrollContainer}>
+        <View style={styles.scrollContainer}>
+          <TopBar role="pastor" userName="John Doe" showUserName />
+          {/* Header Section */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={getIconSize(28)} color="#fff" />
+              <Text style={styles.headerTitle}>Assessment</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.searchContainer}>
+            <SearchBar value={search} onChangeValue={setSearch} />
+          </View>
+          {/* Tabs Section */}
+          <View style={{ marginTop: 10 }}>
+            <TabSwitcher
+              tabs={availableTabs}
+              activeTab={tabs}
+              onChange={setTabs}
+            />
+          </View>
+
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
-              paddingBottom: 40,
+              paddingBottom: bottom + 20,
             }}
           >
-            <PastorNavigationHeader showNameTag={true} />
-
-            {/* Header Section */}
-            <Header title="Assessment" />
-
-            {/* Tabs Section */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: 16,
-                gap: 8,
-                marginTop: 15,
-                paddingBottom: 5,
-              }}
-              style={{ maxHeight: 50 }}
-            >
-              {availableTabs.map((e, i) => (
-                <Tab
-                  key={i}
-                  data={e}
-                  tabs={tabs}
-                  setTabs={setTabs}
-                  onPress={() => {
-                    setTabs(e.tab);
-                  }}
-                />
-              ))}
-            </ScrollView>
-
-            {/* Content Section */}
             <View
               style={{
-                marginVertical: 10,
                 paddingHorizontal: 16,
                 width: "100%",
               }}
             >
               {filteredRoadMaps.map((e, i) => (
                 <React.Fragment key={i}>
-                  <AssessmentCard data={e} navigation={router} />
+                  <AssessmentCard
+                    data={e}
+                    onPress={() => handleCardPress(e)} // Pass the custom onPress handler
+                    onMeetingPress={() => {
+                      console.log("Meeting pressed for:", e.title);
+                    }}
+                    onMeetingIconPress={() => {
+                      console.log("Meeting icon pressed for:", e.title);
+                    }}
+                    onCustomizedPress={() => {
+                      console.log("Customized plans pressed for:", e.title);
+                    }}
+                  />
                   {i < filteredRoadMaps.length - 1 && (
                     <View className="h-[0.5px] bg-white/30 my-4" />
                   )}
@@ -165,13 +104,7 @@ export default function Survey() {
               ))}
             </View>
           </ScrollView>
-        </SafeAreaView>
-
-        {/* Modal */}
-        {/* <RoadMapOutcomeModal
-          isMenuVisible={isRoadmapModalVisible}
-          closeMenu={() => setIsRoadmapModalVisible(false)}
-        /> */}
+        </View>
       </LinearGradient>
     </>
   );
@@ -183,11 +116,30 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     marginHorizontal: 16,
-    marginTop: 16,
   },
   separator: {
     height: 2,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     marginVertical: 18,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: getSpacing(16),
+    paddingBottom: getSpacing(12),
+    marginVertical: getSpacing(16),
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    marginLeft: getSpacing(8),
+    fontSize: getFontSize(18),
+    fontWeight: '600',
+    color: '#fff',
   },
 });

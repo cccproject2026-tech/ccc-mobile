@@ -1,150 +1,251 @@
+import { Assessment } from "@/lib/assessments/types";
+import { getFontSize, getIconSize, getSpacing, moderateScale, verticalScale } from "@/utils/responsive";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 export default function AssessmentCard({
   data,
-  navigation,
+  onPress,
+  onMeetingPress,
+  onMeetingIconPress,
+  onCustomizedPress,
 }: {
-  data: any;
-  navigation: any;
+  data: Assessment;
+  onPress?: (data: Assessment) => void;
+  onMeetingPress?: () => void;
+  onMeetingIconPress?: () => void;
+  onCustomizedPress?: () => void;
 }) {
-  const router = useRouter()
-
   return (
     <TouchableOpacity
-      onPress={() => {
-        navigation.push({
-          pathname: "/(pastor-tabs)/assessments/cma-survey-page",
-          params: { data: JSON.stringify(data) },
-        });
-      }}
+      onPress={() => onPress && onPress(data)} // Use the passed onPress handler
       className="w-full bg-[#194F82] rounded-[10px] py-2 px-2 my-2.5 border border-[#FFFFFF73]"
     >
       <View className="flex-row items-start w-full">
-        <View className="w-[130px] items-center">
-          <View className="w-full h-[138px] bg-[#00ABAE] border-[5px] border-[#BFFEFE] rounded-[15px] items-center justify-center">
-            <Text className="text-[#001B4A] text-[40px] font-extrabold">
+        <View style={{ width: moderateScale(130) }} className="items-center">
+          <View
+            style={{
+              width: "100%",
+              height: verticalScale(138),
+              backgroundColor: "#00ABAE",
+              borderWidth: moderateScale(5),
+              borderColor: "#BFFEFE",
+              borderRadius: moderateScale(15),
+            }}
+            className="items-center justify-center"
+          >
+            <Text
+              style={{
+                color: "#001B4A",
+                fontSize: getFontSize(40),
+                fontWeight: "800",
+              }}
+            >
               {data?.type}
             </Text>
-            <View className="h-0.5 w-[80%] bg-white rounded-sm -mt-1.5" />
-            <Text className="text-white text-[9px] font-extrabold text-center mt-2 leading-[18px] px-1">
+            <View
+              style={{
+                height: moderateScale(0.5),
+                width: "80%",
+                backgroundColor: "white",
+                borderRadius: moderateScale(1),
+                marginTop: moderateScale(-6),
+              }}
+            />
+            <Text
+              style={{
+                color: "white",
+                fontSize: getFontSize(9),
+                fontWeight: "800",
+                textAlign: "center",
+                marginTop: getSpacing(8),
+                lineHeight: getFontSize(18),
+                paddingHorizontal: getSpacing(4),
+              }}
+            >
               {data?.type === "CMA"
                 ? "CHURCH ASSESSMENT EVALUATION"
                 : "PASTORAL MINISTRY PROFILE"}
             </Text>
           </View>
-          {data?.completionDate && (
+          {data?.dueDate && (
             <View className="items-center w-full mt-3">
               <Text
-                className={`text-xs font-bold ${data?.status === "Due" ? "text-yellow-400" : "text-white"
-                  }`}
+                style={{
+                  fontSize: getFontSize(12),
+                  fontWeight: "700",
+                  color: data?.status === "Due" ? "#EAB308" : "white",
+                }}
               >
-                Due :{data?.completionDate}
+                Due : {data?.dueDate}
               </Text>
             </View>
           )}
         </View>
 
-        <View className="ml-2.5 flex-1 gap-1">
+        <View style={{ marginLeft: getSpacing(10) }} className="flex-1 gap-1">
           <View>
             <Text
-              className="text-white text-base leading-[22px] font-semibold"
+              style={{
+                color: "white",
+                fontSize: getFontSize(16),
+                lineHeight: getFontSize(22),
+                fontWeight: "600",
+              }}
               ellipsizeMode="tail"
             >
               {data?.title}
             </Text>
           </View>
-          <Text className="py-2 text-[#F4F2F2B5] font-normal text-sm">
+          <Text
+            style={{
+              paddingVertical: getSpacing(8),
+              color: "#F4F2F2B5",
+              fontSize: getFontSize(14),
+            }}
+          >
             {data?.description}
           </Text>
-          <TouchableOpacity className="items-center border border-[#FFFFFF33] py-1 px-2 my-1 rounded-lg max-w-[70%]">
-            <Text className="text-sm font-medium text-white">
+          <TouchableOpacity
+            style={{
+              borderWidth: 1,
+              borderColor: "#FFFFFF33",
+              paddingVertical: getSpacing(4),
+              paddingHorizontal: getSpacing(8),
+              marginVertical: getSpacing(4),
+              borderRadius: moderateScale(8),
+              maxWidth: "70%",
+            }}
+            className="items-center"
+          >
+            <Text style={{ fontSize: getFontSize(14), fontWeight: "500", color: "white" }}>
               Status{" "}
-              <Text className="items-center font-black text-white">•</Text>{" "}
+              <Text style={{ fontWeight: "900", color: "white" }}>•</Text>{" "}
               <Text
-                className={`text-sm font-medium ${data?.status == "Due" ? "text-yellow-400" : "text-white"
-                  }`}
+                style={{
+                  fontSize: getFontSize(14),
+                  fontWeight: "500",
+                  color: data?.status === "Due" ? "#EAB308" : "white",
+                }}
               >
                 {data?.status}
               </Text>
             </Text>
           </TouchableOpacity>
-          <View>
-            <Text className="text-sm font-medium text-white">
-              Completed on :{data?.completionDate}
-            </Text>
-          </View>
+          {data?.completionDate && (
+            <View>
+              <Text style={{ fontSize: getFontSize(14), fontWeight: "500", color: "white" }}>
+                Completed on : {data?.completionDate}
+              </Text>
+            </View>
+          )}
 
-          {(data && data?.status === "Not Started") ||
-            data?.status === "Due" ? (
-            <TouchableOpacity className="bg-white items-center rounded-[10px] py-[5px] my-3 w-[70%]" onPress={() => {
-              router.push("/(pastor-tabs)/(tabs)/assessments/answer-question-page")
-            }}>
-              <Text className="text-base text-[#001FC1] font-semibold pb-1 leading-[22px]">
+          {((data?.status === "Not Started") || (data?.status === "Due")) && (
+            <TouchableOpacity
+              style={{
+                backgroundColor: "white",
+                alignItems: "center",
+                borderRadius: moderateScale(10),
+                paddingVertical: getSpacing(5),
+                marginVertical: getSpacing(12),
+                width: "70%",
+              }}
+              onPress={() => onPress && onPress(data)} // Use onPress for Start Now too
+            >
+              <Text
+                style={{
+                  fontSize: getFontSize(16),
+                  color: "#001FC1",
+                  fontWeight: "600",
+                  paddingBottom: getSpacing(4),
+                  lineHeight: getFontSize(22),
+                }}
+              >
                 Start Now
               </Text>
             </TouchableOpacity>
-          ) : null}
+          )}
         </View>
       </View>
-      {data?.type === "PMP" &&
-        (data?.status === "Submitted" ? (
-          <LinearGradient
-            colors={["#B83AF3", "#21B6E9"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{
-              borderRadius: 10,
-              padding: 2,
-              marginVertical: 12,
-              width: "95%",
-              marginHorizontal: "auto",
-            }}
-          >
-            <TouchableOpacity
+      {data?.type === "PMP" && (
+        <>
+          {data?.status === "Submitted" && data?.meetingDate ? (
+            <LinearGradient
+              colors={["#B83AF3", "#21B6E9"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
               style={{
-                backgroundColor: "#233A6F",
-                borderRadius: 8,
-                alignItems: "center",
-                paddingVertical: 7,
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingHorizontal: 10,
-                alignContent: "center",
+                borderRadius: moderateScale(10),
+                padding: moderateScale(2),
+                marginVertical: getSpacing(12),
+                width: "95%",
+                alignSelf: "center",
               }}
             >
-              <Text
-                className="py-1"
+              <TouchableOpacity
                 style={{
-                  fontSize: 16,
-                  color: "yellow",
+                  backgroundColor: "#233A6F",
+                  borderRadius: moderateScale(8),
+                  alignItems: "center",
+                  paddingVertical: getSpacing(7),
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  paddingHorizontal: getSpacing(10),
+                }}
+                onPress={onMeetingPress}
+              >
+                <Text
+                  style={{
+                    fontSize: getFontSize(16),
+                    color: "#EAB308",
+                    fontWeight: "600",
+                    lineHeight: getFontSize(20),
+                    paddingVertical: getSpacing(4),
+                  }}
+                >
+                  Meeting Scheduled on {data?.meetingDate}
+                </Text>
+                <TouchableOpacity onPress={onMeetingIconPress}>
+                  <Image
+                    source={require("../../../assets/icons/threeDots.png")}
+                    style={{
+                      width: getIconSize(24),
+                      height: getIconSize(24),
+                      resizeMode: "contain",
+                    }}
+                  />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            </LinearGradient>
+          ) : data?.status === "Completed" ? (
+            <TouchableOpacity
+              style={{
+                alignSelf: "center",
+                backgroundColor: "white",
+                borderRadius: moderateScale(10),
+                alignItems: "center",
+                paddingVertical: getSpacing(7),
+                marginVertical: getSpacing(12),
+                width: "95%",
+              }}
+              onPress={onCustomizedPress}
+            >
+              <Text
+                style={{
+                  paddingVertical: getSpacing(4),
+                  fontSize: getFontSize(16),
+                  color: "#001FC1",
                   fontWeight: "600",
-                  lineHeight: 20,
+                  lineHeight: getFontSize(20),
                 }}
               >
                 Customized Development Plans
               </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  console.log("Icon clicked!");
-                }}
-              >
-                <Image
-                  source={require("../../../assets/icons/threeDots.png")}
-                  style={{ width: 24, height: 24, resizeMode: "contain" }}
-                />
-              </TouchableOpacity>
             </TouchableOpacity>
-          </LinearGradient>
-        ) : data?.status === "Completed" ? (
-          <TouchableOpacity className="mx-auto bg-white rounded-[10px] items-center py-[7px] my-3 w-[95%]">
-            <Text className="py-1 text-base text-[#001FC1] font-semibold leading-5">
-              Customized Development Plans
-            </Text>
-          </TouchableOpacity>
-        ) : null)}
+          ) : null}
+        </>
+      )}
     </TouchableOpacity>
   );
 }

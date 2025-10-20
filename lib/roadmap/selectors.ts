@@ -1,26 +1,35 @@
-import { BaseItem, RevitalizationData } from './types';
+// import { BaseItem, RevitalizationData } from './types';
 
-export const selectProgram = (d: RevitalizationData) => d.program;
-export const selectPhase = (d: RevitalizationData, id: string) => d.phases[id];
-export const selectItems = (d: RevitalizationData, ids: string[]) => ids.map(i => d.items[i]);
+// export const selectProgram = (d: RevitalizationData) => d.program;
+// export const selectPhase = (d: RevitalizationData, id: string) => d.phases[id];
+// export const selectItems = (d: RevitalizationData, ids: string[]) => ids.map(i => d.items[i]);
 
-export type FilterTab = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED' | 'IN_PROGRESS';
+// export type FilterTab = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED' | 'IN_PROGRESS';
 
-export const filterItems = (items: BaseItem[], tab: FilterTab) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const t = tab.toUpperCase(); // normalize
+// export const filterItems = (items: BaseItem[], tab: FilterTab) => {
+//     const today = new Date().toISOString().slice(0, 10);
+//     const t = tab.toUpperCase(); // normalize
 
-    if (t === 'ALL') return items;
+//     if (t === 'ALL') return items;
 
-    if (t === 'DUE') {
-        return items.filter(
-            i =>
-                i.dueDate &&
-                i.dueDate <= today &&
-                i.status.toUpperCase() !== 'COMPLETED'
-        );
-    }
+//     if (t === 'DUE') {
+//         return items.filter(
+//             i =>
+//                 i.dueDate &&
+//                 i.dueDate <= today &&
+//                 i.status.toUpperCase() !== 'COMPLETED'
+//         );
+//     }
 
-    // compare uppercase versions to be safe
-    return items.filter(i => i.status.toUpperCase() === t);
-};
+//     // compare uppercase versions to be safe
+//     return items.filter(i => i.status.toUpperCase() === t);
+// };
+
+
+
+import { Phase, RevitalizationData, Task } from './types';
+
+export const getPhase = (data: RevitalizationData, id: string): Phase => data.phases[id];
+export const getTask = (data: RevitalizationData, id: string): Task => data.tasks[id];
+export const getPhaseTasks = (data: RevitalizationData, phase: Phase): Task[] =>
+    phase.tasks.map(id => data.tasks[id]);

@@ -1,364 +1,4 @@
-import { ChecklistSchema, FormSchema, MeetingSchema, RevitalizationData, SignSchema, UploadSchema } from "./types";
-
-// export const mockRevitalization: RevitalizationData = {
-//     program: {
-//         id: 'revitalization',
-//         title: 'Revitalization Roadmap',
-//         phases: ['jump-start', 'phase-1', 'phase-2', 'phase-3'],
-//     },
-//     phases: {
-//         'jump-start': {
-//             id: 'jump-start',
-//             code: 'JUMP_START',
-//             title: 'Jump–start',
-//             subtitle: 'Attend a two–day revitalization jump–start session',
-//             estMonthsMin: 1,
-//             estMonthsMax: 2,
-//             coverImage: 'https://example.com/jump.jpg',
-//             items: ['jump-start-session'], // single item, not multiple
-//         },
-//         'phase-1': {
-//             id: 'phase-1',
-//             code: 'PHASE_1',
-//             title: 'Self Revitalization Phase',
-//             subtitle: 'Conflict resolution and theory of change',
-//             estMonthsMin: 1,
-//             estMonthsMax: 2,
-//             coverImage: 'https://example.com/p1.jpg',
-//             items: [
-//                 'p1-sign-covenant',
-//                 'p1-upload-strategy',
-//                 'p1-mentor-meeting',
-//                 'p1-complete-assessment',
-//                 'p1-train-leadership',
-//                 'p1-submit-budget',
-//                 'p1-share-testimony',
-//                 'p1-checklist-evangelism',
-//             ],
-//         },
-//         'phase-2': {
-//             id: 'phase-2',
-//             code: 'PHASE_2',
-//             title: 'Church Empowerment Phase',
-//             subtitle: 'Community programs and long-term impact',
-//             estMonthsMin: 3,
-//             estMonthsMax: 9,
-//             coverImage: 'https://example.com/p2.jpg',
-//             items: [
-//                 'p2-mou-with-ngos',
-//                 'p2-upload-calendar',
-//                 'p2-community-survey',
-//                 'p2-run-pilot-program',
-//                 'p2-upload-report',
-//             ],
-//         },
-//         'phase-3': {
-//             id: 'phase-3',
-//             code: 'PHASE_3',
-//             title: 'Community Revitalization and Multiplication',
-//             subtitle: 'Review outcomes and empower others',
-//             estMonthsMin: 10,
-//             estMonthsMax: 12,
-//             coverImage: 'https://example.com/p3.jpg',
-//             items: [
-//                 'p3-train-new-coaches',
-//                 'p3-plant-microgroups',
-//                 'p3-measure-kpis',
-//                 'p3-graduation',
-//             ],
-//         },
-//     },
-//     items: {
-//         // Jump-start child roadmaps
-//         'jump-start-session': {
-//             id: 'jump-start-session',
-//             phaseId: 'jump-start',
-//             kind: 'CHILD_ROADMAP',
-//             title: 'Jump–start',
-//             description: 'Attend a two–day revitalization jump–start session',
-//             status: 'NOT_STARTED',
-//             sessionDate: '2024-10-11',
-//             steps: [
-//                 { id: 's1', title: 'Christ Method Alone (Why & How)', done: false },
-//                 { id: 's2', title: 'Self-Leadership', done: false },
-//                 { id: 's3', title: 'Dealing with Resistance', done: false },
-//                 { id: 's4', title: 'Empower Others-Spiritual Renewal', done: false },
-//                 { id: 's5', title: 'Community Engagement - Need Assessments', done: false },
-//                 { id: 's6', title: 'Cycle of Evangelism & Discipleship', done: false },
-//             ],
-//             meta: { hasOverviewTab: true },
-//         },
-
-//         // Phase 1 tasks (heterogeneous)
-//         'p1-sign-roadmap': {
-//             id: 'p1-sign-roadmap',
-//             phaseId: 'phase-1',
-//             kind: 'TASK',
-//             title: '12-Month Mentoring Revitalization Roadmap Approval',
-//             description: '12-Month Revitalization Roadmap for pastoral mentoring and church revitalization growth',
-//             status: 'NOT_STARTED',
-//             taskType: 'SIGN',
-//             schema: {
-//                 agreementText: 'I agree to participate in the 12-month revitalization mentoring and church growth roadmap provided by The Center for Community Change',
-//                 requireCheckbox: true,
-//                 signatureLabel: 'Signature Required here',
-//                 documentUrl: 'https://example.com/12-month-roadmap.pdf',
-//             } as SignSchema,
-//             meta: {
-//                 coverImage: 'https://example.com/sign.jpg',
-//                 completionTimeMonths: '1 - 2',
-//                 roadmapText: 'Sign 12-Month Revitalization Roadmap',
-//                 viewTimelineUrl: '/timeline/12-month-mentoring',
-//             },
-//         },
-
-//         'p1-prayer-strategy': {
-//             id: 'p1-prayer-strategy',
-//             phaseId: 'phase-1',
-//             kind: 'TASK',
-//             title: 'Prayer and Visitation Strategy',
-//             description: 'Develop a prayer and visitation strategy and upload document',
-//             status: 'NOT_STARTED',
-//             taskType: 'UPLOAD',
-//             schema: {
-//                 accept: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-//                 maxSizeMB: 10,
-//                 maxFiles: 1,
-//                 label: 'Upload Strategy',
-//                 description: 'Upload your prayer and visitation strategy document',
-//             } as UploadSchema,
-//             meta: {
-//                 coverImage: 'https://example.com/prayer.jpg',
-//                 completionTimeMonths: '1 - 2',
-//                 roadmapText: 'Create a prayer and visitation strategy',
-//             },
-//         },
-
-//         'p1-pastoral-profile': {
-//             id: 'p1-pastoral-profile',
-//             phaseId: 'phase-1',
-//             kind: 'TASK',
-//             title: 'Pastoral Ministry Profile (PMP)',
-//             description: 'Complete a personal pastoral assessment taking a deeper look into your ministry',
-//             status: 'NOT_STARTED',
-//             taskType: 'FORM',
-//             schema: {
-//                 fields: [
-//                     { id: 'leadership_style', type: 'dropdown', label: 'Leadership Style', required: true, options: ['Visionary', 'Servant', 'Democratic', 'Transformational'] },
-//                     { id: 'ministry_focus', type: 'multi-select', label: 'Ministry Focus Areas', options: ['Youth', 'Outreach', 'Discipleship', 'Worship', 'Administration'] },
-//                     { id: 'challenges', type: 'textarea', label: 'Current Ministry Challenges', required: true, placeholder: 'Describe your challenges...' },
-//                     { id: 'years_ministry', type: 'number', label: 'Years in Ministry', validation: { min: 0, max: 60 } },
-//                 ],
-//                 submitLabel: 'Take PMP Survey',
-//             } as FormSchema,
-//             meta: {
-//                 coverImage: 'https://example.com/pmp.jpg',
-//                 completionTimeMonths: '1 - 2',
-//                 roadmapText: 'Complete a Pastoral Ministry Profile (PMP)',
-//             },
-//         },
-
-//         'p1-gods-vision': {
-//             id: 'p1-gods-vision',
-//             phaseId: 'phase-1',
-//             kind: 'TASK',
-//             title: "God's Vision for your Church",
-//             description: 'View do you see your church as a Christ formed place and develop',
-//             status: 'NOT_STARTED',
-//             taskType: 'UPLOAD',
-//             schema: {
-//                 accept: ['application/pdf', 'image/*', 'video/*'],
-//                 maxSizeMB: 50,
-//                 maxFiles: 3,
-//                 label: 'Upload Vision Document',
-//                 description: 'Upload your vision document, images, or video',
-//             } as UploadSchema,
-//             meta: {
-//                 coverImage: 'https://example.com/vision.jpg',
-//                 completionTimeMonths: '1 - 2',
-//                 roadmapText: 'Create a Vision for your church',
-//             },
-//         },
-
-//         'p1-calendar': {
-//             id: 'p1-calendar',
-//             phaseId: 'phase-1',
-//             kind: 'TASK',
-//             title: 'Calendar',
-//             description: 'Create a calendar that will complement your vision for the church',
-//             status: 'NOT_STARTED',
-//             taskType: 'UPLOAD',
-//             schema: {
-//                 accept: ['application/pdf', 'text/calendar', 'application/vnd.ms-excel', 'text/csv'],
-//                 maxSizeMB: 5,
-//                 maxFiles: 1,
-//                 label: 'Upload Calendar',
-//                 description: 'Upload your church calendar',
-//             } as UploadSchema,
-//             meta: {
-//                 coverImage: 'https://example.com/calendar.jpg',
-//                 completionTimeMonths: '1 - 2',
-//                 roadmapText: 'Create your Vision Plan (create a calendar)',
-//             },
-//         },
-
-//         'p1-mentor-disciple': {
-//             id: 'p1-mentor-disciple',
-//             phaseId: 'phase-1',
-//             kind: 'TASK',
-//             title: 'Identify a Mentor/Disciple',
-//             description: 'Identify a Mentor/Disciple and submit their name and contact information to advance service platform',
-//             status: 'NOT_STARTED',
-//             taskType: 'FORM',
-//             schema: {
-//                 fields: [
-//                     { id: 'name', type: 'text', label: 'Name of Mentor/Disciple', required: true },
-//                     { id: 'email', type: 'email', label: 'Email', required: true },
-//                     { id: 'phone', type: 'text', label: 'Phone Number', required: true },
-//                     { id: 'role', type: 'dropdown', label: 'Role', options: ['Mentor', 'Disciple'], required: true },
-//                 ],
-//                 submitLabel: 'Submit',
-//             } as FormSchema,
-//             meta: {
-//                 coverImage: 'https://example.com/mentor.jpg',
-//                 completionTimeMonths: '1 - 2',
-//                 roadmapText: 'Identify a Mentor/Disciple and submit contact',
-//             },
-//         },
-
-//         'p1-community-engagement': {
-//             id: 'p1-community-engagement',
-//             phaseId: 'phase-1',
-//             kind: 'TASK',
-//             title: 'Community Engagement Project',
-//             description: 'Choose a community engagement project that aligns with your church and upload.',
-//             status: 'NOT_STARTED',
-//             taskType: 'FORM',
-//             schema: {
-//                 fields: [
-//                     { id: 'project_name', type: 'text', label: 'Community Engagement Project', required: true },
-//                     { id: 'project_file', type: 'text', label: 'Upload your Community Engagement Project', placeholder: 'File upload (handled separately)' },
-//                     { id: 'follow_up_event1', type: 'text', label: 'Follow up Event 1', placeholder: 'TO ADD IT' },
-//                     { id: 'follow_up_event1_date', type: 'date', label: 'Choose your Follow up Event 1', required: true },
-//                     { id: 'follow_up_event2', type: 'text', label: 'Follow up Event 2', placeholder: 'TO ADD IT' },
-//                     { id: 'follow_up_event2_date', type: 'date', label: 'Choose your Follow up Event 2', required: true },
-//                 ],
-//                 submitLabel: 'Submit',
-//             } as FormSchema,
-//             meta: {
-//                 coverImage: 'https://example.com/community.jpg',
-//                 completionTimeMonths: '1 - 2',
-//                 roadmapText: 'Choose a community engagement project',
-//                 hasFileUpload: true,
-//             },
-//         },
-//         // Phase 2 sample tasks
-//         'p2-mou-with-ngos': {
-//             id: 'p2-mou-with-ngos',
-//             phaseId: 'phase-2',
-//             kind: 'TASK',
-//             title: 'Sign MoU with NGOs',
-//             description: 'Execute partnership MoU',
-//             status: 'NOT_STARTED',
-//             taskType: 'SIGN',
-//             schema: { docUrl: 'https://example.com/mou.pdf' },
-//         },
-//         'p2-upload-calendar': {
-//             id: 'p2-upload-calendar',
-//             phaseId: 'phase-2',
-//             kind: 'TASK',
-//             title: 'Upload Outreach Calendar',
-//             description: 'Provide 6‑month program calendar',
-//             status: 'NOT_STARTED',
-//             taskType: 'UPLOAD',
-//             schema: { accept: ['application/pdf'] },
-//         },
-//         'p2-community-survey': {
-//             id: 'p2-community-survey',
-//             phaseId: 'phase-2',
-//             kind: 'TASK',
-//             title: 'Community Survey',
-//             description: 'Submit 100+ survey responses',
-//             status: 'NOT_STARTED',
-//             taskType: 'FORM',
-//             schema: { fields: [{ id: 'f1', type: 'number', label: 'Responses' }] },
-//         },
-//         'p2-run-pilot-program': {
-//             id: 'p2-run-pilot-program',
-//             phaseId: 'phase-2',
-//             kind: 'TASK',
-//             title: 'Run Pilot Program',
-//             description: 'Complete a 4‑week pilot and log attendance',
-//             status: 'NOT_STARTED',
-//             taskType: 'CHECKLIST',
-//             checklist: [
-//                 { id: 'w1', text: 'Week 1 complete', done: false },
-//                 { id: 'w2', text: 'Week 2 complete', done: false },
-//                 { id: 'w3', text: 'Week 3 complete', done: false },
-//                 { id: 'w4', text: 'Week 4 complete', done: false },
-//             ],
-//         },
-//         'p2-upload-report': {
-//             id: 'p2-upload-report',
-//             phaseId: 'phase-2',
-//             kind: 'TASK',
-//             title: 'Upload Pilot Report',
-//             description: 'Submit PDF with outcomes and photos',
-//             status: 'NOT_STARTED',
-//             taskType: 'UPLOAD',
-//             schema: { accept: ['application/pdf'] },
-//         },
-
-//         // Phase 3 sample tasks
-//         'p3-train-new-coaches': {
-//             id: 'p3-train-new-coaches',
-//             phaseId: 'phase-3',
-//             kind: 'TASK',
-//             title: 'Train New Coaches',
-//             description: 'Run a coach training weekend',
-//             status: 'NOT_STARTED',
-//             taskType: 'CHECKLIST',
-//             checklist: [
-//                 { id: 't1', text: 'Curriculum prepared', done: false },
-//                 { id: 't2', text: '15 attendees confirmed', done: false },
-//             ],
-//         },
-//         'p3-plant-microgroups': {
-//             id: 'p3-plant-microgroups',
-//             phaseId: 'phase-3',
-//             kind: 'TASK',
-//             title: 'Plant Micro‑groups',
-//             description: 'Launch 5 micro‑groups',
-//             status: 'NOT_STARTED',
-//             taskType: 'FORM',
-//             schema: [
-//                 { id: 'g1', type: 'number', label: 'Groups started' },
-//                 { id: 'g2', type: 'textarea', label: 'Locations' },
-//             ],
-//         },
-//         'p3-measure-kpis': {
-//             id: 'p3-measure-kpis',
-//             phaseId: 'phase-3',
-//             kind: 'TASK',
-//             title: 'Measure KPIs',
-//             description: 'Submit quarterly metrics',
-//             status: 'NOT_STARTED',
-//             taskType: 'UPLOAD',
-//             schema: { accept: ['text/csv', 'application/vnd.ms-excel'] },
-//         },
-//         'p3-graduation': {
-//             id: 'p3-graduation',
-//             phaseId: 'phase-3',
-//             kind: 'TASK',
-//             title: 'Graduation',
-//             description: 'Final review and certificate issue',
-//             status: 'NOT_STARTED',
-//             taskType: 'MEETING',
-//             schema: { durationMin: 60 },
-//         },
-//     },
-// };
-
+import { RevitalizationData } from './types';
 
 export const mockRevitalization: RevitalizationData = {
     program: {
@@ -366,17 +6,20 @@ export const mockRevitalization: RevitalizationData = {
         title: 'Revitalization Roadmap',
         phases: ['jump-start', 'phase-1', 'phase-2', 'phase-3'],
     },
+
     phases: {
         'jump-start': {
             id: 'jump-start',
             code: 'JUMP_START',
-            title: 'Jump–start',
-            subtitle: 'Attend a two–day revitalization jump–start session',
+            title: 'Jump-start',
+            subtitle: 'Attend a two-day revitalization jump-start session',
             estMonthsMin: 1,
             estMonthsMax: 2,
-            coverImage: require("@/assets/images/jumpstart.png"),
-            items: ['jump-start-session'],
+            coverImage: require('@/assets/images/jumpstart.png'),
+            tasks: ['jump-start-session'],
+            isSingleRoadmap: true,
         },
+
         'phase-1': {
             id: 'phase-1',
             code: 'PHASE_1',
@@ -384,19 +27,19 @@ export const mockRevitalization: RevitalizationData = {
             subtitle: 'Conflict resolution and theory of change',
             estMonthsMin: 1,
             estMonthsMax: 2,
-            coverImage: require("@/assets/images/roadmap.jpg"),
-            items: [
-                'p1-sign-roadmap',           // ✅ was 'p1-sign-covenant'
-                'p1-prayer-strategy',        // ✅ was 'p1-upload-strategy'
-                'p1-mentor-disciple',        // ✅ was 'p1-mentor-meeting'
-                'p1-pastoral-profile',       // ✅ was 'p1-complete-assessment'
-                'p1-gods-vision',            // ✅ was 'p1-train-leadership'
-                'p1-calendar',               // ✅ was 'p1-submit-budget'
-                'p1-community-engagement',   // ✅ was 'p1-share-testimony'
-                // Add one more if needed, or remove extra
-                // 'p1-checklist-evangelism' ← doesn't exist, so omit
+            coverImage: require('@/assets/images/roadmap.jpg'),
+            tasks: [
+                'p1-sign-roadmap',
+                'p1-prayer-strategy',
+                'p1-pastoral-profile',
+                'p1-mentor-disciple',
+                'p1-gods-vision',
+                'p1-calendar',
+                'p1-member-desciple',
+                'p1-community-engagement',
             ],
         },
+
         'phase-2': {
             id: 'phase-2',
             code: 'PHASE_2',
@@ -404,15 +47,18 @@ export const mockRevitalization: RevitalizationData = {
             subtitle: 'Community programs and long-term impact',
             estMonthsMin: 3,
             estMonthsMax: 9,
-            coverImage: require("@/assets/images/roadmap.jpg"),
-            items: [
+            coverImage: require('@/assets/images/roadmap.jpg'),
+            tasks: [
                 'p2-mou-with-ngos',
-                'p2-upload-calendar',
+                'p2-facility-review',
                 'p2-community-survey',
                 'p2-run-pilot-program',
                 'p2-upload-report',
+                'p2-community-engagement',
+                'p2-empower-leader'
             ],
         },
+
         'phase-3': {
             id: 'phase-3',
             code: 'PHASE_3',
@@ -420,8 +66,8 @@ export const mockRevitalization: RevitalizationData = {
             subtitle: 'Review outcomes and empower others',
             estMonthsMin: 10,
             estMonthsMax: 12,
-            coverImage: require("@/assets/images/roadmap.jpg"),
-            items: [
+            coverImage: require('@/assets/images/roadmap.jpg'),
+            tasks: [
                 'p3-train-new-coaches',
                 'p3-plant-microgroups',
                 'p3-measure-kpis',
@@ -429,80 +75,142 @@ export const mockRevitalization: RevitalizationData = {
             ],
         },
     },
-    items: {
-        // Jump-start
+
+    tasks: {
+        // ========== JUMP-START ==========
         'jump-start-session': {
             id: 'jump-start-session',
             phaseId: 'jump-start',
-            kind: 'CHILD_ROADMAP',
-            title: 'Jump–start',
-            descriptionRich: {
-                type: 'ordered',
-                content: [
-                    'Christ Method Alone (Why & How)',
-                    'Self-Leadership',
-                    'Dealing with Resistance',
-                    'Empower Others-Spiritual Renewal',
-                    'Community Engagement - Need Assessments',
-                    'Cycle of Evangelism & Discipleship'
-                ]
-            },
+            title: 'Jump-start Session',
+            description: `1. Christ Method Alone (Why & How)
+2. Self-Leadership
+3. Dealing with Resistance
+4. Empower Others-Spiritual Renewal
+5. Community Engagement - Need Assessments
+6. Cycle of Evangelism & Discipleship`,
             status: 'NOT_STARTED',
-            sessionDate: '2024-10-11',
-            steps: [
-                { id: 's1', title: 'Christ Method Alone (Why & How)', done: false },
-                { id: 's2', title: 'Self-Leadership', done: false },
-                { id: 's3', title: 'Dealing with Resistance', done: false },
-                { id: 's4', title: 'Empower Others-Spiritual Renewal', done: false },
-                { id: 's5', title: 'Community Engagement - Need Assessments', done: false },
-                { id: 's6', title: 'Cycle of Evangelism & Discipleship', done: false },
-            ],
+            schema: {
+                fields: [
+                    {
+                        id: 'session-notes',
+                        type: 'TEXT_AREA',
+                        label: 'Session Notes',
+                        placeholder: 'Add your notes from the jump-start session...',
+                        required: false,
+                    },
+                    {
+                        id: 'static-session-date',
+                        type: 'DATE_PICKER',
+                        label: 'Session Date',
+                        editable: false,
+                        defaultValue: '10 / 11 / 24',
+                    },
+
+                    {
+                        id: 'contact-section',
+                        type: 'SECTION_BOX',
+                        label: 'Personal Details',
+                        fields: [
+                            {
+                                id: 'name',
+                                type: 'TEXT_FIELD',
+                                label: 'Name of Mentor/Disciple',
+                                placeholder: 'Enter full name',
+                                required: true,
+                            },
+                            {
+                                id: 'email',
+                                type: 'TEXT_FIELD',
+                                label: 'Email',
+                                placeholder: 'example@email.com',
+                                required: true,
+                            },
+                            {
+                                id: 'phone',
+                                type: 'TEXT_FIELD',
+                                label: 'Phone Number',
+                                placeholder: '+1 (555) 123-4567',
+                                required: true,
+                            },
+                            {
+                                id: 'role',
+                                type: 'DROPDOWN',
+                                label: 'Role',
+                                options: ['Mentor', 'Disciple'],
+                                required: true,
+                            },
+                        ],
+                    },
+                ],
+                submitLabel: 'Mark as Completed',
+            },
             meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '1 - 2',
+                roadmapText: 'Attend a Jump-start Session in your area',
                 hasOverviewTab: true,
-                coverImage: require("@/assets/images/roadmap.jpg")
             },
         },
 
-        // Phase 1 tasks
+        // ========== PHASE 1 ==========
         'p1-sign-roadmap': {
             id: 'p1-sign-roadmap',
             phaseId: 'phase-1',
-            kind: 'TASK',
             title: '12-Month Mentoring Revitalization Roadmap Approval',
             description: '12-Month Revitalization Roadmap for pastoral mentoring and church revitalization growth',
             status: 'NOT_STARTED',
-            taskType: 'SIGN',
             schema: {
-                agreementText: 'I agree to participate in the 12-month revitalization mentoring and church growth roadmap provided by The Center for Community Change',
-                requireCheckbox: true,
-                signatureLabel: 'Signature Required here',
-                documentUrl: 'https://example.com/12-month-roadmap.pdf',
-            } satisfies SignSchema,
+                fields: [
+                    {
+                        id: 'timeline-link',
+                        type: 'TEXT_DISPLAY',
+                        label: 'VIEW 12 MONTHS MENTORING TIMELINE MONTHS',
+                    },
+                    {
+                        id: 'agreement-checkbox',
+                        type: 'CHECKBOX',
+                        label: 'I agree to participate in the 12-month revitalization mentoring and church growth roadmap provided by The Center for Community Change',
+                        required: true,
+                    },
+                    // {
+                    //     id: 'signature',
+                    //     type: 'SIGNATURE',
+                    //     label: 'Signature Required here',
+                    //     required: true,
+                    //     dependsOn: ['agreement-checkbox'],
+                    // },
+                ],
+                submitLabel: 'Signature Required here',
+            },
             meta: {
-                coverImage: 'https://example.com/sign.jpg',
+                coverImage: require('@/assets/images/roadmap.jpg'),
                 completionTimeMonths: '1 - 2',
                 roadmapText: 'Sign 12-Month Revitalization Roadmap',
-                viewTimelineUrl: '/timeline/12-month-mentoring',
             },
         },
 
         'p1-prayer-strategy': {
             id: 'p1-prayer-strategy',
             phaseId: 'phase-1',
-            kind: 'TASK',
-            title: 'Prayer and Visitation Strategy',
+            title: 'Prayer & Visit Strategy',
             description: 'Develop a prayer and visitation strategy and upload document',
             status: 'NOT_STARTED',
-            taskType: 'UPLOAD',
             schema: {
-                accept: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-                maxSizeMB: 10,
-                maxFiles: 1,
-                label: 'Upload Strategy',
-                description: 'Upload your prayer and visitation strategy document',
-            } satisfies UploadSchema,
+                fields: [
+                    {
+                        id: 'strategy-upload',
+                        type: 'UPLOAD',
+                        label: 'Upload Strategy',
+                        accept: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+                        maxSizeMB: 10,
+                        maxFiles: 2,
+                        required: true,
+                    },
+                ],
+                // submitLabel: 'Submit',
+            },
             meta: {
-                coverImage: 'https://example.com/prayer.jpg',
+                coverImage: require('@/assets/images/roadmap.jpg'),
                 completionTimeMonths: '1 - 2',
                 roadmapText: 'Create a prayer and visitation strategy',
             },
@@ -511,258 +219,597 @@ export const mockRevitalization: RevitalizationData = {
         'p1-pastoral-profile': {
             id: 'p1-pastoral-profile',
             phaseId: 'phase-1',
-            kind: 'TASK',
             title: 'Pastoral Ministry Profile (PMP)',
-            description: 'Complete a personal pastoral assessment taking a deeper look into your ministry',
+            description: 'Complete a personal pastoral assessment evaluation.',
             status: 'NOT_STARTED',
-            taskType: 'FORM',
             schema: {
                 fields: [
-                    { id: 'leadership_style', type: 'dropdown', label: 'Leadership Style', required: true, options: ['Visionary', 'Servant', 'Democratic', 'Transformational'] },
-                    { id: 'ministry_focus', type: 'multi-select', label: 'Ministry Focus Areas', options: ['Youth', 'Outreach', 'Discipleship', 'Worship', 'Administration'] },
-                    { id: 'challenges', type: 'textarea', label: 'Current Ministry Challenges', required: true, placeholder: 'Describe your challenges...' },
-                    { id: 'years_ministry', type: 'number', label: 'Years in Ministry', validation: { min: 0, max: 60 } },
+                    {
+                        id: 'pmp-survey',
+                        type: 'SURVEY_BUTTON',
+                        label: 'Take PMP Survey',
+                        survey: 'PMP',
+                        onPress: 'NAVIGATE',
+                        navigateTo: '/(pastor-tabs)/(tabs)/assessments/(pmp)/pmp-survey-page',
+                    },
                 ],
-                submitLabel: 'Take PMP Survey',
-            } satisfies FormSchema,
-            meta: {
-                coverImage: 'https://example.com/pmp.jpg',
-                completionTimeMonths: '1 - 2',
-                roadmapText: 'Complete a Pastoral Ministry Profile (PMP)',
             },
-        },
-
-        'p1-gods-vision': {
-            id: 'p1-gods-vision',
-            phaseId: 'phase-1',
-            kind: 'TASK',
-            title: "God's Vision for your Church",
-            description: 'View do you see your church as a Christ formed place and develop',
-            status: 'NOT_STARTED',
-            taskType: 'UPLOAD',
-            schema: {
-                accept: ['application/pdf', 'image/*', 'video/*'],
-                maxSizeMB: 50,
-                maxFiles: 3,
-                label: 'Upload Vision Document',
-                description: 'Upload your vision document, images, or video',
-            } satisfies UploadSchema,
             meta: {
-                coverImage: 'https://example.com/vision.jpg',
+                coverImage: require('@/assets/images/roadmap.jpg'),
                 completionTimeMonths: '1 - 2',
-                roadmapText: 'Create a Vision for your church',
-            },
-        },
-
-        'p1-calendar': {
-            id: 'p1-calendar',
-            phaseId: 'phase-1',
-            kind: 'TASK',
-            title: 'Calendar',
-            description: 'Create a calendar that will complement your vision for the church',
-            status: 'NOT_STARTED',
-            taskType: 'UPLOAD',
-            schema: {
-                accept: ['application/pdf', 'text/calendar', 'application/vnd.ms-excel', 'text/csv'],
-                maxSizeMB: 5,
-                maxFiles: 1,
-                label: 'Upload Calendar',
-                description: 'Upload your church calendar',
-            } satisfies UploadSchema,
-            meta: {
-                coverImage: 'https://example.com/calendar.jpg',
-                completionTimeMonths: '1 - 2',
-                roadmapText: 'Create your Vision Plan (create a calendar)',
+                roadmapText: 'Complete Pastoral Ministry Profile',
             },
         },
 
         'p1-mentor-disciple': {
             id: 'p1-mentor-disciple',
             phaseId: 'phase-1',
-            kind: 'TASK',
-            title: 'Identify a Mentor/Disciple',
-            description: 'Identify a Mentor/Disciple and submit their name and contact information to advance service platform',
+            title: 'Church Assessment Evaluation (CMA)',
+            description: 'Complete a evaluation about your churck and its membership',
             status: 'NOT_STARTED',
-            taskType: 'FORM',
             schema: {
                 fields: [
-                    { id: 'name', type: 'text', label: 'Name of Mentor/Disciple', required: true },
-                    { id: 'email', type: 'email', label: 'Email', required: true },
-                    { id: 'phone', type: 'text', label: 'Phone Number', required: true },
-                    { id: 'role', type: 'dropdown', label: 'Role', options: ['Mentor', 'Disciple'], required: true },
+                    {
+                        id: 'cma-survey',
+                        type: 'SURVEY_BUTTON',
+                        label: 'Take CMA Survey',
+                        survey: 'CMA',
+                        onPress: 'NAVIGATE',
+                        navigateTo: '/(pastor-tabs)/(tabs)/assessments/cma-survey-page',
+                    },
+                ],
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '1 - 2',
+                roadmapText: 'Identify a Mentor/Disciple',
+            },
+        },
+
+
+
+        'p1-gods-vision': {
+            id: 'p1-gods-vision',
+            phaseId: 'phase-1',
+            title: "God's Vision for your Church",
+            description: 'View how you see your church as a Christ-formed place and develop a vision',
+            status: 'NOT_STARTED',
+            schema: {
+                fields: [
+                    {
+                        id: 'vision-upload',
+                        type: 'UPLOAD',
+                        label: 'Upload Vision Document',
+                        accept: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+                        maxSizeMB: 50,
+                        maxFiles: 3,
+                        required: true,
+                    },
+                ],
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '1 - 2',
+                roadmapText: 'Create Vision for your church',
+            },
+        },
+
+        'p1-calendar': {
+            id: 'p1-calendar',
+            phaseId: 'phase-1',
+            title: 'Calendar',
+            description: 'Create a calendar that will complement your vision for the church',
+            status: 'NOT_STARTED',
+            schema: {
+                fields: [
+                    {
+                        id: 'calendar-upload',
+                        type: 'UPLOAD',
+                        label: 'Upload Calendar',
+                        accept: ['application/pdf', 'text/calendar', 'application/vnd.ms-excel', 'text/csv'],
+                        maxSizeMB: 5,
+                        maxFiles: 1,
+                        required: true,
+                    },
+                ],
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '1 - 2',
+                roadmapText: 'Create Vision Plan (calendar)',
+            },
+        },
+
+        'p1-member-desciple': {
+            id: 'p1-member-desciple',
+            phaseId: 'phase-1',
+            title: 'Identify a Mentor/Disciple',
+            description: 'Select a church member who will support you on this journey',
+            status: 'NOT_STARTED',
+            schema: {
+                fields: [
+                    {
+                        id: 'member-name',
+                        type: 'TEXT_FIELD',
+                        label: 'Name of Mentor/Disciple',
+                        placeholder: 'Enter name of Mentor/Disciple here...',
+                        required: true,
+                    },
+
                 ],
                 submitLabel: 'Submit',
-            } satisfies FormSchema,
+            },
             meta: {
-                coverImage: 'https://example.com/mentor.jpg',
+                coverImage: require('@/assets/images/roadmap.jpg'),
                 completionTimeMonths: '1 - 2',
-                roadmapText: 'Identify a Mentor/Disciple and submit contact',
+                roadmapText: 'Community Engagement Project',
             },
         },
 
         'p1-community-engagement': {
             id: 'p1-community-engagement',
             phaseId: 'phase-1',
-            kind: 'TASK',
             title: 'Community Engagement Project',
-            description: 'Choose a community engagement project that aligns with your church and upload.',
+            description: 'Choose a community engagement project that aligns with your church',
             status: 'NOT_STARTED',
-            taskType: 'FORM',
             schema: {
                 fields: [
-                    { id: 'project_name', type: 'text', label: 'Community Engagement Project', required: true },
-                    { id: 'project_file', type: 'text', label: 'Upload your Community Engagement Project', placeholder: 'File upload (handled separately)' },
-                    { id: 'follow_up_event1', type: 'text', label: 'Follow up Event 1', placeholder: 'TO ADD IT' },
-                    { id: 'follow_up_event1_date', type: 'date', label: 'Choose your Follow up Event 1', required: true },
-                    { id: 'follow_up_event2', type: 'text', label: 'Follow up Event 2', placeholder: 'TO ADD IT' },
-                    { id: 'follow_up_event2_date', type: 'date', label: 'Choose your Follow up Event 2', required: true },
+                    {
+                        id: 'project-name',
+                        type: 'TEXT_FIELD',
+                        label: 'Community Engagement Project',
+                        placeholder: 'Choose your community engagement project...',
+                        required: true,
+                    },
+                    {
+                        id: 'event1-date',
+                        type: 'DATE_PICKER',
+                        label: 'Community Engagement Project Date',
+                        required: true,
+                    },
+                    {
+                        id: 'event2-date',
+                        type: 'SECTION_BOX',
+                        label: 'Follow up Event 2',
+                        fields: [
+                            {
+                                id: 'followup-event-name',
+                                type: 'TEXT_FIELD',
+                                label: 'Follow up Event Name 1',
+                                placeholder: 'Choose your follow up event 1...',
+                                required: true,
+                            },
+                            {
+                                id: 'followup-event-date',
+                                type: 'DATE_PICKER',
+                                label: 'Follow up Event 1 Date',
+                                required: true,
+                            },
+                        ]
+                    },
                 ],
                 submitLabel: 'Submit',
-            } satisfies FormSchema,
+            },
             meta: {
-                coverImage: 'https://example.com/community.jpg',
+                coverImage: require('@/assets/images/roadmap.jpg'),
                 completionTimeMonths: '1 - 2',
-                roadmapText: 'Choose a community engagement project',
-                hasFileUpload: true,
+                roadmapText: 'Community Engagement Project',
             },
         },
 
-        // Phase 2
+        // ========== PHASE 2 ==========
         'p2-mou-with-ngos': {
             id: 'p2-mou-with-ngos',
             phaseId: 'phase-2',
-            kind: 'TASK',
-            title: 'Sign MoU with NGOs',
-            description: 'Execute partnership MoU',
+            title: 'Community Engagement Project',
+            description: 'Complete a community engagement project with the Member/Disciple and share the stories of Gods work',
             status: 'NOT_STARTED',
-            taskType: 'SIGN',
             schema: {
-                agreementText: 'I agree to the MoU terms.',
-                requireCheckbox: true,
-                documentUrl: 'https://example.com/mou.pdf',
-            } satisfies SignSchema,
+                fields: [
+                    {
+                        id: 'project-date',
+                        type: 'DATE_PICKER',
+                        label: 'Project Date',
+                        required: true,
+                    },
+                    {
+                        id: 'image-video-upload',
+                        type: 'UPLOAD',
+                        label: 'Upload Images/Videos',
+                        accept: ['image/*', 'video/*'],
+                        maxSizeMB: 5,
+                        maxFiles: 1,
+                        required: true,
+                    },
+                ],
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '3',
+            },
         },
-        'p2-upload-calendar': {
-            id: 'p2-upload-calendar',
+
+        'p2-facility-review': {
+            id: 'p2-facility-review',
             phaseId: 'phase-2',
-            kind: 'TASK',
-            title: 'Upload Outreach Calendar',
-            description: 'Provide 6‑month program calendar',
+            title: 'Facility Review',
+            description: 'Complete a review of your facility and make the necessary minor adjustments to make it more visitor friendly',
             status: 'NOT_STARTED',
-            taskType: 'UPLOAD',
             schema: {
-                accept: ['application/pdf'],
-                maxSizeMB: 5,
-                maxFiles: 1,
-                label: 'Upload Calendar',
-            } satisfies UploadSchema,
+                fields: [
+                    {
+                        id: 'section',
+                        type: 'SECTION_BOX',
+                        // label: 'Facility Review Areas',
+                        fields: [
+                            {
+                                id: 'adjustments-made',
+                                type: 'TEXT_AREA',
+                                label: 'Adjustments you have made',
+                                placeholder: 'Explain the adjustments you have made...'
+                            },
+                            {
+                                id: 'facility-review-date',
+                                type: 'DATE_PICKER',
+                                label: 'Facility Review Date',
+                                required: true,
+                            },
+                        ]
+                    },
+                ],
+                submitLabel: 'Submit',
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '3 - 4',
+            },
         },
+
         'p2-community-survey': {
             id: 'p2-community-survey',
             phaseId: 'phase-2',
-            kind: 'TASK',
-            title: 'Community Survey',
-            description: 'Submit 100+ survey responses',
+            title: 'Welcome Team',
+            description: 'Develop a welcome team strategy and begin implementing that strategy, include a secret guest',
             status: 'NOT_STARTED',
-            taskType: 'FORM',
             schema: {
-                fields: [{ id: 'responses', type: 'number', label: 'Number of Responses', required: true }],
-                submitLabel: 'Submit Survey Data',
-            } satisfies FormSchema,
+                fields: [
+                    {
+                        id: 'section',
+                        type: 'SECTION_BOX',
+                        // label: 'Facility Review Areas',
+                        fields: [
+                            {
+                                id: 'secret-guest-info',
+                                type: 'TEXT_AREA',
+                                label: 'Secret Guest Information',
+                                placeholder: 'Enter the secret guest information here...'
+                            },
+                            {
+                                id: 'welcome-team-meeting-date',
+                                type: 'DATE_PICKER',
+                                label: 'Welcome Team Meeting Date',
+                                required: true,
+                            },
+                        ]
+                    },
+                ],
+                submitLabel: 'Submit',
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '4 - 6',
+            },
         },
+
         'p2-run-pilot-program': {
             id: 'p2-run-pilot-program',
             phaseId: 'phase-2',
-            kind: 'TASK',
-            title: 'Run Pilot Program',
-            description: 'Complete a 4‑week pilot and log attendance',
+            title: 'Guest Contact Information',
+            description: 'Begin collecting guest contact information and measure guest follow-up',
             status: 'NOT_STARTED',
-            taskType: 'CHECKLIST',
             schema: {
-                items: [
-                    { id: 'w1', text: 'Week 1 complete', done: false },
-                    { id: 'w2', text: 'Week 2 complete', done: false },
-                    { id: 'w3', text: 'Week 3 complete', done: false },
-                    { id: 'w4', text: 'Week 4 complete', done: false },
+                fields: [
+                    {
+                        id: 'attendance-tracker-system',
+                        type: 'TEXT_AREA',
+                        label: 'Name Of The Attendance Tracker System',
+                        placeholder: 'Enter the name of the attendance tracker system information here...'
+                    },
                 ],
-            } satisfies ChecklistSchema,
+                submitLabel: 'Submit',
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '6 - 7',
+            },
         },
+
         'p2-upload-report': {
             id: 'p2-upload-report',
             phaseId: 'phase-2',
-            kind: 'TASK',
-            title: 'Upload Pilot Report',
-            description: 'Submit PDF with outcomes and photos',
+            title: 'Community Assessment',
+            description: 'Refine your understanding of the needs in your community by using a community assessment tool',
             status: 'NOT_STARTED',
-            taskType: 'UPLOAD',
             schema: {
-                accept: ['application/pdf'],
-                maxSizeMB: 20,
-                maxFiles: 1,
-                label: 'Upload Report',
-            } satisfies UploadSchema,
+                fields: [
+                    {
+                        id: 'report-upload',
+                        type: 'UPLOAD',
+                        label: 'Upload Assessment Results',
+                        accept: ['application/pdf'],
+                        maxSizeMB: 20,
+                        maxFiles: 2,
+                        required: true,
+                    },
+                ],
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '8 - 9',
+            },
         },
 
-        // Phase 3
+        'p2-community-engagement': {
+            id: 'p2-community-engagement',
+            phaseId: 'phase-2',
+            title: 'Community Engagement Events',
+            description: 'Plan two community engagement events with at least 1 follow-up bridge event that addresses felt needs in the community',
+            status: 'NOT_STARTED',
+            schema: {
+                fields: [
+                    {
+                        id: 'event2-date',
+                        type: 'SECTION_BOX',
+                        label: 'Community Engagement Event 1',
+                        fields: [
+                            {
+                                id: 'events-for-community-engagement-1',
+                                type: 'TEXT_FIELD',
+                                label: 'Events For Community Engagement Event 1',
+                                placeholder: 'List here...',
+                                required: true,
+                            },
+                            {
+                                id: 'community-engagement-event-1-date',
+                                type: 'DATE_PICKER',
+                                label: 'Community Engagement Event 1 Date',
+                                required: true,
+                            },
+                            {
+                                id: 'event2-date',
+                                type: 'SECTION_BOX',
+                                label: 'Follow up events',
+                                fields: [
+                                    {
+                                        id: 'follow-up-event-1',
+                                        type: 'TEXT_FIELD',
+                                        label: 'Follow Up Event 1',
+                                        placeholder: 'List here...',
+                                        required: true,
+                                    },
+                                    {
+                                        id: 'community-engagement-event-1-date',
+                                        type: 'DATE_PICKER',
+                                        label: 'Follow up Event 1 Date',
+                                        required: true,
+                                    },
+                                    {
+                                        id: 'image-video-upload',
+                                        type: 'UPLOAD',
+                                        label: 'Upload Images/Videos',
+                                        accept: ['image/*', 'video/*'],
+                                        maxSizeMB: 5,
+                                        maxFiles: 1,
+                                    },
+                                    {
+                                        id: 'submit-button',
+                                        type: 'BUTTON',
+                                        label: 'Submit',
+                                        onPress: 'SUBMIT',
+
+                                    }
+                                ]
+                            },
+                        ]
+                    },
+                    {
+                        id: 'event2-date',
+                        type: 'SECTION_BOX',
+                        label: 'Community Engagement Event 2',
+                        fields: [
+                            {
+                                id: 'events-for-community-engagement-2',
+                                type: 'TEXT_FIELD',
+                                label: 'Events For Community Engagement Event 2',
+                                placeholder: 'List here...',
+                                required: true,
+                            },
+                            {
+                                id: 'community-engagement-event-2-date',
+                                type: 'DATE_PICKER',
+                                label: 'Community Engagement Event 2 Date',
+                                required: true,
+                            },
+                            {
+                                id: 'event2-date',
+                                type: 'SECTION_BOX',
+                                label: 'Follow up events',
+                                fields: [
+                                    {
+                                        id: 'follow-up-event-1',
+                                        type: 'TEXT_FIELD',
+                                        label: 'Follow Up Event 1',
+                                        placeholder: 'List here...',
+                                        required: true,
+                                    },
+                                    {
+                                        id: 'community-engagement-event-1-date',
+                                        type: 'DATE_PICKER',
+                                        label: 'Follow up Event 1 Date',
+                                        required: true,
+                                    },
+                                    {
+                                        id: 'image-video-upload',
+                                        type: 'UPLOAD',
+                                        label: 'Upload Images/Videos',
+                                        accept: ['image/*', 'video/*'],
+                                        maxSizeMB: 5,
+                                        maxFiles: 1,
+                                    },
+                                    {
+                                        id: 'submit-button',
+                                        type: 'BUTTON',
+                                        label: 'Submit',
+                                        onPress: 'SUBMIT',
+
+                                    }
+                                ]
+                            },
+                        ]
+                    },
+                ],
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '1 - 2',
+                roadmapText: 'Community Engagement Project',
+            },
+        },
+        'p2-empower-leader': {
+            id: 'p2-empower-leader',
+            phaseId: 'phase-2',
+            title: 'Empower Ministry Leaders',
+            description: 'Begin empowering ministry leaders into calendar activities in the worship service and offering a regular new member opportunities to come to the church service. Include a lay Bible "worker" role',
+            status: 'NOT_STARTED',
+            schema: {
+                fields: [
+                    {
+                        id: 'calendar-upload',
+                        type: 'UPLOAD',
+                        label: 'Upload Calendar',
+                        accept: ['application/pdf', 'text/calendar', 'application/vnd.ms-excel', 'text/csv'],
+                        maxSizeMB: 20,
+                        maxFiles: 1,
+                        required: true,
+                    },
+                ],
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '8 - 9',
+            },
+        },
+        // ========== PHASE 3 ==========
         'p3-train-new-coaches': {
             id: 'p3-train-new-coaches',
             phaseId: 'phase-3',
-            kind: 'TASK',
             title: 'Train New Coaches',
             description: 'Run a coach training weekend',
             status: 'NOT_STARTED',
-            taskType: 'CHECKLIST',
             schema: {
-                items: [
-                    { id: 't1', text: 'Curriculum prepared', done: false },
-                    { id: 't2', text: '15 attendees confirmed', done: false },
+                fields: [
+                    {
+                        id: 'training-checklist',
+                        type: 'CHECKLIST',
+                        label: 'Training Preparation',
+                        required: true,
+                        items: [
+                            { id: 't1', label: 'Curriculum prepared', checked: false },
+                            { id: 't2', label: '15 attendees confirmed', checked: false },
+                        ],
+                    },
                 ],
-            } satisfies ChecklistSchema,
+                submitLabel: 'Submit',
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '10',
+            },
         },
+
         'p3-plant-microgroups': {
             id: 'p3-plant-microgroups',
             phaseId: 'phase-3',
-            kind: 'TASK',
-            title: 'Plant Micro‑groups',
-            description: 'Launch 5 micro‑groups',
+            title: 'Plant Micro-groups',
+            description: 'Launch 5 micro-groups',
             status: 'NOT_STARTED',
-            taskType: 'FORM',
             schema: {
                 fields: [
-                    { id: 'groups_started', type: 'number', label: 'Number of Groups Started', required: true },
-                    { id: 'locations', type: 'textarea', label: 'Locations', required: true },
+                    {
+                        id: 'groups-started',
+                        type: 'TEXT_FIELD',
+                        label: 'Number of Groups Started',
+                        validation: { min: 5 },
+                        required: true,
+                    },
+                    {
+                        id: 'locations',
+                        type: 'TEXT_AREA',
+                        label: 'Locations',
+                        required: true,
+                    },
                 ],
                 submitLabel: 'Submit',
-            } satisfies FormSchema,
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '11',
+            },
         },
+
         'p3-measure-kpis': {
             id: 'p3-measure-kpis',
             phaseId: 'phase-3',
-            kind: 'TASK',
             title: 'Measure KPIs',
             description: 'Submit quarterly metrics',
             status: 'NOT_STARTED',
-            taskType: 'UPLOAD',
             schema: {
-                accept: ['text/csv', 'application/vnd.ms-excel'],
-                maxSizeMB: 10,
-                maxFiles: 1,
-                label: 'Upload KPI Report',
-            } satisfies UploadSchema,
+                fields: [
+                    {
+                        id: 'kpi-upload',
+                        type: 'UPLOAD',
+                        label: 'Upload KPI Report',
+                        accept: ['text/csv', 'application/vnd.ms-excel'],
+                        maxSizeMB: 10,
+                        maxFiles: 1,
+                        required: true,
+                    },
+                ],
+                submitLabel: 'Submit',
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '11 - 12',
+            },
         },
+
         'p3-graduation': {
             id: 'p3-graduation',
             phaseId: 'phase-3',
-            kind: 'TASK',
             title: 'Graduation',
             description: 'Final review and certificate issue',
             status: 'NOT_STARTED',
-            taskType: 'MEETING',
             schema: {
-                durationMin: 60,
-                allowReschedule: true,
-                description: 'Schedule your final graduation meeting',
-            } satisfies MeetingSchema,
+                fields: [
+                    {
+                        id: 'graduation-date',
+                        type: 'DATE_PICKER',
+                        label: 'Schedule Graduation Meeting',
+                        required: true,
+                    },
+                    {
+                        id: 'meeting-notes',
+                        type: 'TEXT_AREA',
+                        label: 'Meeting Notes (Optional)',
+                        placeholder: 'Add any notes about the graduation...',
+                    },
+                ],
+                submitLabel: 'Complete',
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '12',
+            },
         },
     },
 };

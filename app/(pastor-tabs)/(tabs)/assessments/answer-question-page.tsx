@@ -4,7 +4,7 @@ import { Header, QuestionFields } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, Stack } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -27,7 +27,7 @@ interface AssessmentData {
 export default function AnswerQuestionPage() {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
-
+  const params = useLocalSearchParams();
   const questions = [
     {
       id: "membership",
@@ -119,7 +119,13 @@ export default function AnswerQuestionPage() {
                   type="submit"
                   title={"Submit"}
                   onPress={() =>
-                    router.push("/(pastor-tabs)/(tabs)/assessments/survey-form")
+                    router.push({
+                      pathname: "/(pastor-tabs)/(tabs)/assessments/survey-form",
+                      params: {
+                        returnTo: params?.returnTo,
+                        surveyFieldId: params?.surveyFieldId,
+                      },
+                    })
                   }
                 />
               </View>

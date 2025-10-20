@@ -16,242 +16,232 @@ export default function RevitalizationCard({
   const pathname = usePathname();
   console.log(pathname, "paht");
 
+  const handleNavigation = () => {
+    if (pathname === "/roadmap/phase-1/revitalization-roadmap") {
+      typeof data.assignment !== "undefined" && data.assignment
+        ? navigation.push({
+          pathname:
+            "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+          params: { data: JSON.stringify(data) },
+        })
+        : typeof data.subPhase !== "undefined" && data.subPhase
+          ? navigation.push({
+            pathname: "/(pastor-tabs)/roadmap/sub-phases",
+            params: { data: JSON.stringify(data) },
+          })
+          : navigation.push({
+            pathname: "/(pastor-tabs)/roadmap/phase-1/detailed-roadmap",
+            params: { data: JSON.stringify(data) },
+          });
+    } else if (pathname === "/roadmap/phase-2/revitalization-roadmap") {
+      typeof data.assignment !== "undefined" && data.assignment
+        ? navigation.push({
+          pathname:
+            "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
+          params: { data: JSON.stringify(data) },
+        })
+        : typeof data.subPhase !== "undefined" && data.subPhase
+          ? navigation.push({
+            pathname: "/(pastor-tabs)/roadmap/sub-phases",
+            params: { data: JSON.stringify(data) },
+          })
+          : data.empowerment
+            ? navigation.push({
+              pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
+              params: { data: JSON.stringify(data) },
+            })
+            : navigation.push({
+              pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
+              params: { data: JSON.stringify(data) },
+            });
+    } else if (pathname === "/roadmap/landing/landing") {
+      typeof data.assignment !== "undefined" && data.assignment
+        ? navigation.push({
+          pathname:
+            "/(mentor-tabs)/profile/my-assignment/detailed-assignment",
+          params: { data: JSON.stringify(data) },
+        })
+        : typeof data.subPhase !== "undefined" && data.subPhase
+          ? navigation.push({
+            pathname: "/(mentor-tabs)/roadmap/sub-phases",
+            params: { data: JSON.stringify(data) },
+          })
+          : data.empowerment
+            ? navigation.push({
+              pathname: "/(mentor-tabs)/roadmap/phase-2/detailed-empowerment",
+              params: { data: JSON.stringify(data) },
+            })
+            : navigation.push({
+              pathname: "/(mentor-tabs)/roadmap/phase-2/detailed-roadmap",
+              params: { data: JSON.stringify(data) },
+            });
+    } else {
+      if (data.phase === "Phase 1") {
+        router.push("/roadmap/phase-1/revitalization-roadmap");
+      } else if (data.phase === "Phase 2") {
+        router.push("/roadmap/phase-2/revitalization-roadmap");
+      } else {
+        router.push("/roadmap/phase-1/revitalization-roadmap");
+      }
+    }
+  }
   return (
     <TouchableOpacity
-      onPress={() => {
-        if (pathname === "/roadmap/phase-1/revitalization-roadmap") {
-          typeof data.assignment !== "undefined" && data.assignment
-            ? navigation.push({
-              pathname:
-                "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-              params: { data: JSON.stringify(data) },
-            })
-            : typeof data.subPhase !== "undefined" && data.subPhase
-              ? navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/sub-phases",
-                params: { data: JSON.stringify(data) },
-              })
-              : navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/phase-1/detailed-roadmap",
-                params: { data: JSON.stringify(data) },
-              });
-        } else if (pathname === "/roadmap/phase-2/revitalization-roadmap") {
-          typeof data.assignment !== "undefined" && data.assignment
-            ? navigation.push({
-              pathname:
-                "/(pastor-tabs)/profile/my-assignment/detailed-assignment",
-              params: { data: JSON.stringify(data) },
-            })
-            : typeof data.subPhase !== "undefined" && data.subPhase
-              ? navigation.push({
-                pathname: "/(pastor-tabs)/roadmap/sub-phases",
-                params: { data: JSON.stringify(data) },
-              })
-              : data.empowerment
-                ? navigation.push({
-                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-empowerment",
-                  params: { data: JSON.stringify(data) },
-                })
-                : navigation.push({
-                  pathname: "/(pastor-tabs)/roadmap/phase-2/detailed-roadmap",
-                  params: { data: JSON.stringify(data) },
-                });
-        } else if (pathname === "/roadmap/landing/landing") {
-          typeof data.assignment !== "undefined" && data.assignment
-            ? navigation.push({
-              pathname:
-                "/(mentor-tabs)/profile/my-assignment/detailed-assignment",
-              params: { data: JSON.stringify(data) },
-            })
-            : typeof data.subPhase !== "undefined" && data.subPhase
-              ? navigation.push({
-                pathname: "/(mentor-tabs)/roadmap/sub-phases",
-                params: { data: JSON.stringify(data) },
-              })
-              : data.empowerment
-                ? navigation.push({
-                  pathname: "/(mentor-tabs)/roadmap/phase-2/detailed-empowerment",
-                  params: { data: JSON.stringify(data) },
-                })
-                : navigation.push({
-                  pathname: "/(mentor-tabs)/roadmap/phase-2/detailed-roadmap",
-                  params: { data: JSON.stringify(data) },
-                });
-        } else {
-          if (data.phase === "Phase 1") {
-            router.push("/roadmap/phase-1/revitalization-roadmap");
-          } else if (data.phase === "Phase 2") {
-            router.push("/roadmap/phase-2/revitalization-roadmap");
-          } else {
-            router.push("/roadmap/phase-1/revitalization-roadmap");
-          }
-        }
-      }}
+      onPress={handleNavigation}
       className="w-full bg-[#194F82] rounded-[10px] p-4 my-2.5 border border-white/45"
     >
+      {/* Main Content Row */}
       <View className="flex-row w-full">
-        <View className="!w-[110px] !h-[100px] items-center">
+        {/* Image Section - Fixed Width */}
+        <View className="w-[110px] h-[100px] mr-3">
           <View className="relative">
             <Image
               source={data?.image}
-              className="!w-[110px] !h-[100px] rounded-xl"
+              className="w-full h-full rounded-xl"
+              resizeMode="cover"
             />
             {data?.phase && (
-              <View className="mx-5">
-                <Text className="text-black font-semibold text-xs text-center absolute bottom-2.5 left-0 right-0 bg-[#F1E91A85] p-1 rounded-lg">
+              <View className="absolute left-0 right-0 mx-2 bottom-2">
+                <Text className="text-black font-semibold text-xs text-center bg-[#F1E91A85] py-1 px-2 rounded-lg">
                   {data?.phase}
                 </Text>
               </View>
             )}
           </View>
-          <View className="items-start mt-2">
-            <Text className="text-white font-semibold leading-[22px] text-xs">
+          {/* Completion Time */}
+          {data?.time && (
+            <Text className="mt-2 text-xs font-semibold text-white" numberOfLines={2}>
               {data?.time}
             </Text>
-          </View>
+          )}
         </View>
 
-        <View className="ml-2.5 flex-1 gap-0.5">
-          <View>
-            <Text
-              className="text-base font-semibold text-white"
-              ellipsizeMode="tail"
-            >
-              {data?.title}
-            </Text>
-          </View>
-          <Text className="py-2 text-[#F4F2F2B5] leading-[18px] font-medium text-sm">
+        {/* Content Section - Flexible */}
+        <View className="flex-1">
+          {/* Title */}
+          <Text
+            className="mb-1 text-base font-semibold text-white"
+            numberOfLines={2}
+          >
+            {data?.title}
+          </Text>
+
+          {/* Description */}
+          <Text
+            className="text-[#F4F2F2B5] text-sm font-medium leading-[18px] mb-2"
+            numberOfLines={2}
+          >
             {data?.description}
           </Text>
 
-          <TouchableOpacity className="items-center border border-white/20 py-1 px-2 my-1 rounded-lg max-w-[80%]">
+          {/* Status Badge - Responsive */}
+          <View className="self-start px-3 py-1 mb-2 border rounded-lg border-white/20">
             <Text className="text-sm font-medium text-white">
               Status{" "}
-              <Text className="items-center font-black text-white">•</Text>{" "}
+              <Text className="font-black">•</Text>{" "}
               <Text
-                className={`text-sm font-medium ${data?.status == "Due" ? "text-yellow-400" : "text-white"
+                className={`text-sm font-medium ${data?.status === "Due" ? "text-yellow-400" : "text-white"
                   }`}
               >
                 {data?.status}
               </Text>
             </Text>
-          </TouchableOpacity>
+          </View>
 
-          {data?.sessionDate && data?.status == "Not Started" ? (
-            <TouchableOpacity className="items-center border border-white py-2.5 my-3 rounded-lg w-[80%]">
-              <Text className="pb-1 text-sm font-medium text-white">
-                Session Date :{" "}
+          {/* Conditional Content Based on Status */}
+          {data?.sessionDate && data?.status === "Not Started" && (
+            <View className="self-start px-3 py-2 border rounded-lg border-white/40">
+              <Text className="mb-1 text-sm font-medium text-white">
+                Session Date:
               </Text>
-              <TouchableOpacity className="border border-[#47729b] p-1.5 my-1 w-[75%] rounded-lg">
-                <Text className="w-full text-xs font-light text-center text-white">
+              <View className="border border-[#47729b] py-1 px-2 rounded-lg">
+                <Text className="text-xs font-light text-center text-white">
                   {data?.sessionDate}
                 </Text>
-              </TouchableOpacity>
-            </TouchableOpacity>
-          ) : data?.taskStatus?.started ? (
-            <>
-              <View className="flex-row items-center">
-                <View className="bg-black rounded-[10px] w-[80%]">
+              </View>
+            </View>
+          )}
+
+          {data?.taskStatus?.started && (
+            <View>
+              <View className="flex-row items-center mb-1">
+                <View className="bg-black rounded-[10px] flex-1 max-w-[70%] h-1.5">
                   <View
-                    className="bg-white h-1.5 rounded-[10px]"
-                    style={{ width: 50 }}
+                    className="bg-white h-full rounded-[10px]"
+                    style={{ width: progressPercentage }}
                   />
                 </View>
-                <Text className="pl-1 text-xs font-light text-white">
-                  {" "}
-                  {data?.taskStatus?.inProgress} /{" "}
-                  {data?.taskStatus?.toComplete}
+                <Text className="ml-2 text-xs font-light text-white">
+                  {data?.taskStatus?.inProgress} / {data?.taskStatus?.toComplete}
                 </Text>
               </View>
               <Text className="text-xs font-light text-white">
                 Tasks Completed
               </Text>
-            </>
-          ) : data.status == "Completed" ? (
+            </View>
+          )}
+
+          {data.status === "Completed" && data.completionDate && (
             <Text className="text-xs font-light text-white">
-              {" "}
-              Completed on : {data.completionDate}
+              Completed on: {data.completionDate}
             </Text>
-          ) : (
-            <></>
           )}
         </View>
       </View>
 
+      {/* Session Dates - Full Width Below */}
       {data?.showBothDate &&
         data?.sessionDate &&
-        data?.status == "Not Started Yet" && (
-          <TouchableOpacity className="items-center border border-white py-2.5 my-3 rounded-lg w-[95%] flex-row justify-evenly mx-auto">
-            <View>
-              <Text className="pb-1 text-sm font-medium text-white">
-                Session Date :{" "}
-              </Text>
-              <TouchableOpacity className="border border-[#47729b] p-1.5 my-1 w-full rounded-lg">
-                <Text className="w-full text-xs font-light text-center text-white">
-                  {data?.sessionDate}
+        data?.status === "Not Started Yet" && (
+          <View className="px-4 py-3 mt-3 border border-white rounded-lg">
+            <View className="flex-row justify-between gap-3">
+              <View className="flex-1">
+                <Text className="mb-2 text-sm font-medium text-white">
+                  Session Date:
                 </Text>
-              </TouchableOpacity>
-            </View>
-            <View>
-              <Text className="pb-1 text-sm font-medium text-white">
-                Session Date :{" "}
-              </Text>
-              <TouchableOpacity className="border border-[#47729b] p-1.5 my-1 w-full rounded-lg">
-                <Text className="w-full text-xs font-light text-center text-white">
-                  {data?.sessionDate}
+                <View className="border border-[#47729b] py-2 px-2 rounded-lg">
+                  <Text className="text-xs font-light text-center text-white">
+                    {data?.sessionDate}
+                  </Text>
+                </View>
+              </View>
+              <View className="flex-1">
+                <Text className="mb-2 text-sm font-medium text-white">
+                  Session Date:
                 </Text>
-              </TouchableOpacity>
+                <View className="border border-[#47729b] py-2 px-2 rounded-lg">
+                  <Text className="text-xs font-light text-center text-white">
+                    {data?.sessionDate}
+                  </Text>
+                </View>
+              </View>
             </View>
-          </TouchableOpacity>
+          </View>
         )}
 
+      {/* Meeting Banner */}
       {data?.showBothDate && data?.meeting && (
         <LinearGradient
           colors={["#B83AF3", "#21B6E9"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={{
-            borderRadius: 10,
-            padding: 2,
-            marginVertical: 12,
-            width: "95%",
-            marginHorizontal: "auto",
-          }}
+          className="mt-3 rounded-lg p-[2px]"
         >
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#233A6F",
-              borderRadius: 8,
-              alignItems: "center",
-              paddingVertical: 7,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              paddingHorizontal: 10,
-              alignContent: "center",
-            }}
-          >
+          <View className="bg-[#233A6F] rounded-lg px-3 py-2 flex-row items-center justify-between">
             <Text
-              className="py-1"
-              style={{
-                fontSize: 16,
-                color: "yellow",
-                fontWeight: "600",
-                lineHeight: 20,
-              }}
+              className="flex-1 mr-2 text-sm font-semibold text-yellow-400"
+              numberOfLines={2}
             >
-              Meeting Scheduled on 25 {data?.meeting?.scheduled}
+              Meeting Scheduled on {data?.meeting?.scheduled}
             </Text>
-            <TouchableOpacity
-              onPress={() => {
-                console.log("Icon clicked!");
-              }}
-            >
+            <TouchableOpacity onPress={() => console.log("Icon clicked!")}>
               <Image
                 source={require("../../../assets/icons/threeDots.png")}
-                style={{ width: 24, height: 24, resizeMode: "contain" }}
+                className="w-6 h-6"
+                resizeMode="contain"
               />
             </TouchableOpacity>
-          </TouchableOpacity>
+          </View>
         </LinearGradient>
       )}
     </TouchableOpacity>

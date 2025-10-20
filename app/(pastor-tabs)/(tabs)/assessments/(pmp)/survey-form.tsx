@@ -5,8 +5,9 @@ import { SurveyModal } from "@/components/atom/surveyModal";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useRoadmapProgress } from "@/context/RoadmapProgressContext";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,10 +16,19 @@ export default function SurveyForm() {
   const [selections, setSelections] = React.useState<{
     [key: string]: number[];
   }>({});
+
+  // ✅ Get params - returnTo is the TASK ID, surveyFieldId is the FIELD ID
+  const params = useLocalSearchParams<{
+    returnTo?: string;
+    surveyFieldId?: string;
+  }>();
+
+  const router = useRouter();
   const [formTab, setFormTab] = React.useState(0);
   const [isVisible, setIsVisible] = React.useState(false);
   const scrollViewRef = React.useRef<ScrollView>(null);
   const totalPages = 5;
+  const { progress, updateItem } = useRoadmapProgress();
 
   const handlePageChange = (newIndex: number) => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -27,6 +37,36 @@ export default function SurveyForm() {
 
   const handleSelectionChange = (key: string, indices: number[]) => {
     setSelections((prev) => ({ ...prev, [key]: indices }));
+  };
+
+  const handleSubmit = () => {
+    console.log('=== SURVEY SUBMIT DEBUG ===');
+    console.log('Params:', params);
+    console.log('Return To (Task ID):', params?.returnTo);
+    console.log('Survey Field ID:', params?.surveyFieldId);
+
+    if (params?.returnTo && params?.surveyFieldId) {
+
+      const existingProgress = progress[params.returnTo] || {};
+      updateItem(params.returnTo, {
+        ...existingProgress,
+        formValues: {
+          ...(existingProgress.formValues || {}),
+          [`${params.surveyFieldId}-completed`]: true,
+        },
+        status: 'COMPLETED',
+        updatedAt: Date.now(),
+      });
+
+      console.log('Update called successfully');
+    } else {
+      console.error('Missing params - returnTo or surveyFieldId');
+    }
+
+    setIsVisible(true);
+    // setTimeout(() => {
+    //   router.back();
+    // }, 2000);
   };
 
   const clearCurrentTabSelections = () => {
@@ -75,7 +115,7 @@ export default function SurveyForm() {
           <Text className="font-bold text-[17px] leading-[22px] text-white text-center">
             {subTitle}
           </Text>
-          {subTitle && (
+          {subTitle2 && (
             <Text className="font-semibold text-[15px] leading-[22px] text-white text-center break-all">
               {subTitle2}
             </Text>
@@ -168,6 +208,7 @@ export default function SurveyForm() {
                   description="Select the option in each box that relates to how Christ Method Alone is being practiced in your community."
                 />
               )}
+
               <View
                 className="flex flex-row justify-center items-center max-w-[40%] mx-auto"
                 style={{ gap: 10 }}
@@ -188,7 +229,7 @@ export default function SurveyForm() {
                   onPress={() => {
                     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
                     if (formTab === totalPages - 1) {
-                      setIsVisible(true)
+                      handleSubmit();
                     } else {
                       handlePageChange(formTab + 1);
                     }
@@ -199,7 +240,10 @@ export default function SurveyForm() {
 
             <SurveyModal
               isMenuVisible={isVisible}
-              closeMenu={() => setIsVisible(false)}
+              closeMenu={() => {
+                setIsVisible(false);
+                router.back(); // Navigate back when modal closes
+              }}
             />
           </ScrollView>
         </SafeAreaView>

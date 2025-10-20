@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router"
 import React from "react"
 import {
   Modal,
@@ -17,7 +18,7 @@ export const SurveyModal = ({
   isMenuVisible,
   closeMenu,
 }: RoadMapOutcomeModalProps) => {
-
+  const router = useRouter();
   return (
     <Modal
       visible={isMenuVisible}
@@ -34,14 +35,17 @@ export const SurveyModal = ({
                 borderRadius: 14,
                 elevation: 5,
               }}
-              className="bg-white justify-center items-center h-full p-5 gap-5"
+              className="items-center justify-center h-full gap-5 p-5 bg-white"
             >
               <Text className="text-center font-medium text-base leading-[28px] text-[#176192]">
                 On completion of the PMP and CMA assessment tools please schedule a meeting with your mentor.
               </Text>
               <SurveyButton
                 title={"Schedule Meeting"}
-                onPress={() => { }}
+                onPress={() => {
+                  closeMenu();
+                  router.push("/(pastor-tabs)/(tabs)/appointments/my-appointments");
+                }}
               />
             </View>
           </TouchableWithoutFeedback>

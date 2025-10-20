@@ -1,9 +1,9 @@
 import { Button } from "@/components/atom/buttons";
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import {
-  AssessmentCard,
+  AssessmentMainCard,
   GuidelinesPoints,
-  Header,
+  Header
 } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
@@ -30,9 +30,6 @@ interface AssessmentData {
 export default function PmpSurvey() {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
-  const [searchText, setSearchText] = React.useState("");
-  const [tabs, setTabs] = React.useState("All");
-
   const params = useLocalSearchParams();
 
   // Parse the data safely
@@ -40,96 +37,7 @@ export default function PmpSurvey() {
     ? (JSON.parse(params.data as string) as AssessmentData)
     : undefined;
 
-  console.log("data", dataItems?.type);
-
-  const dummyRoadMaps = [
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description: "Review the overall health of your church",
-      type: "CMA",
-      status: "Due",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Pastoral Ministry Profile (PMP)",
-      description: "Take a deeper look into your ministry",
-      type: "PMP",
-      status: "Not Started",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 8,
-        completed: false,
-      },
-    },
-    {
-      title: "Church Empowerment PhasePastoral Ministry Profile (PMP)",
-      description: "Take a deeper look into your ministry",
-      type: "PMP",
-      status: "Submitted",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 18,
-        completed: false,
-      },
-    },
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description: "Review the overall health of your church ",
-      type: "CMA",
-      status: "Completed",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Pastoral Ministry Profile (PMP)",
-      description: "Take a deeper look into your ministry",
-      type: "PMP",
-      status: "Completed",
-      completionDate: "20 Oct 2024",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-  ];
-
-  const availableTabs = [
-    { tab: "All" },
-    { tab: "Due" },
-    { tab: "Not Started" },
-    { tab: "In Progress" },
-    { tab: "Completed" },
-    { tab: "Overdue" },
-    { tab: "Pending Review" },
-    { tab: "On Hold" },
-  ];
-
-  const filteredRoadMaps = dummyRoadMaps.filter((item) => {
-    if (tabs === "All") return true;
-    return item.status === tabs;
-  });
+  console.log("data", params?.surveyFieldId);
 
   return (
     <>
@@ -145,11 +53,11 @@ export default function PmpSurvey() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
+            <PastorNavigationHeader showNameTag={true} />
 
             {/* Header Section */}
             <Header
-              title="Church Assessment Evaluation(CMA)"
+              title="Pastoral Ministry Profile (PMP)"
               subTitle="Assessment"
               hideSearchBar={true}
             />
@@ -170,7 +78,7 @@ export default function PmpSurvey() {
             </ScrollView>
 
             {/* Content Section */}
-            <AssessmentCard
+            <AssessmentMainCard
               type={dataItems?.type}
               dueDate={dataItems?.completionDate}
               dueDateClass="text-yellow-500"
@@ -195,7 +103,13 @@ export default function PmpSurvey() {
                 marginTop: 42
               }}
               onPress={() => {
-                router.push("/(pastor-tabs)/(tabs)/assessments/(pmp)/survey-form")
+                router.push({
+                  pathname: "/(pastor-tabs)/(tabs)/assessments/(pmp)/survey-form",
+                  params: {
+                    returnTo: params?.returnTo,
+                    surveyFieldId: params?.surveyFieldId,
+                  },
+                });
               }}
             />
           </ScrollView>

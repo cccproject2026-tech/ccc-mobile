@@ -1,36 +1,102 @@
+// // lib/roadmap/mappers.ts
+// import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
+// import { Phase, RevitalizationData } from '@/lib/roadmap/types';
+
+// export function usePhaseToCard(data: RevitalizationData, phase: Phase) {
+//     const { progress } = useRoadmapProgress();
+//     const items = phase.items.map(id => data.items[id]);
+
+//     // FIX: Use progress context to get actual status
+//     const completed = items.filter(i => {
+//         const actualStatus = progress[i.id]?.status || i.status;
+//         return actualStatus === 'COMPLETED';
+//     }).length;
+
+//     const total = items.length;
+
+//     const anyDue = items.some(i => {
+//         const actualStatus = progress[i.id]?.status || i.status;
+//         return i.dueDate && actualStatus !== 'COMPLETED';
+//     });
+
+//     const anyInProgress = items.some(i => {
+//         const actualStatus = progress[i.id]?.status || i.status;
+//         return actualStatus === 'IN_PROGRESS';
+//     });
+
+//     const allCompleted = completed === total && total > 0;
+
+//     const status: 'initial' | 'in-progress' | 'completed' | 'due' =
+//         allCompleted ? 'completed' : anyDue ? 'due' : anyInProgress || completed > 0 ? 'in-progress' : 'initial';
+
+//     const completedDate = allCompleted
+//         ? new Date().toISOString().slice(0, 10)
+//         : undefined;
+
+//     // FIX: Only show progress bar when status is in-progress or due
+//     const taskProgress =
+//         (status === 'in-progress' || status === 'due') && total > 0
+//             ? { completed, total }
+//             : undefined;
+
+//     return {
+//         image: phase.coverImage,
+//         title: phase.title,
+//         description: phase.subtitle,
+//         completionTime: `Completion Time\nMonths ${phase.estMonthsMin} – ${phase.estMonthsMax}`,
+//         status,
+//         completedDate,
+//         taskProgress,
+//         showArrow: true,
+//         showCheckmark: allCompleted,
+//     } as const;
+// }
+
+
+// lib/roadmap/mappers.ts - SINGLE HOOK FOR CARD DATA
 import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
-import { Phase, RevitalizationData } from '@/lib/roadmap/types';
+import { Phase, Task } from './types';
 
-export function usePhaseToCard(data: RevitalizationData, phase: Phase) {
+export function usePhaseCard(phase: Phase, tasks: Task[]) {
     const { progress } = useRoadmapProgress();
-    const items = phase.items.map(id => data.items[id]);
-    const completed = items.filter(i => (progress[i.id]?.status || i.status) === 'COMPLETED').length;
-    const total = items.length;
 
-    const anyDue = items.some(i => i.dueDate && (progress[i.id]?.status ?? i.status) !== 'COMPLETED');
-    const anyInProgress = items.some(i => (progress[i.id]?.status ?? i.status) === 'IN_PROGRESS');
+    // Calculate completion
+    const completed = tasks.filter(t =>
+        (progress[t.id]?.status || t.status) === 'COMPLETED'
+    ).length;
+    const total = tasks.length;
+
+    // Check status
+    const anyDue = tasks.some(t => {
+        const status = progress[t.id]?.status || t.status;
+        const today = new Date().toISOString().slice(0, 10);
+        return t.dueDate && t.dueDate <= today && status !== 'COMPLETED';
+    });
+
+    const anyInProgress = tasks.some(t =>
+        (progress[t.id]?.status || t.status) === 'IN_PROGRESS'
+    );
+
     const allCompleted = completed === total && total > 0;
 
+    // Determine phase status
     const status: 'initial' | 'in-progress' | 'completed' | 'due' =
-        allCompleted ? 'completed' : anyDue ? 'due' : anyInProgress ? 'in-progress' : 'initial';
+        allCompleted ? 'completed' :
+            anyDue ? 'due' :
+                anyInProgress || completed > 0 ? 'in-progress' :
+                    'initial';
 
-    const completedDate = allCompleted
-        ? new Date().toISOString().slice(0, 10) // demo only
-        : undefined;
-
-    const taskProgress =
-        (status === 'due' || status === 'in-progress') && total > 0
-            ? { completed, total }
-            : undefined;
     return {
         image: phase.coverImage,
         title: phase.title,
         description: phase.subtitle,
         completionTime: `Completion Time\nMonths ${phase.estMonthsMin} – ${phase.estMonthsMax}`,
         status,
-        completedDate,
-        taskProgress,
+        completedDate: allCompleted ? new Date().toISOString().slice(0, 10) : undefined,
+        taskProgress: (status === 'in-progress' || status === 'due') && total > 0
+            ? { completed, total }
+            : undefined,
         showArrow: true,
         showCheckmark: allCompleted,
-    } as const;
+    };
 }

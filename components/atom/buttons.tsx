@@ -36,7 +36,7 @@ interface UploadPDFButtonProps {
   setSelectedFile: (file: DocumentPicker.DocumentPickerResult) => void;
   icon?: ImageSourcePropType | "";
   style?: ViewStyle;
-  textStyle?:TextStyle;
+  textStyle?: TextStyle;
 }
 
 export const Button: React.FC<ButtonProps> = ({

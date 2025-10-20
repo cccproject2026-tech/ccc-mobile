@@ -15,7 +15,6 @@ import { Stack } from "expo-router";
 import React from "react";
 import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-const SimpleSuccessModalAny = SimpleSuccessModal as unknown as React.ComponentType<any>;
 
 type RootStackParamList = {
   Home: undefined;
@@ -435,12 +434,11 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
         </View>
       </Modal>
       {/* Success Modal for Meeting Mode Change */}
-      <SimpleSuccessModalAny
+      <SimpleSuccessModal
         visible={showModeSuccess}
         onClose={() => setShowModeSuccess(false)}
-      >
-        <Text style={{ color: '#264387', fontSize: 20, fontWeight: '600', textAlign: 'center' }}>{modeSuccessText}</Text>
-      </SimpleSuccessModalAny>
+        title={modeSuccessText}
+      />
     </>
   );
 }

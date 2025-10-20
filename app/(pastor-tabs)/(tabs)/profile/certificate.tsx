@@ -1,7 +1,7 @@
 import { Button } from "@/components/atom/buttons";
 import CustomDropdown from "@/components/atom/dropDown";
 import { Header } from "@/components/build-components";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
+import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { customColors } from "@/constants/config/customColors";
 import { icons } from "@/constants/images";
@@ -18,8 +18,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { SafeAreaView } from "react-native-safe-area-context";
 
 interface ProfileData {
   firstName: string;
@@ -60,7 +60,7 @@ export default function Certificate() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [hasChurch2, setHasChurch2] = useState(true);
-
+  const { bottom } = useSafeAreaInsets();
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: "John",
     lastName: "Ross",
@@ -274,15 +274,17 @@ export default function Certificate() {
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
-        <SafeAreaView style={{ flex: 1 }}>
-          <PastorNavigationHeader />
+        <View style={{ flex: 1 }}>
+          <TopBar role="pastor" />
           <View style={styles.mainContainer}>
             <Header
               title="John Ross"
               subTitle={`Mentor > John Doe > Mentee >Profile`}
               hideSearchBar={true}
             />
-            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+            <ScrollView showsVerticalScrollIndicator={false}
+              style={{ flex: 1, }}
+              contentContainerStyle={{ paddingBottom: bottom + 20 }}>
               <View
                 style={{
                   gap: 20,
@@ -959,7 +961,7 @@ export default function Certificate() {
               </View>
             )}
           </View>
-        </SafeAreaView>
+        </View>
 
         {/* Modals */}
         {/* <ConfirmationModal
@@ -980,7 +982,7 @@ export default function Certificate() {
 const styles = StyleSheet.create({
   mainContainer: {
     width: "100%",
-    paddingBottom: 80,
+    // paddingBottom: 80,/
     flex: 1
   },
   headerContainer: {

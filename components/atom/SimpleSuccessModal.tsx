@@ -17,13 +17,14 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export interface SimpleSuccessModalProps {
     visible: boolean;
     onClose: () => void;
-    actionType?: 'scheduled' | 'rescheduled';
+    title: string;
 }
 
 const SimpleSuccessModal: React.FC<SimpleSuccessModalProps> = ({
     visible,
     onClose,
-    actionType = 'scheduled',
+    title,
+    // actionType = 'scheduled',
 }) => {
     React.useEffect(() => {
         if (visible) {
@@ -34,15 +35,6 @@ const SimpleSuccessModal: React.FC<SimpleSuccessModalProps> = ({
             return () => clearTimeout(timer);
         }
     }, [visible, onClose]);
-
-    const getTitle = () => {
-        switch (actionType) {
-            case 'rescheduled':
-                return 'Appointment has been Rescheduled';
-            default:
-                return 'New Appointment has been Scheduled';
-        }
-    };
 
     if (!visible) return null;
 
@@ -57,7 +49,7 @@ const SimpleSuccessModal: React.FC<SimpleSuccessModalProps> = ({
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <Text style={styles.title}>
-                            {getTitle()}
+                            {title}
                         </Text>
                     </View>
                 </View>
