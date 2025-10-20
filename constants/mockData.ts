@@ -608,3 +608,72 @@ export const PastorMenuItems: MenuItem[] = [
         ],
     },
 ];
+
+export const MentorMenuItems: MenuItem[] = [
+    {
+        id: 'myMentees',
+        label: 'My Mentees',
+        icon: icons.myMentors,
+        iconType: 'image',
+        route: '/(mentor-tabs)/my-mentees',
+    },
+    {
+        id: 'courses',
+        label: 'Courses',
+        icon: icons.Revitalization,
+        iconType: 'image',
+        route: '/(mentor-tabs)/roadmap/landing/landing',
+    },
+    {
+        id: 'revitalizationRoadmap',
+        label: 'Revitalization RoadMap',
+        icon: icons.Revitalization,
+        iconType: 'image',
+        route: '/(mentor-tabs)/roadmap/landing/landing',
+    },
+    {
+        id: 'assessments',
+        label: 'Assessments',
+        icon: icons.Assessments,
+        iconType: 'image',
+        route: '/(mentor-tabs)/assessments/survey',
+    },
+    {
+        id: 'progress',
+        label: 'Track Progress',
+        icon: icons.progress,
+        iconType: 'image',
+        route: '/(mentor-tabs)/progress/progress',
+    },
+    {
+        id: 'schedule',
+        label: 'Schedule',
+        icon: icons.Appointments,
+        iconType: 'image',
+        route: '/(mentor-tabs)/progress/progress',
+    },
+    {
+        id: 'profile',
+        label: 'Profile',
+        icon: icons.profile,
+        iconType: 'image',
+        showChevron: true,
+        children: [
+            { id: 'myProfile', label: 'My Profile', icon: icons.myProfile, iconType: 'image', route: '/(mentor-tabs)/profile/my-profile' },
+            { id: 'documents', label: 'Documents', icon: icons.document, iconType: 'image', route: '/(mentor-tabs)/profile/my-profile' },
+            { id: 'certificate', label: 'Certificate', icon: icons.certificate, iconType: 'image', route: '/(mentor-tabs)/profile/certificate' },
+            { id: 'microGrant', label: 'Micro Grant', icon: icons.microGrant, iconType: 'image', route: '/(mentor-tabs)/profile/grant' },
+        ],
+    },
+    {
+        id: 'settings',
+        label: 'Settings',
+        icon: icons.settings,
+        iconType: 'image',
+        showChevron: true,
+        children: [
+            { id: 'changePassword', label: 'Change Password', icon: icons.changePass, iconType: 'image', route: '/(mentor-tabs)/profile/my-profile' },
+            { id: 'turnOffNotifications', label: 'Turn Off Notifications', icon: icons.turnOffNotification, iconType: 'image', route: '/(mentor-tabs)/notifications' },
+        ],
+    },
+];

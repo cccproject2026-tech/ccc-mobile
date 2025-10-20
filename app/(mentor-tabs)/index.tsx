@@ -3,27 +3,37 @@ import {
   CardBox,
   MentorCard,
   RoadMapCard,
-} from "@/components/atom/cards";
-import { Search } from "@/components/atom/Search";
-import { Button } from "@/components/build-components";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
-import { icons } from "@/constants/images";
-import { LinearGradient } from "expo-linear-gradient";
-import { Stack } from "expo-router";
-import React from "react";
-import {
-  Image,
-  ImageBackground,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+} from "@/components/atom/cards"
+import { Search } from "@/components/atom/Search"
+import { Button } from "@/components/build-components"
+import HeaderHero from "@/components/director/HeroHeader"
+import WelcomeCard from "@/components/director/WelcomeCard"
+import { Colors } from "@/constants/Colors"
+import { icons } from "@/constants/images"
+import { formatClock, formatDate } from "@/utils/date"
+import { LinearGradient } from "expo-linear-gradient"
+import { StatusBar } from "expo-status-bar"
+import React, { useMemo, useState } from "react"
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native"
+import MapView, { Marker } from "react-native-maps"
+import Animated, {
+  useAnimatedRef,
+  useScrollViewOffset,
+} from "react-native-reanimated"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export default function MentorDashboard({ navigation }: { navigation: any }) {
-  const [searchText, setSearchText] = React.useState("");
+  const [searchText, setSearchText] = useState("")
+  const [now] = useState(new Date())
+  const [mapRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  })
+  const insets = useSafeAreaInsets()
+  const scrollRef = useAnimatedRef<Animated.ScrollView>()
+  const scrollOffset = useScrollViewOffset(scrollRef)
 
   const users = [
     // India
@@ -62,82 +72,13 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
       location: "Beijing, China",
     },
     // Add more users as needed
-  ];
-  const getCurrentTime = () => {
-    const now = new Date();
-    let hours = now.getHours();
-    const minutes = now.getMinutes();
-    const ampm = hours >= 12 ? "PM" : "AM";
-
-    // Convert 24-hour format to 12-hour format
-    hours = hours % 12;
-    hours = hours ? hours : 12; // If hour is 0, show 12
-
-    // Add leading zero to minutes if needed
-    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-
-    return `${hours} : ${formattedMinutes} ${ampm}`;
-  };
-  const greeting = () => {
-    const currentHour = new Date().getHours();
-    let greeting;
-
-    // Determine the greeting based on the current hour
-    if (currentHour < 12) {
-      greeting = "Good Morning";
-    } else if (currentHour < 18) {
-      greeting = "Good Afternoon";
-    } else {
-      greeting = "Good Evening";
-    }
-    return greeting;
-  };
-
-  let greetingMessage = greeting();
-
-  const getCurrentDayAndDate = () => {
-    const now = new Date();
-
-    // Arrays for days and months
-    const days = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
-    // Get day, month, and date
-    const day = days[now.getDay()];
-    const month = months[now.getMonth()];
-    const date = now.getDate();
-
-    return `${day}, ${month} ${date}`;
-  };
-
-  // Example usage
-  const currentDayAndDate = getCurrentDayAndDate();
-  console.log(currentDayAndDate); // e.g., "Tuesday, Sep 23"
-
-  // Example usage
-  const currentTime = getCurrentTime();
-  console.log(currentTime); // e.g., "12:00 PM"
+  ]
+  const greeting = useMemo(() => {
+    const h = now.getHours()
+    if (h < 12) return "Good Morning"
+    if (h < 18) return "Good Afternoon"
+    return "Good Evening"
+  }, [now])
 
   const dummyAppointments = [
     {
@@ -154,7 +95,7 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
       role: "Field Mentor",
       mode: "meet",
     },
-  ];
+  ]
   const dummyRoadMaps = [
     {
       phase: "Phase 1",
@@ -171,7 +112,7 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
       title: "Survey",
       status: "Remaining",
     },
-  ];
+  ]
   const dummyMentors = [
     {
       name: "John Doe",
@@ -181,286 +122,251 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
       name: "John Doe",
       role: "Field Mentor",
     },
-  ];
+  ]
 
   return (
     <>
-      {/* <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, "#1D548D", "#264387"]}
         style={{ flex: 1 }}
-      > */}
-      <SafeAreaView style={{ flex: 1 }}>
-        <Stack.Screen options={{ headerShown: false }} />
-        <ScrollView contentContainerStyle={styles.container}>
-          <ImageBackground
-            source={icons.backgroundImage}
-            style={styles.backgroundImage}
-            resizeMode="cover"
+      >
+        <Animated.ScrollView
+          ref={scrollRef}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 16 + insets.bottom }}
+        >
+          <HeaderHero
+            height={280}
+            image={icons.backgroundImage}
+            bottomBlendColor={Colors.lightBlueGradientOne}
+            clock={formatClock(now)}
+            date={formatDate(now)}
+            scrollOffset={scrollOffset}
+          />
+          <LinearGradient
+            colors={[Colors.lightBlueGradientOne, "transparent"]}
+            style={{ minHeight: "100%" }}
           >
-            <View className="mt-4">
-              <PastorNavigationHeader route="/(mentor-tabs)/notifications" />
-            </View>
-            <View style={styles.contentContainer}>
-              <Text className="text-white text-[22px] leading-[22px] font-semibold">
-                {currentTime}
-              </Text>
-              <Text className="text-base leading-[22px] text-white font-semibold">
-                {currentDayAndDate}
-              </Text>
-            </View>
-            <View></View>
-            <View style={{ marginHorizontal: 16, paddingVertical: 10 }}>
+            <View style={{ paddingHorizontal: 16, marginTop: 12, gap: 8 }}>
               <Text
-                className="font-bold"
-                style={[styles.text, { ...{ paddingVertical: 10 } }]}
+                style={{ fontSize: 16, color: "#e7f6fc", fontWeight: "700" }}
               >
-                {greetingMessage}
+                {greeting}
               </Text>
-              <View
-                style={{
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: "white",
-                  borderRadius: 10,
-                  height: 90,
-                  padding: 10,
-                  flexDirection: "row",
-                  backgroundColor: "#14517d",
+              <WelcomeCard
+                onClick={() => {}}
+                avatar={icons.myProfile}
+                message="John Doe, Welcome !"
+              />
+            </View>
+            <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="w-full"
+                contentContainerStyle={{
+                  gap: 16,
+                  paddingVertical: 10,
+                  marginTop: 8,
                 }}
               >
-                <Image
-                  source={icons.myProfile} // Replace with actual user profile image URL
-                  style={{ width: 60, height: 60, borderRadius: 30 }}
-                  resizeMode="contain"
-                />
-                <View style={{ paddingHorizontal: 10, gap: 10 }}>
-                  <Text
-                    className="font-semibold"
-                    style={[styles.text, { ...{ fontSize: 16 } }]}
-                  >
-                    John Doe, Welcome !
-                  </Text>
-                  {/* <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text className="font-medium text-white text-[16px]">
-                      Progress{" "}
-                    </Text>
-                    <View
-                      style={{
-                        backgroundColor: "black",
-                        //   borderWidth: 4,
-                        borderRadius: 10,
-                        width: "50%",
-                        //   borderColor: "white",
-                      }}
-                    >
-                      <View
-                        style={{
-                          backgroundColor: "white",
-                          width: "70%",
-                          height: 6,
-                          borderRadius: 10,
-                        }}
-                      ></View>
-                    </View>
-                    <Text style={[styles.text, { ...{ fontSize: 16 } }]}>
-                      {" "}
-                      70%
-                    </Text>
-                  </View> */}
+                <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
+                  <Image
+                    source={icons.video}
+                    className="w-full h-full rounded-[25px]"
+                    resizeMode="cover"
+                  />
+                </View>
+
+                <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
+                  <Image
+                    source={icons.video}
+                    className="w-full h-full rounded-[25px]"
+                    resizeMode="cover"
+                  />
+                </View>
+
+                <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
+                  <Image
+                    source={icons.video}
+                    className="w-full h-full rounded-[25px]"
+                    resizeMode="cover"
+                  />
+                </View>
+              </ScrollView>
+            </View>
+            <View style={styles.separator} />
+            {/* Appointments Section */}
+            <View
+              style={{ paddingHorizontal: 16, marginTop: 14, marginBottom: 20 }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 15, color: "#e7f6fc", fontWeight: "700" }}
+                >
+                  Today's Appointments
+                </Text>
+                <Text
+                  style={{ color: "#cfe9f3", fontWeight: "600", fontSize: 13 }}
+                >
+                  See all
+                </Text>
+              </View>
+              <View
+                style={{
+                  marginTop: 10,
+                  gap: 12,
+                  borderBottomColor: "#ffffff22",
+                  borderBottomWidth: 1,
+                  paddingBottom: 18,
+                }}
+              >
+                {dummyAppointments.map((e, i) => (
+                  <AppointmentCard
+                    data={e}
+                    dataKey={i.toString()}
+                    type={"mentor"}
+                    key={i}
+                  />
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.RoadMapContainer}>
+              <View style={styles.RoadMapHeaderRow}>
+                <Text className="text-white font-bold text-[17px]">
+                  Roadmap List
+                </Text>
+                <Text className="text-white font-medium text-[16px]">
+                  See all
+                </Text>
+              </View>
+              <View className="gap-2">
+                {dummyRoadMaps.map((e, i) => (
+                  <RoadMapCard data={e} dataKey={i.toString()} key={i} />
+                ))}
+              </View>
+              <View className="w-full">
+                <Button
+                  buttonClass="max-w-[130px] ml-auto"
+                  bgColor="white"
+                  textColor="#001FC1"
+                >
+                  Add New Entry
+                </Button>
+              </View>
+            </View>
+            <View style={styles.separator} />
+
+            <View style={styles.ExploreContainer}>
+              <View style={styles.headerExploreContainer}>
+                <Text className="text-white font-bold text-[16px]">
+                  Explore CCC
+                </Text>
+              </View>
+
+              <View className="items-center justify-center w-full px-2 py-5">
+                <View className="flex-row gap-3">
+                  <CardBox
+                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                    title="Mentees"
+                    icon={icons.Revitalization2}
+                  />
+                  <CardBox
+                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                    title="Track Progress"
+                    icon={icons.Assessments2}
+                  />
+                  <CardBox
+                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                    title="Revitalization Roadmap"
+                    icon={icons.Assessments2}
+                  />
+                </View>
+                <View className="flex-row gap-3">
+                  <CardBox
+                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                    title="Assessments"
+                    icon={icons.progress2}
+                  />
+                  <CardBox
+                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                    title="Schedule"
+                    icon={icons.Appointments2}
+                  />
+                  <CardBox
+                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
+                    title="Courses"
+                    icon={icons.Appointments2}
+                  />
                 </View>
               </View>
             </View>
-          </ImageBackground>
-          <View
-            style={{
-              backgroundColor: "#196394",
-              height: "100%",
-              width: "100%",
-            }}
-          >
-            <LinearGradient
-              colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-              style={{ flex: 1 }}
-            >
-              <View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  className="w-full"
-                  contentContainerStyle={{
-                    paddingHorizontal: 20,
-                    gap: 16,
-                    paddingVertical: 10,
-                    marginTop: 8,
-                  }}
-                >
-                  <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
-                    <Image
-                      source={icons.video}
-                      className="w-full h-full rounded-[25px]"
-                      resizeMode="cover"
-                    />
-                  </View>
+            <View
+              style={{
+                height: 2,
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                marginHorizontal: 16,
+                marginBottom: 20,
+              }}
+            />
 
-                  <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
-                    <Image
-                      source={icons.video}
-                      className="w-full h-full rounded-[25px]"
-                      resizeMode="cover"
-                    />
-                  </View>
-
-                  <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
-                    <Image
-                      source={icons.video}
-                      className="w-full h-full rounded-[25px]"
-                      resizeMode="cover"
-                    />
-                  </View>
-                </ScrollView>
-                <View style={styles.separator} />
-                {/* Appointments Section   */}
-                <View style={styles.appointmentsContainer}>
-                  <View style={styles.rowBetween}>
-                    <Text className="text-white font-bold text-[17px]">
-                      Today's Appointments
-                    </Text>
-                    <Text className="text-white font-medium text-[16px]">
-                      See all
-                    </Text>
-                  </View>
-                  {dummyAppointments.map((e, i) => (
-                    <AppointmentCard
-                      data={e}
-                      dataKey={i.toString()}
-                      type={"mentor"}
-                      key={i}
-                    />
-                  ))}
-                </View>
-                <View style={styles.separator} />
-                {/* Road Maps Section */}
-
-                <View style={styles.RoadMapContainer}>
-                  <View style={styles.RoadMapHeaderRow}>
-                    <Text className="text-white font-bold text-[17px]">
-                      Roadmap List
-                    </Text>
-                    <Text className="text-white font-medium text-[16px]">
-                      See all
-                    </Text>
-                  </View>
-                  <View className="gap-2">
-                    {dummyRoadMaps.map((e, i) => (
-                      <RoadMapCard data={e} dataKey={i.toString()} key={i} />
-                    ))}
-                  </View>
-                  <View className="w-full">
-                    <Button
-                      buttonClass="max-w-[130px] ml-auto"
-                      bgColor="white"
-                      textColor="#001FC1"
-                    >
-                      Add New Entry
-                    </Button>
-                  </View>
-                </View>
-                <View style={styles.separator} />
-
-                {/* Explore CCC section  */}
-
-                <View style={styles.ExploreContainer}>
-                  <View style={styles.headerExploreContainer}>
-                    <Text className="text-white font-bold text-[16px]">
-                      Explore CCC
-                    </Text>
-                  </View>
-
-                  <View className="py-5 px-2 w-full justify-center items-center">
-                    <View className="flex-row gap-3">
-                      <CardBox
-                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                        title="Mentees"
-                        icon={icons.Revitalization2}
-                      />
-                      <CardBox
-                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                        title="Track Progress"
-                        icon={icons.Assessments2}
-                      />
-                      <CardBox
-                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                        title="Revitalization Roadmap"
-                        icon={icons.Assessments2}
-                      />
-                    </View>
-                    <View className="flex-row gap-3">
-                      <CardBox
-                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                        title="Assessments"
-                        icon={icons.progress2}
-                      />
-                      <CardBox
-                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                        title="Schedule"
-                        icon={icons.Appointments2}
-                      />
-                      <CardBox
-                        cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                        title="Courses"
-                        icon={icons.Appointments2}
-                      />
-                    </View>
-                  </View>
-                </View>
-                <View
-                  style={{
-                    height: 2,
-                    backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
-                    marginHorizontal: 16,
-                    marginBottom: 20,
-                  }}
-                />
-
-                <View style={styles.mentorContainer}>
-                  <View style={styles.mentorHeaderContainer}>
-                    <Text className="text-white font-bold text-[17px]">
-                      My Mentors
-                    </Text>
-                    <Text className="text-white font-medium text-[16px]">
-                      See all
-                    </Text>
-                  </View>
-                  {dummyMentors.map((e, i) => (
-                    <MentorCard
-                      key={i}
-                      data={e}
-                      dataKey={i.toString()}
-                      navigation={navigation}
-                      onMenuPress={() => {}}
-                    />
-                  ))}
-                </View>
-                <View style={styles.separator} />
-
-                <View style={styles.searchContainer}>
-                  <Search
-                    searchText={searchText}
-                    setSearchText={setSearchText}
-                  />
-                </View>
-                <View className="max-w-[410px] h-[415px] rounded-[10px] bg-white/80 flex justify-center items-center my-2.5 mx-5 mb-32">
-                  <Text>Map Integration</Text>
-                </View>
+            <View style={[styles.mentorContainer, { marginBottom: 24 }]}>
+              <View style={styles.mentorHeaderContainer}>
+                <Text className="text-white font-bold text-[17px]">
+                  Reminders
+                </Text>
+                <Text className="text-white font-medium text-[16px]">
+                  See all
+                </Text>
               </View>
-            </LinearGradient>
-            {/* other content  */}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-      {/* </LinearGradient> */}
+              {dummyMentors.map((e, i) => (
+                <MentorCard
+                  key={i}
+                  data={e}
+                  dataKey={i.toString()}
+                  navigation={navigation}
+                  onMenuPress={() => {}}
+                />
+              ))}
+            </View>
+
+            <View className="px-5 flex-row justify-between">
+              <Text className="text-white font-bold text-[17px]">
+                Mentees
+              </Text>
+            </View>
+            <View style={styles.searchContainer}>
+              <Search searchText={searchText} setSearchText={setSearchText} />
+            </View>
+            <View className="my-2.5 mx-5 mb-32 rounded-[10px] overflow-hidden" style={{ height: 410 }}>
+              <MapView
+                style={{ width: "100%", height: "100%" }}
+                region={mapRegion}
+                showsUserLocation={false}
+                showsMyLocationButton={false}
+                showsCompass={true}
+                showsScale={true}
+                showsBuildings={true}
+                showsIndoors={true}
+                mapType="standard"
+              >
+                <Marker coordinate={{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }} />
+              </MapView>
+            </View>
+          </LinearGradient>
+        </Animated.ScrollView>
+      </LinearGradient>
     </>
-  );
+  )
 }
 const styles = StyleSheet.create({
   searchContainer: {
@@ -584,7 +490,6 @@ const styles = StyleSheet.create({
     marginVertical: 18,
   },
   RoadMapContainer: {
-    flex: 1,
     gap: 16,
     position: "relative",
     marginHorizontal: 16,
@@ -652,4 +557,4 @@ const styles = StyleSheet.create({
     fontFamily: "AlbertBold", // font-albertBold
     textAlign: "center",
   },
-});
+})

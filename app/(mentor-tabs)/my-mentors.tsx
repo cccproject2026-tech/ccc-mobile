@@ -62,10 +62,10 @@ export default function MyMentorsScreen() {
   const [searchText, setSearchText] = useState("");
 
   const handleMenuPress = (mentor: Mentor) => {
-    router.push({
-      pathname: "/(pastor-tabs)/(tabs)/schedule-meeting",
-      params: { mentorData: JSON.stringify(mentor) },
-    });
+    // router.push({
+    //   pathname: "/(pastor-tabs)/(tabs)/schedule-meeting",
+    //   params: { mentorData: JSON.stringify(mentor) },
+    // });
   };
   return (
     <>
