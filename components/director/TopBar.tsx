@@ -44,7 +44,7 @@ const TopBar: React.FC<Props> = ({
         } else if (role === 'pastor') {
             router.push('/(pastor-tabs)/(tabs)/notifications');
         } else {
-            router.push('/(pastor-tabs)/(tabs)/notifications');
+            router.push('/(mentor-tabs)/(tabs)/notifications');
         }
     }
 

@@ -1,13 +1,11 @@
-import React, { useEffect } from "react";
-import { View } from "react-native";
-
-import { DrawerOverlay } from "@/components/atom/DrawerOverlay";
+import CustomDrawerContent from '@/components/director/CustomDrawer';
+import { MentorMenuItems } from '@/constants/mockData';
 import { useData } from "@/dataContext";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { Stack } from "expo-router";
+import { Drawer } from 'expo-router/drawer';
+import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 
-export default function MentorTabLayout() {
-  const colorScheme = useColorScheme();
+export default function MentorDrawerLayout() {
   const { setCurrentScreenState } = useData();
 
   useEffect(() => {
@@ -15,54 +13,26 @@ export default function MentorTabLayout() {
   }, [setCurrentScreenState]);
 
   return (
-    <View style={{ flex: 1 }}>
-      <Stack />
-      {/* <Tabs
+    <Drawer
+      drawerContent={(props) => (
+        <CustomDrawerContent userRole="mentor" menuItems={MentorMenuItems} {...props} />
+      )}
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        drawerType: 'front',
+        drawerStyle: {
+          width: Platform.OS === 'android' ? 290 : 320,
+        },
         headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
-      <Tabs.Screen
+      }}
+    >
+      <Drawer.Screen
         name="index"
         options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          headerShown: false,
+          drawerItemStyle: { display: 'none' },
         }}
       />
-      <Tabs.Screen
-        name="mentees"
-        options={{
-          title: 'Mentees',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.2.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="sessions"
-        options={{
-          title: 'Sessions',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="resources"
-        options={{
-          title: 'Resources',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="folder.fill" color={color} />,
-        }}
-      />
-    </Tabs> */}
-
-      <DrawerOverlay />
-    </View>
+    </Drawer>
   );
 }
 
