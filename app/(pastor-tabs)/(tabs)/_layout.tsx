@@ -1,9 +1,10 @@
 import { Tabs, usePathname } from 'expo-router';
-import React, { useState } from 'react';
-import { Dimensions, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, Image, Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { icons } from '@/constants/images';
 import { AssessmentProvider } from '@/context/AssessmentsContext';
 import { RoadmapProgressProvider } from '@/context/RoadmapProgressContext';
 import { StatusBar } from 'react-native';
@@ -58,39 +59,24 @@ export default function PastorTabLayout() {
 
     const tabBarConfig = getTabBarConfig();
 
-    // Hide tab bar for specific routes
-    // useEffect(() => {
+    useEffect(() => {
 
-    //     // Define patterns that should hide the tab bar
-    //     const hideTabBarPatterns = [
-    //         // Specific route patterns
-    //         /\/assign-mentor$/,
-    //         /\/assign-mentee$/,
-    //         /\/remove-mentor$/,
-    //         /\/remove-mentee$/,
-    //         /\/select-roadmap$/,
+        // Define patterns that should hide the tab bar
+        const hideTabBarPatterns = [
+            // Specific route patterns
+            /\/report$/,
+        ];
 
-    //         // Detail pages with dynamic IDs
-    //         /\/revitalization-roadmaps\/[^\/]+$/,
+        const shouldHide = hideTabBarPatterns.some(pattern => {
+            const matches = pattern.test(pathname);
+            if (matches) {
+                console.log(`Pattern ${pattern} matched pathname ${pathname}`);
+            }
+            return matches;
+        });
 
-    //         // Sub-routes of new-interests (but not the main page)
-    //         /^\/new-interests\/.+/,
-
-    //         // Any modal or overlay routes
-    //         /\/modal\//,
-    //         /\/overlay\//,
-    //     ];
-
-    //     const shouldHide = hideTabBarPatterns.some(pattern => {
-    //         const matches = pattern.test(pathname);
-    //         if (matches) {
-    //             console.log(`Pattern ${pattern} matched pathname ${pathname}`);
-    //         }
-    //         return matches;
-    //     });
-
-    //     setTabBarVisible(!shouldHide);
-    // }, [pathname]);
+        setTabBarVisible(!shouldHide);
+    }, [pathname]);
 
 
     return (
@@ -125,22 +111,38 @@ export default function PastorTabLayout() {
                             tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
                         }}
                     />
-                    <Tabs.Screen
+                    {/* <Tabs.Screen
                         name="discover"
                         options={{
                             title: 'Discover',
                             tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
                         }}
-                    />
+                    /> */}
                     <Tabs.Screen
                         name="profile"
                         options={{
                             title: 'Profile',
-                            tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
+                            tabBarIcon: ({ color }) => <Image source={icons.profileTabIcon} style={{ width: 28, height: 28, tintColor: color }} />,
+                        }}
+                    />
+
+                    <Tabs.Screen
+                        name="appointments"
+                        options={{
+                            title: '',
+                            href: null,
                         }}
                     />
                     <Tabs.Screen
-                        name="appointments"
+                        name="mentors"
+                        options={{
+                            title: '',
+                            href: null,
+                        }}
+                    />
+
+                    <Tabs.Screen
+                        name="new-roadmap"
                         options={{
                             title: '',
                             href: null,

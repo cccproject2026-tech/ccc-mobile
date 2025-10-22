@@ -1,5 +1,5 @@
 import { Assessment } from "@/lib/assessments/types";
-import { getFontSize, getIconSize, getSpacing, moderateScale, verticalScale } from "@/utils/responsive";
+import { getFontSize, getIconSize, getSpacing, isIOS, moderateScale, verticalScale } from "@/utils/responsive";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
@@ -17,65 +17,81 @@ export default function AssessmentCard({
   onMeetingIconPress?: () => void;
   onCustomizedPress?: () => void;
 }) {
+  // iOS compression factors
+  const fontCompress = isIOS ? 0.92 : 1;
+  const spacingCompress = isIOS ? 0.85 : 1;
+  const imageCompress = isIOS ? 0.92 : 1;
+  const cardCompress = isIOS ? 0.96 : 1;
+
   return (
     <TouchableOpacity
-      onPress={() => onPress && onPress(data)} // Use the passed onPress handler
-      className="w-full bg-[#194F82] rounded-[10px] py-2 px-2 my-2.5 border border-[#FFFFFF73]"
+      onPress={() => onPress && onPress(data)}
+      style={{
+        width: '100%',
+        backgroundColor: '#194F82',
+        borderRadius: moderateScale(10 * cardCompress),
+        paddingVertical: getSpacing(14 * spacingCompress),
+        paddingHorizontal: getSpacing(14 * spacingCompress), // Add more horizontal padding
+        marginVertical: getSpacing(2.5 * spacingCompress),
+        borderWidth: 1,
+        borderColor: '#FFFFFF73',
+      }}
     >
-      <View className="flex-row items-start w-full">
-        <View style={{ width: moderateScale(130) }} className="items-center">
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', width: '100%' }}>
+        <View style={{ width: moderateScale(130 * imageCompress), alignItems: 'center' }}>
           <View
             style={{
-              width: "100%",
-              height: verticalScale(138),
-              backgroundColor: "#00ABAE",
-              borderWidth: moderateScale(5),
-              borderColor: "#BFFEFE",
-              borderRadius: moderateScale(15),
+              width: '100%',
+              height: verticalScale(138 * imageCompress),
+              backgroundColor: '#00ABAE',
+              borderWidth: moderateScale(5 * cardCompress),
+              borderColor: '#BFFEFE',
+              borderRadius: moderateScale(15 * cardCompress),
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-            className="items-center justify-center"
           >
             <Text
               style={{
-                color: "#001B4A",
-                fontSize: getFontSize(40),
-                fontWeight: "800",
+                color: '#001B4A',
+                fontSize: getFontSize(40 * fontCompress),
+                fontWeight: '800',
               }}
             >
               {data?.type}
             </Text>
             <View
               style={{
-                height: moderateScale(0.5),
-                width: "80%",
-                backgroundColor: "white",
-                borderRadius: moderateScale(1),
-                marginTop: moderateScale(-6),
+                height: moderateScale(0.5 * cardCompress),
+                width: '80%',
+                backgroundColor: 'white',
+                borderRadius: moderateScale(1 * cardCompress),
+                marginTop: moderateScale(-6 * cardCompress),
               }}
             />
             <Text
               style={{
-                color: "white",
-                fontSize: getFontSize(9),
-                fontWeight: "800",
-                textAlign: "center",
-                marginTop: getSpacing(8),
-                lineHeight: getFontSize(18),
-                paddingHorizontal: getSpacing(4),
+                color: 'white',
+                fontSize: getFontSize(9 * fontCompress),
+                fontWeight: '800',
+                textAlign: 'center',
+                marginTop: getSpacing(8 * spacingCompress),
+                lineHeight: getFontSize(18 * fontCompress),
+                paddingHorizontal: getSpacing(4 * spacingCompress),
               }}
             >
-              {data?.type === "CMA"
-                ? "CHURCH ASSESSMENT EVALUATION"
-                : "PASTORAL MINISTRY PROFILE"}
+              {data?.type === 'CMA'
+                ? 'CHURCH ASSESSMENT EVALUATION'
+                : 'PASTORAL MINISTRY PROFILE'}
             </Text>
           </View>
           {data?.dueDate && (
-            <View className="items-center w-full mt-3">
+            <View style={{ alignItems: 'center', width: '100%', marginTop: getSpacing(3 * spacingCompress) }}>
               <Text
                 style={{
-                  fontSize: getFontSize(12),
-                  fontWeight: "700",
-                  color: data?.status === "Due" ? "#EAB308" : "white",
+                  fontSize: getFontSize(12 * fontCompress),
+                  fontWeight: '700',
+                  color: data?.status === 'Due' ? '#EAB308' : 'white',
                 }}
               >
                 Due : {data?.dueDate}
@@ -84,14 +100,14 @@ export default function AssessmentCard({
           )}
         </View>
 
-        <View style={{ marginLeft: getSpacing(10) }} className="flex-1 gap-1">
+        <View style={{ marginLeft: getSpacing(10 * spacingCompress), flex: 1 }}>
           <View>
             <Text
               style={{
-                color: "white",
-                fontSize: getFontSize(16),
-                lineHeight: getFontSize(22),
-                fontWeight: "600",
+                color: 'white',
+                fontSize: getFontSize(15 * fontCompress),
+                lineHeight: getFontSize(20 * fontCompress),
+                fontWeight: '600',
               }}
               ellipsizeMode="tail"
             >
@@ -100,9 +116,9 @@ export default function AssessmentCard({
           </View>
           <Text
             style={{
-              paddingVertical: getSpacing(8),
-              color: "#F4F2F2B5",
-              fontSize: getFontSize(14),
+              paddingVertical: getSpacing(6 * spacingCompress),
+              color: '#F4F2F2B5',
+              fontSize: getFontSize(13 * fontCompress),
             }}
           >
             {data?.description}
@@ -110,23 +126,23 @@ export default function AssessmentCard({
           <TouchableOpacity
             style={{
               borderWidth: 1,
-              borderColor: "#FFFFFF33",
-              paddingVertical: getSpacing(4),
-              paddingHorizontal: getSpacing(8),
-              marginVertical: getSpacing(4),
-              borderRadius: moderateScale(8),
-              maxWidth: "70%",
+              borderColor: '#FFFFFF33',
+              paddingVertical: getSpacing(3 * spacingCompress),
+              paddingHorizontal: getSpacing(7 * spacingCompress),
+              marginVertical: getSpacing(3 * spacingCompress),
+              borderRadius: moderateScale(8 * cardCompress),
+              maxWidth: '70%',
+              alignItems: 'center',
             }}
-            className="items-center"
           >
-            <Text style={{ fontSize: getFontSize(14), fontWeight: "500", color: "white" }}>
-              Status{" "}
-              <Text style={{ fontWeight: "900", color: "white" }}>•</Text>{" "}
+            <Text style={{ fontSize: getFontSize(13 * fontCompress), fontWeight: '500', color: 'white' }}>
+              Status{' '}
+              <Text style={{ fontWeight: '900', color: 'white' }}>•</Text>{' '}
               <Text
                 style={{
-                  fontSize: getFontSize(14),
-                  fontWeight: "500",
-                  color: data?.status === "Due" ? "#EAB308" : "white",
+                  fontSize: getFontSize(13 * fontCompress),
+                  fontWeight: '500',
+                  color: data?.status === 'Due' ? '#EAB308' : 'white',
                 }}
               >
                 {data?.status}
@@ -135,31 +151,31 @@ export default function AssessmentCard({
           </TouchableOpacity>
           {data?.completionDate && (
             <View>
-              <Text style={{ fontSize: getFontSize(14), fontWeight: "500", color: "white" }}>
+              <Text style={{ fontSize: getFontSize(13 * fontCompress), fontWeight: '500', color: 'white' }}>
                 Completed on : {data?.completionDate}
               </Text>
             </View>
           )}
 
-          {((data?.status === "Not Started") || (data?.status === "Due")) && (
+          {((data?.status === 'Not Started') || (data?.status === 'Due')) && (
             <TouchableOpacity
               style={{
-                backgroundColor: "white",
-                alignItems: "center",
-                borderRadius: moderateScale(10),
-                paddingVertical: getSpacing(5),
-                marginVertical: getSpacing(12),
-                width: "70%",
+                backgroundColor: 'white',
+                alignItems: 'center',
+                borderRadius: moderateScale(10 * cardCompress),
+                paddingVertical: getSpacing(4 * spacingCompress),
+                marginVertical: getSpacing(8 * spacingCompress),
+                width: '70%',
               }}
-              onPress={() => onPress && onPress(data)} // Use onPress for Start Now too
+              onPress={() => onPress && onPress(data)}
             >
               <Text
                 style={{
-                  fontSize: getFontSize(16),
-                  color: "#001FC1",
-                  fontWeight: "600",
-                  paddingBottom: getSpacing(4),
-                  lineHeight: getFontSize(22),
+                  fontSize: getFontSize(15 * fontCompress),
+                  color: '#001FC1',
+                  fontWeight: '600',
+                  paddingBottom: getSpacing(3 * spacingCompress),
+                  lineHeight: getFontSize(20 * fontCompress),
                 }}
               >
                 Start Now
@@ -168,40 +184,42 @@ export default function AssessmentCard({
           )}
         </View>
       </View>
-      {data?.type === "PMP" && (
-        <>
-          {data?.status === "Submitted" && data?.meetingDate ? (
+      {data?.type === 'PMP' && (
+        <View style={{
+          paddingTop: 5
+        }}>
+          {data?.status === 'Submitted' && data?.meetingDate ? (
             <LinearGradient
-              colors={["#B83AF3", "#21B6E9"]}
+              colors={['#B83AF3', '#21B6E9']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={{
-                borderRadius: moderateScale(10),
-                padding: moderateScale(2),
-                marginVertical: getSpacing(12),
-                width: "95%",
-                alignSelf: "center",
+                borderRadius: moderateScale(10 * cardCompress),
+                padding: moderateScale(2 * cardCompress),
+                marginVertical: getSpacing(8 * spacingCompress),
+                width: '95%',
+                alignSelf: 'center',
               }}
             >
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#233A6F",
-                  borderRadius: moderateScale(8),
-                  alignItems: "center",
-                  paddingVertical: getSpacing(7),
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  paddingHorizontal: getSpacing(10),
+                  backgroundColor: '#233A6F',
+                  borderRadius: moderateScale(8 * cardCompress),
+                  alignItems: 'center',
+                  paddingVertical: getSpacing(5 * spacingCompress),
+                  paddingHorizontal: getSpacing(14 * spacingCompress), // Add horizontal padding
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
                 }}
                 onPress={onMeetingPress}
               >
                 <Text
                   style={{
-                    fontSize: getFontSize(16),
-                    color: "#EAB308",
-                    fontWeight: "600",
-                    lineHeight: getFontSize(20),
-                    paddingVertical: getSpacing(4),
+                    fontSize: getFontSize(14 * fontCompress),
+                    color: '#EAB308',
+                    fontWeight: '600',
+                    lineHeight: getFontSize(18 * fontCompress),
+                    paddingVertical: getSpacing(3 * spacingCompress),
                   }}
                 >
                   Meeting Scheduled on {data?.meetingDate}
@@ -210,41 +228,42 @@ export default function AssessmentCard({
                   <Image
                     source={require("../../../assets/icons/threeDots.png")}
                     style={{
-                      width: getIconSize(24),
-                      height: getIconSize(24),
-                      resizeMode: "contain",
+                      width: getIconSize(20 * imageCompress),
+                      height: getIconSize(20 * imageCompress),
+                      resizeMode: 'contain',
                     }}
                   />
                 </TouchableOpacity>
               </TouchableOpacity>
             </LinearGradient>
-          ) : data?.status === "Completed" ? (
+          ) : data?.status === 'Completed' ? (
             <TouchableOpacity
               style={{
-                alignSelf: "center",
-                backgroundColor: "white",
-                borderRadius: moderateScale(10),
-                alignItems: "center",
-                paddingVertical: getSpacing(7),
-                marginVertical: getSpacing(12),
-                width: "95%",
+                alignSelf: 'center',
+                backgroundColor: 'white',
+                borderRadius: moderateScale(10 * cardCompress),
+                alignItems: 'center',
+                paddingVertical: getSpacing(5 * spacingCompress),
+                paddingHorizontal: getSpacing(14 * spacingCompress), // Add horizontal padding
+                marginVertical: getSpacing(8 * spacingCompress),
+                width: '95%',
               }}
               onPress={onCustomizedPress}
             >
               <Text
                 style={{
-                  paddingVertical: getSpacing(4),
-                  fontSize: getFontSize(16),
-                  color: "#001FC1",
-                  fontWeight: "600",
-                  lineHeight: getFontSize(20),
+                  paddingVertical: getSpacing(3 * spacingCompress),
+                  fontSize: getFontSize(14 * fontCompress),
+                  color: '#001FC1',
+                  fontWeight: '600',
+                  lineHeight: getFontSize(18 * fontCompress),
                 }}
               >
                 Customized Development Plans
               </Text>
             </TouchableOpacity>
           ) : null}
-        </>
+        </View>
       )}
     </TouchableOpacity>
   );

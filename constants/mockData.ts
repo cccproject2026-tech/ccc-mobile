@@ -498,19 +498,19 @@ export const PastorMenuItems: MenuItem[] = [
         iconType: 'image',
         route: '/(pastor-tabs)/mentors',
     },
-    {
-        id: 'test',
-        label: 'test roadmap',
-        icon: icons.myMentors,
-        iconType: 'image',
-        route: '/(pastor-tabs)/new-roadmap',
-    },
+    // {
+    //     id: 'test',
+    //     label: 'test roadmap',
+    //     icon: icons.myMentors,
+    //     iconType: 'image',
+    //     route: '/(pastor-tabs)/new-roadmap',
+    // },
     {
         id: 'revitalizationRoadmap',
         label: 'Revitalization RoadMap',
         icon: icons.Revitalization,
         iconType: 'image',
-        route: '/(pastor-tabs)/roadmap/revitalization-roadmap',
+        route: '/(pastor-tabs)/new-roadmap',
     },
     {
         id: 'assessments',
@@ -545,7 +545,7 @@ export const PastorMenuItems: MenuItem[] = [
                 label: 'My Profile',
                 icon: icons.myProfile,
                 iconType: 'image',
-                route: '/(pastor-tabs)/profile/my-profile',
+                route: '/(pastor-tabs)/profile',
             },
             {
                 id: 'documents',
@@ -589,7 +589,7 @@ export const PastorMenuItems: MenuItem[] = [
                 label: 'Change Password',
                 icon: icons.changePass,
                 iconType: 'image',
-                route: '/(pastor-tabs)/profile/my-profile',
+                route: '/(pastor-tabs)/profile',
             },
             {
                 id: 'turnOffNotifications',

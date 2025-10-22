@@ -46,6 +46,9 @@ export interface ScheduleMeetingBottomSheetProps {
         accent?: string;
         cardBackground?: string;
     };
+    disableOutsideClose?: boolean; // Prevent closing by clicking outside or swiping down
+    showCancelButton?: boolean; // Control whether cancel button is shown in step 1
+    onScheduleComplete?: () => void; // Callback after successful scheduling for context updates
 }
 
 const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingBottomSheetProps>(
@@ -61,20 +64,23 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                 accent: '#FFC107',
                 cardBackground: 'rgba(255, 255, 255, 0.1)',
             },
+            disableOutsideClose = false, // Default: allow closing (existing behavior)
+            showCancelButton = true, // Default: show cancel button (existing behavior)
+            onScheduleComplete, // Optional callback for context updates
         },
         ref
     ) => {
         const { bottom } = useSafeAreaInsets();
         const deviceType = getDeviceType();
         const snapPoints = useMemo(() => {
-            // Adjust bottom sheet height based on device size
             if (deviceType === 'small') {
-                return ['88%']; // Larger percentage for small devices
+                return ['88%'];
             } else if (deviceType === 'medium') {
                 return ['82%'];
             }
-            return ['78%']; // Smaller percentage for large devices
+            return ['78%'];
         }, [deviceType]);
+
         const [currentStep, setCurrentStep] = useState<1 | 2>(1);
         const [searchQuery, setSearchQuery] = useState('');
         const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
@@ -134,10 +140,10 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                     disappearsOnIndex={-1}
                     appearsOnIndex={0}
                     opacity={0.5}
-                    pressBehavior="close"
+                    pressBehavior={disableOutsideClose ? 'none' : 'close'} // Disable backdrop press if needed
                 />
             ),
-            []
+            [disableOutsideClose]
         );
 
         const handleNext = () => {
@@ -161,6 +167,11 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                     meetingOption,
                 });
 
+                // Call the optional completion callback for context updates
+                if (onScheduleComplete) {
+                    onScheduleComplete();
+                }
+
                 // Show success modal
                 setShowSuccessModal(true);
 
@@ -171,7 +182,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                 }, 2000);
             }
         };
-
         const resetForm = () => {
             setCurrentStep(1);
             setSelectedMentor(null);
@@ -184,12 +194,14 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
         };
 
         const handleClose = () => {
-            onClose();
-            setTimeout(() => {
-                resetForm();
-            }, 300);
+            // Only allow manual close if not disabled
+            if (!disableOutsideClose) {
+                onClose();
+                setTimeout(() => {
+                    resetForm();
+                }, 300);
+            }
         };
-
         const isStep1Valid = selectedMentor !== null;
         const isStep2Valid = selectedDate && selectedTime;
 
@@ -198,10 +210,9 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                 <BottomSheetModal
                     ref={ref}
                     snapPoints={snapPoints}
-                    enablePanDownToClose
+                    enablePanDownToClose={!disableOutsideClose} // Disable swipe down if needed
                     backgroundComponent={() => null}
                     backdropComponent={renderBackdrop}
-                    // backgroundStyle={[styles.bottomSheetBackground, { backgroundColor: colorScheme.background }]}
                     handleIndicatorStyle={styles.handleIndicator}
                     onDismiss={handleClose}
                 >
@@ -211,14 +222,10 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                         end={{ x: 0.5, y: 1 }}
                         style={{ flex: 1, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20 }}
                     >
-
                         <BottomSheetScrollView
                             style={[styles.contentContainer]}
                             contentContainerStyle={{ paddingBottom: bottom + getSpacing(12), paddingTop: getSpacing(12) }}
                         >
-
-
-                            {/* Content */}
                             <View>
                                 {currentStep === 1 ? (
                                     // Step 1: Select Mentor
@@ -226,7 +233,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                         {/* Title Container */}
                                         <View style={[styles.titleContainer, { borderColor: 'rgba(255, 255, 255, 0.3)' }]}>
                                             <Text style={[styles.stepTitleLarge, { color: colorScheme.text }]}>
-                                                Select Mentor for the  Meeting
+                                                Select Mentor for the Meeting
                                             </Text>
                                         </View>
 
@@ -277,14 +284,17 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
 
                                         {/* Footer Buttons for Step 1 */}
                                         <View style={styles.step1Footer}>
-                                            <Pressable
-                                                style={[styles.cancelButton, { borderColor: 'rgba(255, 255, 255, 0.5)', backgroundColor: '#FFFFFF' }]}
-                                                onPress={handleClose}
-                                            >
-                                                <Text style={[styles.cancelButtonText, { color: '#4A5BCC' }]}>
-                                                    Cancel
-                                                </Text>
-                                            </Pressable>
+                                            {/* Conditionally render cancel button based on showCancelButton prop */}
+                                            {showCancelButton && (
+                                                <Pressable
+                                                    style={[styles.cancelButton, { borderColor: 'rgba(255, 255, 255, 0.5)', backgroundColor: '#FFFFFF' }]}
+                                                    onPress={handleClose}
+                                                >
+                                                    <Text style={[styles.cancelButtonText, { color: '#4A5BCC' }]}>
+                                                        Cancel
+                                                    </Text>
+                                                </Pressable>
+                                            )}
 
                                             <Pressable
                                                 style={[
@@ -293,6 +303,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                         backgroundColor: isStep1Valid ? 'rgba(30, 54, 111, 1)' : 'rgba(30, 54, 111, 1)',
                                                         borderWidth: 1,
                                                         borderColor: isStep1Valid ? '#fff' : 'rgba(74, 91, 204, 0.5)',
+                                                        flex: showCancelButton ? undefined : 1, // Full width if no cancel button
                                                     }
                                                 ]}
                                                 onPress={handleNext}
@@ -337,7 +348,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                             />
                                         </View>
 
-                                        {/* Time Selection - Only show if date is selected */}
+                                        {/* Time Selection */}
                                         {selectedDate && (
                                             <>
                                                 <Text style={[styles.sectionTitle, { color: colorScheme.text }]}>
@@ -445,7 +456,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                 onPress={handleBack}
                                             >
                                                 <Text style={[styles.cancelButtonText, { color: colorScheme.text }]}>
-                                                    Cancel
+                                                    Back
                                                 </Text>
                                             </Pressable>
 
@@ -455,7 +466,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                     {
                                                         backgroundColor: isStep2Valid ? 'rgba(30, 54, 111, 1)' : 'rgba(30, 54, 111, 1)',
                                                         borderWidth: 1,
-                                                        borderColor: isStep1Valid ? '#fff' : 'rgba(74, 91, 204, 0.5)',
+                                                        borderColor: isStep2Valid ? '#fff' : 'rgba(74, 91, 204, 0.5)',
                                                     }
                                                 ]}
                                                 onPress={handleSchedule}
@@ -471,7 +482,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                             </View>
                         </BottomSheetScrollView>
                     </LinearGradient>
-
                 </BottomSheetModal>
 
                 <SimpleSuccessModal
@@ -636,24 +646,27 @@ const styles = StyleSheet.create({
     },
     step1Footer: {
         flexDirection: 'row',
-        gap: getSpacing(isSmallDevice ? 10 : 12),
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: getSpacing(isSmallDevice ? 8 : 12),
         marginTop: getSpacing(isSmallDevice ? 16 : 18),
         marginBottom: getSpacing(6),
+        width: '100%',
+        paddingHorizontal: getSpacing(isSmallDevice ? 6 : 12),
     },
     cancelButton: {
-        flex: 1,
-        paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
-        borderRadius: getSpacing(isSmallDevice ? 8 : 10),
-        borderWidth: 1.5,
+        minWidth: 110,
+        flexGrow: 1,
+        paddingVertical: 14,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
     },
-    cancelButtonText: {
-        fontSize: getFontSize(isSmallDevice ? 13 : 14),
-        fontWeight: '600',
-    },
     nextButton: {
-        flex: 1,
+        minWidth: 110,
+        flexGrow: 1,
         paddingVertical: 14,
         backgroundColor: 'rgba(30, 54, 111, 1)',
         borderWidth: 2,
@@ -661,22 +674,47 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
     },
+    scheduleButton: {
+        minWidth: 110,
+        flexGrow: 1,
+        paddingVertical: 14,
+        backgroundColor: 'rgba(30, 54, 111, 1)',
+        borderWidth: 2,
+        borderColor: '#fff',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+
+    cancelButtonText: {
+        fontSize: getFontSize(isSmallDevice ? 13 : 14),
+        fontWeight: '600',
+    },
+
     nextButtonText: {
         fontSize: getFontSize(isSmallDevice ? 13 : 14),
         fontWeight: '600',
     },
+
     step2Footer: {
         flexDirection: 'row',
-        gap: getSpacing(isSmallDevice ? 10 : 12),
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: getSpacing(isSmallDevice ? 8 : 12),
         marginTop: getSpacing(isSmallDevice ? 18 : 20),
+        width: '100%',
+        paddingHorizontal: getSpacing(isSmallDevice ? 6 : 12),
     },
-    scheduleButton: {
-        flex: 1,
-        paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
-        borderRadius: getSpacing(isSmallDevice ? 8 : 10),
+    backButton: {
+        minWidth: 110,
+        flexGrow: 1,
+        paddingVertical: 14,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
     },
+
     scheduleButtonText: {
         fontSize: getFontSize(isSmallDevice ? 13 : 14),
         fontWeight: '600',

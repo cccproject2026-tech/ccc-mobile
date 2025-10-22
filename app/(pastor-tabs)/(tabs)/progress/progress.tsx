@@ -1,26 +1,53 @@
 import { ProgressCard } from "@/components/atom/cards";
 import { Tab } from "@/components/atom/tab";
 import { Header } from "@/components/build-components";
+import PMPBottomSheet from "@/components/director/PMPBottomSheet";
+import ProgressAssessmentCard from "@/components/director/ProgressAssessmentCard";
 import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarChart";
 import { ProgressPieChart } from "@/components/director/ProgressPieChart";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
+import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
-import React from "react";
+import { router } from "expo-router";
+import React, { useCallback, useRef } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ProgressScreen() {
   const [roadmapTabs, setRoadmapTabs] = React.useState("All");
   const [assessmentTabs, setAssessmentTabs] = React.useState("All");
   const [showCompleted, setShowCompleted] = React.useState(false);
-
+  const pmpSheetRef = useRef<BottomSheetModal>(null);
+  const { bottom } = useSafeAreaInsets();
   const [progress, setProgress] = React.useState<{ completedPercentage: number; remainingPercentage: number }>({
     completedPercentage: 62.5,
     remainingPercentage: 37.5,
   });
 
+  const closePMPSheet = useCallback(() => {
+    pmpSheetRef.current?.dismiss();
+  }, []);
+
+  const handleNext = () => {
+    closePMPSheet();
+    router.push('/(pastor-tabs)/(tabs)/progress/report');
+  };
+
+  const handleDownload = () => {
+    closePMPSheet();
+    router.push('/(pastor-tabs)/(tabs)/progress/report');
+  };
+
+  const openPMPSheet = useCallback(() => {
+    console.log('Opening PMP Bottom Sheet');
+    console.log('pmpSheetRef current:', pmpSheetRef.current);
+    if (pmpSheetRef.current) {
+      pmpSheetRef.current.present();
+    } else {
+      console.error('PMPBottomSheet ref is null');
+    }
+  }, []);
   const dummyRoadMaps = [
     {
       title: "Self Revitalization Phase",
@@ -188,51 +215,51 @@ export default function ProgressScreen() {
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
-        <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={styles.scrollContainer}>
+        <View style={styles.scrollContainer}>
+          <TopBar role="pastor" userName="John Ross" showUserName />
+          {/* Header Section */}
+          <Header title="My Progress" showSettings={false} hideSearchBar={true} />
+
+          {/* Toggle Buttons */}
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                !showCompleted && styles.toggleButtonActive,
+                styles.toggleButtonLeft,
+              ]}
+              onPress={() => handleSwitchProgress('inprogress')}
+            >
+              <Text style={[
+                styles.toggleButtonText,
+                !showCompleted && styles.toggleButtonTextActive
+              ]}>
+                Inprogress
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                showCompleted && styles.toggleButtonActive,
+                styles.toggleButtonRight,
+              ]}
+              onPress={() => handleSwitchProgress('completed')}
+            >
+              <Text style={[
+                styles.toggleButtonText,
+                showCompleted && styles.toggleButtonTextActive
+              ]}>
+                Completed
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
-              paddingBottom: 40,
+              paddingBottom: bottom * 1.3,
             }}
           >
-            <PastorNavigationHeader showNameTag={true} />
-            {/* Header Section */}
-            <Header title="My Progress" showSettings={false} hideSearchBar={true} />
-
-            {/* Toggle Buttons */}
-            <View style={styles.toggleContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.toggleButton,
-                  !showCompleted && styles.toggleButtonActive,
-                  styles.toggleButtonLeft,
-                ]}
-                onPress={() => handleSwitchProgress('inprogress')}
-              >
-                <Text style={[
-                  styles.toggleButtonText,
-                  !showCompleted && styles.toggleButtonTextActive
-                ]}>
-                  Inprogress
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.toggleButton,
-                  showCompleted && styles.toggleButtonActive,
-                  styles.toggleButtonRight,
-                ]}
-                onPress={() => handleSwitchProgress('completed')}
-              >
-                <Text style={[
-                  styles.toggleButtonText,
-                  showCompleted && styles.toggleButtonTextActive
-                ]}>
-                  Completed
-                </Text>
-              </TouchableOpacity>
-            </View>
 
             {/* Pie Chart Section */}
             <ProgressPieChart
@@ -350,17 +377,23 @@ export default function ProgressScreen() {
                 }}
               >
                 {filteredAssessments.map((e, i) => (
-                  <React.Fragment key={i}>
-                    <ProgressCard data={e} navigation={router} />
-                    {i < filteredAssessments.length - 1 && (
-                      <View className="h-[0.5px] bg-white/30 my-4" />
-                    )}
-                  </React.Fragment>
+                  <View key={`assessment-${i}`} style={[styles.cardWrapper, {
+                    paddingTop: i === 0 ? 15 : 0,
+                  }]}>
+                    <ProgressAssessmentCard
+                      onDevelopmentPlanPress={openPMPSheet} data={e as any} />
+                  </View>
                 ))}
               </View>
             </View>
           </ScrollView>
-        </SafeAreaView>
+          <PMPBottomSheet
+            ref={pmpSheetRef}
+            onClose={closePMPSheet}
+            onNext={handleNext}
+            onDownload={handleDownload}
+          />
+        </View>
       </LinearGradient>
     </>
   );
@@ -378,6 +411,9 @@ const styles = StyleSheet.create({
     height: 20,
     backgroundColor: "transparent",
     marginVertical: 10,
+  },
+  cardWrapper: {
+    width: '100%',
   },
   toggleContainer: {
     flexDirection: "row",

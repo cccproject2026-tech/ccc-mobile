@@ -439,6 +439,7 @@ import TopBar from '@/components/director/TopBar';
 import { DynamicFormTask } from '@/components/roadmaps/DynamicFormTask';
 import { mockRevitalization } from '@/lib/roadmap/mock';
 import { getPhase, getTask } from '@/lib/roadmap/selectors';
+import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -446,7 +447,7 @@ import { useCallback, useState } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ItemDetail() {
-    const { itemId } = useLocalSearchParams<{ itemId: string }>();
+    const { itemId, returnTo } = useLocalSearchParams<{ itemId: string; returnTo?: string }>();
     const router = useRouter();
 
     const task = getTask(mockRevitalization, itemId!);
@@ -511,9 +512,6 @@ export default function ItemDetail() {
         </View>
     );
 
-    // Show tabs only for tasks with hasOverviewTab meta
-    const showTabs = task.meta?.hasOverviewTab;
-
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
@@ -521,78 +519,137 @@ export default function ItemDetail() {
             </View>
 
             {/* Header */}
-            <View className="flex-row items-center justify-between px-4 py-4 mb-5 border-b border-white/20">
-                <View className="flex-row items-center flex-1">
-                    <TouchableOpacity onPress={() => router.back()}>
+
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: getSpacing(8),
+                paddingVertical: getSpacing(16),
+                marginBottom: getSpacing(16),
+                borderBottomWidth: 1,
+                borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+            }}>
+                {/* Left side - Back button and Text */}
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    flex: 1,
+                    marginRight: getSpacing(12), // Add space before right elements
+                }}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            if (returnTo) {
+                                // navigate to provided return path (assignments)
+                                router.push(returnTo as any);
+                                return;
+                            }
+                            router.back();
+                        }}
+                        style={{ marginRight: getSpacing(8) }}
+                    >
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
-                    <View className="ml-2">
-                        <Text className="text-xl font-bold leading-6 text-white">
-                            {phase?.title || 'Revitalization Roadmap'}
+
+                    {/* Text Container with flex to prevent overflow */}
+                    <View style={{ flex: 1, marginRight: getSpacing(8) }}>
+                        <Text
+                            style={{
+                                fontSize: isAndroid ? getFontSize(18) : getFontSize(15),
+                                fontWeight: '700',
+                                lineHeight: getFontSize(18),
+                                color: '#FFFFFF',
+                            }}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                        >
+                            {phase.title}
                         </Text>
-                        {phase?.subtitle && (
-                            <Text className="mt-1 text-sm text-white/80">
+                        {phase.subtitle && (
+                            <Text
+                                style={{
+                                    marginTop: getSpacing(4),
+                                    fontSize: getFontSize(12),
+                                    color: 'rgba(255, 255, 255, 0.8)',
+                                }}
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                            >
                                 {phase.subtitle}
                             </Text>
                         )}
                     </View>
                 </View>
-                <TouchableOpacity onPress={() => setShowOutcomeMenu(true)}>
-                    <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-                </TouchableOpacity>
-            </View>
 
-            {/* Tabs - Only for Jump-start */}
-            {showTabs && (
-                <View className="flex-row items-center justify-center px-4 mb-4">
+                {/* Right side - Phase badge and menu */}
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: getSpacing(8),
+                }}>
                     <TouchableOpacity
-                        onPress={() => setActiveTab('overview')}
-                        className={`px-6 py-2.5 rounded-full mr-2 ${activeTab === 'overview' ? 'bg-white' : 'bg-transparent border border-white/40'
-                            }`}
+                        onPress={() => setShowOutcomeMenu(true)}
+                        style={{ padding: getSpacing(4) }}
                     >
-                        <Text className={`text-[15px] font-medium ${activeTab === 'overview' ? 'text-[#1A4882]' : 'text-white'
-                            }`}>
-                            Overview
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={() => setActiveTab('comments')}
-                        className={`px-5 py-2.5 rounded-full mr-2 flex-row items-center ${activeTab === 'comments' ? 'bg-white' : 'bg-transparent border border-white/40'
-                            }`}
-                    >
-                        <Text className={`text-[15px] font-medium ${activeTab === 'comments' ? 'text-[#1A4882]' : 'text-white'
-                            }`}>
-                            Comments
-                        </Text>
-                        <View className={`ml-2 w-5 h-5 rounded-full items-center justify-center ${activeTab === 'comments' ? 'bg-[#1A4882]' : 'bg-white'
-                            }`}>
-                            <Text className={`text-xs font-bold ${activeTab === 'comments' ? 'text-white' : 'text-[#1A4882]'
-                                }`}>
-                                2
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={() => setActiveTab('queries')}
-                        className={`px-5 py-2.5 rounded-full flex-row items-center ${activeTab === 'queries' ? 'bg-white' : 'bg-transparent border border-white/40'
-                            }`}
-                    >
-                        <Text className={`text-[15px] font-medium ${activeTab === 'queries' ? 'text-[#1A4882]' : 'text-white'
-                            }`}>
-                            Queries
-                        </Text>
-                        <View className={`ml-2 w-5 h-5 rounded-full items-center justify-center ${activeTab === 'queries' ? 'bg-[#1A4882]' : 'bg-white'
-                            }`}>
-                            <Text className={`text-xs font-bold ${activeTab === 'queries' ? 'text-white' : 'text-[#1A4882]'
-                                }`}>
-                                3
-                            </Text>
-                        </View>
+                        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
                     </TouchableOpacity>
                 </View>
-            )}
+            </View>
+
+            <View className="flex-row items-center justify-center px-4 mb-4">
+                <TouchableOpacity
+                    onPress={() => setActiveTab('overview')}
+                    className={`px-6 py-2.5 rounded-full mr-2 ${activeTab === 'overview' ? 'bg-white' : 'bg-transparent border border-white/40'
+                        }`}
+                >
+                    <Text className={`text-[15px] font-medium ${activeTab === 'overview' ? 'text-[#1A4882]' : 'text-white'
+                        }`}>
+                        Overview
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={() => router.push({
+                        pathname: '/new-roadmap/comments',
+                        params: { taskId: task.id, phaseId: task.phaseId },
+                    })}
+                    className={`px-5 py-2.5 rounded-full mr-2 flex-row items-center ${activeTab === 'comments' ? 'bg-white' : 'bg-transparent border border-white/40'
+                        }`}
+                >
+                    <Text className={`text-[15px] font-medium ${activeTab === 'comments' ? 'text-[#1A4882]' : 'text-white'
+                        }`}>
+                        Comments
+                    </Text>
+                    <View className={`ml-2 w-5 h-5 rounded-full items-center justify-center ${activeTab === 'comments' ? 'bg-[#1A4882]' : 'bg-white'
+                        }`}>
+                        <Text className={`text-xs font-bold ${activeTab === 'comments' ? 'text-white' : 'text-[#1A4882]'
+                            }`}>
+                            2
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={() => router.push({
+                        pathname: '/new-roadmap/queries',
+                        params: { taskId: task.id, phaseId: task.phaseId },
+                    })}
+                    className={`px-5 py-2.5 rounded-full flex-row items-center ${activeTab === 'queries' ? 'bg-white' : 'bg-transparent border border-white/40'
+                        }`}
+                >
+                    <Text className={`text-[15px] font-medium ${activeTab === 'queries' ? 'text-[#1A4882]' : 'text-white'
+                        }`}>
+                        Queries
+                    </Text>
+                    <View className={`ml-2 w-5 h-5 rounded-full items-center justify-center ${activeTab === 'queries' ? 'bg-[#1A4882]' : 'bg-white'
+                        }`}>
+                        <Text className={`text-xs font-bold ${activeTab === 'queries' ? 'text-white' : 'text-[#1A4882]'
+                            }`}>
+                            3
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
 
             {/* Content */}
             <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>

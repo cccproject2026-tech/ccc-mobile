@@ -1,6 +1,7 @@
 import TopBar from '@/components/director/TopBar';
 import { useAssessment } from '@/context/AssessmentsContext';
-import { Assessment, AssessmentQuestion, QuestionGroup } from '@/lib/assessments/types';
+import { dummyRoadMaps } from '@/lib/assessments/mock';
+import { AssessmentQuestion, QuestionGroup } from '@/lib/assessments/types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,6 +9,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
+    Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -15,18 +17,28 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
+
 export default function AnswerQuestionPage() {
-    const { data, assessmentId, viewMode } = useLocalSearchParams();
-    const assessment: Assessment = JSON.parse(data as string);
+    const { assessmentId, viewMode } = useLocalSearchParams();
+    const [showModal, setShowModal] = useState(false);
+
+    const assessment = dummyRoadMaps.find(a => a.id === assessmentId);
+
+    if (!assessment) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: 'red' }}>Error: Assessment data not found.</Text>
+            </View>
+        );
+    }
+
     const router = useRouter();
     const { saveResponse, getResponse, completeAssessment } = useAssessment();
 
-    // Check if we're in view mode
     const isViewMode = viewMode === 'true';
 
-    // Load previous response if exists
     const previousResponse = getResponse(assessmentId as string);
-    const [answers, setAnswers] = useState<Record<string, any>>(
+    const [answers, setAnswers] = useState<Record<number, Record<string, any>>>(
         previousResponse?.sectionAnswers || {}
     );
     const [currentSectionIndex, setCurrentSectionIndex] = useState(
@@ -41,6 +53,7 @@ export default function AnswerQuestionPage() {
         if (!isViewMode) {
             saveProgress();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [answers, currentSectionIndex]);
 
     const saveProgress = async () => {
@@ -50,24 +63,24 @@ export default function AnswerQuestionPage() {
             assessmentTitle: assessment.title,
             preSurveyAnswers: previousResponse?.preSurveyAnswers,
             sectionAnswers: answers,
-            status: 'in-progress',
+            status: 'Submitted',
             currentSectionIndex,
         });
     };
 
     const handleAnswer = (questionId: string, value: boolean) => {
-        // Don't allow changes in view mode
         if (isViewMode) return;
-
         setAnswers(prev => ({
             ...prev,
-            [questionId]: value,
+            [currentSectionIndex]: {
+                ...prev[currentSectionIndex],
+                [questionId]: value,
+            }
         }));
     };
 
     const handleClearResponses = () => {
         if (isViewMode) return;
-
         Alert.alert(
             "Clear Responses",
             "Are you sure you want to clear all responses for this section?",
@@ -77,13 +90,10 @@ export default function AnswerQuestionPage() {
                     text: "Clear",
                     style: "destructive",
                     onPress: () => {
-                        const clearedAnswers = { ...answers };
-                        currentSection.questionGroups.forEach(group => {
-                            group.questions.forEach(q => {
-                                delete clearedAnswers[q.id];
-                            });
-                        });
-                        setAnswers(clearedAnswers);
+                        setAnswers(prev => ({
+                            ...prev,
+                            [currentSectionIndex]: {},
+                        }));
                     }
                 }
             ]
@@ -92,7 +102,6 @@ export default function AnswerQuestionPage() {
 
     const handleNextSection = () => {
         if (isViewMode) {
-            // In view mode, just navigate to next section without validation
             if (currentSectionIndex < totalSections - 1) {
                 setCurrentSectionIndex(prev => prev + 1);
             } else {
@@ -101,17 +110,28 @@ export default function AnswerQuestionPage() {
             return;
         }
 
-        // Check if all required questions are answered (only in edit mode)
+        // 1. Check all required questions
         const allQuestions = currentSection.questionGroups.flatMap(group => group.questions);
-        const unansweredQuestions = allQuestions.filter(
-            q => q.required && !answers[q.id]
-        );
+        const unansweredQuestions = allQuestions.filter(q => q.required && !(answers[currentSectionIndex]?.[q.id]));
 
         if (unansweredQuestions.length > 0) {
             Alert.alert("Required Fields", "Please answer all required questions before proceeding.");
             return;
         }
 
+        // 2. Check at least one answer in each group
+        for (const group of currentSection.questionGroups) {
+            const hasAnswered = group.questions.some(q => answers[currentSectionIndex]?.[q.id]);
+            if (!hasAnswered) {
+                Alert.alert(
+                    "Incomplete Group",
+                    "Please answer at least one question in each group of this section before proceeding."
+                );
+                return;
+            }
+        }
+
+        // If checks pass, navigate or submit
         if (currentSectionIndex < totalSections - 1) {
             setCurrentSectionIndex(prev => prev + 1);
         } else {
@@ -125,6 +145,7 @@ export default function AnswerQuestionPage() {
         }
     };
 
+    // Fix: Await completeAssessment, THEN show modal
     const handleSubmitAssessment = () => {
         Alert.alert(
             "Submit Assessment",
@@ -134,26 +155,22 @@ export default function AnswerQuestionPage() {
                 {
                     text: "Submit",
                     onPress: async () => {
-                        await completeAssessment(assessmentId as string);
-                        Alert.alert(
-                            "Success",
-                            "Your assessment has been submitted successfully!",
-                            [
-                                {
-                                    text: "OK",
-                                    onPress: () => router.back()
-                                }
-                            ]
-                        );
+                        await completeAssessment(assessmentId as string); // Ensure context is updated
+                        setShowModal(true); // Now show scheduling modal
                     }
                 }
             ]
         );
     };
 
+    const handleScheduleMeeting = () => {
+        setShowModal(false);
+        router.push({ pathname: '/(pastor-tabs)/(tabs)/appointments/my-appointments', params: { openSheet: 'true', assessmentId } });
+    };
+
     const renderQuestion = (question: AssessmentQuestion) => {
         if (question.type === 'checkbox') {
-            const isChecked = answers[question.id] || false;
+            const isChecked = answers[currentSectionIndex]?.[question.id] || false;
             return (
                 <TouchableOpacity
                     key={question.id}
@@ -179,22 +196,51 @@ export default function AnswerQuestionPage() {
         return null;
     };
 
-    const renderQuestionGroup = (group: QuestionGroup) => {
-        return (
-            <View key={group.id} style={styles.questionGroupCard}>
-                {group.questions.map(renderQuestion)}
-            </View>
-        );
-    };
+    const renderQuestionGroup = (group: QuestionGroup) => (
+        <View key={group.id} style={styles.questionGroupCard}>
+            {group.questions.map(renderQuestion)}
+        </View>
+    );
 
     return (
-        <LinearGradient
-            colors={['#176192', '#1D548D', '#264387']}
-            style={styles.container}
-        >
+        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
             <TopBar showDrawer={false} showNotifications={false} />
+            {!isViewMode && (
+                <View style={{ alignItems: 'flex-end', margin: 12 }}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            // For each group in the current section
+                            const filledAnswers: Record<string, boolean> = {};
+                            currentSection.questionGroups.forEach(group => {
+                                group.questions.forEach(q => {
+                                    // Mark only checkbox-type as true
+                                    if (q.type === 'checkbox') {
+                                        filledAnswers[q.id] = true;
+                                    }
+                                });
+                            });
+                            setAnswers(prev => ({
+                                ...prev,
+                                [currentSectionIndex]: {
+                                    ...prev[currentSectionIndex],
+                                    ...filledAnswers
+                                }
+                            }));
+                        }}
+                        style={{
+                            backgroundColor: '#28C76F',
+                            paddingVertical: 8,
+                            paddingHorizontal: 18,
+                            borderRadius: 8,
+                        }}
+                    >
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>
+                            Mark All As Answered
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
-            {/* View Mode Indicator */}
             {isViewMode && (
                 <View style={styles.viewModeIndicator}>
                     <Ionicons name="eye-outline" size={20} color="#14B8A6" />
@@ -247,7 +293,6 @@ export default function AnswerQuestionPage() {
                 <View style={styles.buttonContainer}>
                     {isViewMode ? (
                         <>
-                            {/* Previous Section Button */}
                             <TouchableOpacity
                                 style={[styles.clearButton, currentSectionIndex === 0 && styles.buttonDisabled]}
                                 onPress={handlePreviousSection}
@@ -258,8 +303,6 @@ export default function AnswerQuestionPage() {
                                     <Ionicons name="chevron-back" size={16} /> Previous
                                 </Text>
                             </TouchableOpacity>
-
-                            {/* Next/Close Button */}
                             <TouchableOpacity
                                 style={styles.nextButton}
                                 onPress={handleNextSection}
@@ -272,7 +315,6 @@ export default function AnswerQuestionPage() {
                         </>
                     ) : (
                         <>
-                            {/* Clear Button */}
                             <TouchableOpacity
                                 style={styles.clearButton}
                                 onPress={handleClearResponses}
@@ -280,8 +322,6 @@ export default function AnswerQuestionPage() {
                             >
                                 <Text style={styles.clearButtonText}>Clear Responses</Text>
                             </TouchableOpacity>
-
-                            {/* Next/Submit Button */}
                             <TouchableOpacity
                                 style={styles.nextButton}
                                 onPress={handleNextSection}
@@ -295,6 +335,51 @@ export default function AnswerQuestionPage() {
                     )}
                 </View>
             </KeyboardAwareScrollView>
+
+            <Modal
+                visible={showModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowModal(false)}
+            >
+                <View style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0,0,0,0.3)',
+                }}>
+                    <View style={{
+                        backgroundColor: 'white',
+                        borderRadius: 16,
+                        padding: 32,
+                        alignItems: 'center',
+                        elevation: 2,
+                        margin: getSpacing(20),
+                    }}>
+                        <Text style={{ textAlign: 'center', fontSize: 18, marginBottom: 24, color: '#176192' }}>
+                            On completion of the PMP and CMA assessment tools please schedule a meeting with your mentor.
+                        </Text>
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: '#223A74',
+                                paddingHorizontal: 32,
+                                paddingVertical: 16,
+                                borderRadius: 12,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.2,
+                                shadowRadius: 4,
+                                elevation: 4,
+                            }}
+                            onPress={handleScheduleMeeting}
+                        >
+                            <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
+                                Schedule Meeting
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </LinearGradient>
     );
 }

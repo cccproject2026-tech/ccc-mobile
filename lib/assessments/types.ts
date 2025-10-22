@@ -10,6 +10,7 @@ export interface Assessment {
     guidelines: string[];
     preSurvey?: PreSurveyQuestion[];
     sections: AssessmentSection[];
+    completedOn?: string;
 }
 
 export interface PreSurveyQuestion {

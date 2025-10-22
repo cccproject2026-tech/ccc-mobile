@@ -1,5 +1,6 @@
 import TopBar from '@/components/director/TopBar';
 import { useAssessment } from '@/context/AssessmentsContext';
+import { dummyRoadMaps } from '@/lib/assessments/mock';
 import { Assessment } from '@/lib/assessments/types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,15 +12,23 @@ import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from
 const { height } = Dimensions.get('window');
 
 export default function SurveyGuidelinesPage() {
-    const { data } = useLocalSearchParams();
-    const assessment: Assessment = JSON.parse(data as string);
+    const { assessmentId } = useLocalSearchParams();
+    if (!assessmentId) {
+        return (
+            <View style={styles.container}>
+                <Text style={{ color: '#fff', textAlign: 'center', marginTop: 50 }}>
+                    Assessment ID is missing.
+                </Text>
+            </View>
+        );
+    }
+    const assessment: Assessment = dummyRoadMaps.find((item) => item.id === assessmentId)!;
     const router = useRouter();
     const { getResponse, clearResponse } = useAssessment();
 
     // Use the assessment ID from the data
-    const assessmentId = assessment.id;
-    const savedResponse = getResponse(assessmentId);
-    const isCompleted = savedResponse?.status === 'completed';
+    const savedResponse = getResponse(assessmentId as string);
+    const isCompleted = savedResponse?.status === 'Completed' || assessment.completedOn || assessment.status === 'Completed';
 
     const handleStart = () => {
         if (assessment.type === 'CMA' && assessment.preSurvey) {
@@ -34,7 +43,6 @@ export default function SurveyGuidelinesPage() {
             router.push({
                 pathname: '/assessments/answer-questions',
                 params: {
-                    data: JSON.stringify(assessment),
                     assessmentId
                 },
             });
@@ -42,15 +50,14 @@ export default function SurveyGuidelinesPage() {
     };
 
     const handleRepeatSurvey = async () => {
-        await clearResponse(assessmentId);
-        handleStart();
+        await clearResponse(assessmentId as string);
+        // handleStart();
     };
 
     const handleViewResponse = () => {
         router.push({
             pathname: '/assessments/answer-questions',
             params: {
-                data: JSON.stringify(assessment),
                 assessmentId,
                 viewMode: 'true'
 
@@ -128,6 +135,32 @@ export default function SurveyGuidelinesPage() {
                         )}
                     </View>
                 </View>
+                {assessment.completedOn && assessment.meetingDate && (
+                    <LinearGradient
+                        colors={["#B83AF3", "#21B6E9"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.meetingGradientContainer}
+                    >
+                        <TouchableOpacity
+                            style={styles.meetingContainer}
+                            onPress={() => {
+                                // Handle meeting press - navigate to meeting details or appointments
+                                console.log('Meeting pressed');
+                            }}
+                        >
+                            <Text style={styles.meetingText}>
+                                Meeting Scheduled on {assessment.meetingDate}
+                            </Text>
+                            <TouchableOpacity onPress={() => {
+                                // Handle meeting options/menu
+                                console.log('Meeting options pressed');
+                            }}>
+                                <Ionicons name="ellipsis-vertical" size={24} color="#EAB308" />
+                            </TouchableOpacity>
+                        </TouchableOpacity>
+                    </LinearGradient>
+                )}
 
                 {/* Show guidelines only if not completed */}
                 {!isCompleted && (
@@ -145,6 +178,7 @@ export default function SurveyGuidelinesPage() {
                         </View>
                     </View>
                 )}
+
 
                 {/* Action Buttons */}
                 {isCompleted ? (
@@ -171,7 +205,7 @@ export default function SurveyGuidelinesPage() {
                         activeOpacity={0.8}
                     >
                         <Text style={styles.startButtonText}>
-                            {savedResponse?.status === 'in-progress' ? 'Continue Assessment' : 'Start Now'}
+                            {savedResponse?.status === 'Submitted' ? 'Continue Assessment' : 'Start Now'}
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -368,4 +402,29 @@ const styles = StyleSheet.create({
         color: '#14B8A6',
         fontWeight: '500',
     },
+    meetingGradientContainer: {
+        borderRadius: 10,
+        padding: 2,
+        marginVertical: getSpacing(12),
+        width: "95%",
+        alignSelf: "center",
+    },
+    meetingContainer: {
+        backgroundColor: "#233A6F",
+        borderRadius: 8,
+        alignItems: "center",
+        paddingVertical: getSpacing(7),
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingHorizontal: getSpacing(10),
+    },
+    meetingText: {
+        fontSize: getFontSize(16),
+        color: "#EAB308",
+        fontWeight: "600",
+        lineHeight: getFontSize(20),
+        paddingVertical: getSpacing(4),
+        flex: 1,
+    },
+
 });

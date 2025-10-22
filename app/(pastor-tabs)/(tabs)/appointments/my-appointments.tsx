@@ -11,7 +11,7 @@ import { appointments } from "@/constants/mockData";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,6 +36,7 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = React.useState<string>(today);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
+  const router = useRouter();
   const [responseModal, setResponseModal] = React.useState<ResponseModalState>({
     visible: false,
     message: "",
@@ -45,7 +46,15 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
 
   // Bottom sheet ref
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
+  const { openSheet, assessmentId } = useLocalSearchParams();
 
+  React.useEffect(() => {
+    if (openSheet === 'true' && scheduleMeetingBottomSheetRef.current) {
+      setTimeout(() => {
+        scheduleMeetingBottomSheetRef.current?.present();
+      }, 200); // Ensure sheet presents after mount
+    }
+  }, [openSheet]);
   // Mock mentors data
   const mockMentors: Mentor[] = [
     {
@@ -162,12 +171,17 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
   // Handle schedule meeting
   const handleScheduleMeeting = (data: any) => {
     console.log('Scheduling meeting:', data);
-    // Here you would typically make an API call to schedule the meeting
     setResponseModal({
       visible: true,
       message: `Meeting scheduled with ${data.selectedMentor.name} on ${formatDisplayDate(data.selectedDate)} at ${data.selectedTime.label}`,
       buttonText: "OK",
     });
+    if (openSheet === 'true') {
+      router.push({
+        pathname: '/assessments/survey-guidelines',
+        params: { assessmentId }
+      })
+    }
   };
 
   // Handle close bottom sheet

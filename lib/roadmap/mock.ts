@@ -1,3 +1,4 @@
+import { RelativePathString } from 'expo-router';
 import { RevitalizationData } from './types';
 
 export const mockRevitalization: RevitalizationData = {
@@ -72,6 +73,7 @@ export const mockRevitalization: RevitalizationData = {
                 'p3-plant-microgroups',
                 'p3-measure-kpis',
                 'p3-graduation',
+                "p3-review"
             ],
         },
     },
@@ -89,6 +91,9 @@ export const mockRevitalization: RevitalizationData = {
 5. Community Engagement - Need Assessments
 6. Cycle of Evangelism & Discipleship`,
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3"],
+            queries: ["query-1", "query-2"],
+
             schema: {
                 fields: [
                     {
@@ -98,51 +103,9 @@ export const mockRevitalization: RevitalizationData = {
                         placeholder: 'Add your notes from the jump-start session...',
                         required: false,
                     },
-                    {
-                        id: 'static-session-date',
-                        type: 'DATE_PICKER',
-                        label: 'Session Date',
-                        editable: false,
-                        defaultValue: '10 / 11 / 24',
-                    },
 
-                    {
-                        id: 'contact-section',
-                        type: 'SECTION_BOX',
-                        label: 'Personal Details',
-                        fields: [
-                            {
-                                id: 'name',
-                                type: 'TEXT_FIELD',
-                                label: 'Name of Mentor/Disciple',
-                                placeholder: 'Enter full name',
-                                required: true,
-                            },
-                            {
-                                id: 'email',
-                                type: 'TEXT_FIELD',
-                                label: 'Email',
-                                placeholder: 'example@email.com',
-                                required: true,
-                            },
-                            {
-                                id: 'phone',
-                                type: 'TEXT_FIELD',
-                                label: 'Phone Number',
-                                placeholder: '+1 (555) 123-4567',
-                                required: true,
-                            },
-                            {
-                                id: 'role',
-                                type: 'DROPDOWN',
-                                label: 'Role',
-                                options: ['Mentor', 'Disciple'],
-                                required: true,
-                            },
-                        ],
-                    },
                 ],
-                submitLabel: 'Mark as Completed',
+                submitLabel: 'Jump-start Completed',
             },
             meta: {
                 coverImage: require('@/assets/images/roadmap.jpg'),
@@ -159,6 +122,9 @@ export const mockRevitalization: RevitalizationData = {
             title: '12-Month Mentoring Revitalization Roadmap Approval',
             description: '12-Month Revitalization Roadmap for pastoral mentoring and church revitalization growth',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
             schema: {
                 fields: [
                     {
@@ -195,6 +161,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Prayer & Visit Strategy',
             description: 'Develop a prayer and visitation strategy and upload document',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -222,6 +192,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Pastoral Ministry Profile (PMP)',
             description: 'Complete a personal pastoral assessment evaluation.',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2",],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -230,7 +204,7 @@ export const mockRevitalization: RevitalizationData = {
                         label: 'Take PMP Survey',
                         survey: 'PMP',
                         onPress: 'NAVIGATE',
-                        navigateTo: '/(pastor-tabs)/(tabs)/assessments/(pmp)/pmp-survey-page',
+                        navigateTo: '/(pastor-tabs)/(tabs)/assessments/survey-guidelines?assessmentId=assessment_002' as RelativePathString,
                     },
                 ],
             },
@@ -247,6 +221,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Church Assessment Evaluation (CMA)',
             description: 'Complete a evaluation about your churck and its membership',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -255,7 +233,7 @@ export const mockRevitalization: RevitalizationData = {
                         label: 'Take CMA Survey',
                         survey: 'CMA',
                         onPress: 'NAVIGATE',
-                        navigateTo: '/(pastor-tabs)/(tabs)/assessments/cma-survey-page',
+                        navigateTo: '/(pastor-tabs)/(tabs)/assessments/survey-guidelines?assessmentId=assessment_001' as RelativePathString,
                     },
                 ],
             },
@@ -266,14 +244,16 @@ export const mockRevitalization: RevitalizationData = {
             },
         },
 
-
-
         'p1-gods-vision': {
             id: 'p1-gods-vision',
             phaseId: 'phase-1',
             title: "God's Vision for your Church",
             description: 'View how you see your church as a Christ-formed place and develop a vision',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -300,6 +280,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Calendar',
             description: 'Create a calendar that will complement your vision for the church',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -326,6 +310,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Identify a Mentor/Disciple',
             description: 'Select a church member who will support you on this journey',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -352,6 +340,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Community Engagement Project',
             description: 'Choose a community engagement project that aligns with your church',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -404,6 +396,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Community Engagement Project',
             description: 'Complete a community engagement project with the Member/Disciple and share the stories of Gods work',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -435,6 +431,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Facility Review',
             description: 'Complete a review of your facility and make the necessary minor adjustments to make it more visitor friendly',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -471,6 +471,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Welcome Team',
             description: 'Develop a welcome team strategy and begin implementing that strategy, include a secret guest',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -507,6 +511,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Guest Contact Information',
             description: 'Begin collecting guest contact information and measure guest follow-up',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -530,6 +538,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Community Assessment',
             description: 'Refine your understanding of the needs in your community by using a community assessment tool',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -555,6 +567,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Community Engagement Events',
             description: 'Plan two community engagement events with at least 1 follow-up bridge event that addresses felt needs in the community',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -681,6 +697,10 @@ export const mockRevitalization: RevitalizationData = {
             title: 'Empower Ministry Leaders',
             description: 'Begin empowering ministry leaders into calendar activities in the worship service and offering a regular new member opportunities to come to the church service. Include a lay Bible "worker" role',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
@@ -703,23 +723,70 @@ export const mockRevitalization: RevitalizationData = {
         'p3-train-new-coaches': {
             id: 'p3-train-new-coaches',
             phaseId: 'phase-3',
-            title: 'Train New Coaches',
-            description: 'Run a coach training weekend',
+            title: 'Inactive Member List',
+            description: 'Develop an inactive member list and aa relationship map',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
-                        id: 'training-checklist',
-                        type: 'CHECKLIST',
-                        label: 'Training Preparation',
-                        required: true,
-                        items: [
-                            { id: 't1', label: 'Curriculum prepared', checked: false },
-                            { id: 't2', label: '15 attendees confirmed', checked: false },
+                        id: 'meeting-section-1',
+                        type: 'SECTION_BOX',
+                        fields: [
+                            {
+                                id: 'meeting-1-date',
+                                type: 'DATE_PICKER',
+                                label: 'Meeting Date 1',
+                                required: true,
+                            },
+                            {
+                                id: 'name',
+                                type: 'TEXT_FIELD',
+                                label: 'Number of inactive members',
+                                placeholder: 'Submit number of inactive members..',
+                                required: true,
+                            },
+                            {
+                                id: 'submit-button',
+                                type: 'BUTTON',
+                                label: 'Submit',
+                                onPress: 'SUBMIT',
+
+                            }
+
+                        ],
+                    },
+                    {
+                        id: 'meeting-section-2',
+                        type: 'SECTION_BOX',
+                        fields: [
+                            {
+                                id: 'meeting-2-date',
+                                type: 'DATE_PICKER',
+                                label: 'Meeting Date 2',
+                                required: true,
+                            },
+                            {
+                                id: 'name',
+                                type: 'TEXT_FIELD',
+                                label: 'Number of inactive members',
+                                placeholder: 'Submit number of inactive members..',
+                                required: true,
+                            },
+                            {
+                                id: 'submit-button',
+                                type: 'BUTTON',
+                                label: 'Submit',
+                                onPress: 'SUBMIT',
+
+                            }
+
                         ],
                     },
                 ],
-                submitLabel: 'Submit',
             },
             meta: {
                 coverImage: require('@/assets/images/roadmap.jpg'),
@@ -730,22 +797,31 @@ export const mockRevitalization: RevitalizationData = {
         'p3-plant-microgroups': {
             id: 'p3-plant-microgroups',
             phaseId: 'phase-3',
-            title: 'Plant Micro-groups',
-            description: 'Launch 5 micro-groups',
+            title: 'Doorway Events',
+            description: 'Schedule at least three intentional "doorway" events on your church calendar and invite inactive members to attend',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
-                        id: 'groups-started',
-                        type: 'TEXT_FIELD',
-                        label: 'Number of Groups Started',
-                        validation: { min: 5 },
+                        id: 'event-date-1',
+                        type: 'DATE_PICKER',
+                        label: 'Date of Event 1',
                         required: true,
                     },
                     {
-                        id: 'locations',
-                        type: 'TEXT_AREA',
-                        label: 'Locations',
+                        id: 'event-date-2',
+                        type: 'DATE_PICKER',
+                        label: 'Date of Event 2',
+                        required: true,
+                    },
+                    {
+                        id: 'event-date-3',
+                        type: 'DATE_PICKER',
+                        label: 'Date of Event 3',
                         required: true,
                     },
                 ],
@@ -760,22 +836,31 @@ export const mockRevitalization: RevitalizationData = {
         'p3-measure-kpis': {
             id: 'p3-measure-kpis',
             phaseId: 'phase-3',
-            title: 'Measure KPIs',
-            description: 'Submit quarterly metrics',
+            title: 'CMA Assessment',
+            description: 'Review the first CMA Assessment survey and retake the survey for revitalization results',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
-                        id: 'kpi-upload',
-                        type: 'UPLOAD',
-                        label: 'Upload KPI Report',
-                        accept: ['text/csv', 'application/vnd.ms-excel'],
-                        maxSizeMB: 10,
-                        maxFiles: 1,
-                        required: true,
+                        id: 'review-date',
+                        type: 'DATE_PICKER',
+                        label: 'Review Date',
+                        defaultValue: '10 / 11 / 24',
+                    },
+                    {
+                        id: 'cma-survey',
+                        type: 'SURVEY_BUTTON',
+                        label: 'Take CMA Survey',
+                        survey: 'CMA',
+                        onPress: 'NAVIGATE',
+                        navigateTo: '/(pastor-tabs)/(tabs)/assessments/survey-guidelines?assessmentId=assessment_001' as RelativePathString,
                     },
                 ],
-                submitLabel: 'Submit',
+                // submitLabel: 'Submit',
             },
             meta: {
                 coverImage: require('@/assets/images/roadmap.jpg'),
@@ -786,25 +871,58 @@ export const mockRevitalization: RevitalizationData = {
         'p3-graduation': {
             id: 'p3-graduation',
             phaseId: 'phase-3',
-            title: 'Graduation',
-            description: 'Final review and certificate issue',
+            title: 'Attendance',
+            description: 'Develop an intentional strategy for noticing lack of attendance',
             status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
             schema: {
                 fields: [
                     {
                         id: 'graduation-date',
                         type: 'DATE_PICKER',
-                        label: 'Schedule Graduation Meeting',
-                        required: true,
-                    },
-                    {
-                        id: 'meeting-notes',
-                        type: 'TEXT_AREA',
-                        label: 'Meeting Notes (Optional)',
-                        placeholder: 'Add any notes about the graduation...',
+                        label: 'Proclamation Event Date',
+                        defaultValue: '10 / 11 / 24',
                     },
                 ],
-                submitLabel: 'Complete',
+                submitLabel: 'Mark as Completed',
+            },
+            meta: {
+                coverImage: require('@/assets/images/roadmap.jpg'),
+                completionTimeMonths: '12',
+            },
+        },
+        'p3-review': {
+            id: 'p3-review',
+            phaseId: 'phase-3',
+            title: 'Final Revitalization Review',
+            description: 'Celebrate wins and identify next steps for growth',
+            status: 'NOT_STARTED',
+            comments: ["comment-1", "comment-2", "comment-3", "comment-4"],
+            queries: ["query-1", "query-2"],
+
+
+            schema: {
+                fields: [
+                    {
+                        id: 'thanks-giving-date',
+                        type: 'DATE_PICKER',
+                        label: 'Praise and thanks giving date',
+                        defaultValue: '10 / 11 / 24',
+                    },
+                    {
+                        id: 'image-video-upload',
+                        type: 'UPLOAD',
+                        label: 'Upload Images/Videos',
+                        accept: ['image/*', 'video/*'],
+                        maxSizeMB: 5,
+                        maxFiles: 1,
+                        required: true,
+                    },
+                ],
+                submitLabel: 'Submit',
             },
             meta: {
                 coverImage: require('@/assets/images/roadmap.jpg'),
@@ -812,4 +930,146 @@ export const mockRevitalization: RevitalizationData = {
             },
         },
     },
+
+
+    comments: {
+        "comment-1": {
+            id: "comment-1",
+            taskId: "task-1",
+            author: {
+                id: "user-john-doe",
+                name: "John Doe",
+                role: "Mentor",
+                avatar: require('@/assets/icons/user.png')
+            },
+            content: "Needs improvement. Refer XYZ document",
+            timestamp: "2024-10-22T09:41:00Z",
+            status: "UNREAD"
+        },
+
+        "comment-2": {
+            id: "comment-2",
+            taskId: "task-1",
+            author: {
+                id: "user-robin-roe",
+                name: "Robin Roe",
+                role: "Project Manager",
+                avatar: require('@/assets/icons/user.png')
+            },
+            content: "Needs improvement. Refer XYZ document",
+            timestamp: "2024-10-21T10:00:00Z",
+            status: "READ",
+        },
+
+        "comment-3": {
+            id: "comment-3",
+            taskId: "task-1",
+            author: {
+                id: "user-john-doe",
+                name: "John Doe",
+                role: "Mentor",
+                avatar: require('@/assets/icons/user.png')
+            },
+            content: "No need to spend time researching this area. Focus on the other sub group.",
+            timestamp: "2024-10-21T08:30:00Z",
+            status: "READ"
+        },
+
+        "comment-4": {
+            id: "comment-4",
+            taskId: "task-2",
+            author: {
+                id: "user-john-doe",
+                name: "John Doe",
+                role: "Mentor",
+                avatar: require('@/assets/icons/user.png')
+            },
+            content: "Needs improvement. Refer XYZ document",
+            timestamp: "2024-10-09T00:00:00Z",
+            status: "UNREAD"
+        }
+    },
+
+    queries: {
+        "query-1": {
+            id: "query-1",
+            author: {
+                id: "user-me",
+                name: "Me",
+                avatar: require('@/assets/icons/user.png')
+            },
+            question: "Is it possible for you to get me a letter stating that my volunteering is part of this course to submit to my church committee?",
+            timestamp: "2024-09-22T00:00:00Z",
+            status: "PENDING",
+            responses: [],
+            hasResponse: false
+        },
+        "query-2": {
+            id: "query-2",
+            author: {
+                id: "user-me",
+                name: "Me",
+                avatar: require('@/assets/icons/user.png')
+            },
+            question: "Is it possible for you to get me a letter stating that my volunteering is part of this course to submit to my church committee?",
+            timestamp: "2024-09-22T00:00:00Z",
+            status: "ANSWERED",
+            responses: ["response-1"],
+            hasResponse: true
+        },
+        "query-3": {
+            id: "query-3",
+            author: {
+                id: "user-me",
+                name: "Me",
+                avatar: require('@/assets/icons/user.png')
+            },
+            question: "When will the next phase materials be available?",
+            timestamp: "2024-09-20T00:00:00Z",
+            status: "ANSWERED",
+            responses: ["response-2"],
+            hasResponse: true
+        },
+        "query-4": {
+            id: "query-4",
+            author: {
+                id: "user-me",
+                name: "Me",
+                avatar: require('@/assets/icons/user.png')
+            },
+            question: "Can I submit the documentation in digital format?",
+            timestamp: "2024-09-21T00:00:00Z",
+            status: "PENDING",
+            responses: [],
+            hasResponse: false
+        }
+    },
+
+    queryResponses: {
+        "response-1": {
+            id: "response-1",
+            queryId: "query-2",
+            content: "I do not have the authority to do that. Please contact Project Manager",
+            timestamp: "2024-09-22T10:00:00Z",
+            author: {
+                id: "mentor-john",
+                name: "John Doe",
+                role: "Mentor",
+                avatar: require('@/assets/icons/user.png')
+            }
+        },
+        "response-2": {
+            id: "response-2",
+            queryId: "query-3",
+            content: "The Phase 1 materials will be available by the end of this month. You will receive an email notification once they are ready.",
+            timestamp: "2024-09-20T14:30:00Z",
+            author: {
+                id: "mentor-john",
+                name: "John Doe",
+                role: "Mentor",
+                avatar: require('@/assets/icons/user.png')
+            }
+        }
+    }
+
 };

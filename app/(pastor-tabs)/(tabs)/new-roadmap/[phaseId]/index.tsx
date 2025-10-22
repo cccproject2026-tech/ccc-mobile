@@ -1,4 +1,3 @@
-// app/(pastor-tabs)/(tabs)/new-roadmap/[phaseId]/index.tsx - OPTIMIZED
 import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import RoadmapCard from '@/components/director/ProgressRoadmapCard';
@@ -9,6 +8,7 @@ import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
 import { mockRevitalization } from '@/lib/roadmap/mock';
 import { getPhase, getPhaseTasks } from '@/lib/roadmap/selectors';
 import { Task } from '@/lib/roadmap/types';
+import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -20,6 +20,12 @@ type TabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
 export default function PhaseDetail() {
     const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
     const phase = getPhase(mockRevitalization, phaseId!);
+    // Compute phase number from phaseId
+    let phaseNumber: number | null = null;
+    if (phaseId && phaseId.startsWith('phase-')) {
+        const num = parseInt(phaseId.replace('phase-', ''), 10);
+        if (!isNaN(num)) phaseNumber = num;
+    }
     const tasks = getPhaseTasks(mockRevitalization, phase);
     const { progress } = useRoadmapProgress();
 
@@ -126,26 +132,91 @@ export default function PhaseDetail() {
             </View>
 
             {/* Header */}
-            <View className="flex-row items-center justify-between px-4 py-4 mb-4 border-b border-white/20">
-                <View className="flex-row items-center flex-1">
-                    <TouchableOpacity onPress={() => router.back()}>
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: getSpacing(8),
+                paddingVertical: getSpacing(16),
+                marginBottom: getSpacing(16),
+                borderBottomWidth: 1,
+                borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+            }}>
+                {/* Left side - Back button and Text */}
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    flex: 1,
+                    marginRight: getSpacing(12), // Add space before right elements
+                }}>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={{ marginRight: getSpacing(8) }}
+                    >
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
-                    <View className="ml-2">
-                        <Text className="text-xl font-bold leading-6 text-white">
+
+                    {/* Text Container with flex to prevent overflow */}
+                    <View style={{ flex: 1, marginRight: getSpacing(8) }}>
+                        <Text
+                            style={{
+                                fontSize: isAndroid ? getFontSize(18) : getFontSize(15),
+                                fontWeight: '700',
+                                lineHeight: getFontSize(18),
+                                color: '#FFFFFF',
+                            }}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                        >
                             {phase.title}
                         </Text>
                         {phase.subtitle && (
-                            <Text className="mt-1 text-sm text-white/80">
+                            <Text
+                                style={{
+                                    marginTop: getSpacing(4),
+                                    fontSize: getFontSize(12),
+                                    color: 'rgba(255, 255, 255, 0.8)',
+                                }}
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                            >
                                 {phase.subtitle}
                             </Text>
                         )}
                     </View>
                 </View>
-                <TouchableOpacity onPress={() => setShowOutcomeMenu(true)}>
-                    <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-                </TouchableOpacity>
+
+                {/* Right side - Phase badge and menu */}
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: getSpacing(8),
+                }}>
+                    {phaseNumber && (
+                        <View style={{
+                            backgroundColor: '#F7E35F',
+                            borderRadius: 10,
+                            paddingHorizontal: getSpacing(10),
+                            paddingVertical: getSpacing(2),
+                        }}>
+                            <Text style={{
+                                color: '#1D1D1D',
+                                fontWeight: '700',
+                                fontSize: getFontSize(13),
+                            }}>
+                                Phase {phaseNumber}
+                            </Text>
+                        </View>
+                    )}
+                    <TouchableOpacity
+                        onPress={() => setShowOutcomeMenu(true)}
+                        style={{ padding: getSpacing(4) }}
+                    >
+                        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
+                    </TouchableOpacity>
+                </View>
             </View>
+
 
             {/* Search & Tabs */}
             <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>

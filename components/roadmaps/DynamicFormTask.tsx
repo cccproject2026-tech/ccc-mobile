@@ -1,6 +1,8 @@
 import SimpleSuccessModal from '@/components/atom/SimpleSuccessModal';
+import { useAssessment } from '@/context/AssessmentsContext';
 import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
 import { DynamicField, Task } from '@/lib/roadmap/types';
+import { getFontSize, getSpacing, isSmallDevice } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
@@ -18,9 +20,7 @@ export function DynamicFormTask({ item }: Props) {
     const [formData, setFormData] = useState<Record<string, any>>(p?.formValues || {});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const router = useRouter();
-
-
-
+    const { getResponse } = useAssessment();
 
 
     // ✅ OPTIMIZATION 1: Sync formData when progress updates (multi-device)
@@ -367,17 +367,81 @@ export function DynamicFormTask({ item }: Props) {
                 );
 
             case 'SURVEY_BUTTON': {
-                console.log('=== SURVEY BUTTON RENDER DEBUG ===');
-                console.log('Field ID:', field.id);
-                console.log('Task ID:', item.id);
-                console.log('Progress for task:', progress[item.id]);
-                console.log('Form values:', progress[item.id]?.formValues);
+                // Extract assessmentId from the navigateTo URL
+                const assessmentId = field.navigateTo?.split('assessmentId=')[1] || 'assessment-001';
 
-                const completionKey = `${field.id}-completed`;
-                const dateKey = `${field.id}-completedDate`;
+                // Get assessment response from context
+                const assessmentResponse = getResponse(assessmentId);
+                const isCompleted = assessmentResponse?.status === 'Completed';
 
-                const completed = progress[item.id]?.formValues?.[completionKey] === true;
+                return (
+                    <View key={field.id} style={styles.fieldContainer}>
+                        {/* Survey Card Container */}
+                        <View style={[
+                            styles.surveyCard,
+                            isCompleted && styles.surveyCardCompleted
+                        ]}>
+                            {/* Conditional Content Based on Completion Status */}
+                            {!isCompleted ? (
+                                // Before Survey - Show Take Survey Button
+                                <Pressable
+                                    style={[
+                                        styles.surveyButton,
+                                        disabled && styles.buttonDisabled,
+                                    ]}
+                                    onPress={() => !disabled && handleButtonPress(field)}
+                                    disabled={disabled}
+                                >
+                                    <Text style={styles.surveyButtonText}>
+                                        {field.label || 'Take PMP Survey'}
+                                    </Text>
+                                </Pressable>
+                            ) : (
+                                // After Survey - Show Results Link and Repeat Button
+                                <>
+                                    <Pressable
+                                        style={styles.viewResultsButton}
+                                        onPress={() => {
+                                            // Navigate to answer questions in view mode
+                                            router.push({
+                                                pathname: '/assessments/answer-questions',
+                                                params: {
+                                                    assessmentId,
+                                                    viewMode: 'true'
+                                                }
+                                            });
+                                        }}
+                                    >
+                                        <Text style={styles.viewResultsText}>
+                                            View your Survey Results
+                                        </Text>
+                                    </Pressable>
+
+                                    <Pressable
+                                        style={[
+                                            styles.repeatSurveyButton,
+                                            disabled && styles.buttonDisabled,
+                                        ]}
+                                        onPress={() => {
+                                            if (!disabled) {
+                                                // Just navigate to start the survey again
+                                                // The survey will handle showing previous responses
+                                                handleButtonPress(field);
+                                            }
+                                        }}
+                                        disabled={disabled}
+                                    >
+                                        <Text style={styles.repeatSurveyButtonText}>
+                                            Repeat {field.survey || 'PMP'} Survey
+                                        </Text>
+                                    </Pressable>
+                                </>
+                            )}
+                        </View>
+                    </View>
+                );
             }
+
 
 
             case 'DATE_PICKER': {
@@ -870,10 +934,6 @@ const styles = StyleSheet.create({
         borderColor: 'white',
     },
 
-    buttonDisabled: {
-        backgroundColor: '#666',
-        opacity: 0.6,
-    },
 
     buttonText: {
         color: '#2563eb',
@@ -887,19 +947,19 @@ const styles = StyleSheet.create({
     },
 
     // SURVEY_BUTTON styles
-    surveyButton: {
-        backgroundColor: 'white',
-        paddingVertical: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        marginBottom: 24,
-    },
+    // surveyButton: {
+    //     backgroundColor: 'white',
+    //     paddingVertical: 16,
+    //     borderRadius: 12,
+    //     alignItems: 'center',
+    //     marginBottom: 24,
+    // },
 
-    surveyButtonText: {
-        color: '#2563eb',
-        fontSize: 16,
-        fontWeight: '600',
-    },
+    // surveyButtonText: {
+    //     color: '#2563eb',
+    //     fontSize: 16,
+    //     fontWeight: '600',
+    // },
 
     meetingBanner: {
         backgroundColor: 'rgba(139, 92, 246, 0.9)',
@@ -948,11 +1008,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
 
-    viewResultsText: {
-        color: 'white',
-        fontSize: 15,
-        textDecorationLine: 'underline',
-    },
+
 
     repeatButton: {
         backgroundColor: 'white',
@@ -967,4 +1023,78 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    // Survey Button Styles
+    surveyCard: {
+        // backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        // borderRadius: getSpacing(12),
+        // borderWidth: 1,
+        // borderColor: 'rgba(255, 255, 255, 0.3)',
+        padding: getSpacing(16),
+        marginBottom: getSpacing(12),
+    },
+    surveyCardCompleted: {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    surveyDescription: {
+        fontSize: getFontSize(isSmallDevice ? 13 : 14),
+        color: '#FFFFFF',
+        lineHeight: getFontSize(isSmallDevice ? 20 : 22),
+        marginBottom: getSpacing(16),
+        textAlign: 'left',
+    },
+    surveyButton: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: getSpacing(10),
+        paddingVertical: getSpacing(14),
+        paddingHorizontal: getSpacing(24),
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    surveyButtonText: {
+        fontSize: getFontSize(isSmallDevice ? 15 : 16),
+        fontWeight: '600',
+        color: '#1E3A8A',
+    },
+    viewResultsButton: {
+        marginBottom: getSpacing(12),
+        paddingVertical: getSpacing(4),
+    },
+    viewResultsText: {
+        fontSize: getFontSize(isSmallDevice ? 15 : 16),
+        fontWeight: '400',
+        color: '#FFFFFF',
+        textDecorationLine: 'underline',
+        textAlign: 'center',
+    },
+    repeatSurveyButton: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: getSpacing(10),
+        paddingVertical: getSpacing(14),
+        paddingHorizontal: getSpacing(24),
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    repeatSurveyButtonText: {
+        fontSize: getFontSize(isSmallDevice ? 15 : 16),
+        fontWeight: '600',
+        color: '#1E3A8A',
+    },
+    buttonDisabled: {
+        opacity: 0.5,
+    },
+
 });

@@ -33,12 +33,14 @@ export const platformScale = (iosSize: number, androidSize: number): number => {
 
 // Responsive font sizes
 export const getFontSize = (baseSize: number): number => {
+    // Defensive: fallback to a sensible default if baseSize is <= 0 or falsy
+    const safeBaseSize = typeof baseSize === 'number' && baseSize > 0 ? baseSize : 14;
     if (isAndroid) {
-        // Android tends to render fonts larger, so reduce by 15-20%
-        return moderateScale(baseSize * 0.85, 0.3);
+        return moderateScale(safeBaseSize * 0.85, 0.3);
     }
-    return moderateScale(baseSize, 0.3);
+    return moderateScale(safeBaseSize, 0.3);
 };
+
 
 // Responsive spacing
 export const getSpacing = (baseSpacing: number): number => {

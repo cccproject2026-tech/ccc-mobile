@@ -243,7 +243,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
               textDayFontWeight: "500",
               arrowColor: "transparent",
               monthTextColor: "transparent",
-              textMonthFontSize: 0,
+              // textMonthFontSize: 0,
             }}
             style={{
               backgroundColor: "transparent",

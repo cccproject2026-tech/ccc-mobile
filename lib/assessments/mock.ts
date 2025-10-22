@@ -2,12 +2,12 @@ import { Assessment } from "./types";
 
 export const dummyRoadMaps: Assessment[] = [
     {
-        id: "assessment-001",
+        id: "assessment_001",
         type: "CMA",
         title: "Church Assessment Evaluation(CMA)",
         description: "Review the overall health of your church",
         status: "Due",
-        dueDate: "20 Oct 2024",
+        dueDate: "25 Oct 2024",
         guidelines: [
             "Please complete assessment in a single session without interruptions.",
             "It is a review of your church's current state.",
@@ -449,5 +449,2504 @@ export const dummyRoadMaps: Assessment[] = [
                 ]
             }
         ],
+    },
+    {
+        "id": "assessment_002",
+        "type": "PMP",
+        "title": "Pastoral Ministry Profile (PMP)",
+        "description": "Take a deeper look into your ministry",
+        "status": "Not Started",
+        "dueDate": "25 Oct 2025",
+        "guidelines": [
+            "Please complete the assessment in a single session without saving progress in between.",
+            "It is recommended that you begin the assessment at a time when you will not be interrupted.",
+            "Once the assessment begins, you will not be able to return to previous sections.",
+            "This assessment consists of 5 sections to complete.",
+            "The full assessment should take approximately 45 minutes."
+        ],
+        "sections": [
+            {
+                "title": "Personal Well-Being (Biopsychosocial/Spiritual filter)",
+                "subtitle": "Select the option that most accurately reflects how you feel and offer you gain a deeper understanding of yourself. The more honest you are, the more helpful and guiding the outcome will be.",
+                "questionGroups": [
+                    {
+                        "id": "group_1",
+                        "questions": [
+                            {
+                                "id": "q_1_1",
+                                "text": "Feeling physically drained most of the time.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_2",
+                                "text": "Often feeling drained.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_3",
+                                "text": "Feeling mostly energized and engaged.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_4",
+                                "text": "Feeling fully energized and enjoying life.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_5",
+                                "text": "Not physically active.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_6",
+                                "text": "Occasionally exercising.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_7",
+                                "text": "In the process of adopting an exercise plan.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_8",
+                                "text": "Committed to an exercise plan.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_9",
+                                "text": "Constant perception of stress/anxiety.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_10",
+                                "text": "Thinking about getting professional help to cope with stress and anxiety (doctor(s), counselor(s), etc.).",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_11",
+                                "text": "Working with a mental health professional.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_12",
+                                "text": "Demonstrating a high EI - have a consistent routine for maintaining strong mental health.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_2",
+                        "questions": [
+                            {
+                                "id": "q_2_1",
+                                "text": "Significant marital/parental challenges.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_2",
+                                "text": "Experiencing relational family challenges.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_3",
+                                "text": "Actively engaged in the family life, prioritizing professional responsibility and personal growth.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_3",
+                        "questions": [
+                            {
+                                "id": "q_3_1",
+                                "text": "Feeling lost of self-identity.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_2",
+                                "text": "A vague sense of self-identity, rely on others for personal and professional affirmation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_3",
+                                "text": "Have a plan and an accountability partner(s) for personal and professional growth.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_4",
+                                "text": "Provide spiritual guidance and coaching to colleagues.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4",
+                        "questions": [
+                            {
+                                "id": "q_4_1",
+                                "text": "Struggling with keeping the faith.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2",
+                                "text": "Not sensing a strong connection with God.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3",
+                                "text": "Live in a structured spiritual-life rhythm.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4",
+                                "text": "Incorporates faith in all aspects of personal and professional life.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5",
+                        "questions": [
+                            {
+                                "id": "q_5_1",
+                                "text": "Struggling with addiction(s).",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2",
+                                "text": "Have identified a number of obstacles.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3",
+                                "text": "Have experienced success with growth and professional success.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4",
+                                "text": "Regularly receive professional/expert guidance regarding personal well-being.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_5",
+                                "text": "Have experienced positive transformation and committed to continued improvement.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_6",
+                        "questions": [
+                            {
+                                "id": "q_6_1",
+                                "text": "Lack of sleep.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_6_2",
+                                "text": "Limited supporting relationships.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_6_3",
+                                "text": "No plan for self-care.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Professional Development/Leadership Style",
+                "subtitle": "Select the option that most accurately reflects your personal and professional growth, as this self-assessment will provide the best support and guidance we can offer.",
+                "questionGroups": [
+                    {
+                        "id": "group_2_1",
+                        "questions": [
+                            {
+                                "id": "q_2_1_1",
+                                "text": "Lost a sense of call to pastoral ministry - considering other careers.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_2",
+                                "text": "Not sure if serving in faith community that 'fits' - mostly feeling connected with the assigned congregation and its leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_3",
+                                "text": "Finds joy working with the church and local community leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_4",
+                                "text": "Experienced lead-out doing much ministry with a sense of ministry - reading/showing up at work-visiting church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_5",
+                                "text": "Performing only required tasks without any enthusiasm.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_6",
+                                "text": "Excited to offer a personal skillset and expertise, service, in the church in area of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_7",
+                                "text": "Regularly provides CE guidance and outside of the congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_8",
+                                "text": "Feeling cynical, distrusting self and others.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_9",
+                                "text": "Not trusting local church leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_10",
+                                "text": "Working confidently with the local church leaders and finding it mutually rewarding.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_11",
+                                "text": "Raising the next generation of church leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_12",
+                                "text": "Not sure of personal strengths and area of growth.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_13",
+                                "text": "Seeking mentorship to identify and to address areas of growth.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_14",
+                                "text": "Having a strong accountability and support skills.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_15",
+                                "text": "Not reflecting on personal strengths, weaknesses, areas and threats.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_16",
+                                "text": "Disconnected from other non-denominational entities.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_17",
+                                "text": "Sporadic relationships with some CE players outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_18",
+                                "text": "Have strong personal connections with many CE players in the community.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_19",
+                                "text": "Play a vital leadership role in the community outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_20",
+                                "text": "Very limited personal interactions with church leaders/members.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_21",
+                                "text": "Not working closely with the local denominational leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_22",
+                                "text": "Collaborating regularly with the local conference.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_23",
+                                "text": "Have a leadership role (formal or informal) at the local conference.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Community Engagement/CE Experience",
+                "subtitle": "Select the option that most accurately reflects your engagement within the community, as this assessment is designed to enhance your community engagement. The more precise you are, the better support and guidance we can offer.",
+                "questionGroups": [
+                    {
+                        "id": "group_3_1",
+                        "questions": [
+                            {
+                                "id": "q_3_1_1",
+                                "text": "Unfamiliar with the CMA ministry concept.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_2",
+                                "text": "Not fully understanding but approaching the CMA method in relationship and evangelism.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_3",
+                                "text": "Fully embraces the CMA approach to ministry and evangelism.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_4",
+                                "text": "Fully implements the CMA approach in all areas of life - inside and outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_5",
+                                "text": "No collaborations with outside community players.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_6",
+                                "text": "Some relationships with local community influencers and players.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_7",
+                                "text": "Actively participating in the community life outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_8",
+                                "text": "Hold a leadership role in the community life outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_9",
+                                "text": "Occasional participation but no strategic leadership in CE initiatives.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_10",
+                                "text": "Formal support but not active strategic leadership in the church CE efforts.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_11",
+                                "text": "Prominent leadership role in CE ministries at home congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_12",
+                                "text": "Conduct formal training classes/workshops in the area of CE for other ministry leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Congregational Health",
+                "subtitle": "Select the option that most accurately reflects the health of the congregation you provide with a clearer understanding of the better support and guidance we can offer you are.",
+                "questionGroups": [
+                    {
+                        "id": "group_4_1",
+                        "questions": [
+                            {
+                                "id": "q_4_1_1",
+                                "text": "Membership/attendance is in decline.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_1_2",
+                                "text": "Plateauing or declining membership.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_1_3",
+                                "text": "Church membership and attendance are on the rise.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_1_4",
+                                "text": "Increasing volunteer participation in CE projects—successfully implements the CMA approach in all aspects of church life.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_2",
+                        "questions": [
+                            {
+                                "id": "q_4_2_1",
+                                "text": "No clear vision and mission statements.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2_2",
+                                "text": "Vague sense of vision and mission.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2_3",
+                                "text": "Committed to strong vision and mission statements.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2_4",
+                                "text": "Compellingly embodies the church’s vision and mission statements.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_3",
+                        "questions": [
+                            {
+                                "id": "q_4_3_1",
+                                "text": "The average age of the church is above 60.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3_2",
+                                "text": "Experiencing congregational aging.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3_3",
+                                "text": "Has shown signs of healthy growth and CE ministry sustainability.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3_4",
+                                "text": "Growing younger as a congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_4",
+                        "questions": [
+                            {
+                                "id": "q_4_4_1",
+                                "text": "Many toxic members.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4_2",
+                                "text": "Often dealing with unnecessary judgment, comments and rumors.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4_3",
+                                "text": "Fosters open and trusting social atmosphere—celebrating achievements and encouraging advancements.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4_4",
+                                "text": "Pursuing inward and outward holistic model of transformation as the primary focus of evangelism.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_5",
+                        "questions": [
+                            {
+                                "id": "q_4_5_1",
+                                "text": "Absence of CE leaders/volunteers.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_5_2",
+                                "text": "An example of the 10/70 rule of active participation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_5_3",
+                                "text": "High level of community engagement among the members.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_5_4",
+                                "text": "Inspires and leads other congregations and community-transformation initiatives and projects.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_6",
+                        "questions": [
+                            {
+                                "id": "q_4_6_1",
+                                "text": "Dysfunctional church board; church leaders often talk about each other as 'us' and 'them'.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_6_2",
+                                "text": "Lack of adequate representation in the church leadership.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_6_3",
+                                "text": "The leadership team is trusted and adequately represents the congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_6_4",
+                                "text": "Shows deep care for its leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_7",
+                        "questions": [
+                            {
+                                "id": "q_4_7_1",
+                                "text": "Church presence not impactful in the surrounding area.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_7_2",
+                                "text": "CE is focused mostly distribution goods and services and transformation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_7_3",
+                                "text": "Clear signs of positive transformation in the community of CE leadership.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_7_4",
+                                "text": "Increasing number of people in the surrounding community whose quality of life has been significantly improved.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_8",
+                        "questions": [
+                            {
+                                "id": "q_4_8_1",
+                                "text": "The CMA is not embodied in the life of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_8_2",
+                                "text": "Occasional community-oriented events.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_8_3",
+                                "text": "Members practice the CMA principles—all CE of the church is building relationships outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_8_4",
+                                "text": "Recognition among and strong personal relationships with community stakeholders.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Continuing Education",
+                "subtitle": "Select the option that best reflects your educational growth as this assessment is designed to provide you with a clearer understanding of your educational opportunities. The more honest you are, the better support and guidance we can offer.",
+                "questionGroups": [
+                    {
+                        "id": "group_5_1",
+                        "questions": [
+                            {
+                                "id": "q_5_1_1",
+                                "text": "No formal community engagement/services training certification.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_1_2",
+                                "text": "Some community engagement/services training certification.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_1_3",
+                                "text": "Completed formal training/certification in the area of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_1_4",
+                                "text": "Teaches and supports others in the area of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5_2",
+                        "questions": [
+                            {
+                                "id": "q_5_2_1",
+                                "text": "Master’s degree in a ministry-related field.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2_2",
+                                "text": "Has fulfilled all educational requirements for pastoral ordination.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2_3",
+                                "text": "Holding/finishing an advanced graduate degree relevant to ministry.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2_4",
+                                "text": "Has a learning plan for post-graduate educational development.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5_3",
+                        "questions": [
+                            {
+                                "id": "q_5_3_1",
+                                "text": "No current continuing education enrollment.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3_2",
+                                "text": "Additional formal education in a field relevant to community engagement.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3_3",
+                                "text": "Continuing formal/self-education in the field of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3_4",
+                                "text": "Diverse cultural awareness and language skills.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5_4",
+                        "questions": [
+                            {
+                                "id": "q_5_4_1",
+                                "text": "Limited cultural/language proficiency.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4_2",
+                                "text": "Thinking about pursuing another educational goal (another degree or doctorate studies).",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4_3",
+                                "text": "Developing personal cultural awareness or expanding linguistic skill through formal/self-organized educational plan.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4_4",
+                                "text": "Teaches and mentors others in the areas of self-anthropology and culture change.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "assessment_003",
+        "type": "PMP",
+        "title": "Pastoral Ministry Profile (PMP)",
+        "description": "Take a deeper look into your ministry",
+        "status": "Submitted",
+        // "dueDate": "2024-10-20",
+        "completionDate": "2024-09-20",
+        "completedOn": "2024-09-18",
+        "meetingDate": "2025-01-20",
+        "guidelines": [
+            "Please complete the assessment in a single session without saving progress in between.",
+            "It is recommended that you begin the assessment at a time when you will not be interrupted.",
+            "Once the assessment begins, you will not be able to return to previous sections.",
+            "This assessment consists of 5 sections to complete.",
+            "The full assessment should take approximately 45 minutes."
+        ],
+        "sections": [
+            {
+                "title": "Personal Well-Being (Biopsychosocial/Spiritual filter)",
+                "subtitle": "Select the option that most accurately reflects how you feel and offer you gain a deeper understanding of yourself. The more honest you are, the more helpful and guiding the outcome will be.",
+                "questionGroups": [
+                    {
+                        "id": "group_1",
+                        "questions": [
+                            {
+                                "id": "q_1_1",
+                                "text": "Feeling physically drained most of the time.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_2",
+                                "text": "Often feeling drained.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_3",
+                                "text": "Feeling mostly energized and engaged.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_4",
+                                "text": "Feeling fully energized and enjoying life.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_5",
+                                "text": "Not physically active.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_6",
+                                "text": "Occasionally exercising.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_7",
+                                "text": "In the process of adopting an exercise plan.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_8",
+                                "text": "Committed to an exercise plan.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_9",
+                                "text": "Constant perception of stress/anxiety.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_10",
+                                "text": "Thinking about getting professional help to cope with stress and anxiety (doctor(s), counselor(s), etc.).",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_11",
+                                "text": "Working with a mental health professional.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_12",
+                                "text": "Demonstrating a high EI - have a consistent routine for maintaining strong mental health.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_2",
+                        "questions": [
+                            {
+                                "id": "q_2_1",
+                                "text": "Significant marital/parental challenges.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_2",
+                                "text": "Experiencing relational family challenges.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_3",
+                                "text": "Actively engaged in the family life, prioritizing professional responsibility and personal growth.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_3",
+                        "questions": [
+                            {
+                                "id": "q_3_1",
+                                "text": "Feeling lost of self-identity.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_2",
+                                "text": "A vague sense of self-identity, rely on others for personal and professional affirmation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_3",
+                                "text": "Have a plan and an accountability partner(s) for personal and professional growth.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_4",
+                                "text": "Provide spiritual guidance and coaching to colleagues.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4",
+                        "questions": [
+                            {
+                                "id": "q_4_1",
+                                "text": "Struggling with keeping the faith.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2",
+                                "text": "Not sensing a strong connection with God.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3",
+                                "text": "Live in a structured spiritual-life rhythm.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4",
+                                "text": "Incorporates faith in all aspects of personal and professional life.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5",
+                        "questions": [
+                            {
+                                "id": "q_5_1",
+                                "text": "Struggling with addiction(s).",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2",
+                                "text": "Have identified a number of obstacles.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3",
+                                "text": "Have experienced success with growth and professional success.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4",
+                                "text": "Regularly receive professional/expert guidance regarding personal well-being.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_5",
+                                "text": "Have experienced positive transformation and committed to continued improvement.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_6",
+                        "questions": [
+                            {
+                                "id": "q_6_1",
+                                "text": "Lack of sleep.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_6_2",
+                                "text": "Limited supporting relationships.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_6_3",
+                                "text": "No plan for self-care.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Professional Development/Leadership Style",
+                "subtitle": "Select the option that most accurately reflects your personal and professional growth, as this self-assessment will provide the best support and guidance we can offer.",
+                "questionGroups": [
+                    {
+                        "id": "group_2_1",
+                        "questions": [
+                            {
+                                "id": "q_2_1_1",
+                                "text": "Lost a sense of call to pastoral ministry - considering other careers.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_2",
+                                "text": "Not sure if serving in faith community that 'fits' - mostly feeling connected with the assigned congregation and its leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_3",
+                                "text": "Finds joy working with the church and local community leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_4",
+                                "text": "Experienced lead-out doing much ministry with a sense of ministry - reading/showing up at work-visiting church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_5",
+                                "text": "Performing only required tasks without any enthusiasm.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_6",
+                                "text": "Excited to offer a personal skillset and expertise, service, in the church in area of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_7",
+                                "text": "Regularly provides CE guidance and outside of the congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_8",
+                                "text": "Feeling cynical, distrusting self and others.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_9",
+                                "text": "Not trusting local church leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_10",
+                                "text": "Working confidently with the local church leaders and finding it mutually rewarding.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_11",
+                                "text": "Raising the next generation of church leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_12",
+                                "text": "Not sure of personal strengths and area of growth.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_13",
+                                "text": "Seeking mentorship to identify and to address areas of growth.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_14",
+                                "text": "Having a strong accountability and support skills.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_15",
+                                "text": "Not reflecting on personal strengths, weaknesses, areas and threats.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_16",
+                                "text": "Disconnected from other non-denominational entities.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_17",
+                                "text": "Sporadic relationships with some CE players outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_18",
+                                "text": "Have strong personal connections with many CE players in the community.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_19",
+                                "text": "Play a vital leadership role in the community outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_20",
+                                "text": "Very limited personal interactions with church leaders/members.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_21",
+                                "text": "Not working closely with the local denominational leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_22",
+                                "text": "Collaborating regularly with the local conference.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_23",
+                                "text": "Have a leadership role (formal or informal) at the local conference.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Community Engagement/CE Experience",
+                "subtitle": "Select the option that most accurately reflects your engagement within the community, as this assessment is designed to enhance your community engagement. The more precise you are, the better support and guidance we can offer.",
+                "questionGroups": [
+                    {
+                        "id": "group_3_1",
+                        "questions": [
+                            {
+                                "id": "q_3_1_1",
+                                "text": "Unfamiliar with the CMA ministry concept.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_2",
+                                "text": "Not fully understanding but approaching the CMA method in relationship and evangelism.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_3",
+                                "text": "Fully embraces the CMA approach to ministry and evangelism.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_4",
+                                "text": "Fully implements the CMA approach in all areas of life - inside and outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_5",
+                                "text": "No collaborations with outside community players.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_6",
+                                "text": "Some relationships with local community influencers and players.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_7",
+                                "text": "Actively participating in the community life outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_8",
+                                "text": "Hold a leadership role in the community life outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_9",
+                                "text": "Occasional participation but no strategic leadership in CE initiatives.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_10",
+                                "text": "Formal support but not active strategic leadership in the church CE efforts.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_11",
+                                "text": "Prominent leadership role in CE ministries at home congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_12",
+                                "text": "Conduct formal training classes/workshops in the area of CE for other ministry leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Congregational Health",
+                "subtitle": "Select the option that most accurately reflects the health of the congregation you provide with a clearer understanding of the better support and guidance we can offer you are.",
+                "questionGroups": [
+                    {
+                        "id": "group_4_1",
+                        "questions": [
+                            {
+                                "id": "q_4_1_1",
+                                "text": "Membership/attendance is in decline.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_1_2",
+                                "text": "Plateauing or declining membership.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_1_3",
+                                "text": "Church membership and attendance are on the rise.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_1_4",
+                                "text": "Increasing volunteer participation in CE projects—successfully implements the CMA approach in all aspects of church life.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_2",
+                        "questions": [
+                            {
+                                "id": "q_4_2_1",
+                                "text": "No clear vision and mission statements.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2_2",
+                                "text": "Vague sense of vision and mission.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2_3",
+                                "text": "Committed to strong vision and mission statements.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2_4",
+                                "text": "Compellingly embodies the church’s vision and mission statements.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_3",
+                        "questions": [
+                            {
+                                "id": "q_4_3_1",
+                                "text": "The average age of the church is above 60.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3_2",
+                                "text": "Experiencing congregational aging.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3_3",
+                                "text": "Has shown signs of healthy growth and CE ministry sustainability.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3_4",
+                                "text": "Growing younger as a congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_4",
+                        "questions": [
+                            {
+                                "id": "q_4_4_1",
+                                "text": "Many toxic members.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4_2",
+                                "text": "Often dealing with unnecessary judgment, comments and rumors.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4_3",
+                                "text": "Fosters open and trusting social atmosphere—celebrating achievements and encouraging advancements.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4_4",
+                                "text": "Pursuing inward and outward holistic model of transformation as the primary focus of evangelism.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_5",
+                        "questions": [
+                            {
+                                "id": "q_4_5_1",
+                                "text": "Absence of CE leaders/volunteers.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_5_2",
+                                "text": "An example of the 10/70 rule of active participation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_5_3",
+                                "text": "High level of community engagement among the members.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_5_4",
+                                "text": "Inspires and leads other congregations and community-transformation initiatives and projects.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_6",
+                        "questions": [
+                            {
+                                "id": "q_4_6_1",
+                                "text": "Dysfunctional church board; church leaders often talk about each other as 'us' and 'them'.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_6_2",
+                                "text": "Lack of adequate representation in the church leadership.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_6_3",
+                                "text": "The leadership team is trusted and adequately represents the congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_6_4",
+                                "text": "Shows deep care for its leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_7",
+                        "questions": [
+                            {
+                                "id": "q_4_7_1",
+                                "text": "Church presence not impactful in the surrounding area.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_7_2",
+                                "text": "CE is focused mostly distribution goods and services and transformation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_7_3",
+                                "text": "Clear signs of positive transformation in the community of CE leadership.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_7_4",
+                                "text": "Increasing number of people in the surrounding community whose quality of life has been significantly improved.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_8",
+                        "questions": [
+                            {
+                                "id": "q_4_8_1",
+                                "text": "The CMA is not embodied in the life of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_8_2",
+                                "text": "Occasional community-oriented events.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_8_3",
+                                "text": "Members practice the CMA principles—all CE of the church is building relationships outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_8_4",
+                                "text": "Recognition among and strong personal relationships with community stakeholders.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Continuing Education",
+                "subtitle": "Select the option that best reflects your educational growth as this assessment is designed to provide you with a clearer understanding of your educational opportunities. The more honest you are, the better support and guidance we can offer.",
+                "questionGroups": [
+                    {
+                        "id": "group_5_1",
+                        "questions": [
+                            {
+                                "id": "q_5_1_1",
+                                "text": "No formal community engagement/services training certification.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_1_2",
+                                "text": "Some community engagement/services training certification.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_1_3",
+                                "text": "Completed formal training/certification in the area of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_1_4",
+                                "text": "Teaches and supports others in the area of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5_2",
+                        "questions": [
+                            {
+                                "id": "q_5_2_1",
+                                "text": "Master’s degree in a ministry-related field.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2_2",
+                                "text": "Has fulfilled all educational requirements for pastoral ordination.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2_3",
+                                "text": "Holding/finishing an advanced graduate degree relevant to ministry.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2_4",
+                                "text": "Has a learning plan for post-graduate educational development.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5_3",
+                        "questions": [
+                            {
+                                "id": "q_5_3_1",
+                                "text": "No current continuing education enrollment.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3_2",
+                                "text": "Additional formal education in a field relevant to community engagement.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3_3",
+                                "text": "Continuing formal/self-education in the field of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3_4",
+                                "text": "Diverse cultural awareness and language skills.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5_4",
+                        "questions": [
+                            {
+                                "id": "q_5_4_1",
+                                "text": "Limited cultural/language proficiency.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4_2",
+                                "text": "Thinking about pursuing another educational goal (another degree or doctorate studies).",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4_3",
+                                "text": "Developing personal cultural awareness or expanding linguistic skill through formal/self-organized educational plan.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4_4",
+                                "text": "Teaches and mentors others in the areas of self-anthropology and culture change.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "assessment_004",
+        "type": "PMP",
+        "title": "Pastoral Ministry Profile (PMP)",
+        "description": "Take a deeper look into your ministry",
+        "status": "Completed",
+        // "dueDate": "2024-10-20",
+        "completionDate": "2024-09-20",
+        "completedOn": "2024-09-18",
+        "meetingDate": "2025-01-20",
+        "guidelines": [
+            "Please complete the assessment in a single session without saving progress in between.",
+            "It is recommended that you begin the assessment at a time when you will not be interrupted.",
+            "Once the assessment begins, you will not be able to return to previous sections.",
+            "This assessment consists of 5 sections to complete.",
+            "The full assessment should take approximately 45 minutes."
+        ],
+        "sections": [
+            {
+                "title": "Personal Well-Being (Biopsychosocial/Spiritual filter)",
+                "subtitle": "Select the option that most accurately reflects how you feel and offer you gain a deeper understanding of yourself. The more honest you are, the more helpful and guiding the outcome will be.",
+                "questionGroups": [
+                    {
+                        "id": "group_1",
+                        "questions": [
+                            {
+                                "id": "q_1_1",
+                                "text": "Feeling physically drained most of the time.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_2",
+                                "text": "Often feeling drained.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_3",
+                                "text": "Feeling mostly energized and engaged.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_4",
+                                "text": "Feeling fully energized and enjoying life.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_5",
+                                "text": "Not physically active.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_6",
+                                "text": "Occasionally exercising.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_7",
+                                "text": "In the process of adopting an exercise plan.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_8",
+                                "text": "Committed to an exercise plan.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_9",
+                                "text": "Constant perception of stress/anxiety.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_10",
+                                "text": "Thinking about getting professional help to cope with stress and anxiety (doctor(s), counselor(s), etc.).",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_11",
+                                "text": "Working with a mental health professional.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_1_12",
+                                "text": "Demonstrating a high EI - have a consistent routine for maintaining strong mental health.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_2",
+                        "questions": [
+                            {
+                                "id": "q_2_1",
+                                "text": "Significant marital/parental challenges.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_2",
+                                "text": "Experiencing relational family challenges.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_3",
+                                "text": "Actively engaged in the family life, prioritizing professional responsibility and personal growth.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_3",
+                        "questions": [
+                            {
+                                "id": "q_3_1",
+                                "text": "Feeling lost of self-identity.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_2",
+                                "text": "A vague sense of self-identity, rely on others for personal and professional affirmation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_3",
+                                "text": "Have a plan and an accountability partner(s) for personal and professional growth.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_4",
+                                "text": "Provide spiritual guidance and coaching to colleagues.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4",
+                        "questions": [
+                            {
+                                "id": "q_4_1",
+                                "text": "Struggling with keeping the faith.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2",
+                                "text": "Not sensing a strong connection with God.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3",
+                                "text": "Live in a structured spiritual-life rhythm.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4",
+                                "text": "Incorporates faith in all aspects of personal and professional life.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5",
+                        "questions": [
+                            {
+                                "id": "q_5_1",
+                                "text": "Struggling with addiction(s).",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2",
+                                "text": "Have identified a number of obstacles.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3",
+                                "text": "Have experienced success with growth and professional success.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4",
+                                "text": "Regularly receive professional/expert guidance regarding personal well-being.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_5",
+                                "text": "Have experienced positive transformation and committed to continued improvement.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_6",
+                        "questions": [
+                            {
+                                "id": "q_6_1",
+                                "text": "Lack of sleep.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_6_2",
+                                "text": "Limited supporting relationships.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_6_3",
+                                "text": "No plan for self-care.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Professional Development/Leadership Style",
+                "subtitle": "Select the option that most accurately reflects your personal and professional growth, as this self-assessment will provide the best support and guidance we can offer.",
+                "questionGroups": [
+                    {
+                        "id": "group_2_1",
+                        "questions": [
+                            {
+                                "id": "q_2_1_1",
+                                "text": "Lost a sense of call to pastoral ministry - considering other careers.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_2",
+                                "text": "Not sure if serving in faith community that 'fits' - mostly feeling connected with the assigned congregation and its leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_3",
+                                "text": "Finds joy working with the church and local community leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_4",
+                                "text": "Experienced lead-out doing much ministry with a sense of ministry - reading/showing up at work-visiting church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_5",
+                                "text": "Performing only required tasks without any enthusiasm.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_6",
+                                "text": "Excited to offer a personal skillset and expertise, service, in the church in area of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_7",
+                                "text": "Regularly provides CE guidance and outside of the congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_8",
+                                "text": "Feeling cynical, distrusting self and others.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_9",
+                                "text": "Not trusting local church leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_10",
+                                "text": "Working confidently with the local church leaders and finding it mutually rewarding.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_11",
+                                "text": "Raising the next generation of church leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_12",
+                                "text": "Not sure of personal strengths and area of growth.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_13",
+                                "text": "Seeking mentorship to identify and to address areas of growth.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_14",
+                                "text": "Having a strong accountability and support skills.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_15",
+                                "text": "Not reflecting on personal strengths, weaknesses, areas and threats.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_16",
+                                "text": "Disconnected from other non-denominational entities.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_17",
+                                "text": "Sporadic relationships with some CE players outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_18",
+                                "text": "Have strong personal connections with many CE players in the community.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_19",
+                                "text": "Play a vital leadership role in the community outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_20",
+                                "text": "Very limited personal interactions with church leaders/members.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_21",
+                                "text": "Not working closely with the local denominational leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_22",
+                                "text": "Collaborating regularly with the local conference.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_2_1_23",
+                                "text": "Have a leadership role (formal or informal) at the local conference.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Community Engagement/CE Experience",
+                "subtitle": "Select the option that most accurately reflects your engagement within the community, as this assessment is designed to enhance your community engagement. The more precise you are, the better support and guidance we can offer.",
+                "questionGroups": [
+                    {
+                        "id": "group_3_1",
+                        "questions": [
+                            {
+                                "id": "q_3_1_1",
+                                "text": "Unfamiliar with the CMA ministry concept.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_2",
+                                "text": "Not fully understanding but approaching the CMA method in relationship and evangelism.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_3",
+                                "text": "Fully embraces the CMA approach to ministry and evangelism.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_4",
+                                "text": "Fully implements the CMA approach in all areas of life - inside and outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_5",
+                                "text": "No collaborations with outside community players.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_6",
+                                "text": "Some relationships with local community influencers and players.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_7",
+                                "text": "Actively participating in the community life outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_8",
+                                "text": "Hold a leadership role in the community life outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_9",
+                                "text": "Occasional participation but no strategic leadership in CE initiatives.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_10",
+                                "text": "Formal support but not active strategic leadership in the church CE efforts.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_11",
+                                "text": "Prominent leadership role in CE ministries at home congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_3_1_12",
+                                "text": "Conduct formal training classes/workshops in the area of CE for other ministry leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Congregational Health",
+                "subtitle": "Select the option that most accurately reflects the health of the congregation you provide with a clearer understanding of the better support and guidance we can offer you are.",
+                "questionGroups": [
+                    {
+                        "id": "group_4_1",
+                        "questions": [
+                            {
+                                "id": "q_4_1_1",
+                                "text": "Membership/attendance is in decline.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_1_2",
+                                "text": "Plateauing or declining membership.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_1_3",
+                                "text": "Church membership and attendance are on the rise.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_1_4",
+                                "text": "Increasing volunteer participation in CE projects—successfully implements the CMA approach in all aspects of church life.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_2",
+                        "questions": [
+                            {
+                                "id": "q_4_2_1",
+                                "text": "No clear vision and mission statements.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2_2",
+                                "text": "Vague sense of vision and mission.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2_3",
+                                "text": "Committed to strong vision and mission statements.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_2_4",
+                                "text": "Compellingly embodies the church’s vision and mission statements.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_3",
+                        "questions": [
+                            {
+                                "id": "q_4_3_1",
+                                "text": "The average age of the church is above 60.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3_2",
+                                "text": "Experiencing congregational aging.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3_3",
+                                "text": "Has shown signs of healthy growth and CE ministry sustainability.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_3_4",
+                                "text": "Growing younger as a congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_4",
+                        "questions": [
+                            {
+                                "id": "q_4_4_1",
+                                "text": "Many toxic members.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4_2",
+                                "text": "Often dealing with unnecessary judgment, comments and rumors.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4_3",
+                                "text": "Fosters open and trusting social atmosphere—celebrating achievements and encouraging advancements.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_4_4",
+                                "text": "Pursuing inward and outward holistic model of transformation as the primary focus of evangelism.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_5",
+                        "questions": [
+                            {
+                                "id": "q_4_5_1",
+                                "text": "Absence of CE leaders/volunteers.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_5_2",
+                                "text": "An example of the 10/70 rule of active participation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_5_3",
+                                "text": "High level of community engagement among the members.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_5_4",
+                                "text": "Inspires and leads other congregations and community-transformation initiatives and projects.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_6",
+                        "questions": [
+                            {
+                                "id": "q_4_6_1",
+                                "text": "Dysfunctional church board; church leaders often talk about each other as 'us' and 'them'.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_6_2",
+                                "text": "Lack of adequate representation in the church leadership.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_6_3",
+                                "text": "The leadership team is trusted and adequately represents the congregation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_6_4",
+                                "text": "Shows deep care for its leaders.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_7",
+                        "questions": [
+                            {
+                                "id": "q_4_7_1",
+                                "text": "Church presence not impactful in the surrounding area.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_7_2",
+                                "text": "CE is focused mostly distribution goods and services and transformation.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_7_3",
+                                "text": "Clear signs of positive transformation in the community of CE leadership.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_7_4",
+                                "text": "Increasing number of people in the surrounding community whose quality of life has been significantly improved.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_4_8",
+                        "questions": [
+                            {
+                                "id": "q_4_8_1",
+                                "text": "The CMA is not embodied in the life of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_8_2",
+                                "text": "Occasional community-oriented events.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_8_3",
+                                "text": "Members practice the CMA principles—all CE of the church is building relationships outside of the church.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_4_8_4",
+                                "text": "Recognition among and strong personal relationships with community stakeholders.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Continuing Education",
+                "subtitle": "Select the option that best reflects your educational growth as this assessment is designed to provide you with a clearer understanding of your educational opportunities. The more honest you are, the better support and guidance we can offer.",
+                "questionGroups": [
+                    {
+                        "id": "group_5_1",
+                        "questions": [
+                            {
+                                "id": "q_5_1_1",
+                                "text": "No formal community engagement/services training certification.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_1_2",
+                                "text": "Some community engagement/services training certification.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_1_3",
+                                "text": "Completed formal training/certification in the area of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_1_4",
+                                "text": "Teaches and supports others in the area of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5_2",
+                        "questions": [
+                            {
+                                "id": "q_5_2_1",
+                                "text": "Master’s degree in a ministry-related field.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2_2",
+                                "text": "Has fulfilled all educational requirements for pastoral ordination.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2_3",
+                                "text": "Holding/finishing an advanced graduate degree relevant to ministry.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_2_4",
+                                "text": "Has a learning plan for post-graduate educational development.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5_3",
+                        "questions": [
+                            {
+                                "id": "q_5_3_1",
+                                "text": "No current continuing education enrollment.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3_2",
+                                "text": "Additional formal education in a field relevant to community engagement.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3_3",
+                                "text": "Continuing formal/self-education in the field of CE.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_3_4",
+                                "text": "Diverse cultural awareness and language skills.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    },
+                    {
+                        "id": "group_5_4",
+                        "questions": [
+                            {
+                                "id": "q_5_4_1",
+                                "text": "Limited cultural/language proficiency.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4_2",
+                                "text": "Thinking about pursuing another educational goal (another degree or doctorate studies).",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4_3",
+                                "text": "Developing personal cultural awareness or expanding linguistic skill through formal/self-organized educational plan.",
+                                "type": "checkbox",
+                                "required": true
+                            },
+                            {
+                                "id": "q_5_4_4",
+                                "text": "Teaches and mentors others in the areas of self-anthropology and culture change.",
+                                "type": "checkbox",
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
     },
 ];

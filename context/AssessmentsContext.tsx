@@ -8,8 +8,9 @@ export interface AssessmentResponse {
     preSurveyAnswers?: Record<string, string>;
     sectionAnswers: Record<string, any>;
     completedAt?: string;
-    status: 'in-progress' | 'completed';
+    status: 'Due' | 'Not Started' | 'Submitted' | 'Completed';
     currentSectionIndex: number;
+    meetingDate?: string;
 }
 
 interface AssessmentContextType {
@@ -18,6 +19,7 @@ interface AssessmentContextType {
     getResponse: (assessmentId: string) => AssessmentResponse | null;
     clearResponse: (assessmentId: string) => Promise<void>;
     completeAssessment: (assessmentId: string) => Promise<void>;
+    updateMeetingDate: (assessmentId: string, meetingDate: string) => Promise<void>;
     isLoading: boolean;
 }
 
@@ -74,19 +76,35 @@ export const AssessmentProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+
     const completeAssessment = async (assessmentId: string) => {
         try {
             const response = responses[assessmentId];
             if (response) {
                 const updatedResponse = {
                     ...response,
-                    status: 'completed' as const,
+                    status: 'Completed' as const,
                     completedAt: new Date().toISOString(),
                 };
                 await saveResponse(assessmentId, updatedResponse);
             }
         } catch (error) {
             console.error('Error completing assessment:', error);
+        }
+    };
+
+    const updateMeetingDate = async (assessmentId: string, meetingDate: string) => {
+        try {
+            const response = responses[assessmentId];
+            if (response) {
+                const updatedResponse = {
+                    ...response,
+                    meetingDate,
+                };
+                await saveResponse(assessmentId, updatedResponse);
+            }
+        } catch (error) {
+            console.error('Error updating meeting date:', error);
         }
     };
 
@@ -98,6 +116,7 @@ export const AssessmentProvider = ({ children }: { children: ReactNode }) => {
                 getResponse,
                 clearResponse,
                 completeAssessment,
+                updateMeetingDate,
                 isLoading,
             }}
         >
