@@ -131,37 +131,6 @@ export function DynamicFormTask({ item }: Props) {
         }
     }, [p?.formValues]);
 
-    // ✅ Check completion from progress context, not local state
-    const isSurveyCompleted = (fieldId: string) => {
-        // Check from progress context directly (most up-to-date)
-        const progressFormValues = progress[item.id]?.formValues || {};
-        return progressFormValues[`${fieldId}-completed`] === true;
-    };
-
-    const isMeetingScheduled = (fieldId: string) => {
-        const progressFormValues = progress[item.id]?.formValues || {};
-        return progressFormValues[`${fieldId}-meetingScheduled`] === true;
-    };
-
-    const handleSurveyButtonPress = (field: DynamicField) => {
-        if (field.navigateTo) {
-            // Save current progress
-            updateItem(item.id, {
-                formValues: formData,
-                status: 'IN_PROGRESS',
-            });
-
-            // Navigate with params
-            router.push({
-                pathname: field.navigateTo as any,
-                params: {
-                    returnTo: item.id,
-                    surveyFieldId: field.id,
-                },
-            });
-        }
-    };
-
     const renderField = (field: DynamicField) => {
         if (!shouldShowField(field)) return null;
 
@@ -184,6 +153,16 @@ export function DynamicFormTask({ item }: Props) {
                         />
                     </View>
                 );
+
+            case 'TEXT':
+                return (
+                    <View key={field.id} style={[styles.fieldContainer, { alignItems: 'center' }]}>
+                        <Text style={styles.text}>
+                            {field.label}
+                        </Text>
+                    </View>
+                );
+
 
             case 'TEXT_AREA':
                 return (
@@ -651,6 +630,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         color: 'white',
         fontSize: 15,
+    },
+    text: {
+        color: 'white',
+        fontSize: 16,
+        marginBottom: 8,
+        textAlign: 'center',
     },
     textArea: { height: 100, textAlignVertical: 'top' },
     checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16, gap: 12 },

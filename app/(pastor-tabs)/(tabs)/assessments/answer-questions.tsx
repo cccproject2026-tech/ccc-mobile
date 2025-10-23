@@ -165,7 +165,7 @@ export default function AnswerQuestionPage() {
 
     const handleScheduleMeeting = () => {
         setShowModal(false);
-        router.push({ pathname: '/(pastor-tabs)/(tabs)/appointments/my-appointments', params: { openSheet: 'true', assessmentId } });
+        router.push({ pathname: '/(pastor-tabs)/(tabs)/appointments', params: { openSheet: 'true', assessmentId } });
     };
 
     const renderQuestion = (question: AssessmentQuestion) => {

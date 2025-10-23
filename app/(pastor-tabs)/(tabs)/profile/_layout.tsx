@@ -5,7 +5,10 @@ export default function ProfileLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
+        animation: 'slide_from_right', // or 'none' to disable
+        animationDuration: 200,
       }}
+      initialRouteName="index" // Set initial route
     />
   );
 }

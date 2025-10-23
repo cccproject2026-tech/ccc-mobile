@@ -531,7 +531,7 @@ export const PastorMenuItems: MenuItem[] = [
         label: 'Appointments',
         icon: icons.Appointments,
         iconType: 'image',
-        route: '/(pastor-tabs)/appointments/my-appointments',
+        route: '/(pastor-tabs)/appointments',
     },
     {
         id: 'profile',

@@ -163,7 +163,7 @@ export default function ProfileScreen() {
       >
         <View className="w-full">
           <Header title="Profile" showSettings={false} hideSearchBar />
-          <View className="flex-1 items-center py-5 relative">
+          <View className="relative items-center flex-1 py-5">
             <View className="w-[70px] h-[70px] rounded-full justify-center items-center bg-white/12 relative mb-4">
               <Image
                 source={profileImage}
@@ -216,7 +216,7 @@ export default function ProfileScreen() {
           )}
 
           {!isEditMode && (
-            <View className="flex flex-row justify-center items-center gap-2 px-5 py-4 mt-2">
+            <View className="flex flex-row items-center justify-center gap-2 px-5 py-4 mt-2">
               <View className="flex flex-row w-1/2 justify-around items-center rounded-[10px] px-2.5 py-2.5 bg-[#004B87] border border-white/80">
                 <Text className="text-white">Upload documents</Text>
                 <Image source={icons.attachment} style={styles.icon} />
@@ -260,7 +260,7 @@ export default function ProfileScreen() {
             </View>
 
             {/* Detailed Personal Info */}
-            <View className="rounded-md p-2 pb-10 border border-white/45 mt-4 gap-4">
+            <View className="gap-4 p-2 pb-10 mt-4 border rounded-md border-white/45">
               <View className="gap-6 mt-2">
                 <Text className="font-[AlbertRegular] text-white text-[14px]">
                   Personal Information
@@ -297,7 +297,7 @@ export default function ProfileScreen() {
 
               {/* Church-1 Personal Info */}
               <View className="flex-1 gap-3">
-                <View className="flex-row items-center gap-12 justify-between">
+                <View className="flex-row items-center justify-between gap-12">
                   <Text className="font-[AlbertRegular] text-white text-[14px]">
                     Current Church -1 Information
                   </Text>
@@ -307,7 +307,7 @@ export default function ProfileScreen() {
                       buttonClass="mx-0 px-0 rounded-full"
                       wrapperClass="flex-1 rounded-full"
                       labelStyle={{ fontSize: 14, lineHeight: 0 }}
-                      onPress={() => {}}
+                      onPress={() => { }}
                     />
                   )}
                 </View>
@@ -394,7 +394,7 @@ export default function ProfileScreen() {
               {/* church 2 Information */}
               {profileData.church2 && (
                 <View className="gap-3">
-                  <View className="flex-row justify-between gap-12 items-center">
+                  <View className="flex-row items-center justify-between gap-12">
                     <Text className="font-[AlbertRegular] text-white text-[14px]">
                       Current Church -2 Information
                     </Text>
@@ -404,7 +404,7 @@ export default function ProfileScreen() {
                         buttonClass="mx-0 px-0 rounded-full"
                         wrapperClass="flex-1 rounded-full"
                         labelStyle={{ fontSize: 14, lineHeight: 0 }}
-                        onPress={() => {}}
+                        onPress={() => { }}
                       />
                     )}
                   </View>
@@ -607,7 +607,7 @@ export default function ProfileScreen() {
             </View>
           </View>
           {isEditMode && (
-            <View className="flex-row justify-center items-center gap-5 my-10">
+            <View className="flex-row items-center justify-center gap-5 my-10">
               <Button
                 children="Cancel"
                 labelStyle={{
@@ -620,7 +620,7 @@ export default function ProfileScreen() {
                   backgroundColor: "white",
                   width: 87,
                 }}
-                onPress={() => {}}
+                onPress={() => { }}
               />
               <Button
                 children="Save"
@@ -633,7 +633,7 @@ export default function ProfileScreen() {
                   borderRadius: 10,
                   width: 87,
                 }}
-                onPress={() => {}}
+                onPress={() => { }}
               />
             </View>
           )}

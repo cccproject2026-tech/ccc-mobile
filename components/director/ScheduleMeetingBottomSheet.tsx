@@ -46,9 +46,39 @@ export interface ScheduleMeetingBottomSheetProps {
         accent?: string;
         cardBackground?: string;
     };
+
+
     disableOutsideClose?: boolean; // Prevent closing by clicking outside or swiping down
     showCancelButton?: boolean; // Control whether cancel button is shown in step 1
     onScheduleComplete?: () => void; // Callback after successful scheduling for context updates
+}
+export interface ScheduleMeetingBottomSheetProps {
+    mentors: Mentor[];
+    onClose: () => void;
+    onSchedule: (data: {
+        selectedMentor: Mentor;
+        selectedDate: string;
+        selectedTime: TimeSlot;
+        meetingOption: string;
+    }) => void;
+    mode?: 'schedule' | 'reschedule'; // NEW: Determine which mode
+    existingAppointment?: {
+        mentor: Mentor;
+        date: string;
+        time: TimeSlot;
+        meetingOption: string;
+    } | null;  // ⬅️ ADD | null
+
+    actionType?: 'scheduled' | 'rescheduled';
+    colorScheme?: {
+        background?: string;
+        text?: string;
+        accent?: string;
+        cardBackground?: string;
+    };
+    disableOutsideClose?: boolean;
+    showCancelButton?: boolean;
+    onScheduleComplete?: () => void;
 }
 
 const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingBottomSheetProps>(
@@ -57,6 +87,8 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
             mentors,
             onClose,
             onSchedule,
+            mode = 'schedule', // NEW: Default to schedule mode
+            existingAppointment, // NEW: Pre-filled data for reschedule
             actionType = 'scheduled',
             colorScheme = {
                 background: '#1E3A6F',
@@ -64,9 +96,9 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                 accent: '#FFC107',
                 cardBackground: 'rgba(255, 255, 255, 0.1)',
             },
-            disableOutsideClose = false, // Default: allow closing (existing behavior)
-            showCancelButton = true, // Default: show cancel button (existing behavior)
-            onScheduleComplete, // Optional callback for context updates
+            disableOutsideClose = false,
+            showCancelButton = true,
+            onScheduleComplete,
         },
         ref
     ) => {
@@ -81,20 +113,30 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
             return ['78%'];
         }, [deviceType]);
 
-        const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+        // Determine initial step based on mode
+        const [currentStep, setCurrentStep] = useState<1 | 2>(mode === 'reschedule' ? 2 : 1);
         const [searchQuery, setSearchQuery] = useState('');
-        const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
-        const [selectedDate, setSelectedDate] = useState<string>('');
-        const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null);
-        const [meetingOption, setMeetingOption] = useState('Zoom');
+
+        // Pre-fill data for reschedule mode
+        const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(
+            mode === 'reschedule' && existingAppointment ? existingAppointment.mentor : null
+        );
+        const [selectedDate, setSelectedDate] = useState<string>(
+            mode === 'reschedule' && existingAppointment ? existingAppointment.date : ''
+        );
+        const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(
+            mode === 'reschedule' && existingAppointment ? existingAppointment.time : null
+        );
+        const [meetingOption, setMeetingOption] = useState(
+            mode === 'reschedule' && existingAppointment ? existingAppointment.meetingOption : 'Zoom'
+        );
         const [showMeetingOptions, setShowMeetingOptions] = useState(false);
         const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-        // Time slots based on selected date (simulating API response)
+        // Time slots logic remains the same
         const getTimeSlotsForDate = (dateString: string): TimeSlot[] => {
             if (!dateString) return [];
 
-            // Simulate different time slots for different dates
             const baseSlots = [
                 { id: '1', startTime: '09:00', endTime: '10:00', label: '09:00 am - 10:00 am' },
                 { id: '2', startTime: '11:00', endTime: '12:00', label: '11:00 am - 12:00 pm' },
@@ -102,16 +144,15 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                 { id: '4', startTime: '03:00', endTime: '04:00', label: '03:00 pm - 04:00 pm' },
             ];
 
-            // Different available slots for different dates
             const date = new Date(dateString);
             const dayOfWeek = date.getDay();
 
-            if (dayOfWeek === 1 || dayOfWeek === 3) { // Monday or Wednesday
-                return baseSlots.slice(0, 2); // Morning slots only
-            } else if (dayOfWeek === 2 || dayOfWeek === 4) { // Tuesday or Thursday
-                return baseSlots.slice(1, 4); // Afternoon slots
+            if (dayOfWeek === 1 || dayOfWeek === 3) {
+                return baseSlots.slice(0, 2);
+            } else if (dayOfWeek === 2 || dayOfWeek === 4) {
+                return baseSlots.slice(1, 4);
             } else {
-                return baseSlots; // All slots
+                return baseSlots;
             }
         };
 
@@ -140,7 +181,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                     disappearsOnIndex={-1}
                     appearsOnIndex={0}
                     opacity={0.5}
-                    pressBehavior={disableOutsideClose ? 'none' : 'close'} // Disable backdrop press if needed
+                    pressBehavior={disableOutsideClose ? 'none' : 'close'}
                 />
             ),
             [disableOutsideClose]
@@ -153,7 +194,10 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
         };
 
         const handleBack = () => {
-            if (currentStep === 2) {
+            // In reschedule mode, close instead of going back
+            if (mode === 'reschedule') {
+                handleClose();
+            } else if (currentStep === 2) {
                 setCurrentStep(1);
             }
         };
@@ -167,34 +211,31 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                     meetingOption,
                 });
 
-                // Call the optional completion callback for context updates
                 if (onScheduleComplete) {
                     onScheduleComplete();
                 }
 
-                // Show success modal
                 setShowSuccessModal(true);
 
-                // Close bottom sheet after modal shows
                 setTimeout(() => {
                     onClose();
                     resetForm();
                 }, 2000);
             }
         };
+
         const resetForm = () => {
-            setCurrentStep(1);
-            setSelectedMentor(null);
-            setSelectedDate('');
-            setSelectedTime(null);
+            setCurrentStep(mode === 'reschedule' ? 2 : 1);
+            setSelectedMentor(mode === 'reschedule' && existingAppointment ? existingAppointment.mentor : null);
+            setSelectedDate(mode === 'reschedule' && existingAppointment ? existingAppointment.date : '');
+            setSelectedTime(mode === 'reschedule' && existingAppointment ? existingAppointment.time : null);
             setSearchQuery('');
-            setMeetingOption('Zoom');
+            setMeetingOption(mode === 'reschedule' && existingAppointment ? existingAppointment.meetingOption : 'Zoom');
             setShowMeetingOptions(false);
             setShowSuccessModal(false);
         };
 
         const handleClose = () => {
-            // Only allow manual close if not disabled
             if (!disableOutsideClose) {
                 onClose();
                 setTimeout(() => {
@@ -202,15 +243,20 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                 }, 300);
             }
         };
+
         const isStep1Valid = selectedMentor !== null;
         const isStep2Valid = selectedDate && selectedTime;
+
+        // Determine which step to show
+        const showMentorSelection = mode === 'schedule' && currentStep === 1;
+        const showDateTimeSelection = mode === 'reschedule' || currentStep === 2;
 
         return (
             <>
                 <BottomSheetModal
                     ref={ref}
                     snapPoints={snapPoints}
-                    enablePanDownToClose={!disableOutsideClose} // Disable swipe down if needed
+                    enablePanDownToClose={!disableOutsideClose}
                     backgroundComponent={() => null}
                     backdropComponent={renderBackdrop}
                     handleIndicatorStyle={styles.handleIndicator}
@@ -227,17 +273,15 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                             contentContainerStyle={{ paddingBottom: bottom + getSpacing(12), paddingTop: getSpacing(12) }}
                         >
                             <View>
-                                {currentStep === 1 ? (
-                                    // Step 1: Select Mentor
+                                {showMentorSelection ? (
+                                    // Step 1: Select Mentor (Only in Schedule mode)
                                     <View style={styles.stepContent}>
-                                        {/* Title Container */}
                                         <View style={[styles.titleContainer, { borderColor: 'rgba(255, 255, 255, 0.3)' }]}>
                                             <Text style={[styles.stepTitleLarge, { color: colorScheme.text }]}>
                                                 Select Mentor for the Meeting
                                             </Text>
                                         </View>
 
-                                        {/* Search Bar */}
                                         <View style={styles.searchBarContainer}>
                                             <SearchBar
                                                 backgroundColor='transparent'
@@ -247,7 +291,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                             />
                                         </View>
 
-                                        {/* Mentor List */}
                                         <View style={[styles.mentorListStep1, { borderColor: 'rgba(255, 255, 255, 0.3)' }]}>
                                             {filteredMentors.map((mentor) => (
                                                 <Pressable
@@ -282,9 +325,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                             ))}
                                         </View>
 
-                                        {/* Footer Buttons for Step 1 */}
                                         <View style={styles.step1Footer}>
-                                            {/* Conditionally render cancel button based on showCancelButton prop */}
                                             {showCancelButton && (
                                                 <Pressable
                                                     style={[styles.cancelButton, { borderColor: 'rgba(255, 255, 255, 0.5)', backgroundColor: '#FFFFFF' }]}
@@ -303,7 +344,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                         backgroundColor: isStep1Valid ? 'rgba(30, 54, 111, 1)' : 'rgba(30, 54, 111, 1)',
                                                         borderWidth: 1,
                                                         borderColor: isStep1Valid ? '#fff' : 'rgba(74, 91, 204, 0.5)',
-                                                        flex: showCancelButton ? undefined : 1, // Full width if no cancel button
+                                                        flex: showCancelButton ? undefined : 1,
                                                     }
                                                 ]}
                                                 onPress={handleNext}
@@ -315,14 +356,22 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                             </Pressable>
                                         </View>
                                     </View>
-                                ) : (
-                                    // Step 2: Schedule Meeting
+                                ) : showDateTimeSelection ? (
+                                    // Step 2: Schedule/Reschedule Date & Time
                                     <View style={styles.stepContent}>
+                                        {/* Show mentor info for reschedule mode */}
+                                        {mode === 'reschedule' && selectedMentor && (
+                                            <View style={[styles.titleContainer, { borderColor: 'rgba(255, 255, 255, 0.3)', marginBottom: 16 }]}>
+                                                <Text style={[styles.sectionTitle, { color: colorScheme.text }]}>
+                                                    Rescheduling with {selectedMentor.name}
+                                                </Text>
+                                            </View>
+                                        )}
+
                                         <Text style={[styles.stepTitle, { color: colorScheme.text }]}>
                                             Select Available Date
                                         </Text>
 
-                                        {/* Calendar */}
                                         <View style={styles.calendarContainer}>
                                             <GradientCalendar
                                                 selected={selectedDate}
@@ -348,7 +397,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                             />
                                         </View>
 
-                                        {/* Time Selection */}
                                         {selectedDate && (
                                             <>
                                                 <Text style={[styles.sectionTitle, { color: colorScheme.text }]}>
@@ -400,7 +448,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                             </>
                                         )}
 
-                                        {/* Meeting Options */}
                                         <Text style={[styles.sectionTitle, { color: colorScheme.text }]}>
                                             Preferred Meeting Option
                                         </Text>
@@ -425,7 +472,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                             />
                                         </Pressable>
 
-                                        {/* Meeting Options Dropdown */}
                                         {showMeetingOptions && (
                                             <View style={[styles.dropdownOptions, { backgroundColor: 'transparent', borderColor: `${colorScheme.text}30` }]}>
                                                 {meetingOptions.map((option) => (
@@ -449,14 +495,13 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                             </View>
                                         )}
 
-                                        {/* Footer Buttons for Step 2 */}
                                         <View style={styles.step2Footer}>
                                             <Pressable
-                                                style={[styles.cancelButton, { borderColor: `${colorScheme.text}80` }]}
+                                                style={[styles.cancelButton, { borderColor: `${colorScheme.text}80`, backgroundColor: '#FFFFFF' }]}
                                                 onPress={handleBack}
                                             >
-                                                <Text style={[styles.cancelButtonText, { color: colorScheme.text }]}>
-                                                    Back
+                                                <Text style={[styles.cancelButtonText, { color: '#4A5BCC' }]}>
+                                                    {mode === 'reschedule' ? 'Cancel' : 'Back'}
                                                 </Text>
                                             </Pressable>
 
@@ -473,12 +518,12 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                 disabled={!isStep2Valid}
                                             >
                                                 <Text style={[styles.scheduleButtonText, { color: '#FFFFFF' }]}>
-                                                    Schedule
+                                                    {mode === 'reschedule' ? 'Reschedule' : 'Schedule'}
                                                 </Text>
                                             </Pressable>
                                         </View>
                                     </View>
-                                )}
+                                ) : null}
                             </View>
                         </BottomSheetScrollView>
                     </LinearGradient>
@@ -487,12 +532,13 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                 <SimpleSuccessModal
                     visible={showSuccessModal}
                     onClose={() => setShowSuccessModal(false)}
-                    title={actionType === 'scheduled' ? 'Appointment has been Scheduled' : 'Appointment has been Rescheduled'}
+                    title={mode === 'reschedule' ? 'Appointment has been Rescheduled' : 'Appointment has been Scheduled'}
                 />
             </>
         );
     }
 );
+
 
 const styles = StyleSheet.create({
     bottomSheetBackground: {

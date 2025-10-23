@@ -14,6 +14,7 @@ import { useMemo, useState } from "react";
 import {
   Image, Pressable, ScrollView, StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from "react-native";
 import Animated, { useAnimatedRef, useScrollViewOffset } from "react-native-reanimated";
@@ -426,21 +427,25 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
               </View>
               <View style={{ marginTop: 10, gap: 12, borderBottomColor: '#ffffff22', borderBottomWidth: 1, paddingBottom: 18 }}>
                 {appointments.map((a) => (
-                  <AppointmentCard
-                    key={a.id}
-                    date={a.date}
-                    time={a.time}
-                    tz={a.tz}
-                    person={a.person}
-                    role={a.role}
-                    mode={a.mode}
-                    platformIcon={a.icon}
-                    avatar={icons.myProfile}
-                    onPressChevron={() => { }}
-                    onCall={() => { }}
-                    onChat={() => { }}
-                    onMail={() => { }}
-                  />
+                  <TouchableOpacity key={a.id} activeOpacity={0.8} onPress={() => {
+                    router.push('/appointments')
+                  }}>
+                    <AppointmentCard
+                      key={a.id}
+                      date={a.date}
+                      time={a.time}
+                      tz={a.tz}
+                      person={a.person}
+                      role={a.role}
+                      mode={a.mode}
+                      platformIcon={a.icon}
+                      avatar={icons.myProfile}
+                      onPressChevron={() => { }}
+                      onCall={() => { }}
+                      onChat={() => { }}
+                      onMail={() => { }}
+                    />
+                  </TouchableOpacity>
                 ))}
               </View>
             </View>

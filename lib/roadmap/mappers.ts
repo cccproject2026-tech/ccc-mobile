@@ -57,6 +57,16 @@
 import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
 import { Phase, Task } from './types';
 
+
+export const getPhaseNumber = (phase: Phase): number | undefined => {
+    // Don't show phase badge for single roadmap phases
+    if (phase.isSingleRoadmap) return undefined;
+
+    // Extract phase number from phase ID (e.g., 'phase-1' → 1)
+    const match = phase.id.match(/phase-(\d+)/);
+    return match ? parseInt(match[1], 10) : undefined;
+};
+
 export function usePhaseCard(phase: Phase, tasks: Task[]) {
     const { progress } = useRoadmapProgress();
 
@@ -85,8 +95,11 @@ export function usePhaseCard(phase: Phase, tasks: Task[]) {
             anyDue ? 'due' :
                 anyInProgress || completed > 0 ? 'in-progress' :
                     'initial';
+    const phaseNumber = getPhaseNumber(phase);
+
 
     return {
+        phase: phase.id,
         image: phase.coverImage,
         title: phase.title,
         description: phase.subtitle,
@@ -98,5 +111,6 @@ export function usePhaseCard(phase: Phase, tasks: Task[]) {
             : undefined,
         showArrow: true,
         showCheckmark: allCompleted,
+        phaseNumber,
     };
 }

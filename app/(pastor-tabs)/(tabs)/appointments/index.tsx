@@ -2,7 +2,7 @@ import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
-import ScheduleMeetingBottomSheet, { Mentor } from "@/components/director/ScheduleMeetingBottomSheet";
+import ScheduleMeetingBottomSheet, { Mentor, TimeSlot } from "@/components/director/ScheduleMeetingBottomSheet";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
@@ -12,7 +12,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -127,21 +127,32 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
 
   const selectedDateAppointments = getAppointmentsForDate(selectedDate);
 
-  const scheduleMeeting = () => {
-    navigation.navigate("scheduleMeeting", {
-      data: {},
-      navigatedFrom: "surveyScreen",
-    });
-  };
 
-  const handleViewDetails = (appointment: any) => {
-    console.log('View details', appointment);
-    // Navigate to appointment details
-  };
+  const [rescheduleData, setRescheduleData] = useState<{
+    mentor: Mentor;
+    date: string;
+    time: TimeSlot;
+    meetingOption: string;
+  } | null>(null);
 
+  // Handle reschedule button press
   const handleReschedule = (appointment: any) => {
-    console.log('Reschedule appointment', appointment);
-    // Navigate to reschedule screen
+    // Convert appointment data to the format needed
+    const mentorData = mockMentors.find(m => m.name === appointment.person);
+    if (mentorData) {
+      setRescheduleData({
+        mentor: mentorData,
+        date: appointment.date,
+        time: {
+          id: '1',
+          startTime: appointment.time.split(' - ')[0],
+          endTime: appointment.time.split(' - ')[1],
+          label: appointment.time,
+        },
+        meetingOption: appointment.mode,
+      });
+    }
+    scheduleMeetingBottomSheetRef.current?.present();
   };
 
   const handleCancel = (appointment: any) => {
@@ -200,6 +211,7 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
     'Whatsapp',
     'Phone call',
   ];
+
 
   const handleChangeMode = (appointment: any) => {
     setChangeModeModalVisible(true);
@@ -377,7 +389,12 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
       <ScheduleMeetingBottomSheet
         ref={scheduleMeetingBottomSheetRef}
         mentors={mockMentors}
-        onClose={handleCloseScheduleBottomSheet}
+        mode={rescheduleData ? 'reschedule' : 'schedule'} // Dynamic mode
+        existingAppointment={rescheduleData} // Pass existing data for reschedule
+        onClose={() => {
+          handleCloseScheduleBottomSheet();
+          setRescheduleData(null); // Reset reschedule data
+        }}
         onSchedule={handleScheduleMeeting}
         colorScheme={{
           background: Colors.darkBlueGradientOne,

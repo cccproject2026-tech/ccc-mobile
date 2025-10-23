@@ -77,22 +77,22 @@ export default function MyMentorsScreen() {
 
     const handleCall = (mentor: MentorData) => {
         console.log("Calling", mentor.name);
-        // Implement call functionality
+
     };
 
     const handleChat = (mentor: MentorData) => {
         console.log("Chatting with", mentor.name);
-        // Implement chat functionality
+
     };
 
     const handleMail = (mentor: MentorData) => {
         console.log("Emailing", mentor.name);
-        // Implement email functionality
+
     };
 
     const handleWhatsApp = (mentor: MentorData) => {
         console.log("WhatsApp", mentor.name);
-        // Implement WhatsApp functionality
+
     };
 
     const handleScheduleAppointment = (mentor: MentorData) => {

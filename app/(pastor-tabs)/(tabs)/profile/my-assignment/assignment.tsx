@@ -1,11 +1,11 @@
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Header } from "@/components/build-components";
-import RoadmapCard, { RoadmapCardData, RoadmapCardStatus } from "@/components/director/ProgressRoadmapCard";
+import RoadmapCard from "@/components/director/ProgressRoadmapCard";
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { mockRevitalization } from '@/lib/roadmap/mock';
-import type { Task } from '@/lib/roadmap/types';
+import type { RoadmapCardData, RoadmapCardStatus, Task } from '@/lib/roadmap/types';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
