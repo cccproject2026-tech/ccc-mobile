@@ -1,50 +1,47 @@
-import ActionCardList from '@/components/director/ActionCard';
-import AddUserCard from '@/components/director/AddUserCard';
-import AppointmentCard from '@/components/director/AppointmentCard';
-import ExploreCard from '@/components/director/ExploreCard';
-import GraduateStatusPieChart from '@/components/director/GraduateStatusPieChart';
-import HeaderHero from '@/components/director/HeroHeader';
-import InterestCard from '@/components/director/InterestCard';
-import MentorMenteeList from '@/components/director/MentorMenteeList';
-import MonthlyTrendsChart from '@/components/director/MonthlyTrends';
-import StatCard from '@/components/director/StatCard';
-import UserAddedConfirmationModal from '@/components/director/UserAddedModal';
-import WelcomeCard from '@/components/director/WelcomeCard';
-import { Colors } from '@/constants/Colors';
-import { icons } from '@/constants/images';
-import { appointments, exploreItems, newInterests, stats } from '@/constants/mockData';
-import { formatClock, formatDate } from '@/utils/date';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useMemo, useState } from 'react';
+import ActionCardList from "@/components/director/ActionCard";
+import AddUserCard from "@/components/director/AddUserCard";
+import AppointmentCard from "@/components/director/AppointmentCard";
+import ExploreCard from "@/components/director/ExploreCard";
+import GraduateStatusPieChart from "@/components/director/GraduateStatusPieChart";
+import HeaderHero from "@/components/director/HeroHeader";
+import InterestCard from "@/components/director/InterestCard";
+import MentorMenteeList from "@/components/director/MentorMenteeList";
+import MonthlyTrendsChart from "@/components/director/MonthlyTrends";
+import StatCard from "@/components/director/StatCard";
+import UserAddedConfirmationModal from "@/components/director/UserAddedModal";
+import WelcomeCard from "@/components/director/WelcomeCard";
+import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
 import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+  appointments,
+  exploreItems,
+  newInterests,
+  stats,
+} from "@/constants/mockData";
+import { formatClock, formatDate } from "@/utils/date";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedRef,
-  useScrollViewOffset
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+  useScrollViewOffset,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const HEADER_HEIGHT = 280;
-
-
 
 export default function DirectorDashboard() {
   const [now, setNow] = useState(new Date());
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
 
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [addedUser, setAddedUser] = useState({ name: '', role: '' });
+  const [addedUser, setAddedUser] = useState({ name: "", role: "" });
 
   const handleUserAdded = (name: string, role: string) => {
     setAddedUser({ name, role });
@@ -60,23 +57,21 @@ export default function DirectorDashboard() {
     // Navigate to assignment screen
   };
 
-
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-
   const greeting = useMemo(() => {
     const h = now.getHours();
-    if (h < 12) return 'Good Morning';
-    if (h < 18) return 'Good Afternoon';
-    return 'Good Evening';
+    if (h < 12) return "Good Morning";
+    if (h < 18) return "Good Afternoon";
+    return "Good Evening";
   }, [now]);
 
   const handleWelcomRoute = () => {
-    router.push('/(director-tabs)/(tabs)/profile');
-  }
+    router.push("/(director-tabs)/(tabs)/profile");
+  };
 
   const topColor = Colors.lightBlueGradientOne;
 
@@ -91,7 +86,8 @@ export default function DirectorDashboard() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingBottom: 16 + insets.bottom,
-          }}        >
+          }}
+        >
           <HeaderHero
             height={HEADER_HEIGHT}
             image={icons.backgroundImage}
@@ -101,32 +97,53 @@ export default function DirectorDashboard() {
             scrollOffset={scrollOffset}
           />
 
-
           <LinearGradient
-            colors={['transparent', Colors.darkBlueGradientOne]}
-            style={{ minHeight: '100%', }}
+            colors={["transparent", Colors.darkBlueGradientOne]}
+            style={{ minHeight: "100%" }}
           >
             <View style={{ paddingHorizontal: 16, marginTop: 12, gap: 8 }}>
-              <Text style={[styles.sectionTitle, { fontSize: 16 }]}>{greeting}</Text>
+              <Text style={[styles.sectionTitle, { fontSize: 16 }]}>
+                {greeting}
+              </Text>
               <WelcomeCard
                 onClick={handleWelcomRoute}
-                avatar={icons.myProfile} message="David Roe, Welcome !" />
+                avatar={icons.myProfile}
+                message="David Roe, Welcome !"
+              />
             </View>
 
             <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
               <View
-                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
               >
                 <Text style={[styles.sectionTitle, { fontSize: 15 }]}>
                   Today&apos;s Appointments
                 </Text>
                 <Pressable>
-                  <Text style={{ color: '#cfe9f3', fontWeight: '600', fontSize: 13 }}>
+                  <Text
+                    style={{
+                      color: "#cfe9f3",
+                      fontWeight: "600",
+                      fontSize: 13,
+                    }}
+                  >
                     See all
                   </Text>
                 </Pressable>
               </View>
-              <View style={{ marginTop: 10, gap: 12, borderBottomColor: '#ffffff22', borderBottomWidth: 1, paddingBottom: 18 }}>
+              <View
+                style={{
+                  marginTop: 10,
+                  gap: 12,
+                  borderBottomColor: "#ffffff22",
+                  borderBottomWidth: 1,
+                  paddingBottom: 18,
+                }}
+              >
                 {appointments.map((a) => (
                   <AppointmentCard
                     key={a.id}
@@ -137,10 +154,10 @@ export default function DirectorDashboard() {
                     mode={a.mode}
                     platformIcon={a.icon}
                     avatar={icons.myProfile}
-                    onPressChevron={() => { }}
-                    onCall={() => { }}
-                    onChat={() => { }}
-                    onMail={() => { }}
+                    onPressChevron={() => {}}
+                    onCall={() => {}}
+                    onChat={() => {}}
+                    onMail={() => {}}
                   />
                 ))}
               </View>
@@ -148,30 +165,32 @@ export default function DirectorDashboard() {
             <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
               <View
                 style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+                >
                   <Text style={[styles.sectionTitle, { fontSize: 15 }]}>
                     New Interests
                   </Text>
                   <View
                     style={{
-                      backgroundColor: '#EAF7FF',
+                      backgroundColor: "#EAF7FF",
                       borderRadius: 10,
                       paddingHorizontal: 8,
                       paddingVertical: 3,
                       minWidth: 24,
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
                     <Text
                       style={{
-                        color: '#164d62',
-                        fontWeight: '700',
+                        color: "#164d62",
+                        fontWeight: "700",
                         fontSize: 12,
                       }}
                     >
@@ -180,7 +199,13 @@ export default function DirectorDashboard() {
                   </View>
                 </View>
                 <Pressable>
-                  <Text style={{ color: '#cfe9f3', fontWeight: '600', fontSize: 13 }}>
+                  <Text
+                    style={{
+                      color: "#cfe9f3",
+                      fontWeight: "600",
+                      fontSize: 13,
+                    }}
+                  >
                     See all
                   </Text>
                 </Pressable>
@@ -190,7 +215,7 @@ export default function DirectorDashboard() {
                 style={{
                   marginTop: 10,
                   gap: 12,
-                  borderBottomColor: '#ffffff22',
+                  borderBottomColor: "#ffffff22",
                   borderBottomWidth: 1,
                   paddingBottom: 18,
                 }}
@@ -199,33 +224,41 @@ export default function DirectorDashboard() {
                   <InterestCard
                     key={interest.id}
                     data={interest}
-                    onCall={() => console.log('Call', interest.name)}
-                    onChat={() => console.log('Chat', interest.name)}
-                    onMail={() => console.log('Mail', interest.name)}
-                    onPress={() => console.log('View', interest.name)}
+                    onCall={() => console.log("Call", interest.name)}
+                    onChat={() => console.log("Chat", interest.name)}
+                    onMail={() => console.log("Mail", interest.name)}
+                    onPress={() => console.log("View", interest.name)}
                   />
                 ))}
               </View>
             </View>
-            <View style={{
-              paddingHorizontal: 16,
-              marginTop: 16,
-            }}>
+            <View
+              style={{
+                paddingHorizontal: 16,
+                marginTop: 16,
+              }}
+            >
               <View
                 style={{
-                  borderBottomColor: '#ffffff22',
+                  borderBottomColor: "#ffffff22",
                   borderBottomWidth: 1,
                   paddingBottom: 18,
                 }}
               >
-
                 <AddUserCard onUserAdded={handleUserAdded} />
               </View>
             </View>
             <View style={{ marginTop: 16 }}>
               <MentorMenteeList />
             </View>
-            <View style={{ paddingHorizontal: 16, marginTop: 18, marginBottom: 18, gap: 8 }}>
+            <View
+              style={{
+                paddingHorizontal: 16,
+                marginTop: 18,
+                marginBottom: 18,
+                gap: 8,
+              }}
+            >
               <Text style={[styles.sectionTitle, { fontSize: 15 }]}>
                 Explore CCC
               </Text>
@@ -233,9 +266,9 @@ export default function DirectorDashboard() {
               {/* Grid */}
               <View
                 style={{
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between',
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  justifyContent: "space-between",
                   rowGap: 12,
                 }}
               >
@@ -244,14 +277,26 @@ export default function DirectorDashboard() {
                     key={item.id}
                     icon={item.icon}
                     title={item.title}
-                    onPress={() => console.log(`Pressed ${item.title}`)}
+                    onPress={() => {
+                      if (item.title === "Schedule") {
+                        router.push("/(director-tabs)/(tabs)/appointments");
+                      } else {
+                        console.log(`Pressed ${item.title}`);
+                      }
+                    }}
                   />
                 ))}
               </View>
-
             </View>
 
-            <View style={{ paddingHorizontal: 16, marginTop: 18, marginBottom: 18, gap: 8 }}>
+            <View
+              style={{
+                paddingHorizontal: 16,
+                marginTop: 18,
+                marginBottom: 18,
+                gap: 8,
+              }}
+            >
               <Text style={[styles.sectionTitle, { fontSize: 15 }]}>
                 Overview
               </Text>
@@ -259,24 +304,42 @@ export default function DirectorDashboard() {
               {/* Stats Row */}
               <View
                 style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
                 {stats.map((stat) => (
-                  <StatCard key={stat.id} label={stat.label} value={stat.value} />
+                  <StatCard
+                    key={stat.id}
+                    label={stat.label}
+                    value={stat.value}
+                  />
                 ))}
               </View>
             </View>
-            <View style={{ paddingHorizontal: 16, marginTop: 18, marginBottom: 18, gap: 8 }}>
+            <View
+              style={{
+                paddingHorizontal: 16,
+                marginTop: 18,
+                marginBottom: 18,
+                gap: 8,
+              }}
+            >
               <Text style={[styles.sectionTitle, { fontSize: 15 }]}>
                 Graduate Status of Pastors in a Year
               </Text>
 
               <GraduateStatusPieChart />
             </View>
-            <View style={{ paddingHorizontal: 16, marginTop: 18, marginBottom: 18, gap: 8 }}>
+            <View
+              style={{
+                paddingHorizontal: 16,
+                marginTop: 18,
+                marginBottom: 18,
+                gap: 8,
+              }}
+            >
               <Text style={[styles.sectionTitle, { fontSize: 15 }]}>
                 Monthly Trends of Pastors and Mentors
               </Text>
@@ -300,7 +363,7 @@ export default function DirectorDashboard() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    color: '#e7f6fc',
-    fontWeight: '700',
+    color: "#e7f6fc",
+    fontWeight: "700",
   },
 });
