@@ -3,7 +3,7 @@ import { MenuItem } from '@/constants/mockData';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -69,38 +69,17 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
         const isExpanded = expandedItems[item.id];
         const isLastItem = index === totalItems - 1;
 
-        // const handleItemPress = useCallback(() => {
-        //     if (hasChildren) {
-        //         toggleExpand(item.id);
-        //     } else if (item.route) {
-        //         // First, close the drawer
-        //         props.navigation.closeDrawer();
-
-        //         // Then navigate after a small delay to allow drawer animation
-        //         requestAnimationFrame(() => {
-        //             router.push(item.route as any);
-        //         });
-        //     }
-        // }, [item.id, item.route, hasChildren]);
-        const handleItemPress = useCallback(() => {
-            if (hasChildren) {
-                toggleExpand(item.id);
-            } else if (item.route) {
-                props.navigation.closeDrawer();
-
-                // Use setTimeout to ensure drawer closes first
-                setTimeout(() => {
-                    // Use the navigation object instead of router
-                    router.push(item.route as any);
-                }, 100);
-            }
-        }, [item.id, item.route, hasChildren]);
-
         return (
             <View key={item.id}>
                 <TouchableOpacity
                     style={[styles.drawerItem, isNested && styles.nestedItem]}
-                    onPress={handleItemPress}
+                    onPress={() => {
+                        if (hasChildren) {
+                            toggleExpand(item.id);
+                        } else if (item.route) {
+                            router.push(item.route as any);
+                        }
+                    }}
                 >
                     <View style={styles.drawerItemLeft}>
                         <View style={styles.iconContainer}>

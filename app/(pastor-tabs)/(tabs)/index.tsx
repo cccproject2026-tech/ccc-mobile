@@ -9,7 +9,6 @@ import { appointments } from '@/constants/mockData';
 import { formatClock, formatDate } from "@/utils/date";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import {
   Image, Pressable, ScrollView, StyleSheet,
@@ -114,7 +113,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
             style={styles.backgroundImage}
             resizeMode="cover"
           >
-            <View className="mt-4">
+               <View className="mt-4">
               <TopBar />
             </View>
             <View style={styles.contentContainer}>
@@ -328,13 +327,11 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
         </ScrollView>
       </View> */}
 
-      <StatusBar style="light" translucent backgroundColor="transparent" />
       <LinearGradient
         colors={[Colors.lightBlueGradientOne, '#1D548D', '#264387']}
         style={{ flex: 1, }}
       >
 
-        {/* <View style={{ flex: 1, backgroundColor: Colors.lightBlueGradientOne }}> */}
         <Animated.ScrollView
           ref={scrollRef}
           scrollEventThrottle={16}
@@ -349,6 +346,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
             clock={formatClock(now)}
             date={formatDate(now)}
             scrollOffset={scrollOffset}
+            role="pastor"
           />
           <LinearGradient
             colors={[Colors.lightBlueGradientOne, 'transparent']}
@@ -407,7 +405,6 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
             </View>
             <View style={styles.separator} />
 
-            {/* Upcoming Appointments Section */}
             <View style={{ paddingHorizontal: 16, marginTop: 14, marginBottom: 20 }}>
               <View
                 style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
@@ -460,9 +457,6 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                 </Text>
               </View>
               <View className="gap-2">
-                {/* {dummyRoadMaps.map((e, i) => (
-                  <RoadMapCard data={e} dataKey={i.toString()} key={i} />
-                ))} */}
                 {dummyRoadMaps.map((e, i) => (
                   <RoadMapCardNew data={e} dataKey={i.toString()} key={i} />
                 ))}
