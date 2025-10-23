@@ -43,13 +43,13 @@ export const getFontSize = (baseSize: number): number => {
 
 
 // Responsive spacing
-export const getSpacing = (baseSpacing: number): number => {
-    if (isAndroid) {
-        // Reduce spacing more on Android to make things more compact
-        return moderateScale(baseSpacing * 0.8, 0.3);
-    }
-    return moderateScale(baseSpacing, 0.3);
-};
+// export const getSpacing = (baseSpacing: number): number => {
+//     if (isAndroid) {
+//         // Reduce spacing more on Android to make things more compact
+//         return moderateScale(baseSpacing * 0.8, 0.3);
+//     }
+//     return moderateScale(baseSpacing, 0.3);
+// };
 
 // Responsive image sizes
 export const getImageSize = (baseSize: number): number => {
@@ -67,13 +67,13 @@ export const getButtonHeight = (baseHeight: number): number => {
     return moderateScale(baseHeight, 0.3);
 };
 
-// Icon sizes
-export const getIconSize = (baseSize: number): number => {
-    if (isAndroid) {
-        return Math.round(baseSize * 0.85);
-    }
-    return Math.round(baseSize * 0.9);
-};
+// // Icon sizes
+// export const getIconSize = (baseSize: number): number => {
+//     if (isAndroid) {
+//         return Math.round(baseSize * 0.85);
+//     }
+//     return Math.round(baseSize * 0.9);
+// };
 
 // Device type helper
 export const getDeviceType = () => {
@@ -91,10 +91,26 @@ export const getCardImageSize = (): number => {
     return baseSize;
 };
 
-// List item heights
+// List item heights - INCREASED for better Android visibility
 export const getListItemHeight = (): number => {
     if (isAndroid) {
-        return isSmallDevice ? 50 : 55; // Reduced heights
+        return isSmallDevice ? 68 : 76; // Increased from 50/55
     }
-    return isSmallDevice ? 58 : 65; // Reduced heights
+    return isSmallDevice ? 58 : 65;
+};
+
+// Icon sizes - Less aggressive reduction for Android
+export const getIconSize = (baseSize: number): number => {
+    if (isAndroid) {
+        return Math.round(baseSize * 0.95); // Changed from 0.85 to 0.95
+    }
+    return Math.round(baseSize * 0.9);
+};
+
+// Responsive spacing - Less compression on Android
+export const getSpacing = (baseSpacing: number): number => {
+    if (isAndroid) {
+        return moderateScale(baseSpacing * 0.9, 0.3); // Changed from 0.8 to 0.9
+    }
+    return moderateScale(baseSpacing, 0.3);
 };

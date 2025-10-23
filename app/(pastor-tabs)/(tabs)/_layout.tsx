@@ -45,13 +45,13 @@ export default function PastorTabLayout() {
 
         if (navType === 'gesture') {
             return {
-                height: 60 + bottom,
+                height: 70 + bottom,
                 paddingBottom: bottom,
             };
         } else {
             // Button navigation
             return {
-                height: 75,
+                height: 70,
                 paddingBottom: 15,
             };
         }
