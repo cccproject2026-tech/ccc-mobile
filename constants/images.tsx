@@ -115,7 +115,7 @@ export const icons: Icons = {
   attachment: require("@/assets/icons/attachment.png"),
   edit: require("@/assets/icons/edit.png"),
   video: require("@/assets/icons/VIDEO.png"),
-  search: require("@/assets/icons/search.png"),
+  search: require("@/assets/icons/Search.png"),
   edit2: require("@/assets/icons/edit2.png"),
   profile2: require("@/assets/icons/Profile2.png"),
   list: require("@/assets/icons/List.png"),
