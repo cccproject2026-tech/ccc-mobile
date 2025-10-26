@@ -396,7 +396,7 @@ export const mockRevitalization: RevitalizationData = {
                     {
                         id: 'member-name',
                         type: 'TEXT_FIELD',
-                        label: 'Name of Mentor/Disciple',
+                        label: 'Name',
                         placeholder: 'Enter name of Mentor/Disciple here...',
                         required: true,
                     },
@@ -423,18 +423,25 @@ export const mockRevitalization: RevitalizationData = {
 
             schema: {
                 fields: [
+
                     {
-                        id: 'project-name',
-                        type: 'TEXT_FIELD',
-                        label: 'Community Engagement Project',
-                        placeholder: 'Choose your community engagement project...',
-                        required: true,
-                    },
-                    {
-                        id: 'event1-date',
-                        type: 'DATE_PICKER',
-                        label: 'Community Engagement Project Date',
-                        required: true,
+                        id: 'community-eng-event-details',
+                        type: 'SECTION_BOX',
+                        fields: [
+                            {
+                                id: 'project-name',
+                                type: 'TEXT_FIELD',
+                                label: 'Community Engagement Project',
+                                placeholder: 'Choose your community engagement project...',
+                                required: true,
+                            },
+                            {
+                                id: 'event1-date',
+                                type: 'DATE_PICKER',
+                                label: 'Community Engagement Project Date',
+                                required: true,
+                            },
+                        ]
                     },
                     {
                         id: 'event2-date',
@@ -662,22 +669,29 @@ export const mockRevitalization: RevitalizationData = {
             schema: {
                 fields: [
                     {
-                        id: 'event2-date',
+                        id: 'event2-date-field',
                         type: 'SECTION_BOX',
                         label: 'Community Engagement Event 1',
                         fields: [
+
                             {
-                                id: 'events-for-community-engagement-1',
-                                type: 'TEXT_FIELD',
-                                label: 'Events For Community Engagement Event 1',
-                                placeholder: 'List here...',
-                                required: true,
-                            },
-                            {
-                                id: 'community-engagement-event-1-date',
-                                type: 'DATE_PICKER',
-                                label: 'Community Engagement Event 1 Date',
-                                required: true,
+                                id: 'community-eng-event-1-details',
+                                type: 'SECTION_BOX',
+                                fields: [
+                                    {
+                                        id: 'events-for-community-engagement-1',
+                                        type: 'TEXT_FIELD',
+                                        label: 'Events For Community Engagement Event 1',
+                                        placeholder: 'List here...',
+                                        required: true,
+                                    },
+                                    {
+                                        id: 'community-engagement-event-1-date',
+                                        type: 'DATE_PICKER',
+                                        label: 'Community Engagement Event 1 Date',
+                                        required: true,
+                                    },
+                                ]
                             },
                             {
                                 id: 'event2-date',
@@ -721,18 +735,25 @@ export const mockRevitalization: RevitalizationData = {
                         type: 'SECTION_BOX',
                         label: 'Community Engagement Event 2',
                         fields: [
+
                             {
-                                id: 'events-for-community-engagement-2',
-                                type: 'TEXT_FIELD',
-                                label: 'Events For Community Engagement Event 2',
-                                placeholder: 'List here...',
-                                required: true,
-                            },
-                            {
-                                id: 'community-engagement-event-2-date',
-                                type: 'DATE_PICKER',
-                                label: 'Community Engagement Event 2 Date',
-                                required: true,
+                                id: 'community-event-2-details',
+                                type: 'SECTION_BOX',
+                                fields: [
+                                    {
+                                        id: 'events-for-community-engagement-2',
+                                        type: 'TEXT_FIELD',
+                                        label: 'Events For Community Engagement Event 2',
+                                        placeholder: 'List here...',
+                                        required: true,
+                                    },
+                                    {
+                                        id: 'community-engagement-event-2-date',
+                                        type: 'DATE_PICKER',
+                                        label: 'Community Engagement Event 2 Date',
+                                        required: true,
+                                    },
+                                ]
                             },
                             {
                                 id: 'event2-date',
