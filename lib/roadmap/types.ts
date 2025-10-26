@@ -7,6 +7,39 @@ export type CommentStatus = 'UNREAD' | 'READ' | 'ARCHIVED';
 export type QueryStatus = 'PENDING' | 'ANSWERED';
 
 
+
+
+export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due';
+
+export interface RoadmapCardData {
+    image?: string | number;
+    title: string;
+    description?: string;
+    completionTime?: string;
+    status?: RoadmapCardStatus;
+    completedDate?: string;
+    taskProgress?: {
+        completed: number;
+        total: number;
+    };
+    showArrow?: boolean;
+    showCheckmark?: boolean;
+}
+export interface Division {
+    id: string;
+    phaseId: string;
+    name: string;
+    description?: string;
+    tasks: string[];
+    order?: number;
+    meta?: {
+        icon?: string;
+        color?: string;
+        [key: string]: any;
+    };
+}
+
+
 export interface QueryAuthor {
     id: string;
     name: string;
@@ -77,7 +110,8 @@ export interface Phase {
     estMonthsMin?: number;
     estMonthsMax?: number;
     coverImage?: string;
-    tasks: string[];
+    tasks?: string[];
+    divisions?: string[];
     isSingleRoadmap?: boolean;
 }
 
@@ -95,7 +129,8 @@ export type DynamicFieldType =
     | 'DROPDOWN'
     | 'MULTI_SELECT'
     | 'BUTTON'
-    | 'SURVEY_BUTTON';
+    | 'SURVEY_BUTTON'
+    | 'TEXT'
 
 export interface ChecklistItem {
     id: string;
@@ -156,6 +191,7 @@ export interface Task {
     tags?: string[];
     schema: DynamicFormSchema;
     comments?: string[];
+    divisionId?: string;
     queries?: string[];
     meta?: {
         coverImage?: string;
@@ -172,6 +208,7 @@ export interface RevitalizationData {
     program: Program;
     phases: Record<string, Phase>;
     tasks: Record<string, Task>;
+    divisions?: Record<string, Division>;
     comments?: Record<string, Comment>;
     queries?: Record<string, Query>;
     queryResponses?: Record<string, QueryResponse>;

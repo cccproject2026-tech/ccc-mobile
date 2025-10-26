@@ -11,6 +11,7 @@ type Props = {
     clock: string;
     date: string;
     scrollOffset: SharedValue<number>;
+    role: 'director' | 'pastor' | 'mentor';
 };
 
 const HeaderHero: React.FC<Props> = ({
@@ -19,6 +20,7 @@ const HeaderHero: React.FC<Props> = ({
     clock,
     date,
     scrollOffset,
+    role
 }) => {
     const animStyle = useAnimatedStyle(() => ({
         transform: [
@@ -45,6 +47,7 @@ const HeaderHero: React.FC<Props> = ({
                 <TopBar
                     notifications={3}
                     showUserName={false}
+                    role={role}
                 // ...other TopBar props
                 />
             </View>

@@ -4,7 +4,6 @@ import { Drawer } from 'expo-router/drawer';
 import React from 'react';
 import { Platform } from 'react-native';
 
-
 export default function PastorDrawerLayout() {
   return (
     <Drawer
@@ -15,6 +14,9 @@ export default function PastorDrawerLayout() {
           width: Platform.OS === 'android' ? 290 : 320,
         },
         headerShown: false,
+        // Prevent remounting on navigation
+        // unmountOnBlur: false,
+        freezeOnBlur: true,
       }}
     >
       <Drawer.Screen
@@ -24,7 +26,6 @@ export default function PastorDrawerLayout() {
           drawerItemStyle: { display: 'none' },
         }}
       />
-
     </Drawer>
   );
 }

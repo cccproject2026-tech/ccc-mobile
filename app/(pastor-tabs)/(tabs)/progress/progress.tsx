@@ -14,6 +14,7 @@ import React, { useCallback, useRef } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+
 export default function ProgressScreen() {
   const [roadmapTabs, setRoadmapTabs] = React.useState("All");
   const [assessmentTabs, setAssessmentTabs] = React.useState("All");
@@ -261,7 +262,6 @@ export default function ProgressScreen() {
             }}
           >
 
-            {/* Pie Chart Section */}
             <ProgressPieChart
               data={progress}
               title="Overall Progress - Roadmaps & Assessments"
@@ -270,7 +270,6 @@ export default function ProgressScreen() {
             {/* Bar Chart Section */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{currentTitle}</Text>
-
               <View style={styles.chartWrapper}>
                 <ProgressBarChart
                   data={currentData}

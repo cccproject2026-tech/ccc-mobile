@@ -530,12 +530,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row'
     },
     iconButton: {
-        width: isAndroid ? getSpacing(28) : getSpacing(isSmallDevice ? 30 : 32),
-        height: isAndroid ? getSpacing(28) : getSpacing(isSmallDevice ? 30 : 32),
+        width: isAndroid ? getSpacing(36) : getSpacing(isSmallDevice ? 30 : 32),
+        height: isAndroid ? getSpacing(36) : getSpacing(isSmallDevice ? 30 : 32),
         alignItems: 'center',
         justifyContent: 'center',
     },
-
     // List Layout Styles
     listContainer: {
         flexDirection: 'row',
@@ -544,59 +543,58 @@ const styles = StyleSheet.create({
         borderRadius: getSpacing(12),
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.3)',
-        padding: getSpacing(8),
+        padding: isAndroid ? getSpacing(12) : getSpacing(8), // More padding on Android
         marginBottom: getSpacing(8),
-        minHeight: isAndroid ? getSpacing(50) : getSpacing(56),
+        minHeight: isAndroid ? getSpacing(68) : getSpacing(56), // Taller on Android
+        // gap: isAndroid ? getSpacing(10) : getSpacing(8), // Add gap between items
     },
     listImageContainer: {
-        width: isAndroid ? getSpacing(36) : getSpacing(40),
-        height: isAndroid ? getSpacing(36) : getSpacing(40),
+        width: isAndroid ? getSpacing(48) : getSpacing(40), // Larger on Android
+        height: isAndroid ? getSpacing(48) : getSpacing(40),
         borderRadius: getSpacing(10),
         overflow: 'hidden',
-        marginRight: getSpacing(8),
+        marginRight: getSpacing(10),
         flexShrink: 0,
     },
     listInfoSection: {
         flex: 1,
         justifyContent: 'center',
         minWidth: 0,
+        marginRight: getSpacing(8), // Add margin for breathing room
     },
     listName: {
-        fontSize: getFontSize(isSmallDevice ? 14 : 15),
+        fontSize: getFontSize(isSmallDevice ? 15 : 16), // Slightly larger
         fontWeight: '600',
         color: '#fff',
-        marginBottom: getSpacing(3),
+        marginBottom: getSpacing(4),
     },
     listMenteesContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     listMenteesText: {
-        fontSize: getFontSize(isSmallDevice ? 11 : 12),
+        fontSize: getFontSize(isSmallDevice ? 12 : 13), // Slightly larger
         fontWeight: '500',
         color: '#FFC107',
     },
-    listContactIcons: {
-        flexDirection: 'row',
-        gap: getSpacing(4),
-        marginLeft: getSpacing(8),
-    },
     listIconButton: {
-        width: isAndroid ? getSpacing(20) : getSpacing(24),
-        height: isAndroid ? getSpacing(20) : getSpacing(24),
+        width: isAndroid ? getSpacing(36) : getSpacing(24), // Much larger on Android
+        height: isAndroid ? getSpacing(36) : getSpacing(24),
         alignItems: 'center',
         justifyContent: 'center',
+        // marginLeft: isAndroid ? getSpacing(2) : 0, // Small margin between icons
     },
     listMenuButton: {
-        width: isAndroid ? getSpacing(24) : getSpacing(28),
-        height: isAndroid ? getSpacing(24) : getSpacing(28),
+        width: isAndroid ? getSpacing(36) : getSpacing(28), // Larger on Android
+        height: isAndroid ? getSpacing(36) : getSpacing(28),
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
+        // marginLeft: isAndroid ? getSpacing(4) : 0,
     },
     checkbox: {
-        width: getSpacing(24),
-        height: getSpacing(24),
+        width: getSpacing(26), // Slightly larger
+        height: getSpacing(26),
         borderRadius: getSpacing(6),
         borderWidth: 2,
         borderColor: 'rgba(255,255,255,0.5)',
@@ -611,4 +609,5 @@ const styles = StyleSheet.create({
     checkboxContainer: {
         marginLeft: getSpacing(10)
     },
+
 });

@@ -473,7 +473,7 @@ export const MENU_ITEMS: MenuItem[] = [
         children: [
             { id: 'my-profile', label: 'My Profile', icon: icons.myProfile, iconType: 'image', route: '/(director-tabs)/(tabs)/profile' },
             { id: 'documents', label: 'Documents', icon: 'folder-outline', route: '/(director-tabs)/(tabs)/documents' },
-            { id: 'notes', label: 'Notes', icon: 'document-text-outline', route: '/(director-tabs)/(tabs' },
+            { id: 'notes', label: 'Notes', icon: 'document-text-outline', route: '/(director-tabs)/(tabs)/documents' },
         ],
     },
     {
@@ -531,7 +531,7 @@ export const PastorMenuItems: MenuItem[] = [
         label: 'Appointments',
         icon: icons.Appointments,
         iconType: 'image',
-        route: '/(pastor-tabs)/appointments/my-appointments',
+        route: '/(pastor-tabs)/appointments',
     },
     {
         id: 'profile',

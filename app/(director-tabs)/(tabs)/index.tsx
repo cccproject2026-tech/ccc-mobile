@@ -95,6 +95,7 @@ export default function DirectorDashboard() {
             clock={formatClock(now)}
             date={formatDate(now)}
             scrollOffset={scrollOffset}
+            role="director"
           />
 
           <LinearGradient

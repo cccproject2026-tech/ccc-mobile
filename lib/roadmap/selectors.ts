@@ -1,10 +1,36 @@
-import { Comment, Phase, Query, QueryResponse, RevitalizationData, Task } from './types';
+import { Comment, Division, Phase, Query, QueryResponse, RevitalizationData, Task } from './types';
 
 // Existing helpers
-export const getPhase = (data: RevitalizationData, id: string): Phase => data.phases[id];
 export const getTask = (data: RevitalizationData, id: string): Task => data.tasks[id];
-export const getPhaseTasks = (data: RevitalizationData, phase: Phase): Task[] =>
-    phase.tasks.map(id => data.tasks[id]);
+export function getPhase(data: RevitalizationData, phaseId: string): Phase {
+    return data.phases[phaseId];
+}
+
+export function getPhaseTasks(data: RevitalizationData, phase: Phase): Task[] {
+    // If phase has divisions, get tasks from all divisions
+    if (phase.divisions && data.divisions) {
+        const allTasks: Task[] = [];
+        phase.divisions.forEach(divId => {
+            const division = data.divisions![divId];
+            if (division?.tasks) {
+                division.tasks.forEach(taskId => {
+                    const task = data.tasks[taskId];
+                    if (task) allTasks.push(task);
+                });
+            }
+        });
+        return allTasks;
+    }
+
+    // Otherwise get direct tasks
+    if (phase.tasks) {
+        return phase.tasks
+            .map(taskId => data.tasks[taskId])
+            .filter(Boolean);
+    }
+
+    return [];
+}
 
 // Comment helpers
 export const getComment = (data: RevitalizationData, id: string): Comment | undefined =>
@@ -51,3 +77,39 @@ export const getQueryResponses = (data: RevitalizationData, queryId: string): Qu
         .filter(Boolean)
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 };
+
+
+
+
+export function getDivisionsForPhase(
+    data: RevitalizationData,
+    phaseId: string
+): Division[] {
+    const phase = data.phases[phaseId];
+    if (!phase?.divisions || !data.divisions) return [];
+
+    return phase.divisions
+        .map(divId => data.divisions![divId])
+        .filter(Boolean)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+export function getTasksForDivision(
+    data: RevitalizationData,
+    divisionId: string
+): Task[] {
+    const division = data.divisions?.[divisionId];
+    if (!division?.tasks) return [];
+
+    return division.tasks
+        .map(taskId => data.tasks[taskId])
+        .filter(Boolean);
+}
+
+export function phaseHasDivisions(
+    data: RevitalizationData,
+    phaseId: string
+): boolean {
+    const phase = data.phases[phaseId];
+    return phase?.divisions != null && phase.divisions.length > 0;
+}

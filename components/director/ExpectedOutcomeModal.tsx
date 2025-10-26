@@ -117,7 +117,7 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
                 // Original View
                 <LinearGradient
                     colors={['#1a237e', '#283593', '#3949ab']}
-                    style={[styles.container, { paddingTop: Platform.OS === 'android' ? top : 10, paddingBottom: bottom }]}
+                    style={[styles.container, { paddingTop: Platform.OS === 'android' ? top : 10, }]}
                 >
                     {/* Header */}
                     <View style={styles.header}>
@@ -144,7 +144,7 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
                     </View>
 
                     {/* Content */}
-                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottom }}>
                         <View style={styles.outcomeContainer}>
                             {outcomes.map((outcome, index) => (
                                 <View key={outcome.id} style={styles.outcomeItem}>
@@ -153,15 +153,15 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
                                 </View>
                             ))}
                         </View>
+                        <View style={styles.downloadContainer}>
+                            <TouchableOpacity style={styles.downloadButton} onPress={handleDownloadPress}>
+                                <Ionicons name="download-outline" size={20} color="#fff" />
+                                <Text style={styles.downloadText}>Download</Text>
+                            </TouchableOpacity>
+                        </View>
                     </ScrollView>
 
                     {/* Download Button */}
-                    <View style={styles.downloadContainer}>
-                        <TouchableOpacity style={styles.downloadButton} onPress={handleDownloadPress}>
-                            <Ionicons name="download-outline" size={20} color="#fff" />
-                            <Text style={styles.downloadText}>Download</Text>
-                        </TouchableOpacity>
-                    </View>
                 </LinearGradient>
             )}
         </Modal>
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     },
     downloadContainer: {
         paddingHorizontal: 20,
-        paddingVertical: 16,
+        // paddingVertical: 16,
     },
     downloadButton: {
         flexDirection: 'row',
