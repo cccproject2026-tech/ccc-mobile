@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from 'expo-router';
 import React, { forwardRef, useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface CreateRoadmapModalProps {
@@ -97,6 +98,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                     aspect: [16, 9],
                     quality: 0.8,
                 });
+                console.log('Image picker result:', result);
 
                 if (!result.canceled && result.assets[0]) {
                     setFormData(prev => ({
@@ -158,21 +160,33 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                 // For Phase type, navigate to create-roadmap page
                 resetForm();
                 onCancel();
-                router.push('/(director-tabs)/(tabs)/revitalization-roadmaps/create-roadmap');
+                const queryParams = {
+                    name: formData.name,
+                    subheading: formData.subheading,
+                    completionTime: formData.completionTime,
+                    bannerImage: formData.bannerImage || '',
+                    divisions: formData.divisions
+                };
+                router.push({
+                    pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/create-roadmap',
+                    params: queryParams
+                });
             } else {
-                // For Single Roadmap type, complete the creation here
-                console.log('Creating individual roadmap:', formData);
-                Alert.alert(
-                    'Success',
-                    'Individual roadmap created successfully!',
-                    [{
-                        text: 'OK',
-                        onPress: () => {
-                            resetForm();
-                            onCancel();
-                        }
-                    }]
-                );
+                // For Single Roadmap type, navigate to roadmap-form page
+                const queryParams = {
+                    name: formData.name,
+                    subheading: formData.subheading,
+                    completionTime: formData.completionTime,
+                    bannerImage: formData.bannerImage || ''
+                };
+
+                resetForm();
+                onCancel();
+                
+                router.push({
+                    pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/roadmap-form',
+                    params: queryParams
+                });
             }
         };
 
@@ -194,16 +208,25 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                     onClose();
                 }}
             >
-                <BottomSheetView style={[styles.contentContainer, { paddingBottom: bottom + 20 }]}>
+                <BottomSheetView
+                    style={[styles.contentContainer, { paddingBottom: bottom + 20 }]}
+                >
                     {/* Close Button */}
                     <Pressable style={styles.closeButton} onPress={handleCancel}>
                         <Ionicons name="close" size={28} color="#fff" />
                     </Pressable>
 
                     {/* Header */}
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Create New Roadmap</Text>
-                    </View>
+                    <LinearGradient
+                        colors={["#7C3AED", "#38BDF8"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.gradientBorder}
+                    >
+                        <View style={styles.header}>
+                            <Text style={styles.headerTitle}>Create New Roadmap</Text>
+                        </View>
+                    </LinearGradient>
 
                     {/* Form Content */}
                     <View style={styles.formWrapper}>
@@ -218,7 +241,9 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                     >
                                         <Text style={styles.dropdownText}>{formData.type}</Text>
                                         <Ionicons
-                                            name={showTypeDropdown ? "chevron-up" : "chevron-down"}
+                                            name={
+                                                showTypeDropdown ? "chevron-up" : "chevron-down"
+                                            }
                                             size={20}
                                             color="#fff"
                                         />
@@ -228,13 +253,15 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                         <View style={styles.dropdownOptions}>
                                             <TouchableOpacity
                                                 style={styles.dropdownOption}
-                                                onPress={() => handleTypeSelect('Single Roadmap')}
+                                                onPress={() => handleTypeSelect("Single Roadmap")}
                                             >
-                                                <Text style={styles.dropdownOptionText}>Single Roadmap</Text>
+                                                <Text style={styles.dropdownOptionText}>
+                                                    Single Roadmap
+                                                </Text>
                                             </TouchableOpacity>
                                             <TouchableOpacity
                                                 style={styles.dropdownOption}
-                                                onPress={() => handleTypeSelect('Phase')}
+                                                onPress={() => handleTypeSelect("Phase")}
                                             >
                                                 <Text style={styles.dropdownOptionText}>Phase</Text>
                                             </TouchableOpacity>
@@ -245,28 +272,44 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                 {/* Dynamic Name Field */}
                                 <View style={styles.fieldContainer}>
                                     <Text style={styles.fieldLabel}>
-                                        {formData.type === 'Phase' ? 'Name of Phase' : 'Roadmap Name'}
+                                        {formData.type === "Phase"
+                                            ? "Name of Phase"
+                                            : "Roadmap Name"}
                                     </Text>
                                     <TextInput
                                         style={styles.textInput}
-                                        placeholder={formData.type === 'Phase' ? 'Enter Name of Phase' : 'Enter Name'}
+                                        placeholder={
+                                            formData.type === "Phase"
+                                                ? "Enter Name of Phase"
+                                                : "Enter Name"
+                                        }
                                         placeholderTextColor="rgba(255,255,255,0.5)"
                                         value={formData.name}
-                                        onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+                                        onChangeText={(text) =>
+                                            setFormData((prev) => ({ ...prev, name: text }))
+                                        }
                                     />
                                 </View>
 
                                 {/* Dynamic Subheading Field */}
                                 <View style={styles.fieldContainer}>
                                     <Text style={styles.fieldLabel}>
-                                        {formData.type === 'Phase' ? 'Name of Subtitle for Phase' : 'Roadmap Subheading'}
+                                        {formData.type === "Phase"
+                                            ? "Name of Subtitle for Phase"
+                                            : "Roadmap Subheading"}
                                     </Text>
                                     <TextInput
                                         style={[styles.textInput, styles.textArea]}
-                                        placeholder={formData.type === 'Phase' ? 'Enter Subtitle' : 'Enter Subheading'}
+                                        placeholder={
+                                            formData.type === "Phase"
+                                                ? "Enter Subtitle"
+                                                : "Enter Subheading"
+                                        }
                                         placeholderTextColor="rgba(255,255,255,0.5)"
                                         value={formData.subheading}
-                                        onChangeText={(text) => setFormData(prev => ({ ...prev, subheading: text }))}
+                                        onChangeText={(text) =>
+                                            setFormData((prev) => ({ ...prev, subheading: text }))
+                                        }
                                         multiline
                                         numberOfLines={4}
                                         textAlignVertical="top"
@@ -276,65 +319,89 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                 {/* Dynamic Completion Time Field */}
                                 <View style={styles.fieldContainer}>
                                     <Text style={styles.fieldLabel}>
-                                        {formData.type === 'Phase' ? 'Completion Time for the Phase' : 'Completion Time for the Roadmap'}
+                                        {formData.type === "Phase"
+                                            ? "Completion Time for the Phase"
+                                            : "Completion Time for the Roadmap"}
                                     </Text>
                                     <TextInput
                                         style={styles.textInput}
                                         placeholder="Months :"
                                         placeholderTextColor="rgba(255,255,255,0.5)"
                                         value={formData.completionTime}
-                                        onChangeText={(text) => setFormData(prev => ({ ...prev, completionTime: text }))}
+                                        onChangeText={(text) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                completionTime: text,
+                                            }))
+                                        }
                                     />
                                 </View>
 
                                 {/* Division of Phase - Always show */}
-                                <View style={styles.fieldContainer}>
-                                    <Text style={styles.fieldLabel}>Division of Phase</Text>
+                                {formData.type === "Phase" && (
+                                    <View style={styles.fieldContainer}>
+                                        <Text style={styles.fieldLabel}>Division of Phase</Text>
 
-                                    {/* Add Division Input */}
-                                    <View style={styles.divisionInputContainer}>
-                                        <TextInput
-                                            key={`division-input-${formData.divisions.length}`}
-                                            style={[styles.textInput, styles.divisionInput]}
-                                            placeholder="None"
-                                            placeholderTextColor="rgba(255,255,255,0.5)"
-                                            value={newDivision}
-                                            onChangeText={setNewDivision}
-                                        />
-                                        <TouchableOpacity
-                                            style={styles.addButton}
-                                            onPress={handleAddDivision}
-                                        >
-                                            <Ionicons name="add" size={20} color="#fff" />
-                                            <Text style={styles.addButtonText}>Add</Text>
-                                        </TouchableOpacity>
-                                    </View>
-
-                                    {/* Division Tags */}
-                                    {formData.divisions.length > 0 && (
-                                        <View style={styles.tagsContainer}>
-                                            {formData.divisions.map((division, index) => (
-                                                <View key={index} style={styles.tag}>
-                                                    <Text style={styles.tagText}>{division}</Text>
-                                                    <TouchableOpacity
-                                                        onPress={() => handleRemoveDivision(index)}
-                                                        style={styles.tagRemove}
-                                                    >
-                                                        <Ionicons name="close" size={16} color="#fff" />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            ))}
+                                        {/* Add Division Input */}
+                                        <View style={styles.divisionInputContainer}>
+                                            <TextInput
+                                                key={`division-input-${formData.divisions.length}`}
+                                                style={[styles.textInput, styles.divisionInput]}
+                                                placeholder="None"
+                                                placeholderTextColor="rgba(255,255,255,0.5)"
+                                                value={newDivision}
+                                                onChangeText={setNewDivision}
+                                            />
+                                            <TouchableOpacity
+                                                style={styles.addButton}
+                                                onPress={handleAddDivision}
+                                            >
+                                                <Ionicons name="add" size={20} color="#fff" />
+                                                <Text style={styles.addButtonText}>Add</Text>
+                                            </TouchableOpacity>
                                         </View>
-                                    )}
-                                </View>
+
+                                        {/* Division Tags */}
+                                        {formData.divisions.length > 0 && (
+                                            <View style={styles.tagsContainer}>
+                                                {formData.divisions.map((division, index) => (
+                                                    <View key={index} style={styles.tag}>
+                                                        <Text style={styles.tagText}>{division}</Text>
+                                                        <TouchableOpacity
+                                                            onPress={() => handleRemoveDivision(index)}
+                                                            style={styles.tagRemove}
+                                                        >
+                                                            <Ionicons
+                                                                name="close"
+                                                                size={16}
+                                                                color="#fff"
+                                                            />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
 
                                 {/* Upload Banner Button */}
-                                <TouchableOpacity style={styles.uploadButton} onPress={handleImagePicker}>
-                                    <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
-                                    <Text style={styles.uploadButtonText}>
-                                        {formData.type === 'Phase' ? 'Upload Banner Image for the Phase' : 'Upload Banner Image for the Roadmap'}
-                                    </Text>
-                                </TouchableOpacity>
+                                {formData.bannerImage ? (
+                                    <View style={styles.imagePreviewContainer}>
+                                        <Image source={{ uri: formData.bannerImage }} style={styles.imagePreview} />
+                                        <TouchableOpacity style={styles.changeImageButton} onPress={handleImagePicker}>
+                                            <Text style={styles.changeImageText}>Change Image</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <TouchableOpacity style={styles.uploadButton} onPress={handleImagePicker}>
+                                        <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
+                                        <Text style={styles.uploadButtonText}>
+                                            {formData.type === "Phase"
+                                                ? "Upload Banner Image for the Phase"
+                                                : "Upload Banner Image for the Roadmap"}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </ScrollView>
 
@@ -350,15 +417,17 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                             <TouchableOpacity
                                 style={[
                                     styles.nextButton,
-                                    !isFormValid() && styles.nextButtonDisabled
+                                    !isFormValid() && styles.nextButtonDisabled,
                                 ]}
                                 onPress={handleNext}
                                 disabled={!isFormValid()}
                             >
-                                <Text style={[
-                                    styles.nextButtonText,
-                                    !isFormValid() && styles.nextButtonTextDisabled
-                                ]}>
+                                <Text
+                                    style={[
+                                        styles.nextButtonText,
+                                        !isFormValid() && styles.nextButtonTextDisabled,
+                                    ]}
+                                >
                                     Create
                                 </Text>
                             </TouchableOpacity>
@@ -372,12 +441,12 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
 
 const styles = StyleSheet.create({
     bottomSheetBackground: {
-        backgroundColor: '#1E3A6F',
+        backgroundColor: "#1E3A6F",
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
     },
     handleIndicator: {
-        display: 'none',
+        display: "none",
     },
     contentContainer: {
         flex: 1,
@@ -387,32 +456,38 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     closeButton: {
-        position: 'absolute',
-        top: 20,
-        right: 20,
-        zIndex: 10,
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
+        // position: 'absolute',
+        // top: 20,
+        // right: 20,
+        // zIndex: 10,
+        // width: 40,
+        // height: 40,
+        alignItems: "flex-end",
+        justifyContent: "center",
+        marginVertical: 15,
+    },
+    gradientBorder: {
+        padding: 2,
+        borderRadius: 13,
+        marginBottom: 10,
     },
     header: {
-        alignItems: 'center',
-        paddingVertical: 20,
+        alignItems: "center",
+        backgroundColor: "#1E3A6F",
+        borderRadius: 11,
+        paddingVertical: 9,
+        paddingHorizontal: 28,
         borderBottomWidth: 1.5,
-        borderBottomColor: '#4A90E2',
-        borderRadius: 12,
-        marginTop: 16,
-        marginBottom: 24,
+        borderBottomColor: "#4A90E2",
     },
     headerTitle: {
         fontSize: 20,
-        fontWeight: '600',
-        color: '#fff',
+        fontWeight: "600",
+        color: "#fff",
     },
     scrollContainer: {
         flex: 1,
-        maxHeight: '75%',
+        maxHeight: "80%",
     },
     formContainer: {
         gap: 20,
@@ -420,73 +495,73 @@ const styles = StyleSheet.create({
     },
     fieldContainer: {
         gap: 8,
-        position: 'relative',
+        position: "relative",
     },
     fieldLabel: {
         fontSize: 16,
-        fontWeight: '500',
-        color: '#fff',
+        fontWeight: "500",
+        color: "#fff",
     },
     dropdown: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.1)',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        backgroundColor: "rgba(255,255,255,0.1)",
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderColor: "rgba(255,255,255,0.2)",
         borderRadius: 12,
         paddingHorizontal: 16,
         paddingVertical: 16,
     },
     dropdownText: {
         fontSize: 16,
-        color: '#fff',
+        color: "#fff",
     },
     dropdownOptions: {
-        position: 'absolute',
-        top: '100%',
+        position: "absolute",
+        top: "100%",
         left: 0,
         right: 0,
-        backgroundColor: '#2A4A7F',
+        backgroundColor: "#2A4A7F",
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderColor: "rgba(255,255,255,0.2)",
         borderRadius: 12,
         marginTop: 4,
         zIndex: 1000,
-        overflow: 'hidden',
+        overflow: "hidden",
     },
     dropdownOption: {
         paddingHorizontal: 16,
         paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.1)',
+        borderBottomColor: "rgba(255,255,255,0.1)",
     },
     dropdownOptionText: {
         fontSize: 16,
-        color: '#fff',
+        color: "#fff",
     },
     textInput: {
-        backgroundColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: "rgba(255,255,255,0.1)",
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderColor: "rgba(255,255,255,0.2)",
         borderRadius: 12,
         paddingHorizontal: 16,
         paddingVertical: 16,
         fontSize: 16,
-        color: '#fff',
+        color: "#fff",
     },
     textArea: {
         height: 100,
         paddingTop: 16,
     },
     uploadButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255,255,255,0.1)',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(255,255,255,0.1)",
         borderWidth: 1.5,
-        borderColor: 'rgba(255,255,255,0.3)',
-        borderStyle: 'dashed',
+        borderColor: "rgba(255,255,255,0.3)",
+        borderStyle: "dashed",
         borderRadius: 12,
         paddingVertical: 20,
         gap: 12,
@@ -494,82 +569,82 @@ const styles = StyleSheet.create({
     },
     uploadButtonText: {
         fontSize: 16,
-        fontWeight: '500',
-        color: '#fff',
+        fontWeight: "500",
+        color: "#fff",
     },
     actionButtons: {
-        flexDirection: 'row',
+        flexDirection: "row",
         gap: 16,
         marginTop: 24,
         paddingTop: 16,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.1)',
+        borderTopColor: "rgba(255,255,255,0.1)",
     },
     cancelButton: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: "#fff",
         borderRadius: 12,
         paddingVertical: 16,
-        alignItems: 'center',
+        alignItems: "center",
     },
     cancelButtonText: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#1E3A6F',
+        fontWeight: "600",
+        color: "#1E3A6F",
     },
     nextButton: {
         flex: 1,
-        backgroundColor: '#2A4A7F',
+        backgroundColor: "#2A4A7F",
         borderRadius: 12,
         paddingVertical: 16,
-        alignItems: 'center',
+        alignItems: "center",
     },
     nextButtonDisabled: {
-        backgroundColor: 'rgba(42, 74, 127, 0.5)',
+        backgroundColor: "rgba(42, 74, 127, 0.5)",
     },
     nextButtonText: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
+        fontWeight: "600",
+        color: "#fff",
     },
     nextButtonTextDisabled: {
-        color: 'rgba(255, 255, 255, 0.5)',
+        color: "rgba(255, 255, 255, 0.5)",
     },
     divisionInputContainer: {
-        flexDirection: 'row',
+        flexDirection: "row",
         gap: 12,
-        alignItems: 'flex-end',
+        alignItems: "flex-end",
     },
     divisionInput: {
         flex: 1,
     },
     addButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(255,255,255,0.2)",
         borderWidth: 1.5,
-        borderColor: 'rgba(255,255,255,0.4)',
+        borderColor: "rgba(255,255,255,0.4)",
         borderRadius: 12,
         paddingHorizontal: 18,
         paddingVertical: 14,
         gap: 8,
         minWidth: 80,
-        justifyContent: 'center',
+        justifyContent: "center",
     },
     addButtonText: {
         fontSize: 15,
-        fontWeight: '600',
-        color: '#fff',
+        fontWeight: "600",
+        color: "#fff",
     },
     tagsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
+        flexDirection: "row",
+        flexWrap: "wrap",
         marginTop: 12,
     },
     tag: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(255,255,255,0.2)",
         borderRadius: 20,
         paddingHorizontal: 14,
         paddingVertical: 8,
@@ -579,16 +654,40 @@ const styles = StyleSheet.create({
     },
     tagText: {
         fontSize: 15,
-        color: '#fff',
-        fontWeight: '600',
+        color: "#fff",
+        fontWeight: "600",
     },
     tagRemove: {
         width: 20,
         height: 20,
         borderRadius: 10,
-        backgroundColor: 'rgba(255,255,255,0.3)',
-        alignItems: 'center',
-        justifyContent: 'center',
+        backgroundColor: "rgba(255,255,255,0.3)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    imagePreviewContainer: {
+        marginTop: 8,
+        borderRadius: 12,
+        overflow: "hidden",
+        borderWidth: 1.5,
+        borderColor: "rgba(255,255,255,0.3)",
+    },
+    imagePreview: {
+        width: "100%",
+        height: 100,
+        resizeMode: "cover",
+    },
+    changeImageButton: {
+        backgroundColor: "rgba(255,255,255,0.1)",
+        paddingVertical: 12,
+        alignItems: "center",
+        borderTopWidth: 1.5,
+        borderTopColor: "rgba(255,255,255,0.3)",
+    },
+    changeImageText: {
+        fontSize: 16,
+        fontWeight: "500",
+        color: "#fff",
     },
 });
 
