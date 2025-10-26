@@ -5,8 +5,8 @@ import { Assessment } from '@/lib/assessments/types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { height } = Dimensions.get('window');
@@ -30,6 +30,13 @@ export default function SurveyGuidelinesPage() {
     const savedResponse = getResponse(assessmentId as string);
     const isCompleted = savedResponse?.status === 'Completed' || assessment.completedOn || assessment.status === 'Completed';
 
+    useFocusEffect(
+        useCallback(() => {
+            // Refresh status when returning to this screen
+            const savedResponse = getResponse(assessmentId as string);
+            // Update your state if needed
+        }, [assessmentId])
+    );
     const handleStart = () => {
         if (assessment.type === 'CMA' && assessment.preSurvey) {
             router.push({

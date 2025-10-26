@@ -258,7 +258,7 @@ export function DynamicFormTask({ item }: Props) {
                                     isMediaUpload ? (
                                         <Pressable onPress={() => {
                                             router.push({
-                                                pathname: '/new-roadmap/shared-media',
+                                                pathname: '/roadmap/shared-media',
                                                 params: {
                                                     fileId: file.id,
                                                     taskId: item.id

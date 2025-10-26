@@ -310,7 +310,7 @@ export default function PhaseDetail() {
                         return (
                             <Pressable
                                 key={task.id}
-                                onPress={() => router.push(`/new-roadmap/${phaseId}/${task.id}`)}
+                                onPress={() => router.push(`/roadmap/${phaseId}/${task.id}`)}
                             >
                                 <RoadmapCard data={cardData} />
                             </Pressable>

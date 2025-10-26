@@ -238,7 +238,7 @@ export default function Assignment() {
                   <RoadmapCard data={e.cardData}
                     onPress={() =>
                       router.push({
-                        pathname: '/(pastor-tabs)/(tabs)/new-roadmap/[phaseId]/[itemId]',
+                        pathname: '/(pastor-tabs)/(tabs)/roadmap/[phaseId]/[itemId]',
                         params: {
                           phaseId: e.task.phaseId,
                           itemId: e.task.id,

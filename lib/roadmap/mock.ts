@@ -174,13 +174,24 @@ export const mockRevitalization: RevitalizationData = {
             schema: {
                 fields: [
                     {
-                        id: 'session-notes',
-                        type: 'TEXT_AREA',
-                        label: 'Session Notes',
-                        placeholder: 'Add your notes from the jump-start session...',
-                        required: false,
-                    },
-
+                        id: 'meeting-section-2',
+                        type: 'SECTION_BOX',
+                        fields: [
+                            {
+                                id: 'session-notes',
+                                type: 'TEXT_AREA',
+                                label: 'Notes',
+                                placeholder: 'Write your notes here...',
+                                required: false,
+                            },
+                            {
+                                id: 'session-date',
+                                type: 'DATE_PICKER',
+                                label: 'Session Date',
+                                defaultValue: '10 / 11 / 24',
+                            },
+                        ]
+                    }
                 ],
                 submitLabel: 'Jump-start Completed',
             },

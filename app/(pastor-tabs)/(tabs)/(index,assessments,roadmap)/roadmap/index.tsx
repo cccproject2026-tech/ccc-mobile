@@ -126,9 +126,9 @@ export default function PhaseList() {
 
     const handlePhasePress = useCallback((phase: typeof filteredPhases[0]['phase']) => {
         if (phase.isSingleRoadmap && Array.isArray(phase.tasks) && phase.tasks.length === 1) {
-            router.push(`/new-roadmap/${phase.id}/${phase.tasks[0]}`);
+            router.push(`/roadmap/${phase.id}/${phase.tasks[0]}`);
         } else {
-            router.push(`/new-roadmap/${phase.id}`);
+            router.push(`/roadmap/${phase.id}`);
         }
     }, []);
 
