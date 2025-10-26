@@ -1,5 +1,4 @@
 import ActionBottomSheet from '@/components/director/ActionSheetModal';
-import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import CreateRoadmapModal, { RoadmapFormData } from '@/components/director/CreateRoadmapModal';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import FilterModal, { FilterOption } from '@/components/director/FilterModal';
@@ -7,6 +6,7 @@ import MenteeCard, { Mentee } from '@/components/director/MenteeCard';
 import MentorCard, { MentorData } from '@/components/director/MentorCard';
 import MentorProfileSwiper from '@/components/director/MentorProfileSwiper';
 import RoadmapCard from '@/components/director/ProgressRoadmapCard';
+import RoadmapHeader from '@/components/director/RoadmapHeader';
 import SearchBar from '@/components/director/SearchBar';
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from '@/components/director/TopBar';
@@ -101,10 +101,6 @@ export default function RevitalizationRoadmap() {
     const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
     const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
     const [selectedRoadmap, setSelectedRoadmap] = useState<RoadmapCardData | null>(null);
-    const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
-    const [showOutcomeModal, setShowOutcomeModal] = useState(false);
-    const [selectedOutcome, setSelectedOutcome] = useState<string>('');
-    const [showCreateRoadmapModal, setShowCreateRoadmapModal] = useState(false);
 
     const getFilterOptions = (): FilterOption[] => {
         return [
@@ -294,78 +290,9 @@ export default function RevitalizationRoadmap() {
         setActiveTab(tab);
     };
 
-    const getOutcomeMenuItems = (): MenuItem[] => [
-        {
-            id: 'outcome-4-months',
-            label: 'Expected Outcome - 4 Months',
-            onPress: () => {
-                setSelectedOutcome('Expected Outcome - First Four Months');
-                setShowOutcomeMenu(false);
-                setShowOutcomeModal(true);
-            },
-        },
-        {
-            id: 'outcome-6-months',
-            label: 'Expected Outcome - 6 Months',
-            onPress: () => {
-                setSelectedOutcome('Expected Outcome - Six Months');
-                setShowOutcomeMenu(false);
-                setShowOutcomeModal(true);
-            },
-        },
-        {
-            id: 'outcome-9-months',
-            label: 'Expected Outcome - 9 Months',
-            onPress: () => {
-                setSelectedOutcome('Expected Outcome - Nine Months');
-                setShowOutcomeMenu(false);
-                setShowOutcomeModal(true);
-            },
-        },
-        {
-            id: 'outcome-end-year',
-            label: 'Expected Outcome - End of Year',
-            onPress: () => {
-                setSelectedOutcome('Expected Outcome - End of Year');
-                setShowOutcomeMenu(false);
-                setShowOutcomeModal(true);
-            },
-        },
-    ];
 
-    const getOutcomeData = (title: string) => {
-        // This is the data from your screenshot - you can customize for different periods
-        const fourMonthsData = [
-            {
-                id: '1',
-                text: 'The church is committed to the revitalization process.',
-            },
-            {
-                id: '2',
-                text: 'The Church is praying consistently and intentionally for revitalization.',
-            },
-            {
-                id: '3',
-                text: 'The church understands its current health and is committed to making improvements.',
-            },
-            {
-                id: '4',
-                text: 'The church is beginning to feel like a warm and welcoming place for new attendees.',
-            },
-            {
-                id: '5',
-                text: 'Church members have begun to build new relationships with people who have attended a community engagement event and its follow-up event.',
-            },
-            {
-                id: '6',
-                text: 'Church members will begin to feel a sense of hope for the future and begin expecting God to do something exciting in their church.',
-            },
-        ];
 
-        // For now, return the same data for all periods
-        // You can customize this based on the title parameter
-        return fourMonthsData;
-    };
+    
 
     const getFilterDisplayText = () => {
         if (STATES.includes(selectedFilter)) {
@@ -429,65 +356,7 @@ export default function RevitalizationRoadmap() {
 
                 <View className="flex-1 pt-6">
                     {/* Header */}
-                    <View className="flex-row items-center justify-between px-1 py-4 mb-4 border-b border-white/20">
-                        {/* Left Section - Back Button + Title with Subtitle */}
-                        <View className="flex-row items-center flex-1">
-                            <TouchableOpacity onPress={() => router.back()}>
-                                <Ionicons name="chevron-back" size={28} color="#fff" />
-                            </TouchableOpacity>
-                            <View className="ml-1">
-                                <Text className="text-xl font-bold leading-6 text-white">R.Roadmap</Text>
-                                <Text className="text-sm text-white/70 mt-0.5">Library</Text>
-                            </View>
-                        </View>
-
-                        {/* Right Section - Pill Buttons + Menu */}
-                        <View className="flex-row items-center gap-1">
-                            {/* Select Button - Only show for roadmap library tab */}
-                            {activeTab === 'roadmap-library' && (
-                                <TouchableOpacity
-                                    className="flex-row items-center px-4 py-2.5 border-[1.5px] border-white/80 rounded-xl"
-                                    onPress={() => router.push('/(director-tabs)/(tabs)/revitalization-roadmaps/select-roadmap')}
-                                >
-                                    <Ionicons name="checkmark" size={20} color="#fff" />
-                                    <Text className="ml-1.5 text-[15px] font-semibold text-white">Select</Text>
-                                </TouchableOpacity>
-                            )}
-
-                            {/* Roadmap Button */}
-                            <TouchableOpacity
-                                className="flex-row items-center px-4 py-2.5 border-[1.5px] border-white/80 rounded-xl"
-                                onPress={handleOpenCreateRoadmapModal}
-                            >
-                                <Ionicons name="add" size={20} color="#fff" />
-                                <Text className="ml-1.5 text-[15px] font-semibold text-white">Roadmap</Text>
-                            </TouchableOpacity>
-
-                            {/* Three Dots Menu */}
-                            <TouchableOpacity
-                                className="p-1"
-                                onPress={() => setShowOutcomeMenu(!showOutcomeMenu)}
-                            >
-                                <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Outcome Context Menu */}
-                        <ContextMenu
-                            visible={showOutcomeMenu}
-                            items={getOutcomeMenuItems()}
-                            onClose={() => setShowOutcomeMenu(false)}
-                            position={{ top: 60, right: 16 }}
-                            minWidth={280}
-                            showIcons={false}
-                            itemTextStyle={{
-                                fontSize: 15,
-                                fontWeight: '500',
-                                color: '#1A4882'
-                            }}
-                        />
-                    </View>
-
+                    <RoadmapHeader handleOpenCreateRoadmapModal={handleOpenCreateRoadmapModal} activeTab={activeTab} />
 
                     {/* Search Bar */}
                     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
@@ -617,23 +486,7 @@ export default function RevitalizationRoadmap() {
                     filterOptions={filterOptions}
                 />
 
-                <ExpectedOutcomeModal
-                    visible={showOutcomeModal}
-                    onClose={() => setShowOutcomeModal(false)}
-                    title={selectedOutcome}
-                    outcomes={getOutcomeData(selectedOutcome)}
-                    onSelect={() => {
-                        console.log('Select outcome');
-                        setShowOutcomeModal(false);
-                    }}
-                    onEdit={() => {
-                        console.log('Edit outcome');
-                        setShowOutcomeModal(false);
-                    }}
-                    onDownload={() => {
-                        console.log('Download outcome');
-                    }}
-                />
+                
 
                 <CreateRoadmapModal
                     ref={createRoadmapModalRef}
