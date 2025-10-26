@@ -280,6 +280,10 @@ export default function DirectorDashboard() {
                     onPress={() => {
                       if (item.title === "Schedule") {
                         router.push("/(director-tabs)/(tabs)/appointments");
+                      } else if (item.title === "Revitalization Roadmap") {
+                        router.push(
+                          "/(director-tabs)/(tabs)/revitalization-roadmaps"
+                        );
                       } else {
                         console.log(`Pressed ${item.title}`);
                       }
