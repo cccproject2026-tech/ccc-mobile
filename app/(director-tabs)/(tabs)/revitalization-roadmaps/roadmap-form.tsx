@@ -5,6 +5,7 @@ import AddFieldSheet, {
   FieldType,
 } from "@/components/director/forms/AddFieldSheet";
 import FormCheckBox from "@/components/director/forms/FormCheckBox";
+import { usePhaseCreation } from "@/context/PhaseCreationContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -27,13 +28,23 @@ export default function RoadmapFormScreen() {
     const { bottom } = useSafeAreaInsets();
     const params = useLocalSearchParams();
     const addFieldSheetRef = useRef<AddFieldSheetRef>(null);
+    const { state, updateRoadmap } = usePhaseCreation();
+    
+    const isPhaseFlow = params.isPhaseFlow === 'true';
 
-    const roadmapData = {
-    name: (params.name as string) || "",
-    subheading: (params.subheading as string) || "",
-    completionTime: (params.completionTime as string) || "",
-    selectedDivision: (params.selectedDivision as string) || "",
-    bannerImage: (params.bannerImage as string) || null,
+    // Get roadmap data from context if in phase flow, otherwise from params
+    const roadmapData = isPhaseFlow && state.currentRoadmap ? {
+        name: state.currentRoadmap.name || "",
+        subheading: state.currentRoadmap.subheading || "",
+        completionTime: state.currentRoadmap.completionTime || "",
+        selectedDivision: state.currentRoadmap.selectedDivision || "",
+        bannerImage: state.currentRoadmap.bannerImage || null,
+    } : {
+        name: (params.name as string) || "",
+        subheading: (params.subheading as string) || "",
+        completionTime: (params.completionTime as string) || "",
+        selectedDivision: (params.selectedDivision as string) || "",
+        bannerImage: (params.bannerImage as string) || null,
     };
 
     const [formData, setFormData] = useState({
@@ -289,9 +300,28 @@ export default function RoadmapFormScreen() {
 
     console.log("Final roadmap data:", finalRoadmapData);
 
-    // Show success modal (auto-dismisses after 2s)
-    setSuccessMessage("Roadmap Created Successfully");
-    setShowSuccess(true);
+    // If in phase flow, update current roadmap with fields and navigate back
+    if (isPhaseFlow && state.currentRoadmap) {
+        updateRoadmap(state.currentRoadmap.id, {
+            fields: formData.customFields
+        });
+
+        setSuccessMessage("Roadmap Added Successfully");
+        setShowSuccess(true);
+        
+        // After success, navigate back to create-roadmap to add another roadmap
+        setTimeout(() => {
+            setShowSuccess(false);
+            router.push({
+                pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/create-roadmap',
+                params: { isPhaseFlow: 'true' }
+            });
+        }, 2000);
+    } else {
+        // Show success modal (auto-dismisses after 2s)
+        setSuccessMessage("Roadmap Created Successfully");
+        setShowSuccess(true);
+    }
   };
 
   // Field Type Label Component
@@ -702,7 +732,7 @@ export default function RoadmapFormScreen() {
 
       {/* Success Modal */}
       <SimpleSuccessModal
-        visible={showSuccess}
+        visible={showSuccess && !isPhaseFlow}
         onClose={() => {
           setShowSuccess(false);
           router.push("/(director-tabs)/(tabs)/revitalization-roadmaps");

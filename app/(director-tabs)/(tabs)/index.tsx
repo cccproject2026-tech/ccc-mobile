@@ -285,7 +285,16 @@ export default function DirectorDashboard() {
                         router.push(
                           "/(director-tabs)/(tabs)/revitalization-roadmaps"
                         );
-                      } else {
+                      // } else if (item.title === "Assessments") {
+                      //   router.push("/(director-tabs)/(tabs)/assessments");
+                      } else if (item.title === "Track Progress") {
+                        router.push("/(director-tabs)/(tabs)/progress-tracker");
+                      // } else if (item.title === "Assignment") {
+                      //   router.push("/(director-tabs)/(tabs)/assignment");
+                      } else if (item.title === "Microgrant") {
+                        router.push("/(director-tabs)/(tabs)/micro-grant");
+                      }
+                      else {
                         console.log(`Pressed ${item.title}`);
                       }
                     }}

@@ -1,5 +1,6 @@
 import CustomDrawerContent from '@/components/director/CustomDrawer';
 import { MENU_ITEMS } from '@/constants/mockData';
+import { PhaseCreationProvider } from '@/context/PhaseCreationContext';
 import { Drawer } from 'expo-router/drawer';
 import React from 'react';
 import { Platform } from 'react-native';
@@ -7,7 +8,8 @@ import { Platform } from 'react-native';
 
 export default function DirectorDrawerLayout() {
   return (
-    <Drawer
+    <PhaseCreationProvider>
+      <Drawer
       drawerContent={(props) => <CustomDrawerContent userRole="director" menuItems={MENU_ITEMS} {...props} />}
       screenOptions={{
         drawerType: 'front',
@@ -25,6 +27,7 @@ export default function DirectorDrawerLayout() {
         }}
       />
 
-    </Drawer>
+      </Drawer>
+    </PhaseCreationProvider>
   );
 }

@@ -1,3 +1,4 @@
+import { usePhaseCreation } from '@/context/PhaseCreationContext';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
@@ -26,6 +27,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
     ({ onClose, onNext, onCancel }, ref) => {
         const { bottom } = useSafeAreaInsets();
         const router = useRouter();
+        const { setPhaseDetails } = usePhaseCreation();
         const snapPoints = useMemo(() => ['90%'], []);
 
         const [formData, setFormData] = useState<RoadmapFormData>({
@@ -157,19 +159,21 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
             }
 
             if (formData.type === 'Phase') {
-                // For Phase type, navigate to create-roadmap page
+                // For Phase type, save to context and navigate to create-roadmap page
+                setPhaseDetails({
+                    phaseName: formData.name,
+                    phaseSubheading: formData.subheading,
+                    phaseCompletionTime: formData.completionTime,
+                    phaseDivisions: formData.divisions,
+                    phaseBannerImage: formData.bannerImage || ''
+                });
+                
                 resetForm();
                 onCancel();
-                const queryParams = {
-                    name: formData.name,
-                    subheading: formData.subheading,
-                    completionTime: formData.completionTime,
-                    bannerImage: formData.bannerImage || '',
-                    divisions: formData.divisions
-                };
+                
                 router.push({
                     pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/create-roadmap',
-                    params: queryParams
+                    params: { isPhaseFlow: 'true' }
                 });
             } else {
                 // For Single Roadmap type, navigate to roadmap-form page
@@ -487,7 +491,7 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         flex: 1,
-        maxHeight: "80%",
+        maxHeight: "65%",
     },
     formContainer: {
         gap: 20,

@@ -1,9 +1,10 @@
+import { usePhaseCreation } from '@/context/PhaseCreationContext';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Alert,
     Image,
@@ -22,6 +23,9 @@ export default function CreateRoadmapScreen() {
     const router = useRouter();
     const { bottom } = useSafeAreaInsets();
     const params = useLocalSearchParams();
+    const { state, addRoadmap, updateRoadmap, setCurrentRoadmap } = usePhaseCreation();
+    
+    const isPhaseFlow = params.isPhaseFlow === 'true';
 
     const [formData, setFormData] = useState<{
         name: string;
@@ -66,7 +70,7 @@ export default function CreateRoadmapScreen() {
     };
 
     const handleCancel = () => {
-        router.back();
+        router.replace('/(director-tabs)/(tabs)/revitalization-roadmaps');
     };
 
     const validateForm = () => {
@@ -105,20 +109,54 @@ export default function CreateRoadmapScreen() {
             return;
         }
 
-        // Navigate to the form creation page with roadmap data
-        const queryParams = {
-            name: formData.name,
-            subheading: formData.subheading,
-            completionTime: formData.completionTime,
-            selectedDivision: formData.selectedDivision,
-            bannerImage: formData.bannerImage || ''
-        };
+        if (isPhaseFlow) {
+            // For Phase flow, add roadmap to context and navigate to roadmap-form
+            const roadmap = addRoadmap({
+                name: formData.name,
+                subheading: formData.subheading,
+                completionTime: formData.completionTime,
+                selectedDivision: formData.selectedDivision,
+                bannerImage: formData.bannerImage
+            });
 
-        router.push({
-            pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/roadmap-form',
-            params: queryParams
-        });
+            setCurrentRoadmap(roadmap);
+
+            router.push({
+                pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/roadmap-form',
+                params: {
+                    isPhaseFlow: 'true',
+                    roadmapId: roadmap.id
+                }
+            });
+        } else {
+            // For Single Roadmap, navigate to roadmap-form with params
+            const queryParams = {
+                name: formData.name,
+                subheading: formData.subheading,
+                completionTime: formData.completionTime,
+                selectedDivision: formData.selectedDivision,
+                bannerImage: formData.bannerImage || ''
+            };
+
+            router.push({
+                pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/roadmap-form',
+                params: queryParams
+            });
+        }
     };
+
+    useEffect(() => {
+        // Load current roadmap data if in phase flow
+        if (isPhaseFlow && state.currentRoadmap) {
+            setFormData({
+                name: state.currentRoadmap.name,
+                subheading: state.currentRoadmap.subheading,
+                completionTime: state.currentRoadmap.completionTime,
+                bannerImage: state.currentRoadmap.bannerImage,
+                selectedDivision: state.currentRoadmap.selectedDivision
+            });
+        }
+    }, [isPhaseFlow, state.currentRoadmap]);
 
     return (
         <LinearGradient
@@ -128,7 +166,7 @@ export default function CreateRoadmapScreen() {
             <View style={styles.content}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Create Roadmap</Text>
@@ -137,12 +175,22 @@ export default function CreateRoadmapScreen() {
                 <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                     {/* Banner Section */}
                     <View style={styles.bannerSection}>
-
                         <View style={styles.bannerImageContainer}>
-                            <Image source={require('@/assets/images/church-2.png')} style={styles.bannerImage} />
+                            <Image 
+                                source={
+                                    isPhaseFlow && state.phaseDetails?.phaseBannerImage
+                                        ? { uri: state.phaseDetails.phaseBannerImage }
+                                        : require('@/assets/images/church-2.png')
+                                } 
+                                style={styles.bannerImage} 
+                            />
                             <BlurView intensity={10} style={styles.blurOverlay}>
                                 <View style={styles.bannerOverlay}>
-                                    <Text style={styles.bannerTitle}>self Revitalization Phase</Text>
+                                    <Text style={styles.bannerTitle}>
+                                        {isPhaseFlow && state.phaseDetails 
+                                            ? state.phaseDetails.phaseName 
+                                            : 'self Revitalization Phase'}
+                                    </Text>
                                 </View>
                             </BlurView>
                         </View>
