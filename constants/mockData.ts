@@ -559,14 +559,14 @@ export const PastorMenuItems: MenuItem[] = [
                 label: 'Assignments',
                 icon: icons.assignment,
                 iconType: 'image',
-                route: '/(pastor-tabs)/(tabs)/profile/my-assignment/assignment',
+                route: '/(pastor-tabs)/(tabs)/profile/assignments',
             },
             {
                 id: 'certificates',
                 label: 'Certificates',
                 icon: icons.certificate,
                 iconType: 'image',
-                route: '/(pastor-tabs)/(tabs)/profile/certificate',
+                route: '/(pastor-tabs)/(tabs)/profile/certificates',
             },
             {
                 id: 'microGrant',

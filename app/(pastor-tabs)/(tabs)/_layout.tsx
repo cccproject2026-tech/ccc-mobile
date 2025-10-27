@@ -107,7 +107,7 @@ export default function PastorTabLayout() {
                         }}
                     />
                     <Tabs.Screen
-                        name="profile"
+                        name="profile/index"
                         options={{
                             title: 'Profile',
                             tabBarIcon: ({ color }) => <Image source={icons.profileTabIcon} style={{ width: 28, height: 28, tintColor: color }} />,
@@ -115,12 +115,34 @@ export default function PastorTabLayout() {
                     />
 
                     {/* HIDDEN ROUTES - Hide the parent group AND the individual routes it creates */}
-                    <Tabs.Screen
+                    {/* <Tabs.Screen
                         name="(index,assessments,roadmap)"
                         options={{
                             href: null,
                         }}
+                    /> */}
+                    <Tabs.Screen
+                        name="profile/documents"
+                        options={{
+                            href: null,
+                        }}
                     />
+
+
+                    <Tabs.Screen
+                        name="profile/certificates"
+                        options={{
+                            href: null,
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="profile/grant"
+                        options={{
+                            href: null,
+                        }}
+                    />
+
+
                     {/* Hide the auto-generated routes from the folder name */}
                     <Tabs.Screen
                         name="(index)"

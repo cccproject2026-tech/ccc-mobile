@@ -13,7 +13,7 @@ import { useCallback, useState } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ItemDetail() {
-    const { itemId, returnTo } = useLocalSearchParams<{ itemId: string; returnTo?: string }>();
+    const { itemId } = useLocalSearchParams<{ itemId: string; returnTo?: string }>();
     const router = useRouter();
 
     const task = getTask(mockRevitalization, itemId!);
@@ -105,11 +105,6 @@ export default function ItemDetail() {
                 }}>
                     <TouchableOpacity
                         onPress={() => {
-                            if (returnTo) {
-                                // navigate to provided return path (assignments)
-                                router.push(returnTo as any);
-                                return;
-                            }
                             router.back();
                         }}
                         style={{ marginRight: getSpacing(8) }}

@@ -33,6 +33,8 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
             <Stack.Screen name="assessments/survey" />
             <Stack.Screen name="assessments/report" />
             <Stack.Screen name="assessments/answer-questions" />
+
+            <Stack.Screen name="profile/assignments" />                     {/* Dashboard */}
         </Stack>
     );
 }
