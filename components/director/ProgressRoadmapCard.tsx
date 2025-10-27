@@ -22,6 +22,9 @@ export const RoadmapCard: React.FC<Props> = ({
     const hasProgress = data.taskProgress && !isCompleted;
     const showArrow = data.showArrow && !isCompleted;
 
+    // ✅ Check if actions (menu or arrow) are present
+    const hasActions = showMenu || showArrow;
+
     const progressPercentage = useMemo(() => {
         return data.taskProgress
             ? Math.min(100, (data.taskProgress.completed / data.taskProgress.total) * 100)
@@ -67,29 +70,33 @@ export const RoadmapCard: React.FC<Props> = ({
         </View>
     );
 
-    const renderActions = () => (
-        <View style={styles.actionsContainer}>
-            {showMenu && onMenuPress && (
-                <TouchableOpacity
-                    onPress={onMenuPress}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
+    const renderActions = () => {
+        if (!hasActions) return null;
+
+        return (
+            <View style={styles.actionsContainer}>
+                {showMenu && onMenuPress && (
+                    <TouchableOpacity
+                        onPress={onMenuPress}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Ionicons
+                            name="ellipsis-vertical"
+                            size={isSmallDevice ? 20 : 24}
+                            color="rgba(255,255,255,0.6)"
+                        />
+                    </TouchableOpacity>
+                )}
+                {showArrow && (
                     <Ionicons
-                        name="ellipsis-vertical"
+                        name="chevron-forward"
                         size={isSmallDevice ? 20 : 24}
                         color="rgba(255,255,255,0.6)"
                     />
-                </TouchableOpacity>
-            )}
-            {showArrow && (
-                <Ionicons
-                    name="chevron-forward"
-                    size={isSmallDevice ? 20 : 24}
-                    color="rgba(255,255,255,0.6)"
-                />
-            )}
-        </View>
-    );
+                )}
+            </View>
+        );
+    };
 
     const renderProgressSection = () => {
         if (!hasProgress || !data.taskProgress) return null;
@@ -113,8 +120,15 @@ export const RoadmapCard: React.FC<Props> = ({
 
     return (
         <CardWrapper style={styles.card} onPress={onPress} activeOpacity={0.7}>
-            <View style={styles.inner}>
-                <View style={styles.left}>
+            {/* ✅ Use dynamic flex ratios based on hasActions */}
+            <View style={[
+                styles.inner,
+                !hasActions && styles.innerNoActions
+            ]}>
+                <View style={[
+                    styles.left,
+                    !hasActions && styles.leftNoActions
+                ]}>
                     {renderImage()}
                     {showCompletionTimeOnLeft && (
                         <Text style={styles.completionTime}>
@@ -123,28 +137,49 @@ export const RoadmapCard: React.FC<Props> = ({
                     )}
                 </View>
 
-                <View style={styles.right}>
+                <View style={[
+                    styles.right,
+                    !hasActions && styles.rightNoActions
+                ]}>
                     <View style={styles.titleRow}>
-                        <Text style={styles.title} numberOfLines={2}>
+                        <Text
+                            style={[
+                                styles.title,
+                                !hasActions && styles.titleNoActions
+                            ]}
+                            numberOfLines={2}
+                        >
                             {data.title}
                         </Text>
                         {renderActions()}
                     </View>
 
                     {data.description && (
-                        <Text style={styles.description} numberOfLines={2}>
+                        <Text
+                            style={[
+                                styles.description,
+                                !hasActions && styles.descriptionNoActions
+                            ]}
+                            numberOfLines={2}
+                        >
                             {data.description}
                         </Text>
                     )}
 
                     {data.completionTime && !data.status && (
-                        <Text style={styles.completionTimeText}>
+                        <Text style={[
+                            styles.completionTimeText,
+                            !hasActions && styles.completionTimeTextNoActions
+                        ]}>
                             {data.completionTime}
                         </Text>
                     )}
 
                     {statusConfig && (
-                        <View style={styles.statusRow}>
+                        <View style={[
+                            styles.statusRow,
+                            !hasActions && styles.statusRowNoActions
+                        ]}>
                             <View style={styles.statusPill}>
                                 <Text style={[styles.statusPillText, { color: statusConfig.color }]}>
                                     Status  •  {statusConfig.text}
@@ -156,7 +191,10 @@ export const RoadmapCard: React.FC<Props> = ({
                     {renderProgressSection()}
 
                     {isCompleted && data.completedDate && (
-                        <Text style={styles.completedDate}>
+                        <Text style={[
+                            styles.completedDate,
+                            !hasActions && styles.completedDateNoActions
+                        ]}>
                             Completed on : {data.completedDate}
                         </Text>
                     )}
@@ -181,16 +219,24 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         minWidth: 0,
     },
+    // ✅ When no actions, use different layout
+    innerNoActions: {
+        // No changes needed, flexDirection remains 'row'
+    },
     left: {
-        width: 90,
         marginRight: getSpacing(16),
         alignItems: 'flex-start',
         flexShrink: 0,
     },
+    // ✅ When no actions, left section takes 30% width
+    leftNoActions: {
+        width: '30%',
+        maxWidth: 140,
+    },
     imageContainer: {
         position: 'relative',
-        width: 90,
-        height: 90,
+        width: getSpacing(100),
+        height: getSpacing(100),
     },
     image: {
         width: '100%',
@@ -235,6 +281,11 @@ const styles = StyleSheet.create({
         flex: 1,
         minWidth: 0,
     },
+    // ✅ When no actions, right section takes remaining 70%
+    rightNoActions: {
+        flex: 1,
+        paddingRight: 0,
+    },
     titleRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -250,6 +301,10 @@ const styles = StyleSheet.create({
         lineHeight: getFontSize(isSmallDevice ? 20 : 23),
         paddingRight: getSpacing(40),
         minWidth: 0,
+    },
+    // ✅ When no actions, no padding needed for actions space
+    titleNoActions: {
+        paddingRight: 0,
     },
     actionsContainer: {
         flexDirection: 'column',
@@ -270,9 +325,16 @@ const styles = StyleSheet.create({
         paddingRight: getSpacing(40),
         minWidth: 0,
     },
+    // ✅ Remove padding when no actions
+    descriptionNoActions: {
+        paddingRight: 0,
+    },
     statusRow: {
         marginTop: getSpacing(6),
         paddingRight: getSpacing(40),
+    },
+    statusRowNoActions: {
+        paddingRight: 0,
     },
     statusPill: {
         borderWidth: 1,
@@ -332,6 +394,9 @@ const styles = StyleSheet.create({
         paddingRight: getSpacing(40),
         minWidth: 0,
     },
+    completedDateNoActions: {
+        paddingRight: 0,
+    },
     completionTimeText: {
         fontSize: getFontSize(14),
         fontWeight: '400',
@@ -340,6 +405,9 @@ const styles = StyleSheet.create({
         marginTop: getSpacing(6),
         paddingRight: getSpacing(40),
         minWidth: 0,
+    },
+    completionTimeTextNoActions: {
+        paddingRight: 0,
     },
 });
 

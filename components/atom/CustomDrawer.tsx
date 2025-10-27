@@ -65,7 +65,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Assessments",
       iconKey: "Assessments",
-      navigateLocation: "/(pastor-tabs)/assessments/survey",
+      navigateLocation: "/(pastor-tabs)/assessments",
     },
     {
       name: "Progress",

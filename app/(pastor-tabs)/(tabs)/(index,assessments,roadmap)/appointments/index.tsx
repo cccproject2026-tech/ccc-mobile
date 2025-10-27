@@ -188,9 +188,8 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
       buttonText: "OK",
     });
     if (openSheet === 'true') {
-      router.push({
-        pathname: '/assessments/survey-guidelines',
-        params: { assessmentId }
+      router.replace({
+        pathname: '/assessments'
       })
     }
   };

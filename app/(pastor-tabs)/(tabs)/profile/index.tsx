@@ -192,7 +192,7 @@ export default function ProfileScreen() {
     <View style={styles.actionButtons}>
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={() => router.push('/(pastor-tabs)/(tabs)/profile/documents')}
+        onPress={() => router.push('/profile/documents')}
       >
         <Text style={styles.actionButtonText}>Documents</Text>
         <Image source={icons.attachment} style={styles.smallIcon} />

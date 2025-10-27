@@ -221,10 +221,6 @@ export default function Assignment() {
               paddingBottom: bottom * 1.3,
             }}
           >
-
-            {/* Tabs Section */}
-
-
             {/* Content Section */}
             <View
               style={{
@@ -238,12 +234,13 @@ export default function Assignment() {
                   <RoadmapCard data={e.cardData}
                     onPress={() =>
                       router.push({
-                        pathname: '/(pastor-tabs)/(tabs)/new-roadmap/[phaseId]/[itemId]',
+                        pathname: '/roadmap/[phaseId]/[itemId]',
                         params: {
                           phaseId: e.task.phaseId,
                           itemId: e.task.id,
-                          returnTo: '/(pastor-tabs)/(tabs)/profile/my-assignment/assignment',
                         },
+                      }, {
+                        withAnchor: true,
                       })
                     } />
 

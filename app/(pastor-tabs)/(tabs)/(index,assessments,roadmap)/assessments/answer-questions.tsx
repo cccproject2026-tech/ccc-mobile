@@ -1,12 +1,16 @@
+import SimpleSuccessModal from '@/components/atom/SimpleSuccessModal';
+import ScheduleMeetingBottomSheet, { Mentor } from '@/components/director/ScheduleMeetingBottomSheet';
 import TopBar from '@/components/director/TopBar';
+import { Colors } from '@/constants/Colors';
 import { useAssessment } from '@/context/AssessmentsContext';
 import { dummyRoadMaps } from '@/lib/assessments/mock';
 import { AssessmentQuestion, QuestionGroup } from '@/lib/assessments/types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Alert,
     Modal,
@@ -17,10 +21,16 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
-
 export default function AnswerQuestionPage() {
     const { assessmentId, viewMode } = useLocalSearchParams();
     const [showModal, setShowModal] = useState(false);
+
+    // ✅ Bottom sheet ref
+    const scheduleMeetingBottomSheetRef = useRef<BottomSheetModal>(null);
+
+    // ✅ Success modal state
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     const assessment = dummyRoadMaps.find(a => a.id === assessmentId);
 
@@ -47,6 +57,46 @@ export default function AnswerQuestionPage() {
 
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
+
+    // ✅ Mock mentors data
+    const mockMentors: Mentor[] = [
+        {
+            id: '1',
+            name: 'John Ross',
+            role: 'Mentor',
+            profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
+        },
+        {
+            id: '2',
+            name: 'Sarah Johnson',
+            role: 'Field Mentor',
+            profileImage: 'https://randomuser.me/api/portraits/women/2.jpg',
+        },
+        {
+            id: '3',
+            name: 'Michael Chen',
+            role: 'Mentor',
+            profileImage: 'https://randomuser.me/api/portraits/men/3.jpg',
+        },
+        {
+            id: '4',
+            name: 'Emily Davis',
+            role: 'Mentor',
+            profileImage: 'https://randomuser.me/api/portraits/women/4.jpg',
+        },
+        {
+            id: '5',
+            name: 'Robert Wilson',
+            role: 'Field Mentor',
+            profileImage: 'https://randomuser.me/api/portraits/men/5.jpg',
+        },
+        {
+            id: '6',
+            name: 'Lisa Anderson',
+            role: 'Field Mentor',
+            profileImage: 'https://randomuser.me/api/portraits/women/6.jpg',
+        },
+    ];
 
     // Auto-save progress whenever answers or section changes (only if not in view mode)
     useEffect(() => {
@@ -145,7 +195,6 @@ export default function AnswerQuestionPage() {
         }
     };
 
-    // Fix: Await completeAssessment, THEN show modal
     const handleSubmitAssessment = () => {
         Alert.alert(
             "Submit Assessment",
@@ -155,17 +204,57 @@ export default function AnswerQuestionPage() {
                 {
                     text: "Submit",
                     onPress: async () => {
-                        await completeAssessment(assessmentId as string); // Ensure context is updated
-                        setShowModal(true); // Now show scheduling modal
+                        await completeAssessment(assessmentId as string);
+                        setShowModal(true); // Show prompt modal
                     }
                 }
             ]
         );
     };
 
+    // ✅ UPDATED: Opens bottom sheet instead of navigating
     const handleScheduleMeeting = () => {
+        setShowModal(false); // Close prompt modal
+
+        setTimeout(() => {
+            scheduleMeetingBottomSheetRef.current?.present(); // Open bottom sheet
+        }, 300);
+    };
+
+    // ✅ NEW: Handle skip scheduling
+    const handleSkipScheduling = () => {
         setShowModal(false);
-        router.push({ pathname: '/(pastor-tabs)/(tabs)/appointments', params: { openSheet: 'true', assessmentId } });
+
+        setTimeout(() => {
+            router.back(); // Go back to survey-guidelines
+        }, 300);
+    };
+
+    // ✅ NEW: Handle successful scheduling
+    const handleScheduleComplete = (data: any) => {
+        console.log('Meeting scheduled:', data);
+
+        // Format date for display
+        const formatDate = (dateString: string) => {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = monthNames[date.getMonth()];
+            const year = date.getFullYear().toString().slice(-2);
+            return `${day} ${month} ${year}`;
+        };
+
+        // Show success message
+        setSuccessMessage(
+            `Meeting scheduled with ${data.selectedMentor.name} on ${formatDate(data.selectedDate)} at ${data.selectedTime.label}`
+        );
+        setShowSuccessModal(true);
+
+        // Navigate back after 2 seconds
+        setTimeout(() => {
+            router.back(); // Goes to survey-guidelines
+        }, 2000);
     };
 
     const renderQuestion = (question: AssessmentQuestion) => {
@@ -205,15 +294,14 @@ export default function AnswerQuestionPage() {
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
             <TopBar showDrawer={false} showNotifications={false} />
+
             {!isViewMode && (
                 <View style={{ alignItems: 'flex-end', margin: 12 }}>
                     <TouchableOpacity
                         onPress={() => {
-                            // For each group in the current section
                             const filledAnswers: Record<string, boolean> = {};
                             currentSection.questionGroups.forEach(group => {
                                 group.questions.forEach(q => {
-                                    // Mark only checkbox-type as true
                                     if (q.type === 'checkbox') {
                                         filledAnswers[q.id] = true;
                                     }
@@ -336,6 +424,7 @@ export default function AnswerQuestionPage() {
                 </View>
             </KeyboardAwareScrollView>
 
+            {/* ✅ 1. PROMPT MODAL - Schedule or Skip */}
             <Modal
                 visible={showModal}
                 transparent
@@ -354,32 +443,88 @@ export default function AnswerQuestionPage() {
                         padding: 32,
                         alignItems: 'center',
                         elevation: 2,
-                        margin: getSpacing(20),
+                        margin: 20,
+                        maxWidth: 400,
                     }}>
-                        <Text style={{ textAlign: 'center', fontSize: 18, marginBottom: 24, color: '#176192' }}>
+                        <Text style={{
+                            textAlign: 'center',
+                            fontSize: 18,
+                            marginBottom: 24,
+                            color: '#176192',
+                            lineHeight: 24,
+                        }}>
                             On completion of the PMP and CMA assessment tools please schedule a meeting with your mentor.
                         </Text>
-                        <TouchableOpacity
-                            style={{
-                                backgroundColor: '#223A74',
-                                paddingHorizontal: 32,
-                                paddingVertical: 16,
-                                borderRadius: 12,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.2,
-                                shadowRadius: 4,
-                                elevation: 4,
-                            }}
-                            onPress={handleScheduleMeeting}
-                        >
-                            <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-                                Schedule Meeting
-                            </Text>
-                        </TouchableOpacity>
+
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: '#6B7280',
+                                    paddingHorizontal: 24,
+                                    paddingVertical: 16,
+                                    borderRadius: 12,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.2,
+                                    shadowRadius: 4,
+                                    elevation: 4,
+                                }}
+                                onPress={handleSkipScheduling}
+                            >
+                                <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
+                                    Skip for Now
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: '#223A74',
+                                    paddingHorizontal: 24,
+                                    paddingVertical: 16,
+                                    borderRadius: 12,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.2,
+                                    shadowRadius: 4,
+                                    elevation: 4,
+                                }}
+                                onPress={handleScheduleMeeting}
+                            >
+                                <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
+                                    Schedule Meeting
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
+
+            {/* ✅ 2. SCHEDULE MEETING BOTTOM SHEET */}
+            <ScheduleMeetingBottomSheet
+                ref={scheduleMeetingBottomSheetRef}
+                mentors={mockMentors}
+                mode="schedule"
+                onClose={() => {
+                    scheduleMeetingBottomSheetRef.current?.dismiss();
+                }}
+                onSchedule={handleScheduleComplete}
+                colorScheme={{
+                    background: Colors.darkBlueGradientOne,
+                    text: '#FFFFFF',
+                    accent: '#FFC107',
+                    cardBackground: 'rgba(255, 255, 255, 0.1)',
+                }}
+            />
+
+            {/* ✅ 3. SUCCESS MODAL */}
+            <SimpleSuccessModal
+                visible={showSuccessModal}
+                onClose={() => {
+                    setShowSuccessModal(false);
+                    router.back(); // Navigate back to survey-guidelines
+                }}
+                title={successMessage}
+            />
         </LinearGradient>
     );
 }

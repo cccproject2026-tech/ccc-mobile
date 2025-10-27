@@ -1,16 +1,19 @@
-import { ProgressCard } from "@/components/atom/cards";
 import { Tab } from "@/components/atom/tab";
 import { Header } from "@/components/build-components";
 import PMPBottomSheet from "@/components/director/PMPBottomSheet";
 import ProgressAssessmentCard from "@/components/director/ProgressAssessmentCard";
 import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarChart";
 import { ProgressPieChart } from "@/components/director/ProgressPieChart";
+import RoadmapCard from "@/components/director/ProgressRoadmapCard";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
+import { usePhaseCard } from '@/lib/roadmap/mappers';
+import { mockRevitalization } from '@/lib/roadmap/mock';
+import { getPhase, getPhaseTasks } from '@/lib/roadmap/selectors';
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -49,70 +52,7 @@ export default function ProgressScreen() {
       console.error('PMPBottomSheet ref is null');
     }
   }, []);
-  const dummyRoadMaps = [
-    {
-      title: "Self Revitalization Phase",
-      time: "Completion Time Months 1 - 2",
-      status: "Due",
-      image: require("@/assets/images/jumpstart.png"),
-      progress: "1",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Church Empowerment Phase",
-      time: "Completion Time Months 3 - 9",
-      status: "In Progress",
-      image: require("@/assets/images/roadmap.jpg"),
-      progress: "1",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: " Community Revitalization and Multiplication Phase",
-      time: "Completion Time Months 3 - 9",
-      type: "assignment",
-      read: true,
-      status: "Not Started Yet",
-      image: require("@/assets/images/roadmap.jpg"),
-      progress: "0",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Jump-start",
-      description: "Interested in receiving mentoring in community engagement",
-      time: "Completion Time Months 3 - 9",
-      type: "assignment",
-      read: true,
-      status: "Completed",
-      image: require("@/assets/images/roadmap.jpg"),
-      progress: "0",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-      completedTime: "20 Oct 2024",
-    },
-  ];
+
 
   const dummyAssessment = [
     {
@@ -152,21 +92,44 @@ export default function ProgressScreen() {
     },
   ];
 
+
+
+
+
   const availableTabs = [
     { tab: "All" },
     { tab: "Completed" },
     { tab: "Remaining" },
   ];
 
-  const filteredRoadMaps = dummyRoadMaps.filter((item) => {
-    if (roadmapTabs === "All") {
-      return true;
-    } else if (roadmapTabs === "Completed") {
-      return item.status === "Completed";
-    } else {
-      return item.status !== "Completed";
-    }
+  // Build phase card data from mockRevitalization (matches roadmap index implementation)
+  // Note: usePhaseCard is a hook so we call it for each phase (same pattern as roadmap index)
+  const phaseCards = (mockRevitalization.program.phases || []).map(phaseId => {
+    const phase = getPhase(mockRevitalization, phaseId);
+    const tasks = getPhaseTasks(mockRevitalization, phase);
+    return usePhaseCard(phase, tasks);
   });
+
+  // Filter based on the Revitalization tabs (All / Completed / Remaining)
+  const selectablePhaseCards = useMemo(() => {
+    const key = (roadmapTabs || '').toString().toLowerCase();
+    if (key === 'all') return phaseCards;
+    if (key === 'completed') return phaseCards.filter(c => c.status === 'completed');
+    return phaseCards.filter(c => c.status !== 'completed');
+  }, [phaseCards, roadmapTabs]);
+
+  const shuffle = (arr: any[]) => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  const selectedPhaseCards = useMemo(() => shuffle(selectablePhaseCards).slice(0, 5), [selectablePhaseCards]);
+
+
 
   const filteredAssessments = dummyAssessment.filter((item) => {
     if (assessmentTabs === "All") {
@@ -306,9 +269,7 @@ export default function ProgressScreen() {
                     data={e}
                     tabs={roadmapTabs}
                     setTabs={setRoadmapTabs}
-                    onPress={() => {
-                      setRoadmapTabs(e.tab);
-                    }}
+                    onPress={() => setRoadmapTabs(e.tab)}
                     className="flex-1 w-full "
                   />
                 ))}
@@ -321,13 +282,11 @@ export default function ProgressScreen() {
                   width: "100%",
                 }}
               >
-                {filteredRoadMaps.map((e, i) => (
-                  <React.Fragment key={i}>
-                    <ProgressCard data={e} navigation={router} />
-                    {i < filteredRoadMaps.length - 1 && (
-                      <View className="h-[0.5px] bg-white/30 my-4" />
-                    )}
-                  </React.Fragment>
+                {selectedPhaseCards.map((card, index) => (
+                  <View key={`roadmap-${index}`} style={[styles.cardWrapper, { paddingTop: index === 0 ? 15 : 0 }]}>
+                    {/* do not pass phaseNumber here so the badge doesn't show on image */}
+                    <RoadmapCard data={{ ...card, phaseNumber: undefined }} />
+                  </View>
                 ))}
               </View>
             </View>

@@ -24,7 +24,6 @@ export default function PastorTabLayout() {
         const windowHeight = Dimensions.get('window').height;
         const navBarHeight = screenHeight - windowHeight - (StatusBar.currentHeight || 0);
 
-
         if (bottom > 0 && navBarHeight < 50) {
             return 'gesture';
         }
@@ -49,7 +48,6 @@ export default function PastorTabLayout() {
                 paddingBottom: bottom,
             };
         } else {
-            // Button navigation
             return {
                 height: 70,
                 paddingBottom: 15,
@@ -60,10 +58,7 @@ export default function PastorTabLayout() {
     const tabBarConfig = getTabBarConfig();
 
     useEffect(() => {
-
-        // Define patterns that should hide the tab bar
         const hideTabBarPatterns = [
-            // Specific route patterns
             /\/report$/,
         ];
 
@@ -78,11 +73,9 @@ export default function PastorTabLayout() {
         setTabBarVisible(!shouldHide);
     }, [pathname]);
 
-
     return (
         <RoadmapProgressProvider>
             <AssessmentProvider>
-
                 <Tabs
                     screenOptions={{
                         tabBarActiveTintColor: '#fff',
@@ -104,6 +97,8 @@ export default function PastorTabLayout() {
                             marginBottom: 4,
                         },
                     }}>
+
+                    {/* VISIBLE TABS */}
                     <Tabs.Screen
                         name="index"
                         options={{
@@ -111,82 +106,95 @@ export default function PastorTabLayout() {
                             tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
                         }}
                     />
-                    {/* <Tabs.Screen
-                        name="discover"
-                        options={{
-                            title: 'Discover',
-                            tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
-                        }}
-                    /> */}
                     <Tabs.Screen
-                        name="profile"
+                        name="profile/index"
                         options={{
                             title: 'Profile',
                             tabBarIcon: ({ color }) => <Image source={icons.profileTabIcon} style={{ width: 28, height: 28, tintColor: color }} />,
                         }}
                     />
 
+                    {/* HIDDEN ROUTES - Hide the parent group AND the individual routes it creates */}
+                    {/* <Tabs.Screen
+                        name="(index,assessments,roadmap)"
+                        options={{
+                            href: null,
+                        }}
+                    /> */}
+                    <Tabs.Screen
+                        name="profile/documents"
+                        options={{
+                            href: null,
+                        }}
+                    />
+
+
+                    <Tabs.Screen
+                        name="profile/certificates"
+                        options={{
+                            href: null,
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="profile/grant"
+                        options={{
+                            href: null,
+                        }}
+                    />
+
+
+                    {/* Hide the auto-generated routes from the folder name */}
+                    <Tabs.Screen
+                        name="(index)"
+                        options={{
+                            href: null,
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="(assessments)"
+                        options={{
+                            href: null,
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="(roadmap)"
+                        options={{
+                            href: null,
+                        }}
+                    />
                     <Tabs.Screen
                         name="appointments"
                         options={{
-                            title: '',
                             href: null,
                         }}
                     />
                     <Tabs.Screen
                         name="mentors"
                         options={{
-                            title: '',
-                            href: null,
-                        }}
-                    />
-
-                    <Tabs.Screen
-                        name="new-roadmap"
-                        options={{
-                            title: '',
-                            href: null,
-                        }}
-                    />
-                    <Tabs.Screen
-                        name="assessments"
-                        options={{
-                            title: '',
                             href: null,
                         }}
                     />
                     <Tabs.Screen
                         name="progress"
                         options={{
-                            title: '',
-                            href: null,
-                        }}
-                    />
-                    <Tabs.Screen
-                        name="roadmap"
-                        options={{
-                            title: '',
                             href: null,
                         }}
                     />
                     <Tabs.Screen
                         name="my-mentors"
                         options={{
-                            title: '',
                             href: null,
                         }}
                     />
                     <Tabs.Screen
                         name="notifications"
                         options={{
-                            title: '',
                             href: null,
                         }}
                     />
                     <Tabs.Screen
                         name="schedule-meeting"
                         options={{
-                            title: '',
                             href: null,
                         }}
                     />

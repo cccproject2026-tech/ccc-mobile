@@ -64,6 +64,8 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
         setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
+
+
     const renderMenuItem = (item: MenuItem, isNested = false, index: number, totalItems: number) => {
         const hasChildren = item.children && item.children.length > 0;
         const isExpanded = expandedItems[item.id];
