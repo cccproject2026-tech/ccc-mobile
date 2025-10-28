@@ -720,15 +720,17 @@ export const CardBox = ({
   icon,
   title,
   cardStyle,
+  onPress,
 }: {
   icon: any;
   title: string;
   cardStyle?: ViewStyle;
+  onPress?: () => void;
 }) => {
-  return (
+  const content = (
     <LinearGradient
       colors={[Colors.darkBlueGradientTwo, Colors.lightBlueGradientTwo]}
-      style={[styles.gradientContainer, cardStyle]}
+      style={[styles.gradientContainer, cardStyle, { width: '100%' }]}
     >
       <Image source={icon} style={styles.icon} />
       <Text className="text-white font-medium text-[16px] text-center">
@@ -736,6 +738,17 @@ export const CardBox = ({
       </Text>
     </LinearGradient>
   );
+
+  if (onPress) {
+    // Wrap with TouchableOpacity but preserve layout by giving it the same width as the CardBox
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={{ width: '50%' }}>
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return content;
 };
 
 export const MentorCard = ({
@@ -746,7 +759,7 @@ export const MentorCard = ({
 }: {
   data: any;
   dataKey: string;
-  navigation: any;
+  navigation?: any;
   onMenuPress: () => void;
 }) => {
   return (

@@ -77,6 +77,7 @@ export default function PastorTabLayout() {
         <RoadmapProgressProvider>
             <AssessmentProvider>
                 <Tabs
+                    backBehavior='history'
                     screenOptions={{
                         tabBarActiveTintColor: '#fff',
                         headerShown: false,
@@ -174,12 +175,12 @@ export default function PastorTabLayout() {
                             href: null,
                         }}
                     />
-                    <Tabs.Screen
+                    {/* <Tabs.Screen
                         name="progress"
                         options={{
                             href: null,
                         }}
-                    />
+                    /> */}
                     <Tabs.Screen
                         name="my-mentors"
                         options={{

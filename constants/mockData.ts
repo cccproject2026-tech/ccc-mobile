@@ -603,10 +603,11 @@ export const PastorMenuItems: MenuItem[] = [
                 label: 'Change Mentor',
                 icon: icons.changeMentor,
                 iconType: 'image',
-                route: '/(pastor-tabs)/roadmap/phase-2/empowerment-cards',
+                route: '/(pastor-tabs)/',
             },
         ],
     },
+    { id: 'logout', label: 'Log out', icon: 'log-out-outline', route: '/' },
 ];
 
 export const MentorMenuItems: MenuItem[] = [

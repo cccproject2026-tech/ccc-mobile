@@ -138,6 +138,7 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
           contentContainerStyle={{ paddingBottom: 16 + insets.bottom }}
         >
           <HeaderHero
+            role="mentor"
             height={280}
             image={icons.backgroundImage}
             bottomBlendColor={Colors.lightBlueGradientOne}
@@ -156,7 +157,7 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
                 {greeting}
               </Text>
               <WelcomeCard
-                onClick={() => {}}
+                onClick={() => { }}
                 avatar={icons.myProfile}
                 message="John Doe, Welcome !"
               />
@@ -334,12 +335,12 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
                   data={e}
                   dataKey={i.toString()}
                   navigation={navigation}
-                  onMenuPress={() => {}}
+                  onMenuPress={() => { }}
                 />
               ))}
             </View>
 
-            <View className="px-5 flex-row justify-between">
+            <View className="flex-row justify-between px-5">
               <Text className="text-white font-bold text-[17px]">
                 Mentees
               </Text>

@@ -1,4 +1,6 @@
+// app/_layout.tsx
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider"
+import { AuthProvider, useAuth } from "@/context/AuthContext"
 import { DataProvider } from "@/dataContext"
 import "@/global.css"
 import { useColorScheme } from "@/hooks/useColorScheme"
@@ -16,33 +18,60 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native"
-import { Stack } from "expo-router"
+import { Stack, useRouter, useSegments } from "expo-router"
 import { StatusBar } from "expo-status-bar"
+import { useEffect } from "react"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import "react-native-reanimated"
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme()
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  })
+// Navigation Guard Component - handles auth-based redirects
+function NavigationGuard() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
 
-  const [fontsLoaded, fontError] = useFonts({
-    AlbertSans_300Light,
-    AlbertSans_400Regular,
-    AlbertSans_500Medium,
-    AlbertSans_600SemiBold,
-    AlbertSans_700Bold,
-  })
+  useEffect(() => {
+    if (isLoading) {
+      console.log('NavigationGuard: Loading...');
+      return;
+    }
 
-  if (!loaded || !fontsLoaded) {
-    // Async font loading only occurs in development.
-    return null
-  }
+    const inAuthGroup = segments[0] === '(login)';
+    const inPastorGroup = segments[0] === '(pastor-tabs)';
+
+    console.log('NavigationGuard:', {
+      isAuthenticated,
+      user: user?.email,
+      currentRoute: segments.join('/'),
+      inAuthGroup,
+      inPastorGroup
+    });
+
+    // ONLY protect pastor-tabs with authentication
+    if (!isAuthenticated && inPastorGroup) {
+      console.log('❌ Not authenticated, redirecting to home from pastor-tabs');
+      setTimeout(() => {
+        router.replace('/');
+      }, 0);
+    }
+    // If authenticated and in login, redirect to pastor dashboard
+    else if (isAuthenticated && inAuthGroup) {
+      console.log('✅ Already authenticated, redirecting to pastor dashboard');
+      router.replace('/(pastor-tabs)/(tabs)');
+    }
+  }, [isAuthenticated, segments, isLoading, user, router]);
+
+  return null;
+}
+
+// Main Layout Component
+function LayoutContent() {
+  const colorScheme = useColorScheme();
 
   return (
-    <DataProvider>
+    <>
+      <NavigationGuard />
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
           <BottomSheetModalProvider>
@@ -51,10 +80,8 @@ export default function RootLayout() {
                 <Stack>
                   <Stack.Screen name="(pastor-tabs)" options={{ headerShown: false }} />
                   <Stack.Screen name="(mentor-tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="(director-tabs)"
-                    options={{ headerShown: false }}
-                  />
+                  <Stack.Screen name="(director-tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="(login)" options={{ headerShown: false }} />
                   <Stack.Screen name="+not-found" />
                   <Stack.Screen name="index" options={{ headerShown: false }} />
                 </Stack>
@@ -64,6 +91,33 @@ export default function RootLayout() {
           </BottomSheetModalProvider>
         </KeyboardProvider>
       </GestureHandlerRootView>
-    </DataProvider>
-  )
+    </>
+  );
+}
+
+// Root Layout - wraps everything with providers
+export default function RootLayout() {
+  const [loaded] = useFonts({
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+  });
+
+  const [fontsLoaded, fontError] = useFonts({
+    AlbertSans_300Light,
+    AlbertSans_400Regular,
+    AlbertSans_500Medium,
+    AlbertSans_600SemiBold,
+    AlbertSans_700Bold,
+  });
+
+  if (!loaded || !fontsLoaded) {
+    return null;
+  }
+
+  return (
+    <AuthProvider>
+      <DataProvider>
+        <LayoutContent />
+      </DataProvider>
+    </AuthProvider>
+  );
 }

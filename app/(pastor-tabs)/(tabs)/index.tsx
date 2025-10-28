@@ -6,10 +6,11 @@ import WelcomeCard from "@/components/director/WelcomeCard";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { appointments } from '@/constants/mockData';
+import { useAuth } from "@/context/AuthContext";
 import { formatClock, formatDate } from "@/utils/date";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Image, Pressable, ScrollView, StyleSheet,
   Text,
@@ -18,17 +19,30 @@ import {
 } from "react-native";
 import Animated, { useAnimatedRef, useScrollViewOffset } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-export default function PastorDashboard({ navigation }: { navigation: any }) {
+export default function PastorDashboard() {
   const [now, setNow] = useState(new Date());
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  // ADD THESE LINES
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  // ADD THIS useEffect for authentication check
+  useEffect(() => {
+    console.log('PastorDashboard auth check:', { isAuthenticated, isLoading, user: user?.email });
+
+    if (!isLoading && !isAuthenticated) {
+      console.log('❌ Not authenticated in PastorDashboard, redirecting to home');
+      router.replace('/');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
 
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
 
   const handleWelcomRoute = () => {
-    router.push('/(director-tabs)/(tabs)/profile');
+    router.push('/(pastor-tabs)/(tabs)/profile');
   }
 
 
@@ -284,7 +298,7 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                       <CardBox title="Assessments" icon={icons.Assessments2} />
                     </View>
                     <View className="flex-row gap-4">
-                      <CardBox title="Progress" icon={icons.progress2} />
+                        <CardBox onPress={() => { router.push(('/(pastor-tabs)/(tabs)/progress') as any) }} title="Progress" icon={icons.progress2} />
                       <CardBox
                         title="Appointments"
                         icon={icons.Appointments2}
@@ -473,14 +487,15 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
               <View className="items-center justify-center w-full px-2 py-5">
                 <View className="flex-row gap-4">
                   <CardBox
+                    onPress={() => { router.push('/roadmap') }}
                     title="Revitalization Roadmap"
                     icon={icons.Revitalization2}
                   />
-                  <CardBox title="Assessments" icon={icons.Assessments2} />
+                  <CardBox onPress={() => { router.push('/assessments') }} title="Assessments" icon={icons.Assessments2} />
                 </View>
                 <View className="flex-row gap-4">
-                  <CardBox title="Progress" icon={icons.progress2} />
-                  <CardBox
+                  <CardBox onPress={() => { router.push('/progress/progress') }} title="Progress" icon={icons.progress2} />
+                  <CardBox onPress={() => { router.push('/appointments') }}
                     title="Appointments"
                     icon={icons.Appointments2}
                   />
@@ -510,7 +525,6 @@ export default function PastorDashboard({ navigation }: { navigation: any }) {
                   key={i}
                   data={e}
                   dataKey={i.toString()}
-                  navigation={navigation}
                   onMenuPress={() => { }}
                 />
               ))}

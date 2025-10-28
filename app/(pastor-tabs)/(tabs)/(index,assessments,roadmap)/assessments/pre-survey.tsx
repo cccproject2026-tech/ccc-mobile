@@ -49,7 +49,7 @@ export default function PreSurveyPage() {
             assessmentTitle: assessment.title,
             preSurveyAnswers: answers,
             sectionAnswers: previousResponse?.sectionAnswers || {},
-            status: 'in-progress',
+            status: 'Submitted',
             currentSectionIndex: 0,
         });
 
