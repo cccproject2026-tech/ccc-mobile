@@ -172,9 +172,10 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                 onCancel();
                 
                 router.push({
-                    pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/create-roadmap',
+                    // @ts-ignore - grouped route path
+                    pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
                     params: { isPhaseFlow: 'true' }
-                });
+                } as any);
             } else {
                 // For Single Roadmap type, navigate to roadmap-form page
                 const queryParams = {
@@ -188,9 +189,10 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                 onCancel();
                 
                 router.push({
-                    pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/roadmap-form',
+                    // @ts-ignore - grouped route path
+                    pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/(creation)/roadmap-form',
                     params: queryParams
-                });
+                } as any);
             }
         };
 

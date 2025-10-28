@@ -122,7 +122,7 @@ export default function CreateRoadmapScreen() {
             setCurrentRoadmap(roadmap);
 
             router.push({
-                pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/roadmap-form',
+                pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/(creation)/roadmap-form',
                 params: {
                     isPhaseFlow: 'true',
                     roadmapId: roadmap.id
@@ -139,7 +139,7 @@ export default function CreateRoadmapScreen() {
             };
 
             router.push({
-                pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/roadmap-form',
+                pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/(creation)/roadmap-form',
                 params: queryParams
             });
         }

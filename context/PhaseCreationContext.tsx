@@ -7,7 +7,7 @@ export interface PhaseRoadmap {
   completionTime: string;
   selectedDivision: string;
   bannerImage: string | null;
-  fields?: any[]; // Fields configuration from create-roadmap.tsx
+  fields?: any[];
 }
 
 interface PhaseDetails {
@@ -24,19 +24,18 @@ interface PhaseCreationState {
   currentRoadmap: PhaseRoadmap | null;
 }
 
-interface PhaseCreationContextType {
+interface PhaseCreationContextValue {
   state: PhaseCreationState;
   setPhaseDetails: (details: PhaseDetails) => void;
   addRoadmap: (roadmap: Omit<PhaseRoadmap, 'id'>) => PhaseRoadmap;
   updateRoadmap: (id: string, updates: Partial<PhaseRoadmap>) => void;
   setCurrentRoadmap: (roadmap: PhaseRoadmap | null) => void;
-  getRoadmaps: () => PhaseRoadmap[];
   clearPhaseData: () => void;
 }
 
-const PhaseCreationContext = createContext<PhaseCreationContextType | undefined>(undefined);
+const PhaseCreationContext = createContext<PhaseCreationContextValue | undefined>(undefined);
 
-export const PhaseCreationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const PhaseCreationProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<PhaseCreationState>({
     phaseDetails: null,
     roadmaps: [],
@@ -47,8 +46,6 @@ export const PhaseCreationProvider: React.FC<{ children: ReactNode }> = ({ child
     setState((prev) => ({
       ...prev,
       phaseDetails: details,
-      roadmaps: [],
-      currentRoadmap: null,
     }));
   };
 
@@ -57,13 +54,11 @@ export const PhaseCreationProvider: React.FC<{ children: ReactNode }> = ({ child
       ...roadmap,
       id: `roadmap-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     };
-
     setState((prev) => ({
       ...prev,
       roadmaps: [...prev.roadmaps, newRoadmap],
       currentRoadmap: newRoadmap,
     }));
-
     return newRoadmap;
   };
 
@@ -87,10 +82,6 @@ export const PhaseCreationProvider: React.FC<{ children: ReactNode }> = ({ child
     }));
   };
 
-  const getRoadmaps = (): PhaseRoadmap[] => {
-    return state.roadmaps;
-  };
-
   const clearPhaseData = () => {
     setState({
       phaseDetails: null,
@@ -107,7 +98,6 @@ export const PhaseCreationProvider: React.FC<{ children: ReactNode }> = ({ child
         addRoadmap,
         updateRoadmap,
         setCurrentRoadmap,
-        getRoadmaps,
         clearPhaseData,
       }}
     >

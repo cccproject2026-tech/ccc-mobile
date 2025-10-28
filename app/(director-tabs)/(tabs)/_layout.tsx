@@ -76,6 +76,9 @@ export default function DirectorTabLayout() {
       // Any modal or overlay routes
       /\/modal\//,
       /\/overlay\//,
+      
+      // Creation flow routes
+      /\/revitalization-roadmaps\/\(creation\)/,
     ];
 
     const shouldHide = hideTabBarPatterns.some((pattern) => {

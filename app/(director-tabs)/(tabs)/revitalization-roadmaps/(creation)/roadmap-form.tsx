@@ -1,8 +1,8 @@
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import CustomDatePicker from "@/components/build-components/date-picker";
 import AddFieldSheet, {
-  AddFieldSheetRef,
-  FieldType,
+    AddFieldSheetRef,
+    FieldType,
 } from "@/components/director/forms/AddFieldSheet";
 import FormCheckBox from "@/components/director/forms/FormCheckBox";
 import { usePhaseCreation } from "@/context/PhaseCreationContext";
@@ -11,15 +11,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -258,7 +258,22 @@ export default function RoadmapFormScreen() {
     };
 
     const handleCancel = () => {
-        router.back();
+        if (isPhaseFlow) {
+            Alert.alert(
+                "Exit Phase Creation",
+                "Are you sure you want to exit? Your current progress will be saved.",
+                [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Exit",
+                        style: "destructive",
+                        onPress: () => router.replace('/(director-tabs)/(tabs)/revitalization-roadmaps')
+                    }
+                ]
+            );
+        } else {
+            router.replace('/(director-tabs)/(tabs)/revitalization-roadmaps');
+        }
     };
 
     const handleCreateRoadmap = () => {
@@ -300,28 +315,19 @@ export default function RoadmapFormScreen() {
 
     console.log("Final roadmap data:", finalRoadmapData);
 
-    // If in phase flow, update current roadmap with fields and navigate back
+    // If in phase flow, update current roadmap with fields
     if (isPhaseFlow && state.currentRoadmap) {
         updateRoadmap(state.currentRoadmap.id, {
             fields: formData.customFields
         });
 
         setSuccessMessage("Roadmap Added Successfully");
-        setShowSuccess(true);
-        
-        // After success, navigate back to create-roadmap to add another roadmap
-        setTimeout(() => {
-            setShowSuccess(false);
-            router.push({
-                pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/create-roadmap',
-                params: { isPhaseFlow: 'true' }
-            });
-        }, 2000);
     } else {
-        // Show success modal (auto-dismisses after 2s)
         setSuccessMessage("Roadmap Created Successfully");
-        setShowSuccess(true);
     }
+    
+    // Show success modal for both flows
+    setShowSuccess(true);
   };
 
   // Field Type Label Component
@@ -732,10 +738,10 @@ export default function RoadmapFormScreen() {
 
       {/* Success Modal */}
       <SimpleSuccessModal
-        visible={showSuccess && !isPhaseFlow}
+        visible={showSuccess}
         onClose={() => {
           setShowSuccess(false);
-          router.push("/(director-tabs)/(tabs)/revitalization-roadmaps");
+          router.replace("/(director-tabs)/(tabs)/revitalization-roadmaps");
         }}
         title={successMessage}
       />
