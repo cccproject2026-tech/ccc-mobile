@@ -1,6 +1,5 @@
 import ActionBottomSheet from '@/components/director/ActionSheetModal';
 import CreateRoadmapModal, { RoadmapFormData } from '@/components/director/CreateRoadmapModal';
-import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import FilterModal, { FilterOption } from '@/components/director/FilterModal';
 import MenteeCard, { Mentee } from '@/components/director/MenteeCard';
 import MentorCard, { MentorData } from '@/components/director/MentorCard';
@@ -11,6 +10,8 @@ import SearchBar from '@/components/director/SearchBar';
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from '@/components/director/TopBar';
 import { mockMentees, STATES } from '@/constants/mockData';
+import { mockRevitalization } from '@/lib/roadmap/mock';
+import { getPhase } from '@/lib/roadmap/selectors';
 import { RoadmapCardData } from '@/lib/roadmap/types';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -50,44 +51,17 @@ const mockMentors: MentorData[] = [
     },
 ];
 
-// Mock data for Roadmap Library
-const mockRoadmapLibrary: RoadmapCardData[] = [
-    {
-        image: require('@/assets/images/jumpstart.png'),
-        title: 'Jump-start',
-        description: 'Interested in receiving mentoring in community engagement',
-        completionTime: 'Completion Time Months 1 - 2',
+// Generate roadmap library from mockRevitalization
+const mockRoadmapLibrary: RoadmapCardData[] = mockRevitalization.program.phases.map(phaseId => {
+    const phase = getPhase(mockRevitalization, phaseId);
+    return {
+        image: phase.coverImage,
+        title: phase.title,
+        description: phase.subtitle,
+        completionTime: `Completion Time Months ${phase.estMonthsMin} - ${phase.estMonthsMax}`,
         showArrow: true,
-    },
-    {
-        image: require('@/assets/images/roadmap.jpg'),
-        title: 'Self Revitalization Phase',
-        description: 'Develop personal leadership and ministry skills',
-        completionTime: 'Completion Time Months 3 - 6',
-        showArrow: true,
-    },
-    {
-        image: require('@/assets/images/roadmap.jpg'),
-        title: 'Church Empowerment Phase',
-        description: 'Build church capacity and community engagement',
-        completionTime: 'Completion Time Months 7 - 12',
-        showArrow: true,
-    },
-    {
-        image: require('@/assets/images/jumpstart.png'),
-        title: 'Community Revitalization and Multiplication',
-        description: 'Expand ministry impact and multiply efforts',
-        completionTime: 'Completion Time Months 13 - 18',
-        showArrow: true,
-    },
-    {
-        image: require('@/assets/images/roadmap.jpg'),
-        title: 'Leadership Development',
-        description: 'Advanced leadership training and mentorship',
-        completionTime: 'Completion Time Months 19 - 24',
-        showArrow: true,
-    },
-];
+    };
+});
 
 export default function RevitalizationRoadmap() {
     const router = useRouter();
@@ -290,7 +264,26 @@ export default function RevitalizationRoadmap() {
         setActiveTab(tab);
     };
 
+    const handlePhasePress = useCallback((roadmapData: RoadmapCardData) => {
+        // Find the corresponding phase
+        const phaseId = mockRevitalization.program.phases.find(id => {
+            const phase = getPhase(mockRevitalization, id);
+            return phase.title === roadmapData.title;
+        });
+        
+        if (!phaseId) return;
+        
+        const phase = getPhase(mockRevitalization, phaseId);
+        
+        // If single roadmap with one task, go directly to task
+        if (phase.isSingleRoadmap && Array.isArray(phase.tasks) && phase.tasks.length === 1) {
+            router.push(`/(director-tabs)/(tabs)/revitalization-roadmaps/${phaseId}/${phase.tasks[0]}`);
+        } else {
+            router.push(`/(director-tabs)/(tabs)/revitalization-roadmaps/${phaseId}`);
+        }
+    }, []);
 
+    
 
     
 
@@ -354,7 +347,11 @@ export default function RevitalizationRoadmap() {
             <View className="flex-1">
                 <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
 
-                <View className="flex-1 pt-6">
+                <ScrollView 
+                    className="flex-1 py-6" 
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: bottom + height * 0.05 }}
+                >
                     {/* Header */}
                     <RoadmapHeader handleOpenCreateRoadmapModal={handleOpenCreateRoadmapModal} activeTab={activeTab} />
 
@@ -396,7 +393,7 @@ export default function RevitalizationRoadmap() {
                     </View>
 
                     {/* Content List */}
-                    <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+                    <View className="px-4">
                         {activeTab === 'roadmap-library' && (
                             /* Roadmap Library */
                             filteredRoadmaps.map((roadmap, index) => (
@@ -405,7 +402,7 @@ export default function RevitalizationRoadmap() {
                                     data={roadmap}
                                     showMenu={true}
                                     onMenuPress={() => handleRoadmapMenuPress(roadmap)}
-                                    onPress={() => console.log('Roadmap pressed:', roadmap.title)}
+                                    onPress={() => handlePhasePress(roadmap)}
                                 />
                             ))
                         )}
@@ -450,8 +447,8 @@ export default function RevitalizationRoadmap() {
                                 />
                             ))
                         )}
-                    </ScrollView>
-                </View>
+                    </View>
+                </ScrollView>
 
                 <ActionBottomSheet
                     ref={bottomSheetModalRef}
