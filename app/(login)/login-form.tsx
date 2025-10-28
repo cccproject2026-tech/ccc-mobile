@@ -4,7 +4,7 @@ import { icons } from "@/constants/images";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
     ActivityIndicator,
@@ -20,6 +20,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function LoginFormScreen() {
+    const { showProfileSetup } = useLocalSearchParams();
     const { top, bottom } = useSafeAreaInsets();
     const { login, isLoading, error, interestData } = useAuth();
 

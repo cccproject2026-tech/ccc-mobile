@@ -1,3 +1,4 @@
+// context/AuthContext.tsx
 import { mockApiDelay, User } from '@/lib/user/mock';
 import { InterestFormData, InterestStatus, STORAGE_KEYS } from '@/lib/user/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,7 +14,7 @@ export interface AuthState {
     interestStatus: InterestStatus;
     interestData: InterestFormData | null;
     passwordSet: boolean;
-
+    profileComplete: boolean; // NEW
 }
 
 interface AuthContextType extends AuthState {
@@ -27,15 +28,15 @@ interface AuthContextType extends AuthState {
     setPassword: (email: string, password: string) => Promise<void>;
     verifyEmail: (email: string) => Promise<boolean>;
     resetPassword: (email: string, newPassword: string) => Promise<void>;
+    completeProfile: () => Promise<void>; // NEW
     clearError: () => void;
     resetAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-
 // This hook protects routes based on authentication
-function useProtectedRoute(user: User | null, isLoading: boolean) {
+function useProtectedRoute(user: User | null, isLoading: boolean, profileComplete: boolean) {
     const segments = useSegments();
     const router = useRouter();
     const pathname = usePathname();
@@ -48,27 +49,28 @@ function useProtectedRoute(user: User | null, isLoading: boolean) {
         const inPastorGroup = segments[0] === '(pastor-tabs)';
         const inMentorGroup = segments[0] === '(mentor-tabs)';
         const inDirectorGroup = segments[0] === '(director-tabs)';
+        const inProfileSetup = pathname === '/(login)/profile';
 
         console.log('Current segments:', segments);
         console.log('Is authenticated:', !!user);
+        console.log('Profile complete:', profileComplete);
         console.log('Pathname:', pathname);
 
         // Allow root index page for role selection (public)
         if (inRootIndex) {
-            // If user is logged in, redirect them to their dashboard
-            // if (user && user.role === 'pastor') {
-            //     router.replace('/(pastor-tabs)/(tabs)');
-            // } else if (user && user.role === 'mentor') {
-            //     router.replace('/(mentor-tabs)');
-            // } else if (user && user.role === 'director') {
-            //     router.replace('/(director-tabs)/(tabs)');
-            // }
             return;
         }
 
         // Mentor and Director groups are public (no auth required for testing)
         if (inMentorGroup || inDirectorGroup) {
             console.log('In mentor/director group - no auth required');
+            return;
+        }
+
+        // If authenticated but profile not complete, redirect to profile setup
+        if (user && user.role === 'pastor' && !profileComplete && !inProfileSetup) {
+            console.log('📝 Profile incomplete, redirecting to profile setup');
+            router.replace('/(login)/profile');
             return;
         }
 
@@ -79,6 +81,13 @@ function useProtectedRoute(user: User | null, isLoading: boolean) {
                 router.replace('/(login)');
                 return;
             }
+
+            // If authenticated pastor but profile not complete, redirect to profile
+            if (!profileComplete && !inProfileSetup) {
+                console.log('Profile not complete, redirecting to profile setup');
+                router.replace('/(login)/profile');
+                return;
+            }
         }
 
         // If user is not signed in and trying to access login group
@@ -87,12 +96,12 @@ function useProtectedRoute(user: User | null, isLoading: boolean) {
             return;
         }
 
-        // If user (pastor) is signed in and on auth pages, redirect to their dashboard
-        if (user && user.role === 'pastor' && inAuthGroup) {
-            console.log('Redirecting to pastor dashboard - user already authenticated');
+        // If user (pastor) is signed in with complete profile and on auth pages, redirect to their dashboard
+        if (user && user.role === 'pastor' && profileComplete && inAuthGroup && !inProfileSetup) {
+            console.log('Redirecting to pastor dashboard - user already authenticated with complete profile');
             router.replace('/(pastor-tabs)/(tabs)');
         }
-    }, [user, segments, isLoading, pathname]);
+    }, [user, segments, isLoading, pathname, profileComplete]);
 }
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -105,10 +114,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         interestStatus: 'none',
         interestData: null,
         passwordSet: false,
+        profileComplete: false, // NEW
     });
 
     // Use the protected route hook
-    useProtectedRoute(state.user, state.isLoading);
+    useProtectedRoute(state.user, state.isLoading, state.profileComplete);
 
     // Initialize auth state from AsyncStorage
     useEffect(() => {
@@ -119,12 +129,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const storedInterestStatus = await AsyncStorage.getItem(STORAGE_KEYS.INTEREST_STATUS);
                 const storedInterestData = await AsyncStorage.getItem(STORAGE_KEYS.INTEREST_DATA);
                 const storedPasswordSet = await AsyncStorage.getItem(STORAGE_KEYS.PASSWORD_SET);
+                const storedProfileComplete = await AsyncStorage.getItem(STORAGE_KEYS.PROFILE_COMPLETE); // NEW
 
                 console.log('Initializing auth:', {
                     hasUser: !!storedUser,
                     hasToken: !!storedToken,
                     interestStatus: storedInterestStatus,
                     passwordSet: storedPasswordSet,
+                    profileComplete: storedProfileComplete, // NEW
                 });
 
                 if (storedUser && storedToken) {
@@ -136,10 +148,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         error: null,
                         interestStatus: (storedInterestStatus as InterestStatus) || 'none',
                         interestData: storedInterestData ? JSON.parse(storedInterestData) : null,
-                        passwordSet: storedPasswordSet === 'true', // ✅
+                        passwordSet: storedPasswordSet === 'true',
+                        profileComplete: storedProfileComplete === 'true', // NEW
                     });
                 } else {
-                    // User not logged in, but might have interest data
                     setState(prev => ({
                         ...prev,
                         user: null,
@@ -147,7 +159,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         isLoading: false,
                         interestStatus: (storedInterestStatus as InterestStatus) || 'none',
                         interestData: storedInterestData ? JSON.parse(storedInterestData) : null,
-                        passwordSet: storedPasswordSet === 'true', // ✅ Check this even when logged out
+                        passwordSet: storedPasswordSet === 'true',
+                        profileComplete: false, // NEW
                     }));
                 }
             } catch (error) {
@@ -160,6 +173,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     interestStatus: 'none',
                     interestData: null,
                     passwordSet: false,
+                    profileComplete: false, // NEW
                 });
             }
         };
@@ -167,14 +181,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         initializeAuth();
     }, []);
 
-
     const login = async (email: string, password: string): Promise<void> => {
         setState(prev => ({ ...prev, isLoading: true, error: null }));
 
         try {
             await mockApiDelay(800);
 
-            // Check if user has approved interest with password
             const storedData = await AsyncStorage.getItem(STORAGE_KEYS.INTEREST_DATA);
             const storedStatus = await AsyncStorage.getItem(STORAGE_KEYS.INTEREST_STATUS);
             const storedPasswordSet = await AsyncStorage.getItem(STORAGE_KEYS.PASSWORD_SET);
@@ -185,7 +197,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             const userData = JSON.parse(storedData) as InterestFormData & { password?: string };
 
-            // Verify email and password
             if (userData.email !== email) {
                 throw new Error('Invalid email or password');
             }
@@ -194,7 +205,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 throw new Error('Invalid email or password');
             }
 
-            // Create user object
             const user: User = {
                 id: `user_${Date.now()}`,
                 firstName: userData.firstName,
@@ -209,6 +219,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
             await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
 
+            // Check profile complete status
+            const profileComplete = await AsyncStorage.getItem(STORAGE_KEYS.PROFILE_COMPLETE);
+
             console.log('Login successful:', user);
 
             setState(prev => ({
@@ -217,38 +230,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 isAuthenticated: true,
                 isLoading: false,
                 error: null,
+                profileComplete: profileComplete === 'true', // NEW
             }));
-
-            /* PRODUCTION VERSION:
-                        * 
-                        * const response = await fetch('https://api.example.com/auth/login', {
-                        *   method: 'POST',
-                        *   headers: { 'Content-Type': 'application/json' },
-                        *   body: JSON.stringify({ email, password })
-                        * });
-                        * 
-                        * if (!response.ok) {
-                        *   const error = await response.json();
-                        *   throw new Error(error.message || 'Authentication failed');
-                        * }
-                        * 
-                        * const { user, token, interestStatus } = await response.json();
-                        * 
-                        * if (interestStatus === 'pending') {
-                        *   throw new Error('Your account is still pending approval');
-                        * }
-                        * 
-                        * await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-                        * await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-                        * 
-                        * setState(prev => ({
-                        *   ...prev,
-                        *   user,
-                        *   isAuthenticated: true,
-                        *   isLoading: false,
-                        *   error: null,
-                        * }));
-                        */
         } catch (error) {
             console.error('Login failed:', error);
             setState(prev => ({
@@ -261,31 +244,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             throw error;
         }
     };
+
     const logout = async (): Promise<void> => {
         setState(prev => ({ ...prev, isLoading: true }));
 
         try {
             await mockApiDelay(500);
 
-            // Only clear auth-related storage
             await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_USER);
             await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
 
             console.log('✅ Logout successful - auth cleared');
 
-            // Reset ONLY auth fields, preserve everything else
             setState(prev => ({
                 ...prev,
                 user: null,
                 isAuthenticated: false,
                 isLoading: false,
                 error: null,
-                // DON'T RESET THESE - keep them from prev state:
-                // interestStatus: prev.interestStatus (stays "approved")
-                // interestData: prev.interestData (stays)
-                // passwordSet: prev.passwordSet (stays true)
+                profileComplete: false, // Reset on logout
             }));
-
         } catch (error) {
             console.error('Logout failed:', error);
             setState(prev => ({
@@ -296,7 +274,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             throw error;
         }
     };
-
 
     const register = async (userData: Partial<User>, password: string): Promise<void> => {
         setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -379,12 +356,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 status: 'pending',
             };
 
-            // Store interest data and status
             await AsyncStorage.setItem(STORAGE_KEYS.INTEREST_DATA, JSON.stringify(submittedData));
             await AsyncStorage.setItem(STORAGE_KEYS.INTEREST_STATUS, 'pending');
 
             console.log('Interest form submitted:', submittedData);
-            console.log('Status set to: pending');
 
             setState(prev => ({
                 ...prev,
@@ -392,33 +367,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 interestStatus: 'pending',
                 interestData: submittedData,
             }));
-
-            /* PRODUCTION VERSION:
-             * 
-             * const response = await fetch('https://api.example.com/interest', {
-             *   method: 'POST',
-             *   headers: { 
-             *     'Content-Type': 'application/json'
-             *   },
-             *   body: JSON.stringify(interestData)
-             * });
-             * 
-             * if (!response.ok) {
-             *   throw new Error('Failed to submit interest form');
-             * }
-             * 
-             * const result = await response.json();
-             * 
-             * await AsyncStorage.setItem(STORAGE_KEYS.INTEREST_DATA, JSON.stringify(result.data));
-             * await AsyncStorage.setItem(STORAGE_KEYS.INTEREST_STATUS, result.status);
-             * 
-             * setState(prev => ({ 
-             *   ...prev, 
-             *   isLoading: false,
-             *   interestStatus: result.status,
-             *   interestData: result.data,
-             * }));
-             */
         } catch (error) {
             setState(prev => ({
                 ...prev,
@@ -442,13 +390,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             return 'none';
-
-            /* PRODUCTION VERSION:
-             * 
-             * const response = await fetch(`https://api.example.com/interest/status?email=${email}`);
-             * const { status } = await response.json();
-             * return status;
-             */
         } catch (error) {
             console.error('Failed to check interest status:', error);
             return 'none';
@@ -461,7 +402,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             await mockApiDelay(500);
 
-            // Check if email exists in submitted interest data
             const storedData = await AsyncStorage.getItem(STORAGE_KEYS.INTEREST_DATA);
             if (storedData) {
                 const data = JSON.parse(storedData) as InterestFormData;
@@ -473,13 +413,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             setState(prev => ({ ...prev, isLoading: false }));
             return false;
-
-            /* PRODUCTION VERSION:
-             * 
-             * const response = await fetch(`https://api.example.com/verify-email?email=${email}`);
-             * const { exists, approved } = await response.json();
-             * return exists && approved;
-             */
         } catch (error) {
             setState(prev => ({
                 ...prev,
@@ -496,16 +429,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             await mockApiDelay(1000);
 
-            // Store password in interest data for login verification
             const storedData = await AsyncStorage.getItem(STORAGE_KEYS.INTEREST_DATA);
             if (storedData) {
                 const data = JSON.parse(storedData) as InterestFormData;
-                // Add password to the stored data
                 const updatedData = { ...data, password };
                 await AsyncStorage.setItem(STORAGE_KEYS.INTEREST_DATA, JSON.stringify(updatedData));
             }
 
-            // Mark password as set
             await AsyncStorage.setItem(STORAGE_KEYS.PASSWORD_SET, 'true');
 
             console.log('Password set successfully for:', email);
@@ -515,15 +445,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 isLoading: false,
                 passwordSet: true,
             }));
-
-            /* PRODUCTION VERSION:
-             * 
-             * const response = await fetch('https://api.example.com/set-password', {
-             *   method: 'POST',
-             *   headers: { 'Content-Type': 'application/json' },
-             *   body: JSON.stringify({ email, password })
-             * });
-             */
         } catch (error) {
             setState(prev => ({
                 ...prev,
@@ -534,7 +455,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    // Update mockApproveInterest to reset password status
     const mockApproveInterest = async (): Promise<void> => {
         setState(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -542,7 +462,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await mockApiDelay(800);
 
             await AsyncStorage.setItem(STORAGE_KEYS.INTEREST_STATUS, 'approved');
-            await AsyncStorage.setItem(STORAGE_KEYS.PASSWORD_SET, 'false'); // Reset password
+            await AsyncStorage.setItem(STORAGE_KEYS.PASSWORD_SET, 'false');
 
             console.log('Interest approved! User needs to set password.');
 
@@ -569,38 +489,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const clearError = () => {
-        setState(prev => ({ ...prev, error: null }));
-    };
-
-    const resetAuth = () => {
-        setState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-            interestStatus: 'none',
-            interestData: null,
-            passwordSet: false,
-        });
-        console.log('✅ Auth context reset to initial state');
-    };
-
-
     const resetPassword = async (email: string, newPassword: string): Promise<void> => {
         setState(prev => ({ ...prev, isLoading: true, error: null }));
 
         try {
             await mockApiDelay(1000);
 
-            // Update password in stored interest data
             const storedData = await AsyncStorage.getItem(STORAGE_KEYS.INTEREST_DATA);
             if (storedData) {
                 const data = JSON.parse(storedData) as InterestFormData & { password?: string };
 
-                // Verify email matches
                 if (data.email === email) {
-                    // Update password
                     const updatedData = { ...data, password: newPassword };
                     await AsyncStorage.setItem(STORAGE_KEYS.INTEREST_DATA, JSON.stringify(updatedData));
 
@@ -619,19 +518,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } else {
                 throw new Error('No account found with this email');
             }
-
-            /* PRODUCTION VERSION:
-             * 
-             * const response = await fetch('https://api.example.com/reset-password', {
-             *   method: 'POST',
-             *   headers: { 'Content-Type': 'application/json' },
-             *   body: JSON.stringify({ email, newPassword })
-             * });
-             * 
-             * if (!response.ok) {
-             *   throw new Error('Failed to reset password');
-             * }
-             */
         } catch (error) {
             console.error('Reset password failed:', error);
             setState(prev => ({
@@ -640,6 +526,69 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 error: error instanceof Error ? error.message : 'Failed to reset password'
             }));
             throw error;
+        }
+    };
+
+    // NEW - Complete profile function
+    const completeProfile = async (): Promise<void> => {
+        setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+        try {
+            await mockApiDelay(500);
+
+            await AsyncStorage.setItem(STORAGE_KEYS.PROFILE_COMPLETE, 'true');
+
+            console.log('✅ Profile marked as complete');
+
+            setState(prev => ({
+                ...prev,
+                isLoading: false,
+                profileComplete: true,
+            }));
+        } catch (error) {
+            console.error('Failed to mark profile as complete:', error);
+            setState(prev => ({
+                ...prev,
+                isLoading: false,
+                error: error instanceof Error ? error.message : 'Failed to complete profile'
+            }));
+            throw error;
+        }
+    };
+
+    const clearError = () => {
+        setState(prev => ({ ...prev, error: null }));
+    };
+
+    const resetAuth = async () => {
+        try {
+            // Clear ALL auth-related storage
+            await AsyncStorage.multiRemove([
+                STORAGE_KEYS.AUTH_USER,
+                STORAGE_KEYS.AUTH_TOKEN,
+                STORAGE_KEYS.INTEREST_STATUS,
+                STORAGE_KEYS.INTEREST_DATA,
+                STORAGE_KEYS.PASSWORD_SET,
+                STORAGE_KEYS.PROFILE_COMPLETE,
+            ]);
+
+            console.log('✅ AsyncStorage cleared successfully');
+
+            // Reset state to initial values
+            setState({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null,
+                interestStatus: 'none',
+                interestData: null,
+                passwordSet: false,
+                profileComplete: false,
+            });
+
+            console.log('✅ Auth context reset to initial state');
+        } catch (error) {
+            console.error('❌ Failed to clear AsyncStorage:', error);
         }
     };
 
@@ -656,7 +605,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         verifyEmail,
         clearError,
         resetAuth,
-        resetPassword
+        resetPassword,
+        completeProfile, // NEW
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,4 +1,3 @@
-// app/_layout.tsx
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider"
 import { AuthProvider, useAuth } from "@/context/AuthContext"
 import { DataProvider } from "@/dataContext"
@@ -27,7 +26,7 @@ import "react-native-reanimated"
 
 // Navigation Guard Component - handles auth-based redirects
 function NavigationGuard() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, profileComplete } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -39,14 +38,26 @@ function NavigationGuard() {
 
     const inAuthGroup = segments[0] === '(login)';
     const inPastorGroup = segments[0] === '(pastor-tabs)';
+    const inProfileSetup = segments.join('/') === '(login)/profile';
 
     console.log('NavigationGuard:', {
       isAuthenticated,
+      profileComplete,
       user: user?.email,
       currentRoute: segments.join('/'),
       inAuthGroup,
-      inPastorGroup
+      inPastorGroup,
+      inProfileSetup
     });
+
+    // If authenticated but profile not complete, redirect to profile setup
+    if (isAuthenticated && !profileComplete && !inProfileSetup) {
+      console.log('📝 Profile incomplete, redirecting to profile setup');
+      setTimeout(() => {
+        router.replace('/(login)/profile');
+      }, 0);
+      return;
+    }
 
     // ONLY protect pastor-tabs with authentication
     if (!isAuthenticated && inPastorGroup) {
@@ -54,13 +65,15 @@ function NavigationGuard() {
       setTimeout(() => {
         router.replace('/');
       }, 0);
+      return;
     }
-    // If authenticated and in login, redirect to pastor dashboard
-    else if (isAuthenticated && inAuthGroup) {
-      console.log('✅ Already authenticated, redirecting to pastor dashboard');
+
+    // If authenticated, profile complete, and in login pages (but not profile setup), redirect to pastor dashboard
+    if (isAuthenticated && profileComplete && inAuthGroup && !inProfileSetup) {
+      console.log('✅ Already authenticated with complete profile, redirecting to pastor dashboard');
       router.replace('/(pastor-tabs)/(tabs)');
     }
-  }, [isAuthenticated, segments, isLoading, user, router]);
+  }, [isAuthenticated, profileComplete, segments, isLoading, user, router]);
 
   return null;
 }

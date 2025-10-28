@@ -12,6 +12,7 @@ export const STORAGE_KEYS = {
     INTEREST_STATUS: '@ccc_interest_status',
     INTEREST_DATA: '@ccc_interest_data',
     PASSWORD_SET: '@ccc_password_set',
+    PROFILE_COMPLETE: '@auth/profile_complete',
 } as const;
 
 export type InterestStatus = 'none' | 'pending' | 'approved' | 'rejected';

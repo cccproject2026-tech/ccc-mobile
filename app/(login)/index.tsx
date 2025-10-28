@@ -273,7 +273,6 @@
 // }
 
 
-
 // app/(login)/index.tsx
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
@@ -306,18 +305,43 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
 
-  // Mock video data
+  // Mock video data with IDs
+  const welcomeVideos = [
+    {
+      id: "welcome-1",
+      title: "Welcome!",
+      subtitle: "Learn more about CCC",
+      duration: "11:00",
+      videoUrl: "https://example.com/video1.mp4", // Replace with actual URL
+      image: icons.video,
+    },
+    {
+      id: "welcome-2",
+      title: "Welcome!",
+      subtitle: "Learn more about CCC",
+      duration: "11:00",
+      videoUrl: "https://example.com/video2.mp4", // Replace with actual URL
+      image: icons.video,
+    },
+  ];
+
   const videoData = [
     {
+      id: "intro-1",
       title: "Introduction • 11 Minutes",
       heading: "Center for Community Change",
       description: "Interested in receiving mentoring in community engagement",
+      duration: "11:00",
+      videoUrl: "https://example.com/video3.mp4", // Replace with actual URL
       image: require("@/assets/images/jumpstart.png"),
     },
     {
+      id: "intro-2",
       title: "Introduction • 11 Minutes",
       heading: "Center for Community Change",
       description: "Interested in receiving mentoring in community engagement",
+      duration: "11:00",
+      videoUrl: "https://example.com/video4.mp4", // Replace with actual URL
       image: require("@/assets/images/roadmap.jpg"),
     },
   ];
@@ -338,21 +362,35 @@ export default function LoginScreen() {
   const handleLoginClick = () => {
     console.log("Login button clicked - Status:", interestStatus, "Password Set:", passwordSet);
 
-    // Only go to set-password if BOTH conditions are true:
-    // 1. Approved AND 2. No password set yet
     if (interestStatus === "approved" && !passwordSet) {
       console.log("Redirecting to set-password");
       router.push("/(login)/set-password");
     } else {
-      // All other cases go to login-form:
-      // - Already has password (even if approved)
-      // - Not approved yet
-      // - No interest submitted
       console.log("Redirecting to login-form");
       router.push("/(login)/login-form");
     }
   };
 
+  // Handle video navigation
+  const handleVideoPress = (video: any) => {
+    // router.push({
+    //   pathname: "/(login)/video-player",
+    //   params: {
+    //     videoId: video.id,
+    //     title: video.heading || video.title,
+    //     description: video.description || video.subtitle,
+    //     videoUrl: video.videoUrl,
+    //     duration: video.duration,
+    //   },
+    // });
+    router.push("/(login)/videos");
+
+  };
+
+  // Handle show all videos
+  const handleShowAllVideos = () => {
+    router.push("/(login)/videos");
+  };
 
   return (
     <>
@@ -369,12 +407,10 @@ export default function LoginScreen() {
           ]}
         >
           <TopBar showDrawer={false} showNotifications={false} />
+
           {/* Top Section - User Icon and Contact/Status Card */}
           <View style={styles.topSection}>
-
-            {/* Conditional: Show Contact Card OR Waiting for Approval Badge */}
             {interestStatus === "pending" ? (
-              // Waiting for Approval Badge
               <TouchableOpacity style={styles.approvalBadgeWrapper}>
                 <LinearGradient
                   colors={["#B83AF3", "#21B6E9"]}
@@ -398,7 +434,6 @@ export default function LoginScreen() {
                 </LinearGradient>
               </TouchableOpacity>
             ) : (
-              // Contact Information Card
               <View style={styles.contactCard}>
                 <Text style={styles.contactTitle}>Contact Information</Text>
                 <View style={styles.contactRow}>
@@ -421,43 +456,31 @@ export default function LoginScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.videoScrollContent}
           >
-            <View style={styles.welcomeVideoCard}>
-              <Image
-                source={icons.video}
-                style={styles.videoImage}
-                resizeMode="cover"
-              />
-              <View style={styles.playButton}>
-                <Ionicons
-                  name="play-circle"
-                  size={64}
-                  color="rgba(255,255,255,0.9)"
+            {welcomeVideos.map((video, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.welcomeVideoCard}
+                onPress={() => handleVideoPress(video)}
+                activeOpacity={0.9}
+              >
+                <Image
+                  source={video.image}
+                  style={styles.videoImage}
+                  resizeMode="cover"
                 />
-              </View>
-              <View style={styles.videoTextOverlay}>
-                <Text style={styles.welcomeTitle}>Welcome!</Text>
-                <Text style={styles.welcomeSubtitle}>Learn more about CCC</Text>
-              </View>
-            </View>
-
-            <View style={styles.welcomeVideoCard}>
-              <Image
-                source={icons.video}
-                style={styles.videoImage}
-                resizeMode="cover"
-              />
-              <View style={styles.playButton}>
-                <Ionicons
-                  name="play-circle"
-                  size={64}
-                  color="rgba(255,255,255,0.9)"
-                />
-              </View>
-              <View style={styles.videoTextOverlay}>
-                <Text style={styles.welcomeTitle}>Welcome!</Text>
-                <Text style={styles.welcomeSubtitle}>Learn more about CCC</Text>
-              </View>
-            </View>
+                <View style={styles.playButton}>
+                  <Ionicons
+                    name="play-circle"
+                    size={64}
+                    color="rgba(255,255,255,0.9)"
+                  />
+                </View>
+                <View style={styles.videoTextOverlay}>
+                  <Text style={styles.welcomeTitle}>{video.title}</Text>
+                  <Text style={styles.welcomeSubtitle}>{video.subtitle}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
 
           {/* Divider */}
@@ -466,7 +489,7 @@ export default function LoginScreen() {
           {/* More Videos Section Header */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>More Videos</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleShowAllVideos}>
               <Text style={styles.showAllText}>Show all</Text>
             </TouchableOpacity>
           </View>
@@ -474,7 +497,11 @@ export default function LoginScreen() {
           {/* Video List */}
           {videoData.map((video, index) => (
             <React.Fragment key={index}>
-              <TouchableOpacity style={styles.videoListItem}>
+              <TouchableOpacity
+                style={styles.videoListItem}
+                onPress={() => handleVideoPress(video)}
+                activeOpacity={0.9}
+              >
                 <Image source={video.image} style={styles.videoThumbnail} />
                 <View style={styles.videoListPlayButton}>
                   <Ionicons
@@ -500,7 +527,7 @@ export default function LoginScreen() {
           {/* Divider */}
           <View style={styles.divider} />
 
-          {/* Login Button/Form - Only show if NOT pending */}
+          {/* Login Button/Form */}
           {interestStatus !== "pending" && (
             <>
               <TouchableOpacity
@@ -510,12 +537,11 @@ export default function LoginScreen() {
                 <Text style={styles.logInButtonText}>Log in</Text>
               </TouchableOpacity>
 
-              {/* Divider */}
               <View style={styles.divider} />
             </>
           )}
 
-          {/* New User / Submit Interest - Only show if NOT pending */}
+          {/* New User / Submit Interest */}
           {interestStatus !== "pending" && (
             <View style={styles.actionButtonWrapper}>
               <LinearGradient
@@ -564,7 +590,6 @@ export default function LoginScreen() {
                 your account has been approved.
               </Text>
 
-              {/* Mock Approve Button (For Testing) */}
               <TouchableOpacity
                 style={styles.mockApproveButton}
                 onPress={mockApproveInterest}

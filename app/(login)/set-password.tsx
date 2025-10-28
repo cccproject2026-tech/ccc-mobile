@@ -96,7 +96,12 @@ export default function SetPasswordScreen() {
                 [
                     {
                         text: "OK",
-                        onPress: () => router.replace("/(login)/login-form"),
+                        onPress: () => router.replace({
+                            pathname: "/(login)/login-form",
+                            params: {
+                                showProfileSetup: "true"
+                            },
+                        }),
                     },
                 ]
             );

@@ -37,23 +37,33 @@ export default function SurveyGuidelinesPage() {
             // Update your state if needed
         }, [assessmentId])
     );
+    // const handleStart = () => {
+    //     if (assessment.type === 'CMA' && assessment.preSurvey) {
+    //         router.push({
+    //             pathname: '/assessments/pre-survey',
+    //             params: {
+    //                 data: JSON.stringify(assessment),
+    //                 assessmentId
+    //             },
+    //         });
+    //     } else {
+    //         router.push({
+    //             pathname: '/assessments/answer-questions',
+    //             params: {
+    //                 assessmentId
+    //             },
+    //         });
+    //     }
+    // };
+
     const handleStart = () => {
-        if (assessment.type === 'CMA' && assessment.preSurvey) {
-            router.push({
-                pathname: '/assessments/pre-survey',
-                params: {
-                    data: JSON.stringify(assessment),
-                    assessmentId
-                },
-            });
-        } else {
-            router.push({
-                pathname: '/assessments/answer-questions',
-                params: {
-                    assessmentId
-                },
-            });
-        }
+        router.push({
+            pathname: '/assessments/answer-questions',
+            params: {
+                assessmentId,
+                hasPreSurvey: (assessment.type === 'CMA' && assessment.preSurvey) ? 'true' : 'false'
+            },
+        });
     };
 
     const handleRepeatSurvey = async () => {
