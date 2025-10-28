@@ -1,30 +1,31 @@
 import { icons } from '@/constants/images';
 import { MenuItem } from '@/constants/mockData';
+import { useAuth } from '@/context/AuthContext'; // ADD THIS
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
+import { CommonActions } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 
 interface CustomDrawerProps extends DrawerContentComponentProps {
     menuItems: MenuItem[];
     expandAllByDefault?: boolean;
     userRole?: 'director' | 'pastor' | 'mentor';
-
 }
-
 
 export default function CustomDrawerContent(props: CustomDrawerProps) {
     const router = useRouter();
+    const { logout, user } = useAuth(); // ADD THIS
+
     const initializeExpandedItems = (items: MenuItem[], expandAll: boolean) => {
         const result: { [key: string]: boolean } = {};
 
         const traverse = (menuItems: MenuItem[]) => {
             menuItems.forEach(item => {
                 if (item.children && item.children.length > 0) {
-                    result[item.id] = expandAll; // set based on prop
+                    result[item.id] = expandAll;
                     traverse(item.children);
                 }
             });
@@ -35,10 +36,8 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
     };
 
     const handleLogoPress = () => {
-        // Close the drawer first
         props.navigation.closeDrawer();
 
-        // Navigate based on user role
         switch (props.userRole) {
             case 'director':
                 router.replace('/(director-tabs)/(tabs)');
@@ -50,10 +49,79 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                 router.replace('/(mentor-tabs)');
                 break;
             default:
-                // Fallback: navigate to home page
                 router.replace('/');
         }
     };
+
+    // ADD THIS FUNCTION
+    const handleLogout = async () => {
+        Alert.alert(
+            'Log Out',
+            'Are you sure you want to log out?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Log Out',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            console.log('🔓 Starting logout process...');
+
+                            // Step 1: Close drawer immediately
+                            props.navigation.closeDrawer();
+
+                            if (props.userRole === 'pastor') {
+                                await logout();
+                                console.log('✅ Auth state cleared');
+
+                                // Step 3: Reset navigation stack using drawer navigation
+                                props.navigation.dispatch(
+                                    CommonActions.reset({
+                                        index: 0,
+                                        routes: [{ name: 'index' }],
+                                    })
+                                );
+
+                                // Step 4: Also use expo-router to ensure we're at root
+                                setTimeout(() => {
+                                    while (router.canGoBack()) {
+                                        router.back();
+                                    }
+                                    router.replace('/');
+                                }, 100);
+
+                                console.log('✅ Logout complete');
+                            } else {
+                                props.navigation.dispatch(
+                                    CommonActions.reset({
+                                        index: 0,
+                                        routes: [{ name: 'index' }],
+                                    })
+                                );
+
+                                // Step 4: Also use expo-router to ensure we're at root
+                                setTimeout(() => {
+                                    while (router.canGoBack()) {
+                                        router.back();
+                                    }
+                                    router.replace('/');
+                                }, 100);
+                            }
+
+                        } catch (error) {
+                            console.error('❌ Logout failed:', error);
+                            Alert.alert('Error', 'Failed to log out. Please try again.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+
 
     const [expandedItems, setExpandedItems] = useState(() =>
         initializeExpandedItems(props.menuItems, !!props.expandAllByDefault)
@@ -64,8 +132,7 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
         setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
-
-
+    // UPDATE THIS FUNCTION
     const renderMenuItem = (item: MenuItem, isNested = false, index: number, totalItems: number) => {
         const hasChildren = item.children && item.children.length > 0;
         const isExpanded = expandedItems[item.id];
@@ -76,6 +143,12 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                 <TouchableOpacity
                     style={[styles.drawerItem, isNested && styles.nestedItem]}
                     onPress={() => {
+                        // Handle logout separately
+                        if (item.id === 'logout') {
+                            handleLogout();
+                            return;
+                        }
+
                         if (hasChildren) {
                             toggleExpand(item.id);
                         } else if (item.route) {
@@ -110,10 +183,8 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                     )}
                 </TouchableOpacity>
 
-                {/* Divider after each item except the last one */}
                 {!isLastItem && <View style={styles.divider} />}
 
-                {/* Render children if expanded */}
                 {hasChildren && isExpanded && (
                     <>
                         {item.children?.map((child, childIndex) => (
@@ -134,7 +205,10 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                 <View style={styles.avatarContainer}>
                     <Image source={icons.myProfile} style={styles.avatar} />
                 </View>
-                <Text style={styles.userName}>David Roe</Text>
+                {/* Show user name from context if available */}
+                <Text style={styles.userName}>
+                    {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                </Text>
                 <TouchableOpacity style={styles.logoButton} onPress={handleLogoPress}>
                     <Image
                         source={require('@/assets/logos/CCClogo.png')}
@@ -155,7 +229,6 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
             {/* Footer - Contact Information */}
             <View style={[styles.footer, {
                 paddingBottom: Math.max(bottom, Platform.OS === 'android' ? 16 : 20),
-
             }]}>
                 <Text style={styles.footerTitle}>Contact Information</Text>
                 <View style={styles.contactRow}>
@@ -177,6 +250,7 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
         </View>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {

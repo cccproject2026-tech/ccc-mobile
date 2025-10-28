@@ -14,7 +14,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useRef } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
@@ -35,12 +35,12 @@ export default function ProgressScreen() {
 
   const handleNext = () => {
     closePMPSheet();
-    router.push('/(pastor-tabs)/(tabs)/progress/report');
+    router.push('/progress/report');
   };
 
   const handleDownload = () => {
     closePMPSheet();
-    router.push('/(pastor-tabs)/(tabs)/progress/report');
+    router.push('/progress/report');
   };
 
   const openPMPSheet = useCallback(() => {
@@ -118,16 +118,16 @@ export default function ProgressScreen() {
     return phaseCards.filter(c => c.status !== 'completed');
   }, [phaseCards, roadmapTabs]);
 
-  const shuffle = (arr: any[]) => {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  };
+  // const shuffle = (arr: any[]) => {
+  //   const a = arr.slice();
+  //   for (let i = a.length - 1; i > 0; i--) {
+  //     const j = Math.floor(Math.random() * (i + 1));
+  //     [a[i], a[j]] = [a[j], a[i]];
+  //   }
+  //   return a;
+  // };
 
-  const selectedPhaseCards = useMemo(() => shuffle(selectablePhaseCards).slice(0, 5), [selectablePhaseCards]);
+  // const selectedPhaseCards = useMemo(() => shuffle(selectablePhaseCards).slice(0, 5), [selectablePhaseCards]);
 
 
 
@@ -282,12 +282,38 @@ export default function ProgressScreen() {
                   width: "100%",
                 }}
               >
-                {selectedPhaseCards.map((card, index) => (
-                  <View key={`roadmap-${index}`} style={[styles.cardWrapper, { paddingTop: index === 0 ? 15 : 0 }]}>
-                    {/* do not pass phaseNumber here so the badge doesn't show on image */}
-                    <RoadmapCard data={{ ...card, phaseNumber: undefined }} />
-                  </View>
-                ))}
+                {selectablePhaseCards.map((card, index) => {
+                  // card.phase contains the phase id (from usePhaseCard)
+                  const phase = getPhase(mockRevitalization, card.phase as string);
+                  return (
+                    <View key={`roadmap-${index}`} style={[styles.cardWrapper, { paddingTop: index === 0 ? 15 : 0 }]}>
+                      <Pressable
+                        onPress={() => {
+                          try {
+                            if (phase?.isSingleRoadmap && Array.isArray(phase.tasks) && phase.tasks.length === 1) {
+                              // route directly to the single roadmap item
+                              router.push(`/roadmap/${phase.id}/${phase.tasks[0]}`, {
+                                withAnchor: true,
+                              });
+                            } else {
+                              router.push(`/roadmap/${phase.id}`, {
+                                withAnchor: true,
+                              });
+                            }
+                          } catch (e) {
+                            console.error('Error navigating to roadmap phase', e);
+                            // fallback: go to phase page
+                            router.push(`/roadmap/${card.phase}` as any, {
+                              withAnchor: true,
+                            });
+                          }
+                        }}
+                      >
+                        <RoadmapCard data={{ ...card, phaseNumber: undefined }} />
+                      </Pressable>
+                    </View>
+                  );
+                })}
               </View>
             </View>
 

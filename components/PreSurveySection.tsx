@@ -1,10 +1,7 @@
-import TopBar from '@/components/director/TopBar';
 import { useAssessment } from '@/context/AssessmentsContext';
 import { Assessment, PreSurveyQuestion } from '@/lib/assessments/types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
@@ -16,14 +13,22 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
-export default function PreSurveyPage() {
-    const { data, assessmentId } = useLocalSearchParams();
-    const assessment: Assessment = JSON.parse(data as string);
-    const router = useRouter();
+interface PreSurveySectionProps {
+    assessment: Assessment;
+    assessmentId: string;
+    onComplete: () => void;
+    onCancel: () => void;
+}
+
+export default function PreSurveySection({
+    assessment,
+    assessmentId,
+    onComplete,
+    onCancel
+}: PreSurveySectionProps) {
     const { saveResponse, getResponse } = useAssessment();
 
-    // Load previous answers if they exist
-    const previousResponse = getResponse(assessmentId as string);
+    const previousResponse = getResponse(assessmentId);
     const [answers, setAnswers] = useState<Record<string, string>>(
         previousResponse?.preSurveyAnswers || {}
     );
@@ -33,18 +38,19 @@ export default function PreSurveyPage() {
     };
 
     const handleSubmit = async () => {
-        // Basic validation (check required fields)
         const requiredQuestions = assessment.preSurvey?.filter(q => q.required) || [];
-        const allAnswered = requiredQuestions.every(q => answers[q.id] && answers[q.id].trim() !== '');
+        const allAnswered = requiredQuestions.every(
+            q => answers[q.id] && answers[q.id].trim() !== ''
+        );
 
         if (!allAnswered) {
             Alert.alert("Required Fields", "Please fill all required fields.");
             return;
         }
 
-        // Save pre-survey responses to context
-        await saveResponse(assessmentId as string, {
-            assessmentId: assessmentId as string,
+        // Save pre-survey responses
+        await saveResponse(assessmentId, {
+            assessmentId,
             assessmentType: assessment.type,
             assessmentTitle: assessment.title,
             preSurveyAnswers: answers,
@@ -53,35 +59,15 @@ export default function PreSurveyPage() {
             currentSectionIndex: 0,
         });
 
-        // Navigate to main assessment questions
-        router.push({
-            pathname: '/assessments/answer-questions',
-            params: {
-                data: JSON.stringify(assessment),
-                assessmentId
-            },
-        });
-    };
-
-    const handleCancel = () => {
-        router.back();
+        onComplete();
     };
 
     return (
-        <LinearGradient
-            colors={['#176192', '#1D548D', '#264387']}
-            style={styles.container}
-        >
-            <TopBar
-                userName="John Ross"
-                showUserName={true}
-                showNotifications={true}
-            />
-
+        <>
             {/* Header Section - Outside ScrollView */}
             <View style={styles.headerContainer}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <TouchableOpacity onPress={onCancel} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={24} color="#fff" />
                     </TouchableOpacity>
                     <View style={styles.headerTextContainer}>
@@ -125,7 +111,7 @@ export default function PreSurveyPage() {
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         style={styles.cancelButton}
-                        onPress={handleCancel}
+                        onPress={onCancel}
                         activeOpacity={0.8}
                     >
                         <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -139,14 +125,11 @@ export default function PreSurveyPage() {
                     </TouchableOpacity>
                 </View>
             </KeyboardAwareScrollView>
-        </LinearGradient>
+        </>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
     headerContainer: {
         paddingHorizontal: getSpacing(16),
         borderBottomWidth: 1,
