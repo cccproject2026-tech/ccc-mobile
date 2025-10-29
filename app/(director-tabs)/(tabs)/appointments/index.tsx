@@ -12,8 +12,13 @@ import { icons } from "@/constants/images";
 import { appointments } from "@/constants/mockData";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import {
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
+import React, { useCallback } from "react";
 import {
   Alert,
   Dimensions,
@@ -47,6 +52,13 @@ const Appointments: React.FC = () => {
     buttonText: "",
   });
   const { bottom } = useSafeAreaInsets();
+
+  // Reset active tab when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      setActiveTab("appointments");
+    }, [])
+  );
 
   // Bottom sheet ref
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);

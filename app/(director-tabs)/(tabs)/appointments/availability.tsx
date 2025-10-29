@@ -7,8 +7,8 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useRouter } from "expo-router";
-import React from "react";
+import { Stack, useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback } from "react";
 import {
   Image,
   Pressable,
@@ -50,6 +50,13 @@ const AvailabilityScreen = () => {
   const [activeTab, setActiveTab] = React.useState<
     "appointments" | "availability"
   >("availability");
+  
+  // Reset active tab when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      setActiveTab("availability");
+    }, [])
+  );
 
   // Weekly availability state
   const [weeklyAvailability, setWeeklyAvailability] =

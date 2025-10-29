@@ -55,7 +55,7 @@ export default function Header({
               }}
             />
             <View>
-              <Text className="text-white font-semibold text-[17px]">
+              <Text style={{ color: "white" }} className="text-white font-semibold text-[17px]">
                 {title}
               </Text>
               {subTitle && (
