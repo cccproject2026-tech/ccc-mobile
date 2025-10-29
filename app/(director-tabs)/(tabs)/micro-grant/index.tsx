@@ -7,7 +7,7 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Dimensions, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
@@ -94,6 +94,42 @@ export default function MicroGrant() {
     const { height } = Dimensions.get('window');
     const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
 
+    const styles = StyleSheet.create({
+        tabsContainer: {
+            flexDirection: 'row',
+            gap: 8,
+            paddingHorizontal: 16,
+            marginBottom: 16,
+            paddingVertical: 8,
+        },
+        tabButton: {
+            flex: 1,
+            paddingVertical: 12,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: 'white/50',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        tabButtonActive: {
+            backgroundColor: 'white',
+        },
+        tabButtonInactive: {
+            backgroundColor: '#14517D',
+        },
+        tabButtonText: {
+            fontSize: 16,
+            fontWeight: 'semibold',
+            color: 'white',
+            textAlign: 'center',
+        },
+        tabButtonTextActive: {
+            color: '#1a5b77',
+        },
+        tabButtonTextInactive: {
+            color: 'white',
+        },
+    });
     const menuItems = [
         {
             icon: 'people-outline',
@@ -189,36 +225,40 @@ export default function MicroGrant() {
 
                 <View className="flex-1 pt-6">
                     {/* Header */}
-                    <View className="px-4 pb-3 mb-4 border-b border-white/30">
-                        <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.3)' }}>
+                        <TouchableOpacity onPress={() => router.back()} style={{flexDirection: 'row', alignItems: 'center'}}>
                             <Ionicons name="chevron-back" size={28} color="#fff" />
-                            <Text className="ml-2 text-lg font-semibold text-white">
+                            <Text style={{fontSize: 16, fontWeight: 'semibold', color: 'white', marginLeft: 8}} className="ml-2 text-lg font-semibold text-white">
                                 Micro Grant - Application Received
                             </Text>
                         </TouchableOpacity>
                     </View>
 
                     {/* Search Bar */}
-                    <View className="px-4 mb-4">
+                    <View style={{paddingHorizontal: 16, marginBottom: 16}}>
                         <SearchBar value={search} onChangeValue={setSearch} />
                     </View>
 
                     {/* Tabs */}
-                    <View className="flex-row gap-3 px-4 mb-4">
+                    <View style={styles.tabsContainer}>
                         <Pressable
                             onPress={() => handleTabChange('new')}
-                            className={`flex-1 py-3 rounded-2xl border border-white/50 relative ${activeTab === 'new' ? 'bg-white' : 'bg-[#14517D]'
-                                }`}
+                            style={[
+                                styles.tabButton,
+                                activeTab === 'new' ? styles.tabButtonActive : styles.tabButtonInactive,
+                            ]}
                         >
                             <Text
-                                className={`text-center text-base font-semibold ${activeTab === 'new' ? 'text-[#1a5b77]' : 'text-white'
-                                    }`}
+                                style={[
+                                    styles.tabButtonText,
+                                    activeTab === 'new' ? styles.tabButtonTextActive : styles.tabButtonTextInactive,
+                                ]}
                             >
                                 New
                             </Text>
                             {newCount > 0 && (
-                                <View className="absolute -top-2 -right-2 bg-[#1C4ED8] rounded-full w-6 h-6 items-center justify-center">
-                                    <Text className="text-xs font-bold text-white">
+                                <View style={{position: 'absolute', top: -8, right: -8, backgroundColor: '#1C4ED8', borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center'}}>
+                                    <Text style={{fontSize: 12, fontWeight: 'bold', color: 'white'}} >
                                         {newCount}
                                     </Text>
                                 </View>
@@ -227,18 +267,22 @@ export default function MicroGrant() {
 
                         <Pressable
                             onPress={() => handleTabChange('pending')}
-                            className={`flex-1 py-3 rounded-2xl border border-white/50 relative ${activeTab === 'pending' ? 'bg-white' : 'bg-[#14517D]'
-                                }`}
+                            style={[
+                                styles.tabButton,
+                                activeTab === 'pending' ? styles.tabButtonActive : styles.tabButtonInactive,
+                            ]}
                         >
                             <Text
-                                className={`text-center text-base font-semibold ${activeTab === 'pending' ? 'text-[#1a5b77]' : 'text-white'
-                                    }`}
+                                style={[
+                                    styles.tabButtonText,
+                                    activeTab === 'pending' ? styles.tabButtonTextActive : styles.tabButtonTextInactive,
+                                ]}
                             >
                                 Pending
                             </Text>
                             {pendingCount > 0 && (
-                                <View className="absolute -top-2 -right-2 bg-[#1C4ED8] rounded-full w-6 h-6 items-center justify-center">
-                                    <Text className="text-xs font-bold text-white">
+                                <View style={{position: 'absolute', top: -8, right: -8, backgroundColor: '#1C4ED8', borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center'}}>
+                                    <Text style={{fontSize: 12, fontWeight: 'bold', color: 'white'}} >
                                         {pendingCount}
                                     </Text>
                                 </View>
@@ -247,12 +291,16 @@ export default function MicroGrant() {
 
                         <Pressable
                             onPress={() => handleTabChange('approved')}
-                            className={`flex-1 py-3 rounded-2xl border border-white/50 relative ${activeTab === 'approved' ? 'bg-white' : 'bg-[#14517D]'
-                                }`}
+                            style={[
+                                styles.tabButton,
+                                activeTab === 'approved' ? styles.tabButtonActive : styles.tabButtonInactive,
+                            ]}
                         >
                             <Text
-                                className={`text-center text-base font-semibold ${activeTab === 'approved' ? 'text-[#1a5b77]' : 'text-white'
-                                    }`}
+                                style={[
+                                    styles.tabButtonText,
+                                    activeTab === 'approved' ? styles.tabButtonTextActive : styles.tabButtonTextInactive,
+                                ]}
                             >
                                 Approved
                             </Text>
@@ -285,4 +333,5 @@ export default function MicroGrant() {
             </View>
         </LinearGradient>
     );
+    
 }

@@ -184,10 +184,10 @@ export default function ProgressTracker() {
 
                 <View className="flex-1 pt-6">
                     {/* Header */}
-                    <View className="flex-row items-center justify-between px-4 pb-3 mb-4 border-b border-white/30">
-                        <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
+                    <View style={{flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: 'white/30'}}>
+                        <TouchableOpacity onPress={() => router.back()} style={{flexDirection: 'row', alignItems: 'center'}}>
                             <Ionicons name="chevron-back" size={28} color="#fff" />
-                            <Text className="ml-2 text-xl font-semibold text-white">Progress Tracker</Text>
+                            <Text style={{fontSize: 16, fontWeight: 'semibold', color: 'white', marginLeft: 8}} className="ml-2 text-xl font-semibold text-white">Progress Tracker</Text>
                         </TouchableOpacity>
 
                         <View style={{ flexDirection: 'row', gap: 12 }}>

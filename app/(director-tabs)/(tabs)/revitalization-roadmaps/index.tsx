@@ -340,158 +340,190 @@ export default function RevitalizationRoadmap() {
     ];
 
     return (
-        <LinearGradient
-            colors={['#176192', '#1D548D', '#264387']}
-            style={{ flex: 1, }}
-        >
-            <View className="flex-1">
-                <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+      <LinearGradient
+        colors={["#176192", "#1D548D", "#264387"]}
+        style={{ flex: 1 }}
+      >
+        <View className="flex-1">
+          <TopBar
+            userName="David Roe"
+            notifications={3}
+            showUserName={true}
+            showNotifications={true}
+          />
+          {/* Header */}
+          <RoadmapHeader
+            handleOpenCreateRoadmapModal={handleOpenCreateRoadmapModal}
+            activeTab={activeTab}
+          />
+          {/* Search Bar - Fixed */}
+          <View
+            style={{ paddingHorizontal: 16 }}
+          >
+            <SearchBar value={search} onChangeValue={setSearch} />
+          </View>
 
-                <ScrollView 
-                    className="flex-1 py-6" 
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: bottom + height * 0.05 }}
-                >
-                    {/* Header */}
-                    <RoadmapHeader handleOpenCreateRoadmapModal={handleOpenCreateRoadmapModal} activeTab={activeTab} />
-
-                    {/* Search Bar */}
-                    <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-                        <SearchBar value={search} onChangeValue={setSearch} />
-                    </View>
-                    <View
-                        className="mb-4 border-b border-white/30"
-                        style={{
-                            borderBottomLeftRadius: 20,
-                            borderBottomRightRadius: 20,
-                        }}
-                    >
-                        <MentorProfileSwiper />
-                    </View>
-                    {/* Tabs */}
-                    <TabSwitcher
-                        tabs={tabData}
-                        activeTab={activeTab}
-                        onChange={(key) => handleTabChange(key as 'roadmap-library' | 'mentors' | 'mentees')}
-                    />
-
-                    {/* Profile Swiper */}
-
-
-                    {/* Sort By */}
-                    <View className="flex-row items-center justify-end gap-2 px-4 mb-4">
-                        <Text className="text-base text-white">Sort by</Text>
-                        <Pressable
-                            onPress={() => setFilterModalVisible(true)}
-                            className="flex-row items-center gap-2 px-4 py-2 bg-transparent border rounded-full border-white/50"
-                        >
-                            <Text className="text-base font-medium text-white" numberOfLines={1}>
-                                {getFilterDisplayText()}
-                            </Text>
-                            <Ionicons name="chevron-down" size={18} color="#fff" />
-                        </Pressable>
-                    </View>
-
-                    {/* Content List */}
-                    <View className="px-4">
-                        {activeTab === 'roadmap-library' && (
-                            /* Roadmap Library */
-                            filteredRoadmaps.map((roadmap, index) => (
-                                <RoadmapCard
-                                    key={`roadmap-${index}`}
-                                    data={roadmap}
-                                    showMenu={true}
-                                    onMenuPress={() => handleRoadmapMenuPress(roadmap)}
-                                    onPress={() => handlePhasePress(roadmap)}
-                                />
-                            ))
-                        )}
-
-                        {activeTab === 'mentors' && (
-                            /* Mentors List */
-                            filteredMentors.map((mentor) => (
-                                <TouchableOpacity
-                                    key={mentor.id}
-                                    onPress={() => router.push(`/(director-tabs)/(tabs)/mentors/${mentor.id}`)}
-                                    activeOpacity={0.8}
-                                >
-                                    <MentorCard
-                                        mentor={mentor}
-                                        layout={viewMode}
-                                        onCall={() => console.log('Call', mentor.name)}
-                                        onChat={() => console.log('Chat', mentor.name)}
-                                        onMail={() => console.log('Mail', mentor.name)}
-                                        onWhatsApp={() => console.log('WhatsApp', mentor.name)}
-                                        onMenuPress={() => handleMentorMenuPress(mentor)}
-                                    />
-                                </TouchableOpacity>
-                            ))
-                        )}
-
-                        {activeTab === 'mentees' && (
-                            /* Mentees List */
-                            filteredMentees.map((mentee) => (
-                                <MenteeCard
-                                    key={mentee.id}
-                                    data={mentee}
-                                    layout={viewMode}
-                                    onPress={() => router.push(`/(director-tabs)/(tabs)/revitalization-roadmaps/${mentee.id}`)}
-                                    onCall={() => console.log('Call', mentee.name)}
-                                    onChat={() => console.log('Chat', mentee.name)}
-                                    onMail={() => console.log('Mail', mentee.name)}
-                                    onWhatsApp={() => console.log('WhatsApp', mentee.name)}
-                                    onMenuPress={() => handleMenuPress(mentee)}
-                                    onMarkComplete={() => console.log('Mark complete', mentee.name)}
-                                    onIssueCertificate={() => console.log('Issue certificate', mentee.name)}
-                                    onInviteAsFieldMentor={() => console.log('Invite as field mentor', mentee.name)}
-                                />
-                            ))
-                        )}
-                    </View>
-                </ScrollView>
-
-                <ActionBottomSheet
-                    ref={bottomSheetModalRef}
-                    title={selectedMentee?.name || selectedMentor?.name || selectedRoadmap?.title || ''}
-                    subtitle={
-                        selectedMentor
-                            ? `${selectedMentor.menteesCount} Mentees`
-                            : selectedRoadmap
-                                ? selectedRoadmap.completionTime
-                                : undefined
-                    }
-                    image={selectedMentee?.profileImage || selectedMentor?.profileImage}
-                    actions={
-                        selectedRoadmap
-                            ? roadmapMenuItems
-                            : selectedMentor
-                                ? selectedMentor.role === 'Field Mentor'
-                                    ? fieldMentorMenuItems
-                                    : mentorMenuItems
-                                : menteeMenuItems
-                    }
-                    onClose={handleCloseModal}
-                />
-                <FilterModal
-                    visible={filterModalVisible}
-                    onClose={() => setFilterModalVisible(false)}
-                    selectedFilter={selectedFilter}
-                    onFilterSelect={(filter) => {
-                        setSelectedFilter(filter);
-                        setFilterModalVisible(false);
-                    }}
-                    filterOptions={filterOptions}
-                />
-
-                
-
-                <CreateRoadmapModal
-                    ref={createRoadmapModalRef}
-                    onClose={handleCloseCreateRoadmapModal}
-                    onNext={handleCreateRoadmapNext}
-                    onCancel={handleCreateRoadmapCancel}
-                />
+          <ScrollView
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingBottom: bottom + height * 0.05,
+              paddingTop: 6,
+            }}
+          >
+            <View
+              className="mb-4 border-b border-white/30"
+              style={{
+                borderBottomLeftRadius: 20,
+                borderBottomRightRadius: 20,
+              }}
+            >
+              <MentorProfileSwiper />
             </View>
-        </LinearGradient>
+            {/* Tabs */}
+            <TabSwitcher
+              tabs={tabData}
+              activeTab={activeTab}
+              onChange={(key) =>
+                handleTabChange(
+                  key as "roadmap-library" | "mentors" | "mentees"
+                )
+              }
+            />
+
+            {/* Profile Swiper */}
+
+            {/* Sort By */}
+            <View style={{flexDirection: 'row', justifyContent: 'flex-end', gap: 8, paddingHorizontal: 16, marginBottom: 16, alignItems: 'center'}} className="flex-row items-center justify-end gap-2 px-4 mb-4">
+              <Text style={{fontSize: 16, color: 'white'}} className="text-base text-white">Sort by</Text>
+              <Pressable
+                onPress={() => setFilterModalVisible(true)}
+                style={{flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: 'transparent', borderRadius: 8, borderWidth: 1, borderColor: 'white'}}
+              >
+                <Text
+                  style={{fontSize: 16, fontWeight: 'medium', color: 'white'}}
+                  numberOfLines={1}
+                >
+                  {getFilterDisplayText()}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="#fff" />
+              </Pressable>
+            </View>
+
+            {/* Content List */}
+            <View className="px-4">
+              {activeTab === "roadmap-library" &&
+                /* Roadmap Library */
+                filteredRoadmaps.map((roadmap, index) => (
+                  <RoadmapCard
+                    key={`roadmap-${index}`}
+                    data={roadmap}
+                    showMenu={true}
+                    onMenuPress={() => handleRoadmapMenuPress(roadmap)}
+                    onPress={() => handlePhasePress(roadmap)}
+                  />
+                ))}
+
+              {activeTab === "mentors" &&
+                /* Mentors List */
+                filteredMentors.map((mentor) => (
+                  <TouchableOpacity
+                    key={mentor.id}
+                    onPress={() =>
+                      router.push(
+                        `/(director-tabs)/(tabs)/mentors/${mentor.id}`
+                      )
+                    }
+                    activeOpacity={0.8}
+                  >
+                    <MentorCard
+                      mentor={mentor}
+                      layout={viewMode}
+                      onCall={() => console.log("Call", mentor.name)}
+                      onChat={() => console.log("Chat", mentor.name)}
+                      onMail={() => console.log("Mail", mentor.name)}
+                      onWhatsApp={() => console.log("WhatsApp", mentor.name)}
+                      onMenuPress={() => handleMentorMenuPress(mentor)}
+                    />
+                  </TouchableOpacity>
+                ))}
+
+              {activeTab === "mentees" &&
+                /* Mentees List */
+                filteredMentees.map((mentee) => (
+                  <MenteeCard
+                    key={mentee.id}
+                    data={mentee}
+                    layout={viewMode}
+                    onPress={() =>
+                      router.push(
+                        `/(director-tabs)/(tabs)/revitalization-roadmaps/${mentee.id}`
+                      )
+                    }
+                    onCall={() => console.log("Call", mentee.name)}
+                    onChat={() => console.log("Chat", mentee.name)}
+                    onMail={() => console.log("Mail", mentee.name)}
+                    onWhatsApp={() => console.log("WhatsApp", mentee.name)}
+                    onMenuPress={() => handleMenuPress(mentee)}
+                    onMarkComplete={() =>
+                      console.log("Mark complete", mentee.name)
+                    }
+                    onIssueCertificate={() =>
+                      console.log("Issue certificate", mentee.name)
+                    }
+                    onInviteAsFieldMentor={() =>
+                      console.log("Invite as field mentor", mentee.name)
+                    }
+                  />
+                ))}
+            </View>
+          </ScrollView>
+
+          <ActionBottomSheet
+            ref={bottomSheetModalRef}
+            title={
+              selectedMentee?.name ||
+              selectedMentor?.name ||
+              selectedRoadmap?.title ||
+              ""
+            }
+            subtitle={
+              selectedMentor
+                ? `${selectedMentor.menteesCount} Mentees`
+                : selectedRoadmap
+                ? selectedRoadmap.completionTime
+                : undefined
+            }
+            image={selectedMentee?.profileImage || selectedMentor?.profileImage}
+            actions={
+              selectedRoadmap
+                ? roadmapMenuItems
+                : selectedMentor
+                ? selectedMentor.role === "Field Mentor"
+                  ? fieldMentorMenuItems
+                  : mentorMenuItems
+                : menteeMenuItems
+            }
+            onClose={handleCloseModal}
+          />
+          <FilterModal
+            visible={filterModalVisible}
+            onClose={() => setFilterModalVisible(false)}
+            selectedFilter={selectedFilter}
+            onFilterSelect={(filter) => {
+              setSelectedFilter(filter);
+              setFilterModalVisible(false);
+            }}
+            filterOptions={filterOptions}
+          />
+
+          <CreateRoadmapModal
+            ref={createRoadmapModalRef}
+            onClose={handleCloseCreateRoadmapModal}
+            onNext={handleCreateRoadmapNext}
+            onCancel={handleCreateRoadmapCancel}
+          />
+        </View>
+      </LinearGradient>
     );
 }
