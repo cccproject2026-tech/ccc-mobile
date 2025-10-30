@@ -139,7 +139,7 @@ export const NotificationCard = ({
           <View className="flex flex-row items-center text-base font-medium text-white/70 gap-[6px]">
             <Image
               source={icons.myProfile} // Replace with actual user profile image URL
-              style={{ width: 20, height: 20, borderRadius: "50%" }}
+              style={{ width: 20, height: 20, borderRadius: 10 }}
               resizeMode="contain"
             />
             <Text style={{ color: "white", fontWeight: "200" }}>
@@ -216,7 +216,7 @@ export const NotificationMentorCard = ({
           <View className="flex flex-row items-center text-base font-medium text-white/70 gap-[6px]">
             <Image
               source={icons.myProfile} // Replace with actual user profile image URL
-              style={{ width: 20, height: 20, borderRadius: "50%" }}
+              style={{ width: 20, height: 20, borderRadius: 10 }}
               resizeMode="contain"
             />
             <Text style={{ color: "white", fontWeight: "200" }}>
@@ -1805,7 +1805,7 @@ const styles = StyleSheet.create({
   mentorInfoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: "50%",
+    borderRadius: 10,
   },
   mentorNameText: {
     color: "#FFFFFF",
@@ -1937,7 +1937,7 @@ const styles = StyleSheet.create({
   mentorImage: {
     width: 20,
     height: 20,
-    borderRadius: "50%", // rounded-md
+    borderRadius: 10, // rounded-md
     marginHorizontal: 8, // mx-2
   },
   mentorText: {
