@@ -55,6 +55,14 @@ export const exploreItems = [
     { id: '6', icon: icons.assignment, title: 'Assignment' },
 ];
 
+export const mentorExploreItems = [
+    { id: '1', icon: icons.profile, title: 'Track Progress' },
+    { id: '2', icon: icons.Assessments, title: 'Schedule' },
+    { id: '3', icon: icons.microGrant, title: 'Microgrant' },
+    { id: '4', icon: icons.Revitalization, title: 'Revitalization Roadmap' },
+    { id: '5', icon: icons.Assessments, title: 'Assessment' },
+    { id: '6', icon: icons.assignment, title: 'Assignment' },
+]
 export const stats = [
     { id: '1', label: 'Total Mentors', value: '501' },
     { id: '2', label: 'Total Pastors', value: '501' },

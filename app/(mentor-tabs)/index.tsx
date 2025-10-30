@@ -1,17 +1,19 @@
 import {
   AppointmentCard,
-  CardBox,
   MentorCard,
-  RoadMapCard,
+  RoadMapCard
 } from "@/components/atom/cards"
 import { Search } from "@/components/atom/Search"
 import { Button } from "@/components/build-components"
+import ExploreCard from "@/components/director/ExploreCard"
 import HeaderHero from "@/components/director/HeroHeader"
 import WelcomeCard from "@/components/director/WelcomeCard"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
+import { mentorExploreItems } from "@/constants/mockData"
 import { formatClock, formatDate } from "@/utils/date"
 import { LinearGradient } from "expo-linear-gradient"
+import { useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import React, { useMemo, useState } from "react"
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native"
@@ -25,6 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 export default function MentorDashboard({ navigation }: { navigation: any }) {
   const [searchText, setSearchText] = useState("")
   const [now] = useState(new Date())
+  const router = useRouter();
   const [mapRegion] = useState({
     latitude: 37.78825,
     longitude: -122.4324,
@@ -267,49 +270,33 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
             </View>
             <View style={styles.separator} />
 
-            <View style={styles.ExploreContainer}>
-              <View style={styles.headerExploreContainer}>
-                <Text className="text-white font-bold text-[16px]">
-                  Explore CCC
-                </Text>
+            <View style={{ paddingHorizontal: 16, marginTop: 18, marginBottom: 18, gap: 8 }}>
+              <Text style={{
+                fontSize: 15,
+                color: "#e7f6fc", fontWeight: "700"
+              }}>
+                Explore CCC
+              </Text>
+
+              {/* Grid */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  justifyContent: 'space-between',
+                  rowGap: 12,
+                }}
+              >
+                {mentorExploreItems.map((item) => (
+                  <ExploreCard
+                    key={item.id}
+                    icon={item.icon}
+                    title={item.title}
+                    onPress={() => console.log(`Pressed ${item.title}`)}
+                  />
+                ))}
               </View>
 
-              <View className="items-center justify-center w-full px-2 py-5">
-                <View className="flex-row gap-3">
-                  <CardBox
-                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                    title="Mentees"
-                    icon={icons.Revitalization2}
-                  />
-                  <CardBox
-                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                    title="Track Progress"
-                    icon={icons.Assessments2}
-                  />
-                  <CardBox
-                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                    title="Revitalization Roadmap"
-                    icon={icons.Assessments2}
-                  />
-                </View>
-                <View className="flex-row gap-3">
-                  <CardBox
-                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                    title="Assessments"
-                    icon={icons.progress2}
-                  />
-                  <CardBox
-                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                    title="Schedule"
-                    icon={icons.Appointments2}
-                  />
-                  <CardBox
-                    cardStyle={{ width: 115, height: 82, borderRadius: 10 }}
-                    title="Courses"
-                    icon={icons.Appointments2}
-                  />
-                </View>
-              </View>
             </View>
             <View
               style={{
@@ -364,8 +351,8 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
               </MapView>
             </View>
           </LinearGradient>
-        </Animated.ScrollView>
-      </LinearGradient>
+        </Animated.ScrollView >
+      </LinearGradient >
     </>
   )
 }
