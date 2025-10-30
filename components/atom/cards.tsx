@@ -730,7 +730,7 @@ export const CardBox = ({
   const content = (
     <LinearGradient
       colors={[Colors.darkBlueGradientTwo, Colors.lightBlueGradientTwo]}
-      style={[styles.gradientContainer, cardStyle, { width: '100%' }]}
+      style={[styles.gradientContainer, cardStyle]}
     >
       <Image source={icon} style={styles.icon} />
       <Text className="text-white font-medium text-[16px] text-center">
@@ -1910,7 +1910,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FFFFFF", // white
     padding: 10,
-    width: "50%",
+    // width: "50%",
   },
   icon: {
     width: 28,

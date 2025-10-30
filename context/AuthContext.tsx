@@ -1,4 +1,3 @@
-// context/AuthContext.tsx
 import { mockApiDelay, User } from '@/lib/user/mock';
 import { InterestFormData, InterestStatus, STORAGE_KEYS } from '@/lib/user/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
