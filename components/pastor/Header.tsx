@@ -42,6 +42,7 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
   return (
     <View
       className={`flex-row items-center justify-between px-4 ${wrapperClass}`}
+      style={{ paddingTop: 10, paddingHorizontal: 16, display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
     >
       {showDrawer ? (
         <TouchableOpacity onPress={toggleDrawer}>
@@ -76,7 +77,7 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
           </View>
         </LinearGradient>
       )}
-      <View className="flex-row gap-4 items-center">
+      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
         {showNotificationIcon && (
           <TouchableOpacity
             onPress={() => handlePress()}

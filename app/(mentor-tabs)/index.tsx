@@ -258,9 +258,9 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
                   <RoadMapCard data={e} dataKey={i.toString()} key={i} />
                 ))}
               </View>
-              <View className="w-full">
+              <View className="w-full flex justify-end">
                 <Button
-                  buttonClass="max-w-[130px] ml-auto"
+                  buttonClass="!w-[40%] !h-11"
                   bgColor="white"
                   textColor="#001FC1"
                 >

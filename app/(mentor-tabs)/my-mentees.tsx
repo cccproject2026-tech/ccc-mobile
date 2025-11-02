@@ -3,13 +3,16 @@ import {
   MentorShortCard,
 } from "@/components/build-components"
 import { TabSwitcher } from "@/components/director/TabSwitcher"
+import MenteeMenuBottomSheet, { MenteeMenuBottomSheetRef } from "@/components/mentor/MenteeMenuBottomSheet"
+import ScheduleMeetingBottomSheet, { ScheduleMeetingBottomSheetRef } from "@/components/mentor/ScheduleMeetingBottomSheet"
 import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
 import { Feather, Ionicons } from "@expo/vector-icons"
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { LinearGradient } from "expo-linear-gradient"
 import { Stack, router } from "expo-router"
-import React, { useState } from "react"
+import React, { useRef, useState } from "react"
 import {
   Image,
   ScrollView,
@@ -19,10 +22,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 import MapView, { Marker } from "react-native-maps"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 interface Mentor {
+  id: string
   name: string
   role: string
   description: string
@@ -30,31 +35,37 @@ interface Mentor {
 
 const dummyMentors: Mentor[] = [
   {
+    id: "john-ross",
     name: "John Doe",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
   },
   {
+    id: "john-ross",
     name: "John Ross",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
   },
   {
+    id: "john-ross",
     name: "John Doe",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
   },
   {
+    id: "john-ross",
     name: "John Ross",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
   },
   {
+    id: "john-ross",
     name: "John Doe",
     role: "Mentor",
     description: "Sub text area write something here. That you can read more",
   },
   {
+    id: "john-ross",
     name: "John Doe",
     role: "Field Mentor",
     description: "Sub text area write something here. That you can read more",
@@ -80,6 +91,10 @@ export default function MyMentees() {
   const [expandedSection, setExpandedSection] = useState<"PHASE" | "STATE" | "CONFERENCE">("PHASE")
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [selectedConference, setSelectedConference] = useState<string | null>(null)
+  const [selectedMentee, setSelectedMentee] = useState<Mentor | null>(null)
+
+  const menteeMenuRef = useRef<MenteeMenuBottomSheetRef>(null)
+  const scheduleMeetingRef = useRef<ScheduleMeetingBottomSheetRef>(null)
 
   const phaseOptions = ["Self Revitalization", "Phase 1", "Phase 2"]
 
@@ -90,19 +105,70 @@ export default function MyMentees() {
   ]
 
   const handleMenuPress = (mentor: Mentor) => {
-    // router.push({
-    //   pathname: "/(pastor-tabs)/(tabs)/schedule-meeting",
-    //   params: { mentorData: JSON.stringify(mentor) },
-    // });
+    setSelectedMentee(mentor)
+    menteeMenuRef.current?.present()
+  }
+
+  const closeMenu = () => {
+    setSelectedMentee(null)
+  }
+
+  const handleMenuAction = (action: string, mentee: any) => {
+    console.log(`Action: ${action} for mentee: ${mentee?.name}`)
+    // Handle different actions here
+    switch (action) {
+      case "revitalization-roadmap":
+        // Navigate to roadmap
+        break
+      case "mentor-notes":
+        // Navigate to notes
+        router.push({
+          pathname: "/(mentor-tabs)/mentor-notes",
+          params: {
+            menteeId: mentee?.id,
+            menteeName: mentee?.name,
+          },
+        })
+        break
+      case "assessments":
+        // Navigate to assessments
+        break
+      case "assignments":
+        // Navigate to assignments
+        break
+      case "track-progress":
+        // Navigate to progress tracking
+        break
+      case "schedule-meeting":
+        // Open schedule meeting bottom sheet
+        scheduleMeetingRef.current?.present()
+        break
+      case "mark-complete":
+        // Mark mentee program as complete
+        break
+      default:
+        break
+    }
+  }
+
+  const handleScheduleMeeting = (date: Date, time: string, option: string) => {
+    console.log("Meeting scheduled:", {
+      mentee: selectedMentee?.name,
+      date: date.toDateString(),
+      time,
+      option,
+    })
+    // Here you would typically save the meeting to your backend
   }
   return (
-    <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
-        <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <LinearGradient
+          colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+          style={{ flex: 1 }}
+        >
+          <Stack.Screen options={{ headerShown: false }} />
+          <SafeAreaView style={{ flex: 1 }}>
           <ScrollView style={{ flex: 1 }}>
             <View
               style={{
@@ -190,7 +256,17 @@ export default function MyMentees() {
                       }}
                     >
                       {dummyMentors.slice(0, 8).map((mentor, index) => (
-                        <View key={index} style={{ alignItems: "center" }}>
+                        <TouchableOpacity
+                          key={index}
+                          activeOpacity={0.85}
+                          style={{ alignItems: "center" }}
+                          onPress={() =>
+                            router.push({
+                              pathname: "/(mentor-tabs)/mentee-profile",
+                              params: { menteeId: mentor.id },
+                            })
+                          }
+                        >
                           <LinearGradient
                             colors={["#8B5CF6", "#3B82F6"]}
                             start={{ x: 0, y: 0 }}
@@ -235,7 +311,7 @@ export default function MyMentees() {
                           >
                             {mentor.name}
                           </Text>
-                        </View>
+                        </TouchableOpacity>
                       ))}
                     </ScrollView>
                   </View>
@@ -431,21 +507,32 @@ export default function MyMentees() {
                               : styles.mentorCard
                           }
                         >
-                          {listToggle ? (
-                            <MentorDetailedCard
-                              data={mentor}
-                              key={index.toString()}
-                              navigation={router}
-                              onMenuPress={() => handleMenuPress(mentor)}
-                            />
-                          ) : (
-                            <MentorShortCard
-                              data={mentor}
-                              dataKey={index.toString()}
-                              navigation={router}
-                              onMenuPress={() => handleMenuPress(mentor)}
-                            />
-                          )}
+                          <TouchableOpacity
+                            activeOpacity={0.88}
+                            onPress={() =>
+                              router.push({
+                                pathname: "/(mentor-tabs)/mentee-profile",
+                                params: { menteeId: mentor.id },
+                              })
+                            }
+                            style={{ flex: 1 }}
+                          >
+                            {listToggle ? (
+                              <MentorDetailedCard
+                                data={mentor}
+                                key={index.toString()}
+                                navigation={router}
+                                onMenuPress={() => handleMenuPress(mentor)}
+                              />
+                            ) : (
+                              <MentorShortCard
+                                data={mentor}
+                                dataKey={index.toString()}
+                                navigation={router}
+                                onMenuPress={() => handleMenuPress(mentor)}
+                              />
+                            )}
+                          </TouchableOpacity>
                         </View>
                       ))}
                     </View>
@@ -456,7 +543,23 @@ export default function MyMentees() {
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
-    </>
+
+        {/* Mentee Menu Bottom Sheet */}
+        <MenteeMenuBottomSheet
+          ref={menteeMenuRef}
+          mentee={selectedMentee}
+          onClose={closeMenu}
+          onAction={handleMenuAction}
+        />
+
+        {/* Schedule Meeting Bottom Sheet */}
+        <ScheduleMeetingBottomSheet
+          ref={scheduleMeetingRef}
+          mentee={selectedMentee}
+          onSchedule={handleScheduleMeeting}
+        />
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   )
 }
 
