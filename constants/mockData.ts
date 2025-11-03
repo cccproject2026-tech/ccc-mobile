@@ -659,7 +659,7 @@ export const MentorMenuItems: MenuItem[] = [
         label: 'Schedule',
         icon: icons.Appointments,
         iconType: 'image',
-        route: '/(mentor-tabs)/progress/progress',
+        route: '/(mentor-tabs)/appointments',
     },
     {
         id: 'profile',
