@@ -8,14 +8,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -101,8 +101,8 @@ export default function ProgressTracker() {
     };
 
     return (
-      <TouchableOpacity 
-        key={mentee.id} 
+      <TouchableOpacity
+        key={mentee.id}
         style={styles.menteeCard}
         activeOpacity={0.8}
         onPress={navigateToDetail}
@@ -131,8 +131,8 @@ export default function ProgressTracker() {
               <>
                 {mentee.progress.currentPhase && (
                   <View style={styles.phaseBadge}>
-                    <Text style={styles.phaseBadgeText} numberOfLines={1}>
-                      Phase : {mentee.progress.currentPhase}
+                    <Text numberOfLines={2} style={styles.phaseBadgeText}>
+                      <Text className="font-bold">Phase :</Text> {mentee.progress.currentPhase}
                     </Text>
                   </View>
                 )}
@@ -147,7 +147,9 @@ export default function ProgressTracker() {
                       ]}
                     />
                   </View>
-                  <Text style={styles.progressText}>{mentee.progress.percent} %</Text>
+                  <Text style={styles.progressText}>
+                    {mentee.progress.percent} %
+                  </Text>
                 </View>
               </>
             )}
@@ -175,25 +177,29 @@ export default function ProgressTracker() {
                 onPress={() => handleMarkAsComplete(mentee)}
               >
                 <LinearGradient
-                  colors={["#F4C430", "#D4AF37"]}
+                  colors={["#7C3AED", "#38BDF8"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={styles.markCompleteGradient}
+                  style={styles.gradientBorder}
                 >
+                  <View style={styles.innerContainer}>
                   <Text style={styles.markCompleteText}>Mark as Complete</Text>
                   <Ionicons name="chevron-forward" size={18} color="#1A4882" />
+                  </View>
                 </LinearGradient>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Chevron */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.chevronButton}
-            onPress={() => router.push({
-              pathname: "/(mentor-tabs)/mentee-progress",
-              params: { menteeId: mentee.id }
-            })}
+            onPress={() =>
+              router.push({
+                pathname: "/(mentor-tabs)/mentee-progress",
+                params: { menteeId: mentee.id },
+              })
+            }
           >
             <Ionicons name="chevron-forward" size={24} color="white" />
           </TouchableOpacity>
@@ -643,11 +649,12 @@ const styles = StyleSheet.create({
   },
   phaseBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "#1A4882",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 12,
     marginTop: 4,
+    borderColor: "white",
+    borderWidth: 1,
   },
   phaseBadgeText: {
     color: "white",
@@ -682,7 +689,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#1A4882",
+    backgroundColor: "#ffffff",
   },
   progressText: {
     color: "white",
@@ -716,8 +723,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 8,
   },
+  gradientBorder: {
+    borderRadius: 12,
+    padding: 4,
+  },
+  innerContainer: {
+    backgroundColor: Colors.lightBlueGradientOne,
+    borderRadius: 12,
+    padding: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
   markCompleteText: {
-    color: "#1A4882",
+    color: "#E9E010",
     fontSize: 14,
     fontWeight: "600",
   },
