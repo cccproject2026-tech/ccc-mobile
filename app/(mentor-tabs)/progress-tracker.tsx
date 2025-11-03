@@ -1,446 +1,207 @@
+import ActionBottomSheet from "@/components/director/ActionSheetModal";
+import FilterModal, { FilterOption } from "@/components/director/FilterModal";
+import MenteeCard, { Mentee } from "@/components/director/MenteeCard";
+import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
+import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
-import { icons } from "@/constants/images";
-import { MenteeProfile, menteeProfiles } from "@/constants/mockMentees";
+import { mockMentees, STATES } from "@/constants/mockData";
+import { menteeProfiles } from "@/constants/mockMentees";
 import { Ionicons } from "@expo/vector-icons";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
-import React, { useState } from "react";
-import {
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { router, Stack } from "expo-router";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type SortOption = "progress-highest" | "completion-latest";
-
 export default function ProgressTracker() {
-  const [searchText, setSearchText] = useState("");
-  const [activeTab, setActiveTab] = useState<"ALL" | "IN_PROGRESS" | "COMPLETED">("ALL");
-  const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("progress-highest");
-  const [showCommentsModal, setShowCommentsModal] = useState(false);
-  const [selectedMentee, setSelectedMentee] = useState<MenteeProfile | null>(null);
-  const [finalComments, setFinalComments] = useState("");
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "in-progress" | "completed">("all");
+  const [viewMode, setViewMode] = useState<"list" | "card">("card");
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState("Course Completion : Latest");
+  const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
 
-  const tabData = [
-    { key: "ALL", label: "All" },
-    { key: "IN_PROGRESS", label: "In-progress" },
-    { key: "COMPLETED", label: "Completed" },
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+  // Debug: Log initial mockMentees
+  React.useEffect(() => {
+    console.log("=== PROGRESS TRACKER DEBUG ===");
+    console.log("mockMentees count:", mockMentees.length);
+    console.log("mockMentees data:", JSON.stringify(mockMentees.slice(0, 2), null, 2));
+  }, []);
+
+  const getFilterOptions = (): FilterOption[] => {
+    return [
+      { label: "Course Completion", options: ["Latest", "Oldest"], isExpandable: true },
+      { label: "State", options: STATES, isExpandable: true },
+      { label: "Conference", isExpandable: true },
+    ];
+  };
+
+  const filterOptions = useMemo(() => getFilterOptions(), []);
+
+  const filteredMentees = useMemo(() => {
+    console.log("=== FILTERING DEBUG ===");
+    console.log("Initial mockMentees length:", mockMentees.length);
+    console.log("Search term:", search);
+    console.log("Active tab:", activeTab);
+    
+    let filtered = mockMentees;
+    console.log("Before search filter:", filtered.length);
+    
+    if (search) {
+      filtered = filtered.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()));
+      console.log("After search filter:", filtered.length);
+    }
+    
+    if (activeTab === "completed") {
+      filtered = filtered.filter((m) => m.isCompleted);
+      console.log("After completed filter:", filtered.length);
+    } else if (activeTab === "in-progress") {
+      filtered = filtered.filter((m) => !m.isCompleted);
+      console.log("After in-progress filter:", filtered.length);
+    }
+    
+    console.log("Final filtered count:", filtered.length);
+    console.log("Filtered mentees:", filtered.map(m => ({ id: m.id, name: m.name, isCompleted: m.isCompleted })));
+    return filtered;
+  }, [search, activeTab]);
+
+  const tabs = [
+    { key: "all", label: "All" },
+    { key: "in-progress", label: "In-progress" },
+    { key: "completed", label: "Completed" },
   ];
 
-  const sortOptions = [
-    { key: "progress-highest", label: "Progress Percentage : Highest" },
-    { key: "completion-latest", label: "Course Completion : Latest" },
-  ];
-
-  // Get all mentees as array
-  const allMentees = Object.values(menteeProfiles);
-
-  // Filter mentees based on active tab
-  const filteredMentees = allMentees.filter((mentee) => {
-    // Search filter
-    if (searchText && !mentee.name.toLowerCase().includes(searchText.toLowerCase())) {
-      return false;
-    }
-
-    // Tab filter
-    if (activeTab === "ALL") {
-      return true;
-    } else if (activeTab === "IN_PROGRESS") {
-      return mentee.progress.status === "in-progress";
-    } else {
-      return mentee.progress.status === "completed" && mentee.progress.isMarkedComplete;
-    }
-  });
-
-  // Sort mentees
-  const sortedMentees = [...filteredMentees].sort((a, b) => {
-    if (sortBy === "progress-highest") {
-      return b.progress.percent - a.progress.percent;
-    } else {
-      // Sort by completion date (most recent first)
-      const dateA = new Date(a.progress.updatedOn || "").getTime();
-      const dateB = new Date(b.progress.updatedOn || "").getTime();
-      return dateB - dateA;
-    }
-  });
-
-  const handleMarkAsComplete = (mentee: MenteeProfile) => {
+  const handleMenuPress = useCallback((mentee: Mentee) => {
     setSelectedMentee(mentee);
-    setFinalComments(mentee.progress.finalComments || "");
-    setShowCommentsModal(true);
-  };
+    setTimeout(() => bottomSheetModalRef.current?.present(), 0);
+  }, []);
 
-  const handleSubmitComments = () => {
-    if (selectedMentee) {
-      // In a real app, this would update the backend
-      console.log("Marking mentee as complete:", selectedMentee.name, finalComments);
-      setShowCommentsModal(false);
-      setSelectedMentee(null);
-      setFinalComments("");
-    }
-  };
+  const handleCloseModal = useCallback(() => {
+    bottomSheetModalRef.current?.dismiss();
+    setTimeout(() => setSelectedMentee(null), 300);
+  }, []);
 
-  const renderMenteeCard = (mentee: MenteeProfile) => {
-    const isCompleted = mentee.progress.status === "completed" && mentee.progress.isMarkedComplete;
-    const canMarkComplete = mentee.progress.percent === 100 && !mentee.progress.isMarkedComplete;
-
-    const navigateToDetail = () => {
-      router.push({
-        pathname: "/(mentor-tabs)/mentee-progress",
-        params: { menteeId: mentee.id }
-      });
-    };
-
-    return (
-      <TouchableOpacity
-        key={mentee.id}
-        style={styles.menteeCard}
-        activeOpacity={0.8}
-        onPress={navigateToDetail}
-      >
-        <View style={styles.menteeCardContent}>
-          {/* Profile Image */}
-          <View style={styles.profileImageContainer}>
-            <Image source={mentee.avatar} style={styles.profileImage} />
-          </View>
-
-          {/* Content */}
-          <View style={styles.menteeInfo}>
-            <Text style={styles.menteeName}>{mentee.name}</Text>
-            <Text style={styles.menteeDescription} numberOfLines={2}>
-              {mentee.description}
-            </Text>
-
-            {/* Phase or Completed info */}
-            {isCompleted ? (
-              <View style={styles.completedBadge}>
-                <Text style={styles.completedBadgeText}>
-                  Completed on :{mentee.progress.completedOn}
-                </Text>
-              </View>
-            ) : (
-              <>
-                {mentee.progress.currentPhase && (
-                  <View style={styles.phaseBadge}>
-                    <Text numberOfLines={2} style={styles.phaseBadgeText}>
-                      <Text className="font-bold">Phase :</Text> {mentee.progress.currentPhase}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Progress Bar */}
-                <View style={styles.progressContainer}>
-                  <View style={styles.progressBar}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        { width: `${mentee.progress.percent}%` },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.progressText}>
-                    {mentee.progress.percent} %
-                  </Text>
-                </View>
-              </>
-            )}
-
-            {/* Communication Icons */}
-            <View style={styles.communicationIcons}>
-              <TouchableOpacity style={styles.iconButton}>
-                <Ionicons name="call-outline" size={18} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
-                <Ionicons name="chatbubble-outline" size={18} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
-                <Ionicons name="mail-outline" size={18} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
-                <Ionicons name="logo-whatsapp" size={18} color="white" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Mark as Complete Button */}
-            {canMarkComplete && (
-              <TouchableOpacity
-                style={styles.markCompleteButton}
-                onPress={() => handleMarkAsComplete(mentee)}
-              >
-                <LinearGradient
-                  colors={["#7C3AED", "#38BDF8"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.gradientBorder}
-                >
-                  <View style={styles.innerContainer}>
-                  <Text style={styles.markCompleteText}>Mark as Complete</Text>
-                  <Ionicons name="chevron-forward" size={18} color="#1A4882" />
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Chevron */}
-          <TouchableOpacity
-            style={styles.chevronButton}
-            onPress={() =>
-              router.push({
-                pathname: "/(mentor-tabs)/mentee-progress",
-                params: { menteeId: mentee.id },
-              })
-            }
-          >
-            <Ionicons name="chevron-forward" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+  const mapMenteeToProfileId = (mentee: Mentee): string => {
+    const match = Object.values(menteeProfiles).find(
+      (p) => p.name.toLowerCase() === mentee.name.toLowerCase()
     );
+    return match?.id || "john-ross";
   };
+
+  const menuItems = [
+    {
+      icon: "book-outline",
+      label: "View Progress Report",
+      onPress: () => {
+        const id = selectedMentee ? mapMenteeToProfileId(selectedMentee) : "john-ross";
+        handleCloseModal();
+        setTimeout(() => {
+          router.push({ pathname: "/(mentor-tabs)/mentee-progress", params: { menteeId: id } });
+        }, 300);
+      },
+    },
+    { icon: "call-outline", label: "Call", onPress: () => handleCloseModal() },
+    { icon: "chatbubble-outline", label: "Chat", onPress: () => handleCloseModal() },
+    { icon: "mail-outline", label: "Mail", onPress: () => handleCloseModal() },
+    { icon: "logo-whatsapp", label: "WhatsApp", onPress: () => handleCloseModal() },
+  ];
 
   return (
-    <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
-        <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={{ flex: 1 }}>
-          <ScrollView style={{ flex: 1 }}>
-            {/* Header */}
-            <PastorNavigationHeader showNameTag />
-            <View style={styles.headerContainer}>
-              <View style={styles.headerContent}>
-                <TouchableOpacity
-                  onPress={() => router.back()}
-                  style={styles.backButton}
-                >
-                  <Image source={icons.forward} style={styles.backIcon} />
-                  <View>
-                    <Text style={styles.headerTitle}>Progress Tracker</Text>
-                    <Text style={styles.headerSubtitle}>Mentees</Text>
-                  </View>
-                </TouchableOpacity>
+    <LinearGradient colors={["#176192", "#1D548D", "#264387"]} style={{ flex: 1 }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
+          <TopBar userName="John Doe" notifications={3} showUserName showNotifications />
 
-                <TouchableOpacity style={styles.menuButton}>
-                  <Ionicons name="menu" size={24} color="white" />
+          <View style={{ flex: 1, paddingTop: 24 }}>
+            {/* Header Row */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, marginBottom: 16 }}>
+              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons name="chevron-back" size={28} color="#fff" />
+                <Text style={{ fontSize: 16, color: "white", marginLeft: 8, fontWeight: "600" }}>Progress Tracker</Text>
+              </TouchableOpacity>
+
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <TouchableOpacity onPress={() => setViewMode(viewMode === "card" ? "list" : "card")} style={{ padding: 4 }}>
+                  <Ionicons name={viewMode === "card" ? "list" : "grid"} size={24} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setFilterModalVisible(true)} style={{ padding: 4 }}>
+                  <Ionicons name="filter" size={22} color="#fff" />
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Separator */}
-            <View className="h-[0.5px] bg-white/30 mt-1" />
-
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBox}>
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search"
-                  placeholderTextColor="white"
-                  value={searchText}
-                  onChangeText={setSearchText}
-                />
-                <Ionicons
-                  name="search"
-                  size={20}
-                  color="rgba(255, 255, 255, 0.6)"
-                  style={styles.searchIcon}
-                />
-              </View>
+            {/* Search */}
+            <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+              <SearchBar value={search} onChangeValue={setSearch} />
             </View>
 
             {/* Tabs */}
-            <View style={{ paddingHorizontal: 0 }}>
-              <TabSwitcher
-                tabs={tabData}
-                activeTab={activeTab}
-                onChange={(key: string) => setActiveTab(key as any)}
-              />
-            </View>
+            <TabSwitcher tabs={tabs} activeTab={activeTab} onChange={(k: string) => setActiveTab(k as any)} />
 
-            {/* Quick Access Avatars */}
-            <View style={styles.quickAccessContainer}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.quickAccessScroll}
-              >
-                {allMentees.slice(0, 5).map((mentee, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    activeOpacity={0.85}
-                    style={{ alignItems: "center" }}
-                    onPress={() => router.push({
-                      pathname: "/(mentor-tabs)/mentee-progress",
-                      params: { menteeId: mentee.id }
-                    })}
-                  >
-                    <LinearGradient
-                      colors={["#8B5CF6", "#3B82F6"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 0, y: 1 }}
-                      style={styles.avatarGradient}
-                    >
-                      <View style={styles.avatarInner}>
-                        <Image
-                          source={mentee.avatar}
-                          style={styles.avatar}
-                          resizeMode="cover"
-                        />
-                      </View>
-                    </LinearGradient>
-                    <Text style={styles.avatarName}>{mentee.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Separator */}
-            <View className="h-[0.5px] bg-white/20 mx-14" />
-
-            {/* Sort Dropdown */}
-            <View style={styles.sortContainer}>
-              <Text style={styles.sortLabel}>Sort by</Text>
-              <View style={{ position: "relative" }}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => setShowSortDropdown((prev) => !prev)}
-                  style={styles.sortButton}
-                >
-                  <Text style={styles.sortButtonText}>
-                    {sortOptions.find((opt) => opt.key === sortBy)?.label}
-                  </Text>
-                  <Ionicons
-                    name={showSortDropdown ? "chevron-up" : "chevron-down"}
-                    size={16}
-                    color="#fff"
-                  />
-                </TouchableOpacity>
-
-                {showSortDropdown && (
-                  <View style={styles.dropdownMenu}>
-                    {sortOptions.map((option) => (
-                      <TouchableOpacity
-                        key={option.key}
-                        style={styles.dropdownOption}
-                        onPress={() => {
-                          setSortBy(option.key as SortOption);
-                          setShowSortDropdown(false);
-                        }}
-                      >
-                        <View style={styles.radioOuter}>
-                          {sortBy === option.key && (
-                            <View style={styles.radioInner} />
-                          )}
-                        </View>
-                        <Text style={styles.dropdownOptionText}>
-                          {option.label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
+            {/* List */}
+            <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+              <View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 }}>
+                <Text style={{ color: '#fff', opacity: 0.7, fontSize: 12 }}>Results: {filteredMentees.length}</Text>
               </View>
-            </View>
-
-            {/* Mentees List */}
-            <View style={styles.menteesList}>
-              {sortedMentees.map((mentee) => renderMenteeCard(mentee))}
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </LinearGradient>
-
-      {/* Final Comments Modal */}
-      <Modal
-        visible={showCommentsModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCommentsModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            {/* Header with gradient border */}
-            <View style={styles.modalHeaderBorder}>
-              <LinearGradient
-                colors={["#8B5CF6", "#3B82F6"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.modalHeaderGradient}
-              >
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>
-                    Pr. {selectedMentee?.name} - Final Comments
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setShowCommentsModal(false)}
-                    style={styles.closeButton}
-                  >
-                    <Ionicons name="close" size={24} color="white" />
-                  </TouchableOpacity>
+              {(() => {
+                console.log("=== RENDER DEBUG ===");
+                console.log("About to render filteredMentees:", filteredMentees.length);
+                console.log("View mode:", viewMode);
+                return null;
+              })()}
+              {filteredMentees.length === 0 && (
+                <View style={{ paddingHorizontal: 16, paddingVertical: 24, alignItems: "center" }}>
+                  <Text style={{ color: "#fff", opacity: 0.8 }}>No mentees found</Text>
                 </View>
-              </LinearGradient>
-            </View>
-
-            {/* Content */}
-            <View style={styles.modalContent}>
-              {selectedMentee?.progress.isMarkedComplete ? (
-                // Read-only view
-                <View style={styles.commentsDisplay}>
-                  <Text style={styles.commentsText}>
-                    {selectedMentee.progress.finalComments}
-                  </Text>
-                </View>
-              ) : (
-                // Editable view
-                <TextInput
-                  style={styles.commentsInput}
-                  placeholder="Write the Comments here..."
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                  multiline
-                  numberOfLines={6}
-                  value={finalComments}
-                  onChangeText={setFinalComments}
-                  textAlignVertical="top"
-                />
               )}
-
-              {/* Buttons */}
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => setShowCommentsModal(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-
-                {!selectedMentee?.progress.isMarkedComplete && (
-                  <TouchableOpacity
-                    style={styles.submitButton}
-                    onPress={handleSubmitComments}
-                  >
-                    <Text style={styles.submitButtonText}>
-                      Mark Programme as Completed
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
+              {filteredMentees.map((mentee) => {
+                console.log(`Rendering mentee: ${mentee.id} - ${mentee.name}`);
+                return (
+                  <MenteeCard
+                    key={mentee.id}
+                    data={mentee}
+                    layout={viewMode}
+                    onPress={() => {
+                      console.log(`Mentee card pressed: ${mentee.name}`);
+                      router.push({ pathname: "/(mentor-tabs)/mentee-progress", params: { menteeId: mapMenteeToProfileId(mentee) } });
+                    }}
+                    onCall={() => console.log(`Call ${mentee.name}`)}
+                    onChat={() => console.log(`Chat ${mentee.name}`)}
+                    onMail={() => console.log(`Mail ${mentee.name}`)}
+                    onWhatsApp={() => console.log(`WhatsApp ${mentee.name}`)}
+                    onMenuPress={() => {
+                      console.log(`Menu pressed for ${mentee.name}`);
+                      handleMenuPress(mentee);
+                    }}
+                    onMarkComplete={() => {
+                      console.log(`Mark complete for ${mentee.name}`);
+                      handleMenuPress(mentee);
+                    }}
+                  />
+                );
+              })}
+            </ScrollView>
           </View>
+
+          <ActionBottomSheet ref={bottomSheetModalRef} title={selectedMentee?.name || ""} image={selectedMentee?.profileImage} actions={menuItems} onClose={handleCloseModal} />
+          <FilterModal
+            visible={filterModalVisible}
+            onClose={() => setFilterModalVisible(false)}
+            selectedFilter={selectedFilter}
+            onFilterSelect={(filter) => {
+              setSelectedFilter(filter);
+              setFilterModalVisible(false);
+            }}
+            filterOptions={filterOptions}
+          />
         </View>
-      </Modal>
-    </>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
