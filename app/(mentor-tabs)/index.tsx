@@ -292,7 +292,13 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
                     key={item.id}
                     icon={item.icon}
                     title={item.title}
-                    onPress={() => console.log(`Pressed ${item.title}`)}
+                    onPress={() => {
+                      if (item.title === 'Track Progress') {
+                        router.push('/(mentor-tabs)/progress-tracker');
+                      } else {
+                        console.log(`Pressed ${item.title}`);
+                      }
+                    }}
                   />
                 ))}
               </View>
