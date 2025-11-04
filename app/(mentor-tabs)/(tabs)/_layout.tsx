@@ -1,8 +1,7 @@
 import { Tabs, usePathname } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Dimensions, Image, Platform } from 'react-native';
+import { Dimensions, Image, Platform, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -98,6 +97,13 @@ export default function MentorTabLayout() {
                         }}
                     />
                     <Tabs.Screen
+                        name="discover"
+                        options={{
+                            title: 'Discover',
+                            tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+                        }}
+                    />
+                    <Tabs.Screen
                         name="profile/index"
                         options={{
                             title: 'Profile',
@@ -116,6 +122,8 @@ export default function MentorTabLayout() {
                     <Tabs.Screen name="(roadmap)" options={{ href: null }} />
 
                     {/* Other mentor-area screens not in tab bar */}
+                    <Tabs.Screen name="new-roadmap" options={{ href: null }} />
+                    <Tabs.Screen name="roadmap" options={{ href: null }} />
                     <Tabs.Screen name="appointments" options={{ href: null }} />
                     <Tabs.Screen name="mentors" options={{ href: null }} />
                     <Tabs.Screen name="my-mentors" options={{ href: null }} />

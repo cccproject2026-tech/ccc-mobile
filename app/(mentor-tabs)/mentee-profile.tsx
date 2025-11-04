@@ -1,3 +1,4 @@
+import { icons } from "@/constants/images"
 import { menteeProfiles } from "@/constants/mockMentees"
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
@@ -49,8 +50,11 @@ export default function MenteeProfileScreen() {
                   <Text style={styles.notificationCount}>3</Text>
                 </View>
               </View>
-              <TouchableOpacity activeOpacity={0.8} style={styles.profileButton}>
-                <Ionicons name="person-circle" size={28} color="#FFFFFF" />
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.profileButton}
+              >
+                <Image source={icons.profileTabIcon} style={{ width: 28, height: 28, tintColor: "#FFFFFF" }} />
               </TouchableOpacity>
             </View>
           </View>
@@ -103,7 +107,9 @@ export default function MenteeProfileScreen() {
             <View style={styles.progressSection}>
               <View style={styles.progressHeader}>
                 <Text style={styles.progressLabel}>Progress</Text>
-                <Text style={styles.progressValue}>{mentee.progress.percent}%</Text>
+                <Text style={styles.progressValue}>
+                  {mentee.progress.percent}%
+                </Text>
               </View>
               <View style={styles.progressBar}>
                 <View
@@ -120,9 +126,16 @@ export default function MenteeProfileScreen() {
                   end={{ x: 1, y: 0 }}
                   style={styles.completeBtn}
                 >
-                  <TouchableOpacity activeOpacity={0.85} style={styles.completeBtnInner}>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={styles.completeBtnInner}
+                  >
                     <Text style={styles.completeBtnText}>Mark as Complete</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#0D588E" />
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color="#0D588E"
+                    />
                   </TouchableOpacity>
                 </LinearGradient>
               )}
@@ -145,7 +158,7 @@ export default function MenteeProfileScreen() {
                   })
                 }
               >
-                <Ionicons name="document-text" size={20} color="#FFFFFF" />
+                <Image source={icons.documentsIcon} style={{ width: 20, height: 20 }} />
                 <Text style={styles.documentsButtonText}>Documents</Text>
                 <View style={styles.documentsBadge}>
                   <Text style={styles.documentsBadgeText}>3</Text>
@@ -165,77 +178,97 @@ export default function MenteeProfileScreen() {
           </View>
 
           <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>Current Church - 1 Information</Text>
+            <Text style={styles.sectionTitle}>
+              Current Church - 1 Information
+            </Text>
             <View style={styles.infoGrid}>
               {renderInfoPill(
                 "Current Church",
                 mentee.primaryChurch.name,
-                "church1-name",
+                "church1-name"
               )}
               {renderInfoPill(
                 "Church Phone",
                 mentee.primaryChurch.phone,
-                "church1-phone",
+                "church1-phone"
               )}
               {renderInfoPill(
                 "Church Website",
                 mentee.primaryChurch.website,
-                "church1-website",
+                "church1-website"
               )}
               {renderInfoPill(
                 "Church Address",
                 mentee.primaryChurch.address,
-                "church1-address",
+                "church1-address"
               )}
-              {renderInfoPill("City", mentee.primaryChurch.city, "church1-city")}
-              {renderInfoPill("State", mentee.primaryChurch.state, "church1-state")}
+              {renderInfoPill(
+                "City",
+                mentee.primaryChurch.city,
+                "church1-city"
+              )}
+              {renderInfoPill(
+                "State",
+                mentee.primaryChurch.state,
+                "church1-state"
+              )}
               {renderInfoPill(
                 "Zip Code",
                 mentee.primaryChurch.zipCode,
-                "church1-zip",
+                "church1-zip"
               )}
               {renderInfoPill(
                 "Country",
                 mentee.primaryChurch.country,
-                "church1-country",
+                "church1-country"
               )}
             </View>
           </View>
 
           <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>Current Church - 2 Information</Text>
+            <Text style={styles.sectionTitle}>
+              Current Church - 2 Information
+            </Text>
             <View style={styles.infoGrid}>
               {renderInfoPill(
                 "Current Church",
                 mentee.secondaryChurch.name,
-                "church2-name",
+                "church2-name"
               )}
               {renderInfoPill(
                 "Church Phone",
                 mentee.secondaryChurch.phone,
-                "church2-phone",
+                "church2-phone"
               )}
               {renderInfoPill(
                 "Church Website",
                 mentee.secondaryChurch.website,
-                "church2-website",
+                "church2-website"
               )}
               {renderInfoPill(
                 "Church Address",
                 mentee.secondaryChurch.address,
-                "church2-address",
+                "church2-address"
               )}
-              {renderInfoPill("City", mentee.secondaryChurch.city, "church2-city")}
-              {renderInfoPill("State", mentee.secondaryChurch.state, "church2-state")}
+              {renderInfoPill(
+                "City",
+                mentee.secondaryChurch.city,
+                "church2-city"
+              )}
+              {renderInfoPill(
+                "State",
+                mentee.secondaryChurch.state,
+                "church2-state"
+              )}
               {renderInfoPill(
                 "Zip Code",
                 mentee.secondaryChurch.zipCode,
-                "church2-zip",
+                "church2-zip"
               )}
               {renderInfoPill(
                 "Country",
                 mentee.secondaryChurch.country,
-                "church2-country",
+                "church2-country"
               )}
             </View>
           </View>
@@ -247,19 +280,19 @@ export default function MenteeProfileScreen() {
               {renderInfoPill(
                 "Years in Ministry",
                 mentee.otherInfo.yearsInMinistry,
-                "other-years",
+                "other-years"
               )}
               {renderInfoPill(
                 "Conference",
                 mentee.otherInfo.conference,
-                "other-conference",
+                "other-conference"
               )}
             </View>
           </View>
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
-  )
+  );
 }
 
 function renderInfoPill(label: string, value: string, key?: string) {
