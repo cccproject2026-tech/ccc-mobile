@@ -1,4 +1,3 @@
-// src/hooks/onboarding/useSubmitInterest.ts
 import { onboardingService } from '@/services/onboarding.service';
 import { useOnboardingStore } from '@/stores/onboarding.store';
 import { InterestFormData } from '@/types';
@@ -23,7 +22,7 @@ export const useSubmitInterest = () => {
             router.push('/(unauthenticated)');
         },
         onError: (error: any) => {
-            console.error('❌ Submit interest failed:', error.message);
+            console.error('❌ Submit interest failed:', error);
         },
     });
 };

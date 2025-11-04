@@ -71,8 +71,9 @@ export default function LoginScreen() {
         // ✅ UPDATED: Route to verify-email if approved but no password
         if (interestStatus === "approved" && !isPasswordSet) {
             router.push("/(unauthenticated)/set-password");
+
         } else {
-            router.push("/(unauthenticated)/interest-form");
+            router.push("/(unauthenticated)/login-form");
         }
     };
 

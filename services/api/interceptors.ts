@@ -144,3 +144,7 @@ apiClient.interceptors.response.use(
         return Promise.reject(apiError);
     }
 );
+
+if (__DEV__) {
+    console.log('✅ API interceptors initialized');
+}

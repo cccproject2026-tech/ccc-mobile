@@ -13,12 +13,12 @@ export const ENDPOINTS = {
 
     // Users
     USERS: {
-        GET_USER: (userId: string) => `/users/${userId}`,
+        GET_USER: (userId: string) => `/api/v1/users/${userId}`,
     },
 
     // Pastor Onboarding (if separate from auth)
     ONBOARDING: {
-        SUBMIT_INTEREST: '/interest',
+        SUBMIT_INTEREST: '/api/v1/interests',
         CHECK_STATUS: (applicationId: string) => `/pastor/onboarding/status/${applicationId}`,
     },
 

@@ -9,5 +9,12 @@ export const apiClient = axios.create({
     },
 });
 
-// Export for interceptor setup
+// ✅ ADDED: Log configuration on startup
+if (__DEV__) {
+    console.log('\n🔧 API Client Configuration:');
+    console.log('Base URL:', API_CONFIG.BASE_URL);
+    console.log('Timeout:', API_CONFIG.TIMEOUT, 'ms');
+    console.log('---\n');
+}
+
 export default apiClient;

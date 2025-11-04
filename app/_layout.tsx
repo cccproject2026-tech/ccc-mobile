@@ -139,6 +139,9 @@ import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import '../global.css';
 
+import '@/services/api/interceptors';
+
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
