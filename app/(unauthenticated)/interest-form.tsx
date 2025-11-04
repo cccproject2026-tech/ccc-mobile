@@ -1,9 +1,10 @@
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
-import { useAuth } from "@/context/AuthContext";
+import { useLogin } from "@/hooks/auth/useLogin";
+import { useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Stack, router } from "expo-router";
 import React, { useState } from "react";
 import {
     ActivityIndicator,
@@ -17,28 +18,27 @@ import {
 } from "react-native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 export default function LoginFormScreen() {
-    const { showProfileSetup } = useLocalSearchParams();
-    const { top, bottom } = useSafeAreaInsets();
-    const { login, isLoading, error, interestData } = useAuth();
+    const { bottom } = useSafeAreaInsets();
+
+    // ✅ UPDATED: Use Zustand store
+    const { interestData } = useOnboardingStore();
+
+    // ✅ UPDATED: Use React Query hook
+    const { mutate: login, isPending, error } = useLogin();
 
     const [email, setEmail] = useState(interestData?.email || "");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
-    const handleLogin = async () => {
+    // ✅ UPDATED: Use mutation hook
+    const handleLogin = () => {
         if (!email || !password) {
             Alert.alert("Error", "Please enter both email and password");
             return;
         }
 
-        try {
-            await login(email, password);
-            // Navigation handled by AuthContext
-        } catch (err) {
-            Alert.alert("Login Failed", error || "Invalid credentials");
-        }
+        login({ email, password });
     };
 
     return (
@@ -53,13 +53,10 @@ export default function LoginFormScreen() {
                     contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 20 }]}
                     showsVerticalScrollIndicator={false}
                 >
-
-                    {/* CCC Logo */}
                     <View style={styles.cccLogoContainer}>
                         <Image source={icons.communityImage} style={styles.cccLogo} resizeMode="contain" />
                     </View>
 
-                    {/* Login Form */}
                     <View style={styles.formContainer}>
                         <TextInput
                             style={styles.input}
@@ -69,7 +66,7 @@ export default function LoginFormScreen() {
                             onChangeText={setEmail}
                             keyboardType="email-address"
                             autoCapitalize="none"
-                            editable={!isLoading}
+                            editable={!isPending}
                         />
 
                         <View style={styles.passwordContainer}>
@@ -81,7 +78,7 @@ export default function LoginFormScreen() {
                                 onChangeText={setPassword}
                                 secureTextEntry={!showPassword}
                                 autoCapitalize="none"
-                                editable={!isLoading}
+                                editable={!isPending}
                             />
                             <TouchableOpacity
                                 onPress={() => setShowPassword(!showPassword)}
@@ -95,18 +92,19 @@ export default function LoginFormScreen() {
                             </TouchableOpacity>
                         </View>
 
+                        {/* ✅ UPDATED: Show error from mutation */}
                         {error && (
                             <View style={styles.errorContainer}>
-                                <Text style={styles.errorText}>{error}</Text>
+                                <Text style={styles.errorText}>{error.message}</Text>
                             </View>
                         )}
 
                         <TouchableOpacity
                             style={styles.loginButton}
                             onPress={handleLogin}
-                            disabled={isLoading}
+                            disabled={isPending}
                         >
-                            {isLoading ? (
+                            {isPending ? (
                                 <ActivityIndicator color="#1A5490" />
                             ) : (
                                 <Text style={styles.loginButtonText}>Log in</Text>
@@ -116,14 +114,14 @@ export default function LoginFormScreen() {
                         <TouchableOpacity
                             style={styles.forgotPassword}
                             onPress={() => {
-                                router.push("/(login)/forgot-password");
+                                router.push("/(unauthenticated)/forgot-password");
                             }}
                         >
                             <Text style={styles.forgotPasswordText}>Forgot Password ?</Text>
                         </TouchableOpacity>
                     </View>
 
-                    {/* New User / Submit Interest */}
+                    {/* ✅ UPDATED: Route change */}
                     <View style={styles.actionButtonWrapper}>
                         <LinearGradient
                             colors={["#7C3AED", "#3B82F6", "#1E40AF"]}
@@ -133,7 +131,7 @@ export default function LoginFormScreen() {
                         >
                             <View style={styles.actionButtonsRow}>
                                 <TouchableOpacity
-                                    onPress={() => router.push("/(login)/set-password")}
+                                    onPress={() => router.push("/(unauthenticated)/interest-form")}
                                     style={styles.actionButton}
                                     activeOpacity={0.8}
                                 >
@@ -143,7 +141,7 @@ export default function LoginFormScreen() {
                                 <View style={styles.verticalDivider} />
 
                                 <TouchableOpacity
-                                    onPress={() => router.push("/(login)/interest-form")}
+                                    onPress={() => router.push("/(unauthenticated)/interest-form")}
                                     style={styles.actionButton}
                                     activeOpacity={0.8}
                                 >
@@ -153,7 +151,6 @@ export default function LoginFormScreen() {
                         </LinearGradient>
                     </View>
 
-                    {/* Andrews University Logo */}
                     <View style={styles.universityLogoContainer}>
                         <Image source={icons.universityIcon} style={styles.universityLogo} resizeMode="contain" />
                     </View>

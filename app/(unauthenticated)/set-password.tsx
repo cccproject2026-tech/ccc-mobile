@@ -1,6 +1,9 @@
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
-import { useAuth } from "@/context/AuthContext";
+import { useSendOtp } from "@/hooks/auth/useSendOtp";
+import { useSetPassword } from "@/hooks/auth/useSetPassword";
+import { useVerifyOtp } from "@/hooks/auth/useVerifyOtp";
+import { useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
@@ -18,10 +21,16 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function SetPasswordScreen() {
-    const { top, bottom } = useSafeAreaInsets();
-    const { setPassword, isLoading, interestData, error, clearError } = useAuth();
+export default function VerifyEmailScreen() {
+    const { bottom } = useSafeAreaInsets();
 
+    // ✅ UPDATED: Use Zustand store
+    const { interestData, email, otpToken, setOtpToken } = useOnboardingStore();
+
+    // ✅ UPDATED: Use React Query hooks
+    const { mutate: sendOtp, isPending: isSending } = useSendOtp();
+    const { mutate: verifyOtp, isPending: isVerifying } = useVerifyOtp();
+    const { mutate: setPassword, isPending: isSettingPassword } = useSetPassword();
 
     const [step, setStep] = useState<1 | 2>(1);
     const [otp, setOtp] = useState(["", "", "", ""]);
@@ -30,21 +39,29 @@ export default function SetPasswordScreen() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-
     const otpRefs = useRef<Array<TextInput | null>>([]);
 
+    const userEmail = email || interestData?.email || "";
 
-    const email = interestData?.email || "";
-
+    // ✅ UPDATED: Send OTP using hook
     const handleVerifyEmail = () => {
-        if (!email) {
+        if (!userEmail) {
             Alert.alert("Error", "No email found. Please submit an interest form first.");
             return;
         }
 
-
-        Alert.alert("OTP Sent", "A 4-digit OTP has been sent to your email.");
-        setStep(2);
+        sendOtp(
+            { email: userEmail },
+            {
+                onSuccess: () => {
+                    Alert.alert("OTP Sent", "A 4-digit OTP has been sent to your email.");
+                    setStep(2);
+                },
+                onError: (error: any) => {
+                    Alert.alert("Error", error.message || "Failed to send OTP");
+                },
+            }
+        );
     };
 
     const handleOTPChange = (value: string, index: number) => {
@@ -54,15 +71,13 @@ export default function SetPasswordScreen() {
         newOtp[index] = value;
         setOtp(newOtp);
 
-
         if (value && index < 3) {
             otpRefs.current[index + 1]?.focus();
         }
     };
 
+    // ✅ UPDATED: Verify OTP and Set Password
     const handleSubmit = async () => {
-        clearError();
-
         const otpValue = otp.join("");
 
         if (otpValue.length !== 4) {
@@ -85,29 +100,48 @@ export default function SetPasswordScreen() {
             return;
         }
 
-        try {
+        // Step 1: Verify OTP first
+        verifyOtp(
+            { email: userEmail, otp: otpValue },
+            {
+                onSuccess: (data) => {
+                    if (data.isValid && data.token) {
+                        // Store token and proceed to set password
+                        setOtpToken(data.token);
 
-            await setPassword(email, passwordInput);
-
-            Alert.alert(
-                "Success!",
-                "Your password has been set successfully. You can now login.",
-                [
-                    {
-                        text: "OK",
-                        onPress: () => router.replace({
-                            pathname: "/(login)/login-form",
-                            params: {
-                                showProfileSetup: "true"
-                            },
-                        }),
-                    },
-                ]
-            );
-        } catch (err) {
-            Alert.alert("Error", error || "Failed to set password. Please try again.");
-        }
+                        // Step 2: Set password with token
+                        setPassword(
+                            { token: data.token, password: passwordInput },
+                            {
+                                onSuccess: () => {
+                                    Alert.alert(
+                                        "Success!",
+                                        "Your password has been set successfully. You can now login.",
+                                        [
+                                            {
+                                                text: "OK",
+                                                onPress: () => router.replace("/(unauthenticated)/profile"),
+                                            },
+                                        ]
+                                    );
+                                },
+                                onError: (error: any) => {
+                                    Alert.alert("Error", error.message || "Failed to set password");
+                                },
+                            }
+                        );
+                    } else {
+                        Alert.alert("Error", "Invalid OTP. Please try again.");
+                    }
+                },
+                onError: (error: any) => {
+                    Alert.alert("Error", error.message || "OTP verification failed");
+                },
+            }
+        );
     };
+
+    const isLoading = isSending || isVerifying || isSettingPassword;
 
     return (
         <>
@@ -116,7 +150,6 @@ export default function SetPasswordScreen() {
                 colors={["#176192", "#1D548D", "#264387"]}
                 style={[styles.container, { paddingBottom: bottom }]}
             >
-                {/* Header */}
                 <TopBar showDrawer={false} showNotifications={false} />
                 <KeyboardAwareScrollView
                     contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 20 }]}
@@ -137,12 +170,12 @@ export default function SetPasswordScreen() {
 
                     {/* Form */}
                     <View style={styles.formContainer}>
-                        {/* Email (Read-only, from context) */}
+                        {/* Email (Read-only) */}
                         <TextInput
                             style={[styles.input, styles.inputDisabled]}
                             placeholder="Username (Auto populated) Email ID"
                             placeholderTextColor="rgba(255,255,255,0.6)"
-                            value={email}
+                            value={userEmail}
                             editable={false}
                         />
 
@@ -238,13 +271,6 @@ export default function SetPasswordScreen() {
                                         </TouchableOpacity>
                                     </View>
                                 </View>
-
-                                {/* Error Message from Context */}
-                                {error && (
-                                    <View style={styles.errorContainer}>
-                                        <Text style={styles.errorText}>{error}</Text>
-                                    </View>
-                                )}
 
                                 {/* Submit Button */}
                                 <TouchableOpacity
