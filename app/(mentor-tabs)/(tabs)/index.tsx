@@ -24,7 +24,7 @@ import Animated, {
 } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-export default function MentorDashboard({ navigation }: { navigation: any }) {
+export default function MentorDashboard() {
   const [searchText, setSearchText] = useState("")
   const [now] = useState(new Date())
   const router = useRouter();
@@ -327,7 +327,6 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
                   key={i}
                   data={e}
                   dataKey={i.toString()}
-                  navigation={navigation}
                   onMenuPress={() => { }}
                 />
               ))}
@@ -552,3 +551,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 })
+
+

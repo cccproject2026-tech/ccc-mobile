@@ -26,7 +26,7 @@ export default function MentorDrawerLayout() {
       }}
     >
       <Drawer.Screen
-        name="index"
+        name="(tabs)"
         options={{
           headerShown: false,
           drawerItemStyle: { display: 'none' },
