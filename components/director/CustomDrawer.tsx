@@ -1,9 +1,8 @@
 import { icons } from '@/constants/images';
 import { MenuItem } from '@/constants/mockData';
-import { useAuth } from '@/context/AuthContext'; // ADD THIS
+import { useAuthStore, useProfileStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { CommonActions } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -14,11 +13,13 @@ interface CustomDrawerProps extends DrawerContentComponentProps {
     expandAllByDefault?: boolean;
     userRole?: 'director' | 'pastor' | 'mentor';
 }
-
 export default function CustomDrawerContent(props: CustomDrawerProps) {
     const router = useRouter();
-    const { logout, user } = useAuth(); // ADD THIS
+    const { bottom } = useSafeAreaInsets();
 
+    // ✅ UPDATED: Use auth store directly
+    const { logout } = useAuthStore();
+    const { profile } = useProfileStore()
     const initializeExpandedItems = (items: MenuItem[], expandAll: boolean) => {
         const result: { [key: string]: boolean } = {};
 
@@ -35,25 +36,33 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
         return result;
     };
 
+    const [expandedItems, setExpandedItems] = useState(() =>
+        initializeExpandedItems(props.menuItems, !!props.expandAllByDefault)
+    );
+
+    const toggleExpand = (id: string) => {
+        setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
     const handleLogoPress = () => {
         props.navigation.closeDrawer();
 
         switch (props.userRole) {
             case 'director':
-                router.replace('/(director-tabs)/(tabs)');
+                router.push('/(director)/(tabs)');
                 break;
             case 'pastor':
-                router.replace('/(pastor-tabs)/(tabs)');
+                router.push('/(pastor)/(tabs)');
                 break;
             case 'mentor':
-                router.replace('/(mentor-tabs)');
+                router.push('/(mentor)');
                 break;
             default:
-                router.replace('/');
+                router.push('/');
         }
     };
 
-    // ADD THIS FUNCTION
+    // ✅ SIMPLIFIED: Logout function
     const handleLogout = async () => {
         Alert.alert(
             'Log Out',
@@ -68,48 +77,19 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            console.log('🔓 Starting logout process...');
+                            console.log('🔓 Logging out...');
 
-                            // Step 1: Close drawer immediately
+                            // Close drawer first
                             props.navigation.closeDrawer();
 
-                            if (props.userRole === 'pastor') {
-                                await logout();
-                                console.log('✅ Auth state cleared');
+                            // Logout (clears all auth state)
+                            await logout();
 
-                                // Step 3: Reset navigation stack using drawer navigation
-                                props.navigation.dispatch(
-                                    CommonActions.reset({
-                                        index: 0,
-                                        routes: [{ name: 'index' }],
-                                    })
-                                );
+                            console.log('✅ Logged out successfully');
 
-                                // Step 4: Also use expo-router to ensure we're at root
-                                setTimeout(() => {
-                                    while (router.canGoBack()) {
-                                        router.back();
-                                    }
-                                    router.replace('/');
-                                }, 100);
-
-                                console.log('✅ Logout complete');
-                            } else {
-                                props.navigation.dispatch(
-                                    CommonActions.reset({
-                                        index: 0,
-                                        routes: [{ name: 'index' }],
-                                    })
-                                );
-
-                                // Step 4: Also use expo-router to ensure we're at root
-                                setTimeout(() => {
-                                    while (router.canGoBack()) {
-                                        router.back();
-                                    }
-                                    router.replace('/');
-                                }, 100);
-                            }
+                            // ✅ SIMPLIFIED: Just navigate to root
+                            // The router will handle the rest based on auth state
+                            router.replace('/');
 
                         } catch (error) {
                             console.error('❌ Logout failed:', error);
@@ -121,19 +101,13 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
         );
     };
 
-
-
-    const [expandedItems, setExpandedItems] = useState(() =>
-        initializeExpandedItems(props.menuItems, !!props.expandAllByDefault)
-    );
-    const { bottom } = useSafeAreaInsets();
-
-    const toggleExpand = (id: string) => {
-        setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
-    };
-
-    // UPDATE THIS FUNCTION
-    const renderMenuItem = (item: MenuItem, isNested = false, index: number, totalItems: number) => {
+    // ✅ UPDATED: Simplified menu item rendering
+    const renderMenuItem = (
+        item: MenuItem,
+        isNested = false,
+        index: number,
+        totalItems: number
+    ) => {
         const hasChildren = item.children && item.children.length > 0;
         const isExpanded = expandedItems[item.id];
         const isLastItem = index === totalItems - 1;
@@ -143,15 +117,21 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                 <TouchableOpacity
                     style={[styles.drawerItem, isNested && styles.nestedItem]}
                     onPress={() => {
-                        // Handle logout separately
+                        // ✅ Handle logout
                         if (item.id === 'logout') {
                             handleLogout();
                             return;
                         }
 
+                        // Handle expandable items
                         if (hasChildren) {
                             toggleExpand(item.id);
-                        } else if (item.route) {
+                            return;
+                        }
+
+                        // Navigate to route
+                        if (item.route) {
+                            props.navigation.closeDrawer();
                             router.push(item.route as any);
                         }
                     }}
@@ -161,7 +141,11 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                             {item.iconType === 'image' ? (
                                 <Image source={item.icon} style={styles.itemIcon} />
                             ) : (
-                                <Ionicons name={item.icon as any} size={Platform.OS === 'android' ? 20 : 22} color="#0A5A8A" />
+                                <Ionicons
+                                    name={item.icon as any}
+                                    size={Platform.OS === 'android' ? 20 : 22}
+                                    color="#0A5A8A"
+                                />
                             )}
                         </View>
                         <Text style={styles.drawerLabel}>{item.label}</Text>
@@ -172,7 +156,11 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                         )}
                     </View>
                     {item.showChevron && !hasChildren && (
-                        <Ionicons name="chevron-forward" size={Platform.OS === 'android' ? 16 : 18} color="#999" />
+                        <Ionicons
+                            name="chevron-forward"
+                            size={Platform.OS === 'android' ? 16 : 18}
+                            color="#999"
+                        />
                     )}
                     {hasChildren && (
                         <Ionicons
@@ -205,9 +193,8 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                 <View style={styles.avatarContainer}>
                     <Image source={icons.myProfile} style={styles.avatar} />
                 </View>
-                {/* Show user name from context if available */}
                 <Text style={styles.userName}>
-                    {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
+                    {profile ? `${profile.firstName} ${profile.lastName}` : 'Guest User'}
                 </Text>
                 <TouchableOpacity style={styles.logoButton} onPress={handleLogoPress}>
                     <Image
@@ -223,7 +210,9 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                {props.menuItems.map((item, index) => renderMenuItem(item, false, index, props.menuItems.length))}
+                {props.menuItems.map((item, index) =>
+                    renderMenuItem(item, false, index, props.menuItems.length)
+                )}
             </ScrollView>
 
             {/* Footer - Contact Information */}
@@ -232,11 +221,19 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
             }]}>
                 <Text style={styles.footerTitle}>Contact Information</Text>
                 <View style={styles.contactRow}>
-                    <Ionicons name="call" size={Platform.OS === 'android' ? 14 : 16} color="#FFFFFF" />
+                    <Ionicons
+                        name="call"
+                        size={Platform.OS === 'android' ? 14 : 16}
+                        color="#FFFFFF"
+                    />
                     <Text style={styles.contactText}>: 269-471-0159</Text>
                 </View>
                 <View style={styles.contactRow}>
-                    <Ionicons name="mail" size={Platform.OS === 'android' ? 14 : 16} color="#FFFFFF" />
+                    <Ionicons
+                        name="mail"
+                        size={Platform.OS === 'android' ? 14 : 16}
+                        color="#FFFFFF"
+                    />
                     <Text style={styles.contactText}>: communitychange@andrews.edu</Text>
                 </View>
                 <View style={styles.footerLogo}>
@@ -250,6 +247,7 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
         </View>
     );
 }
+
 
 
 const styles = StyleSheet.create({

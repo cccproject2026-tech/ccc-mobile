@@ -13,7 +13,7 @@ import { icons } from "@/constants/images"
 import { mentorExploreItems } from "@/constants/mockData"
 import { formatClock, formatDate } from "@/utils/date"
 import { LinearGradient } from "expo-linear-gradient"
-import { useRouter } from "expo-router"
+import { Route, useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import React, { useMemo, useState } from "react"
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native"
@@ -258,7 +258,7 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
                   <RoadMapCard data={e} dataKey={i.toString()} key={i} />
                 ))}
               </View>
-              <View className="w-full flex justify-end">
+              <View className="flex justify-end w-full">
                 <Button
                   buttonClass="!w-[40%] !h-11"
                   bgColor="white"
@@ -292,13 +292,7 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
                     key={item.id}
                     icon={item.icon}
                     title={item.title}
-                    onPress={() => {
-                      if (item.title === 'Track Progress') {
-                        router.push('/(mentor-tabs)/progress-tracker');
-                      } else {
-                        console.log(`Pressed ${item.title}`);
-                      }
-                    }}
+                    route={item.route as Route}
                   />
                 ))}
               </View>

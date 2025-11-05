@@ -15,7 +15,10 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library so you can select a profile picture.",
         "NSPhotoLibraryAddUsageDescription": "This app needs permission to save photos to your library.",
-        "UISupportsDocumentBrowser": true
+        "UISupportsDocumentBrowser": true,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
@@ -64,7 +67,8 @@
         {
           "iCloudContainerEnvironment": "Production"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
