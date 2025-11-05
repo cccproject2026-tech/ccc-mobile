@@ -1,0 +1,32 @@
+export const ENDPOINTS = {
+    // Authentication (Unauthenticated routes)
+    AUTH: {
+        LOGIN: '/auth/login',
+        SEND_OTP: '/auth/send-otp',
+        VERIFY_OTP: '/auth/verify-otp',
+        SET_PASSWORD: '/auth/set-password',
+        FORGOT_PASSWORD: '/auth/forgot-password',
+        RESET_PASSWORD: '/auth/reset-password',
+        REFRESH_TOKEN: '/auth/refresh-token',
+        LOGOUT: '/auth/logout',
+    },
+
+    // Users
+    USERS: {
+        GET_USER: (userId: string) => `/users/${userId}`,
+        CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
+        GET_INTERESTS: (email: string) => `/interests/by-email/${email}`
+    },
+
+    // Pastor Onboarding (if separate from auth)
+    ONBOARDING: {
+        SUBMIT_INTEREST: '/interests',
+        CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
+    },
+
+    // Profile (Authenticated routes)
+    PROFILE: {
+        UPDATE_PROFILE: '/users/me',
+        UPLOAD_AVATAR: '/users/me/avatar',
+    },
+} as const;
