@@ -295,7 +295,10 @@ export default function MentorDashboard() {
                     onPress={() => {
                       if (item.title === 'Track Progress') {
                         router.push('/(mentor-tabs)/progress-tracker');
-                      } else {
+                      } else if (item.title === 'Assessment') {
+                        router.push('./assessments-v2');
+                      }
+                      else {
                         console.log(`Pressed ${item.title}`);
                       }
                     }}

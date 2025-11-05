@@ -120,6 +120,34 @@ export default function MentorTabLayout() {
                     <Tabs.Screen name="(index)" options={{ href: null }} />
                     <Tabs.Screen name="(assessments)" options={{ href: null }} />
                     <Tabs.Screen name="(roadmap)" options={{ href: null }} />
+                    <Tabs.Screen
+                        name="assessments-v2"
+                        options={{
+                            href: null,
+                            title: 'Assessments Library'
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="assessments-v2/select-assessment"
+                        options={{
+                            href: null,
+                            title: 'Select Assessment'
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="assessments-v2/create-assessment"
+                        options={{
+                            href: null,
+                            title: 'Create Assessment'
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="assessments-v2/assign-to"
+                        options={{
+                            href: null,
+                            title: 'Assign To'
+                        }}
+                    />
 
                     {/* Other mentor-area screens not in tab bar */}
                     <Tabs.Screen name="new-roadmap" options={{ href: null }} />

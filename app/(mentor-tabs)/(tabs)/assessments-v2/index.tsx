@@ -1,0 +1,240 @@
+import AssessmentMenuBottomSheet from "@/components/build-components/AssessmentMenuBottomSheet";
+import AssessmentCard from "@/components/build-components/cards/assessment-card";
+import SearchBar from "@/components/director/SearchBar";
+import TopBar from "@/components/director/TopBar";
+import { menteeProfiles } from "@/constants/mockMentees";
+import { dummyRoadMaps } from "@/lib/assessments/mock";
+import { Assessment } from "@/lib/assessments/types";
+import { Ionicons } from "@expo/vector-icons";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React from "react";
+import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+export default function MentorAssessmentsLibrary() {
+    const { bottom } = useSafeAreaInsets();
+    const router = useRouter();
+
+    const [search, setSearch] = React.useState("");
+    const [selectedMentee, setSelectedMentee] = React.useState<string | null>(
+        null
+    );
+    const [selectedAssessment, setSelectedAssessment] =
+        React.useState<Assessment | null>(null);
+    const bottomSheetRef = React.useRef<BottomSheetModal>(null);
+
+    const mentees = React.useMemo(() => Object.values(menteeProfiles), []);
+
+    const filteredAssessments = React.useMemo(() => {
+        const q = search.trim().toLowerCase();
+        let list: Assessment[] = dummyRoadMaps;
+        if (q.length > 0) {
+            list = list.filter(
+                (a) =>
+                    a.title.toLowerCase().includes(q) ||
+                    a.description.toLowerCase().includes(q)
+            );
+        }
+        return list;
+    }, [search]);
+
+    const handleOpenAssessment = (assessment: Assessment) => {
+        if (assessment.type === "CMA") {
+            router.push("/(mentor-tabs)/assessments/cma-survey-page");
+        } else {
+            router.push("/(mentor-tabs)/assessments/(pmp)/pmp-survey-page");
+        }
+    };
+
+    const handleMenuPress = (assessment: Assessment) => {
+        console.log("Menu pressed:", assessment);
+        setSelectedAssessment(assessment);
+        bottomSheetRef.current?.present();
+    };
+
+    const handleAssignTo = (assessment: Assessment) => {
+        bottomSheetRef.current?.dismiss();
+        router.push({
+            pathname: "/(mentor-tabs)/(tabs)/assessments-v2/assign-to",
+            params: { assessmentId: assessment.id },
+        });
+    };
+
+    const handleEditSurvey = (assessment: Assessment) => {
+        console.log("Edit survey:", assessment);
+        // Implement edit survey functionality
+    };
+
+    const handleDeleteSurvey = (assessment: Assessment) => {
+        console.log("Delete survey:", assessment);
+        // Implement delete survey functionality
+    };
+
+    return (
+        <LinearGradient colors={["#155C93", "#1B2B60"]} style={{ flex: 1 }}>
+            <TopBar
+                userName="John Doe"
+                showUserName
+                notifications={3}
+                role="mentor"
+            />
+
+            <View style={{ paddingHorizontal: 16 }}>
+                <View
+                    style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
+                >
+                    <Pressable
+                        onPress={() => router.back()}
+                        hitSlop={10}
+                        style={{ paddingRight: 8 }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color="#E2E8F0" />
+                    </Pressable>
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ color: "#E2E8F0", fontSize: 20, fontWeight: "700" }}>
+                            Assessment
+                        </Text>
+                        <Text style={{ color: "#CFE7F5", fontSize: 12, marginTop: 2 }}>
+                            Library
+                        </Text>
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+                        <View className="w-[30px] h-[30px] rounded-md justify-center items-center border-2 border-white/40">
+                            <Pressable
+                                hitSlop={8}
+                                onPress={() =>
+                                    router.push(
+                                        "/(mentor-tabs)/(tabs)/assessments-v2/select-assessment"
+                                    )
+                                }
+                            >
+                                <Ionicons name="checkmark-outline" size={22} color="#E2E8F0" />
+                            </Pressable>
+                        </View>
+                        <Pressable
+                            className="p-1"
+                            onPress={() =>
+                                router.push(
+                                    "/(mentor-tabs)/(tabs)/assessments-v2/create-assessment"
+                                )
+                            }
+                        >
+                            <View className="w-[30px] h-[30px] rounded-md justify-center items-center border-2 border-white/40">
+                                <Ionicons name="add-outline" size={24} color="white" />
+                            </View>
+                        </Pressable>
+                    </View>
+                </View>
+
+                <View style={{ marginTop: 14 }}>
+                    <SearchBar
+                        value={search}
+                        onChangeValue={setSearch}
+                        placeholder="Search"
+                    />
+                </View>
+
+                {/* Avatars Row */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingVertical: 14, gap: 14 }}
+                >
+                    {/* Library pill */}
+                    <Pressable
+                        onPress={() => setSelectedMentee(null)}
+                        style={{ alignItems: "center", gap: 8 }}
+                    >
+                        <View
+                            style={{
+                                width: 64,
+                                height: 64,
+                                borderRadius: 32,
+                                borderWidth: 3,
+                                borderColor: "#8BD6FF",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                backgroundColor: "#0D4C78",
+                            }}
+                        >
+                            <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>
+                                Library
+                            </Text>
+                        </View>
+                        <Text style={{ color: "#E2E8F0", fontSize: 12 }}>Library</Text>
+                    </Pressable>
+
+                    {mentees.map((m) => (
+                        <Pressable
+                            key={m.id}
+                            onPress={() => setSelectedMentee(m.id)}
+                            style={{ alignItems: "center", gap: 8 }}
+                        >
+                            <View
+                                style={{
+                                    width: 64,
+                                    height: 64,
+                                    borderRadius: 32,
+                                    borderWidth: selectedMentee === m.id ? 3 : 0,
+                                    borderColor: "#8BD6FF",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    overflow: "hidden",
+                                    backgroundColor: "#0D4C78",
+                                }}
+                            >
+                                <Image
+                                    source={m.avatar}
+                                    style={{ width: 64, height: 64, resizeMode: "cover" }}
+                                />
+                            </View>
+                            <Text
+                                style={{ color: "#E2E8F0", fontSize: 12 }}
+                                numberOfLines={1}
+                            >
+                                {m.name}
+                            </Text>
+                        </Pressable>
+                    ))}
+                </ScrollView>
+            </View>
+
+            {/* Cards List */}
+            <View style={{ flex: 1 }}>
+                <ScrollView
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        paddingHorizontal: 16,
+                        paddingBottom: bottom + 20,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {filteredAssessments.map((item) => (
+                        <View key={item.id} style={{ marginBottom: 16 }}>
+                            <AssessmentCard
+                                data={item}
+                                onPress={handleOpenAssessment}
+                                onMeetingPress={() => { }}
+                                onMeetingIconPress={() => { }}
+                                onCustomizedPress={() => { }}
+                                onMenuPress={() => handleMenuPress(item)}
+                            />
+                        </View>
+                    ))}
+                </ScrollView>
+            </View>
+
+            {/* Assessment Menu Bottom Sheet */}
+            <AssessmentMenuBottomSheet
+                ref={bottomSheetRef}
+                assessment={selectedAssessment}
+                onClose={() => setSelectedAssessment(null)}
+                onAssignTo={handleAssignTo}
+                onEditSurvey={handleEditSurvey}
+                onDeleteSurvey={handleDeleteSurvey}
+            />
+        </LinearGradient>
+    );
+}

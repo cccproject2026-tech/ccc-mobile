@@ -1,5 +1,6 @@
 import { Assessment } from "@/lib/assessments/types";
 import { getFontSize, getIconSize, getSpacing, isIOS, moderateScale, verticalScale } from "@/utils/responsive";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
@@ -10,12 +11,14 @@ export default function AssessmentCard({
   onMeetingPress,
   onMeetingIconPress,
   onCustomizedPress,
+  onMenuPress,
 }: {
   data: Assessment;
   onPress?: (data: Assessment) => void;
   onMeetingPress?: () => void;
   onMeetingIconPress?: () => void;
   onCustomizedPress?: () => void;
+  onMenuPress?: () => void;
 }) {
   // iOS compression factors
   const fontCompress = isIOS ? 0.92 : 1;
@@ -24,8 +27,7 @@ export default function AssessmentCard({
   const cardCompress = isIOS ? 0.96 : 1;
 
   return (
-    <TouchableOpacity
-      onPress={() => onPress && onPress(data)}
+    <View
       style={{
         width: '100%',
         backgroundColor: '#194F82',
@@ -35,9 +37,32 @@ export default function AssessmentCard({
         marginVertical: getSpacing(2.5 * spacingCompress),
         borderWidth: 1,
         borderColor: '#FFFFFF73',
+        position: 'relative',
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', width: '100%' }}>
+      {/* Three dots menu button */}
+      <TouchableOpacity
+        onPress={(e) => {
+          e.stopPropagation();
+          onMenuPress?.();
+        }}
+        style={{
+          position: 'absolute',
+          top: getSpacing(14 * spacingCompress),
+          right: getSpacing(14 * spacingCompress),
+          zIndex: 10,
+          padding: getSpacing(4 * spacingCompress),
+        }}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons name="ellipsis-vertical" size={getIconSize(20)} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => onPress && onPress(data)}
+        activeOpacity={0.8}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', width: '100%' }}>
         <View style={{ width: moderateScale(130 * imageCompress), alignItems: 'center' }}>
           <View
             style={{
@@ -265,6 +290,7 @@ export default function AssessmentCard({
           ) : null}
         </View>
       )}
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   );
 }

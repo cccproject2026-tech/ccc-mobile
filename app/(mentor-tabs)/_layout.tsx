@@ -24,6 +24,7 @@ export default function MentorDrawerLayout() {
         },
         headerShown: false,
       }}
+      initialRouteName="(tabs)"
     >
       <Drawer.Screen
         name="(tabs)"
