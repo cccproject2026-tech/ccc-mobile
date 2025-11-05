@@ -59,7 +59,7 @@ export const useProfileStore = create<ProfileStore>()(
                 if (current) {
                     const updatedProfile = {
                         ...current,
-                        churches: [...current.churches, church],
+                        chruchDetails: [...current.churchDetails, church],
                     };
                     set({
                         profile: updatedProfile,
@@ -72,11 +72,11 @@ export const useProfileStore = create<ProfileStore>()(
             updateChurch: (churchId, updates) => {
                 const current = get().profile;
                 if (current) {
-                    const updatedChurches = current.churches.map(church =>
+                    const updatedChurches = current.churchDetails.map(church =>
                         church.id === churchId ? { ...church, ...updates } : church
                     );
                     set({
-                        profile: { ...current, churches: updatedChurches },
+                        profile: { ...current, churchDetails: updatedChurches },
                         lastFetchedAt: Date.now(),
                     });
                     console.log('✅ Church updated:', churchId);
@@ -86,11 +86,11 @@ export const useProfileStore = create<ProfileStore>()(
             removeChurch: (churchId) => {
                 const current = get().profile;
                 if (current) {
-                    const updatedChurches = current.churches.filter(
+                    const updatedChurches = current.churchDetails.filter(
                         church => church.id !== churchId
                     );
                     set({
-                        profile: { ...current, churches: updatedChurches },
+                        profile: { ...current, churchDetails: updatedChurches },
                         lastFetchedAt: Date.now(),
                     });
                     console.log('✅ Church removed:', churchId);

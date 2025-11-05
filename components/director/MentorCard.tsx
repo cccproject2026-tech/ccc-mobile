@@ -17,7 +17,7 @@ export interface MentorData {
     name: string;
     role: string;
     menteesCount?: number;
-    description: string;
+    description?: string;
     profileImage?: string;
 }
 
@@ -85,6 +85,9 @@ const ContactIcons: React.FC<ContactIconsProps> = ({ layout, onCall, onChat, onM
             </TouchableOpacity>
             <TouchableOpacity style={styles.listIconButton} onPress={onMail}>
                 <Ionicons name="mail-outline" size={getIconSize(16)} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onWhatsApp && onWhatsApp(); }}>
+                <Ionicons name="logo-whatsapp" size={getIconSize(17)} color="#fff" />
             </TouchableOpacity>
         </>
     );
@@ -263,11 +266,12 @@ export default function MentorCard({
                     onCall={onCall}
                     onChat={onChat}
                     onMail={onMail}
+                    onWhatsApp={onWhatsApp}
                 />
 
-                <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onWhatsApp && onWhatsApp(); }}>
+                {/* <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onWhatsApp && onWhatsApp(); }}>
                     <Ionicons name="logo-whatsapp" size={getIconSize(isSmallDevice ? 20 : 22)} color="#fff" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
                 {isSelectionMode && !onMenuPress && !menuItems ? (
 
                     <View style={[styles.listIconButton, {

@@ -3,7 +3,7 @@ import { icons } from "@/constants/images";
 import { useSendOtp } from "@/hooks/auth/useSendOtp";
 import { useSetPassword } from "@/hooks/auth/useSetPassword";
 import { useVerifyOtp } from "@/hooks/auth/useVerifyOtp";
-import { useOnboardingStore } from "@/stores";
+import { useOnboardingStore } from "@/stores/onboarding.store";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
@@ -18,32 +18,34 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+// import { useSendOtp, useVerifyOtp, useSetPassword } from "@/hooks"; // ✅ Commented for now
+
 
 export default function VerifyEmailScreen() {
     const { bottom } = useSafeAreaInsets();
 
-    // ✅ UPDATED: Use Zustand store
-    const { interestData, email, otpToken, setOtpToken } = useOnboardingStore();
+    const { interestData, email, setOtpToken, setEmailVerified, setPasswordSet } = useOnboardingStore();
 
-    // ✅ UPDATED: Use React Query hooks
     const { mutate: sendOtp, isPending: isSending } = useSendOtp();
     const { mutate: verifyOtp, isPending: isVerifying } = useVerifyOtp();
     const { mutate: setPassword, isPending: isSettingPassword } = useSetPassword();
 
-    const [step, setStep] = useState<1 | 2>(1);
+    // ✅ UPDATED: Track OTP verification status
+    const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Email, 2: OTP, 3: Password
     const [otp, setOtp] = useState(["", "", "", ""]);
     const [passwordInput, setPasswordInput] = useState("");
     const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isOtpVerified, setIsOtpVerified] = useState(false); // ✅ ADDED: Track OTP verification
 
     const otpRefs = useRef<Array<TextInput | null>>([]);
 
     const userEmail = email || interestData?.email || "";
 
-    // ✅ UPDATED: Send OTP using hook
+    // ✅ UPDATED: Send OTP
     const handleVerifyEmail = () => {
         if (!userEmail) {
             Alert.alert("Error", "No email found. Please submit an interest form first.");
@@ -54,8 +56,16 @@ export default function VerifyEmailScreen() {
             { email: userEmail },
             {
                 onSuccess: () => {
-                    Alert.alert("OTP Sent", "A 4-digit OTP has been sent to your email.");
-                    setStep(2);
+                    Alert.alert(
+                        "OTP Sent",
+                        `A 4-digit OTP has been sent to ${userEmail}\n\n🧪 For testing, use: 1234`,
+                        [
+                            {
+                                text: "OK",
+                                onPress: () => setStep(2), // Move to OTP entry
+                            },
+                        ]
+                    );
                 },
                 onError: (error: any) => {
                     Alert.alert("Error", error.message || "Failed to send OTP");
@@ -76,8 +86,8 @@ export default function VerifyEmailScreen() {
         }
     };
 
-    // ✅ UPDATED: Verify OTP and Set Password
-    const handleSubmit = async () => {
+    // ✅ UPDATED: Verify OTP first, then move to password
+    const handleVerifyOtp = () => {
         const otpValue = otp.join("");
 
         if (otpValue.length !== 4) {
@@ -85,6 +95,31 @@ export default function VerifyEmailScreen() {
             return;
         }
 
+        verifyOtp(
+            { email: userEmail, otp: otpValue },
+            {
+                onSuccess: (response) => {
+                    if (response.data.isValid) {
+                        // ✅ OTP verified - store token and move to password
+                        setOtpToken(response.data.token);
+                        setEmailVerified(true);
+                        setIsOtpVerified(true);
+                        setStep(3); // Move to password entry
+
+                        Alert.alert("Success", "OTP verified successfully. Please set your password.");
+                    } else {
+                        Alert.alert("Error", "Invalid OTP. Please try again.");
+                    }
+                },
+                onError: (error: any) => {
+                    Alert.alert("Error", error.message || "OTP verification failed");
+                },
+            }
+        );
+    };
+
+    // ✅ UPDATED: Set password only after OTP verification
+    const handleSetPassword = () => {
         if (!passwordInput || !confirmPasswordInput) {
             Alert.alert("Error", "Please fill in all password fields");
             return;
@@ -100,42 +135,29 @@ export default function VerifyEmailScreen() {
             return;
         }
 
-        // Step 1: Verify OTP first
-        verifyOtp(
-            { email: userEmail, otp: otpValue },
+        setPassword(
             {
-                onSuccess: (data) => {
-                    if (data.isValid && data.token) {
-                        // Store token and proceed to set password
-                        setOtpToken(data.token);
+                email: userEmail,
+                password: passwordInput,
+                confirmPassword: confirmPasswordInput
+            },
+            {
+                onSuccess: () => {
+                    setPasswordSet(true);
 
-                        // Step 2: Set password with token
-                        setPassword(
-                            { token: data.token, password: passwordInput },
+                    Alert.alert(
+                        "Success!",
+                        "Your password has been set successfully. You can now complete your profile.",
+                        [
                             {
-                                onSuccess: () => {
-                                    Alert.alert(
-                                        "Success!",
-                                        "Your password has been set successfully. You can now login.",
-                                        [
-                                            {
-                                                text: "OK",
-                                                onPress: () => router.replace("/(unauthenticated)/profile"),
-                                            },
-                                        ]
-                                    );
-                                },
-                                onError: (error: any) => {
-                                    Alert.alert("Error", error.message || "Failed to set password");
-                                },
-                            }
-                        );
-                    } else {
-                        Alert.alert("Error", "Invalid OTP. Please try again.");
-                    }
+                                text: "OK",
+                                onPress: () => router.replace("/(unauthenticated)"),
+                            },
+                        ]
+                    );
                 },
                 onError: (error: any) => {
-                    Alert.alert("Error", error.message || "OTP verification failed");
+                    Alert.alert("Error", error.message || "Failed to set password");
                 },
             }
         );
@@ -201,12 +223,20 @@ export default function VerifyEmailScreen() {
                             </TouchableOpacity>
                         )}
 
-                        {/* Step 2: OTP + Password */}
+                        {/* Step 2: OTP Entry (Only shown after email verification) */}
                         {step === 2 && (
                             <>
                                 <Text style={styles.otpLabel}>
                                     An OTP has been sent to your Registered Email ID.{"\n"}
                                     Please fill the OTP to verify Email ID
+                                    {"\n\n"}
+                                    <Text style={{
+                                        color: '#FFD700',
+                                        fontSize: 14,
+                                        fontWeight: '600',
+                                    }}>
+                                        🧪 For testing, use: 1234
+                                    </Text>
                                 </Text>
 
                                 {/* OTP Inputs */}
@@ -221,9 +251,38 @@ export default function VerifyEmailScreen() {
                                             keyboardType="number-pad"
                                             maxLength={1}
                                             selectTextOnFocus
+                                            editable={!isLoading}
                                         />
                                     ))}
                                 </View>
+
+                                {/* Verify OTP Button */}
+                                <TouchableOpacity
+                                    style={styles.submitButton}
+                                    onPress={handleVerifyOtp}
+                                    disabled={isLoading || otp.join("").length !== 4}
+                                >
+                                    {isLoading ? (
+                                        <ActivityIndicator color="#1A5490" />
+                                    ) : (
+                                        <Text style={styles.submitButtonText}>Verify OTP</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </>
+                        )}
+
+                        {/* Step 3: Password Entry (Only shown after OTP verification) */}
+                        {step === 3 && isOtpVerified && (
+                            <>
+                                <Text style={{
+                                    color: 'rgba(255,255,255,0.9)',
+                                    fontSize: 16,
+                                    marginBottom: 16,
+                                    textAlign: 'center',
+                                    fontWeight: '600',
+                                }}>
+                                    Create your account password
+                                </Text>
 
                                 {/* Password Inputs */}
                                 <View style={styles.passwordInputs}>
@@ -236,6 +295,7 @@ export default function VerifyEmailScreen() {
                                             onChangeText={setPasswordInput}
                                             secureTextEntry={!showPassword}
                                             autoCapitalize="none"
+                                            editable={!isLoading}
                                         />
                                         <TouchableOpacity
                                             onPress={() => setShowPassword(!showPassword)}
@@ -258,6 +318,7 @@ export default function VerifyEmailScreen() {
                                             onChangeText={setConfirmPasswordInput}
                                             secureTextEntry={!showConfirmPassword}
                                             autoCapitalize="none"
+                                            editable={!isLoading}
                                         />
                                         <TouchableOpacity
                                             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -272,16 +333,16 @@ export default function VerifyEmailScreen() {
                                     </View>
                                 </View>
 
-                                {/* Submit Button */}
+                                {/* Set Password Button */}
                                 <TouchableOpacity
                                     style={styles.submitButton}
-                                    onPress={handleSubmit}
+                                    onPress={handleSetPassword}
                                     disabled={isLoading}
                                 >
                                     {isLoading ? (
                                         <ActivityIndicator color="#1A5490" />
                                     ) : (
-                                        <Text style={styles.submitButtonText}>Submit</Text>
+                                        <Text style={styles.submitButtonText}>Set Password</Text>
                                     )}
                                 </TouchableOpacity>
                             </>
@@ -297,6 +358,7 @@ export default function VerifyEmailScreen() {
         </>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {

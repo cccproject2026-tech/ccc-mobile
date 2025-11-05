@@ -1,5 +1,5 @@
-import { ChurchInfo } from './auth.types';
-export type InterestStatus = 'none' | 'pending' | 'approved' | 'rejected';
+import { ChurchInfo, UserStatus } from './auth.types';
+export type InterestStatus = 'new' | 'pending' | 'accepted' | 'rejected';
 
 // Interest form data
 export interface InterestFormData {
@@ -7,11 +7,11 @@ export interface InterestFormData {
     lastName: string;
     phoneNumber: string;
     email: string;
-    churches: ChurchInfo[];
+    churchDetails: ChurchInfo[];
     title: string;
     yearsInMinistry: string;
     conference: string;
-    currentCommunityServiceProjects: string;
+    currentCommunityProjects: string;
     interests: string[];
     comments: string;
     submittedAt?: string;
@@ -20,13 +20,17 @@ export interface InterestFormData {
 
 // API Response for interest submission
 export interface SubmitInterestResponse {
-    applicationId: string;
-    message: string;
-    status: InterestStatus;
+    data: {
+        id: string;
+        userId: string;
+    }
 }
 
 // API Response for approval status check
 export interface ApprovalStatusResponse {
+    data: {
+        status: UserStatus
+    }
     applicationId: string;
     status: InterestStatus;
     approvedAt?: string;

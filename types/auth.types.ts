@@ -1,7 +1,10 @@
-export type UserRole = 'pastor' | 'mentor' | 'director';
+export type UserRole = 'pastor' | 'mentor' | 'director' | 'pending'
+
+export type UserStatus = 'new' | 'pending' | 'accepted' | 'rejected';
+
 
 export interface ChurchInfo {
-    id: string;
+    id?: string;
     churchName: string;
     churchPhone: string;
     churchWebsite: string;
@@ -25,7 +28,7 @@ export interface PastorProfile extends User {
     firstName: string;
     lastName: string;
     phoneNumber: string;
-    churches: ChurchInfo[];
+    churchDetails: ChurchInfo[];
     title: string;
     yearsInMinistry: string;
     conference: string;
@@ -47,11 +50,29 @@ export interface LoginCredentials {
     password: string;
 }
 
-export interface LoginResponse {
-    user: User | PastorProfile;
-    accessToken: string;
-    refreshToken: string;
+export interface LoginUser {
+    id: string;
+    email: string;
+    status: UserStatus;
+    role: UserRole;
+    firstName?: string;
+    lastName?: string;
+    isEmailVerified?: boolean
 }
+export interface LoginResponse {
+    success: boolean;
+    message: string;
+    data: {
+        accessToken: string;
+        refreshToken: string;
+        user: LoginUser;
+    };
+}
+export interface AuthTokens {
+    accessToken: string; // ✅ Must be string
+    refreshToken: string; // ✅ Must be string
+}
+
 
 // OTP flow types
 export interface SendOtpRequest {
@@ -59,31 +80,38 @@ export interface SendOtpRequest {
 }
 
 export interface SendOtpResponse {
-    message: string;
-    expiresIn: number; // seconds
+    success: boolean;
+    data: {
+        message: string;
+        expiresIn: number; // seconds
+    };
 }
 
+// ✅ Verify OTP Types
 export interface VerifyOtpRequest {
     email: string;
     otp: string;
 }
 
 export interface VerifyOtpResponse {
-    isValid: boolean;
-    message: string;
-    token?: string; // Temporary token for setting password
+    success: boolean;
+    data: {
+        isValid: boolean;
+        token: string; // Temporary token for password setting
+        message: string;
+    };
 }
-
 // Password flow types
 export interface SetPasswordRequest {
-    token: string; // From OTP verification
+    email: string;
     password: string;
+    confirmPassword: string;
 }
 
 export interface SetPasswordResponse {
-    user: PastorProfile;
-    accessToken: string;
-    refreshToken: string;
+    status: boolean;
+    message: string;
+    data: any
 }
 
 export interface ForgotPasswordRequest {

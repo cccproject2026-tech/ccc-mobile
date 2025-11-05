@@ -142,6 +142,12 @@ export default function PastorTabLayout() {
                             href: null,
                         }}
                     />
+                    <Tabs.Screen
+                        name="profile/upload"
+                        options={{
+                            href: null,
+                        }}
+                    />
 
 
                     {/* Hide the auto-generated routes from the folder name */}

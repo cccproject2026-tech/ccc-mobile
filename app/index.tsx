@@ -459,8 +459,8 @@ export default function RoleSelectionScreen() {
     const router = useRouter();
     const [isClearing, setIsClearing] = useState(false);
 
+    // ✅ UPDATED: Only check auth, not profile
     const { user, isAuthenticated, logout } = useAuthStore();
-    const { isProfileComplete } = useOnboardingStore();
     const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
     const clearProfile = useProfileStore((state) => state.clearProfile);
 
@@ -489,6 +489,7 @@ export default function RoleSelectionScreen() {
                             console.log('✅ All data cleared');
 
                             Alert.alert('Success', 'All data cleared successfully!');
+
                         } catch (error) {
                             console.error('Error clearing storage:', error);
                             Alert.alert('Error', 'Failed to clear data');
@@ -501,28 +502,31 @@ export default function RoleSelectionScreen() {
         );
     };
 
+    // ✅ UPDATED: Simplified role selection logic
     const onSelect = (role: RoleType) => {
         console.log('🎯 Role selected:', role);
+        console.log('🔐 Authenticated:', isAuthenticated);
+        console.log('👤 User:', user);
 
         if (role === 'pastor') {
             // Pastor requires authentication
             if (isAuthenticated && user?.role === 'pastor') {
-                // Already authenticated pastor
-                if (isProfileComplete) {
-                    router.push('/(pastor)/(tabs)');
-                } else {
-                    router.push('/(unauthenticated)/profile');
-                }
+                // ✅ FIXED: Authenticated pastor goes directly to dashboard
+                console.log('✅ Navigating to pastor dashboard');
+                router.push('/(pastor)/(tabs)');
             } else {
                 // Not authenticated, go to login/welcome
+                console.log('📝 Navigating to unauthenticated flow');
                 router.push('/(unauthenticated)');
             }
         } else if (role === 'mentor') {
             // Mentor - Direct access for testing
-            // router.push('/(mentor)');
+            console.log('🧪 Navigating to mentor (testing)');
+            router.push('/(mentor-tabs)');
         } else if (role === 'director') {
             // Director - Direct access for testing
-            // router.push('/(director)/(tabs)');
+            console.log('🧪 Navigating to director (testing)');
+            router.push('/(director)/(tabs)');
         }
     };
 
@@ -560,6 +564,7 @@ export default function RoleSelectionScreen() {
                                 {('firstName' in user ? user.firstName : 'User')}{' '}
                                 {('lastName' in user ? user.lastName : '')}
                             </Text>
+                            {' '}({user.role})
                         </Text>
                     </View>
                 )}
@@ -573,8 +578,8 @@ export default function RoleSelectionScreen() {
                         <Text style={styles.roleButtonText}>Pastor</Text>
                         <Text style={styles.roleDescription}>
                             {isAuthenticated && user?.role === 'pastor'
-                                ? 'Go to Dashboard'
-                                : 'Login or submit interest to join'}
+                                ? '✅ Go to Dashboard'
+                                : '📝 Login or submit interest to join'}
                         </Text>
                     </Pressable>
 
@@ -589,7 +594,7 @@ export default function RoleSelectionScreen() {
                     >
                         <Text style={styles.roleButtonText}>Mentor</Text>
                         <Text style={styles.roleDescription}>
-                            Direct access (Testing)
+                            🧪 Direct access (Testing)
                         </Text>
                     </Pressable>
 
@@ -604,7 +609,7 @@ export default function RoleSelectionScreen() {
                     >
                         <Text style={styles.roleButtonText}>Director</Text>
                         <Text style={styles.roleDescription}>
-                            Direct access (Testing)
+                            🧪 Direct access (Testing)
                         </Text>
                     </Pressable>
                 </View>
@@ -613,21 +618,38 @@ export default function RoleSelectionScreen() {
                 <View style={styles.infoBox}>
                     <Text style={styles.infoText}>
                         🔐 <Text style={styles.boldText}>Pastor</Text>: Full authentication
-                        flow
+                        flow with onboarding
                     </Text>
                     <Text style={styles.infoText}>
                         🧪 <Text style={styles.boldText}>Mentor/Director</Text>: Testing
-                        mode (no auth)
+                        mode (no auth required)
                     </Text>
                     <Text style={styles.infoText}>
                         🗑️ <Text style={styles.boldText}>Clear Data</Text>: Reset
-                        everything for testing
+                        everything and start fresh
                     </Text>
                 </View>
+
+                {/* ✅ ADDED: Debug info (only in dev) */}
+                {__DEV__ && (
+                    <View style={styles.debugBox}>
+                        <Text style={styles.debugTitle}>Debug Info:</Text>
+                        <Text style={styles.debugText}>
+                            Authenticated: {isAuthenticated ? 'Yes' : 'No'}
+                        </Text>
+                        <Text style={styles.debugText}>
+                            User Role: {user?.role || 'None'}
+                        </Text>
+                        <Text style={styles.debugText}>
+                            User ID: {user?.id || 'None'}
+                        </Text>
+                    </View>
+                )}
             </View>
         </SafeAreaView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
@@ -734,5 +756,24 @@ const styles = StyleSheet.create({
     },
     boldText: {
         fontWeight: '600',
+    },
+    debugBox: {
+        marginTop: 24,
+        backgroundColor: '#f5f5f5',
+        padding: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+    },
+    debugTitle: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#666',
+        marginBottom: 8,
+    },
+    debugText: {
+        fontSize: 12,
+        color: '#888',
+        marginBottom: 4,
     },
 });

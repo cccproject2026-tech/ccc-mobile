@@ -130,17 +130,14 @@
 // }
 
 
-
-import { AuthProvider } from '@/context/AuthContext';
+import "@/global.css";
+import '@/services/api/interceptors';
 import { useAuthStore } from '@/stores/auth.store';
-import { useOnboardingStore } from '@/stores/onboarding.store';
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import '../global.css';
-
-import '@/services/api/interceptors';
-
+import { KeyboardProvider } from "react-native-keyboard-controller";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -154,12 +151,12 @@ const queryClient = new QueryClient({
 
 function RootLayoutNav() {
   const { isAuthenticated, user } = useAuthStore();
-  const { isProfileComplete } = useOnboardingStore();
 
   // Guard conditions
-  const isPastor = isAuthenticated && user?.role === 'pastor' && isProfileComplete;
+  const isPastor = isAuthenticated && (user?.role === 'pastor');
   const isMentor = isAuthenticated && user?.role === 'mentor';
   const isDirector = isAuthenticated && user?.role === 'director';
+  const showIndex = !isAuthenticated && !user;
   const isUnauthenticated = !isAuthenticated;
 
   return (
@@ -168,25 +165,30 @@ function RootLayoutNav() {
         headerShown: false,
       }}
     >
-      {/* Unauthenticated Routes - Only accessible when NOT logged in */}
+      {/* ✅ ADDED: Root index - Always accessible for role selection */}
+      <Stack.Protected guard={showIndex}>
+        <Stack.Screen name="index" />
+      </Stack.Protected>
+
+      {/* Unauthenticated Routes */}
       <Stack.Protected guard={isUnauthenticated}>
         <Stack.Screen name="(unauthenticated)" />
       </Stack.Protected>
 
-      {/* Pastor Routes - Only accessible when authenticated as pastor with complete profile */}
+      {/* Pastor Routes */}
       <Stack.Protected guard={isPastor}>
         <Stack.Screen name="(pastor)" />
       </Stack.Protected>
 
-      {/* Mentor Routes - Only accessible when authenticated as mentor */}
+      {/* Mentor Routes */}
       <Stack.Protected guard={isMentor}>
         <Stack.Screen name="(mentor)" />
       </Stack.Protected>
 
-      {/* Director Routes - Only accessible when authenticated as director */}
-      <Stack.Protected guard={isDirector}>
-        <Stack.Screen name="(director)" />
-      </Stack.Protected>
+      {/* Director Routes */}
+      {/* <Stack.Protected guard={isDirector}> */}
+      <Stack.Screen name="(director)" />
+      {/* </Stack.Protected> */}
 
       <Stack.Screen name="+not-found" />
     </Stack>
@@ -195,12 +197,16 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <RootLayoutNav />
-        </AuthProvider>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryClientProvider client={queryClient}>
+          <KeyboardProvider>
+            <BottomSheetModalProvider>
+              <RootLayoutNav />
+            </BottomSheetModalProvider>
+          </KeyboardProvider>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </>
   );
 }

@@ -30,6 +30,7 @@ export interface ChurchInfo {
 }
 
 export interface InterestFormData {
+    id?: string;
     firstName: string;
     lastName: string;
     phoneNumber: string;

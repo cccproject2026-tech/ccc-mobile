@@ -11,16 +11,16 @@ export const useVerifyOtp = () => {
     return useMutation({
         mutationFn: (data: VerifyOtpRequest) => authService.verifyOtp(data),
         onSuccess: (data) => {
-            if (data.isValid) {
+            if (data.data.isValid) {
                 setEmailVerified(true);
                 console.log('✅ OTP verified successfully');
 
-                // Store temporary token in state for password setting
-                // You can use a separate store or pass it as navigation param
-                router.push({
-                    pathname: '/(unauthenticated)/set-password',
-                    params: { token: data.token },
-                });
+                // // Store temporary token in state for password setting
+                // // You can use a separate store or pass it as navigation param
+                // router.push({
+                //     pathname: '/(unauthenticated)/set-password',
+                //     params: { token: data.data.token },
+                // });
             }
         },
         onError: (error: any) => {

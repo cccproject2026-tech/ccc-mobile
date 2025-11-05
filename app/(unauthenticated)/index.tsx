@@ -1,6 +1,6 @@
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
-import { useCheckApprovalStatus } from "@/hooks/onboarding/useCheckApprovalStatus";
+import { useCheckUserStatus } from "@/hooks/onboarding/useCheckApprovalStatus";
 import { useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,16 +17,15 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-
 export default function LoginScreen() {
     const { bottom } = useSafeAreaInsets();
 
-    // ✅ UPDATED: Use Zustand store instead of Context
     const { interestStatus, isPasswordSet } = useOnboardingStore();
+    const { isLoading: isCheckingStatus } = useCheckUserStatus();
+    const isPending = interestStatus === 'pending' || interestStatus === 'new';
 
-    // ✅ UPDATED: Auto-poll approval status
-    const { isLoading: isCheckingStatus } = useCheckApprovalStatus();
-
+    console.log('Interest Status : ', interestStatus);
+    console.log('Is Pending : ', isPending);
     const welcomeVideos = [
         {
             id: "welcome-1",
@@ -68,10 +67,8 @@ export default function LoginScreen() {
     ];
 
     const handleLoginClick = () => {
-        // ✅ UPDATED: Route to verify-email if approved but no password
-        if (interestStatus === "approved" && !isPasswordSet) {
+        if (interestStatus === "accepted" && !isPasswordSet) {
             router.push("/(unauthenticated)/set-password");
-
         } else {
             router.push("/(unauthenticated)/login-form");
         }
@@ -102,7 +99,8 @@ export default function LoginScreen() {
                     <TopBar showDrawer={false} showNotifications={false} />
 
                     <View style={styles.topSection}>
-                        {interestStatus === "pending" ? (
+                        {/* ✅ UPDATED: Use isPending variable */}
+                        {isPending ? (
                             <TouchableOpacity style={styles.approvalBadgeWrapper}>
                                 <LinearGradient
                                     colors={["#B83AF3", "#21B6E9"]}
@@ -214,7 +212,8 @@ export default function LoginScreen() {
 
                     <View style={styles.divider} />
 
-                    {interestStatus !== "pending" && (
+                    {/* ✅ UPDATED: Use isPending */}
+                    {!isPending && (
                         <>
                             <TouchableOpacity
                                 style={styles.logInButton}
@@ -227,7 +226,8 @@ export default function LoginScreen() {
                         </>
                     )}
 
-                    {interestStatus !== "pending" && (
+                    {/* ✅ UPDATED: Use isPending */}
+                    {!isPending && (
                         <View style={styles.actionButtonWrapper}>
                             <LinearGradient
                                 colors={["#7C3AED", "#3B82F6", "#1E40AF"]}
@@ -262,7 +262,8 @@ export default function LoginScreen() {
                         </View>
                     )}
 
-                    {interestStatus === "pending" && (
+                    {/* ✅ UPDATED: Use isPending */}
+                    {isPending && (
                         <View style={styles.pendingMessageContainer}>
                             <Ionicons name="time-outline" size={48} color="rgba(255,255,255,0.7)" />
                             <Text style={styles.pendingMessageTitle}>
@@ -274,7 +275,6 @@ export default function LoginScreen() {
                                 your account has been approved.
                             </Text>
 
-                            {/* ✅ UPDATED: Show status checking indicator */}
                             {isCheckingStatus && (
                                 <View style={styles.checkingContainer}>
                                     <ActivityIndicator color="rgba(255,255,255,0.7)" size="small" />
@@ -283,6 +283,13 @@ export default function LoginScreen() {
                                     </Text>
                                 </View>
                             )}
+
+                            {/* ✅ ADDED: Show current status for debugging */}
+                            {/* {__DEV__ && (
+                                <Text style={styles.debugText}>
+                                    Current Status: {userStatus || 'none'}
+                                </Text>
+                            )} */}
                         </View>
                     )}
 

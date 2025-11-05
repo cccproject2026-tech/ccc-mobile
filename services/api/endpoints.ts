@@ -1,25 +1,27 @@
 export const ENDPOINTS = {
     // Authentication (Unauthenticated routes)
     AUTH: {
-        LOGIN: '/login',
-        SEND_OTP: '/send-otp',
-        VERIFY_OTP: '/verify-otp',
-        SET_PASSWORD: '/set-password',
-        FORGOT_PASSWORD: '/forgot-password',
-        RESET_PASSWORD: '/reset-password',
-        REFRESH_TOKEN: '/refresh-token',
-        LOGOUT: '/logout',
+        LOGIN: '/auth/login',
+        SEND_OTP: '/auth/send-otp',
+        VERIFY_OTP: '/auth/verify-otp',
+        SET_PASSWORD: '/auth/set-password',
+        FORGOT_PASSWORD: '/auth/forgot-password',
+        RESET_PASSWORD: '/auth/reset-password',
+        REFRESH_TOKEN: '/auth/refresh-token',
+        LOGOUT: '/auth/logout',
     },
 
     // Users
     USERS: {
-        GET_USER: (userId: string) => `/api/v1/users/${userId}`,
+        GET_USER: (userId: string) => `/users/${userId}`,
+        CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
+        GET_INTERESTS: (email: string) => `/interests/by-email/${email}`
     },
 
     // Pastor Onboarding (if separate from auth)
     ONBOARDING: {
-        SUBMIT_INTEREST: '/api/v1/interests',
-        CHECK_STATUS: (applicationId: string) => `/pastor/onboarding/status/${applicationId}`,
+        SUBMIT_INTEREST: '/interests',
+        CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
     },
 
     // Profile (Authenticated routes)

@@ -70,7 +70,7 @@ export default function MyMentorsScreen() {
 
   const handleCardPress = (mentor: MentorData) => {
     router.push({
-      pathname: "/(pastor-tabs)/(tabs)/mentors/schedule-meeting",
+      pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
       params: { mentorData: JSON.stringify(mentor) },
     });
   };

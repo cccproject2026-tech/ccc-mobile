@@ -1,3 +1,4 @@
+// src/hooks/auth/useSetPassword.ts
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { useOnboardingStore } from '@/stores/onboarding.store';
@@ -7,27 +8,38 @@ import { useRouter } from 'expo-router';
 
 export const useSetPassword = () => {
     const router = useRouter();
-    const login = useAuthStore((state) => state.login);
+    const { login } = useAuthStore();
     const { setPasswordSet } = useOnboardingStore();
 
     return useMutation({
         mutationFn: (data: SetPasswordRequest) => authService.setPassword(data),
-        onSuccess: async (data) => {
-            // Auto-login after password set
-            await login(data.user, {
-                accessToken: data.accessToken,
-                refreshToken: data.refreshToken,
-            });
 
-            setPasswordSet(true);
+        onSuccess: async (response) => {
+            try {
+                console.log('✅ Set password response:', response);
+                // Extract user and tokens from response
+                const { status, message, data } = response;
 
-            console.log('✅ Password set and logged in');
+                // Auto-login after password set
 
-            // Navigate to profile completion
-            router.replace('/(unauthenticated)/profile');
+                // Mark password as set
+                setPasswordSet(true);
+
+                console.log('✅ Password set successfully :', message);
+
+                // // Navigate to profile completion
+                // router.replace('/(unauthenticated)/profile');
+            } catch (error) {
+                console.error('❌ Error in onSuccess:', error);
+            }
         },
+
         onError: (error: any) => {
-            console.error('❌ Set password failed:', error.message);
+            console.error('❌ Set password failed:', {
+                message: error.message,
+                statusCode: error.statusCode,
+                errors: error.errors,
+            });
         },
     });
 };

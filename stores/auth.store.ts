@@ -33,35 +33,61 @@ export const useAuthStore = create<AuthStore>()(
 
             setUser: (user) => {
                 set({ user, isAuthenticated: true });
+                console.log('✅ User set:', user.email);
             },
 
             setTokens: (tokens) => {
                 set({ tokens });
+                console.log('✅ Tokens set in store');
             },
 
             login: async (user, tokens) => {
-                // Store in secure storage
-                await storage.setTokens(tokens.accessToken, tokens.refreshToken);
-                await storage.setUserData(user);
+                try {
+                    console.log('📝 Starting login process...');
+                    console.log('User:', user.email);
+                    console.log('Tokens:', {
+                        accessToken: tokens.accessToken?.substring(0, 20) + '...',
+                        refreshToken: tokens.refreshToken?.substring(0, 20) + '...'
+                    });
 
-                // Update store
-                set({
-                    user,
-                    tokens,
-                    isAuthenticated: true
-                });
+                    // ✅ Validate tokens are strings
+                    if (typeof tokens.accessToken !== 'string' || typeof tokens.refreshToken !== 'string') {
+                        throw new Error('Tokens must be strings');
+                    }
 
-                console.log('✅ Login successful:', user.email);
+                    // Store in secure storage
+                    await storage.setTokens(tokens.accessToken, tokens.refreshToken);
+                    await storage.setUserData(user);
+
+                    // Update store
+                    set({
+                        user,
+                        tokens,
+                        isAuthenticated: true,
+                    });
+
+                    console.log('✅ Login successful:', user.email);
+                } catch (error) {
+                    console.error('❌ Login failed:', error);
+                    throw error;
+                }
             },
 
             logout: async () => {
-                // Clear secure storage
-                await storage.clearAll();
+                try {
+                    console.log('🔓 Starting logout...');
 
-                // Reset store
-                set(initialState);
+                    // Clear secure storage
+                    await storage.clearAll();
 
-                console.log('✅ Logout successful');
+                    // Reset store
+                    set(initialState);
+
+                    console.log('✅ Logout successful');
+                } catch (error) {
+                    console.error('❌ Logout failed:', error);
+                    throw error;
+                }
             },
 
             updateUser: (updates) => {
@@ -69,8 +95,10 @@ export const useAuthStore = create<AuthStore>()(
                 if (currentUser) {
                     const updatedUser = { ...currentUser, ...updates };
 
-                    // Update secure storage
-                    storage.setUserData(updatedUser);
+                    // Update secure storage (async, but don't wait)
+                    storage.setUserData(updatedUser).catch(err =>
+                        console.error('Error updating user in storage:', err)
+                    );
 
                     // Update store
                     set({ user: updatedUser });
@@ -82,9 +110,11 @@ export const useAuthStore = create<AuthStore>()(
         {
             name: 'auth-storage',
             storage: createJSONStorage(() => AsyncStorage),
+            // ✅ Only persist user and auth status, NOT tokens (security)
             partialize: (state) => ({
                 user: state.user,
                 isAuthenticated: state.isAuthenticated,
+                // Don't persist tokens in AsyncStorage
             }),
         }
     )

@@ -1,4 +1,3 @@
-// app/(login)/forgot-password.tsx
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
 import { useAuth } from "@/context/AuthContext";
@@ -109,7 +108,7 @@ export default function ForgotPasswordScreen() {
                 [
                     {
                         text: "OK",
-                        onPress: () => router.replace("/(login)/login-form"),
+                        onPress: () => router.replace("/(unauthenticated)/login-form"),
                     },
                 ]
             );

@@ -1,16 +1,17 @@
-import { CardBox, MentorCard } from "@/components/atom/cards";
 import RoadMapCardNew from '@/components/atom/RoadMapCard';
 import AppointmentCard from '@/components/director/AppointmentCard';
+import ExploreCard from "@/components/director/ExploreCard";
 import HeaderHero from "@/components/director/HeroHeader";
+import MentorCard, { MentorData } from "@/components/director/MentorCard";
 import WelcomeCard from "@/components/director/WelcomeCard";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { appointments } from '@/constants/mockData';
-import { useAuth } from "@/context/AuthContext";
+import { useProfileStore } from '@/stores';
 import { formatClock, formatDate } from "@/utils/date";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { Route, useRouter } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   Image, Pressable, ScrollView, StyleSheet,
   Text,
@@ -19,30 +20,19 @@ import {
 } from "react-native";
 import Animated, { useAnimatedRef, useScrollViewOffset } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 export default function PastorDashboard() {
   const [now, setNow] = useState(new Date());
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  // ADD THESE LINES
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { profile } = useProfileStore();
 
-  // ADD THIS useEffect for authentication check
-  useEffect(() => {
-    console.log('PastorDashboard auth check:', { isAuthenticated, isLoading, user: user?.email });
-
-    if (!isLoading && !isAuthenticated) {
-      console.log('❌ Not authenticated in PastorDashboard, redirecting to home');
-      router.replace('/');
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-
-
+  console.log({ profile })
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
 
   const handleWelcomRoute = () => {
-    router.push('/(pastor-tabs)/(tabs)/profile');
+    router.push('/(pastor)/(tabs)/profile');
   }
 
 
@@ -74,22 +64,8 @@ export default function PastorDashboard() {
   const currentTime = getCurrentTime();
   console.log(currentTime); // e.g., "12:00 PM"
 
-  const dummyAppointments = [
-    {
-      date: "04 Aug 24",
-      time: "11:30 hrs EST",
-      name: "John Ross",
-      role: "Mentor",
-      mode: "duo",
-    },
-    {
-      date: "11 Aug 24",
-      time: "11:30 hrs EST",
-      name: "John Ross",
-      role: "Field Mentor",
-      mode: "meet",
-    },
-  ];
+
+
   const dummyRoadMaps = [
     {
       phase: "Phase 1",
@@ -107,240 +83,23 @@ export default function PastorDashboard() {
       status: "Remaining",
     },
   ];
-  const dummyMentors = [
+  const mockMentors: MentorData[] = [
     {
-      name: "John Doe",
+      id: "1",
+      name: "John Ross",
       role: "Mentor",
+      profileImage: "https://randomuser.me/api/portraits/men/1.jpg",
     },
     {
-      name: "John Doe",
+      id: "2",
+      name: "John Ross",
       role: "Field Mentor",
+      profileImage: "https://randomuser.me/api/portraits/men/2.jpg",
     },
   ];
 
   return (
     <>
-      {/* <View>
-        <ScrollView contentContainerStyle={styles.container}>
-          <ImageBackground
-            source={icons.backgroundImage}
-            style={styles.backgroundImage}
-            resizeMode="cover"
-          >
-               <View className="mt-4">
-              <TopBar />
-            </View>
-            <View style={styles.contentContainer}>
-              <Text className="text-white text-[22px] leading-[22px] font-semibold">
-                {currentTime}
-              </Text>
-              <Text className="text-base leading-[22px] text-white font-semibold">
-                {currentDayAndDate}
-              </Text>
-            </View>
-            <View></View>
-            <View style={{ marginHorizontal: 16, paddingVertical: 10 }}>
-              <Text
-                className="font-bold"
-                style={[styles.text, { ...{ paddingVertical: 10 } }]}
-              >
-                {greetingMessage}
-              </Text>
-              <View
-                style={{
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: "white",
-                  borderRadius: 10,
-                  height: 90,
-                  padding: 10,
-                  flexDirection: "row",
-                  backgroundColor: "#14517d",
-                }}
-              >
-                <Image
-                  source={icons.myProfile} // Replace with actual user profile image URL
-                  style={{ width: 60, height: 60 }}
-                  resizeMode="contain"
-                />
-                <View style={{ paddingHorizontal: 10, gap: 10 }}>
-                  <Text
-                    className="font-semibold"
-                    style={[styles.text, { ...{ fontSize: 16 } }]}
-                  >
-                    John Ross, Welcome Aboard!
-                  </Text>
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text className="font-medium text-white text-[16px]">
-                      Progress{" "}
-                    </Text>
-                    <View
-                      style={{
-                        backgroundColor: "black",
-                        //   borderWidth: 4,
-                        borderRadius: 10,
-                        width: "50%",
-                        //   borderColor: "white",
-                      }}
-                    >
-                      <View
-                        style={{
-                          backgroundColor: "white",
-                          width: "70%",
-                          height: 6,
-                          borderRadius: 10,
-                        }}
-                      ></View>
-                    </View>
-                    <Text style={[styles.text, { ...{ fontSize: 16 } }]}>
-                      {" "}
-                      70%
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </ImageBackground>
-          <View
-            style={{
-              backgroundColor: "#196394",
-              height: "100%",
-              width: "100%",
-            }}
-          >
-            <LinearGradient
-              colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-              style={{ flex: 1 }}
-            >
-              <View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  className="w-full"
-                  contentContainerStyle={{
-                    paddingHorizontal: 20,
-                    gap: 16,
-                    paddingVertical: 10,
-                    marginTop: 8,
-                  }}
-                >
-                  <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
-                    <Image
-                      source={icons.video}
-                      className="w-full h-full rounded-[25px]"
-                      resizeMode="cover"
-                    />
-                  </View>
-
-                  <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
-                    <Image
-                      source={icons.video}
-                      className="w-full h-full rounded-[25px]"
-                      resizeMode="cover"
-                    />
-                  </View>
-
-                  <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
-                    <Image
-                      source={icons.video}
-                      className="w-full h-full rounded-[25px]"
-                      resizeMode="cover"
-                    />
-                  </View>
-                </ScrollView>
-                <View style={styles.separator} />
-                <View style={styles.appointmentsContainer}>
-                  <View style={styles.rowBetween}>
-                    <Text className="text-white font-bold text-[17px]">
-                      Upcoming Appointments
-                    </Text>
-                    <Text className="text-white font-medium text-[16px]">
-                      See all
-                    </Text>
-                  </View>
-                  {dummyAppointments.map((e, i) => (
-                    <AppointmentCard data={e} dataKey={i.toString()} key={i} />
-                  ))}
-                </View>
-                <View style={styles.separator} />
-
-                <View style={styles.RoadMapContainer}>
-                  <View style={styles.RoadMapHeaderRow}>
-                    <Text className="text-white font-bold text-[17px]">
-                      Today's Roadmap List
-                    </Text>
-                    <Text className="text-white font-medium text-[16px]">
-                      See all
-                    </Text>
-                  </View>
-                  <View className="gap-2">
-                    {dummyRoadMaps.map((e, i) => (
-                      <RoadMapCard data={e} dataKey={i.toString()} key={i} />
-                    ))}
-                  </View>
-                </View>
-                <View style={styles.separator} />
-
-
-                <View style={styles.ExploreContainer}>
-                  <View style={styles.headerExploreContainer}>
-                    <Text className="text-white font-bold text-[16px]">
-                      Explore CCC
-                    </Text>
-                  </View>
-
-                  <View className="items-center justify-center w-full px-2 py-5">
-                    <View className="flex-row gap-4">
-                      <CardBox
-                        title="Revitalization Roadmap"
-                        icon={icons.Revitalization2}
-                      />
-                      <CardBox title="Assessments" icon={icons.Assessments2} />
-                    </View>
-                    <View className="flex-row gap-4">
-                        <CardBox onPress={() => { router.push(('/(pastor-tabs)/(tabs)/progress') as any) }} title="Progress" icon={icons.progress2} />
-                      <CardBox
-                        title="Appointments"
-                        icon={icons.Appointments2}
-                      />
-                    </View>
-                  </View>
-                </View>
-                <View
-                  style={{
-                    height: 2,
-                    backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
-                    marginHorizontal: 16,
-                    marginBottom: 20,
-                  }}
-                />
-
-                <View style={styles.mentorContainer}>
-                  <View style={styles.mentorHeaderContainer}>
-                    <Text className="text-white font-bold text-[17px]">
-                      My Mentors
-                    </Text>
-                    <Text className="text-white font-medium text-[16px]">
-                      See all
-                    </Text>
-                  </View>
-                  {dummyMentors.map((e, i) => (
-                    <MentorCard
-                      key={i}
-                      data={e}
-                      dataKey={i.toString()}
-                      navigation={navigation}
-                      onMenuPress={() => { }}
-                    />
-                  ))}
-                </View>
-                <View style={styles.separator} />
-              </View>
-            </LinearGradient>
-          </View>
-        </ScrollView>
-      </View> */}
-
       <LinearGradient
         colors={[Colors.lightBlueGradientOne, '#1D548D', '#264387']}
         style={{ flex: 1, }}
@@ -384,34 +143,29 @@ export default function PastorDashboard() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                className="w-full"
-                contentContainerStyle={{
-                  // paddingHorizontal: 20,
-                  gap: 16,
-                  paddingVertical: 10,
-                  marginTop: 8,
-                }}
+                style={styles.videoScrollView} // className="w-full"
+                contentContainerStyle={styles.videoContentContainer} // gap: 16, paddingVertical: 10, marginTop: 8
               >
-                <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
+                <View style={styles.videoCard}> {/* w-[313px] h-[183px] rounded-[25px] overflow-hidden */}
                   <Image
                     source={icons.video}
-                    className="w-full h-full rounded-[25px]"
+                    style={styles.videoImage} // w-full h-full rounded-[25px]
                     resizeMode="cover"
                   />
                 </View>
 
-                <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
+                <View style={styles.videoCard}>
                   <Image
                     source={icons.video}
-                    className="w-full h-full rounded-[25px]"
+                    style={styles.videoImage}
                     resizeMode="cover"
                   />
                 </View>
 
-                <View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden">
+                <View style={styles.videoCard}>
                   <Image
                     source={icons.video}
-                    className="w-full h-full rounded-[25px]"
+                    style={styles.videoImage}
                     resizeMode="cover"
                   />
                 </View>
@@ -463,14 +217,14 @@ export default function PastorDashboard() {
 
             <View style={styles.RoadMapContainer}>
               <View style={styles.RoadMapHeaderRow}>
-                <Text className="text-white font-bold text-[17px]">
+                <Text style={styles.roadmapTitle}> {/* text-white font-bold text-[17px] */}
                   Today's Roadmap List
                 </Text>
-                <Text className="text-white font-medium text-[16px]">
+                <Text style={styles.roadmapSeeAll}> {/* text-white font-medium text-[16px] */}
                   See all
                 </Text>
               </View>
-              <View className="gap-2">
+              <View style={styles.roadmapList}> {/* gap-2 */}
                 {dummyRoadMaps.map((e, i) => (
                   <RoadMapCardNew data={e} dataKey={i.toString()} key={i} />
                 ))}
@@ -479,13 +233,13 @@ export default function PastorDashboard() {
             <View style={styles.separator} />
             <View style={styles.ExploreContainer}>
               <View style={styles.headerExploreContainer}>
-                <Text className="text-white font-bold text-[16px]">
+                <Text style={styles.exploreTitle}>
                   Explore CCC
                 </Text>
               </View>
 
-              <View className="items-center justify-center w-full px-2 py-5">
-                <View className="flex-row gap-4">
+              {/* <View style={styles.exploreBoxWrapper}>
+                <View style={styles.exploreRow}>
                   <CardBox
                     onPress={() => { router.push('/roadmap') }}
                     title="Revitalization Roadmap"
@@ -493,12 +247,24 @@ export default function PastorDashboard() {
                   />
                   <CardBox onPress={() => { router.push('/assessments') }} title="Assessments" icon={icons.Assessments2} />
                 </View>
-                <View className="flex-row gap-4">
+                <View style={styles.exploreRow}>
                   <CardBox onPress={() => { router.push('/progress/progress') }} title="Progress" icon={icons.progress2} />
                   <CardBox onPress={() => { router.push('/appointments') }}
                     title="Appointments"
                     icon={icons.Appointments2}
                   />
+                </View>
+              </View> */}
+              <View style={[styles.exploreBoxWrapper]}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
+                  {[
+                    { title: 'Revitalization Roadmap', icon: icons.Revitalization2, route: '/(pastor)/(tabs)/roadmap' },
+                    { title: 'Assessments', icon: icons.Assessments2, route: '/(pastor)/(tabs)/assessments' },
+                    { title: 'Progress', icon: icons.progress2, route: '/(pastor)/(tabs)/progress/progress' },
+                    { title: 'Appointments', icon: icons.Assessments2, route: '/(pastor)/(tabs)/appointments' },
+                  ].map((item, idx) => (
+                    <ExploreCard key={idx} icon={item.icon} route={item.route as Route} title={item.title} wrapperStyle={{ width: '48%' }} />
+                  ))}
                 </View>
               </View>
             </View>
@@ -513,25 +279,24 @@ export default function PastorDashboard() {
 
             <View style={[styles.mentorContainer, { marginBottom: 24 }]}>
               <View style={styles.mentorHeaderContainer}>
-                <Text className="text-white font-bold text-[17px]">
+                <Text style={styles.mentorTitle}> {/* text-white font-bold text-[17px] */}
                   My Mentors
                 </Text>
-                <Text className="text-white font-medium text-[16px]">
+                <Text style={styles.mentorSeeAll}> {/* text-white font-medium text-[16px] */}
                   See all
                 </Text>
               </View>
-              {dummyMentors.map((e, i) => (
+              {mockMentors.map((e, i) => (
                 <MentorCard
                   key={i}
-                  data={e}
-                  dataKey={i.toString()}
+                  mentor={e}
+                  layout='list'
                   onMenuPress={() => { }}
                 />
               ))}
             </View>
           </LinearGradient>
         </Animated.ScrollView>
-        {/* </View> */}
       </LinearGradient>
 
     </>
@@ -721,4 +486,75 @@ const styles = StyleSheet.create({
     fontFamily: "AlbertBold", // font-albertBold
     textAlign: "center",
   },
+
+  // --- NEW STYLES CONVERTED FROM TAILWIND ---
+
+  // For ScrollView className="w-full"
+  videoScrollView: {
+    width: '100%',
+  },
+  // For contentContainerStyle={{ gap: 16, paddingVertical: 10, marginTop: 8 }}
+  videoContentContainer: {
+    gap: 16,
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+  // For View className="w-[313px] h-[183px] rounded-[25px] overflow-hidden"
+  videoCard: {
+    width: 313,
+    height: 183,
+    borderRadius: 25,
+    overflow: 'hidden',
+  },
+  // For Image className="w-full h-full rounded-[25px]"
+  videoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
+  },
+
+  // Roadmap Section
+  roadmapTitle: { // text-white font-bold text-[17px]
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 17,
+  },
+  roadmapSeeAll: { // text-white font-medium text-[16px]
+    color: 'white',
+    fontWeight: '500',
+    fontSize: 16,
+  },
+  roadmapList: { // gap-2
+    gap: 8,
+  },
+
+  // Explore Section
+  exploreTitle: { // text-white font-bold text-[16px]
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  exploreBoxWrapper: { // items-center justify-center w-full px-2 py-5
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    // paddingHorizontal: 8, // px-2
+    paddingVertical: 20, // py-5
+  },
+  exploreRow: { // flex-row gap-4
+    flexDirection: 'row',
+    gap: 16, // gap-4
+  },
+
+  // Mentor Section
+  mentorTitle: { // text-white font-bold text-[17px]
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 17,
+  },
+  mentorSeeAll: { // text-white font-medium text-[16px]
+    color: 'white',
+    fontWeight: '500',
+    fontSize: 16,
+  }
 });

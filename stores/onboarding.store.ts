@@ -5,11 +5,12 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface OnboardingState {
     // Interest form state
-    interestStatus: InterestStatus;
+    interestStatus: InterestStatus | null;
     applicationId: string | null;
     interestData: InterestFormData | null;
 
     // Auth flow state
+    userId: string | null;
     email: string | null; // Email for OTP flow
     otpToken: string | null; // Token from OTP verification
     isEmailVerified: boolean;
@@ -29,6 +30,7 @@ interface OnboardingActions {
     updateInterestData: (updates: Partial<InterestFormData>) => void;
 
     // Auth flow actions
+    setUserId: (userId: string | null) => void;
     setEmail: (email: string) => void;
     setOtpToken: (token: string | null) => void;
     setEmailVerified: (verified: boolean) => void;
@@ -51,9 +53,10 @@ interface OnboardingActions {
 type OnboardingStore = OnboardingState & OnboardingActions;
 
 const initialState: OnboardingState = {
-    interestStatus: 'none',
+    interestStatus: null,
     applicationId: null,
     interestData: null,
+    userId: null,
     email: null,
     otpToken: null,
     isEmailVerified: false,
@@ -61,6 +64,7 @@ const initialState: OnboardingState = {
     isProfileComplete: false,
     lastStatusCheck: null,
     submittedAt: null,
+
 };
 
 export const useOnboardingStore = create<OnboardingStore>()(
@@ -100,6 +104,10 @@ export const useOnboardingStore = create<OnboardingStore>()(
             },
 
             // Auth flow actions
+            setUserId: (userId) => {
+                set({ userId });
+                console.log('📧 UserId set:', userId);
+            },
             setEmail: (email) => {
                 set({ email });
                 console.log('📧 Email set:', email);
@@ -133,7 +141,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
             completeOnboarding: () => {
                 set({
                     isProfileComplete: true,
-                    interestStatus: 'approved',
+                    interestStatus: 'accepted',
                 });
                 console.log('🎉 Onboarding completed!');
             },
@@ -142,12 +150,11 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 set(initialState);
                 console.log('🔄 Onboarding reset');
             },
-
             // Computed getters
             canSendOtp: () => {
                 const state = get();
                 return (
-                    state.interestStatus === 'approved' &&
+                    state.interestStatus === 'accepted' &&
                     !!state.email &&
                     !state.isEmailVerified
                 );
@@ -182,7 +189,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
                     data.lastName &&
                     data.email &&
                     data.phoneNumber &&
-                    data.churches?.length > 0 &&
+                    data.churchDetails?.length > 0 &&
                     data.title &&
                     data.yearsInMinistry &&
                     data.conference &&

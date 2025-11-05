@@ -1,3 +1,4 @@
+// src/hooks/onboarding/useSubmitInterest.ts
 import { onboardingService } from '@/services/onboarding.service';
 import { useOnboardingStore } from '@/stores/onboarding.store';
 import { InterestFormData } from '@/types';
@@ -6,17 +7,18 @@ import { useRouter } from 'expo-router';
 
 export const useSubmitInterest = () => {
     const router = useRouter();
-    const { setApplicationId, setInterestData, setInterestStatus } = useOnboardingStore();
+    const { setUserId, setInterestData, setApplicationId, setInterestStatus } = useOnboardingStore();
 
     return useMutation({
         mutationFn: (data: InterestFormData) => onboardingService.submitInterest(data),
         onSuccess: (response, variables) => {
-            // Store application data
-            setApplicationId(response.applicationId);
+            // ✅ UPDATED: Store userId and applicationId from response
+            setUserId(response.data.userId);
+            setApplicationId(response.data.id);
+            setInterestStatus('new');
             setInterestData(variables);
-            setInterestStatus(response.status);
 
-            console.log('✅ Interest form submitted:', response.applicationId);
+            console.log('✅ Interest form submitted:', response.data);
 
             // Navigate to waiting screen
             router.push('/(unauthenticated)');

@@ -21,17 +21,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function LoginFormScreen() {
     const { bottom } = useSafeAreaInsets();
 
-    // ✅ UPDATED: Use Zustand store
+
     const { interestData } = useOnboardingStore();
 
-    // ✅ UPDATED: Use React Query hook
+
     const { mutate: login, isPending, error } = useLogin();
 
     const [email, setEmail] = useState(interestData?.email || "");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
-    // ✅ UPDATED: Use mutation hook
+
     const handleLogin = () => {
         if (!email || !password) {
             Alert.alert("Error", "Please enter both email and password");
@@ -92,7 +92,7 @@ export default function LoginFormScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        {/* ✅ UPDATED: Show error from mutation */}
+
                         {error && (
                             <View style={styles.errorContainer}>
                                 <Text style={styles.errorText}>{error.message}</Text>
@@ -121,7 +121,7 @@ export default function LoginFormScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* ✅ UPDATED: Route change */}
+
                     <View style={styles.actionButtonWrapper}>
                         <LinearGradient
                             colors={["#7C3AED", "#3B82F6", "#1E40AF"]}
