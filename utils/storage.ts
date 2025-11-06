@@ -1,4 +1,5 @@
-import { PastorProfile, User } from '@/types';
+// utils/storage.ts
+import { User } from '@/types/auth.types';
 import * as SecureStore from 'expo-secure-store';
 
 const KEYS = {
@@ -8,19 +9,19 @@ const KEYS = {
 } as const;
 
 export const storage = {
-    // ✅ Token management (Secure) - Ensure values are strings
+    // ✅ Token management (Secure)
     setTokens: async (accessToken: string, refreshToken: string) => {
         try {
-            // ✅ Ensure they are strings before storing
-            const accessTokenStr = String(accessToken);
-            const refreshTokenStr = String(refreshToken);
+            if (!accessToken || !refreshToken) {
+                throw new Error('Tokens cannot be empty');
+            }
 
             await Promise.all([
-                SecureStore.setItemAsync(KEYS.ACCESS_TOKEN, accessTokenStr),
-                SecureStore.setItemAsync(KEYS.REFRESH_TOKEN, refreshTokenStr),
+                SecureStore.setItemAsync(KEYS.ACCESS_TOKEN, accessToken),
+                SecureStore.setItemAsync(KEYS.REFRESH_TOKEN, refreshToken),
             ]);
 
-            console.log('✅ Tokens stored in SecureStore');
+            console.log('✅ Tokens stored securely');
         } catch (error) {
             console.error('❌ Error storing tokens:', error);
             throw error;
@@ -29,7 +30,8 @@ export const storage = {
 
     getAccessToken: async (): Promise<string | null> => {
         try {
-            return await SecureStore.getItemAsync(KEYS.ACCESS_TOKEN);
+            const token = await SecureStore.getItemAsync(KEYS.ACCESS_TOKEN);
+            return token || null;
         } catch (error) {
             console.error('❌ Error getting access token:', error);
             return null;
@@ -38,9 +40,27 @@ export const storage = {
 
     getRefreshToken: async (): Promise<string | null> => {
         try {
-            return await SecureStore.getItemAsync(KEYS.REFRESH_TOKEN);
+            const token = await SecureStore.getItemAsync(KEYS.REFRESH_TOKEN);
+            return token || null;
         } catch (error) {
             console.error('❌ Error getting refresh token:', error);
+            return null;
+        }
+    },
+
+    getTokens: async (): Promise<{ accessToken: string; refreshToken: string } | null> => {
+        try {
+            const [accessToken, refreshToken] = await Promise.all([
+                SecureStore.getItemAsync(KEYS.ACCESS_TOKEN),
+                SecureStore.getItemAsync(KEYS.REFRESH_TOKEN),
+            ]);
+
+            if (accessToken && refreshToken) {
+                return { accessToken, refreshToken };
+            }
+            return null;
+        } catch (error) {
+            console.error('❌ Error getting tokens:', error);
             return null;
         }
     },
@@ -51,29 +71,29 @@ export const storage = {
                 SecureStore.deleteItemAsync(KEYS.ACCESS_TOKEN),
                 SecureStore.deleteItemAsync(KEYS.REFRESH_TOKEN),
             ]);
-            console.log('✅ Tokens cleared from SecureStore');
+            console.log('✅ Tokens cleared');
         } catch (error) {
             console.error('❌ Error clearing tokens:', error);
         }
     },
 
-    // ✅ User data (Secure) - Properly serialize to string
-    setUserData: async (user: User | PastorProfile) => {
+    // ✅ User data (Secure)
+    setUserData: async (user: User) => {
         try {
-            // ✅ Stringify the user object
             const userString = JSON.stringify(user);
             await SecureStore.setItemAsync(KEYS.USER_DATA, userString);
-            console.log('✅ User data stored in SecureStore');
+            console.log('✅ User data stored');
         } catch (error) {
             console.error('❌ Error storing user data:', error);
             throw error;
         }
     },
 
-    getUserData: async (): Promise<User | PastorProfile | null> => {
+    getUserData: async (): Promise<User | null> => {
         try {
             const data = await SecureStore.getItemAsync(KEYS.USER_DATA);
-            return data ? JSON.parse(data) : null;
+            if (!data) return null;
+            return JSON.parse(data) as User;
         } catch (error) {
             console.error('❌ Error getting user data:', error);
             return null;
@@ -83,7 +103,7 @@ export const storage = {
     clearUserData: async () => {
         try {
             await SecureStore.deleteItemAsync(KEYS.USER_DATA);
-            console.log('✅ User data cleared from SecureStore');
+            console.log('✅ User data cleared');
         } catch (error) {
             console.error('❌ Error clearing user data:', error);
         }
@@ -98,8 +118,7 @@ export const storage = {
             ]);
             console.log('✅ All storage cleared');
         } catch (error) {
-            console.error('❌ Error clearing all storage:', error);
-            throw error;
+            console.error('❌ Error clearing storage:', error);
         }
     },
 };

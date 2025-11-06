@@ -1,92 +1,78 @@
-import { AuthTokens, PastorProfile, User } from '@/types';
+// stores/auth.store.ts
+import { User } from '@/types/auth.types';
 import { storage } from '@/utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface AuthState {
-    user: User | PastorProfile | null;
-    tokens: AuthTokens | null;
+    user: User | null;
     isAuthenticated: boolean;
+    isInitialized: boolean;
 }
 
 interface AuthActions {
-    setUser: (user: User | PastorProfile) => void;
-    setTokens: (tokens: AuthTokens) => void;
-    login: (user: User | PastorProfile, tokens: AuthTokens) => Promise<void>;
+    // Set user after login
+    setUser: (user: User) => void;
+    // Logout user
     logout: () => Promise<void>;
-    updateUser: (updates: Partial<User | PastorProfile>) => void;
+    // Initialize from storage on app startup
+    initialize: () => Promise<void>;
+    // Update user data
+    updateUser: (updates: Partial<User>) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
 
-const initialState: AuthState = {
-    user: null,
-    tokens: null,
-    isAuthenticated: false,
-};
-
 export const useAuthStore = create<AuthStore>()(
     persist(
         (set, get) => ({
-            ...initialState,
+            user: null,
+            isAuthenticated: false,
+            isInitialized: false,
 
             setUser: (user) => {
                 set({ user, isAuthenticated: true });
-                console.log('✅ User set:', user.email);
-            },
-
-            setTokens: (tokens) => {
-                set({ tokens });
-                console.log('✅ Tokens set in store');
-            },
-
-            login: async (user, tokens) => {
-                try {
-                    console.log('📝 Starting login process...');
-                    console.log('User:', user.email);
-                    console.log('Tokens:', {
-                        accessToken: tokens.accessToken?.substring(0, 20) + '...',
-                        refreshToken: tokens.refreshToken?.substring(0, 20) + '...'
-                    });
-
-                    // ✅ Validate tokens are strings
-                    if (typeof tokens.accessToken !== 'string' || typeof tokens.refreshToken !== 'string') {
-                        throw new Error('Tokens must be strings');
-                    }
-
-                    // Store in secure storage
-                    await storage.setTokens(tokens.accessToken, tokens.refreshToken);
-                    await storage.setUserData(user);
-
-                    // Update store
-                    set({
-                        user,
-                        tokens,
-                        isAuthenticated: true,
-                    });
-
-                    console.log('✅ Login successful:', user.email);
-                } catch (error) {
-                    console.error('❌ Login failed:', error);
-                    throw error;
-                }
+                console.log('✅ User authenticated:', user.email);
             },
 
             logout: async () => {
                 try {
-                    console.log('🔓 Starting logout...');
-
-                    // Clear secure storage
+                    console.log('🔓 Logging out');
+                    // Clear secure storage (tokens)
                     await storage.clearAll();
-
                     // Reset store
-                    set(initialState);
-
-                    console.log('✅ Logout successful');
+                    set({ user: null, isAuthenticated: false });
+                    console.log('✅ Logout complete');
                 } catch (error) {
                     console.error('❌ Logout failed:', error);
                     throw error;
+                }
+            },
+
+            initialize: async () => {
+                try {
+                    console.log('🔄 Initializing auth...');
+                    // Check if tokens exist in secure storage
+                    const tokens = await storage.getTokens();
+                    if (tokens?.accessToken) {
+                        set({ isInitialized: true, isAuthenticated: true });
+                        console.log('✅ Auth initialized with stored tokens');
+                    } else {
+                        set({
+                            isInitialized: true,
+                            user: null,
+                            isAuthenticated: false,
+                        });
+                        console.log('✅ Auth initialized - no stored tokens');
+                    }
+                } catch (error) {
+                    console.error('❌ Auth initialization failed:', error);
+                    set({
+                        isInitialized: true,
+                        user: null,
+                        isAuthenticated: false,
+                    });
                 }
             },
 
@@ -94,15 +80,7 @@ export const useAuthStore = create<AuthStore>()(
                 const currentUser = get().user;
                 if (currentUser) {
                     const updatedUser = { ...currentUser, ...updates };
-
-                    // Update secure storage (async, but don't wait)
-                    storage.setUserData(updatedUser).catch(err =>
-                        console.error('Error updating user in storage:', err)
-                    );
-
-                    // Update store
                     set({ user: updatedUser });
-
                     console.log('✅ User updated');
                 }
             },
@@ -110,11 +88,12 @@ export const useAuthStore = create<AuthStore>()(
         {
             name: 'auth-storage',
             storage: createJSONStorage(() => AsyncStorage),
-            // ✅ Only persist user and auth status, NOT tokens (security)
+            // Only persist user and auth status, NOT tokens
             partialize: (state) => ({
                 user: state.user,
                 isAuthenticated: state.isAuthenticated,
-                // Don't persist tokens in AsyncStorage
+                isInitialized: state.isInitialized,
+                // Don't persist tokens in AsyncStorage (they're in SecureStore)
             }),
         }
     )

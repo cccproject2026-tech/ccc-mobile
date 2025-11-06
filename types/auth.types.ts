@@ -1,75 +1,44 @@
-import { ChurchInfo } from "./profile.types";
-
-export type UserRole = 'pastor' | 'mentor' | 'director' | 'pending'
-
+// types/auth.types.ts
+export type UserRole = 'pastor' | 'mentor' | 'director' | 'pending';
 export type UserStatus = 'new' | 'pending' | 'accepted' | 'rejected';
 
-
+// Single, unified User type
 export interface User {
-    id?: string;
+    id: string;
     email: string;
     firstName: string;
     lastName?: string;
     role: UserRole;
-    status: UserStatus | string; // API returns "accepted"
+    status: UserStatus;
     isEmailVerified?: boolean;
     profilePicture?: string;
     createdAt?: string;
     updatedAt?: string;
 }
 
-export interface PastorProfile extends User {
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
-    churchDetails: ChurchInfo[];
-    title: string;
-    yearsInMinistry: string;
-    conference: string;
-    currentCommunityServiceProjects: string;
-    interests: string[];
-    comments: string;
-    avatar?: string;
-    bio?: string;
-    profilePicture?: string;
-}
-
+// Auth tokens - minimal, secure
 export interface AuthTokens {
     accessToken: string;
     refreshToken: string;
 }
 
-// Login flow types
+// Login/Auth responses
 export interface LoginCredentials {
     email: string;
     password: string;
 }
 
-export interface LoginUser {
-    id: string;
-    email: string;
-    status: UserStatus;
-    role: UserRole;
-    firstName?: string;
-    lastName?: string;
-    isEmailVerified?: boolean
-}
 export interface LoginResponse {
     success: boolean;
     message: string;
     data: {
         accessToken: string;
         refreshToken: string;
-        user: LoginUser;
+        user: User;
     };
 }
-export interface AuthTokens {
-    accessToken: string; // ✅ Must be string
-    refreshToken: string; // ✅ Must be string
-}
 
-
-// OTP flow types
+// OTP flow
 export interface SendOtpRequest {
     email: string;
 }
@@ -78,11 +47,10 @@ export interface SendOtpResponse {
     success: boolean;
     data: {
         message: string;
-        expiresIn: number; // seconds
+        expiresIn: number;
     };
 }
 
-// ✅ Verify OTP Types
 export interface VerifyOtpRequest {
     email: string;
     otp: string;
@@ -92,11 +60,12 @@ export interface VerifyOtpResponse {
     success: boolean;
     data: {
         isValid: boolean;
-        token: string; // Temporary token for password setting
+        token: string;
         message: string;
     };
 }
-// Password flow types
+
+// Password
 export interface SetPasswordRequest {
     email: string;
     password: string;
@@ -104,28 +73,12 @@ export interface SetPasswordRequest {
 }
 
 export interface SetPasswordResponse {
-    status: boolean;
+    success: boolean;
     message: string;
-    data: any
+    data: User;
 }
 
-export interface ForgotPasswordRequest {
-    email: string;
-}
-
-export interface ForgotPasswordResponse {
-    message: string;
-}
-
-export interface ResetPasswordRequest {
-    token: string; // From email link
-    newPassword: string;
-}
-
-export interface ResetPasswordResponse {
-    message: string;
-}
-
+// Token refresh
 export interface RefreshTokenRequest {
     refreshToken: string;
 }
@@ -133,4 +86,27 @@ export interface RefreshTokenRequest {
 export interface RefreshTokenResponse {
     accessToken: string;
     refreshToken: string;
+}
+
+// Forgot password
+export interface ForgotPasswordRequest {
+    email: string;
+}
+
+export interface ForgotPasswordResponse {
+    success: boolean;
+    message: string;
+}
+
+
+// Reset password
+export interface ResetPasswordRequest {
+    token: string;
+    newPassword: string;
+    confirmNewPassword: string;
+}
+
+export interface ResetPasswordResponse {
+    success: boolean;
+    message: string;
 }

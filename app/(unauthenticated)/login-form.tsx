@@ -1,11 +1,11 @@
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
-import { useLogin } from "@/hooks/auth/useLogin";
+import { useLogin } from "@/hooks/auth/useAuth";
 import { useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
-import React, { useState } from "react";
+import { Stack, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -18,46 +18,72 @@ import {
 } from "react-native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 export default function LoginFormScreen() {
     const { bottom } = useSafeAreaInsets();
-
-
+    const router = useRouter();
     const { interestData } = useOnboardingStore();
+    const { mutate: login, isPending: isLoading, error } = useLogin();
 
-
-    const { mutate: login, isPending, error } = useLogin();
-
-    const [email, setEmail] = useState(interestData?.email || "");
-    const [password, setPassword] = useState("");
+    // Form state
+    const [email, setEmail] = useState(interestData?.email || '');
+    const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
-
-    const handleLogin = () => {
-        if (!email || !password) {
-            Alert.alert("Error", "Please enter both email and password");
+    // Handle login
+    const handleLogin = useCallback(() => {
+        // Validation
+        if (!email.trim()) {
+            Alert.alert('Error', 'Please enter your email');
+            return;
+        }
+        if (!password.trim()) {
+            Alert.alert('Error', 'Please enter your password');
             return;
         }
 
-        login({ email, password });
-    };
+        console.log('📤 Logging in with:', email);
+        login({ email: email.trim(), password });
+    }, [email, password, login]);
+
+    // Navigate to forgot password
+    const handleForgotPassword = useCallback(() => {
+        router.push('/(unauthenticated)/forgot-password');
+    }, [router]);
+
+    // Navigate to interest form
+    const handleNewUser = useCallback(() => {
+        router.push('/(unauthenticated)/interest-form');
+    }, [router]);
 
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <LinearGradient
-                colors={["#176192", "#1D548D", "#264387"]}
+                colors={['#176192', '#1D548D', '#264387']}
                 style={styles.container}
             >
                 <TopBar showNotifications={false} showDrawer={false} />
+
                 <KeyboardAwareScrollView
-                    contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 20 }]}
+                    contentContainerStyle={[
+                        styles.scrollContent,
+                        { paddingBottom: bottom + 20 },
+                    ]}
                     showsVerticalScrollIndicator={false}
                 >
+                    {/* CCC Logo */}
                     <View style={styles.cccLogoContainer}>
-                        <Image source={icons.communityImage} style={styles.cccLogo} resizeMode="contain" />
+                        <Image
+                            source={icons.communityImage}
+                            style={styles.cccLogo}
+                            resizeMode="contain"
+                        />
                     </View>
 
+                    {/* Login Form */}
                     <View style={styles.formContainer}>
+                        {/* Email Input */}
                         <TextInput
                             style={styles.input}
                             placeholder="Email or User Name"
@@ -66,9 +92,10 @@ export default function LoginFormScreen() {
                             onChangeText={setEmail}
                             keyboardType="email-address"
                             autoCapitalize="none"
-                            editable={!isPending}
+                            editable={!isLoading}
                         />
 
+                        {/* Password Input */}
                         <View style={styles.passwordContainer}>
                             <TextInput
                                 style={styles.passwordInput}
@@ -78,72 +105,80 @@ export default function LoginFormScreen() {
                                 onChangeText={setPassword}
                                 secureTextEntry={!showPassword}
                                 autoCapitalize="none"
-                                editable={!isPending}
+                                editable={!isLoading}
                             />
                             <TouchableOpacity
                                 onPress={() => setShowPassword(!showPassword)}
                                 style={styles.eyeIcon}
+                                disabled={isLoading}
                             >
                                 <Ionicons
-                                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                                     size={24}
                                     color="rgba(255,255,255,0.6)"
                                 />
                             </TouchableOpacity>
                         </View>
 
-
+                        {/* Error Message */}
                         {error && (
                             <View style={styles.errorContainer}>
-                                <Text style={styles.errorText}>{error.message}</Text>
+                                <Ionicons name="alert-circle" size={20} color="#FF6B6B" />
+                                <Text style={styles.errorText}>
+                                    {error.message ||
+                                        'Login failed. Please check your credentials.'}
+                                </Text>
                             </View>
                         )}
 
+                        {/* Login Button */}
                         <TouchableOpacity
-                            style={styles.loginButton}
+                            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
                             onPress={handleLogin}
-                            disabled={isPending}
+                            disabled={isLoading}
                         >
-                            {isPending ? (
+                            {isLoading ? (
                                 <ActivityIndicator color="#1A5490" />
                             ) : (
                                 <Text style={styles.loginButtonText}>Log in</Text>
                             )}
                         </TouchableOpacity>
 
+                        {/* Forgot Password */}
                         <TouchableOpacity
                             style={styles.forgotPassword}
-                            onPress={() => {
-                                router.push("/(unauthenticated)/forgot-password");
-                            }}
+                            onPress={handleForgotPassword}
+                            disabled={isLoading}
                         >
-                            <Text style={styles.forgotPasswordText}>Forgot Password ?</Text>
+                            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                         </TouchableOpacity>
                     </View>
 
-
+                    {/* Action Buttons */}
                     <View style={styles.actionButtonWrapper}>
                         <LinearGradient
-                            colors={["#7C3AED", "#3B82F6", "#1E40AF"]}
+                            colors={['#7C3AED', '#3B82F6', '#1E40AF']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             style={styles.gradientContainer}
                         >
                             <View style={styles.actionButtonsRow}>
                                 <TouchableOpacity
-                                    onPress={() => router.push("/(unauthenticated)/interest-form")}
+                                    onPress={handleNewUser}
                                     style={styles.actionButton}
                                     activeOpacity={0.8}
+                                    disabled={isLoading}
                                 >
-                                    <Text style={styles.actionButtonText}>New User {">>"}</Text>
+                                    <Text style={styles.actionButtonText}>New User {'>>'}</Text>
                                 </TouchableOpacity>
 
                                 <View style={styles.verticalDivider} />
 
                                 <TouchableOpacity
-                                    onPress={() => router.push("/(unauthenticated)/interest-form")}
+                                    onPress={handleNewUser}
                                     style={styles.actionButton}
                                     activeOpacity={0.8}
+                                    disabled={isLoading}
                                 >
                                     <Text style={styles.actionButtonText}>Submit Interest</Text>
                                 </TouchableOpacity>
@@ -151,15 +186,19 @@ export default function LoginFormScreen() {
                         </LinearGradient>
                     </View>
 
+                    {/* University Logo */}
                     <View style={styles.universityLogoContainer}>
-                        <Image source={icons.universityIcon} style={styles.universityLogo} resizeMode="contain" />
+                        <Image
+                            source={icons.universityIcon}
+                            style={styles.universityLogo}
+                            resizeMode="contain"
+                        />
                     </View>
                 </KeyboardAwareScrollView>
             </LinearGradient>
         </>
     );
 }
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -208,6 +247,9 @@ const styles = StyleSheet.create({
         paddingRight: 50,
         fontSize: 16,
         color: "#fff",
+    },
+    loginButtonDisabled: {
+        opacity: 0.6,
     },
     eyeIcon: {
         position: "absolute",

@@ -1,121 +1,86 @@
+// stores/onboarding.store.ts
 import { InterestFormData, InterestStatus } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface OnboardingState {
-    // Interest form state
-    interestStatus: InterestStatus | null;
-    applicationId: string | null;
+    // Form data
     interestData: InterestFormData | null;
-
-    // Auth flow state
+    interestStatus: InterestStatus | null;
     userId: string | null;
-    email: string | null; // Email for OTP flow
-    otpToken: string | null; // Token from OTP verification
+    applicationId: string | null;
+    email: string | null;
+
+    // Email verification flow
     isEmailVerified: boolean;
     isPasswordSet: boolean;
-    isProfileComplete: boolean;
 
-    // Timestamps
-    lastStatusCheck: number | null;
-    submittedAt: number | null;
+    // UI flow state (temporary, not persisted)
+    currentStep:
+    | 'form'
+    | 'submitted'
+    | 'approved'
+    | 'email-verify'
+    | 'password'
+    | 'complete';
 }
 
 interface OnboardingActions {
-    // Interest form actions
-    setInterestStatus: (status: InterestStatus) => void;
-    setApplicationId: (id: string) => void;
     setInterestData: (data: InterestFormData) => void;
-    updateInterestData: (updates: Partial<InterestFormData>) => void;
-
-    // Auth flow actions
+    setInterestStatus: (status: InterestStatus) => void;
     setUserId: (userId: string | null) => void;
-    setEmail: (email: string) => void;
-    setOtpToken: (token: string | null) => void;
+    setApplicationId: (id: string | null) => void;
+    setEmail: (email: string | null) => void;
     setEmailVerified: (verified: boolean) => void;
     setPasswordSet: (set: boolean) => void;
-    setProfileComplete: (complete: boolean) => void;
-
-    // Utility actions
-    updateLastStatusCheck: () => void;
-    completeOnboarding: () => void;
-    resetOnboarding: () => void;
-
-    // Computed getters
-    canSendOtp: () => boolean;
-    canVerifyOtp: () => boolean;
-    canSetPassword: () => boolean;
-    canCompleteProfile: () => boolean;
-    hasCompleteInterestData: () => boolean;
+    setCurrentStep: (
+        step: OnboardingState['currentStep']
+    ) => void;
+    reset: () => void;
 }
 
 type OnboardingStore = OnboardingState & OnboardingActions;
 
 const initialState: OnboardingState = {
-    interestStatus: null,
-    applicationId: null,
     interestData: null,
+    interestStatus: null,
     userId: null,
+    applicationId: null,
     email: null,
-    otpToken: null,
     isEmailVerified: false,
     isPasswordSet: false,
-    isProfileComplete: false,
-    lastStatusCheck: null,
-    submittedAt: null,
-
+    currentStep: 'form',
 };
 
 export const useOnboardingStore = create<OnboardingStore>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             ...initialState,
 
-            // Interest form actions
+            setInterestData: (data) => {
+                set({ interestData: data, interestStatus: 'pending', email: data.email });
+                console.log('📝 Interest data saved:', data.email);
+            },
+
             setInterestStatus: (status) => {
                 set({ interestStatus: status });
-                console.log('📝 Interest status:', status);
+                console.log('📊 Interest status updated:', status);
+            },
+
+            setUserId: (userId) => {
+                set({ userId });
+                console.log('👤 User ID set:', userId);
             },
 
             setApplicationId: (id) => {
                 set({ applicationId: id });
-                console.log('📝 Application ID:', id);
+                console.log('📋 Application ID set:', id);
             },
 
-            setInterestData: (data) => {
-                set({
-                    interestData: data,
-                    email: data.email, // Store email for later use
-                    submittedAt: Date.now(),
-                    interestStatus: 'pending',
-                });
-                console.log('📝 Interest data saved:', data.email);
-            },
-
-            updateInterestData: (updates) => {
-                const current = get().interestData;
-                if (current) {
-                    set({
-                        interestData: { ...current, ...updates }
-                    });
-                    console.log('📝 Interest data updated');
-                }
-            },
-
-            // Auth flow actions
-            setUserId: (userId) => {
-                set({ userId });
-                console.log('📧 UserId set:', userId);
-            },
             setEmail: (email) => {
                 set({ email });
                 console.log('📧 Email set:', email);
-            },
-
-            setOtpToken: (token) => {
-                set({ otpToken: token });
-                console.log('🔑 OTP token stored');
             },
 
             setEmailVerified: (verified) => {
@@ -125,93 +90,31 @@ export const useOnboardingStore = create<OnboardingStore>()(
 
             setPasswordSet: (passwordSet) => {
                 set({ isPasswordSet: passwordSet });
-                console.log('✅ Password set:', passwordSet);
+                console.log('🔐 Password set:', passwordSet);
             },
 
-            setProfileComplete: (complete) => {
-                set({ isProfileComplete: complete });
-                console.log('✅ Profile complete:', complete);
+            setCurrentStep: (step) => {
+                set({ currentStep: step });
+                console.log('📍 Current step:', step);
             },
 
-            // Utility actions
-            updateLastStatusCheck: () => {
-                set({ lastStatusCheck: Date.now() });
-            },
-
-            completeOnboarding: () => {
-                set({
-                    isProfileComplete: true,
-                    interestStatus: 'accepted',
-                });
-                console.log('🎉 Onboarding completed!');
-            },
-
-            resetOnboarding: () => {
+            reset: () => {
                 set(initialState);
-                console.log('🔄 Onboarding reset');
-            },
-            // Computed getters
-            canSendOtp: () => {
-                const state = get();
-                return (
-                    state.interestStatus === 'accepted' &&
-                    !!state.email &&
-                    !state.isEmailVerified
-                );
-            },
-
-            canVerifyOtp: () => {
-                const state = get();
-                return !!state.email && !state.isEmailVerified;
-            },
-
-            canSetPassword: () => {
-                const state = get();
-                return (
-                    state.isEmailVerified &&
-                    !!state.otpToken &&
-                    !state.isPasswordSet
-                );
-            },
-
-            canCompleteProfile: () => {
-                const state = get();
-                return state.isPasswordSet && !state.isProfileComplete;
-            },
-
-            hasCompleteInterestData: () => {
-                const data = get().interestData;
-                if (!data) return false;
-
-                // Check required fields
-                return !!(
-                    data.firstName &&
-                    data.lastName &&
-                    data.email &&
-                    data.phoneNumber &&
-                    data.churchDetails?.length > 0 &&
-                    data.title &&
-                    data.yearsInMinistry &&
-                    data.conference &&
-                    data.interests?.length > 0
-                );
+                console.log('🔄 Onboarding store reset');
             },
         }),
         {
-            name: 'pastor-onboarding',
+            name: 'onboarding-storage',
             storage: createJSONStorage(() => AsyncStorage),
-            // Persist everything except sensitive otpToken
             partialize: (state) => ({
-                interestStatus: state.interestStatus,
-                applicationId: state.applicationId,
                 interestData: state.interestData,
+                interestStatus: state.interestStatus,
+                userId: state.userId,
+                applicationId: state.applicationId,
                 email: state.email,
                 isEmailVerified: state.isEmailVerified,
                 isPasswordSet: state.isPasswordSet,
-                isProfileComplete: state.isProfileComplete,
-                lastStatusCheck: state.lastStatusCheck,
-                submittedAt: state.submittedAt,
-                // Don't persist otpToken for security
+                // Don't persist currentStep (UI state only)
             }),
         }
     )

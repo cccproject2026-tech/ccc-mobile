@@ -1,50 +1,36 @@
-// src/services/auth.service.ts
+// services/auth.service.ts
 import {
-    ForgotPasswordRequest,
-    ForgotPasswordResponse,
     LoginCredentials,
     LoginResponse,
-    PastorProfile,
     RefreshTokenRequest,
     RefreshTokenResponse,
-    ResetPasswordRequest,
-    ResetPasswordResponse,
     SendOtpRequest,
     SendOtpResponse,
     SetPasswordRequest,
     SetPasswordResponse,
-    User,
     VerifyOtpRequest,
     VerifyOtpResponse,
-} from '@/types';
+} from '@/types/auth.types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
 export const authService = {
-    // Login with email + password (✅ REAL API)
+    // Login with credentials
     login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
         console.log('📤 Login request:', { email: credentials.email });
-
         const response = await apiClient.post<LoginResponse>(
             ENDPOINTS.AUTH.LOGIN,
             credentials
         );
-
-        console.log('Response Raw', response.data)
         console.log('📥 Login response:', {
-            success: response.data.success,
-            message: response.data.message,
             userEmail: response.data.data.user.email,
             userRole: response.data.data.user.role,
-            // userStatus: response.data.data.user.status,
-            // isEmailVerified: response.data.data.user.isEmailVerified,
-            hasAccessToken: !!response.data.data.accessToken,
-            hasRefreshToken: !!response.data.data.refreshToken,
+            hasTokens: !!response.data.data.accessToken,
         });
-
         return response.data;
     },
-    // ✅ MOCK: Send OTP to email
+
+    // Send OTP to email
     sendOtp: async (data: SendOtpRequest): Promise<SendOtpResponse> => {
         console.log('📤 Sending OTP (MOCK) to:', data.email);
 
@@ -105,8 +91,9 @@ export const authService = {
         */
     },
 
-    // Set password (✅ REAL API)
+    // Set password
     setPassword: async (data: SetPasswordRequest): Promise<SetPasswordResponse> => {
+        console.log('📤 Setting password for:', data.email);
         const response = await apiClient.post<SetPasswordResponse>(
             ENDPOINTS.AUTH.SET_PASSWORD,
             data
@@ -114,32 +101,11 @@ export const authService = {
         return response.data;
     },
 
-    // Forgot password (✅ REAL API)
-    forgotPassword: async (
-        data: ForgotPasswordRequest
-    ): Promise<ForgotPasswordResponse> => {
-        const response = await apiClient.post<ForgotPasswordResponse>(
-            ENDPOINTS.AUTH.FORGOT_PASSWORD,
-            data
-        );
-        return response.data;
-    },
-
-    // Reset password (✅ REAL API)
-    resetPassword: async (
-        data: ResetPasswordRequest
-    ): Promise<ResetPasswordResponse> => {
-        const response = await apiClient.post<ResetPasswordResponse>(
-            ENDPOINTS.AUTH.RESET_PASSWORD,
-            data
-        );
-        return response.data;
-    },
-
-    // Refresh token (✅ REAL API)
+    // Refresh token
     refreshToken: async (
         data: RefreshTokenRequest
     ): Promise<RefreshTokenResponse> => {
+        console.log('📤 Refreshing token');
         const response = await apiClient.post<RefreshTokenResponse>(
             ENDPOINTS.AUTH.REFRESH_TOKEN,
             data
@@ -147,16 +113,31 @@ export const authService = {
         return response.data;
     },
 
-    // Logout (✅ REAL API)
+    // Logout
     logout: async (): Promise<void> => {
+        console.log('📤 Logging out');
         await apiClient.post(ENDPOINTS.AUTH.LOGOUT);
     },
 
-    // Get user by ID (✅ REAL API)
-    getUserById: async (userId: string): Promise<User | PastorProfile> => {
-        const response = await apiClient.get<User | PastorProfile>(
-            ENDPOINTS.USERS.GET_USER(userId)
-        );
+    // Forgot password
+    forgotPassword: async (email: string): Promise<{ message: string }> => {
+        console.log('📤 Forgot password for:', email);
+        const response = await apiClient.post(ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+            email,
+        });
+        return response.data;
+    },
+
+    // Reset password
+    resetPassword: async (
+        token: string,
+        newPassword: string
+    ): Promise<{ message: string }> => {
+        console.log('📤 Resetting password');
+        const response = await apiClient.post(ENDPOINTS.AUTH.RESET_PASSWORD, {
+            token,
+            newPassword,
+        });
         return response.data;
     },
 };

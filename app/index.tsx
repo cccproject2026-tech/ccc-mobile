@@ -437,7 +437,6 @@
 
 
 import { useAuthStore } from '@/stores/auth.store';
-import { useOnboardingStore } from '@/stores/onboarding.store';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -460,7 +459,6 @@ export default function RoleSelectionScreen() {
 
     // ✅ UPDATED: Only check auth, not profile
     const { user, isAuthenticated, logout } = useAuthStore();
-    const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
 
     const handleClearStorage = async () => {
         Alert.alert(
@@ -476,9 +474,6 @@ export default function RoleSelectionScreen() {
                         try {
                             // Logout (clears auth + secure storage)
                             await logout();
-
-                            // Clear stores
-                            resetOnboarding();
 
                             // Clear all AsyncStorage
                             await AsyncStorage.clear();
