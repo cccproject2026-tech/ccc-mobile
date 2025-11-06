@@ -5,14 +5,15 @@ import MentorProfileSwiper from '@/components/director/MentorProfileSwiper';
 import SearchBar from '@/components/director/SearchBar';
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from '@/components/director/TopBar';
-import { mockMentees, STATES } from '@/constants/mockData';
+import { STATES } from '@/constants/mockData';
+import { useMentees } from '@/hooks/mentees/useMentees';
 import { getFontSize, getIconSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Dimensions, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
@@ -28,6 +29,7 @@ export default function Mentees() {
     const { height } = Dimensions.get('window');
     const [viewMode, setViewMode] = useState<'list' | 'card'>('card');
     const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
+    const { mentees, isLoading, isError } = useMentees();
 
     const getFilterOptions = (): FilterOption[] => {
         return [
@@ -135,30 +137,70 @@ export default function Mentees() {
     const filterOptions = useMemo(() => getFilterOptions(), []);
 
     const filteredMentees = useMemo(() => {
-        let filtered = mockMentees;
+        let filtered = mentees;
 
         if (search) {
             filtered = filtered.filter((mentee) =>
-                mentee.name.toLowerCase().includes(search.toLowerCase())
+                mentee.name.toLowerCase().includes(search.toLowerCase()) ||
+                mentee.role?.toLowerCase().includes(search.toLowerCase()) ||
+                mentee.description?.toLowerCase().includes(search.toLowerCase())
             );
         }
 
+        // Note: API doesn't provide isCompleted field, so we can't filter by completion status
+        // If you need this functionality, you'll need to add it to the API response
         if (activeTab === 'completed') {
-            filtered = filtered.filter((mentee) => mentee.isCompleted);
+            filtered = filtered.filter((mentee) => mentee.isCompleted === true);
         } else if (activeTab === 'in-progress') {
-            filtered = filtered.filter((mentee) => !mentee.isCompleted);
+            filtered = filtered.filter((mentee) => mentee.isCompleted !== true);
         }
 
         return filtered;
-    }, [search, activeTab]);
+    }, [mentees, search, activeTab]);
 
-    const inProgressCount = mockMentees.filter((m) => !m.isCompleted).length;
+    const inProgressCount = useMemo(() => {
+        return mentees.filter((m) => m.isCompleted !== true).length;
+    }, [mentees]);
 
     const tabs = [
         { key: 'all', label: 'All' },
         { key: 'in-progress', label: 'In-progress', badge: inProgressCount },
         { key: 'completed', label: 'Completed' }
     ];
+
+    if (isLoading) {
+        return (
+            <LinearGradient
+                colors={['#176192', '#1D548D', '#264387']}
+                style={[styles.container]}
+            >
+                <View style={styles.innerContainer}>
+                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color="#fff" />
+                    </View>
+                </View>
+            </LinearGradient>
+        );
+    }
+
+    if (isError) {
+        return (
+            <LinearGradient
+                colors={['#176192', '#1D548D', '#264387']}
+                style={[styles.container]}
+            >
+                <View style={styles.innerContainer}>
+                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: getSpacing(16) }}>
+                        <Text style={{ color: '#fff', textAlign: 'center', fontSize: getFontSize(16) }}>
+                            Failed to load mentees. Please try again.
+                        </Text>
+                    </View>
+                </View>
+            </LinearGradient>
+        );
+    }
 
     return (
         <LinearGradient

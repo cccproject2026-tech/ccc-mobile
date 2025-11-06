@@ -111,52 +111,9 @@ export default function MentorTabLayout() {
                         }}
                     />
 
-                    {/* HIDDEN ROUTES - not shown in the tab bar */}
-                    <Tabs.Screen name="profile/documents" options={{ href: null }} />
-                    <Tabs.Screen name="profile/certificates" options={{ href: null }} />
-                    <Tabs.Screen name="profile/grant" options={{ href: null }} />
-
-                    {/* Hide auto-generated group routes */}
-                    <Tabs.Screen name="(index)" options={{ href: null }} />
-                    <Tabs.Screen name="(assessments)" options={{ href: null }} />
-                    <Tabs.Screen name="(roadmap)" options={{ href: null }} />
-                    <Tabs.Screen
-                        name="assessments-v2"
-                        options={{
-                            href: null,
-                            title: 'Assessments Library'
-                        }}
-                    />
-                    <Tabs.Screen
-                        name="assessments-v2/select-assessment"
-                        options={{
-                            href: null,
-                            title: 'Select Assessment'
-                        }}
-                    />
-                    <Tabs.Screen
-                        name="assessments-v2/create-assessment"
-                        options={{
-                            href: null,
-                            title: 'Create Assessment'
-                        }}
-                    />
-                    <Tabs.Screen
-                        name="assessments-v2/assign-to"
-                        options={{
-                            href: null,
-                            title: 'Assign To'
-                        }}
-                    />
-
-                    {/* Other mentor-area screens not in tab bar */}
-                    <Tabs.Screen name="new-roadmap" options={{ href: null }} />
-                    <Tabs.Screen name="roadmap" options={{ href: null }} />
-                    <Tabs.Screen name="appointments" options={{ href: null }} />
-                    <Tabs.Screen name="mentors" options={{ href: null }} />
-                    <Tabs.Screen name="my-mentors" options={{ href: null }} />
+                    {/* HIDDEN ROUTES - only routes that actually exist in (tabs) directory */}
                     <Tabs.Screen name="notifications" options={{ href: null }} />
-                    <Tabs.Screen name="schedule-meeting" options={{ href: null }} />
+                    <Tabs.Screen name="new-roadmap" options={{ href: null }} />
                 </Tabs>
             </AssessmentProvider>
         </RoadmapProgressProvider>

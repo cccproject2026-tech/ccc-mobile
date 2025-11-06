@@ -3,69 +3,41 @@ import MentorProfileSwiper from "@/components/director/MentorProfileSwiper";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useMentors } from "@/hooks/mentors/useMentors";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-
-const dummyMentors: MentorData[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-    profileImage: "https://randomuser.me/api/portraits/men/32.jpg",
-  },
-  {
-    id: "2",
-    name: "John Ross",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-    profileImage: "https://randomuser.me/api/portraits/men/45.jpg",
-  },
-  {
-    id: "3",
-    name: "Sarah Johnson",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-    profileImage: "https://randomuser.me/api/portraits/women/68.jpg",
-  },
-  {
-    id: "4",
-    name: "Michael Brown",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-    profileImage: "https://randomuser.me/api/portraits/men/22.jpg",
-  },
-  {
-    id: "5",
-    name: "Emily Davis",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-    profileImage: "https://randomuser.me/api/portraits/women/44.jpg",
-  },
-  {
-    id: "6",
-    name: "David Wilson",
-    role: "Field Mentor",
-    description: "Sub text area write something here. That you can read more",
-    profileImage: "https://randomuser.me/api/portraits/men/58.jpg",
-  },
-];
 
 export default function MyMentorsScreen() {
   const [listToggle, setListToggle] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const { mentors, isLoading, isError } = useMentors();
+
+  // Filter mentors based on search text
+  const filteredMentors = useMemo(() => {
+    if (!mentors) return [];
+    if (!searchText.trim()) return mentors;
+    const searchLower = searchText.toLowerCase();
+    return mentors.filter(
+      (mentor) =>
+        mentor.name.toLowerCase().includes(searchLower) ||
+        mentor.role.toLowerCase().includes(searchLower) ||
+        mentor.email?.toLowerCase().includes(searchLower)
+    );
+  }, [mentors, searchText]);
+
   const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
 
   const handleCardPress = (mentor: MentorData) => {
@@ -94,6 +66,33 @@ export default function MyMentorsScreen() {
     console.log("WhatsApp", mentor.name);
     // Implement WhatsApp functionality
   };
+
+  if (isLoading) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  if (isError) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text className="text-white text-center">Failed to load mentors. Please try again.</Text>
+        </View>
+      </LinearGradient>
+    );
+  }
+
   return (
     <>
       <LinearGradient
@@ -175,16 +174,16 @@ export default function MyMentorsScreen() {
                     listToggle ? styles.mentorsListView : styles.mentorsGrid
                   }
                 >
-                  {dummyMentors.map((mentor) => (
+                  {filteredMentors.map((mentor) => (
                     <MentorCard
                       key={mentor.id}
-                      mentor={mentor}
+                      mentor={mentor as MentorData}
                       layout={listToggle ? 'list' : 'card'}
-                      onCall={() => handleCall(mentor)}
-                      onChat={() => handleChat(mentor)}
-                      onMail={() => handleMail(mentor)}
-                      onWhatsApp={() => handleWhatsApp(mentor)}
-                      onPress={() => handleCardPress(mentor)}
+                      onCall={() => handleCall(mentor as MentorData)}
+                      onChat={() => handleChat(mentor as MentorData)}
+                      onMail={() => handleMail(mentor as MentorData)}
+                      onWhatsApp={() => handleWhatsApp(mentor as MentorData)}
+                      onPress={() => handleCardPress(mentor as MentorData)}
                     />
                   ))}
                 </View>
@@ -203,15 +202,15 @@ export default function MyMentorsScreen() {
                     listToggle ? styles.mentorsListView : styles.mentorsGrid
                   }
                 >
-                  {dummyMentors.map((mentor) => (
+                  {filteredMentors.map((mentor) => (
                     <MentorCard
                       key={mentor.id}
-                      mentor={mentor}
+                      mentor={mentor as MentorData}
                       layout={listToggle ? 'list' : 'card'}
-                      onCall={() => handleCall(mentor)}
-                      onChat={() => handleChat(mentor)}
-                      onMail={() => handleMail(mentor)}
-                      onWhatsApp={() => handleWhatsApp(mentor)}
+                      onCall={() => handleCall(mentor as MentorData)}
+                      onChat={() => handleChat(mentor as MentorData)}
+                      onMail={() => handleMail(mentor as MentorData)}
+                      onWhatsApp={() => handleWhatsApp(mentor as MentorData)}
                     />
                   ))}
                 </View>

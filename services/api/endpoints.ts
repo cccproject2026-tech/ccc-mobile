@@ -24,6 +24,14 @@ export const ENDPOINTS = {
         CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
     },
 
+    // Home
+    HOME: {
+        MENTEES: '/home/mentees',
+        MENTORS: '/home/mentors',
+        GET_MENTOR_BY_EMAIL: (email: string) => `/home/mentor/${email}`,
+        GET_MENTEE_BY_EMAIL: (email: string) => `/home/mentee/${email}`,
+    },
+
     // Profile (Authenticated routes)
     PROFILE: {
         UPDATE_PROFILE: '/users/me',

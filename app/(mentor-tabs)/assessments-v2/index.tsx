@@ -57,7 +57,7 @@ export default function MentorAssessmentsLibrary() {
     const handleAssignTo = (assessment: Assessment) => {
         bottomSheetRef.current?.dismiss();
         router.push({
-            pathname: "/(mentor-tabs)/(tabs)/assessments-v2/assign-to",
+            pathname: "/(mentor-tabs)/assessments-v2/assign-to",
             params: { assessmentId: assessment.id },
         });
     };
@@ -106,7 +106,7 @@ export default function MentorAssessmentsLibrary() {
                                 hitSlop={8}
                                 onPress={() =>
                                     router.push(
-                                        "/(mentor-tabs)/(tabs)/assessments-v2/select-assessment"
+                                        "/(mentor-tabs)/assessments-v2/select-assessment"
                                     )
                                 }
                             >
@@ -116,9 +116,7 @@ export default function MentorAssessmentsLibrary() {
                         <Pressable
                             className="p-1"
                             onPress={() =>
-                                router.push(
-                                    "/(mentor-tabs)/(tabs)/assessments-v2/create-assessment"
-                                )
+                                router.push("/(mentor-tabs)/assessments-v2/create-assessment")
                             }
                         >
                             <View className="w-[30px] h-[30px] rounded-md justify-center items-center border-2 border-white/40">
