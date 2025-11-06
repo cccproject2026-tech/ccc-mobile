@@ -1,23 +1,26 @@
-import { ChurchInfo, UserStatus } from './auth.types';
+import { UserStatus } from './auth.types';
+import { ChurchInfo } from './profile.types';
 export type InterestStatus = 'new' | 'pending' | 'accepted' | 'rejected';
 
 // Interest form data
 export interface InterestFormData {
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
-    email: string;
-    churchDetails: ChurchInfo[];
-    title: string;
-    yearsInMinistry: string;
-    conference: string;
-    currentCommunityProjects: string;
-    interests: string[];
-    comments: string;
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+    email?: string;
+    churchDetails?: ChurchInfo[]; // default to [] in code
+    interests?: string[];         // default to [] in code
+    // optional extras:
+    profileInfo?: string;
+    title?: string;
+    yearsInMinistry?: string;
+    conference?: string;
+    currentCommunityProjects?: string;
+    comments?: string;
     submittedAt?: string;
-    status?: InterestStatus;
+    status?: "pending" | "accepted" | "rejected";
 }
-
 // API Response for interest submission
 export interface SubmitInterestResponse {
     data: {

@@ -14,6 +14,7 @@ export interface ProfileData {
 }
 
 export interface ChurchInfo {
+    id?: string;
     name: string;
     phone: string;
     website: string;

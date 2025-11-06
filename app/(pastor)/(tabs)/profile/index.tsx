@@ -1,15 +1,18 @@
 import ConfirmModal from '@/components/atom/ConfirmModal';
 import SuccessModal from '@/components/atom/SuccessModal';
 import TopBar from '@/components/director/TopBar';
+import { Colors } from '@/constants/Colors';
 import { icons } from '@/constants/images';
-import { INITIAL_PROFILE_DATA, TITLE_OPTIONS } from '@/lib/profile/mock';
-import { ChurchInfo, ProfileData } from '@/lib/profile/types';
+import { useProfile, useUpdateProfile } from '@/hooks/profile/useProfile';
+import { TITLE_OPTIONS } from '@/lib/profile/mock';
+import { UpdateProfileData } from '@/types';
+import { ChurchInfo } from '@/types/profile.types';
 import { getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
@@ -23,32 +26,103 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
-
-
+const CLEAN_CHURCH_TEMPLATE: ChurchInfo = {
+  churchName: '',
+  churchPhone: '',
+  churchAddress: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  country: '',
+  churchWebsite: '',
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
 
-  // State
+  // Fetch profile data from React Query
+  const { data: profileData, isLoading, isError } = useProfile();
+  const updateProfile = useUpdateProfile();
+
+  // Local UI state
   const [isEditing, setIsEditing] = useState(false);
-  const [hasProfile] = useState(true);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [profileData, setProfileData] = useState<ProfileData>(INITIAL_PROFILE_DATA);
-  const [selectedTitle, setSelectedTitle] = useState(profileData.title);
   const [showTitleDropdown, setShowTitleDropdown] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+  // Form state (only when editing)
+  const [formData, setFormData] = useState<UpdateProfileData>({
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    churches: [],
+    title: '',
+    yearsInMinistry: '',
+    conference: '',
+    currentCommunityServiceProjects: '',
+    interests: [],
+    comments: '',
+    bio: '',
+  });
+
+  // Initialize form data when profile loads or when entering edit mode
+  useEffect(() => {
+    if (profileData?.user && isEditing) {
+      setFormData({
+        firstName: profileData.user.firstName || '',
+        lastName: profileData.user.lastName || '',
+        phoneNumber: profileData.interest?.phoneNumber || '',
+        churches: profileData.interest?.churchDetails || [],
+        title: profileData.interest?.title || '',
+        yearsInMinistry: profileData.interest?.yearsInMinistry || '',
+        conference: profileData.interest?.conference || '',
+        currentCommunityServiceProjects: profileData.interest?.currentCommunityProjects || '',
+        interests: profileData.interest?.interests || [],
+        comments: profileData.interest?.comments || '',
+        bio: profileData.interest?.profileInfo || '',
+      });
+      setProfileImage(profileData.user.profilePicture || null);
+    }
+  }, [isEditing, profileData]);
+
+  // Calculate progress percentage
+  const progressPercentage = useMemo(() => {
+    return profileData?.progress?.percentage || 0;
+  }, [profileData?.progress]);
+
+  // Get greeting based on time
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good Morning';
+    if (h < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  }, []);
+
   // ============= HANDLERS =============
-  const updateField = useCallback((field: keyof ProfileData, value: any) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
+  const updateField = useCallback((field: keyof UpdateProfileData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
   const updateChurch = useCallback((index: number, field: keyof ChurchInfo, value: string) => {
-    setProfileData(prev => {
-      const churches = [...prev.churches];
-      churches[index] = { ...churches[index], [field]: value };
+    setFormData(prev => {
+      const churches = [...(prev.churches || [])];
+      // Only allow valid ChurchInfo properties
+      const validFields: (keyof ChurchInfo)[] = [
+        'churchName',
+        'churchPhone',
+        'churchAddress',
+        'city',
+        'state',
+        'zipCode',
+        'country',
+        'churchWebsite',
+      ];
+
+      if (validFields.includes(field)) {
+        churches[index] = { ...churches[index], [field]: value };
+      }
       return { ...prev, churches };
     });
   }, []);
@@ -83,32 +157,26 @@ export default function ProfileScreen() {
   }, []);
 
   const addChurch = useCallback(() => {
-    setProfileData(prev => ({
+    setFormData(prev => ({
       ...prev,
       churches: [
-        ...prev.churches,
+        ...(prev.churches || []),
         {
-          name: '',
-          phone: '',
-          website: '',
-          address: '',
-          city: '',
-          state: '',
-          zip: '',
-          country: '',
+          ...CLEAN_CHURCH_TEMPLATE,
+          id: `temp-${Date.now()}`, // Keep temp ID for UI only
         },
       ],
     }));
   }, []);
 
   const removeChurch = useCallback((index: number) => {
-    if (profileData.churches.length > 1) {
-      setProfileData(prev => ({
+    if ((formData.churches?.length || 0) > 1) {
+      setFormData(prev => ({
         ...prev,
-        churches: prev.churches.filter((_, i) => i !== index),
+        churches: prev.churches?.filter((_, i) => i !== index),
       }));
     }
-  }, [profileData.churches.length]);
+  }, [formData.churches]);
 
   const handleEditPress = useCallback(() => {
     setShowSuccessModal(false);
@@ -120,42 +188,115 @@ export default function ProfileScreen() {
     setShowConfirmModal(true);
   }, []);
 
-  // Close confirm and switch to view mode, then show success
-  const handleConfirmSave = useCallback(() => {
-    setShowConfirmModal(false);
-    setIsEditing(false);
+  // Sanitize church data before sending to API
+  const sanitizeChurches = (churches: ChurchInfo[] | undefined): ChurchInfo[] => {
+    if (!churches || churches.length === 0) return [];
 
-    // Show success modal after a brief delay
-    setTimeout(() => {
-      setShowSuccessModal(true);
-    }, 100);
-  }, []);
+    return churches.map(church => ({
+      churchName: church.churchName || '',
+      churchPhone: church.churchPhone || '',
+      churchAddress: church.churchAddress || '',
+      city: church.city || '',
+      state: church.state || '',
+      zipCode: church.zipCode || '',
+      country: church.country || '',
+      churchWebsite: church.churchWebsite || '',
+      // Explicitly exclude: id, address, phone (UI-only or wrong property names)
+    }));
+  };
+
+  const handleConfirmSave = useCallback(async () => {
+    setShowConfirmModal(false);
+
+    try {
+      // Clean and sanitize church data
+      const cleanedChurches = sanitizeChurches(formData.churches);
+
+      const updateData: UpdateProfileData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phoneNumber,
+        churches: cleanedChurches, // Use cleaned churches
+        title: formData.title,
+        yearsInMinistry: formData.yearsInMinistry,
+        conference: formData.conference,
+        currentCommunityServiceProjects: formData.currentCommunityServiceProjects,
+        interests: formData.interests,
+        comments: formData.comments,
+        bio: formData.bio,
+        avatar: profileImage || undefined,
+      };
+
+      console.log('📤 Submitting cleaned profile update:', updateData);
+
+      // This now handles invalidation and refetch internally
+      await updateProfile.mutateAsync(updateData);
+
+      // Exit edit mode immediately (data is already fresh from refetch)
+      setIsEditing(false);
+
+      // Show success modal
+      setTimeout(() => {
+        setShowSuccessModal(true);
+      }, 100);
+
+      console.log('✅ Profile saved and UI updated successfully');
+    } catch (error: any) {
+      console.error('❌ Failed to update profile:', error);
+      Alert.alert(
+        'Update Failed',
+        error?.response?.data?.message || error.message || 'Failed to update profile. Please try again.'
+      );
+    }
+  }, [formData, profileImage, updateProfile]);
 
   const handleCancelSave = useCallback(() => {
     setShowConfirmModal(false);
   }, []);
 
-  // Reset when canceling
   const handleCancel = useCallback(() => {
     setShowConfirmModal(false);
     setShowSuccessModal(false);
     setIsEditing(false);
-  }, []);
+    // Reset form data to original values
+    if (profileData?.user) {
+      setFormData({
+        firstName: profileData.user.firstName || '',
+        lastName: profileData.user.lastName || '',
+        phoneNumber: profileData.interest?.phoneNumber || '',
+        churches: profileData.interest?.churchDetails || [],
+        title: profileData.interest?.title || '',
+        yearsInMinistry: profileData.interest?.yearsInMinistry || '',
+        conference: profileData.interest?.conference || '',
+        currentCommunityServiceProjects: profileData.interest?.currentCommunityProjects || '',
+        interests: profileData.interest?.interests || [],
+        comments: profileData.interest?.comments || '',
+        bio: profileData.interest?.profileInfo || '',
+      });
+      setProfileImage(profileData.user.profilePicture || null);
+    }
+  }, [profileData]);
 
   const handleSuccessModalClose = useCallback(() => {
     setShowSuccessModal(false);
   }, []);
 
   const handleTitleSelect = useCallback((option: string) => {
-    setSelectedTitle(option);
     updateField('title', option);
     setShowTitleDropdown(false);
   }, [updateField]);
 
+  // ============= RENDER FUNCTIONS =============
   const renderAvatar = () => (
     <View style={styles.avatarContainer}>
       <Image
-        source={profileImage ? { uri: profileImage } : icons.myProfile}
+        source={
+          profileImage
+            ? { uri: profileImage }
+            : profileData?.user?.profilePicture
+              ? { uri: profileData.user.profilePicture }
+              : icons.myProfile
+        }
         style={styles.avatarImage}
       />
       {isEditing && (
@@ -168,13 +309,11 @@ export default function ProfileScreen() {
 
   const renderHeader = () => (
     <TouchableOpacity
-      onPress={() => isEditing ? handleCancel() : router.back()}
+      onPress={() => (isEditing ? handleCancel() : router.back())}
       style={styles.headerContainer}
     >
       <Ionicons name="chevron-back" size={28} color="#fff" />
-      <Text style={styles.headerTitle}>
-        {isEditing ? 'Edit Profile' : 'My Profile'}
-      </Text>
+      <Text style={styles.headerTitle}>{isEditing ? 'Edit Profile' : 'My Profile'}</Text>
     </TouchableOpacity>
   );
 
@@ -182,9 +321,9 @@ export default function ProfileScreen() {
     <View style={styles.progressContainer}>
       <Text style={styles.progressLabel}>Progress</Text>
       <View style={styles.progressBarContainer}>
-        <View style={[styles.progressBar, { width: '70%' }]} />
+        <View style={[styles.progressBar, { width: `${progressPercentage}%` }]} />
       </View>
-      <Text style={styles.progressText}>70%</Text>
+      <Text style={styles.progressText}>{progressPercentage}%</Text>
     </View>
   );
 
@@ -192,17 +331,12 @@ export default function ProfileScreen() {
     <View style={styles.actionButtons}>
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={() => router.push('/profile/documents', {
-          withAnchor: true
-        })}
+        onPress={() => router.push('/profile/documents' as any)}
       >
         <Text style={styles.actionButtonText}>Documents</Text>
         <Image source={icons.attachment} style={styles.smallIcon} />
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={handleEditPress}
-      >
+      <TouchableOpacity style={styles.actionButton} onPress={handleEditPress}>
         <Text style={styles.actionButtonText}>Edit Profile</Text>
         <Image source={icons.edit} style={styles.smallIcon} />
       </TouchableOpacity>
@@ -213,7 +347,9 @@ export default function ProfileScreen() {
     <View style={styles.section}>
       <Text style={styles.sectionHeading}>Profile Information</Text>
       <View style={styles.profileInfoBox}>
-        <Text style={styles.profileInfoText}>{profileData.profileInfo}</Text>
+        <Text style={styles.profileInfoText}>
+          {profileData?.interest?.profileInfo || 'No profile information available.'}
+        </Text>
       </View>
     </View>
   );
@@ -230,9 +366,10 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         <TextInput
           style={styles.profileTextArea}
-          value={profileData.profileInfo}
-          onChangeText={(text) => updateField('profileInfo', text)}
+          value={formData.bio || ''}
+          onChangeText={(text) => updateField('bio', text)}
           multiline
+          placeholder="Tell us about yourself..."
           placeholderTextColor="rgba(255,255,255,0.5)"
         />
       </View>
@@ -244,18 +381,20 @@ export default function ProfileScreen() {
       <Text style={styles.sectionTitle}>Personal Information</Text>
       <View style={styles.row}>
         <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>First Name : {profileData.firstName}</Text>
+          <Text style={styles.viewFieldText}>First Name : {profileData?.user?.firstName}</Text>
         </View>
         <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>Last Name : {profileData.lastName}</Text>
+          <Text style={styles.viewFieldText}>Last Name : {profileData?.user?.lastName}</Text>
         </View>
       </View>
       <View style={styles.row}>
         <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>Phone Number : {profileData.phone}</Text>
+          <Text style={styles.viewFieldText}>
+            Phone Number : {profileData?.interest?.phoneNumber}
+          </Text>
         </View>
         <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>Email : {profileData.email}</Text>
+          <Text style={styles.viewFieldText}>Email : {profileData?.user?.email}</Text>
         </View>
       </View>
     </View>
@@ -269,8 +408,9 @@ export default function ProfileScreen() {
           <Text style={styles.fieldLabel}>First Name :</Text>
           <TextInput
             style={styles.editInput}
-            value={profileData.firstName}
+            value={formData.firstName}
             onChangeText={(text) => updateField('firstName', text)}
+            placeholder="First name"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
@@ -278,8 +418,9 @@ export default function ProfileScreen() {
           <Text style={styles.fieldLabel}>Last Name :</Text>
           <TextInput
             style={styles.editInput}
-            value={profileData.lastName}
+            value={formData.lastName}
             onChangeText={(text) => updateField('lastName', text)}
+            placeholder="Last name"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
@@ -289,19 +430,20 @@ export default function ProfileScreen() {
           <Text style={styles.fieldLabel}>Phone Number :</Text>
           <TextInput
             style={styles.editInput}
-            value={profileData.phone}
-            onChangeText={(text) => updateField('phone', text)}
+            value={formData.phoneNumber}
+            onChangeText={(text) => updateField('phoneNumber', text)}
             keyboardType="phone-pad"
+            placeholder="Phone"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
         <View style={[styles.editFieldContainer, styles.halfInput]}>
           <Text style={styles.fieldLabel}>Email :</Text>
           <TextInput
-            style={styles.editInput}
-            value={profileData.email}
-            onChangeText={(text) => updateField('email', text)}
-            keyboardType="email-address"
+            style={[styles.editInput, { color: 'rgba(255,255,255,0.5)' }]}
+            value={profileData?.user?.email}
+            editable={false}
+            placeholder="Email"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
@@ -309,36 +451,26 @@ export default function ProfileScreen() {
     </View>
   );
 
-  const renderChurchView = (church: ChurchInfo, index: number) => (
-    <View key={index} style={styles.viewSection}>
-      <Text style={styles.sectionTitle}>
-        Current Church -{index + 1} Information
-      </Text>
+  const renderChurchView = (church: ChurchInfo) => (
+    <View key={church.id || `church-${Math.random()}`} style={styles.viewSection}>
+      <Text style={styles.sectionTitle}>Current Church Information</Text>
       <View style={styles.viewField}>
-        <Text style={styles.viewFieldText}>Church Name : {church.name}</Text>
+        <Text style={styles.viewFieldText}>Church Name : {church.churchName}</Text>
       </View>
       <View style={styles.row}>
         <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>Church Phone : {church.phone}</Text>
+          <Text style={styles.viewFieldText}>Church Phone : {church.churchPhone}</Text>
         </View>
-        <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>Church Website : {church.website}</Text>
-        </View>
-      </View>
-      <View style={styles.viewField}>
-        <Text style={styles.viewFieldText}>Church Address : {church.address}</Text>
-      </View>
-      <View style={styles.row}>
         <View style={[styles.viewField, styles.halfInput]}>
           <Text style={styles.viewFieldText}>City : {church.city}</Text>
         </View>
-        <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>State : {church.state}</Text>
-        </View>
+      </View>
+      <View style={styles.viewField}>
+        <Text style={styles.viewFieldText}>Church Address : {church.churchAddress}</Text>
       </View>
       <View style={styles.row}>
         <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>Zip Code : {church.zip}</Text>
+          <Text style={styles.viewFieldText}>State : {church.state}</Text>
         </View>
         <View style={[styles.viewField, styles.halfInput]}>
           <Text style={styles.viewFieldText}>Country : {church.country}</Text>
@@ -348,11 +480,9 @@ export default function ProfileScreen() {
   );
 
   const renderChurchEdit = (church: ChurchInfo, index: number) => (
-    <View key={index} style={styles.editSection}>
+    <View key={church.id || `church-edit-${index}`} style={styles.editSection}>
       <View style={styles.editSectionHeader}>
-        <Text style={styles.sectionTitle}>
-          Current Church -{index + 1} Information
-        </Text>
+        <Text style={styles.sectionTitle}>Current Church - {index + 1} Information</Text>
         {index === 0 ? (
           <TouchableOpacity style={styles.addChurchButton} onPress={addChurch}>
             <Text style={styles.addChurchText}>Add Church</Text>
@@ -366,23 +496,29 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Church Name */}
       <View style={styles.editFieldContainer}>
         <Text style={styles.fieldLabel}>Church Name :</Text>
         <TextInput
           style={styles.editInput}
-          value={church.name}
-          onChangeText={(text) => updateChurch(index, 'name', text)}
+          value={church.churchName || ''}
+          onChangeText={(text) => updateChurch(index, 'churchName', text)}
+          placeholder="Enter church name"
           placeholderTextColor="rgba(255,255,255,0.5)"
         />
       </View>
+
+      {/* Phone and Website */}
       <View style={styles.row}>
         <View style={[styles.editFieldContainer, styles.halfInput]}>
           <Text style={styles.fieldLabel}>Church Phone :</Text>
           <TextInput
             style={styles.editInput}
-            value={church.phone}
-            onChangeText={(text) => updateChurch(index, 'phone', text)}
+            value={church.churchPhone || ''}
+            onChangeText={(text) => updateChurch(index, 'churchPhone', text)}
             keyboardType="phone-pad"
+            placeholder="Phone"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
@@ -390,28 +526,35 @@ export default function ProfileScreen() {
           <Text style={styles.fieldLabel}>Church Website :</Text>
           <TextInput
             style={styles.editInput}
-            value={church.website}
-            onChangeText={(text) => updateChurch(index, 'website', text)}
+            value={church.churchWebsite || ''}
+            onChangeText={(text) => updateChurch(index, 'churchWebsite', text)}
+            placeholder="Website"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
       </View>
+
+      {/* Address */}
       <View style={styles.editFieldContainer}>
         <Text style={styles.fieldLabel}>Church Address :</Text>
         <TextInput
           style={styles.editInput}
-          value={church.address}
-          onChangeText={(text) => updateChurch(index, 'address', text)}
+          value={church.churchAddress || ''}
+          onChangeText={(text) => updateChurch(index, 'churchAddress', text)}
+          placeholder="Street address"
           placeholderTextColor="rgba(255,255,255,0.5)"
         />
       </View>
+
+      {/* City and State */}
       <View style={styles.row}>
         <View style={[styles.editFieldContainer, styles.halfInput]}>
           <Text style={styles.fieldLabel}>City :</Text>
           <TextInput
             style={styles.editInput}
-            value={church.city}
+            value={church.city || ''}
             onChangeText={(text) => updateChurch(index, 'city', text)}
+            placeholder="City"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
@@ -419,20 +562,24 @@ export default function ProfileScreen() {
           <Text style={styles.fieldLabel}>State :</Text>
           <TextInput
             style={styles.editInput}
-            value={church.state}
+            value={church.state || ''}
             onChangeText={(text) => updateChurch(index, 'state', text)}
+            placeholder="State"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
       </View>
+
+      {/* Zip Code and Country */}
       <View style={styles.row}>
         <View style={[styles.editFieldContainer, styles.halfInput]}>
           <Text style={styles.fieldLabel}>Zip Code :</Text>
           <TextInput
             style={styles.editInput}
-            value={church.zip}
-            onChangeText={(text) => updateChurch(index, 'zip', text)}
+            value={church.zipCode || ''}
+            onChangeText={(text) => updateChurch(index, 'zipCode', text)}
             keyboardType="numeric"
+            placeholder="Zip code"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
@@ -440,8 +587,9 @@ export default function ProfileScreen() {
           <Text style={styles.fieldLabel}>Country :</Text>
           <TextInput
             style={styles.editInput}
-            value={church.country}
+            value={church.country || ''}
             onChangeText={(text) => updateChurch(index, 'country', text)}
+            placeholder="Country"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
@@ -453,26 +601,30 @@ export default function ProfileScreen() {
     <View style={styles.viewSection}>
       <Text style={styles.sectionTitle}>Other Information</Text>
       <View style={styles.viewField}>
-        <Text style={styles.viewFieldText}>Title : {profileData.title}</Text>
+        <Text style={styles.viewFieldText}>Title : {profileData?.interest?.title}</Text>
       </View>
       <View style={styles.row}>
         <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>Years in Ministry : {profileData.yearsInMinistry}</Text>
+          <Text style={styles.viewFieldText}>
+            Years in Ministry : {profileData?.interest?.yearsInMinistry}
+          </Text>
         </View>
         <View style={[styles.viewField, styles.halfInput]}>
-          <Text style={styles.viewFieldText}>Conference : {profileData.conference}</Text>
+          <Text style={styles.viewFieldText}>Conference : {profileData?.interest?.conference}</Text>
         </View>
       </View>
       <View style={styles.viewField}>
         <Text style={styles.viewFieldText}>
-          Community Service Projects : {profileData.communityServiceProjects}
+          Community Service Projects : {profileData?.interest?.currentCommunityProjects}
         </Text>
       </View>
       <View style={styles.viewField}>
-        <Text style={styles.viewFieldText}>Interests : {profileData.interests}</Text>
+        <Text style={styles.viewFieldText}>
+          Interests : {profileData?.interest?.interests?.join(', ')}
+        </Text>
       </View>
       <View style={styles.viewField}>
-        <Text style={styles.viewFieldText}>Comments : {profileData.comments}</Text>
+        <Text style={styles.viewFieldText}>Comments : {profileData?.interest?.comments}</Text>
       </View>
     </View>
   );
@@ -486,9 +638,7 @@ export default function ProfileScreen() {
           style={[styles.editInput, styles.dropdownInput]}
           onPress={() => setShowTitleDropdown(!showTitleDropdown)}
         >
-          <Text style={styles.dropdownText}>
-            {selectedTitle || 'Select Title'}
-          </Text>
+          <Text style={styles.dropdownText}>{formData.title || 'Select Title'}</Text>
           <Ionicons name="chevron-down" size={18} color="rgba(255,255,255,0.7)" />
         </TouchableOpacity>
         {showTitleDropdown && (
@@ -510,9 +660,10 @@ export default function ProfileScreen() {
           <Text style={styles.fieldLabel}>Years in Ministry :</Text>
           <TextInput
             style={styles.editInput}
-            value={profileData.yearsInMinistry}
+            value={formData.yearsInMinistry}
             onChangeText={(text) => updateField('yearsInMinistry', text)}
             keyboardType="numeric"
+            placeholder="Years"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
@@ -520,8 +671,9 @@ export default function ProfileScreen() {
           <Text style={styles.fieldLabel}>Conference :</Text>
           <TextInput
             style={styles.editInput}
-            value={profileData.conference}
+            value={formData.conference}
             onChangeText={(text) => updateField('conference', text)}
+            placeholder="Conference"
             placeholderTextColor="rgba(255,255,255,0.5)"
           />
         </View>
@@ -530,8 +682,9 @@ export default function ProfileScreen() {
         <Text style={styles.fieldLabel}>Community Service Projects :</Text>
         <TextInput
           style={styles.editInput}
-          value={profileData.communityServiceProjects}
-          onChangeText={(text) => updateField('communityServiceProjects', text)}
+          value={formData.currentCommunityServiceProjects}
+          onChangeText={(text) => updateField('currentCommunityServiceProjects', text)}
+          placeholder="Projects"
           placeholderTextColor="rgba(255,255,255,0.5)"
         />
       </View>
@@ -539,9 +692,10 @@ export default function ProfileScreen() {
         <Text style={styles.fieldLabel}>Interests :</Text>
         <TextInput
           style={[styles.editInput, styles.textArea]}
-          value={profileData.interests}
-          onChangeText={(text) => updateField('interests', text)}
+          value={formData.interests?.join(', ')}
+          onChangeText={(text) => updateField('interests', text.split(',').map(i => i.trim()))}
           multiline
+          placeholder="Separate interests with commas"
           placeholderTextColor="rgba(255,255,255,0.5)"
         />
       </View>
@@ -549,9 +703,10 @@ export default function ProfileScreen() {
         <Text style={styles.fieldLabel}>Comments :</Text>
         <TextInput
           style={[styles.editInput, styles.textArea]}
-          value={profileData.comments}
+          value={formData.comments}
           onChangeText={(text) => updateField('comments', text)}
           multiline
+          placeholder="Comments"
           placeholderTextColor="rgba(255,255,255,0.5)"
         />
       </View>
@@ -563,53 +718,58 @@ export default function ProfileScreen() {
       <TouchableOpacity
         style={[styles.actionButton2, styles.cancelButton]}
         onPress={handleCancel}
+        disabled={updateProfile.isPending}
       >
         <Text style={styles.cancelButtonText}>Cancel</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.actionButton2, styles.saveButton]}
-        onPress={handleSavePress} // Changed to handleSavePress
+        onPress={handleSavePress}
+        disabled={updateProfile.isPending}
       >
-        <Text style={styles.saveButtonText}>Save</Text>
+        <Text style={styles.saveButtonText}>{updateProfile.isPending ? 'Saving...' : 'Save'}</Text>
       </TouchableOpacity>
     </View>
   );
 
-  // VIEW MODE RENDER
-  // if (hasProfile && !isEditing) {
-  //   return (
-  //     <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
-  //       <TopBar role='pastor' />
-  //       {renderHeader()}
-  //       <KeyboardAwareScrollView
-  //         style={styles.scrollView}
-  //         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom }]}
-  //         showsVerticalScrollIndicator={false}
-  //       >
-  //         <View style={styles.profileHeader}>
-  //           {renderAvatar()}
-  //           <Text style={styles.greeting}>Good Morning {profileData.firstName} {profileData.lastName}</Text>
-  //           <Text style={styles.role}>{profileData.title}</Text>
-  //         </View>
+  // ============= LOADING & ERROR STATES =============
+  if (isLoading) {
+    return (
+      <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontSize: 16 }}>Loading profile...</Text>
+        </View>
+      </LinearGradient>
+    );
+  }
 
-  //         {renderProgressBar()}
-  //         {renderActionButtons()}
-  //         {renderProfileInfo()}
+  if (isError || !profileData?.user) {
+    return (
+      <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center' }}>
+            Failed to load profile data. Please try again.
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{
+              marginTop: 20,
+              padding: 12,
+              backgroundColor: Colors.customBlueOne,
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ color: '#fff' }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+  }
 
-  //         <View style={styles.mainContentBox}>
-  //           {renderPersonalInfoView()}
-  //           {profileData.churches.map(renderChurchView)}
-  //           {renderOtherInfoView()}
-  //         </View>
-  //       </KeyboardAwareScrollView>
-  //     </LinearGradient>
-  //   );
-  // }
-
-  // EDIT MODE RENDER 
+  // ============= MAIN RENDER =============
   return (
     <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
-      <TopBar role='pastor' />
+      <TopBar role="pastor" />
       {renderHeader()}
 
       <KeyboardAwareScrollView
@@ -623,9 +783,9 @@ export default function ProfileScreen() {
             <View style={styles.profileHeader}>
               {renderAvatar()}
               <Text style={styles.greeting}>
-                Good Morning {profileData.firstName} {profileData.lastName}
+                {greeting} {profileData.user.firstName} {profileData.user.lastName}
               </Text>
-              <Text style={styles.role}>{profileData.title}</Text>
+              <Text style={styles.role}>{profileData.interest?.title || 'Pastor'}</Text>
             </View>
 
             {renderProgressBar()}
@@ -634,7 +794,9 @@ export default function ProfileScreen() {
 
             <View style={styles.mainContentBox}>
               {renderPersonalInfoView()}
-              {profileData.churches.map(renderChurchView)}
+              {profileData.interest?.churchDetails &&
+                profileData.interest.churchDetails.length > 0 &&
+                profileData.interest.churchDetails.map((church, index) => renderChurchView(church))}
               {renderOtherInfoView()}
             </View>
           </>
@@ -643,15 +805,15 @@ export default function ProfileScreen() {
         {/* EDIT MODE */}
         {isEditing && (
           <>
-            <View style={styles.editProfileHeader}>
-              {renderAvatar()}
-            </View>
+            <View style={styles.editProfileHeader}>{renderAvatar()}</View>
 
             {renderEditableProfileInfo()}
 
             <View style={styles.mainContentBox}>
               {renderPersonalInfoEdit()}
-              {profileData.churches.map(renderChurchEdit)}
+              {formData.churches &&
+                formData.churches.length > 0 &&
+                formData.churches.map((church, index) => renderChurchEdit(church, index))}
               {renderOtherInfoEdit()}
             </View>
 
@@ -660,17 +822,17 @@ export default function ProfileScreen() {
         )}
       </KeyboardAwareScrollView>
 
-      {/* MODALS - Always rendered outside conditional blocks */}
+      {/* MODALS */}
       <ConfirmModal
         visible={showConfirmModal}
-        title="Are you sure want to save changes ?"
+        title="Are you sure you want to save changes?"
         onConfirm={handleConfirmSave}
         onCancel={handleCancelSave}
       />
 
       <SuccessModal
         visible={showSuccessModal}
-        message="Edited Profile Successfully"
+        message="Profile Updated Successfully"
         onClose={handleSuccessModalClose}
       />
     </LinearGradient>

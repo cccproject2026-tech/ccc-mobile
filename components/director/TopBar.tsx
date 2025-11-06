@@ -40,9 +40,9 @@ const TopBar: React.FC<Props> = ({
     const onMenuPress = () => navigation.dispatch(DrawerActions.openDrawer());
     const handleNotificationsPress = () => {
         if (role === 'director') {
-            router.push('/(director-tabs)/(tabs)/notification');
+            router.push('/(director)/(tabs)/notification');
         } else if (role === 'pastor') {
-            router.push('/(pastor-tabs)/(tabs)/notifications');
+            router.push('/(pastor)/(tabs)/notifications');
         } else {
             router.push('/(mentor-tabs)/(tabs)/notifications');
         }

@@ -14,8 +14,11 @@ export const ENDPOINTS = {
     // Users
     USERS: {
         GET_USER: (userId: string) => `/users/${userId}`,
+        UPDATE_USER: (userId: string) => `/users/${userId}`,
         CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
-        GET_INTERESTS: (email: string) => `/interests/by-email/${email}`
+        GET_INTERESTS: (email: string) => `/interests/by-email/${email}`,
+        UPDATE_INTERESTS: (email: string) => `/interests/by-email/${email}`,
+        GET_PROGRESS: (userId: string) => `/progress/${userId}`,
     },
 
     // Pastor Onboarding (if separate from auth)

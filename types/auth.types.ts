@@ -1,25 +1,19 @@
+import { ChurchInfo } from "./profile.types";
+
 export type UserRole = 'pastor' | 'mentor' | 'director' | 'pending'
 
 export type UserStatus = 'new' | 'pending' | 'accepted' | 'rejected';
 
 
-export interface ChurchInfo {
-    id?: string;
-    churchName: string;
-    churchPhone: string;
-    churchWebsite: string;
-    churchAddress: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-}
-
 export interface User {
-    id: string;
+    id?: string;
     email: string;
+    firstName: string;
+    lastName?: string;
     role: UserRole;
-    isVerified?: boolean;
+    status: UserStatus | string; // API returns "accepted"
+    isEmailVerified?: boolean;
+    profilePicture?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -37,6 +31,7 @@ export interface PastorProfile extends User {
     comments: string;
     avatar?: string;
     bio?: string;
+    profilePicture?: string;
 }
 
 export interface AuthTokens {

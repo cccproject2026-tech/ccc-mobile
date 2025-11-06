@@ -7,12 +7,13 @@ import WelcomeCard from "@/components/director/WelcomeCard";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { appointments } from '@/constants/mockData';
-import { useProfileStore } from '@/stores';
+import { useProfile } from '@/hooks/profile/useProfile';
 import { formatClock, formatDate } from "@/utils/date";
 import { LinearGradient } from "expo-linear-gradient";
 import { Route, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Image, Pressable, ScrollView, StyleSheet,
   Text,
   TouchableOpacity,
@@ -25,31 +26,15 @@ export default function PastorDashboard() {
   const [now, setNow] = useState(new Date());
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { profile } = useProfileStore();
 
-  console.log({ profile })
+  // Only fetch what's needed for this screen
+  const { data, isLoading, isError, error } = useProfile();
+
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
 
   const handleWelcomRoute = () => {
     router.push('/(pastor)/(tabs)/profile');
-  }
-
-
-  const getCurrentTime = () => {
-    const now = new Date();
-    let hours = now.getHours();
-    const minutes = now.getMinutes();
-    const ampm = hours >= 12 ? "PM" : "AM";
-
-    // Convert 24-hour format to 12-hour format
-    hours = hours % 12;
-    hours = hours ? hours : 12; // If hour is 0, show 12
-
-    // Add leading zero to minutes if needed
-    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-
-    return `${hours} : ${formattedMinutes} ${ampm}`;
   };
 
   const greeting = useMemo(() => {
@@ -59,11 +44,41 @@ export default function PastorDashboard() {
     return 'Good Evening';
   }, [now]);
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.lightBlueGradientOne }}>
+        <ActivityIndicator size="large" color={Colors.customWhite} />
+        <Text style={{ color: Colors.customWhite, marginTop: 12 }}>Loading your dashboard...</Text>
+      </View>
+    );
+  }
 
-  // Example usage
-  const currentTime = getCurrentTime();
-  console.log(currentTime); // e.g., "12:00 PM"
+  // Error state
+  if (isError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <Text style={{ color: Colors.customWhite, textAlign: 'center' }}>
+          Failed to load profile data: {error?.message || 'Unknown error'}
+        </Text>
+        <Pressable
+          onPress={() => router.replace('/(unauthenticated)')}
+          style={{ marginTop: 20, padding: 12, backgroundColor: Colors.customBlueOne, borderRadius: 8 }}
+        >
+          <Text style={{ color: Colors.customWhite }}>Return to Login</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
+  // No data fallback
+  if (!data?.user) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: Colors.customWhite }}>No profile data available.</Text>
+      </View>
+    );
+  }
 
 
   const dummyRoadMaps = [
@@ -135,8 +150,8 @@ export default function PastorDashboard() {
               </Text>
               <WelcomeCard
                 onClick={handleWelcomRoute}
-                avatar={icons.myProfile} message="David Roe, Welcome !"
-                progress={70}
+                avatar={icons.myProfile} message={`${data?.user?.firstName} ${data?.user?.lastName}, Welcome !`}
+                progress={data?.progress?.completed || 0}
               />
             </View>
             <View style={{ paddingHorizontal: 16, marginTop: 14 }}>

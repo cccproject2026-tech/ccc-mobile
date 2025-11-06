@@ -1,6 +1,6 @@
 import { icons } from '@/constants/images';
 import { MenuItem } from '@/constants/mockData';
-import { useAuthStore, useProfileStore } from '@/stores';
+import { useAuthStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useRouter } from 'expo-router';
@@ -16,10 +16,9 @@ interface CustomDrawerProps extends DrawerContentComponentProps {
 export default function CustomDrawerContent(props: CustomDrawerProps) {
     const router = useRouter();
     const { bottom } = useSafeAreaInsets();
-
+    const { user } = useAuthStore();
     // ✅ UPDATED: Use auth store directly
     const { logout } = useAuthStore();
-    const { profile } = useProfileStore()
     const initializeExpandedItems = (items: MenuItem[], expandAll: boolean) => {
         const result: { [key: string]: boolean } = {};
 
@@ -194,7 +193,7 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                     <Image source={icons.myProfile} style={styles.avatar} />
                 </View>
                 <Text style={styles.userName}>
-                    {profile ? `${profile.firstName} ${profile.lastName}` : 'Guest User'}
+                    {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
                 </Text>
                 <TouchableOpacity style={styles.logoButton} onPress={handleLogoPress}>
                     <Image
