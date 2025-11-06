@@ -54,7 +54,7 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                 router.push('/(pastor)/(tabs)');
                 break;
             case 'mentor':
-                router.push('/(mentor)');
+                router.push('/(mentor-tabs)');
                 break;
             default:
                 router.push('/');

@@ -4,6 +4,7 @@ import { storage } from '@/utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { useOnboardingStore } from './onboarding.store';
 
 interface AuthState {
     user: User | null;
@@ -38,9 +39,27 @@ export const useAuthStore = create<AuthStore>()(
 
             logout: async () => {
                 try {
+
                     console.log('🔓 Logging out');
                     // Clear secure storage (tokens)
                     await storage.clearAll();
+
+                    // Reset onboarding flow state (in-memory + persisted)
+                    try {
+                        useOnboardingStore.getState().reset();
+                        console.log('🔄 Onboarding store reset');
+                    } catch (err) {
+                        console.warn('⚠️ Failed to reset onboarding store:', err);
+                    }
+
+                    // Clear AsyncStorage entirely to remove any persisted data
+                    try {
+                        await AsyncStorage.clear();
+                        console.log('🧹 AsyncStorage cleared');
+                    } catch (err) {
+                        console.warn('⚠️ Failed to clear AsyncStorage:', err);
+                    }
+
                     // Reset store
                     set({ user: null, isAuthenticated: false });
                     console.log('✅ Logout complete');
