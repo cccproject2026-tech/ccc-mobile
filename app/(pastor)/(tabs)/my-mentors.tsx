@@ -113,7 +113,7 @@ export default function MyMentorsScreen() {
                   style={styles.backButton}
                 >
                   <Image source={icons.forward} style={styles.backIcon} />
-                  <Text className="text-white font-semibold text-[17px]">
+                  <Text style={styles.myMentorsText}>
                     My Mentors
                   </Text>
                 </TouchableOpacity>
@@ -131,10 +131,10 @@ export default function MyMentorsScreen() {
             </View>
 
             {/* Separator */}
-            <View className="h-[0.5px] bg-white/30 mt-1" />
+            <View style={styles.dividerLine} />
 
             {/* Search Section */}
-            <View style={styles.searchContainer} className="mt-4">
+            <View style={styles.searchContainer}>
               <View style={styles.searchBox}>
                 <TextInput
                   style={styles.searchInput}
@@ -163,9 +163,9 @@ export default function MyMentorsScreen() {
               contentContainerStyle={{ paddingBottom: 20 }}
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.mentorsListContainer} className="mt-4">
+              <View style={styles.mentorsListContainer}>
                 <View style={styles.mentorsHeader}>
-                  <Text className="text-white  font-medium text-[16px]">
+                  <Text style={styles.mentorTabText}>
                     Current Mentors
                   </Text>
                 </View>
@@ -191,9 +191,9 @@ export default function MyMentorsScreen() {
               </View>
 
               {/* Prior Mentors */}
-              <View style={styles.mentorsListContainer} className="mt-4">
+              <View style={styles.mentorsListContainer}>
                 <View style={styles.mentorsHeader}>
-                  <Text className="text-white  font-medium text-[16px]">
+                  <Text style={styles.mentorTabText}>
                     Prior Mentors
                   </Text>
                 </View>
@@ -265,6 +265,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     marginHorizontal: 16,
     marginBottom: 10,
+    marginTop: 16,
   },
   searchBox: {
     backgroundColor: "#14517D",
@@ -314,6 +315,7 @@ const styles = StyleSheet.create({
   mentorsListContainer: {
     marginHorizontal: 16,
     marginBottom: 20,
+    marginTop: 16,
   },
   mentorsHeader: {
     flexDirection: "row",
@@ -326,5 +328,20 @@ const styles = StyleSheet.create({
   },
   mentorsListView: {
     gap: 0,
+  },
+  myMentorsText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 17,
+  },
+  dividerLine: {
+    height: 0.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginTop: 4,
+  },
+  mentorTabText: {
+    color: '#fff',
+    fontWeight: '500',
+    fontSize: 16,
   },
 });

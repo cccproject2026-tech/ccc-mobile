@@ -30,6 +30,9 @@ export const useLogin = () => {
     const router = useRouter();
     const queryClient = useQueryClient();
     const setUser = useAuthStore((state) => state.setUser);
+    const setHasProfilePicture = useOnboardingStore(
+        (state) => state.setHasProfilePicture
+    );
 
     return useMutation({
         mutationFn: (credentials: LoginCredentials) =>
@@ -49,6 +52,15 @@ export const useLogin = () => {
 
                 // Update auth store
                 setUser(user);
+
+                // ✅ NEW: Check if user has profile picture
+                if (user.profilePicture) {
+                    setHasProfilePicture(true);
+                    console.log('📷 User has profile picture');
+                } else {
+                    setHasProfilePicture(false);
+                    console.log('❌ User missing profile picture');
+                }
 
                 // Invalidate all queries
                 await queryClient.invalidateQueries({

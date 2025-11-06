@@ -1,4 +1,3 @@
-
 import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import TopBar from '@/components/director/TopBar';
@@ -10,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ItemDetail() {
     const { itemId } = useLocalSearchParams<{ itemId: string; returnTo?: string }>();
@@ -72,47 +71,29 @@ export default function ItemDetail() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
-    if (!task) return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ color: 'white' }}>Task not found</Text>
-        </View>
-    );
+    if (!task)
+        return (
+            <View style={styles.notFoundContainer}>
+                <Text style={styles.notFoundText}>Task not found</Text>
+            </View>
+        );
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
-            <View style={{ paddingBottom: 10 }}>
+        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+            <View style={styles.topBarWrapper}>
                 <TopBar role="pastor" userName="John Ross" showUserName />
             </View>
 
             {/* Header */}
-
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: getSpacing(8),
-                paddingVertical: getSpacing(16),
-                marginBottom: getSpacing(16),
-                borderBottomWidth: 1,
-                borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-            }}>
-                {/* Left side - Back button and Text */}
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    flex: 1,
-                    marginRight: getSpacing(12), // Add space before right elements
-                }}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerLeft}>
                     <TouchableOpacity
-                        onPress={() => {
-                            router.back();
-                        }}
+                        onPress={() => router.back()}
                         style={{ marginRight: getSpacing(8) }}
                     >
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
 
-                    {/* Text Container with flex to prevent overflow */}
                     <View style={{ flex: 1, marginRight: getSpacing(8) }}>
                         <Text
                             style={{
@@ -142,12 +123,7 @@ export default function ItemDetail() {
                     </View>
                 </View>
 
-                {/* Right side - Phase badge and menu */}
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: getSpacing(8),
-                }}>
+                <View style={styles.headerRight}>
                     <TouchableOpacity
                         onPress={() => setShowOutcomeMenu(true)}
                         style={{ padding: getSpacing(4) }}
@@ -157,55 +133,97 @@ export default function ItemDetail() {
                 </View>
             </View>
 
-            <View className="flex-row items-center justify-center px-4 mb-4">
+            {/* Tabs */}
+            <View style={styles.tabRow}>
                 <TouchableOpacity
                     onPress={() => setActiveTab('overview')}
-                    className={`px-6 py-2.5 rounded-full mr-2 ${activeTab === 'overview' ? 'bg-white' : 'bg-transparent border border-white/40'
-                        }`}
+                    style={[
+                        styles.tabButton,
+                        activeTab === 'overview' ? styles.tabActive : styles.tabInactive,
+                        { marginRight: 8 },
+                    ]}
                 >
-                    <Text className={`text-[15px] font-medium ${activeTab === 'overview' ? 'text-[#1A4882]' : 'text-white'
-                        }`}>
+                    <Text
+                        style={[
+                            styles.tabText,
+                            activeTab === 'overview' ? styles.tabTextActive : styles.tabTextInactive,
+                        ]}
+                    >
                         Overview
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={() => router.push({
-                        pathname: '/roadmap/comments',
-                        params: { taskId: task.id, phaseId: task.phaseId },
-                    })}
-                    className={`px-5 py-2.5 rounded-full mr-2 flex-row items-center ${activeTab === 'comments' ? 'bg-white' : 'bg-transparent border border-white/40'
-                        }`}
+                    onPress={() =>
+                        router.push({
+                            pathname: '/roadmap/comments',
+                            params: { taskId: task.id, phaseId: task.phaseId },
+                        })
+                    }
+                    style={[
+                        styles.tabButton,
+                        activeTab === 'comments' ? styles.tabActive : styles.tabInactive,
+                        styles.tabWithBadge,
+                    ]}
                 >
-                    <Text className={`text-[15px] font-medium ${activeTab === 'comments' ? 'text-[#1A4882]' : 'text-white'
-                        }`}>
+                    <Text
+                        style={[
+                            styles.tabText,
+                            activeTab === 'comments' ? styles.tabTextActive : styles.tabTextInactive,
+                        ]}
+                    >
                         Comments
                     </Text>
-                    <View className={`ml-2 w-5 h-5 rounded-full items-center justify-center ${activeTab === 'comments' ? 'bg-[#1A4882]' : 'bg-white'
-                        }`}>
-                        <Text className={`text-xs font-bold ${activeTab === 'comments' ? 'text-white' : 'text-[#1A4882]'
-                            }`}>
+                    <View
+                        style={[
+                            styles.badge,
+                            activeTab === 'comments' ? styles.badgeActive : styles.badgeInactive,
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.badgeText,
+                                activeTab === 'comments' ? styles.badgeTextActive : styles.badgeTextInactive,
+                            ]}
+                        >
                             2
                         </Text>
                     </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={() => router.push({
-                        pathname: '/roadmap/queries',
-                        params: { taskId: task.id, phaseId: task.phaseId },
-                    })}
-                    className={`px-5 py-2.5 rounded-full flex-row items-center ${activeTab === 'queries' ? 'bg-white' : 'bg-transparent border border-white/40'
-                        }`}
+                    onPress={() =>
+                        router.push({
+                            pathname: '/roadmap/queries',
+                            params: { taskId: task.id, phaseId: task.phaseId },
+                        })
+                    }
+                    style={[
+                        styles.tabButton,
+                        activeTab === 'queries' ? styles.tabActive : styles.tabInactive,
+                        styles.tabWithBadge,
+                    ]}
                 >
-                    <Text className={`text-[15px] font-medium ${activeTab === 'queries' ? 'text-[#1A4882]' : 'text-white'
-                        }`}>
+                    <Text
+                        style={[
+                            styles.tabText,
+                            activeTab === 'queries' ? styles.tabTextActive : styles.tabTextInactive,
+                        ]}
+                    >
                         Queries
                     </Text>
-                    <View className={`ml-2 w-5 h-5 rounded-full items-center justify-center ${activeTab === 'queries' ? 'bg-[#1A4882]' : 'bg-white'
-                        }`}>
-                        <Text className={`text-xs font-bold ${activeTab === 'queries' ? 'text-white' : 'text-[#1A4882]'
-                            }`}>
+                    <View
+                        style={[
+                            styles.badge,
+                            activeTab === 'queries' ? styles.badgeActive : styles.badgeInactive,
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.badgeText,
+                                activeTab === 'queries' ? styles.badgeTextActive : styles.badgeTextInactive,
+                            ]}
+                        >
                             3
                         </Text>
                     </View>
@@ -213,55 +231,49 @@ export default function ItemDetail() {
             </View>
 
             {/* Content */}
-            <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
                 {/* Cover Image */}
-                <View className="relative mb-0 overflow-hidden rounded-3xl" style={{ height: 220, backgroundColor: '#1a1a1a' }}>
+                <View style={styles.coverImageContainer}>
                     {task.meta?.coverImage ? (
                         <Image
-                            source={typeof task.meta.coverImage === 'string'
-                                ? { uri: task.meta.coverImage }
-                                : task.meta.coverImage
+                            source={
+                                typeof task.meta.coverImage === 'string'
+                                    ? { uri: task.meta.coverImage }
+                                    : task.meta.coverImage
                             }
-                            style={{ width: '100%', height: '100%', position: 'absolute' }}
+                            style={styles.coverImage}
                             resizeMode="cover"
                         />
                     ) : (
-                        <View style={{ width: '100%', height: '100%', backgroundColor: '#2a2a2a' }} />
+                        <View style={styles.coverPlaceholder} />
                     )}
 
-                    {/* Title overlay */}
-                    <View style={{ position: 'absolute', bottom: 24, left: 0, paddingHorizontal: 24 }}>
-                        <View style={{
-                            backgroundColor: 'rgba(50, 50, 80, 0.7)',
-                            paddingVertical: 8,
-                            paddingHorizontal: 12,
-                            borderRadius: 8,
-                            alignSelf: 'flex-start',
-                        }}>
-                            <Text className="text-2xl font-semibold text-white">{task.title}</Text>
+                    <View style={styles.coverTitleOverlay}>
+                        <View style={styles.coverTitleBox}>
+                            <Text style={styles.coverTitleText}>{task.title}</Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Completion Time */}
-                <View className="px-6 py-4 border-b border-white/20" style={{ borderBottomLeftRadius: 50, borderBottomRightRadius: 50 }}>
-                    <Text className="text-base font-normal text-right text-white">
+                <View style={styles.completionBox}>
+                    <Text style={styles.completionText}>
                         Completion Time Months {task.meta?.completionTimeMonths || '1 - 2'}
                     </Text>
                 </View>
 
                 {/* Roadmap Section */}
-                <Text className="px-1 mt-6 mb-3 text-xl font-semibold text-white">Roadmap</Text>
-                <View className="p-5 mb-6 rounded-2xl" style={{ backgroundColor: 'rgba(64, 156, 186, 0.5)' }}>
-                    <Text className="text-base leading-6 text-white">
+                <Text style={styles.sectionTitle}>Roadmap</Text>
+                <View style={styles.sectionBox}>
+                    <Text style={styles.sectionText}>
                         {task.meta?.roadmapText || phase?.subtitle || task.title}
                     </Text>
                 </View>
 
                 {/* Description Section */}
-                <Text className="px-1 mb-3 text-xl font-semibold text-white">Description</Text>
-                <View className="p-6 mb-6 rounded-2xl" style={{ backgroundColor: 'rgba(64, 156, 186, 0.5)' }}>
-                    <Text className="text-base leading-6 text-white">
+                <Text style={styles.sectionTitle}>Description</Text>
+                <View style={styles.sectionBox}>
+                    <Text style={styles.sectionText}>
                         {task.description || 'No description provided'}
                     </Text>
                 </View>
@@ -292,3 +304,101 @@ export default function ItemDetail() {
         </LinearGradient>
     );
 }
+
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    notFoundContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    notFoundText: { color: 'white' },
+    topBarWrapper: { paddingBottom: 10 },
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: getSpacing(8),
+        paddingVertical: getSpacing(16),
+        marginBottom: getSpacing(16),
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        marginRight: getSpacing(12),
+    },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: getSpacing(8) },
+    tabRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 16,
+        marginBottom: 16,
+    },
+    tabButton: {
+        borderRadius: 999,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    tabActive: { backgroundColor: '#FFFFFF' },
+    tabInactive: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.4)',
+    },
+    tabText: { fontSize: 15, fontWeight: '500' },
+    tabTextActive: { color: '#1A4882' },
+    tabTextInactive: { color: '#FFFFFF' },
+    tabWithBadge: { marginRight: 8 },
+    badge: {
+        marginLeft: 8,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    badgeActive: { backgroundColor: '#1A4882' },
+    badgeInactive: { backgroundColor: '#FFFFFF' },
+    badgeText: { fontSize: 11, fontWeight: '700' },
+    badgeTextActive: { color: '#FFFFFF' },
+    badgeTextInactive: { color: '#1A4882' },
+    scrollContainer: { paddingHorizontal: 16, paddingBottom: 24 },
+    coverImageContainer: {
+        position: 'relative',
+        marginBottom: 0,
+        overflow: 'hidden',
+        borderRadius: 24,
+        height: 220,
+        backgroundColor: '#1a1a1a',
+    },
+    coverImage: { width: '100%', height: '100%', position: 'absolute' },
+    coverPlaceholder: { width: '100%', height: '100%', backgroundColor: '#2a2a2a' },
+    coverTitleOverlay: { position: 'absolute', bottom: 24, left: 0, paddingHorizontal: 24 },
+    coverTitleBox: {
+        backgroundColor: 'rgba(50,50,80,0.7)',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        alignSelf: 'flex-start',
+    },
+    coverTitleText: { fontSize: 20, fontWeight: '600', color: '#FFFFFF' },
+    completionBox: {
+        paddingHorizontal: 24,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.2)',
+        borderBottomLeftRadius: 50,
+        borderBottomRightRadius: 50,
+    },
+    completionText: { fontSize: 16, fontWeight: '400', color: '#FFFFFF', textAlign: 'right' },
+    sectionTitle: { paddingHorizontal: 4, marginTop: 24, marginBottom: 12, fontSize: 20, fontWeight: '600', color: '#FFFFFF' },
+    sectionBox: {
+        padding: 20,
+        marginBottom: 24,
+        borderRadius: 16,
+        backgroundColor: 'rgba(64,156,186,0.5)',
+    },
+    sectionText: { fontSize: 16, lineHeight: 22, color: '#FFFFFF' },
+});

@@ -436,11 +436,12 @@
 // });
 
 
+import { useOnboardingStore } from '@/stores';
 import { useAuthStore } from '@/stores/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -457,10 +458,12 @@ export default function RoleSelectionScreen() {
     const router = useRouter();
     const [isClearing, setIsClearing] = useState(false);
 
-    // ✅ UPDATED: Only check auth, not profile
+    // Store hooks
     const { user, isAuthenticated, logout } = useAuthStore();
+    const { reset: resetOnboarding } = useOnboardingStore();
 
-    const handleClearStorage = async () => {
+    // Handle clear storage
+    const handleClearStorage = useCallback(async () => {
         Alert.alert(
             'Clear All Data',
             'This will log you out and clear all stored data. Continue?',
@@ -472,18 +475,28 @@ export default function RoleSelectionScreen() {
                     onPress: async () => {
                         setIsClearing(true);
                         try {
-                            // Logout (clears auth + secure storage)
+                            console.log('🗑️ Clearing all data...');
+
+                            // 1. Logout (clears auth store + secure storage)
                             await logout();
+                            console.log('✅ Auth store cleared');
 
-                            // Clear all AsyncStorage
+                            // 2. Reset onboarding store
+                            resetOnboarding();
+                            console.log('✅ Onboarding store cleared');
+
+                            // 3. Clear all AsyncStorage
                             await AsyncStorage.clear();
+                            console.log('✅ AsyncStorage cleared');
 
-                            console.log('✅ All data cleared');
+                            console.log('✅ All data cleared successfully');
 
-                            Alert.alert('Success', 'All data cleared successfully!');
+                            Alert.alert('Success', 'All data cleared. Refreshing...');
 
+                            // 4. Refresh the screen
+                            // router.replace('/(authenticated)/role-selection');
                         } catch (error) {
-                            console.error('Error clearing storage:', error);
+                            console.error('❌ Error clearing storage:', error);
                             Alert.alert('Error', 'Failed to clear data');
                         } finally {
                             setIsClearing(false);
@@ -492,35 +505,38 @@ export default function RoleSelectionScreen() {
                 },
             ]
         );
-    };
+    }, [logout, resetOnboarding, router]);
 
-    // ✅ UPDATED: Simplified role selection logic
-    const onSelect = (role: RoleType) => {
-        console.log('🎯 Role selected:', role);
-        console.log('🔐 Authenticated:', isAuthenticated);
-        console.log('👤 User:', user);
+    // Handle role selection
+    const onSelect = useCallback(
+        (role: RoleType) => {
+            console.log('🎯 Role selected:', role);
+            console.log('🔐 Authenticated:', isAuthenticated);
+            console.log('👤 User:', user?.email);
 
-        if (role === 'pastor') {
-            // Pastor requires authentication
-            if (isAuthenticated && user?.role === 'pastor') {
-                // ✅ FIXED: Authenticated pastor goes directly to dashboard
-                console.log('✅ Navigating to pastor dashboard');
-                router.push('/(pastor)/(tabs)');
-            } else {
-                // Not authenticated, go to login/welcome
-                console.log('📝 Navigating to unauthenticated flow');
-                router.push('/(unauthenticated)');
+            if (role === 'pastor') {
+                // Pastor requires authentication
+                if (isAuthenticated && user?.role === 'pastor') {
+                    // Authenticated pastor goes to dashboard
+                    console.log('✅ Navigating to pastor dashboard');
+                    router.push('/(pastor)/(tabs)');
+                } else {
+                    // Not authenticated, go to login/welcome
+                    console.log('📝 Navigating to unauthenticated flow');
+                    router.push('/(unauthenticated)');
+                }
+            } else if (role === 'mentor') {
+                // Mentor - Direct access for testing
+                console.log('🧪 Navigating to mentor (testing)');
+                router.push('/(mentor-tabs)');
+            } else if (role === 'director') {
+                // Director - Direct access for testing
+                console.log('🧪 Navigating to director (testing)');
+                router.push('/(director)/(tabs)');
             }
-        } else if (role === 'mentor') {
-            // Mentor - Direct access for testing
-            console.log('🧪 Navigating to mentor (testing)');
-            router.push('/(mentor-tabs)');
-        } else if (role === 'director') {
-            // Director - Direct access for testing
-            console.log('🧪 Navigating to director (testing)');
-            router.push('/(director)/(tabs)');
-        }
-    };
+        },
+        [isAuthenticated, user, router]
+    );
 
     return (
         <SafeAreaView style={styles.container}>
@@ -553,8 +569,7 @@ export default function RoleSelectionScreen() {
                         <Text style={styles.statusText}>
                             Logged in as{' '}
                             <Text style={styles.boldText}>
-                                {('firstName' in user ? user.firstName : 'User')}{' '}
-                                {('lastName' in user ? user.lastName : '')}
+                                {user.firstName} {user.lastName}
                             </Text>
                             {' '}({user.role})
                         </Text>
@@ -622,7 +637,7 @@ export default function RoleSelectionScreen() {
                     </Text>
                 </View>
 
-                {/* ✅ ADDED: Debug info (only in dev) */}
+                {/* Debug Info (Dev Only) */}
                 {__DEV__ && (
                     <View style={styles.debugBox}>
                         <Text style={styles.debugTitle}>Debug Info:</Text>
@@ -634,6 +649,9 @@ export default function RoleSelectionScreen() {
                         </Text>
                         <Text style={styles.debugText}>
                             User ID: {user?.id || 'None'}
+                        </Text>
+                        <Text style={styles.debugText}>
+                            User Email: {user?.email || 'None'}
                         </Text>
                     </View>
                 )}

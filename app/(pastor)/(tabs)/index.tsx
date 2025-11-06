@@ -158,7 +158,7 @@ export default function PastorDashboard() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={styles.videoScrollView} // className="w-full"
+                style={styles.videoScrollView}
                 contentContainerStyle={styles.videoContentContainer} // gap: 16, paddingVertical: 10, marginTop: 8
               >
                 <View style={styles.videoCard}> {/* w-[313px] h-[183px] rounded-[25px] overflow-hidden */}

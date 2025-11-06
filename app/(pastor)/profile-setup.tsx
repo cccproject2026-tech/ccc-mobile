@@ -25,7 +25,7 @@ export default function ProfileUpload() {
     const router = useRouter();
 
     // Store hooks
-    const { setCurrentStep } = useOnboardingStore();
+    const { setCurrentStep, setHasProfilePicture } = useOnboardingStore();
     const { user } = useAuthStore();
 
     // Loading states
@@ -128,6 +128,9 @@ export default function ProfileUpload() {
                 console.log('✅ Profile uploads synced to backend');
             }
 
+            // ✅ NEW: Mark that user has uploaded profile picture
+            setHasProfilePicture(true);
+
             // Update onboarding step
             setCurrentStep('complete');
 
@@ -139,7 +142,7 @@ export default function ProfileUpload() {
         } finally {
             setActionLoading(false);
         }
-    }, [hasUploaded, setCurrentStep, router]);
+    }, [hasUploaded, setCurrentStep, setHasProfilePicture, router]);
 
     const userName = user?.firstName || 'User';
 

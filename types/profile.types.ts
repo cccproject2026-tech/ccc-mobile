@@ -1,4 +1,4 @@
-import { PastorProfile, User } from './auth.types';
+import { User } from './auth.types';
 import { InterestFormData } from './onboarding.types';
 
 // Profile update data (all fields optional for partial updates)
@@ -58,7 +58,7 @@ export interface CombinedProfile {
 
 
 export interface ProfileResponse {
-    profile: PastorProfile;
+    profile: InterestFormData;
     message?: string;
 }
 

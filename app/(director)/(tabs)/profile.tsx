@@ -188,10 +188,10 @@ export default function ProfileScreen() {
         />
         <TouchableOpacity
           onPress={() => router.back()}
-          className="flex-row items-center px-4 py-4 border-b border-white/30 "
+          style={styles.profileButtonContainer}
         >
           <Ionicons name="chevron-back" size={28} color="#fff" />
-          <Text className="ml-2 text-xl font-semibold text-white">
+          <Text style={styles.profileButtonText}>
             My Profile
           </Text>
         </TouchableOpacity>
@@ -416,10 +416,10 @@ export default function ProfileScreen() {
         />
         <TouchableOpacity
           onPress={() => router.back()}
-          className="flex-row items-center px-4 py-4 border-b border-white/30 "
+          style={styles.profileButtonContainer}
         >
           <Ionicons name="chevron-back" size={28} color="#fff" />
-          <Text className="ml-2 text-xl font-semibold text-white">
+          <Text style={styles.profileButtonText}>
             My Profile
           </Text>
         </TouchableOpacity>
@@ -639,10 +639,10 @@ export default function ProfileScreen() {
       />
       <TouchableOpacity
         onPress={handleCancel}
-        className="flex-row items-center px-4 py-4 border-b border-white/30 "
+        style={styles.editButtonContainer}
       >
         <Ionicons name="chevron-back" size={28} color="#fff" />
-        <Text className="ml-2 text-xl font-semibold text-white">
+        <Text style={styles.editButtonText}>
           Edit Profile
         </Text>
       </TouchableOpacity>
@@ -946,6 +946,34 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 40,
+  },
+  profileButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  profileButtonText: {
+    marginLeft: 8,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  editButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  editButtonText: {
+    marginLeft: 8,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
   },
   profileHeader: {
     alignItems: "center",

@@ -203,7 +203,9 @@ export default function Assignment() {
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
-        <View className="flex-1">
+        <View style={{
+          flex: 1
+        }}>
           <TopBar role="Pastor" />
 
           {/* Header Section */}

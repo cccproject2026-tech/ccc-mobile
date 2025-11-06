@@ -16,6 +16,9 @@ interface OnboardingState {
     isEmailVerified: boolean;
     isPasswordSet: boolean;
 
+    // Profile completion
+    hasProfilePicture: boolean;
+
     // UI flow state (temporary, not persisted)
     currentStep:
     | 'form'
@@ -34,9 +37,8 @@ interface OnboardingActions {
     setEmail: (email: string | null) => void;
     setEmailVerified: (verified: boolean) => void;
     setPasswordSet: (set: boolean) => void;
-    setCurrentStep: (
-        step: OnboardingState['currentStep']
-    ) => void;
+    setHasProfilePicture: (has: boolean) => void;
+    setCurrentStep: (step: OnboardingState['currentStep']) => void;
     reset: () => void;
 }
 
@@ -50,6 +52,7 @@ const initialState: OnboardingState = {
     email: null,
     isEmailVerified: false,
     isPasswordSet: false,
+    hasProfilePicture: false,
     currentStep: 'form',
 };
 
@@ -93,6 +96,12 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 console.log('🔐 Password set:', passwordSet);
             },
 
+            // ✅ NEW: Set profile picture status
+            setHasProfilePicture: (has) => {
+                set({ hasProfilePicture: has });
+                console.log('📷 Has profile picture:', has);
+            },
+
             setCurrentStep: (step) => {
                 set({ currentStep: step });
                 console.log('📍 Current step:', step);
@@ -114,6 +123,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 email: state.email,
                 isEmailVerified: state.isEmailVerified,
                 isPasswordSet: state.isPasswordSet,
+                hasProfilePicture: state.hasProfilePicture, // ✅ Persist this
                 // Don't persist currentStep (UI state only)
             }),
         }
