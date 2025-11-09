@@ -797,7 +797,6 @@ export const mockRevitalization: RevitalizationData = {
                                         type: 'BUTTON',
                                         label: 'Submit',
                                         onPress: 'SUBMIT',
-
                                     }
                                 ]
                             },

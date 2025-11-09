@@ -380,17 +380,11 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                     type: 'weekly',
                                                     daysOfWeek: [1, 2, 3, 4, 5, 6],
                                                 }}
-                                                availableDates={[
-                                                    '2025-10-20',
-                                                    '2025-10-21',
-                                                    '2025-10-22',
-                                                    '2025-10-23',
-                                                    '2025-10-24',
-                                                    '2025-10-27',
-                                                    '2025-10-28',
-                                                    '2025-10-29',
-                                                    '2025-10-30',
-                                                ]}
+                                                availableDates={Array.from({ length: 60 }, (_, i) => {
+                                                    const date = new Date();
+                                                    date.setDate(date.getDate() + i);
+                                                    return date.toISOString().split('T')[0];
+                                                })}
                                                 showHeader={false}
                                                 disablePastDates={true}
                                                 markToday={true}

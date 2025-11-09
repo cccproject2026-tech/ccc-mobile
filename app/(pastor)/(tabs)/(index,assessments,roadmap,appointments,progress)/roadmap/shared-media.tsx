@@ -1,0 +1,426 @@
+import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
+import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
+import TopBar from '@/components/director/TopBar';
+import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
+import { mockRevitalization } from '@/lib/roadmap/mock';
+import { getTask } from '@/lib/roadmap/selectors';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
+import {
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+
+const { width } = Dimensions.get('window');
+const PADDING = 16;
+const CONTAINER_PADDING = 16;
+const GAP = 12;
+const imageWidth = (width - (PADDING * 2) - (CONTAINER_PADDING * 2) - GAP) / 2;
+
+export default function ShareMedia() {
+    const { progress } = useRoadmapProgress();
+    const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
+    const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+    const [selectedOutcome, setSelectedOutcome] = useState('');
+    const [activeTab, setActiveTab] = useState<'photos' | 'videos'>('photos');
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+
+    const { taskId } = useLocalSearchParams<{ mediaId?: string; taskId?: string }>();
+
+    const taskTitle = useMemo(() => {
+        if (!taskId) return 'Complete a Community Engagement Project';
+        try {
+            const task = getTask(mockRevitalization, taskId);
+            return task?.title || 'Complete a Community Engagement Project';
+        } catch {
+            return 'Complete a Community Engagement Project';
+        }
+    }, [taskId]);
+
+    const mockPhotos = [
+        { id: '1', uri: 'book-nature', date: '20 Oct 2024' },
+        { id: '2', uri: 'hands-praying', date: '20 Oct 2024' },
+        { id: '3', uri: 'hands-praying-2', date: '20 Oct 2024' },
+        { id: '4', uri: 'book-nature-2', date: '20 Oct 2024' },
+        { id: '5', uri: 'book-nature-3', date: '20 Oct 2024' },
+        { id: '6', uri: 'hands-praying-3', date: '20 Oct 2024' },
+    ];
+
+    const mockVideos = [
+        { id: '1', uri: 'video-thumbnail', date: '20 Oct 2024' },
+        { id: '2', uri: 'video-thumbnail-2', date: '20 Oct 2024' },
+    ];
+
+    const currentMedia = activeTab === 'photos' ? mockPhotos : mockVideos;
+
+    const toggleSelectionMode = useCallback(() => {
+        setSelectionMode(!selectionMode);
+        if (selectionMode) setSelectedItems(new Set());
+    }, [selectionMode]);
+
+    const toggleItemSelection = useCallback((id: string) => {
+        setSelectedItems(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) newSet.delete(id);
+            else newSet.add(id);
+            return newSet;
+        });
+    }, []);
+
+    const selectAll = useCallback(() => {
+        setSelectedItems(new Set(currentMedia.map(item => item.id)));
+    }, [currentMedia]);
+
+    const deleteSelected = useCallback(() => {
+        console.log('Delete selected items:', Array.from(selectedItems));
+        setSelectedItems(new Set());
+        setSelectionMode(false);
+    }, [selectedItems]);
+
+    const outcomeMenuItems = useCallback((): MenuItem[] => [
+        {
+            id: 'outcome-4-months',
+            label: 'Expected Outcome - 4 Months',
+            onPress: () => {
+                setSelectedOutcome('Expected Outcome - First Four Months');
+                setShowOutcomeMenu(false);
+                setShowOutcomeModal(true);
+            },
+        },
+        {
+            id: 'outcome-6-months',
+            label: 'Expected Outcome - 6 Months',
+            onPress: () => {
+                setSelectedOutcome('Expected Outcome - Six Months');
+                setShowOutcomeMenu(false);
+                setShowOutcomeModal(true);
+            },
+        },
+        {
+            id: 'outcome-9-months',
+            label: 'Expected Outcome - 9 Months',
+            onPress: () => {
+                setSelectedOutcome('Expected Outcome - Nine Months');
+                setShowOutcomeMenu(false);
+                setShowOutcomeModal(true);
+            },
+        },
+        {
+            id: 'outcome-end-year',
+            label: 'Expected Outcome - End of Year',
+            onPress: () => {
+                setSelectedOutcome('Expected Outcome - End of Year');
+                setShowOutcomeMenu(false);
+                setShowOutcomeModal(true);
+            },
+        },
+    ], []);
+
+    const outcomeData = useCallback(() => [
+        { id: '1', text: 'The church is committed to the revitalization process.' },
+        { id: '2', text: 'The Church is praying consistently and intentionally for revitalization.' },
+        { id: '3', text: 'The church understands its current health and is committed to making improvements.' },
+        { id: '4', text: 'The church is beginning to feel like a warm and welcoming place for new attendees.' },
+        { id: '5', text: 'Church members have begun to build new relationships with people who have attended a community engagement event.' },
+        { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
+    ], []);
+
+    const renderMediaItem = useCallback(
+        ({ item, index }: { item: typeof mockPhotos[0]; index: number }) => {
+            const isSelected = selectedItems.has(item.id);
+            const isRightColumn = index % 2 === 1;
+
+            return (
+                <TouchableOpacity
+                    onPress={() => selectionMode && toggleItemSelection(item.id)}
+                    onLongPress={() => {
+                        if (!selectionMode) {
+                            setSelectionMode(true);
+                            toggleItemSelection(item.id);
+                        }
+                    }}
+                    style={[{ width: imageWidth, marginLeft: isRightColumn ? GAP : 0 }]}
+                >
+                    <View style={styles.mediaItemWrapper}>
+                        <View style={[styles.thumbnail, { width: imageWidth }]}>
+                            {activeTab === 'videos' && (
+                                <View style={styles.playIconWrapper}>
+                                    <View style={styles.playIconCircle}>
+                                        <Ionicons name="play" size={32} color="#1D548D" />
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+
+                        {selectionMode && (
+                            <View style={styles.checkboxWrapper}>
+                                <View
+                                    style={[
+                                        styles.checkbox,
+                                        isSelected ? styles.checkboxSelected : styles.checkboxUnselected,
+                                    ]}
+                                >
+                                    {isSelected && <Ionicons name="checkmark" size={18} color="#1D548D" />}
+                                </View>
+                            </View>
+                        )}
+                    </View>
+                    <Text style={styles.mediaDate}>{item.date}</Text>
+                </TouchableOpacity>
+            );
+        },
+        [activeTab, selectionMode, selectedItems, toggleItemSelection]
+    );
+
+    return (
+        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                <View style={styles.topBarWrapper}>
+                    <TopBar role="pastor" userName="John Ross" showUserName />
+                </View>
+
+                <View style={styles.headerContainer}>
+                    <View style={styles.headerRow}>
+                        <TouchableOpacity onPress={() => router.back()}>
+                            <Ionicons name="chevron-back" size={28} color="#fff" />
+                        </TouchableOpacity>
+                        <View style={styles.headerTextContainer}>
+                            <Text style={styles.headerTitle}>{taskTitle}</Text>
+                            <Text style={styles.headerSubtitle}>Phase 2</Text>
+                        </View>
+                    </View>
+                    <TouchableOpacity onPress={() => setShowOutcomeMenu(true)}>
+                        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.section}>
+                    <View style={styles.sharedMediaBox}>
+                        <Text style={styles.sharedMediaTitle}>Shared Media</Text>
+                    </View>
+
+                    <View style={styles.tabRow}>
+                        {['photos', 'videos'].map(tab => (
+                            <TouchableOpacity
+                                key={tab}
+                                onPress={() => {
+                                    setActiveTab(tab as 'photos' | 'videos');
+                                    setSelectionMode(false);
+                                    setSelectedItems(new Set());
+                                }}
+                                style={[
+                                    styles.tabButton,
+                                    activeTab === tab ? styles.tabButtonActive : styles.tabButtonInactive,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.tabButtonText,
+                                        activeTab === tab ? styles.tabTextActive : styles.tabTextInactive,
+                                    ]}
+                                >
+                                    {tab === 'photos' ? 'Photos' : 'Videos'}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
+                <View style={styles.mediaContainer}>
+                    <View style={styles.mediaBorderBox}>
+                        {selectionMode && (
+                            <View style={styles.selectionHeader}>
+                                <View style={styles.selectionHeaderLeft}>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setSelectionMode(false);
+                                            setSelectedItems(new Set());
+                                        }}
+                                        style={styles.closeIcon}
+                                    >
+                                        <Ionicons name="close" size={24} color="#fff" />
+                                    </TouchableOpacity>
+                                    <Text style={styles.selectionText}>
+                                        {selectedItems.size > 0 ? `${selectedItems.size} ` : ''}Selected Items
+                                    </Text>
+                                </View>
+
+                                <View style={styles.selectionHeaderRight}>
+                                    <TouchableOpacity onPress={deleteSelected}>
+                                        <Ionicons name="trash-outline" size={24} color="#fff" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => setShowOutcomeMenu(true)}>
+                                        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )}
+
+                        {selectionMode && (
+                            <TouchableOpacity onPress={selectAll} style={styles.selectAllButton}>
+                                <Text style={styles.selectAllText}>Select all</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {currentMedia.reduce((rows: any[][], item, index) => {
+                            if (index % 2 === 0) rows.push([item]);
+                            else rows[rows.length - 1].push(item);
+                            return rows;
+                        }, []).map((row, rowIndex) => (
+                            <View key={rowIndex} style={styles.mediaRow}>
+                                {row.map((item, colIndex) => {
+                                    const index = rowIndex * 2 + colIndex;
+                                    return <View key={item.id}>{renderMediaItem({ item, index })}</View>;
+                                })}
+                                {row.length === 1 && <View style={{ width: imageWidth }} />}
+                            </View>
+                        ))}
+                    </View>
+
+                    {!selectionMode && (
+                        <View style={styles.selectionToggleWrapper}>
+                            <TouchableOpacity onPress={toggleSelectionMode} style={styles.selectionToggleButton}>
+                                <Ionicons name="checkmark" size={20} color="#1D548D" />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
+            </ScrollView>
+
+            <ContextMenu
+                visible={showOutcomeMenu}
+                items={outcomeMenuItems()}
+                onClose={() => setShowOutcomeMenu(false)}
+                position={{ top: 60, right: 16 }}
+                minWidth={280}
+                showIcons={false}
+                itemTextStyle={{ fontSize: 15, fontWeight: '500', color: '#1A4882' }}
+            />
+
+            <ExpectedOutcomeModal
+                visible={showOutcomeModal}
+                onClose={() => setShowOutcomeModal(false)}
+                title={selectedOutcome}
+                outcomes={outcomeData()}
+                onSelect={() => setShowOutcomeModal(false)}
+                onEdit={() => setShowOutcomeModal(false)}
+                onDownload={() => console.log('Download outcome')}
+            />
+        </LinearGradient>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    scrollContent: { paddingBottom: 20 },
+    topBarWrapper: { paddingHorizontal: PADDING, paddingBottom: 10 },
+    headerContainer: {
+        paddingHorizontal: PADDING,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.2)',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    headerRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    headerTextContainer: { flex: 1, marginLeft: 8 },
+    headerTitle: { color: '#fff', fontWeight: '700', fontSize: 20 },
+    headerSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 2 },
+    section: { paddingHorizontal: PADDING, paddingTop: 16 },
+    sharedMediaBox: {
+        padding: 16,
+        marginBottom: 16,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    sharedMediaTitle: { color: '#fff', textAlign: 'center', fontSize: 18, fontWeight: '600' },
+    tabRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+    tabButton: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+    tabButtonActive: { backgroundColor: '#fff' },
+    tabButtonInactive: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
+    },
+    tabButtonText: { fontWeight: '600', fontSize: 16 },
+    tabTextActive: { color: '#1D548D' },
+    tabTextInactive: { color: '#fff' },
+    mediaContainer: { paddingHorizontal: PADDING, position: 'relative' },
+    mediaBorderBox: {
+        padding: CONTAINER_PADDING,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    selectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    selectionHeaderLeft: { flexDirection: 'row', alignItems: 'center' },
+    closeIcon: { marginRight: 8 },
+    selectionText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+    selectionHeaderRight: { flexDirection: 'row', gap: 16 },
+    selectAllButton: {
+        backgroundColor: '#2666A0',
+        paddingVertical: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    selectAllText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+    mediaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+    mediaItemWrapper: { position: 'relative' },
+    thumbnail: {
+        aspectRatio: 1,
+        borderRadius: 10,
+        backgroundColor: '#999',
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    playIconWrapper: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    playIconCircle: {
+        padding: 12,
+        borderRadius: 40,
+        backgroundColor: 'rgba(255,255,255,0.9)',
+    },
+    checkboxWrapper: { position: 'absolute', top: 6, right: 6, zIndex: 10 },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    checkboxUnselected: { backgroundColor: 'transparent', borderColor: '#fff' },
+    checkboxSelected: { backgroundColor: '#fff', borderColor: '#fff' },
+    mediaDate: { color: '#fff', fontSize: 13 },
+    selectionToggleWrapper: { position: 'absolute', top: 8, right: 28, zIndex: 1000 },
+    selectionToggleButton: {
+        width: 28,
+        height: 28,
+        backgroundColor: '#fff',
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: '#1D548D',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+});

@@ -1,3 +1,5 @@
+import { UserRole } from "@/types";
+
 export const ENDPOINTS = {
     // Authentication (Unauthenticated routes)
     AUTH: {
@@ -13,9 +15,13 @@ export const ENDPOINTS = {
 
     // Users
     USERS: {
+        GET_ALL_USERS: (role?: UserRole) => `/users?role=${role}`,
         GET_USER: (userId: string) => `/users/${userId}`,
+        UPDATE_USER: (userId: string) => `/users/${userId}`,
         CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
-        GET_INTERESTS: (email: string) => `/interests/by-email/${email}`
+        GET_INTERESTS: (email: string) => `/interests/by-email/${email}`,
+        UPDATE_INTERESTS: (email: string) => `/interests/by-email/${email}`,
+        GET_PROGRESS: (userId: string) => `/progress/${userId}`,
     },
 
     // Pastor Onboarding (if separate from auth)
@@ -47,4 +53,16 @@ export const ENDPOINTS = {
         DELETE_ASSESSMENT: (assessmentId: string) => `/assessment/${assessmentId}`,
         UPDATE_INSTRUCTIONS: (assessmentId: string) => `/assessment/${assessmentId}/instructions`,
     },
+
+    GRANT: {
+        GET_FORM: '/microgrant/form',
+        APPLY_GRANT: '/microgrant/apply'
+    },
+
+    APPOINTMENTS: {
+        GET: (userId: string) => `appointments/user/${userId}`,
+        CREATE: '/appointments',
+        GET_BY_MENTOR: (mentorId: string) => `/appointments/mentor/${mentorId}`,
+        UPDATE: (appointmentId: string) => `/appointments/${appointmentId}`
+    }
 } as const;

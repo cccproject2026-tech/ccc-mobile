@@ -1,12 +1,11 @@
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
-import { useSendOtp } from "@/hooks/auth/useSendOtp";
-import { useSetPassword } from "@/hooks/auth/useSetPassword";
-import { useVerifyOtp } from "@/hooks/auth/useVerifyOtp";
+import { useSendOtp, useSetPassword, useVerifyOtp } from "@/hooks/auth/useAuth";
+
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
     ActivityIndicator,
@@ -25,30 +24,44 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function VerifyEmailScreen() {
     const { bottom } = useSafeAreaInsets();
+    const router = useRouter();
 
-    const { interestData, email, setOtpToken, setEmailVerified, setPasswordSet } = useOnboardingStore();
+    // Onboarding store
+    const {
+        interestData,
+        email,
+        setEmail,
+        setEmailVerified,
+        setPasswordSet,
+    } = useOnboardingStore();
 
+    // Auth mutations
     const { mutate: sendOtp, isPending: isSending } = useSendOtp();
     const { mutate: verifyOtp, isPending: isVerifying } = useVerifyOtp();
     const { mutate: setPassword, isPending: isSettingPassword } = useSetPassword();
 
-    // ✅ UPDATED: Track OTP verification status
-    const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Email, 2: OTP, 3: Password
-    const [otp, setOtp] = useState(["", "", "", ""]);
-    const [passwordInput, setPasswordInput] = useState("");
-    const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+    // Local state
+    const [step, setStep] = useState<1 | 2 | 3>(1);
+    const [otp, setOtp] = useState(['', '', '', '']);
+    const [passwordInput, setPasswordInput] = useState('');
+    const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [isOtpVerified, setIsOtpVerified] = useState(false); // ✅ ADDED: Track OTP verification
+    const [isOtpVerified, setIsOtpVerified] = useState(false);
 
     const otpRefs = useRef<Array<TextInput | null>>([]);
 
-    const userEmail = email || interestData?.email || "";
+    const userEmail = email || interestData?.email || '';
+    const isLoading = isSending || isVerifying || isSettingPassword;
 
-    // ✅ UPDATED: Send OTP
+    // ============= HANDLERS =============
+
     const handleVerifyEmail = () => {
         if (!userEmail) {
-            Alert.alert("Error", "No email found. Please submit an interest form first.");
+            Alert.alert(
+                'Error',
+                'No email found. Please submit an interest form first.'
+            );
             return;
         }
 
@@ -57,18 +70,18 @@ export default function VerifyEmailScreen() {
             {
                 onSuccess: () => {
                     Alert.alert(
-                        "OTP Sent",
+                        'OTP Sent',
                         `A 4-digit OTP has been sent to ${userEmail}\n\n🧪 For testing, use: 1234`,
                         [
                             {
-                                text: "OK",
-                                onPress: () => setStep(2), // Move to OTP entry
+                                text: 'OK',
+                                onPress: () => setStep(2),
                             },
                         ]
                     );
                 },
                 onError: (error: any) => {
-                    Alert.alert("Error", error.message || "Failed to send OTP");
+                    Alert.alert('Error', error.message || 'Failed to send OTP');
                 },
             }
         );
@@ -86,12 +99,11 @@ export default function VerifyEmailScreen() {
         }
     };
 
-    // ✅ UPDATED: Verify OTP first, then move to password
     const handleVerifyOtp = () => {
-        const otpValue = otp.join("");
+        const otpValue = otp.join('');
 
         if (otpValue.length !== 4) {
-            Alert.alert("Error", "Please enter the 4-digit OTP");
+            Alert.alert('Error', 'Please enter the 4-digit OTP');
             return;
         }
 
@@ -100,38 +112,38 @@ export default function VerifyEmailScreen() {
             {
                 onSuccess: (response) => {
                     if (response.data.isValid) {
-                        // ✅ OTP verified - store token and move to password
-                        setOtpToken(response.data.token);
                         setEmailVerified(true);
                         setIsOtpVerified(true);
-                        setStep(3); // Move to password entry
+                        setStep(3);
 
-                        Alert.alert("Success", "OTP verified successfully. Please set your password.");
+                        Alert.alert(
+                            'Success',
+                            'OTP verified successfully. Please set your password.'
+                        );
                     } else {
-                        Alert.alert("Error", "Invalid OTP. Please try again.");
+                        Alert.alert('Error', 'Invalid OTP. Please try again.');
                     }
                 },
                 onError: (error: any) => {
-                    Alert.alert("Error", error.message || "OTP verification failed");
+                    Alert.alert('Error', error.message || 'OTP verification failed');
                 },
             }
         );
     };
 
-    // ✅ UPDATED: Set password only after OTP verification
     const handleSetPassword = () => {
         if (!passwordInput || !confirmPasswordInput) {
-            Alert.alert("Error", "Please fill in all password fields");
+            Alert.alert('Error', 'Please fill in all password fields');
             return;
         }
 
         if (passwordInput.length < 6) {
-            Alert.alert("Error", "Password must be at least 6 characters");
+            Alert.alert('Error', 'Password must be at least 6 characters');
             return;
         }
 
         if (passwordInput !== confirmPasswordInput) {
-            Alert.alert("Error", "Passwords do not match");
+            Alert.alert('Error', 'Passwords do not match');
             return;
         }
 
@@ -139,55 +151,61 @@ export default function VerifyEmailScreen() {
             {
                 email: userEmail,
                 password: passwordInput,
-                confirmPassword: confirmPasswordInput
+                confirmPassword: confirmPasswordInput,
             },
             {
                 onSuccess: () => {
                     setPasswordSet(true);
 
                     Alert.alert(
-                        "Success!",
-                        "Your password has been set successfully. You can now complete your profile.",
+                        'Success!',
+                        'Your password has been set successfully. You can now log in and complete your profile.',
                         [
                             {
-                                text: "OK",
-                                onPress: () => router.replace("/(unauthenticated)"),
+                                text: 'OK',
+                                onPress: () => router.replace('/(unauthenticated)/login-form'),
                             },
                         ]
                     );
                 },
                 onError: (error: any) => {
-                    Alert.alert("Error", error.message || "Failed to set password");
+                    Alert.alert('Error', error.message || 'Failed to set password');
                 },
             }
         );
     };
 
-    const isLoading = isSending || isVerifying || isSettingPassword;
-
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <LinearGradient
-                colors={["#176192", "#1D548D", "#264387"]}
+                colors={['#176192', '#1D548D', '#264387']}
                 style={[styles.container, { paddingBottom: bottom }]}
             >
                 <TopBar showDrawer={false} showNotifications={false} />
                 <KeyboardAwareScrollView
-                    contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 20 }]}
+                    contentContainerStyle={[
+                        styles.scrollContent,
+                        { paddingBottom: bottom + 20 },
+                    ]}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Welcome Banner */}
                     <View style={styles.welcomeBanner}>
                         <Text style={styles.welcomeTitle}>WELCOME !</Text>
                         <Text style={styles.welcomeSubtitle}>
-                            You are now enrolled in the CCC mentoring program at Andrews University Seminary
+                            You are now enrolled in the CCC mentoring program at Andrews
+                            University Seminary
                         </Text>
                     </View>
 
                     {/* Logo */}
                     <View style={styles.cccLogoContainer}>
-                        <Image source={icons.communityImage} style={styles.cccLogo} resizeMode="contain" />
+                        <Image
+                            source={icons.communityImage}
+                            style={styles.cccLogo}
+                            resizeMode="contain"
+                        />
                     </View>
 
                     {/* Form */}
@@ -209,7 +227,7 @@ export default function VerifyEmailScreen() {
                                 disabled={isLoading}
                             >
                                 <LinearGradient
-                                    colors={["#7C3AED", "#3B82F6"]}
+                                    colors={['#7C3AED', '#3B82F6']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     style={styles.gradientButton}
@@ -223,18 +241,20 @@ export default function VerifyEmailScreen() {
                             </TouchableOpacity>
                         )}
 
-                        {/* Step 2: OTP Entry (Only shown after email verification) */}
+                        {/* Step 2: OTP Entry */}
                         {step === 2 && (
                             <>
                                 <Text style={styles.otpLabel}>
-                                    An OTP has been sent to your Registered Email ID.{"\n"}
+                                    An OTP has been sent to your Registered Email ID.{'\n'}
                                     Please fill the OTP to verify Email ID
-                                    {"\n\n"}
-                                    <Text style={{
-                                        color: '#FFD700',
-                                        fontSize: 14,
-                                        fontWeight: '600',
-                                    }}>
+                                    {'\n\n'}
+                                    <Text
+                                        style={{
+                                            color: '#FFD700',
+                                            fontSize: 14,
+                                            fontWeight: '600',
+                                        }}
+                                    >
                                         🧪 For testing, use: 1234
                                     </Text>
                                 </Text>
@@ -244,7 +264,9 @@ export default function VerifyEmailScreen() {
                                     {otp.map((digit, index) => (
                                         <TextInput
                                             key={index}
-                                            ref={(ref) => { otpRefs.current[index] = ref; }}
+                                            ref={(ref) => {
+                                                otpRefs.current[index] = ref;
+                                            }}
                                             style={[styles.otpInput, digit && styles.otpInputFilled]}
                                             value={digit}
                                             onChangeText={(value) => handleOTPChange(value, index)}
@@ -260,7 +282,7 @@ export default function VerifyEmailScreen() {
                                 <TouchableOpacity
                                     style={styles.submitButton}
                                     onPress={handleVerifyOtp}
-                                    disabled={isLoading || otp.join("").length !== 4}
+                                    disabled={isLoading || otp.join('').length !== 4}
                                 >
                                     {isLoading ? (
                                         <ActivityIndicator color="#1A5490" />
@@ -271,16 +293,18 @@ export default function VerifyEmailScreen() {
                             </>
                         )}
 
-                        {/* Step 3: Password Entry (Only shown after OTP verification) */}
+                        {/* Step 3: Password Entry */}
                         {step === 3 && isOtpVerified && (
                             <>
-                                <Text style={{
-                                    color: 'rgba(255,255,255,0.9)',
-                                    fontSize: 16,
-                                    marginBottom: 16,
-                                    textAlign: 'center',
-                                    fontWeight: '600',
-                                }}>
+                                <Text
+                                    style={{
+                                        color: 'rgba(255,255,255,0.9)',
+                                        fontSize: 16,
+                                        marginBottom: 16,
+                                        textAlign: 'center',
+                                        fontWeight: '600',
+                                    }}
+                                >
                                     Create your account password
                                 </Text>
 
@@ -302,7 +326,9 @@ export default function VerifyEmailScreen() {
                                             style={styles.eyeIcon}
                                         >
                                             <Ionicons
-                                                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                                name={
+                                                    showPassword ? 'eye-off-outline' : 'eye-outline'
+                                                }
                                                 size={24}
                                                 color="rgba(255,255,255,0.6)"
                                             />
@@ -321,11 +347,17 @@ export default function VerifyEmailScreen() {
                                             editable={!isLoading}
                                         />
                                         <TouchableOpacity
-                                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            onPress={() =>
+                                                setShowConfirmPassword(!showConfirmPassword)
+                                            }
                                             style={styles.eyeIcon}
                                         >
                                             <Ionicons
-                                                name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                                                name={
+                                                    showConfirmPassword
+                                                        ? 'eye-off-outline'
+                                                        : 'eye-outline'
+                                                }
                                                 size={24}
                                                 color="rgba(255,255,255,0.6)"
                                             />
@@ -351,14 +383,17 @@ export default function VerifyEmailScreen() {
 
                     {/* Andrews University Logo */}
                     <View style={styles.universityLogoContainer}>
-                        <Image source={icons.universityIcon} style={styles.universityLogo} resizeMode="contain" />
+                        <Image
+                            source={icons.universityIcon}
+                            style={styles.universityLogo}
+                            resizeMode="contain"
+                        />
                     </View>
                 </KeyboardAwareScrollView>
             </LinearGradient>
         </>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: {

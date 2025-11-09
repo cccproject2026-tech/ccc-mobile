@@ -170,7 +170,7 @@ export default function PastorTabLayout() {
                         }}
                     />
                     <Tabs.Screen
-                        name="appointments"
+                        name="(appointments)"
                         options={{
                             href: null,
                         }}
@@ -181,12 +181,12 @@ export default function PastorTabLayout() {
                             href: null,
                         }}
                     />
-                    {/* <Tabs.Screen
-                        name="progress"
+                    <Tabs.Screen
+                        name="(progress)"
                         options={{
                             href: null,
                         }}
-                    /> */}
+                    />
                     <Tabs.Screen
                         name="my-mentors"
                         options={{

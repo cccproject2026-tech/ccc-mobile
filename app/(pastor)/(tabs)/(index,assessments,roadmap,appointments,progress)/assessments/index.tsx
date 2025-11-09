@@ -215,7 +215,7 @@ export default function Survey() {
                                         onCustomizedPress={() => handleCustomizedPress(e)} // Open PMP sheet
                                     />
                                     {i < filteredRoadMaps.length - 1 && (
-                                        <View className="h-[0.5px] bg-white/30 my-4" />
+                                        <View style={styles.dividerWithMargin} />
                                     )}
                                 </React.Fragment>
                             ))}
@@ -275,4 +275,9 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#fff',
     },
+    dividerWithMargin: {
+        height: 0.5,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        marginVertical: 16,
+    }
 });

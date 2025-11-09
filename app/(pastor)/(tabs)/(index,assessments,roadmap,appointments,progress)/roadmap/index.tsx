@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type TabKey = 'ALL' | 'DUE' | 'COMPLETED' | 'NOT_STARTED' | 'IN_PROGRESS';
 
@@ -24,7 +24,6 @@ export default function PhaseList() {
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<TabKey>('ALL');
 
-    // Outcome menu
     const outcomeMenuItems = useCallback((): MenuItem[] => [
         {
             id: 'outcome-4-months',
@@ -73,13 +72,11 @@ export default function PhaseList() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
-    // Calculate phase statuses with progress
     const phasesWithStatus = useMemo(() => {
         return mockRevitalization.program.phases.map(phaseId => {
             const phase = getPhase(mockRevitalization, phaseId);
             const tasks = getPhaseTasks(mockRevitalization, phase);
 
-            // Calculate status
             const completed = tasks.filter(t =>
                 (progress[t.id]?.status || t.status) === 'COMPLETED'
             ).length;
@@ -107,7 +104,6 @@ export default function PhaseList() {
         });
     }, [progress]);
 
-    // Filter by tab
     const filteredPhases = useMemo(() => {
         if (activeTab === 'ALL') return phasesWithStatus;
 
@@ -134,29 +130,26 @@ export default function PhaseList() {
 
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
-            <View style={{ paddingBottom: 10 }}>
+            <View style={styles.topBarWrapper}>
                 <TopBar role="pastor" userName="John Ross" showUserName />
             </View>
 
-            {/* Header */}
-            <View className="flex-row items-center justify-between px-4 py-4 mb-4 border-b border-white/20">
-                <View className="flex-row items-center flex-1">
+            <View style={styles.headerContainer}>
+                <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => router.back()}>
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
-                    <Text className="ml-2 text-xl font-bold text-white">
-                        Revitalization Roadmap
-                    </Text>
+                    <Text style={styles.headerTitle}>Revitalization Roadmap</Text>
                 </View>
                 <TouchableOpacity onPress={() => setShowOutcomeMenu(true)}>
                     <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
                 </TouchableOpacity>
             </View>
 
-            {/* Search & Tabs */}
-            <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+            <View style={styles.searchWrapper}>
                 <SearchBar value={search} onChangeValue={setSearch} />
             </View>
+
             <TabSwitcher
                 tabs={[
                     { key: 'ALL', label: 'All' },
@@ -169,23 +162,10 @@ export default function PhaseList() {
                 onChange={(key) => setActiveTab(key as TabKey)}
             />
 
-            {/* Content */}
-            <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
                 {activeTab === 'ALL' && (
-                    <Pressable
-                        onPress={resetAll}
-                        style={{
-                            backgroundColor: '#264387',
-                            paddingVertical: 10,
-                            paddingHorizontal: 18,
-                            borderRadius: 8,
-                            alignSelf: 'flex-start',
-                            marginBottom: 16,
-                        }}
-                    >
-                        <Text style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
-                            Clear Roadmap Progress
-                        </Text>
+                    <Pressable onPress={resetAll} style={styles.clearButton}>
+                        <Text style={styles.clearButtonText}>Clear Roadmap Progress</Text>
                     </Pressable>
                 )}
 
@@ -199,15 +179,12 @@ export default function PhaseList() {
                         );
                     })
                 ) : (
-                    <View style={{ alignItems: 'center', marginTop: 40 }}>
-                        <Text style={{ color: 'white', fontSize: 16 }}>
-                            No phases match the selected filter.
-                        </Text>
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>No phases match the selected filter.</Text>
                     </View>
                 )}
             </ScrollView>
 
-            {/* Modals */}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={outcomeMenuItems()}
@@ -230,3 +207,37 @@ export default function PhaseList() {
         </LinearGradient>
     );
 }
+
+const styles = StyleSheet.create({
+    topBarWrapper: { paddingBottom: 10 },
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.2)',
+        marginBottom: 16,
+    },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    headerTitle: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: '700',
+        marginLeft: 8,
+    },
+    searchWrapper: { paddingHorizontal: 16, marginBottom: 16 },
+    scrollContent: { padding: 16 },
+    clearButton: {
+        backgroundColor: '#264387',
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 8,
+        alignSelf: 'flex-start',
+        marginBottom: 16,
+    },
+    clearButtonText: { color: 'white', fontWeight: '700', fontSize: 16 },
+    emptyContainer: { alignItems: 'center', marginTop: 40 },
+    emptyText: { color: 'white', fontSize: 16 },
+});

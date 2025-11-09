@@ -1,5 +1,4 @@
 import { Tab } from "@/components/atom/tab";
-import { Header } from "@/components/build-components";
 import PMPBottomSheet from "@/components/director/PMPBottomSheet";
 import ProgressAssessmentCard from "@/components/director/ProgressAssessmentCard";
 import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarChart";
@@ -7,6 +6,7 @@ import { ProgressPieChart } from "@/components/director/ProgressPieChart";
 import RoadmapCard from "@/components/director/ProgressRoadmapCard";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
 import { usePhaseCard } from '@/lib/roadmap/mappers';
 import { mockRevitalization } from '@/lib/roadmap/mock';
 import { getPhase, getPhaseTasks } from '@/lib/roadmap/selectors';
@@ -14,7 +14,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useRef } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
@@ -181,10 +181,15 @@ export default function ProgressScreen() {
       >
         <View style={styles.scrollContainer}>
           <TopBar role="pastor" userName="John Ross" showUserName />
-          {/* Header Section */}
-          <Header title="My Progress" showSettings={false} hideSearchBar={true} />
+          <View style={styles.headerContainer}>
+            <View style={styles.headerContent}>
+              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <Image source={icons.forward} style={styles.backIcon} />
+                <Text style={styles.myProgressText}>My Mentors</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-          {/* Toggle Buttons */}
           <View style={styles.toggleContainer}>
             <TouchableOpacity
               style={[
@@ -192,12 +197,14 @@ export default function ProgressScreen() {
                 !showCompleted && styles.toggleButtonActive,
                 styles.toggleButtonLeft,
               ]}
-              onPress={() => handleSwitchProgress('inprogress')}
+              onPress={() => handleSwitchProgress("inprogress")}
             >
-              <Text style={[
-                styles.toggleButtonText,
-                !showCompleted && styles.toggleButtonTextActive
-              ]}>
+              <Text
+                style={[
+                  styles.toggleButtonText,
+                  !showCompleted && styles.toggleButtonTextActive,
+                ]}
+              >
                 Inprogress
               </Text>
             </TouchableOpacity>
@@ -207,12 +214,14 @@ export default function ProgressScreen() {
                 showCompleted && styles.toggleButtonActive,
                 styles.toggleButtonRight,
               ]}
-              onPress={() => handleSwitchProgress('completed')}
+              onPress={() => handleSwitchProgress("completed")}
             >
-              <Text style={[
-                styles.toggleButtonText,
-                showCompleted && styles.toggleButtonTextActive
-              ]}>
+              <Text
+                style={[
+                  styles.toggleButtonText,
+                  showCompleted && styles.toggleButtonTextActive,
+                ]}
+              >
                 Completed
               </Text>
             </TouchableOpacity>
@@ -224,44 +233,25 @@ export default function ProgressScreen() {
               paddingBottom: bottom * 1.3,
             }}
           >
-
             <ProgressPieChart
               data={progress}
               title="Overall Progress - Roadmaps & Assessments"
             />
 
-            {/* Bar Chart Section */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{currentTitle}</Text>
               <View style={styles.chartWrapper}>
-                <ProgressBarChart
-                  data={currentData}
-                  showRemaining={!showCompleted}
-                />
+                <ProgressBarChart data={currentData} showRemaining={!showCompleted} />
               </View>
             </View>
 
-            <View
-              className="flex flex-col gap-5 mt-5"
-              style={{ marginTop: 20 }}
-            >
-              <Text
-                className="px-4 text-white"
-                style={{ fontWeight: 600, fontSize: 16 }}
-              >
-                Revitalization Roadmap Progress
-              </Text>
-              {/* Tabs Section */}
+            <View style={styles.progressBlock}>
+              <Text style={styles.progressBlockTitle}>Revitalization Roadmap Progress</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                  paddingHorizontal: 16,
-                  gap: 8,
-                  marginTop: 15,
-                  paddingBottom: 5,
-                }}
-                style={{ maxHeight: 50 }}
+                contentContainerStyle={styles.tabScrollContent}
+                style={styles.tabScroll}
               >
                 {availableTabs.map((e, i) => (
                   <Tab
@@ -270,75 +260,56 @@ export default function ProgressScreen() {
                     tabs={roadmapTabs}
                     setTabs={setRoadmapTabs}
                     onPress={() => setRoadmapTabs(e.tab)}
-                    className="flex-1 w-full "
                   />
                 ))}
               </ScrollView>
 
-              <View
-                style={{
-                  marginVertical: 10,
-                  paddingHorizontal: 16,
-                  width: "100%",
-                }}
-              >
+              <View style={styles.cardListContainer}>
                 {selectablePhaseCards.map((card, index) => {
-                  // card.phase contains the phase id (from usePhaseCard)
-                  const phase = getPhase(mockRevitalization, card.phase as string);
+                  const phase = getPhase(mockRevitalization, card.phase as string)
                   return (
-                    <View key={`roadmap-${index}`} style={[styles.cardWrapper, { paddingTop: index === 0 ? 15 : 0 }]}>
+                    <View
+                      key={`roadmap-${index}`}
+                      style={[styles.cardWrapper, { paddingTop: index === 0 ? 15 : 0 }]}
+                    >
                       <Pressable
                         onPress={() => {
                           try {
-                            if (phase?.isSingleRoadmap && Array.isArray(phase.tasks) && phase.tasks.length === 1) {
-                              // route directly to the single roadmap item
+                            if (
+                              phase?.isSingleRoadmap &&
+                              Array.isArray(phase.tasks) &&
+                              phase.tasks.length === 1
+                            ) {
                               router.push(`/roadmap/${phase.id}/${phase.tasks[0]}`, {
                                 withAnchor: true,
-                              });
+                              })
                             } else {
                               router.push(`/roadmap/${phase.id}`, {
                                 withAnchor: true,
-                              });
+                              })
                             }
-                          } catch (e) {
-                            console.error('Error navigating to roadmap phase', e);
-                            // fallback: go to phase page
+                          } catch {
                             router.push(`/roadmap/${card.phase}` as any, {
                               withAnchor: true,
-                            });
+                            })
                           }
                         }}
                       >
                         <RoadmapCard data={{ ...card, phaseNumber: undefined }} />
                       </Pressable>
                     </View>
-                  );
+                  )
                 })}
               </View>
             </View>
 
-            {/* Assessment Progress */}
-            <View
-              className="flex flex-col gap-5 mt-5"
-              style={{ marginTop: 20 }}
-            >
-              <Text
-                className="px-4 text-white"
-                style={{ fontWeight: 600, fontSize: 16 }}
-              >
-                Assessment Progress
-              </Text>
-              {/* Tabs Section */}
+            <View style={styles.progressBlock}>
+              <Text style={styles.progressBlockTitle}>Assessment Progress</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                  paddingHorizontal: 16,
-                  gap: 8,
-                  marginTop: 15,
-                  paddingBottom: 5,
-                }}
-                style={{ maxHeight: 50 }}
+                contentContainerStyle={styles.tabScrollContent}
+                style={styles.tabScroll}
               >
                 {availableTabs.map((e, i) => (
                   <Tab
@@ -346,31 +317,27 @@ export default function ProgressScreen() {
                     data={e}
                     tabs={assessmentTabs}
                     setTabs={setAssessmentTabs}
-                    onPress={() => {
-                      setAssessmentTabs(e.tab);
-                    }}
-                    className="flex-1 w-full "
+                    onPress={() => setAssessmentTabs(e.tab)}
                   />
                 ))}
               </ScrollView>
-              <View
-                style={{
-                  marginVertical: 10,
-                  paddingHorizontal: 16,
-                  width: "100%",
-                }}
-              >
+
+              <View style={styles.cardListContainer}>
                 {filteredAssessments.map((e, i) => (
-                  <View key={`assessment-${i}`} style={[styles.cardWrapper, {
-                    paddingTop: i === 0 ? 15 : 0,
-                  }]}>
+                  <View
+                    key={`assessment-${i}`}
+                    style={[styles.cardWrapper, { paddingTop: i === 0 ? 15 : 0 }]}
+                  >
                     <ProgressAssessmentCard
-                      onDevelopmentPlanPress={openPMPSheet} data={e as any} />
+                      onDevelopmentPlanPress={openPMPSheet}
+                      data={e as any}
+                    />
                   </View>
                 ))}
               </View>
             </View>
           </ScrollView>
+
           <PMPBottomSheet
             ref={pmpSheetRef}
             onClose={closePMPSheet}
@@ -380,28 +347,29 @@ export default function ProgressScreen() {
         </View>
       </LinearGradient>
     </>
-  );
+  )
 }
-
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
+  scrollContainer: { flex: 1 },
+  headerContainer: { width: "100%", alignItems: "center" },
+  headerContent: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  searchContainer: {
-    marginHorizontal: 16,
-    marginTop: 10,
-  },
-  separator: {
-    height: 20,
-    backgroundColor: "transparent",
-    marginVertical: 10,
-  },
-  cardWrapper: {
-    width: '100%',
-  },
+  myProgressText: { color: "#fff", fontWeight: "600", fontSize: 17 },
+  searchContainer: { marginHorizontal: 16, marginTop: 10 },
+  backButton: { flexDirection: "row", alignItems: "center", gap: 8 },
+  backIcon: { width: 18, height: 18, transform: [{ scaleX: -1 }] },
+  separator: { height: 20, backgroundColor: "transparent", marginVertical: 10 },
+  cardWrapper: { width: "100%" },
   toggleContainer: {
     flexDirection: "row",
     marginHorizontal: 16,
+    marginTop: 16,
     marginBottom: 20,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 25,
@@ -413,29 +381,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "transparent",
   },
-  toggleButtonActive: {
-    backgroundColor: "#ffffff",
-  },
-  toggleButtonLeft: {
-    borderTopLeftRadius: 25,
-    borderBottomLeftRadius: 25,
-  },
-  toggleButtonRight: {
-    borderTopRightRadius: 25,
-    borderBottomRightRadius: 25,
-  },
+  toggleButtonActive: { backgroundColor: "#ffffff" },
+  toggleButtonLeft: { borderTopLeftRadius: 25, borderBottomLeftRadius: 25 },
+  toggleButtonRight: { borderTopRightRadius: 25, borderBottomRightRadius: 25 },
   toggleButtonText: {
     fontSize: 14,
     fontWeight: "600",
     color: "rgba(255, 255, 255, 0.7)",
   },
-  toggleButtonTextActive: {
-    color: "#1535A8",
-  },
-  section: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-  },
+  toggleButtonTextActive: { color: "#1535A8" },
+  section: { marginHorizontal: 16, marginBottom: 20 },
   sectionTitle: {
     color: "white",
     fontSize: 17,
@@ -450,4 +405,18 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     paddingRight: 10,
   },
-});
+  progressBlock: { marginTop: 20, gap: 20 },
+  progressBlockTitle: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    paddingHorizontal: 16,
+  },
+  tabScroll: { maxHeight: 50, marginTop: 15 },
+  tabScrollContent: { paddingHorizontal: 16, gap: 8, paddingBottom: 5 },
+  cardListContainer: {
+    marginVertical: 10,
+    paddingHorizontal: 16,
+    width: "100%",
+  },
+})

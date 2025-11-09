@@ -1,11 +1,11 @@
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
-import { useCheckUserStatus } from "@/hooks/onboarding/useCheckApprovalStatus";
+import { useCheckApprovalStatus } from "@/hooks/onboarding/useOnboarding";
 import { useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
-import React from "react";
+import React, { useCallback } from "react";
 import {
     ActivityIndicator,
     Image,
@@ -17,77 +17,88 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const WELCOME_VIDEOS = [
+    {
+        id: 'welcome-1',
+        title: 'Welcome!',
+        subtitle: 'Learn more about CCC',
+        duration: '11:00',
+        image: icons.video,
+    },
+    {
+        id: 'welcome-2',
+        title: 'Welcome!',
+        subtitle: 'Learn more about CCC',
+        duration: '11:00',
+        image: icons.video,
+    },
+];
+
+const MORE_VIDEOS = [
+    {
+        id: 'intro-1',
+        title: 'Introduction • 11 Minutes',
+        heading: 'Center for Community Change',
+        description: 'Interested in receiving mentoring in community engagement',
+        duration: '11:00',
+        image: require('@/assets/images/jumpstart.png'),
+    },
+    {
+        id: 'intro-2',
+        title: 'Introduction • 11 Minutes',
+        heading: 'Center for Community Change',
+        description: 'Interested in receiving mentoring in community engagement',
+        duration: '11:00',
+        image: require('@/assets/images/roadmap.jpg'),
+    },
+];
 export default function LoginScreen() {
     const { bottom } = useSafeAreaInsets();
+    const { interestStatus, userId } = useOnboardingStore();
 
-    const { interestStatus, isPasswordSet } = useOnboardingStore();
-    const { isLoading: isCheckingStatus } = useCheckUserStatus();
-    const isPending = interestStatus === 'pending' || interestStatus === 'new';
+    // Check if user is pending approval
+    const isPending =
+        interestStatus === 'pending' || interestStatus === 'new';
 
-    console.log('Interest Status : ', interestStatus);
-    console.log('Is Pending : ', isPending);
-    const welcomeVideos = [
-        {
-            id: "welcome-1",
-            title: "Welcome!",
-            subtitle: "Learn more about CCC",
-            duration: "11:00",
-            videoUrl: "https://example.com/video1.mp4",
-            image: icons.video,
-        },
-        {
-            id: "welcome-2",
-            title: "Welcome!",
-            subtitle: "Learn more about CCC",
-            duration: "11:00",
-            videoUrl: "https://example.com/video2.mp4",
-            image: icons.video,
-        },
-    ];
+    // Check approval status periodically when pending
+    const { isLoading: isCheckingStatus } = useCheckApprovalStatus(isPending);
 
-    const videoData = [
-        {
-            id: "intro-1",
-            title: "Introduction • 11 Minutes",
-            heading: "Center for Community Change",
-            description: "Interested in receiving mentoring in community engagement",
-            duration: "11:00",
-            videoUrl: "https://example.com/video3.mp4",
-            image: require("@/assets/images/jumpstart.png"),
-        },
-        {
-            id: "intro-2",
-            title: "Introduction • 11 Minutes",
-            heading: "Center for Community Change",
-            description: "Interested in receiving mentoring in community engagement",
-            duration: "11:00",
-            videoUrl: "https://example.com/video4.mp4",
-            image: require("@/assets/images/roadmap.jpg"),
-        },
-    ];
+    console.log('📊 Interest Status:', interestStatus);
+    console.log('👤 User ID:', userId);
+    console.log('⏳ Is Pending:', isPending);
+    console.log('🔍 Checking Status:', isCheckingStatus);
 
-    const handleLoginClick = () => {
-        if (interestStatus === "accepted" && !isPasswordSet) {
-            router.push("/(unauthenticated)/set-password");
+    // Navigate to login or password setup
+    const handleLoginClick = useCallback(() => {
+        if (interestStatus === 'accepted') {
+            // User has been approved - go to set password
+            console.log('→ Navigating to set password');
+            router.push('/(unauthenticated)/set-password');
         } else {
-            router.push("/(unauthenticated)/login-form");
+            // Go to normal login
+            console.log('→ Navigating to login form');
+            router.push('/(unauthenticated)/login-form');
         }
-    };
+    }, [interestStatus]);
 
-    const handleVideoPress = (video: any) => {
-        router.push("/(unauthenticated)/videos");
-    };
+    // Navigate to videos
+    const handleVideoPress = useCallback(() => {
+        console.log('→ Navigating to videos');
+        router.push('/(unauthenticated)/videos');
+    }, []);
 
-    const handleShowAllVideos = () => {
-        router.push("/(unauthenticated)/videos");
-    };
+    // Navigate to interest form
+    const handleInterestFormPress = useCallback(() => {
+        console.log('→ Navigating to interest form');
+        router.push('/(unauthenticated)/interest-form');
+    }, []);
 
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <LinearGradient
-                colors={["#176192", "#1D548D", "#264387"]}
-                style={[styles.container]}
+                colors={['#176192', '#1D548D', '#264387']}
+                style={styles.container}
             >
                 <ScrollView
                     showsVerticalScrollIndicator={false}
@@ -98,12 +109,15 @@ export default function LoginScreen() {
                 >
                     <TopBar showDrawer={false} showNotifications={false} />
 
+                    {/* Approval Badge or Contact Info */}
                     <View style={styles.topSection}>
-                        {/* ✅ UPDATED: Use isPending variable */}
                         {isPending ? (
-                            <TouchableOpacity style={styles.approvalBadgeWrapper}>
+                            <TouchableOpacity
+                                style={styles.approvalBadgeWrapper}
+                                activeOpacity={0.8}
+                            >
                                 <LinearGradient
-                                    colors={["#B83AF3", "#21B6E9"]}
+                                    colors={['#B83AF3', '#21B6E9']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     style={styles.approvalBadgeGradient}
@@ -140,16 +154,17 @@ export default function LoginScreen() {
                         )}
                     </View>
 
+                    {/* Welcome Videos Carousel */}
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.videoScrollContent}
                     >
-                        {welcomeVideos.map((video, index) => (
+                        {WELCOME_VIDEOS.map((video) => (
                             <TouchableOpacity
-                                key={index}
+                                key={video.id}
                                 style={styles.welcomeVideoCard}
-                                onPress={() => handleVideoPress(video)}
+                                onPress={handleVideoPress}
                                 activeOpacity={0.9}
                             >
                                 <Image
@@ -166,7 +181,9 @@ export default function LoginScreen() {
                                 </View>
                                 <View style={styles.videoTextOverlay}>
                                     <Text style={styles.welcomeTitle}>{video.title}</Text>
-                                    <Text style={styles.welcomeSubtitle}>{video.subtitle}</Text>
+                                    <Text style={styles.welcomeSubtitle}>
+                                        {video.subtitle}
+                                    </Text>
                                 </View>
                             </TouchableOpacity>
                         ))}
@@ -174,21 +191,25 @@ export default function LoginScreen() {
 
                     <View style={styles.divider} />
 
+                    {/* More Videos Section */}
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>More Videos</Text>
-                        <TouchableOpacity onPress={handleShowAllVideos}>
+                        <TouchableOpacity onPress={handleVideoPress}>
                             <Text style={styles.showAllText}>Show all</Text>
                         </TouchableOpacity>
                     </View>
 
-                    {videoData.map((video, index) => (
-                        <React.Fragment key={index}>
+                    {MORE_VIDEOS.map((video, index) => (
+                        <React.Fragment key={video.id}>
                             <TouchableOpacity
                                 style={styles.videoListItem}
-                                onPress={() => handleVideoPress(video)}
+                                onPress={handleVideoPress}
                                 activeOpacity={0.9}
                             >
-                                <Image source={video.image} style={styles.videoThumbnail} />
+                                <Image
+                                    source={video.image}
+                                    style={styles.videoThumbnail}
+                                />
                                 <View style={styles.videoListPlayButton}>
                                     <Ionicons
                                         name="play-circle"
@@ -199,12 +220,15 @@ export default function LoginScreen() {
                                 <View style={styles.videoInfo}>
                                     <Text style={styles.videoLabel}>{video.title}</Text>
                                     <Text style={styles.videoHeading}>{video.heading}</Text>
-                                    <Text style={styles.videoDescription} numberOfLines={2}>
+                                    <Text
+                                        style={styles.videoDescription}
+                                        numberOfLines={2}
+                                    >
                                         {video.description}
                                     </Text>
                                 </View>
                             </TouchableOpacity>
-                            {index < videoData.length - 1 && (
+                            {index < MORE_VIDEOS.length - 1 && (
                                 <View style={styles.listDivider} />
                             )}
                         </React.Fragment>
@@ -212,7 +236,7 @@ export default function LoginScreen() {
 
                     <View style={styles.divider} />
 
-                    {/* ✅ UPDATED: Use isPending */}
+                    {/* Login Section - Only show if not pending */}
                     {!isPending && (
                         <>
                             <TouchableOpacity
@@ -223,84 +247,87 @@ export default function LoginScreen() {
                             </TouchableOpacity>
 
                             <View style={styles.divider} />
+
+                            {/* Action Buttons */}
+                            <View style={styles.actionButtonWrapper}>
+                                <LinearGradient
+                                    colors={['#7C3AED', '#3B82F6', '#1E40AF']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.gradientContainer}
+                                >
+                                    <View style={styles.actionButtonsRow}>
+                                        <TouchableOpacity
+                                            onPress={handleInterestFormPress}
+                                            style={styles.actionButton}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text style={styles.actionButtonText}>
+                                                New User {'>>'}
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        <View style={styles.verticalDivider} />
+
+                                        <TouchableOpacity
+                                            onPress={handleInterestFormPress}
+                                            style={styles.actionButton}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text style={styles.actionButtonText}>
+                                                Submit Interest
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </LinearGradient>
+                            </View>
                         </>
                     )}
 
-                    {/* ✅ UPDATED: Use isPending */}
-                    {!isPending && (
-                        <View style={styles.actionButtonWrapper}>
-                            <LinearGradient
-                                colors={["#7C3AED", "#3B82F6", "#1E40AF"]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.gradientContainer}
-                            >
-                                <View style={styles.actionButtonsRow}>
-                                    <TouchableOpacity
-                                        onPress={() => router.push("/(unauthenticated)/interest-form")}
-                                        style={styles.actionButton}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text style={styles.actionButtonText}>
-                                            New User {">>"}
-                                        </Text>
-                                    </TouchableOpacity>
-
-                                    <View style={styles.verticalDivider} />
-
-                                    <TouchableOpacity
-                                        onPress={() => router.push("/(unauthenticated)/interest-form")}
-                                        style={styles.actionButton}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text style={styles.actionButtonText}>
-                                            Submit Interest
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </LinearGradient>
-                        </View>
-                    )}
-
-                    {/* ✅ UPDATED: Use isPending */}
+                    {/* Pending Message - Only show if pending */}
                     {isPending && (
                         <View style={styles.pendingMessageContainer}>
-                            <Ionicons name="time-outline" size={48} color="rgba(255,255,255,0.7)" />
+                            <Ionicons
+                                name="time-outline"
+                                size={48}
+                                color="rgba(255,255,255,0.7)"
+                            />
                             <Text style={styles.pendingMessageTitle}>
                                 Application Under Review
                             </Text>
                             <Text style={styles.pendingMessageText}>
-                                Thank you for submitting your interest! Your application is currently
-                                being reviewed by our team. You will receive an email notification once
-                                your account has been approved.
+                                Thank you for submitting your interest! Your application is
+                                currently being reviewed by our team. You will receive an email
+                                notification once your account has been approved.
                             </Text>
 
                             {isCheckingStatus && (
                                 <View style={styles.checkingContainer}>
-                                    <ActivityIndicator color="rgba(255,255,255,0.7)" size="small" />
+                                    <ActivityIndicator
+                                        color="rgba(255,255,255,0.7)"
+                                        size="small"
+                                    />
                                     <Text style={styles.checkingText}>
                                         Checking approval status...
                                     </Text>
                                 </View>
                             )}
-
-                            {/* ✅ ADDED: Show current status for debugging */}
-                            {/* {__DEV__ && (
-                                <Text style={styles.debugText}>
-                                    Current Status: {userStatus || 'none'}
-                                </Text>
-                            )} */}
                         </View>
                     )}
 
+                    {/* University Logo */}
                     <View style={styles.logoContainer}>
-                        <Image source={icons.universityIcon} style={styles.logoImage} />
+                        <Image
+                            source={icons.universityIcon}
+                            style={styles.logoImage}
+                        />
                     </View>
                 </ScrollView>
             </LinearGradient>
         </>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
