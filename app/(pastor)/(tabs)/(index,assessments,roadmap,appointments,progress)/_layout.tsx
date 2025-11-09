@@ -16,11 +16,20 @@ export const unstable_settings = {
     'assessments': {
         initialRouteName: 'assessments/index', // ✅ Points to assessment LIST outside group
     },
+
+    'appointments': {
+        initialRouteName: 'appointments/index', // ✅ Points to appointments LIST outside group
+    },
+
+    'progress': {
+        initialRouteName: 'progress/index', // ✅ Points to progress LIST outside group
+    },
 };
 
 export default function SharedStackLayout({ segment }: { segment: string }) {
     return (
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack
+            screenOptions={{ headerShown: false }}>
             {/* Roadmap routes - ALL inside shared group */}
             <Stack.Screen name="roadmap/index" />           {/* Roadmap list */}
             <Stack.Screen name="roadmap/[phaseId]/index" /> {/* Phase details */}
@@ -34,7 +43,24 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
             <Stack.Screen name="assessments/report" />
             <Stack.Screen name="assessments/answer-questions" />
 
-            <Stack.Screen name="profile/assignments" />                     {/* Dashboard */}
+            {/* Shared profile pages */}
+            <Stack.Screen name="profile/assignments" />
+
+            {/* Shared Appointments pages*/}
+            <Stack.Screen
+                name="appointments/index"
+                getId={({ params }) => String(Date.now())}
+            />
+
+            {/* Shared Progress pages - Add getId */}
+            <Stack.Screen
+                name="progress/index"
+                getId={({ params }) => String(Date.now())}
+            />
+            <Stack.Screen
+                name="progress/report"
+                getId={({ params }) => String(Date.now())}
+            />
         </Stack>
     );
 }

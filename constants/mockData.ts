@@ -532,7 +532,7 @@ export const PastorMenuItems: MenuItem[] = [
         label: 'Progress',
         icon: icons.progress,
         iconType: 'image',
-        route: '/(pastor)/(tabs)/progress/progress',
+        route: '/(pastor)/(tabs)/progress',
     },
     {
         id: 'appointments',

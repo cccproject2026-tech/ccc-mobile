@@ -68,6 +68,12 @@ export const profileService = {
         return response.data.data;
     },
 
+    getAllUsers: async (role?: string): Promise<User[]> => {
+        const response = await apiClient.get<{ success: boolean; data: User[] }>(
+            ENDPOINTS.USERS.GET_ALL_USERS(role as any)
+        );
+        return response.data.data;
+    },
     // Upload avatar
     uploadAvatar: async (file: any): Promise<{ avatarUrl: string }> => {
         const formData = new FormData();

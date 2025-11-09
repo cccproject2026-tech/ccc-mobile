@@ -2,100 +2,83 @@ import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
-import ScheduleMeetingBottomSheet, { Mentor, TimeSlot } from "@/components/director/ScheduleMeetingBottomSheet";
+import ScheduleMeetingBottomSheet, { Mentor } from "@/components/director/ScheduleMeetingBottomSheet";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { appointments } from "@/constants/mockData";
+import { useAppointments } from "@/hooks/appointments/useAppointments";
+import { useAuthStore } from "@/stores";
+import { Appointment, AppointmentPlatform, UpdateAppointmentPayload } from "@/types/appointment.types";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type RootStackParamList = {
-  Home: undefined;
-  scheduleMeeting: { data: object; navigatedFrom: string };
-  Appointments: undefined;
-};
 
-interface AppointmentsProps {
-  navigation: NativeStackNavigationProp<RootStackParamList, "Appointments">;
-}
 
-interface ResponseModalState {
-  visible: boolean;
-  message: string;
-  buttonText: string;
-}
-
-const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
+const Appointments = () => {
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = React.useState<string>(today);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const router = useRouter();
-  const [responseModal, setResponseModal] = React.useState<ResponseModalState>({
-    visible: false,
-    message: "",
-    buttonText: "",
-  });
   const { bottom } = useSafeAreaInsets();
 
-  // Bottom sheet ref
+  const { openSheet = 'false', assessmentId } = useLocalSearchParams<{
+    openSheet?: string;
+    assessmentId?: string;
+  }>();
+
+  const { user } = useAuthStore();
+
+  if (!user?.id) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+      >
+        <Text style={{ color: 'white', fontSize: 18 }}>Please log in</Text>
+      </LinearGradient>
+    );
+  }
+  // Use the simplified hook - that's it!
+  const {
+    appointments,
+    isLoading,
+    error,
+    createAppointment,
+    updateAppointment,
+    refetch,
+    getAppointmentsByDate,
+  } = useAppointments(user.id);
+
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
-  const { openSheet, assessmentId } = useLocalSearchParams();
 
   React.useEffect(() => {
     if (openSheet === 'true' && scheduleMeetingBottomSheetRef.current) {
       setTimeout(() => {
         scheduleMeetingBottomSheetRef.current?.present();
-      }, 200); // Ensure sheet presents after mount
+      }, 200);
     }
   }, [openSheet]);
-  // Mock mentors data
-  const mockMentors: Mentor[] = [
-    {
-      id: '1',
-      name: 'John Ross',
-      role: 'Mentor',
-      profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
-    },
-    {
-      id: '2',
-      name: 'John Ross',
-      role: 'Field Mentor',
-      profileImage: 'https://randomuser.me/api/portraits/men/2.jpg',
-    },
-    {
-      id: '3',
-      name: 'John Ross',
-      role: 'Mentor',
-      profileImage: 'https://randomuser.me/api/portraits/men/3.jpg',
-    },
-    {
-      id: '4',
-      name: 'John Ross',
-      role: 'Mentor',
-      profileImage: 'https://randomuser.me/api/portraits/men/4.jpg',
-    },
-    {
-      id: '5',
-      name: 'John Ross',
-      role: 'Field Mentor',
-      profileImage: 'https://randomuser.me/api/portraits/men/5.jpg',
-    },
-    {
-      id: '6',
-      name: 'John Ross',
-      role: 'Field Mentor',
-      profileImage: 'https://randomuser.me/api/portraits/men/6.jpg',
-    },
-  ];
 
-  // Helper function to format date for display
+  const mentorsFromAppointments = useMemo(() => {
+    const mentorMap = new Map<string, Mentor>();
+    appointments.forEach(apt => {
+      if (!mentorMap.has(apt.mentorId)) {
+        mentorMap.set(apt.mentorId, {
+          id: apt.mentorId,
+          name: `Mentor ${apt.mentorId.slice(-4)}`,
+          role: 'Mentor',
+          profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
+        });
+      }
+    });
+    return Array.from(mentorMap.values());
+  }, [appointments]);
+
   const formatDisplayDate = (dateString: string) => {
     const date = new Date(dateString);
     const day = date.getDate();
@@ -103,59 +86,30 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const month = monthNames[date.getMonth()];
     const year = date.getFullYear().toString().slice(-2);
-
     return `${day} ${month} ${year}`;
   };
 
-  // Helper function to check if date is today
   const isToday = (dateString: string) => {
     return dateString === today;
   };
 
-  // Filter appointments based on selected date
-  const getAppointmentsForDate = (dateString: string) => {
-    // For demo purposes, we'll show appointments on specific dates
-    // In real app, you'd filter based on actual appointment dates
-    if (dateString === today) {
-      return appointments; // Show real appointments for today
-    } else if (dateString === '2025-10-20' || dateString === '2025-10-23' || dateString === '2025-10-21') {
-      // Show some appointments for these demo dates
-      return appointments.slice(0, 2);
-    }
-    return []; // No appointments for other dates
-  };
+  // Use the hook's getAppointmentsByDate method
+  const selectedDateAppointments = getAppointmentsByDate(selectedDate);
 
-  const selectedDateAppointments = getAppointmentsForDate(selectedDate);
-
-
-  const [rescheduleData, setRescheduleData] = useState<{
+  const [rescheduleData, setRescheduleData] = React.useState<{
+    appointment: Appointment;
     mentor: Mentor;
-    date: string;
-    time: TimeSlot;
-    meetingOption: string;
   } | null>(null);
 
-  // Handle reschedule button press
-  const handleReschedule = (appointment: any) => {
-    // Convert appointment data to the format needed
-    const mentorData = mockMentors.find(m => m.name === appointment.person);
-    if (mentorData) {
-      setRescheduleData({
-        mentor: mentorData,
-        date: appointment.date,
-        time: {
-          id: '1',
-          startTime: appointment.time.split(' - ')[0],
-          endTime: appointment.time.split(' - ')[1],
-          label: appointment.time,
-        },
-        meetingOption: appointment.mode,
-      });
+  const handleReschedule = (appointment: Appointment) => {
+    const mentor = mentorsFromAppointments.find(m => m.id === appointment.mentorId);
+    if (mentor) {
+      setRescheduleData({ appointment, mentor });
+      scheduleMeetingBottomSheetRef.current?.present();
     }
-    scheduleMeetingBottomSheetRef.current?.present();
   };
 
-  const handleCancel = (appointment: any) => {
+  const handleCancel = (appointment: Appointment) => {
     Alert.alert(
       'Cancel Meeting',
       'Are you sure you want to cancel this meeting?',
@@ -164,63 +118,138 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
         {
           text: 'Yes',
           style: 'destructive',
-          onPress: () => {
-            // Place your cancel logic here
-            console.log('Meeting cancelled:', appointment);
-            // Optionally show a success message or update state
+          onPress: async () => {
+            try {
+              await updateAppointment(appointment.id, { status: 'cancelled' });
+              Alert.alert('Success', 'Meeting cancelled successfully');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to cancel meeting');
+            }
           },
         },
       ]
     );
   };
 
-  // Handle new meeting button press
   const handleNewMeeting = () => {
+    setRescheduleData(null);
     scheduleMeetingBottomSheetRef.current?.present();
   };
 
-  // Handle schedule meeting
-  const handleScheduleMeeting = (data: any) => {
-    console.log('Scheduling meeting:', data);
-    setResponseModal({
-      visible: true,
-      message: `Meeting scheduled with ${data.selectedMentor.name} on ${formatDisplayDate(data.selectedDate)} at ${data.selectedTime.label}`,
-      buttonText: "OK",
-    });
-    if (openSheet === 'true') {
-      router.replace({
-        pathname: '/assessments'
-      })
+  const handleScheduleMeeting = async (data: any) => {
+    try {
+      if (rescheduleData) {
+        const updatePayload: UpdateAppointmentPayload = {
+          meetingDate: data.meetingDate,
+          platform: data.platform as AppointmentPlatform,
+          meetingLink: data.meetingLink,
+          notes: data.notes,
+        };
+        await updateAppointment(rescheduleData.appointment.id, updatePayload);
+        Alert.alert('Success', 'Meeting rescheduled successfully');
+      } else {
+        await createAppointment({
+          userId: user.id,
+          mentorId: data.mentorId,
+          meetingDate: data.meetingDate,
+          platform: data.platform as AppointmentPlatform,
+          meetingLink: data.meetingLink,
+          notes: data.notes,
+        });
+        Alert.alert('Success', 'Meeting scheduled successfully');
+      }
+
+      if (openSheet === 'true') {
+        router.replace({
+          pathname: '/assessments',
+        });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to schedule meeting');
+      console.error('Schedule error:', error);
     }
   };
 
-  // Handle close bottom sheet
   const handleCloseScheduleBottomSheet = () => {
     scheduleMeetingBottomSheetRef.current?.dismiss();
+    setRescheduleData(null);
   };
 
   const [changeModeModalVisible, setChangeModeModalVisible] = React.useState(false);
-  const [selectedMode, setSelectedMode] = React.useState('Zoom');
+  const [selectedAppointmentForMode, setSelectedAppointmentForMode] = React.useState<Appointment | null>(null);
+  const [selectedMode, setSelectedMode] = React.useState<AppointmentPlatform>('zoom');
   const [showModeSuccess, setShowModeSuccess] = React.useState(false);
   const [modeSuccessText, setModeSuccessText] = React.useState('');
-  const meetingModes = [
-    'Zoom',
-    'Google Meet',
-    'Teams',
-    'Whatsapp',
-    'Phone call',
+
+  const meetingModes: AppointmentPlatform[] = [
+    'zoom',
+    'google_meet',
+    'teams',
+    'phone',
+    'in_person',
   ];
 
+  const getModeLabel = (mode: AppointmentPlatform): string => {
+    const labels: Record<AppointmentPlatform, string> = {
+      zoom: 'Zoom',
+      google_meet: 'Google Meet',
+      teams: 'Teams',
+      phone: 'Phone call',
+      in_person: 'In Person',
+    };
+    return labels[mode];
+  };
 
-  const handleChangeMode = (appointment: any) => {
+  const handleChangeMode = (appointment: Appointment) => {
+    setSelectedAppointmentForMode(appointment);
+    setSelectedMode(appointment.platform);
     setChangeModeModalVisible(true);
   };
 
-  const handleChooseMode = () => {
-    setChangeModeModalVisible(false);
-    setModeSuccessText(`Meeting Mode has been\nChanged to ${selectedMode}`);
-    setShowModeSuccess(true);
+  const handleChooseMode = async () => {
+    if (!selectedAppointmentForMode) return;
+    try {
+      await updateAppointment(selectedAppointmentForMode.id, {
+        platform: selectedMode,
+      });
+      setChangeModeModalVisible(false);
+      setModeSuccessText(`Meeting Mode has been\nChanged to ${getModeLabel(selectedMode)}`);
+      setShowModeSuccess(true);
+      setSelectedAppointmentForMode(null);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to change meeting mode');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+      >
+        <Text style={{ color: 'white', fontSize: 18 }}>Loading appointments...</Text>
+      </LinearGradient>
+    );
+  }
+
+  if (error) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+      >
+        <View style={{ alignItems: 'center', gap: 16 }}>
+          <Text style={{ color: 'white', fontSize: 18 }}>Error loading appointments</Text>
+          <Pressable
+            onPress={() => refetch()}
+            style={{ backgroundColor: 'white', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}
+          >
+            <Text style={{ color: '#1535A8', fontWeight: '600' }}>Retry</Text>
+          </Pressable>
+        </View>
+      </LinearGradient>
+    );
+  }
 
   return (
     <>
@@ -234,7 +263,6 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
             <TopBar role="pastor" />
           </View>
           <View style={{ flex: 1 }}>
-            {/* Header */}
             <Header
               title="Appointments"
               hideSearchBar={true}
@@ -252,7 +280,6 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
               />
             </View>
 
-            {/* Main content */}
             <ScrollView
               style={{ flex: 1 }}
               contentContainerStyle={{ paddingBottom: bottom }}
@@ -268,9 +295,7 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
                   paddingTop: 20,
                 }}
               >
-                {/* Calendar */}
                 <View style={styles.calendarContainer}>
-                  {/* Heading with Icon */}
                   <View style={styles.calendarHeader}>
                     <Image source={icons.calendarIcon} style={{ width: 24, height: 24 }} />
                     <Text style={styles.calendarTitle}>
@@ -278,32 +303,10 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
                     </Text>
                   </View>
 
-                  {/* Calendar Component */}
-                  <View style={{
-                    minHeight: 400,
-                  }}>
+                  <View style={{ minHeight: 400 }}>
                     <GradientCalendar
                       selected={selectedDate}
                       setSelected={setSelectedDate}
-                      recurringAvailability={{
-                        type: 'weekly',
-                        daysOfWeek: [1, 2, 3, 4, 5, 6],
-                      }}
-                      unavailableDates={[
-                        '2025-10-30',
-                        '2025-10-22',
-                        '2025-10-25',
-                      ]}
-                      availableDates={[
-                        today,
-                        '2025-10-20',
-                        '2025-10-21',
-                        '2025-10-23',
-                        '2025-10-24',
-                        '2025-10-27',
-                        '2025-10-28',
-                        '2025-10-29',
-                      ]}
                       showHeader={false}
                       disablePastDates={true}
                       markToday={false}
@@ -311,7 +314,6 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
                   </View>
                 </View>
 
-                {/* Selected Date Appointments */}
                 {selectedDateAppointments.length > 0 && (
                   <View style={styles.appointmentsContainer}>
                     <View style={styles.rowBetween}>
@@ -323,16 +325,16 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
                       </Text>
                     </View>
                     <View style={{ gap: 10 }}>
-                      {selectedDateAppointments.map((appointment, i) => (
+                      {selectedDateAppointments.map((appointment) => (
                         <AppointmentCard
-                          key={i}
-                          date={appointment.date}
-                          time={appointment.time}
-                          tz={appointment.tz}
-                          person={appointment.person}
-                          role={appointment.role}
-                          mode={appointment.mode}
-                          platformIcon={appointment.icon}
+                          key={appointment.id}
+                          date={appointment.meetingDate.split('T')[0]}
+                          time={`${appointment.meetingDate.split('T')[1]?.slice(0, 5)} - ${appointment.endTime?.split('T')[1]?.slice(0, 5)}`}
+                          tz="UTC"
+                          person={mentorsFromAppointments.find(m => m.id === appointment.mentorId)?.name || 'Unknown'}
+                          role={mentorsFromAppointments.find(m => m.id === appointment.mentorId)?.role || 'Mentor'}
+                          mode={getModeLabel(appointment.platform)}
+                          platformIcon={appointment.platform}
                           menuItems={[
                             {
                               key: 'reschedule',
@@ -360,7 +362,6 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
                   </View>
                 )}
 
-                {/* No appointments message */}
                 {selectedDateAppointments.length === 0 && (
                   <View style={styles.appointmentsContainer}>
                     <View style={styles.rowBetween}>
@@ -384,16 +385,12 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
         </>
       </LinearGradient>
 
-      {/* Schedule Meeting Bottom Sheet */}
       <ScheduleMeetingBottomSheet
         ref={scheduleMeetingBottomSheetRef}
-        mentors={mockMentors}
-        mode={rescheduleData ? 'reschedule' : 'schedule'} // Dynamic mode
-        existingAppointment={rescheduleData} // Pass existing data for reschedule
-        onClose={() => {
-          handleCloseScheduleBottomSheet();
-          setRescheduleData(null); // Reset reschedule data
-        }}
+        mentors={mentorsFromAppointments}
+        mode={rescheduleData ? 'reschedule' : 'schedule'}
+        existingAppointment={rescheduleData?.appointment}
+        onClose={handleCloseScheduleBottomSheet}
         onSchedule={handleScheduleMeeting}
         colorScheme={{
           background: Colors.darkBlueGradientOne,
@@ -403,7 +400,6 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
         }}
       />
 
-      {/* Change Meeting Mode Modal */}
       <Modal
         visible={changeModeModalVisible}
         transparent
@@ -451,7 +447,9 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
                     <View style={{ width: 13, height: 13, borderRadius: 6.5, backgroundColor: '#3CA1F0' }} />
                   )}
                 </View>
-                <Text style={{ color: selectedMode === mode ? '#EAF7FF' : '#B0B8D1', fontSize: 19, fontWeight: '500' }}>{mode}</Text>
+                <Text style={{ color: selectedMode === mode ? '#EAF7FF' : '#B0B8D1', fontSize: 19, fontWeight: '500' }}>
+                  {getModeLabel(mode)}
+                </Text>
               </Pressable>
             ))}
             <Pressable
@@ -463,7 +461,7 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
           </LinearGradient>
         </View>
       </Modal>
-      {/* Success Modal for Meeting Mode Change */}
+
       <SimpleSuccessModal
         visible={showModeSuccess}
         onClose={() => setShowModeSuccess(false)}
@@ -471,7 +469,7 @@ const Appointments: React.FC<AppointmentsProps> = ({ navigation }) => {
       />
     </>
   );
-}
+};
 
 export default Appointments;
 const styles = StyleSheet.create({

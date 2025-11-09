@@ -208,3 +208,11 @@ export const useUpdateProfile = () => {
         },
     });
 };
+
+export const useGetAllUsers = (role?: string) => {
+    return useQuery({
+        queryKey: ['users', 'all', role || ''],
+        queryFn: () => profileService.getAllUsers(role),
+        staleTime: 1000 * 60 * 10, // 10 minutes
+    });
+}
