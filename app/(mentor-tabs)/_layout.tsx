@@ -24,9 +24,10 @@ export default function MentorDrawerLayout() {
         },
         headerShown: false,
       }}
+      initialRouteName="(tabs)"
     >
       <Drawer.Screen
-        name="index"
+        name="(tabs)"
         options={{
           headerShown: false,
           drawerItemStyle: { display: 'none' },

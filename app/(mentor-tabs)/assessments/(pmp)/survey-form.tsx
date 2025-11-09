@@ -5,20 +5,26 @@ import { SurveyModal } from "@/components/atom/surveyModal";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useAssessment } from "@/hooks/assessments";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SurveyForm() {
+  const { assessmentId } = useLocalSearchParams<{ assessmentId: string }>();
   const [selections, setSelections] = React.useState<{
     [key: string]: number[];
   }>({});
   const [formTab, setFormTab] = React.useState(0);
   const [isVisible, setIsVisible] = React.useState(false);
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const totalPages = 5;
+
+  // Use TanStack Query hook
+  const { data: assessment, isLoading: loading, error: queryError } = useAssessment(assessmentId);
+  const error = queryError ? "Failed to load assessment. Please try again." : null;
+  const totalPages = assessment?.sections.length || 0;
 
   const handlePageChange = (newIndex: number) => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -30,7 +36,16 @@ export default function SurveyForm() {
   };
 
   const clearCurrentTabSelections = () => {
-    const tabKeys = [`tab${formTab}_list1`, `tab${formTab}_list2`];
+    if (!assessment) return;
+    
+    const currentSection = assessment.sections[formTab];
+    if (!currentSection) return;
+
+    // Get all layer keys for the current section
+    const tabKeys = currentSection.layers.map(
+      (layer) => `section_${currentSection._id}_layer_${layer._id}`
+    );
+
     setSelections((prev) => {
       const newSelections = { ...prev };
       tabKeys.forEach((key) => {
@@ -40,23 +55,10 @@ export default function SurveyForm() {
     });
   };
 
-  const items = [
-    "Feeling physically drained most of the time.",
-    "Often feeling drained",
-    "Feeling mostly energized and engaged",
-    "Feeling fully energized and enjoying life",
-  ];
-
   const RenderFormData = ({
-    title,
-    subTitle,
-    subTitle2,
-    description = "",
+    section,
   }: {
-    title: string;
-    subTitle: string;
-    subTitle2?: string;
-    description?: string;
+    section: NonNullable<typeof assessment>["sections"][0];
   }) => {
     return (
       <View className="flex gap-5 px-4">
@@ -69,39 +71,38 @@ export default function SurveyForm() {
         <View className="w-full p-5 flex justify-center items-center gap-2 rounded-[10px] bg-[#194F82]">
           <View className="max-w-[105px] px-5 py-2 rounded-[15px] border border-solid border-[#FFFFFF73]">
             <Text className="font-medium text-[15px] leading-[22px] text-white">
-              {title}
+              {section.title}
             </Text>
           </View>
           <Text className="font-bold text-[17px] leading-[22px] text-white text-center">
-            {subTitle}
+            {section.description}
           </Text>
-          {subTitle && (
-            <Text className="font-semibold text-[15px] leading-[22px] text-white text-center break-all">
-              {subTitle2}
-            </Text>
-          )}
         </View>
 
-        <Text className="font-medium text-sm leading-[18px] text-white/80">
-          {description}
-        </Text>
+        {/* Render ChecklistCard for each layer */}
+        {section.layers.map((layer) => {
+          const selectionKey = `section_${section._id}_layer_${layer._id}`;
+          const choiceTexts = layer.choices.map((choice) => choice.text);
 
-        <ChecklistCard
-          items={items}
-          selectable
-          selectedIndices={selections[`tab${formTab}_list1`] || []}
-          onSelectionChange={(indices) =>
-            handleSelectionChange(`tab${formTab}_list1`, indices)
-          }
-        />
-        <ChecklistCard
-          items={items}
-          selectable
-          selectedIndices={selections[`tab${formTab}_list2`] || []}
-          onSelectionChange={(indices) =>
-            handleSelectionChange(`tab${formTab}_list2`, indices)
-          }
-        />
+          return (
+            <View key={layer._id} className="flex gap-3">
+              {/* Layer title as question header */}
+              {layer.title && (
+                <Text className="font-semibold text-base leading-[22px] text-white">
+                  {layer.title}
+                </Text>
+              )}
+              <ChecklistCard
+                items={choiceTexts}
+                selectable
+                selectedIndices={selections[selectionKey] || []}
+                onSelectionChange={(indices) =>
+                  handleSelectionChange(selectionKey, indices)
+                }
+              />
+            </View>
+          );
+        })}
       </View>
     );
   };
@@ -127,75 +128,56 @@ export default function SurveyForm() {
               wrapperClass="!justify-end"
             />
 
-            <View className="flex gap-5">
-              {formTab === 0 && (
-                <RenderFormData
-                  title="Section 1"
-                  subTitle="Personal Well-Being"
-                  subTitle2="(Biopsychosocial(BPS)/spiritual filter)"
-                  description="Select the option that most accurately reflects how you feel and who you are, as this self-assessment is designed to help you gain a deeper understanding of yourself. The more precise you are, the better support and guidance we can offer"
-                />
-              )}
-
-              {formTab === 1 && (
-                <RenderFormData
-                  title="Section 2"
-                  subTitle="Professional Development/ Leadership style"
-                  description="Select the option that most accurately reflects how you feel and who you are, as this self-assessment is designed to help you gain a deeper understanding of yourself. The more precise you are, the better support and guidance we can offer"
-                />
-              )}
-
-              {formTab === 2 && (
-                <RenderFormData
-                  title="Section 3"
-                  subTitle="Community Engagement (CE) Experience "
-                  description="Select the option in each box that most accurately reflects the health of your church and its community engagement."
-                />
-              )}
-
-              {formTab === 3 && (
-                <RenderFormData
-                  title="Section 4"
-                  subTitle="Congregational Health "
-                  description="Select the option in each box that most accurately reflects the health of the pastor. This  section can be given to an individual or a pastoral team to complete."
-                />
-              )}
-
-              {formTab === 4 && (
-                <RenderFormData
-                  title="Section 5"
-                  subTitle="Continuing Education"
-                  description="Select the option in each box that relates to how Christ Method Alone is being practiced in your community."
-                />
-              )}
-              <View
-                className="flex flex-row justify-center items-center max-w-[40%] mx-auto"
-                style={{ gap: 10 }}
-              >
-                <SurveyButton
-                  title="Clear Responses"
-                  onPress={clearCurrentTabSelections}
-                  bgColor="#ffffff"
-                  textColor="#001FC1"
-                />
-                <SurveyButton
-                  title={
-                    formTab === totalPages - 1
-                      ? "Submit Survey"
-                      : "Next Section"
-                  }
-                  icon={icons.forward}
-                  onPress={() => {
-                    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-                    if (formTab === totalPages - 1) {
-                      setIsVisible(true)
-                    } else {
-                      handlePageChange(formTab + 1);
-                    }
-                  }}
-                />
+            {loading ? (
+              <View className="flex-1 justify-center items-center">
+                <ActivityIndicator size="large" color="#ffffff" />
+                <Text className="text-white mt-4">Loading assessment...</Text>
               </View>
-            </View>
+            ) : error ? (
+              <View className="flex-1 justify-center items-center px-4">
+                <Text className="text-white text-center text-lg">{error}</Text>
+              </View>
+            ) : !assessment ? (
+              <View className="flex-1 justify-center items-center px-4">
+                <Text className="text-white text-center text-lg">
+                  No assessment data available
+                </Text>
+              </View>
+            ) : (
+              <View className="flex gap-5">
+                {assessment.sections.map((section, index) => {
+                  if (formTab !== index) return null;
+                  return <RenderFormData key={section._id} section={section} />;
+                })}
+                <View
+                  className="flex flex-row justify-center items-center max-w-[40%] mx-auto"
+                  style={{ gap: 10 }}
+                >
+                  <SurveyButton
+                    title="Clear Responses"
+                    onPress={clearCurrentTabSelections}
+                    bgColor="#ffffff"
+                    textColor="#001FC1"
+                  />
+                  <SurveyButton
+                    title={
+                      formTab === totalPages - 1
+                        ? "Submit Survey"
+                        : "Next Section"
+                    }
+                    icon={icons.forward}
+                    onPress={() => {
+                      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+                      if (formTab === totalPages - 1) {
+                        setIsVisible(true);
+                      } else {
+                        handlePageChange(formTab + 1);
+                      }
+                    }}
+                  />
+                </View>
+              </View>
+            )}
 
             <SurveyModal
               isMenuVisible={isVisible}

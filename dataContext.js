@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const DataContext = createContext();
@@ -8,30 +9,34 @@ export const DataProvider = ({ children }) => {
   const [data, setData] = useState(null);
   const [currentScreen, setCurrentScreenState] = useState(null);
 
-  const getFromLocalStorage = (key) => {
-    return new Promise((resolve) => {
-      const item = localStorage.getItem(key);
-      resolve(item ? JSON.parse(item) : null);
-    });
+  const getFromStorage = async (key) => {
+    try {
+      const item = await AsyncStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (error) {
+      console.error('Error reading from storage:', error);
+      return null;
+    }
   };
 
-  const setToLocalStorage = (key, value) => {
-    return new Promise((resolve) => {
-      localStorage.setItem(key, JSON.stringify(value));
-      resolve();
-    });
+  const setToStorage = async (key, value) => {
+    try {
+      await AsyncStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error('Error writing to storage:', error);
+    }
   };
 
   useEffect(() => {
     (async () => {
-      const storedData = await getFromLocalStorage(DATA_KEY);
+      const storedData = await getFromStorage(DATA_KEY);
       if (storedData) setData(storedData);
     })();
   }, []);
 
   useEffect(() => {
     if (data !== null) {
-      setToLocalStorage(DATA_KEY, data);
+      setToStorage(DATA_KEY, data);
     }
   }, [data]);
 

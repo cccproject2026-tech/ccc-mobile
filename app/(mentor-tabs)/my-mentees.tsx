@@ -2,18 +2,21 @@ import {
   MentorDetailedCard,
   MentorShortCard,
 } from "@/components/build-components"
+import { Mentee } from "@/components/director/MenteeCard"
 import { TabSwitcher } from "@/components/director/TabSwitcher"
 import MenteeMenuBottomSheet, { MenteeMenuBottomSheetRef } from "@/components/mentor/MenteeMenuBottomSheet"
 import ScheduleMeetingBottomSheet, { ScheduleMeetingBottomSheetRef } from "@/components/mentor/ScheduleMeetingBottomSheet"
 import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
+import { useMentees } from "@/hooks/mentees/useMentees"
 import { Feather, Ionicons } from "@expo/vector-icons"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { LinearGradient } from "expo-linear-gradient"
 import { Stack, router } from "expo-router"
-import React, { useRef, useState } from "react"
+import React, { useMemo, useRef, useState } from "react"
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -25,52 +28,6 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import MapView, { Marker } from "react-native-maps"
 import { SafeAreaView } from "react-native-safe-area-context"
-
-interface Mentor {
-  id: string
-  name: string
-  role: string
-  description: string
-}
-
-const dummyMentors: Mentor[] = [
-  {
-    id: "john-ross",
-    name: "John Doe",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    id: "john-ross",
-    name: "John Ross",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    id: "john-ross",
-    name: "John Doe",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    id: "john-ross",
-    name: "John Ross",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    id: "john-ross",
-    name: "John Doe",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    id: "john-ross",
-    name: "John Doe",
-    role: "Field Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-]
 
 export default function MyMentees() {
   const [listToggle, setListToggle] = useState(false)
@@ -91,7 +48,33 @@ export default function MyMentees() {
   const [expandedSection, setExpandedSection] = useState<"PHASE" | "STATE" | "CONFERENCE">("PHASE")
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [selectedConference, setSelectedConference] = useState<string | null>(null)
-  const [selectedMentee, setSelectedMentee] = useState<Mentor | null>(null)
+  const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null)
+
+  const { mentees, isLoading, isError } = useMentees()
+
+  // Filter mentees based on search text and active tab
+  const filteredMentees = useMemo(() => {
+    let filtered = mentees
+
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase()
+      filtered = filtered.filter(
+        (mentee) =>
+          mentee.name.toLowerCase().includes(searchLower) ||
+          mentee.role?.toLowerCase().includes(searchLower) ||
+          mentee.description?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Filter by tab (note: API doesn't provide isCompleted, so this may not work until API is updated)
+    if (activeTab === "COMPLETED") {
+      filtered = filtered.filter((mentee) => mentee.isCompleted === true)
+    } else if (activeTab === "IN_PROGRESS") {
+      filtered = filtered.filter((mentee) => mentee.isCompleted !== true)
+    }
+
+    return filtered
+  }, [mentees, searchText, activeTab])
 
   const menteeMenuRef = useRef<MenteeMenuBottomSheetRef>(null)
   const scheduleMeetingRef = useRef<ScheduleMeetingBottomSheetRef>(null)
@@ -104,8 +87,8 @@ export default function MyMentees() {
     { key: "COMPLETED", label: "Completed" },
   ]
 
-  const handleMenuPress = (mentor: Mentor) => {
-    setSelectedMentee(mentor)
+  const handleMenuPress = (mentee: Mentee) => {
+    setSelectedMentee(mentee)
     menteeMenuRef.current?.present()
   }
 
@@ -160,6 +143,39 @@ export default function MyMentees() {
     })
     // Here you would typically save the meeting to your backend
   }
+
+  if (isLoading) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <LinearGradient
+          colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+          style={{ flex: 1 }}
+        >
+          <Stack.Screen options={{ headerShown: false }} />
+          <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <ActivityIndicator size="large" color="#fff" />
+          </SafeAreaView>
+        </LinearGradient>
+      </GestureHandlerRootView>
+    )
+  }
+
+  if (isError) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <LinearGradient
+          colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+          style={{ flex: 1 }}
+        >
+          <Stack.Screen options={{ headerShown: false }} />
+          <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
+            <Text className="text-white text-center">Failed to load mentees. Please try again.</Text>
+          </SafeAreaView>
+        </LinearGradient>
+      </GestureHandlerRootView>
+    )
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
@@ -255,15 +271,15 @@ export default function MyMentees() {
                         gap: 10,
                       }}
                     >
-                      {dummyMentors.slice(0, 8).map((mentor, index) => (
+                      {filteredMentees.slice(0, 8).map((mentee) => (
                         <TouchableOpacity
-                          key={index}
+                          key={mentee.id}
                           activeOpacity={0.85}
                           style={{ alignItems: "center" }}
                           onPress={() =>
                             router.push({
                               pathname: "/(mentor-tabs)/mentee-profile",
-                              params: { menteeId: mentor.id },
+                              params: { menteeId: mentee.id },
                             })
                           }
                         >
@@ -309,7 +325,7 @@ export default function MyMentees() {
                               marginTop: 8,
                             }}
                           >
-                            {mentor.name}
+                            {mentee.name}
                           </Text>
                         </TouchableOpacity>
                       ))}
@@ -489,7 +505,7 @@ export default function MyMentees() {
                   <View style={styles.mentorsListContainer} className="mt-4">
                     <View style={styles.mentorsHeader}>
                       <Text className="text-white  font-medium text-[16px]">
-                        Current Mentors
+                        Current Mentees
                       </Text>
                     </View>
 
@@ -498,9 +514,9 @@ export default function MyMentees() {
                         listToggle ? styles.mentorsListView : styles.mentorsGrid
                       }
                     >
-                      {dummyMentors.map((mentor, index) => (
+                      {filteredMentees.map((mentee) => (
                         <View
-                          key={index}
+                          key={mentee.id}
                           style={
                             listToggle
                               ? styles.detailedMentorCard
@@ -512,24 +528,24 @@ export default function MyMentees() {
                             onPress={() =>
                               router.push({
                                 pathname: "/(mentor-tabs)/mentee-profile",
-                                params: { menteeId: mentor.id },
+                                params: { menteeId: mentee.id },
                               })
                             }
                             style={{ flex: 1 }}
                           >
                             {listToggle ? (
                               <MentorDetailedCard
-                                data={mentor}
-                                key={index.toString()}
+                                data={mentee}
+                                key={mentee.id}
                                 navigation={router}
-                                onMenuPress={() => handleMenuPress(mentor)}
+                                onMenuPress={() => handleMenuPress(mentee)}
                               />
                             ) : (
                               <MentorShortCard
-                                data={mentor}
-                                dataKey={index.toString()}
+                                data={mentee}
+                                dataKey={mentee.id}
                                 navigation={router}
-                                onMenuPress={() => handleMenuPress(mentor)}
+                                onMenuPress={() => handleMenuPress(mentee)}
                               />
                             )}
                           </TouchableOpacity>

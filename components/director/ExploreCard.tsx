@@ -10,15 +10,20 @@ const isSmallDevice = SCREEN_WIDTH < 375;
 type Props = {
     icon: any;
     title: string;
-    route: Route;
+    route?: Route;
+    onPress?: () => void;
     wrapperStyle?: ViewStyle
 };
 
-const ExploreCard: React.FC<Props> = ({ icon, title, route, wrapperStyle }) => {
+const ExploreCard: React.FC<Props> = ({ icon, title, route, onPress, wrapperStyle }) => {
     const router = useRouter();
     return (
         <Pressable onPress={() => {
-            route && router.push(route)
+            if (onPress) {
+                onPress();
+            } else if (route) {
+                router.push(route);
+            }
         }} style={[styles.wrapper, wrapperStyle]}>
             <LinearGradient
                 colors={[Colors.darkBlueGradientTwo, Colors.lightBlueGradientTwo]}

@@ -130,6 +130,7 @@
 // }
 
 
+import { DataProvider } from '@/dataContext';
 import "@/global.css";
 import '@/services/api/interceptors';
 import { useAuthStore } from '@/stores/auth.store';
@@ -200,11 +201,13 @@ export default function RootLayout() {
     <>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
-          <KeyboardProvider>
-            <BottomSheetModalProvider>
-              <RootLayoutNav />
-            </BottomSheetModalProvider>
-          </KeyboardProvider>
+          <DataProvider>
+            <KeyboardProvider>
+              <BottomSheetModalProvider>
+                <RootLayoutNav />
+              </BottomSheetModalProvider>
+            </KeyboardProvider>
+          </DataProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
     </>

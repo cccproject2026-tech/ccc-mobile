@@ -13,7 +13,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProgressTracker() {
   const [search, setSearch] = useState("");
@@ -113,11 +112,11 @@ export default function ProgressTracker() {
   return (
     <LinearGradient colors={["#176192", "#1D548D", "#264387"]} style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flex: 1 }}>
+      <View className="flex-1">
+        <View className="flex-1">
           <TopBar userName="John Doe" notifications={3} showUserName showNotifications />
 
-          <View style={{ flex: 1, paddingTop: 24 }}>
+          <View className="flex-1 pt-6">
             {/* Header Row */}
             <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, marginBottom: 16 }}>
               <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center" }}>
@@ -200,7 +199,7 @@ export default function ProgressTracker() {
             filterOptions={filterOptions}
           />
         </View>
-      </SafeAreaView>
+      </View>
     </LinearGradient>
   );
 }

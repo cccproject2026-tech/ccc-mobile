@@ -1,7 +1,7 @@
 import {
-  AppointmentCard,
-  MentorCard,
-  RoadMapCard
+    AppointmentCard,
+    MentorCard,
+    RoadMapCard
 } from "@/components/atom/cards"
 import { Search } from "@/components/atom/Search"
 import { Button } from "@/components/build-components"
@@ -11,20 +11,21 @@ import WelcomeCard from "@/components/director/WelcomeCard"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
 import { mentorExploreItems } from "@/constants/mockData"
+import { useMentors } from "@/hooks/mentors/useMentors"
 import { formatClock, formatDate } from "@/utils/date"
 import { LinearGradient } from "expo-linear-gradient"
-import { Route, useRouter } from "expo-router"
+import { useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import React, { useMemo, useState } from "react"
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native"
 import MapView, { Marker } from "react-native-maps"
 import Animated, {
-  useAnimatedRef,
-  useScrollViewOffset,
+    useAnimatedRef,
+    useScrollViewOffset,
 } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-export default function MentorDashboard({ navigation }: { navigation: any }) {
+export default function MentorDashboard() {
   const [searchText, setSearchText] = useState("")
   const [now] = useState(new Date())
   const router = useRouter();
@@ -116,16 +117,9 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
       status: "Remaining",
     },
   ]
-  const dummyMentors = [
-    {
-      name: "John Doe",
-      role: "Mentor",
-    },
-    {
-      name: "John Doe",
-      role: "Field Mentor",
-    },
-  ]
+  
+  const { mentors } = useMentors();
+  const displayMentors = mentors.slice(0, 2); // Show only first 2 for reminders
 
   return (
     <>
@@ -292,7 +286,15 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
                     key={item.id}
                     icon={item.icon}
                     title={item.title}
-                    route={item.route as Route}
+                    onPress={() => {
+                      if (item.title === 'Track Progress') {
+                        router.push('/(mentor-tabs)/progress-tracker');
+                      } else if (item.title === 'Assessment') {
+                        router.push('/(mentor-tabs)/assessments-v2');
+                      } else {
+                        console.log(`Pressed ${item.title}`);
+                      }
+                    }}
                   />
                 ))}
               </View>
@@ -316,12 +318,11 @@ export default function MentorDashboard({ navigation }: { navigation: any }) {
                   See all
                 </Text>
               </View>
-              {dummyMentors.map((e, i) => (
+              {displayMentors.map((mentor) => (
                 <MentorCard
-                  key={i}
-                  data={e}
-                  dataKey={i.toString()}
-                  navigation={navigation}
+                  key={mentor.id}
+                  data={mentor}
+                  dataKey={mentor.id}
                   onMenuPress={() => { }}
                 />
               ))}
@@ -546,3 +547,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 })
+
+

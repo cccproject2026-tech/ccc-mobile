@@ -30,10 +30,26 @@ export const ENDPOINTS = {
         CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
     },
 
+    // Home
+    HOME: {
+        MENTEES: '/home/mentees',
+        MENTORS: '/home/mentors',
+        GET_MENTOR_BY_EMAIL: (email: string) => `/home/mentor/${email}`,
+        GET_MENTEE_BY_EMAIL: (email: string) => `/home/mentee/${email}`,
+    },
+
     // Profile (Authenticated routes)
     PROFILE: {
         UPDATE_PROFILE: '/users/me',
         UPLOAD_AVATAR: '/users/me/avatar',
+    },
+
+    // Assessments
+    ASSESSMENTS: {
+        GET_ASSESSMENTS: '/assessment',
+        GET_ASSESSMENT_BY_ID: (assessmentId: string) => `/assessment/${assessmentId}`,
+        ASSIGN_ASSESSMENT: (assessmentId: string) => `/assessment/${assessmentId}/assign`,
+        CREATE_ASSESSMENT: '/assessment',
     },
 
     GRANT: {

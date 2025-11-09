@@ -3,11 +3,13 @@ import { MentorDetailedCard, MentorShortCard } from "@/components/build-componen
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { Mentor, useMentors } from "@/hooks/mentors/useMentors";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -18,48 +20,23 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-interface Mentor {
-  name: string;
-  role: string;
-  description: string;
-}
-
-const dummyMentors: Mentor[] = [
-  {
-    name: "John Doe",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    name: "John Ross",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    name: "John Doe",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    name: "John Ross",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    name: "John Doe",
-    role: "Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-  {
-    name: "John Doe",
-    role: "Field Mentor",
-    description: "Sub text area write something here. That you can read more",
-  },
-];
-
 export default function MyMentorsScreen() {
   const [listToggle, setListToggle] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const { mentors, isLoading, isError } = useMentors();
+
+  // Filter mentors based on search text
+  const filteredMentors = useMemo(() => {
+    if (!mentors) return [];
+    if (!searchText.trim()) return mentors;
+    const searchLower = searchText.toLowerCase();
+    return mentors.filter(
+      (mentor) =>
+        mentor.name.toLowerCase().includes(searchLower) ||
+        mentor.role.toLowerCase().includes(searchLower) ||
+        mentor.email?.toLowerCase().includes(searchLower)
+    );
+  }, [mentors, searchText]);
 
   const handleMenuPress = (mentor: Mentor) => {
     // router.push({
@@ -67,6 +44,35 @@ export default function MyMentorsScreen() {
     //   params: { mentorData: JSON.stringify(mentor) },
     // });
   };
+
+  if (isLoading) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#fff" />
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
+  if (isError) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text className="text-white text-center">Failed to load mentors. Please try again.</Text>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
   return (
     <>
       <LinearGradient
@@ -139,8 +145,8 @@ export default function MyMentorsScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ ...styles.quickAccessScroll, gap: 10 }}
                   >
-                    {dummyMentors.slice(0, 8).map((mentor, index) => (
-                      <View key={index} style={{ alignItems: "center" }}>
+                    {filteredMentors.slice(0, 8).map((mentor) => (
+                      <View key={mentor.id} style={{ alignItems: "center" }}>
                         <LinearGradient
                           colors={["#8B5CF6", "#3B82F6"]}
                           start={{ x: 0, y: 0 }}
@@ -166,11 +172,7 @@ export default function MyMentorsScreen() {
                             }}
                           >
                             <Image
-                              source={
-                                mentor.name === "John Doe"
-                                  ? icons.myProfile
-                                  : icons.myProfile
-                              }
+                              source={icons.myProfile}
                               style={{
                                 width: "100%",
                                 height: "100%",
@@ -211,9 +213,9 @@ export default function MyMentorsScreen() {
                       listToggle ? styles.mentorsListView : styles.mentorsGrid
                     }
                   >
-                    {dummyMentors.map((mentor, index) => (
+                    {filteredMentors.map((mentor) => (
                       <View
-                        key={index}
+                        key={mentor.id}
                         style={
                           listToggle
                             ? styles.detailedMentorCard
@@ -223,14 +225,14 @@ export default function MyMentorsScreen() {
                         {listToggle ? (
                           <MentorDetailedCard
                             data={mentor}
-                            key={index.toString()}
+                            key={mentor.id}
                             navigation={router}
                             onMenuPress={() => handleMenuPress(mentor)}
                           />
                         ) : (
                           <MentorShortCard
                             data={mentor}
-                            dataKey={index.toString()}
+                            dataKey={mentor.id}
                             navigation={router}
                             onMenuPress={() => handleMenuPress(mentor)}
                           />
@@ -254,9 +256,9 @@ export default function MyMentorsScreen() {
                       listToggle ? styles.mentorsListView : styles.mentorsGrid
                     }
                   >
-                    {dummyMentors.map((mentor, index) => (
+                    {filteredMentors.map((mentor) => (
                       <View
-                        key={index}
+                        key={mentor.id}
                         style={
                           listToggle
                             ? styles.detailedMentorCard
@@ -266,14 +268,14 @@ export default function MyMentorsScreen() {
                         {listToggle ? (
                           <DetailedMentorCard
                             data={mentor}
-                            key={index.toString()}
+                            key={mentor.id}
                             navigation={router}
                             onMenuPress={() => handleMenuPress(mentor)}
                           />
                         ) : (
                           <MentorCard
                             data={mentor}
-                            dataKey={index.toString()}
+                            dataKey={mentor.id}
                             navigation={router}
                             onMenuPress={() => handleMenuPress(mentor)}
                           />
