@@ -44,5 +44,7 @@ export const ENDPOINTS = {
         GET_ASSESSMENT_BY_ID: (assessmentId: string) => `/assessment/${assessmentId}`,
         ASSIGN_ASSESSMENT: (assessmentId: string) => `/assessment/${assessmentId}/assign`,
         CREATE_ASSESSMENT: '/assessment',
+        DELETE_ASSESSMENT: (assessmentId: string) => `/assessment/${assessmentId}`,
+        UPDATE_INSTRUCTIONS: (assessmentId: string) => `/assessment/${assessmentId}/instructions`,
     },
 } as const;

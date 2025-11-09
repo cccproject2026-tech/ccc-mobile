@@ -1,9 +1,10 @@
+import AssessmentDeletedSuccessModal from "@/components/build-components/AssessmentDeletedSuccessModal";
 import AssessmentMenuBottomSheet from "@/components/build-components/AssessmentMenuBottomSheet";
 import AssessmentCard from "@/components/build-components/cards/assessment-card";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { menteeProfiles } from "@/constants/mockMentees";
-import { useAssessments } from "@/hooks/assessments";
+import { useAssessments, useDeleteAssessment } from "@/hooks/assessments";
 import { ApiAssessment, Assessment } from "@/lib/assessments/types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -63,12 +64,14 @@ export default function MentorAssessmentsLibrary() {
     );
     const [selectedAssessment, setSelectedAssessment] =
         React.useState<Assessment | null>(null);
+    const [showDeleteSuccessModal, setShowDeleteSuccessModal] = React.useState(false);
     const bottomSheetRef = React.useRef<BottomSheetModal>(null);
 
     const mentees = React.useMemo(() => Object.values(menteeProfiles), []);
 
-    // Use TanStack Query hook for assessments
+    // Use TanStack Query hooks
     const { data: apiAssessments, isLoading: loading, error: queryError, refetch } = useAssessments();
+    const deleteAssessmentMutation = useDeleteAssessment();
 
     // Refetch when screen comes into focus
     useFocusEffect(
@@ -129,8 +132,20 @@ export default function MentorAssessmentsLibrary() {
     };
 
     const handleDeleteSurvey = (assessment: Assessment) => {
-        console.log("Delete survey:", assessment);
-        // Implement delete survey functionality
+        deleteAssessmentMutation.mutate(assessment.id, {
+            onSuccess: () => {
+                bottomSheetRef.current?.dismiss();
+                setShowDeleteSuccessModal(true);
+            },
+            onError: (error) => {
+                console.error('Failed to delete assessment:', error);
+                // You can add an Alert here if needed
+            },
+        });
+    };
+
+    const handleDeleteSuccessModalClose = () => {
+        setShowDeleteSuccessModal(false);
     };
 
     return (
@@ -327,6 +342,11 @@ export default function MentorAssessmentsLibrary() {
                 onAssignTo={handleAssignTo}
                 onEditSurvey={handleEditSurvey}
                 onDeleteSurvey={handleDeleteSurvey}
+            />
+
+            <AssessmentDeletedSuccessModal
+                visible={showDeleteSuccessModal}
+                onClose={handleDeleteSuccessModalClose}
             />
         </LinearGradient>
     );
