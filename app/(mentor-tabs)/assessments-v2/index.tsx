@@ -3,13 +3,13 @@ import AssessmentCard from "@/components/build-components/cards/assessment-card"
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { menteeProfiles } from "@/constants/mockMentees";
+import { useAssessments } from "@/hooks/assessments";
 import { ApiAssessment, Assessment } from "@/lib/assessments/types";
-import { assessmentService } from "@/services";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -64,34 +64,26 @@ export default function MentorAssessmentsLibrary() {
     const [selectedAssessment, setSelectedAssessment] =
         React.useState<Assessment | null>(null);
     const bottomSheetRef = React.useRef<BottomSheetModal>(null);
-    const [assessments, setAssessments] = React.useState<Assessment[]>([]);
-    const [loading, setLoading] = React.useState(true);
-    const [error, setError] = React.useState<string | null>(null);
 
     const mentees = React.useMemo(() => Object.values(menteeProfiles), []);
 
-    // Fetch assessments function
-    const fetchAssessments = React.useCallback(async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const apiAssessments = await assessmentService.getAssessments();
-            const mappedAssessments = apiAssessments.map(mapApiAssessmentToAssessment);
-            setAssessments(mappedAssessments);
-        } catch (err) {
-            console.error('Failed to fetch assessments:', err);
-            setError('Failed to load assessments. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    // Use TanStack Query hook for assessments
+    const { data: apiAssessments, isLoading: loading, error: queryError, refetch } = useAssessments();
 
-    // Fetch assessments on mount and when screen comes into focus
+    // Refetch when screen comes into focus
     useFocusEffect(
         useCallback(() => {
-            fetchAssessments();
-        }, [fetchAssessments])
+            refetch();
+        }, [refetch])
     );
+
+    // Map API assessments to component Assessment type
+    const assessments = useMemo(() => {
+        if (!apiAssessments) return [];
+        return apiAssessments.map(mapApiAssessmentToAssessment);
+    }, [apiAssessments]);
+
+    const error = queryError ? 'Failed to load assessments. Please try again.' : null;
 
     const filteredAssessments = React.useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -105,9 +97,15 @@ export default function MentorAssessmentsLibrary() {
 
     const handleOpenAssessment = (assessment: Assessment) => {
         if (assessment.type === "CMA") {
-            router.push("/(mentor-tabs)/assessments/cma-survey-page");
+            router.push({
+                pathname: "/(mentor-tabs)/assessments/cma-survey-page",
+                params: { assessmentId: assessment.id },
+            });
         } else {
-            router.push("/(mentor-tabs)/assessments/(pmp)/pmp-survey-page");
+            router.push({
+                pathname: "/(mentor-tabs)/assessments/(pmp)/pmp-survey-page",
+                params: { assessmentId: assessment.id },
+            });
         }
     };
 
@@ -277,19 +275,7 @@ export default function MentorAssessmentsLibrary() {
                             {error}
                         </Text>
                         <Pressable
-                            onPress={async () => {
-                                try {
-                                    setLoading(true);
-                                    setError(null);
-                                    const apiAssessments = await assessmentService.getAssessments();
-                                    const mappedAssessments = apiAssessments.map(mapApiAssessmentToAssessment);
-                                    setAssessments(mappedAssessments);
-                                } catch (err) {
-                                    setError('Failed to load assessments. Please try again.');
-                                } finally {
-                                    setLoading(false);
-                                }
-                            }}
+                            onPress={() => refetch()}
                             style={{
                                 backgroundColor: '#5EB3D1',
                                 paddingHorizontal: 24,

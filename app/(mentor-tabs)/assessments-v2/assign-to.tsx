@@ -1,13 +1,14 @@
 import AssessmentAssignedSuccessModal from "@/components/build-components/AssessmentAssignedSuccessModal";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
+import { useAssignAssessment } from "@/hooks/assessments";
 import { icons } from "@/constants/images";
 import { menteesService } from "@/services/mentees.service";
-import { assessmentService } from "@/services";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -35,45 +36,42 @@ export default function AssignToPage() {
   const assessmentId = params.assessmentId as string;
 
   const [search, setSearch] = useState("");
-  const [mentees, setMentees] = useState<MenteeDisplay[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [assigning, setAssigning] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedMentees, setSelectedMentees] = useState<Set<string>>(
     new Set()
   );
 
-  // Fetch mentees on mount
-  React.useEffect(() => {
-    const fetchMentees = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await menteesService.getMentees();
-        const mappedMentees: MenteeDisplay[] = response.mentees.map((mentee) => ({
-          id: mentee.id,
-          name: `${mentee.firstName} ${mentee.lastName}`.trim(),
-          email: mentee.email,
-          avatar: icons.myProfile, // Default avatar since API doesn't provide one
-        }));
-        setMentees(mappedMentees);
-        // Initialize with first 3 mentees selected if available
-        if (mappedMentees.length > 0) {
-          setSelectedMentees(
-            new Set(mappedMentees.slice(0, 3).map((m) => m.id))
-          );
-        }
-      } catch (err) {
-        console.error('Failed to fetch mentees:', err);
-        setError('Failed to load mentees. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Use TanStack Query hooks
+  const { data: menteesResponse, isLoading: loading, error: menteesError, refetch } = useQuery({
+    queryKey: ['mentees'],
+    queryFn: () => menteesService.getMentees(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
+  });
 
-    fetchMentees();
-  }, []);
+  const assignAssessmentMutation = useAssignAssessment();
+
+  // Map mentees to display format
+  const mentees: MenteeDisplay[] = useMemo(() => {
+    if (!menteesResponse?.mentees) return [];
+    return menteesResponse.mentees.map((mentee) => ({
+      id: mentee.id,
+      name: `${mentee.firstName} ${mentee.lastName}`.trim(),
+      email: mentee.email,
+      avatar: icons.myProfile,
+    }));
+  }, [menteesResponse]);
+
+  // Initialize with first 3 mentees selected if available
+  useEffect(() => {
+    if (mentees.length > 0 && selectedMentees.size === 0) {
+      setSelectedMentees(
+        new Set(mentees.slice(0, 3).map((m) => m.id))
+      );
+    }
+  }, [mentees, selectedMentees.size]);
+
+  const error = menteesError ? 'Failed to load mentees. Please try again.' : null;
 
   const filteredMentees = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -120,20 +118,22 @@ export default function AssignToPage() {
       return;
     }
 
-    try {
-      setAssigning(true);
-      const userIds = Array.from(selectedMentees);
-      await assessmentService.assignAssessment(assessmentId, userIds);
-      setAssigning(false);
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error('Failed to assign assessment:', err);
-      setAssigning(false);
-      Alert.alert(
-        "Error",
-        "Failed to assign assessment. Please try again."
-      );
-    }
+    const userIds = Array.from(selectedMentees);
+    assignAssessmentMutation.mutate(
+      { assessmentId, userIds },
+      {
+        onSuccess: () => {
+          setShowSuccessModal(true);
+        },
+        onError: (err) => {
+          console.error('Failed to assign assessment:', err);
+          Alert.alert(
+            "Error",
+            "Failed to assign assessment. Please try again."
+          );
+        },
+      }
+    );
   };
 
   const handleSuccessModalClose = () => {
@@ -193,29 +193,7 @@ export default function AssignToPage() {
               {error}
             </Text>
             <Pressable
-              onPress={async () => {
-                try {
-                  setLoading(true);
-                  setError(null);
-                  const response = await menteesService.getMentees();
-                  const mappedMentees: MenteeDisplay[] = response.mentees.map((mentee) => ({
-                    id: mentee.id,
-                    name: `${mentee.firstName} ${mentee.lastName}`.trim(),
-                    email: mentee.email,
-                    avatar: icons.myProfile,
-                  }));
-                  setMentees(mappedMentees);
-                  if (mappedMentees.length > 0) {
-                    setSelectedMentees(
-                      new Set(mappedMentees.slice(0, 3).map((m) => m.id))
-                    );
-                  }
-                } catch (err) {
-                  setError('Failed to load mentees. Please try again.');
-                } finally {
-                  setLoading(false);
-                }
-              }}
+              onPress={() => refetch()}
               style={{
                 backgroundColor: '#5EB3D1',
                 paddingHorizontal: 24,
@@ -309,7 +287,7 @@ export default function AssignToPage() {
         <TouchableOpacity
           style={styles.assignButton}
           onPress={handleAssign}
-          disabled={selectedMentees.size === 0 || assigning}
+          disabled={selectedMentees.size === 0 || assignAssessmentMutation.isPending}
         >
           <LinearGradient
             colors={["#7C3AED", "#38BDF8"]}
@@ -318,7 +296,7 @@ export default function AssignToPage() {
             style={styles.assignButtonGradient}
           >
             <View style={styles.assignButtonInner}>
-              {assigning ? (
+              {assignAssessmentMutation.isPending ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <Text style={styles.assignButtonText}>Assign</Text>

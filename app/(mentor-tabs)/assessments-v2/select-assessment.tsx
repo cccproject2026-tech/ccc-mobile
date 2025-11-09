@@ -1,11 +1,11 @@
+import { useAssessments } from "@/hooks/assessments";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { ApiAssessment, Assessment } from "@/lib/assessments/types";
-import { assessmentService } from "@/services";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -59,41 +59,36 @@ export default function SelectAssessmentPage() {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedAssessments, setSelectedAssessments] = useState<Set<string>>(
     new Set()
   );
 
-  // Fetch assessments function
-  const fetchAssessments = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const apiAssessments = await assessmentService.getAssessments();
-      const mappedAssessments = apiAssessments.map(mapApiAssessmentToAssessment);
-      setAssessments(mappedAssessments);
-      // Initialize with first 3 assessments selected if available
-      if (mappedAssessments.length > 0) {
-        setSelectedAssessments(
-          new Set(mappedAssessments.slice(0, 3).map((a) => a.id))
-        );
-      }
-    } catch (err) {
-      console.error('Failed to fetch assessments:', err);
-      setError('Failed to load assessments. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Use TanStack Query hook for assessments
+  const { data: apiAssessments, isLoading: loading, error: queryError, refetch } = useAssessments();
 
-  // Fetch assessments on mount and when screen comes into focus
+  // Refetch when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchAssessments();
-    }, [fetchAssessments])
+      refetch();
+    }, [refetch])
   );
+
+  // Map API assessments to component Assessment type
+  const assessments = useMemo(() => {
+    if (!apiAssessments) return [];
+    return apiAssessments.map(mapApiAssessmentToAssessment);
+  }, [apiAssessments]);
+
+  // Initialize with first 3 assessments selected if available
+  useEffect(() => {
+    if (assessments.length > 0 && selectedAssessments.size === 0) {
+      setSelectedAssessments(
+        new Set(assessments.slice(0, 3).map((a) => a.id))
+      );
+    }
+  }, [assessments, selectedAssessments.size]);
+
+  const error = queryError ? 'Failed to load assessments. Please try again.' : null;
 
   const filteredAssessments = useMemo(() => {
     const q = search.trim().toLowerCase();

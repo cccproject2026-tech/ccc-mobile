@@ -7,10 +7,11 @@ import {
 } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
+import { useAssessment } from "@/hooks/assessments";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface AssessmentData {
@@ -31,13 +32,59 @@ export default function CmaSurvey() {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
   const params = useLocalSearchParams();
+  const assessmentId = params.assessmentId as string;
 
-  // Parse the data safely
-  const dataItems: AssessmentData | undefined = params.data
-    ? (JSON.parse(params.data as string) as AssessmentData)
-    : undefined;
+  // Use TanStack Query hook
+  const { data: assessment, isLoading: loading, error: queryError } = useAssessment(assessmentId);
+  const error = queryError ? 'Failed to load assessment. Please try again.' : null;
 
-  console.log("data", dataItems?.type);
+  // Infer type from name or default to 'CMA'
+  const inferType = (name: string): string => {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('cma') || nameLower.includes('church')) {
+      return 'CMA';
+    }
+    return 'PMP';
+  };
+
+  if (loading) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={styles.scrollContainer}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', marginTop: 12 }}>
+              Loading assessment...
+            </Text>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
+  if (error || !assessment) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={styles.scrollContainer}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
+            <Text style={{ color: '#FF6B6B', fontSize: 16, textAlign: 'center' }}>
+              {error || 'Assessment not found'}
+            </Text>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
+  const assessmentType = inferType(assessment.name);
 
   return (
     <>
@@ -57,7 +104,7 @@ export default function CmaSurvey() {
 
             {/* Header Section */}
             <Header
-              title="Church Assessment Evaluation(CMA)"
+              title={assessment.name}
               subTitle="Assessment"
               hideSearchBar={true}
             />
@@ -79,13 +126,13 @@ export default function CmaSurvey() {
 
             {/* Content Section */}
             <AssessmentMainCard
-              type={dataItems?.type}
-              dueDate={dataItems?.completionDate}
+              type={assessmentType}
+              dueDate={undefined}
               dueDateClass="text-yellow-500"
             />
 
             {/* Guidelines points Section */}
-            <GuidelinesPoints />
+            <GuidelinesPoints guidelines={assessment.instructions} />
 
             <Button
               type="start"
@@ -103,7 +150,10 @@ export default function CmaSurvey() {
                 marginTop: 42
               }}
               onPress={() => {
-                router.push("/(pastor-tabs)/(tabs)/assessments/answer-question-page")
+                router.push({
+                  pathname: "/(mentor-tabs)/assessments/answer-question-page",
+                  params: { assessmentId: assessment._id },
+                });
               }}
             />
           </ScrollView>

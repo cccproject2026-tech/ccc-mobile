@@ -1,7 +1,7 @@
 import AssessmentCreatedSuccessModal from "@/components/build-components/AssessmentCreatedSuccessModal";
 import TopBar from "@/components/director/TopBar";
+import { useCreateAssessment } from "@/hooks/assessments";
 import { icons } from "@/constants/images";
-import { assessmentService } from "@/services";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -76,8 +76,8 @@ export default function CreateAssessmentPage() {
   ]);
 
   // Loading and success states
-  const [creating, setCreating] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const createAssessmentMutation = useCreateAssessment();
 
   // Customized Development Plans
   const [level1Plans, setLevel1Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
@@ -304,26 +304,25 @@ export default function CreateAssessmentPage() {
       return;
     }
 
-    try {
-      setCreating(true);
-      const requestData = {
-        name: assessmentName.trim(),
-        description: briefDescription.trim(),
-        instructions: validInstructions,
-        sections: validSections,
-      };
+    const requestData = {
+      name: assessmentName.trim(),
+      description: briefDescription.trim(),
+      instructions: validInstructions,
+      sections: validSections,
+    };
 
-      await assessmentService.createAssessment(requestData);
-      setCreating(false);
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error('Failed to create assessment:', err);
-      setCreating(false);
-      Alert.alert(
-        "Error",
-        "Failed to create assessment. Please try again."
-      );
-    }
+    createAssessmentMutation.mutate(requestData, {
+      onSuccess: () => {
+        setShowSuccessModal(true);
+      },
+      onError: (err) => {
+        console.error('Failed to create assessment:', err);
+        Alert.alert(
+          "Error",
+          "Failed to create assessment. Please try again."
+        );
+      },
+    });
   };
 
   const handleSuccessModalClose = () => {
@@ -570,9 +569,9 @@ export default function CreateAssessmentPage() {
           <TouchableOpacity
             style={styles.createButton}
             onPress={handleCreate}
-            disabled={creating}
+            disabled={createAssessmentMutation.isPending}
           >
-            {creating ? (
+            {createAssessmentMutation.isPending ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.createButtonText}>Create Assessment</Text>
