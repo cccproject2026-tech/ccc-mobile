@@ -1,11 +1,15 @@
+import AssessmentCreatedSuccessModal from "@/components/build-components/AssessmentCreatedSuccessModal";
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
+import { assessmentService } from "@/services";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -29,6 +33,7 @@ interface Choice {
 
 interface Layer {
   id: string;
+  title: string;
   choices: Choice[];
 }
 
@@ -64,11 +69,15 @@ export default function CreateAssessmentPage() {
       name: "",
       guidelines: "",
       layers: [
-        { id: "1", choices: [{ id: "1", text: "" }] },
-        { id: "2", choices: [{ id: "1", text: "" }] },
+        { id: "1", title: "", choices: [{ id: "1", text: "" }] },
+        { id: "2", title: "", choices: [{ id: "1", text: "" }] },
       ],
     },
   ]);
+
+  // Loading and success states
+  const [creating, setCreating] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Customized Development Plans
   const [level1Plans, setLevel1Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
@@ -116,7 +125,7 @@ export default function CreateAssessmentPage() {
         id: Date.now().toString(),
         name: "",
         guidelines: "",
-        layers: [{ id: "1", choices: [{ id: "1", text: "" }] }],
+        layers: [{ id: "1", title: "", choices: [{ id: "1", text: "" }] }],
       },
     ]);
   };
@@ -141,10 +150,24 @@ export default function CreateAssessmentPage() {
         for (let i = 0; i < count; i++) {
           const existingLayer = s.layers[i];
           newLayers.push(
-            existingLayer || { id: `${i + 1}`, choices: [{ id: "1", text: "" }] }
+            existingLayer || { id: `${i + 1}`, title: "", choices: [{ id: "1", text: "" }] }
           );
         }
         return { ...s, layers: newLayers };
+      })
+    );
+  };
+
+  const updateLayerTitle = (sectionId: string, layerId: string, title: string) => {
+    setSections(
+      sections.map((s) => {
+        if (s.id !== sectionId) return s;
+        return {
+          ...s,
+          layers: s.layers.map((l) =>
+            l.id === layerId ? { ...l, title } : l
+          ),
+        };
       })
     );
   };
@@ -221,9 +244,90 @@ export default function CreateAssessmentPage() {
     }
   };
 
-  const handleCreate = () => {
-    // TODO: Implement create assessment logic
-    console.log("Creating assessment...");
+  const handleCreate = async () => {
+    // Validation
+    if (!assessmentName.trim()) {
+      Alert.alert("Error", "Please enter an assessment name.");
+      return;
+    }
+
+    if (!briefDescription.trim()) {
+      Alert.alert("Error", "Please enter a description.");
+      return;
+    }
+
+    // Filter out empty instructions
+    const validInstructions = instructions
+      .map((inst) => inst.text.trim())
+      .filter((text) => text.length > 0);
+
+    if (validInstructions.length === 0) {
+      Alert.alert("Error", "Please add at least one instruction.");
+      return;
+    }
+
+    // Validate sections
+    const validSections = sections
+      .map((section) => {
+        // Filter out empty layers and choices
+        const validLayers = section.layers
+          .map((layer) => {
+            const validChoices = layer.choices
+              .map((choice) => choice.text.trim())
+              .filter((text) => text.length > 0);
+
+            if (validChoices.length === 0 || !layer.title.trim()) {
+              return null;
+            }
+
+            return {
+              title: layer.title.trim(),
+              choices: validChoices.map((text) => ({ text })),
+            };
+          })
+          .filter((layer): layer is { title: string; choices: { text: string }[] } => layer !== null);
+
+        if (validLayers.length === 0 || !section.name.trim()) {
+          return null;
+        }
+
+        return {
+          title: section.name.trim(),
+          description: section.guidelines.trim(),
+          layers: validLayers,
+        };
+      })
+      .filter((section): section is { title: string; description: string; layers: { title: string; choices: { text: string }[] }[] } => section !== null);
+
+    if (validSections.length === 0) {
+      Alert.alert("Error", "Please add at least one section with layers and choices.");
+      return;
+    }
+
+    try {
+      setCreating(true);
+      const requestData = {
+        name: assessmentName.trim(),
+        description: briefDescription.trim(),
+        instructions: validInstructions,
+        sections: validSections,
+      };
+
+      await assessmentService.createAssessment(requestData);
+      setCreating(false);
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error('Failed to create assessment:', err);
+      setCreating(false);
+      Alert.alert(
+        "Error",
+        "Failed to create assessment. Please try again."
+      );
+    }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
     router.back();
   };
 
@@ -347,6 +451,15 @@ export default function CreateAssessmentPage() {
               {section.layers.map((layer, layerIndex) => (
                 <View key={layer.id} style={styles.layerSection}>
                   <Text style={styles.layerTitle}>Layer {layerIndex + 1}</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={`Question/Title for Layer ${layerIndex + 1}`}
+                    placeholderTextColor="rgba(255,255,255,0.6)"
+                    value={layer.title}
+                    onChangeText={(text) =>
+                      updateLayerTitle(section.id, layer.id, text)
+                    }
+                  />
                   {layer.choices.map((choice, choiceIndex) => (
                     <View key={choice.id} style={styles.choiceRow}>
                       <TextInput
@@ -454,11 +567,25 @@ export default function CreateAssessmentPage() {
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
-            <Text style={styles.createButtonText}>Create Assessment</Text>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={handleCreate}
+            disabled={creating}
+          >
+            {creating ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.createButtonText}>Create Assessment</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Success Modal */}
+      <AssessmentCreatedSuccessModal
+        visible={showSuccessModal}
+        onClose={handleSuccessModalClose}
+      />
     </LinearGradient>
   );
 }

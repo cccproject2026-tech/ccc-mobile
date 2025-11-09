@@ -1,11 +1,16 @@
+import AssessmentAssignedSuccessModal from "@/components/build-components/AssessmentAssignedSuccessModal";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
-import { menteeProfiles } from "@/constants/mockMentees";
+import { icons } from "@/constants/images";
+import { menteesService } from "@/services/mentees.service";
+import { assessmentService } from "@/services";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -16,6 +21,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+interface MenteeDisplay {
+  id: string;
+  name: string;
+  email: string;
+  avatar: any;
+}
+
 export default function AssignToPage() {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
@@ -23,11 +35,45 @@ export default function AssignToPage() {
   const assessmentId = params.assessmentId as string;
 
   const [search, setSearch] = useState("");
-  // Initialize with first 3 mentees selected (matching the image)
-  const mentees = useMemo(() => Object.values(menteeProfiles).slice(0, 8), []);
-  const [selectedMentees, setSelectedMentees] = useState<Set<string>>(() =>
-    new Set(mentees.slice(0, 3).map((m) => m.id))
+  const [mentees, setMentees] = useState<MenteeDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [assigning, setAssigning] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [selectedMentees, setSelectedMentees] = useState<Set<string>>(
+    new Set()
   );
+
+  // Fetch mentees on mount
+  React.useEffect(() => {
+    const fetchMentees = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await menteesService.getMentees();
+        const mappedMentees: MenteeDisplay[] = response.mentees.map((mentee) => ({
+          id: mentee.id,
+          name: `${mentee.firstName} ${mentee.lastName}`.trim(),
+          email: mentee.email,
+          avatar: icons.myProfile, // Default avatar since API doesn't provide one
+        }));
+        setMentees(mappedMentees);
+        // Initialize with first 3 mentees selected if available
+        if (mappedMentees.length > 0) {
+          setSelectedMentees(
+            new Set(mappedMentees.slice(0, 3).map((m) => m.id))
+          );
+        }
+      } catch (err) {
+        console.error('Failed to fetch mentees:', err);
+        setError('Failed to load mentees. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMentees();
+  }, []);
 
   const filteredMentees = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -68,9 +114,30 @@ export default function AssignToPage() {
       .slice(0, 3); // Show max 3 names
   }, [selectedMentees, mentees]);
 
-  const handleAssign = () => {
-    // TODO: Implement assign logic
-    console.log("Assigning assessment to:", Array.from(selectedMentees));
+  const handleAssign = async () => {
+    if (!assessmentId || selectedMentees.size === 0) {
+      Alert.alert("Error", "Please select at least one mentee.");
+      return;
+    }
+
+    try {
+      setAssigning(true);
+      const userIds = Array.from(selectedMentees);
+      await assessmentService.assignAssessment(assessmentId, userIds);
+      setAssigning(false);
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error('Failed to assign assessment:', err);
+      setAssigning(false);
+      Alert.alert(
+        "Error",
+        "Failed to assign assessment. Please try again."
+      );
+    }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
     router.back();
   };
 
@@ -113,57 +180,114 @@ export default function AssignToPage() {
 
       {/* Mentees List */}
       <View style={{ flex: 1, marginTop: 16 }}>
-        <ScrollView
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingBottom: bottom + 100,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {filteredMentees.map((mentee) => {
-            const isSelected = selectedMentees.has(mentee.id);
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#E2E8F0" />
+            <Text style={{ color: '#E2E8F0', marginTop: 12 }}>
+              Loading mentees...
+            </Text>
+          </View>
+        ) : error ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
+            <Text style={{ color: '#FF6B6B', fontSize: 16, textAlign: 'center', marginBottom: 12 }}>
+              {error}
+            </Text>
+            <Pressable
+              onPress={async () => {
+                try {
+                  setLoading(true);
+                  setError(null);
+                  const response = await menteesService.getMentees();
+                  const mappedMentees: MenteeDisplay[] = response.mentees.map((mentee) => ({
+                    id: mentee.id,
+                    name: `${mentee.firstName} ${mentee.lastName}`.trim(),
+                    email: mentee.email,
+                    avatar: icons.myProfile,
+                  }));
+                  setMentees(mappedMentees);
+                  if (mappedMentees.length > 0) {
+                    setSelectedMentees(
+                      new Set(mappedMentees.slice(0, 3).map((m) => m.id))
+                    );
+                  }
+                } catch (err) {
+                  setError('Failed to load mentees. Please try again.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              style={{
+                backgroundColor: '#5EB3D1',
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                Retry
+              </Text>
+            </Pressable>
+          </View>
+        ) : filteredMentees.length === 0 ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
+            <Text style={{ color: '#E2E8F0', fontSize: 16, textAlign: 'center' }}>
+              {search.trim() ? 'No mentees found matching your search.' : 'No mentees available.'}
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: bottom + 100,
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            {filteredMentees.map((mentee) => {
+              const isSelected = selectedMentees.has(mentee.id);
 
-            return (
-              <View
-                key={mentee.id}
-                style={[
-                  styles.menteeCard,
-                  
-                ]}
-              >
-                {/* Avatar */}
-                <View style={styles.avatarContainer}>
-                  <Image
-                    source={mentee.avatar}
-                    style={styles.avatar}
-                    resizeMode="cover"
-                  />
-                </View>
-
-                {/* Name */}
-                <Text style={styles.menteeName} numberOfLines={1}>
-                  {mentee.name}
-                </Text>
-
-                {/* Checkbox */}
-                <Pressable
-                  onPress={() => toggleSelection(mentee.id)}
-                  hitSlop={8}
+              return (
+                <View
+                  key={mentee.id}
+                  style={styles.menteeCard}
                 >
-                  <View
-                    style={[
-                      styles.checkbox,,
-                    ]}
-                  >
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={16} color="#0E2C3A" />
-                    )}
+                  {/* Avatar */}
+                  <View style={styles.avatarContainer}>
+                    <Image
+                      source={mentee.avatar}
+                      style={styles.avatar}
+                      resizeMode="cover"
+                    />
                   </View>
-                </Pressable>
-              </View>
-            );
-          })}
-        </ScrollView>
+
+                  {/* Name */}
+                  <Text style={styles.menteeName} numberOfLines={1}>
+                    {mentee.name}
+                  </Text>
+
+                  {/* Checkbox */}
+                  <Pressable
+                    onPress={() => toggleSelection(mentee.id)}
+                    hitSlop={8}
+                  >
+                    <View
+                      style={[
+                        styles.checkbox,
+                        isSelected && {
+                          borderColor: "#5EB3D1",
+                          backgroundColor: "#5EB3D1",
+                        },
+                      ]}
+                    >
+                      {isSelected && (
+                        <Ionicons name="checkmark" size={16} color="#0E2C3A" />
+                      )}
+                    </View>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
 
       {/* Bottom Action Bar */}
@@ -185,7 +309,7 @@ export default function AssignToPage() {
         <TouchableOpacity
           style={styles.assignButton}
           onPress={handleAssign}
-          disabled={selectedMentees.size === 0}
+          disabled={selectedMentees.size === 0 || assigning}
         >
           <LinearGradient
             colors={["#7C3AED", "#38BDF8"]}
@@ -194,11 +318,21 @@ export default function AssignToPage() {
             style={styles.assignButtonGradient}
           >
             <View style={styles.assignButtonInner}>
-              <Text style={styles.assignButtonText}>Assign</Text>
+              {assigning ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.assignButtonText}>Assign</Text>
+              )}
             </View>
           </LinearGradient>
         </TouchableOpacity>
       </View>
+
+      {/* Success Modal */}
+      <AssessmentAssignedSuccessModal
+        visible={showSuccessModal}
+        onClose={handleSuccessModalClose}
+      />
     </LinearGradient>
   );
 }

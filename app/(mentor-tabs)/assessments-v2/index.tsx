@@ -3,15 +3,55 @@ import AssessmentCard from "@/components/build-components/cards/assessment-card"
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { menteeProfiles } from "@/constants/mockMentees";
-import { dummyRoadMaps } from "@/lib/assessments/mock";
-import { Assessment } from "@/lib/assessments/types";
+import { ApiAssessment, Assessment } from "@/lib/assessments/types";
+import { assessmentService } from "@/services";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import React from "react";
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback } from "react";
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// Helper function to map API assessment to component Assessment type
+const mapApiAssessmentToAssessment = (apiAssessment: ApiAssessment): Assessment => {
+    // Infer type from name or default to 'PMP'
+    const inferType = (name: string): 'CMA' | 'PMP' => {
+        const nameLower = name.toLowerCase();
+        if (nameLower.includes('cma') || nameLower.includes('church')) {
+            return 'CMA';
+        }
+        return 'PMP';
+    };
+
+    return {
+        id: apiAssessment._id,
+        type: inferType(apiAssessment.name),
+        title: apiAssessment.name,
+        description: apiAssessment.description,
+        status: 'Not Started' as const,
+        guidelines: apiAssessment.instructions,
+        sections: apiAssessment.sections.map((section) => ({
+            title: section.title,
+            subtitle: section.description,
+            questionGroups: section.layers.map((layer) => ({
+                id: layer._id,
+                questions: [
+                    {
+                        id: layer._id,
+                        text: layer.title, // Layer title is the question
+                        type: 'radio' as const,
+                        options: layer.choices.map((c) => ({
+                            label: c.text,
+                            value: c._id,
+                        })),
+                        required: false,
+                    },
+                ],
+            })),
+        })),
+    };
+};
 
 export default function MentorAssessmentsLibrary() {
     const { bottom } = useSafeAreaInsets();
@@ -24,21 +64,44 @@ export default function MentorAssessmentsLibrary() {
     const [selectedAssessment, setSelectedAssessment] =
         React.useState<Assessment | null>(null);
     const bottomSheetRef = React.useRef<BottomSheetModal>(null);
+    const [assessments, setAssessments] = React.useState<Assessment[]>([]);
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
 
     const mentees = React.useMemo(() => Object.values(menteeProfiles), []);
 
+    // Fetch assessments function
+    const fetchAssessments = React.useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const apiAssessments = await assessmentService.getAssessments();
+            const mappedAssessments = apiAssessments.map(mapApiAssessmentToAssessment);
+            setAssessments(mappedAssessments);
+        } catch (err) {
+            console.error('Failed to fetch assessments:', err);
+            setError('Failed to load assessments. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Fetch assessments on mount and when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchAssessments();
+        }, [fetchAssessments])
+    );
+
     const filteredAssessments = React.useMemo(() => {
         const q = search.trim().toLowerCase();
-        let list: Assessment[] = dummyRoadMaps;
-        if (q.length > 0) {
-            list = list.filter(
-                (a) =>
-                    a.title.toLowerCase().includes(q) ||
-                    a.description.toLowerCase().includes(q)
-            );
-        }
-        return list;
-    }, [search]);
+        if (q.length === 0) return assessments;
+        return assessments.filter(
+            (a) =>
+                a.title.toLowerCase().includes(q) ||
+                a.description.toLowerCase().includes(q)
+        );
+    }, [search, assessments]);
 
     const handleOpenAssessment = (assessment: Assessment) => {
         if (assessment.type === "CMA") {
@@ -201,27 +264,73 @@ export default function MentorAssessmentsLibrary() {
 
             {/* Cards List */}
             <View style={{ flex: 1 }}>
-                <ScrollView
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        paddingHorizontal: 16,
-                        paddingBottom: bottom + 20,
-                    }}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {filteredAssessments.map((item) => (
-                        <View key={item.id} style={{ marginBottom: 16 }}>
-                            <AssessmentCard
-                                data={item}
-                                onPress={handleOpenAssessment}
-                                onMeetingPress={() => { }}
-                                onMeetingIconPress={() => { }}
-                                onCustomizedPress={() => { }}
-                                onMenuPress={() => handleMenuPress(item)}
-                            />
-                        </View>
-                    ))}
-                </ScrollView>
+                {loading ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color="#E2E8F0" />
+                        <Text style={{ color: '#E2E8F0', marginTop: 12 }}>
+                            Loading assessments...
+                        </Text>
+                    </View>
+                ) : error ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
+                        <Text style={{ color: '#FF6B6B', fontSize: 16, textAlign: 'center', marginBottom: 12 }}>
+                            {error}
+                        </Text>
+                        <Pressable
+                            onPress={async () => {
+                                try {
+                                    setLoading(true);
+                                    setError(null);
+                                    const apiAssessments = await assessmentService.getAssessments();
+                                    const mappedAssessments = apiAssessments.map(mapApiAssessmentToAssessment);
+                                    setAssessments(mappedAssessments);
+                                } catch (err) {
+                                    setError('Failed to load assessments. Please try again.');
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }}
+                            style={{
+                                backgroundColor: '#5EB3D1',
+                                paddingHorizontal: 24,
+                                paddingVertical: 12,
+                                borderRadius: 8,
+                            }}
+                        >
+                            <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                                Retry
+                            </Text>
+                        </Pressable>
+                    </View>
+                ) : filteredAssessments.length === 0 ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
+                        <Text style={{ color: '#E2E8F0', fontSize: 16, textAlign: 'center' }}>
+                            {search.trim() ? 'No assessments found matching your search.' : 'No assessments available.'}
+                        </Text>
+                    </View>
+                ) : (
+                    <ScrollView
+                        contentContainerStyle={{
+                            flexGrow: 1,
+                            paddingHorizontal: 16,
+                            paddingBottom: bottom + 20,
+                        }}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {filteredAssessments.map((item) => (
+                            <View key={item.id} style={{ marginBottom: 16 }}>
+                                <AssessmentCard
+                                    data={item}
+                                    onPress={handleOpenAssessment}
+                                    onMeetingPress={() => { }}
+                                    onMeetingIconPress={() => { }}
+                                    onCustomizedPress={() => { }}
+                                    onMenuPress={() => handleMenuPress(item)}
+                                />
+                            </View>
+                        ))}
+                    </ScrollView>
+                )}
             </View>
 
             {/* Assessment Menu Bottom Sheet */}
