@@ -1,6 +1,7 @@
 import AssessmentDeletedSuccessModal from "@/components/build-components/AssessmentDeletedSuccessModal";
 import AssessmentMenuBottomSheet from "@/components/build-components/AssessmentMenuBottomSheet";
 import AssessmentCard from "@/components/build-components/cards/assessment-card";
+import DeleteConfirmationModal from "@/components/build-components/DeleteConfirmationModal";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { menteeProfiles } from "@/constants/mockMentees";
@@ -64,7 +65,9 @@ export default function MentorAssessmentsLibrary() {
     );
     const [selectedAssessment, setSelectedAssessment] =
         React.useState<Assessment | null>(null);
+    const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = React.useState(false);
     const [showDeleteSuccessModal, setShowDeleteSuccessModal] = React.useState(false);
+    const [assessmentToDelete, setAssessmentToDelete] = React.useState<Assessment | null>(null);
     const bottomSheetRef = React.useRef<BottomSheetModal>(null);
 
     const mentees = React.useMemo(() => Object.values(menteeProfiles), []);
@@ -132,16 +135,32 @@ export default function MentorAssessmentsLibrary() {
     };
 
     const handleDeleteSurvey = (assessment: Assessment) => {
-        deleteAssessmentMutation.mutate(assessment.id, {
+        setAssessmentToDelete(assessment);
+        setShowDeleteConfirmationModal(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (!assessmentToDelete) return;
+        
+        setShowDeleteConfirmationModal(false);
+        bottomSheetRef.current?.dismiss();
+        
+        deleteAssessmentMutation.mutate(assessmentToDelete.id, {
             onSuccess: () => {
-                bottomSheetRef.current?.dismiss();
                 setShowDeleteSuccessModal(true);
+                setAssessmentToDelete(null);
             },
             onError: (error) => {
                 console.error('Failed to delete assessment:', error);
+                setAssessmentToDelete(null);
                 // You can add an Alert here if needed
             },
         });
+    };
+
+    const handleCancelDelete = () => {
+        setShowDeleteConfirmationModal(false);
+        setAssessmentToDelete(null);
     };
 
     const handleDeleteSuccessModalClose = () => {
@@ -342,6 +361,12 @@ export default function MentorAssessmentsLibrary() {
                 onAssignTo={handleAssignTo}
                 onEditSurvey={handleEditSurvey}
                 onDeleteSurvey={handleDeleteSurvey}
+            />
+
+            <DeleteConfirmationModal
+                visible={showDeleteConfirmationModal}
+                onClose={handleCancelDelete}
+                onConfirm={handleConfirmDelete}
             />
 
             <AssessmentDeletedSuccessModal

@@ -1,7 +1,7 @@
 import AssessmentCreatedSuccessModal from "@/components/build-components/AssessmentCreatedSuccessModal";
 import TopBar from "@/components/director/TopBar";
-import { useCreateAssessment } from "@/hooks/assessments";
 import { icons } from "@/constants/images";
+import { useCreateAssessment } from "@/hooks/assessments";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -74,6 +74,9 @@ export default function CreateAssessmentPage() {
       ],
     },
   ]);
+
+  // Dropdown states for each section
+  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
   // Loading and success states
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -150,12 +153,29 @@ export default function CreateAssessmentPage() {
         for (let i = 0; i < count; i++) {
           const existingLayer = s.layers[i];
           newLayers.push(
-            existingLayer || { id: `${i + 1}`, title: "", choices: [{ id: "1", text: "" }] }
+            existingLayer || { id: `${Date.now()}-${i}`, title: "", choices: [{ id: `${Date.now()}-choice-${i}`, text: "" }] }
           );
         }
         return { ...s, layers: newLayers };
       })
     );
+    setOpenDropdowns((prev) => {
+      const next = new Set(prev);
+      next.delete(sectionId);
+      return next;
+    });
+  };
+
+  const toggleDropdown = (sectionId: string) => {
+    setOpenDropdowns((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+      return next;
+    });
   };
 
   const updateLayerTitle = (sectionId: string, layerId: string, title: string) => {
@@ -438,11 +458,50 @@ export default function CreateAssessmentPage() {
               {/* Number of Layers Dropdown */}
               <View style={styles.dropdownContainer}>
                 <Text style={styles.dropdownLabel}>Number of Layers:</Text>
-                <View style={styles.dropdown}>
-                  <Text style={styles.dropdownText}>
-                    {section.layers.length}
-                  </Text>
-                  <Ionicons name="chevron-down" size={20} color="#E2E8F0" />
+                <View style={{ position: 'relative' }}>
+                  <Pressable
+                    style={styles.dropdown}
+                    onPress={() => toggleDropdown(section.id)}
+                  >
+                    <Text style={styles.dropdownText}>
+                      {section.layers.length}
+                    </Text>
+                    <Ionicons 
+                      name={openDropdowns.has(section.id) ? "chevron-up" : "chevron-down"} 
+                      size={20} 
+                      color="#E2E8F0" 
+                    />
+                  </Pressable>
+                  {openDropdowns.has(section.id) && (
+                    <View style={styles.dropdownMenu}>
+                      <ScrollView 
+                        style={styles.dropdownScrollView}
+                        nestedScrollEnabled
+                        showsVerticalScrollIndicator={false}
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num, index) => (
+                          <Pressable
+                            key={num}
+                            style={[
+                              styles.dropdownOption,
+                              section.layers.length === num && styles.dropdownOptionSelected,
+                              index === 9 && styles.dropdownOptionLast
+                            ]}
+                            onPress={() => updateLayerCount(section.id, num)}
+                          >
+                            <Text
+                              style={[
+                                styles.dropdownOptionText,
+                                section.layers.length === num && styles.dropdownOptionTextSelected
+                              ]}
+                            >
+                              {num}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -704,6 +763,50 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     flex: 1,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#1B2B60',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 12,
+    marginTop: 4,
+    maxHeight: 300,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  dropdownScrollView: {
+    maxHeight: 300,
+  },
+  dropdownOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  dropdownOptionLast: {
+    borderBottomWidth: 0,
+  },
+  dropdownOptionSelected: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  dropdownOptionText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+  },
+  dropdownOptionTextSelected: {
+    color: '#5EB3D1',
+    fontWeight: '600',
   },
   layerSection: {
     marginTop: 16,
