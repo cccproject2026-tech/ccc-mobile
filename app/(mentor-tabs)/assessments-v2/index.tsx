@@ -130,8 +130,11 @@ export default function MentorAssessmentsLibrary() {
     };
 
     const handleEditSurvey = (assessment: Assessment) => {
-        console.log("Edit survey:", assessment);
-        // Implement edit survey functionality
+        bottomSheetRef.current?.dismiss();
+        router.push({
+            pathname: "/(mentor-tabs)/assessments-v2/edit-instructions" as any,
+            params: { assessmentId: assessment.id },
+        });
     };
 
     const handleDeleteSurvey = (assessment: Assessment) => {

@@ -11,6 +11,7 @@ export default function AssessmentsV2Layout() {
             <Stack.Screen name="assign-to" />
             <Stack.Screen name="select-assessment" />
             <Stack.Screen name="create-assessment" />
+            <Stack.Screen name="edit-instructions" />
         </Stack>
     );
 }
