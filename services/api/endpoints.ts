@@ -71,5 +71,6 @@ export const ENDPOINTS = {
 
     ROADMAPS: {
         GET_ALL: '/roadmaps',
+        CREATE: '/roadmaps',
     }
 } as const;

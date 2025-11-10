@@ -6,11 +6,14 @@ import AddFieldSheet, {
 } from "@/components/director/forms/AddFieldSheet";
 import FormCheckBox from "@/components/director/forms/FormCheckBox";
 import { usePhaseCreation } from "@/context/PhaseCreationContext";
+import { useCreateRoadmap } from "@/hooks/roadmaps";
+import { CreateRoadmapRequest, RoadmapExtra } from "@/lib/roadmaps/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Modal,
@@ -28,7 +31,8 @@ export default function RoadmapFormScreen() {
   const { bottom } = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const addFieldSheetRef = useRef<AddFieldSheetRef>(null);
-  const { state, updateRoadmap } = usePhaseCreation();
+  const { state, updateRoadmap, clearPhaseData } = usePhaseCreation();
+  const createRoadmapMutation = useCreateRoadmap();
 
   const isPhaseFlow = params.isPhaseFlow === 'true';
 
@@ -276,6 +280,150 @@ export default function RoadmapFormScreen() {
     }
   };
 
+  // Transform custom fields to API extras format
+  const transformFieldsToExtras = (fields: any[]): RoadmapExtra[] => {
+    return fields
+      .filter((field) => !field.parentSectionId) // Only top-level fields
+      .map((field) => {
+        const nestedFields = fields.filter((f) => f.parentSectionId === field.id);
+
+        switch (field.type) {
+          case "textarea":
+            return {
+              type: "TEXT_AREA" as const,
+              name: field.label || field.name || "Notes",
+              placeHolder: field.placeholder || "Enter your notes",
+              buttonName: field.buttonName || "",
+            };
+          case "text":
+            return {
+              type: "TEXT_FIELD" as const,
+              name: field.label || field.name || "Text Field",
+              placeHolder: field.placeholder || "Enter text",
+              buttonName: field.buttonName || "",
+            };
+          case "checkbox":
+            return {
+              type: "CHECKBOX" as const,
+              name: field.label || field.name || "Checkbox",
+              haveButton: !!field.buttonName,
+              buttonName: field.buttonName || "",
+            };
+          case "datepicker":
+            return {
+              type: "DATE_PICKER" as const,
+              name: field.label || "Date",
+              date: field.date ? new Date(field.date).toLocaleDateString("en-GB").replace(/\//g, "-") : undefined,
+              buttonName: field.buttonName || "",
+              checkboxes: [
+                field.allowPastorSelect && {
+                  type: "CHECKBOX" as const,
+                  name: "Allow pastor to select Date",
+                  haveButton: false,
+                },
+                field.showOnCard && {
+                  type: "CHECKBOX" as const,
+                  name: "Show date on info card",
+                  haveButton: false,
+                },
+              ].filter(Boolean) as RoadmapExtra[],
+            };
+          case "section":
+            return {
+              type: "SECTION" as const,
+              name: field.name || "Section",
+              buttonName: field.buttonName || "",
+              checkboxes: [
+                field.showDuplicateButton && {
+                  type: "CHECKBOX" as const,
+                  name: field.name || "Section",
+                  haveButton: true,
+                  buttonName: field.buttonName || "Add section steps",
+                },
+              ].filter(Boolean) as RoadmapExtra[],
+              sections: nestedFields.map((nestedField) => {
+                if (nestedField.type === "text") {
+                  return {
+                    type: "TEXT_FIELD" as const,
+                    name: nestedField.label || nestedField.name || "Text Field",
+                    placeHolder: nestedField.placeholder || "Enter text",
+                    buttonName: nestedField.buttonName || "",
+                  };
+                } else if (nestedField.type === "datepicker") {
+                  return {
+                    type: "DATE_PICKER" as const,
+                    name: nestedField.label || "Date",
+                    date: nestedField.date ? new Date(nestedField.date).toLocaleDateString("en-GB").replace(/\//g, "-") : undefined,
+                    buttonName: nestedField.buttonName || "",
+                  };
+                }
+                return null;
+              }).filter(Boolean) as RoadmapExtra[],
+            };
+          default:
+            return null;
+        }
+      })
+      .filter(Boolean) as RoadmapExtra[];
+  };
+
+  // Transform form data to API request format
+  const transformToApiFormat = (): CreateRoadmapRequest => {
+    const extras = transformFieldsToExtras(formData.customFields);
+
+    if (isPhaseFlow) {
+      // Phase flow: create phase with multiple roadmaps
+      const roadmaps = state.roadmaps.map((roadmap) => ({
+        name: roadmap.name,
+        roadMapDetails: roadmap.subheading,
+        description: formData.descriptionVerbiage || roadmap.subheading,
+        duration: roadmap.completionTime,
+        imageUrl: roadmap.bannerImage || undefined,
+        phase: roadmap.selectedDivision.toLowerCase(),
+        totalSteps: roadmap.fields?.length || 0,
+        extras: roadmap.fields ? transformFieldsToExtras(roadmap.fields) : [],
+      }));
+
+      return {
+        type: "phase",
+        name: state.phaseDetails?.phaseName || roadmapData.name,
+        roadMapDetails: state.phaseDetails?.phaseSubheading || roadmapData.subheading,
+        description: formData.descriptionVerbiage,
+        duration: state.phaseDetails?.phaseCompletionTime || roadmapData.completionTime,
+        imageUrl: state.phaseDetails?.phaseBannerImage || roadmapData.bannerImage || undefined,
+        divisions: state.phaseDetails?.phaseDivisions || [roadmapData.selectedDivision.toLowerCase()],
+        phase: "Phase 1",
+        totalSteps: state.roadmaps.length,
+        roadmaps,
+      };
+    } else {
+      // Single roadmap flow - create as a phase with one roadmap
+      return {
+        type: "phase",
+        name: roadmapData.name,
+        roadMapDetails: roadmapData.subheading,
+        description: formData.descriptionVerbiage,
+        duration: roadmapData.completionTime,
+        imageUrl: roadmapData.bannerImage || undefined,
+        divisions: [roadmapData.selectedDivision.toLowerCase()],
+        phase: roadmapData.selectedDivision,
+        totalSteps: formData.customFields.length,
+        roadmaps: [
+          {
+            name: roadmapData.name,
+            roadMapDetails: roadmapData.subheading,
+            description: formData.descriptionVerbiage,
+            duration: roadmapData.completionTime,
+            imageUrl: roadmapData.bannerImage || undefined,
+            phase: roadmapData.selectedDivision.toLowerCase(),
+            totalSteps: formData.customFields.length,
+            extras,
+          },
+        ],
+      };
+    }
+  };
+
   const handleCreateRoadmap = () => {
     // Enhanced validation
     const errors: string[] = [];
@@ -308,26 +456,29 @@ export default function RoadmapFormScreen() {
       return;
     }
 
-    const finalRoadmapData = {
-      ...roadmapData,
-      ...formData,
-    };
+    // Transform to API format
+    const apiData = transformToApiFormat();
 
-    console.log("Final roadmap data:", finalRoadmapData);
-
-    // If in phase flow, update current roadmap with fields
-    if (isPhaseFlow && state.currentRoadmap) {
-      updateRoadmap(state.currentRoadmap.id, {
-        fields: formData.customFields
-      });
-
-      setSuccessMessage("Roadmap Added Successfully");
-    } else {
-      setSuccessMessage("Roadmap Created Successfully");
-    }
-
-    // Show success modal for both flows
-    setShowSuccess(true);
+    // Submit to API
+    createRoadmapMutation.mutate(apiData, {
+      onSuccess: () => {
+        if (isPhaseFlow) {
+          setSuccessMessage("Phase Created Successfully");
+          clearPhaseData();
+        } else {
+          setSuccessMessage("Roadmap Created Successfully");
+        }
+        setShowSuccess(true);
+      },
+      onError: (error) => {
+        console.error("Failed to create roadmap:", error);
+        Alert.alert(
+          "Error",
+          "Failed to create roadmap. Please try again.",
+          [{ text: "OK" }]
+        );
+      },
+    });
   };
 
   // Field Type Label Component
@@ -667,19 +818,23 @@ export default function RoadmapFormScreen() {
           <TouchableOpacity
             style={[
               styles.createButton,
-              !isFormValid && styles.createButtonDisabled,
+              (!isFormValid || createRoadmapMutation.isPending) && styles.createButtonDisabled,
             ]}
             onPress={handleCreateRoadmap}
-            disabled={!isFormValid}
+            disabled={!isFormValid || createRoadmapMutation.isPending}
           >
-            <Text
-              style={[
-                styles.createButtonText,
-                !isFormValid && styles.createButtonTextDisabled,
-              ]}
-            >
-              Create Roadmap
-            </Text>
+            {createRoadmapMutation.isPending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text
+                style={[
+                  styles.createButtonText,
+                  !isFormValid && styles.createButtonTextDisabled,
+                ]}
+              >
+                Create Roadmap
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>

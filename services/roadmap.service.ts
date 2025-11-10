@@ -7,7 +7,9 @@ import {
     RoadmapResponse,
     UpdateExtrasDto
 } from '@/lib/roadmap/types';
+import { CreateRoadmapRequest, CreateRoadmapResponse } from '@/lib/roadmaps/types';
 import { apiClient } from './api/client';
+import { ENDPOINTS } from './api/endpoints';
 
 export const roadmapService = {
     /**
@@ -102,6 +104,21 @@ export const roadmapService = {
             throw new Error(response.data.message || 'Failed to delete roadmap extras');
         }
 
+        return response.data;
+    },
+
+    /**
+     * POST - Creates a new roadmap (phase or single)
+     */
+    async createRoadmap(data: CreateRoadmapRequest): Promise<CreateRoadmapResponse> {
+        console.log('📤 Creating roadmap:', data.name);
+        
+        const response = await apiClient.post<CreateRoadmapResponse>(
+            ENDPOINTS.ROADMAPS.CREATE,
+            data
+        );
+
+        console.log('📥 Roadmap created:', response.data);
         return response.data;
     },
 };
