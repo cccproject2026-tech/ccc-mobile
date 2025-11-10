@@ -1,106 +1,108 @@
+// import { ExternalPathString, RelativePathString, Route } from "expo-router";
+// import { ImageSourcePropType } from "react-native";
+
 import { ExternalPathString, RelativePathString, Route } from "expo-router";
-import { ImageSourcePropType } from "react-native";
 
 export type PhaseCode = 'JUMP_START' | 'PHASE_1' | 'PHASE_2' | 'PHASE_3';
 export type Status = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
-export type CommentStatus = 'UNREAD' | 'READ' | 'ARCHIVED';
-export type QueryStatus = 'PENDING' | 'ANSWERED';
+// export type CommentStatus = 'UNREAD' | 'READ' | 'ARCHIVED';
+// export type QueryStatus = 'PENDING' | 'ANSWERED';
 
 
 
 
-export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due';
+// export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due';
 
-export interface RoadmapCardData {
-    image?: string | number;
-    title: string;
-    description?: string;
-    completionTime?: string;
-    status?: RoadmapCardStatus;
-    completedDate?: string;
-    taskProgress?: {
-        completed: number;
-        total: number;
-    };
-    showArrow?: boolean;
-    showCheckmark?: boolean;
-}
-export interface Division {
-    id: string;
-    phaseId: string;
-    name: string;
-    description?: string;
-    tasks: string[];
-    order?: number;
-    meta?: {
-        icon?: string;
-        color?: string;
-        [key: string]: any;
-    };
-}
-
-
-export interface QueryAuthor {
-    id: string;
-    name: string;
-    avatar?: ImageSourcePropType;
-}
-
-export interface QueryResponse {
-    id: string;
-    queryId: string;
-    content: string;
-    timestamp: string;
-    author: {
-        id: string;
-        name: string;
-        role?: string; // e.g., "Mentor", "Admin"
-        avatar?: ImageSourcePropType;
-    };
-}
-
-export interface Query {
-    id: string;
-    author: QueryAuthor;
-    question: string;
-    timestamp: string;
-    status: QueryStatus;
-    responses?: string[]; // Array of response IDs
-    hasResponse: boolean;
-}
+// export interface RoadmapCardData {
+//     image?: string | number;
+//     title: string;
+//     description?: string;
+//     completionTime?: string;
+//     status?: RoadmapCardStatus;
+//     completedDate?: string;
+//     taskProgress?: {
+//         completed: number;
+//         total: number;
+//     };
+//     showArrow?: boolean;
+//     showCheckmark?: boolean;
+// }
+// export interface Division {
+//     id: string;
+//     phaseId: string;
+//     name: string;
+//     description?: string;
+//     tasks: string[];
+//     order?: number;
+//     meta?: {
+//         icon?: string;
+//         color?: string;
+//         [key: string]: any;
+//     };
+// }
 
 
-export interface CommentAuthor {
-    id: string;
-    name: string;
-    role: string;
-    avatar?: ImageSourcePropType;
-}
+// export interface QueryAuthor {
+//     id: string;
+//     name: string;
+//     avatar?: ImageSourcePropType;
+// }
 
-export interface Comment {
-    id: string;
-    taskId: string;
-    author: CommentAuthor;
-    content: string;
-    timestamp: string;
-    status?: CommentStatus;
-    attachments?: CommentAttachment[];
-    parentCommentId?: string;
-}
+// export interface QueryResponse {
+//     id: string;
+//     queryId: string;
+//     content: string;
+//     timestamp: string;
+//     author: {
+//         id: string;
+//         name: string;
+//         role?: string; // e.g., "Mentor", "Admin"
+//         avatar?: ImageSourcePropType;
+//     };
+// }
 
-export interface CommentAttachment {
-    id: string;
-    fileName: string;
-    fileUrl: string;
-    fileType: string;
-    fileSize?: number;
-}
+// export interface Query {
+//     id: string;
+//     author: QueryAuthor;
+//     question: string;
+//     timestamp: string;
+//     status: QueryStatus;
+//     responses?: string[]; // Array of response IDs
+//     hasResponse: boolean;
+// }
 
-export interface Program {
-    id: string;
-    title: string;
-    phases: string[];
-}
+
+// export interface CommentAuthor {
+//     id: string;
+//     name: string;
+//     role: string;
+//     avatar?: ImageSourcePropType;
+// }
+
+// export interface Comment {
+//     id: string;
+//     taskId: string;
+//     author: CommentAuthor;
+//     content: string;
+//     timestamp: string;
+//     status?: CommentStatus;
+//     attachments?: CommentAttachment[];
+//     parentCommentId?: string;
+// }
+
+// export interface CommentAttachment {
+//     id: string;
+//     fileName: string;
+//     fileUrl: string;
+//     fileType: string;
+//     fileSize?: number;
+// }
+
+// export interface Program {
+//     id: string;
+//     title: string;
+//     phases: string[];
+// }
 
 export interface Phase {
     id: string;
@@ -204,12 +206,136 @@ export interface Task {
     };
 }
 
-export interface RevitalizationData {
-    program: Program;
-    phases: Record<string, Phase>;
-    tasks: Record<string, Task>;
-    divisions?: Record<string, Division>;
-    comments?: Record<string, Comment>;
-    queries?: Record<string, Query>;
-    queryResponses?: Record<string, QueryResponse>;
+// export interface RevitalizationData {
+//     program: Program;
+//     phases: Record<string, Phase>;
+//     tasks: Record<string, Task>;
+//     divisions?: Record<string, Division>;
+//     comments?: Record<string, Comment>;
+//     queries?: Record<string, Query>;
+//     queryResponses?: Record<string, QueryResponse>;
+// }
+
+
+// lib/roadmap/types.ts
+
+// ============= BACKEND TYPES =============
+
+export interface RoadmapResponse {
+    success: boolean;
+    message: string;
+    data: Roadmap[];
+}
+
+export interface Roadmap {
+    _id: string;
+    type: string;
+    name: string;
+    roadMapDetails: string;
+    description: string;
+    status: 'not started' | 'in-progress' | 'completed' | 'blocked';
+    duration: string;
+    startDate: string;
+    endDate: string;
+    completedOn: string;
+    imageUrl: string;
+    meetings: any[];
+    divisions: string[];
+    haveNextedRoadMaps: boolean;
+    phase: string;
+    totalSteps: number;
+    extras: Extra[];
+    roadmaps: NestedRoadmap[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface NestedRoadmap {
+    _id: string;
+    name: string;
+    roadMapDetails: string;
+    description: string;
+    status: 'not started' | 'in-progress' | 'completed' | 'blocked';
+    duration: string;
+    imageUrl: string;
+    meetings: any[];
+    startDate: string;
+    endDate: string;
+    completedOn: string;
+    phase: string; // division name
+    totalSteps: number;
+    extras: Extra[];
+}
+
+export interface Extra {
+    type: 'TEXT_AREA' | 'TEXT_DISPLAY' | 'CHECKBOX' | 'TEXT_FIELD' | 'DATE_PICKER' | 'SECTION' | 'UPLOAD' | 'BUTTON';
+    name: string;
+    placeHolder?: string;
+    buttonName?: string | null;
+    haveButton?: boolean;
+    date?: string;
+    checkboxes?: ExtraCheckbox[];
+    sections?: Extra[];
+}
+
+export interface ExtraCheckbox {
+    type: 'CHECKBOX';
+    name: string;
+    haveButton: boolean;
+    buttonName: string | null;
+}
+
+// ============= UI TYPES =============
+
+export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due';
+
+export interface RoadmapCardData {
+    image?: string | number;
+    title: string;
+    description?: string;
+    completionTime?: string;
+    status?: RoadmapCardStatus;
+    completedDate?: string;
+    taskProgress?: {
+        completed: number;
+        total: number;
+    };
+    showArrow?: boolean;
+    showCheckmark?: boolean;
+    phaseNumber?: number;
+}
+
+
+
+export interface CreateExtrasDto {
+    userId: string;
+    roadMapId: string;
+    nestedRoadMapItemId?: string;
+    extras?: any[];
+}
+
+export interface UpdateExtrasDto {
+    extras?: any[];
+}
+
+export interface ExtrasResponseDto {
+    id: string;
+    userId: string;
+    roadMapId: string;
+    nestedRoadMapItemId?: string;
+    extras: any[];
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface ExtrasApiResponse {
+    success: boolean;
+    message: string;
+    data?: ExtrasResponseDto;
+}
+
+export interface GetExtrasResponse {
+    success: boolean;
+    message: string;
+    data?: ExtrasResponseDto | null;
 }

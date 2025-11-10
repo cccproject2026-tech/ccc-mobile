@@ -50,6 +50,9 @@ export const ENDPOINTS = {
         GET_ASSESSMENT_BY_ID: (assessmentId: string) => `/assessment/${assessmentId}`,
         ASSIGN_ASSESSMENT: (assessmentId: string) => `/assessment/${assessmentId}/assign`,
         CREATE_ASSESSMENT: '/assessment',
+        SUBMIT_ASSESSMENT: (id: string) => `/assessment/${id}/submit`,
+        FETCH_ANSWERS: (assessmentId: string, userId: string) =>
+            `/assessment/${assessmentId}/answers/${userId}`,
         DELETE_ASSESSMENT: (assessmentId: string) => `/assessment/${assessmentId}`,
         UPDATE_INSTRUCTIONS: (assessmentId: string) => `/assessment/${assessmentId}/instructions`,
     },
@@ -60,9 +63,13 @@ export const ENDPOINTS = {
     },
 
     APPOINTMENTS: {
-        GET: (userId: string) => `appointments/user/${userId}`,
+        GET: (userId: string) => `/appointments/user/${userId}`,
         CREATE: '/appointments',
         GET_BY_MENTOR: (mentorId: string) => `/appointments/mentor/${mentorId}`,
         UPDATE: (appointmentId: string) => `/appointments/${appointmentId}`
+    },
+
+    ROADMAPS: {
+        GET_ALL: '/roadmaps',
     }
 } as const;

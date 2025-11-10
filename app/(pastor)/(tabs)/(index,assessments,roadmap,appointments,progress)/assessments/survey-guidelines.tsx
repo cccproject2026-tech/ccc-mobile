@@ -1,62 +1,59 @@
 import TopBar from '@/components/director/TopBar';
-import { useAssessment } from '@/context/AssessmentsContext';
-import { dummyRoadMaps } from '@/lib/assessments/mock';
-import { Assessment } from '@/lib/assessments/types';
+import { useAssessment } from '@/hooks/assessments';
+import { mapApiToFrontend } from '@/lib/assessments/mappers';
+import { useAssessmentStore } from '@/stores/assessment.store';
+import { ApiAssessment } from '@/types/assessment.types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import {
+    ActivityIndicator,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 
 const { height } = Dimensions.get('window');
 
 export default function SurveyGuidelinesPage() {
     const { assessmentId } = useLocalSearchParams();
-    if (!assessmentId) {
-        return (
-            <View style={styles.container}>
-                <Text style={{ color: '#fff', textAlign: 'center', marginTop: 50 }}>
-                    Assessment ID is missing.
-                </Text>
-            </View>
-        );
-    }
-    const assessment: Assessment = dummyRoadMaps.find((item) => item.id === assessmentId)!;
     const router = useRouter();
-    const { getResponse, clearResponse } = useAssessment();
 
-    // Use the assessment ID from the data
-    const savedResponse = getResponse(assessmentId as string);
-    const isCompleted = savedResponse?.status === 'Completed' || assessment.completedOn || assessment.status === 'Completed';
+    // Fetch assessment from API (server state)
+    const { data, isLoading, error, refetch } = useAssessment(assessmentId as string);
+    const assessment = useMemo(() => {
+        if (!data) return null;
+        return mapApiToFrontend(data as ApiAssessment);
+    }, [data]);
 
+    // Get draft from store (client state)
+    const getDraft = useAssessmentStore((state) => state.getDraft);
+    const clearDraft = useAssessmentStore((state) => state.clearDraft);
+    const draftResponse = getDraft(assessmentId as string);
+
+    // Check if completed from server data
+    const isCompleted = assessment?.status === 'Completed';
+
+    // Check if has draft in progress
+    const hasDraft = !!draftResponse;
+
+    // Refresh on focus
     useFocusEffect(
         useCallback(() => {
-            // Refresh status when returning to this screen
-            const savedResponse = getResponse(assessmentId as string);
-            // Update your state if needed
+            refetch(); // Refresh assessment data from server
         }, [assessmentId])
     );
-    // const handleStart = () => {
-    //     if (assessment.type === 'CMA' && assessment.preSurvey) {
-    //         router.push({
-    //             pathname: '/assessments/pre-survey',
-    //             params: {
-    //                 data: JSON.stringify(assessment),
-    //                 assessmentId
-    //             },
-    //         });
-    //     } else {
-    //         router.push({
-    //             pathname: '/assessments/answer-questions',
-    //             params: {
-    //                 assessmentId
-    //             },
-    //         });
-    //     }
-    // };
 
     const handleStart = () => {
+        if (!assessment) return;
+        console.log('Starting assessment:', assessmentId);
+        console.log('Assessment type:', assessment.type);
+        console.log('Has pre-survey:', assessment.sections[0]);
         router.push({
             pathname: '/assessments/answer-questions',
             params: {
@@ -67,8 +64,9 @@ export default function SurveyGuidelinesPage() {
     };
 
     const handleRepeatSurvey = async () => {
-        await clearResponse(assessmentId as string);
-        // handleStart();
+        // Clear any existing draft
+        clearDraft(assessmentId as string);
+        handleStart();
     };
 
     const handleViewResponse = () => {
@@ -77,12 +75,13 @@ export default function SurveyGuidelinesPage() {
             params: {
                 assessmentId,
                 viewMode: 'true'
-
             },
         });
     };
 
     const getCardContent = () => {
+        if (!assessment) return null;
+
         if (assessment.type === 'PMP') {
             return {
                 acronym: 'PMP',
@@ -100,6 +99,47 @@ export default function SurveyGuidelinesPage() {
     };
 
     const cardContent = getCardContent();
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <LinearGradient
+                colors={['#176192', '#1D548D', '#264387']}
+                style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}
+            >
+                <ActivityIndicator size="large" color="#fff" />
+                <Text style={{ color: '#fff', marginTop: 16 }}>Loading assessment...</Text>
+            </LinearGradient>
+        );
+    }
+
+    // Error state
+    if (error || !assessment) {
+        return (
+            <LinearGradient
+                colors={['#176192', '#1D548D', '#264387']}
+                style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}
+            >
+                <Ionicons name="alert-circle-outline" size={64} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 18, marginTop: 16 }}>
+                    Failed to load assessment
+                </Text>
+                <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+                    <Text style={{ color: '#fff', textDecorationLine: 'underline' }}>Go Back</Text>
+                </TouchableOpacity>
+            </LinearGradient>
+        );
+    }
+
+    if (!assessmentId) {
+        return (
+            <View style={styles.container}>
+                <Text style={{ color: '#fff', textAlign: 'center', marginTop: 50 }}>
+                    Assessment ID is missing.
+                </Text>
+            </View>
+        );
+    }
 
     return (
         <LinearGradient
@@ -122,6 +162,7 @@ export default function SurveyGuidelinesPage() {
                     </View>
                 </View>
             </View>
+
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -136,22 +177,21 @@ export default function SurveyGuidelinesPage() {
                         <Text style={styles.cardSubtitle}>{cardContent?.line2}</Text>
                     </View>
 
-                    {/* Show different info based on completion status */}
                     <View style={styles.dateContainer}>
-                        <Text style={styles.dueDate}>
-                            Due: {assessment.dueDate}
-                        </Text>
-                        {isCompleted && savedResponse?.completedAt && (
+                        {assessment.dueDate && (
+                            <Text style={styles.dueDate}>
+                                Due: {assessment.dueDate}
+                            </Text>
+                        )}
+                        {isCompleted && assessment.completionDate && (
                             <Text style={styles.completedDate}>
-                                Completed on: {new Date(savedResponse.completedAt).toLocaleDateString('en-GB', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric'
-                                })}
+                                Completed on: {assessment.completionDate}
                             </Text>
                         )}
                     </View>
                 </View>
+
+                {/* Meeting info */}
                 {assessment.completedOn && assessment.meetingDate && (
                     <LinearGradient
                         colors={["#B83AF3", "#21B6E9"]}
@@ -161,18 +201,12 @@ export default function SurveyGuidelinesPage() {
                     >
                         <TouchableOpacity
                             style={styles.meetingContainer}
-                            onPress={() => {
-                                // Handle meeting press - navigate to meeting details or appointments
-                                console.log('Meeting pressed');
-                            }}
+                            onPress={() => console.log('Meeting pressed')}
                         >
                             <Text style={styles.meetingText}>
                                 Meeting Scheduled on {assessment.meetingDate}
                             </Text>
-                            <TouchableOpacity onPress={() => {
-                                // Handle meeting options/menu
-                                console.log('Meeting options pressed');
-                            }}>
+                            <TouchableOpacity onPress={() => console.log('Meeting options')}>
                                 <Ionicons name="ellipsis-vertical" size={24} color="#EAB308" />
                             </TouchableOpacity>
                         </TouchableOpacity>
@@ -196,7 +230,6 @@ export default function SurveyGuidelinesPage() {
                     </View>
                 )}
 
-
                 {/* Action Buttons */}
                 {isCompleted ? (
                     <View style={styles.completedButtonContainer}>
@@ -205,7 +238,9 @@ export default function SurveyGuidelinesPage() {
                             onPress={handleRepeatSurvey}
                             activeOpacity={0.8}
                         >
-                            <Text style={styles.repeatButtonText}>Repeat CMA Survey</Text>
+                            <Text style={styles.repeatButtonText}>
+                                Repeat {assessment.type} Survey
+                            </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.viewResponseButton}
@@ -222,7 +257,7 @@ export default function SurveyGuidelinesPage() {
                         activeOpacity={0.8}
                     >
                         <Text style={styles.startButtonText}>
-                            {savedResponse?.status === 'Submitted' ? 'Continue Assessment' : 'Start Now'}
+                            {hasDraft ? 'Continue Assessment' : 'Start Now'}
                         </Text>
                     </TouchableOpacity>
                 )}
