@@ -173,7 +173,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                 
                 router.push({
                     // @ts-ignore - grouped route path
-                    pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+                    pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
                     params: { isPhaseFlow: 'true' }
                 } as any);
             } else {
@@ -190,7 +190,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                 
                 router.push({
                     // @ts-ignore - grouped route path
-                    pathname: '/(director-tabs)/(tabs)/revitalization-roadmaps/(creation)/roadmap-form',
+                    pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/roadmap-form',
                     params: queryParams
                 } as any);
             }

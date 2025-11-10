@@ -35,7 +35,7 @@ const InterestCard: React.FC<Props> = ({
     const router = useRouter();
     const handleCardPress = () => {
         router.push({
-            pathname: '/(director-tabs)/(tabs)/new-interests/interest-details',
+            pathname: '/(director)/(tabs)/new-interests/interest-details',
             params: { interestId: data.id }
         });
     };

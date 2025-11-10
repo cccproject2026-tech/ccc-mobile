@@ -1,64 +1,64 @@
-// // lib/roadmap/mappers.ts
-// import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
-// import { Phase, RevitalizationData } from '@/lib/roadmap/types';
+// // // lib/roadmap/mappers.ts
+// // import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
+// // import { Phase, RevitalizationData } from '@/lib/roadmap/types';
 
-// export function usePhaseToCard(data: RevitalizationData, phase: Phase) {
-//     const { progress } = useRoadmapProgress();
-//     const items = phase.items.map(id => data.items[id]);
+// // export function usePhaseToCard(data: RevitalizationData, phase: Phase) {
+// //     const { progress } = useRoadmapProgress();
+// //     const items = phase.items.map(id => data.items[id]);
 
-//     // FIX: Use progress context to get actual status
-//     const completed = items.filter(i => {
-//         const actualStatus = progress[i.id]?.status || i.status;
-//         return actualStatus === 'COMPLETED';
-//     }).length;
+// //     // FIX: Use progress context to get actual status
+// //     const completed = items.filter(i => {
+// //         const actualStatus = progress[i.id]?.status || i.status;
+// //         return actualStatus === 'COMPLETED';
+// //     }).length;
 
-//     const total = items.length;
+// //     const total = items.length;
 
-//     const anyDue = items.some(i => {
-//         const actualStatus = progress[i.id]?.status || i.status;
-//         return i.dueDate && actualStatus !== 'COMPLETED';
-//     });
+// //     const anyDue = items.some(i => {
+// //         const actualStatus = progress[i.id]?.status || i.status;
+// //         return i.dueDate && actualStatus !== 'COMPLETED';
+// //     });
 
-//     const anyInProgress = items.some(i => {
-//         const actualStatus = progress[i.id]?.status || i.status;
-//         return actualStatus === 'IN_PROGRESS';
-//     });
+// //     const anyInProgress = items.some(i => {
+// //         const actualStatus = progress[i.id]?.status || i.status;
+// //         return actualStatus === 'IN_PROGRESS';
+// //     });
 
-//     const allCompleted = completed === total && total > 0;
+// //     const allCompleted = completed === total && total > 0;
 
-//     const status: 'initial' | 'in-progress' | 'completed' | 'due' =
-//         allCompleted ? 'completed' : anyDue ? 'due' : anyInProgress || completed > 0 ? 'in-progress' : 'initial';
+// //     const status: 'initial' | 'in-progress' | 'completed' | 'due' =
+// //         allCompleted ? 'completed' : anyDue ? 'due' : anyInProgress || completed > 0 ? 'in-progress' : 'initial';
 
-//     const completedDate = allCompleted
-//         ? new Date().toISOString().slice(0, 10)
-//         : undefined;
+// //     const completedDate = allCompleted
+// //         ? new Date().toISOString().slice(0, 10)
+// //         : undefined;
 
-//     // FIX: Only show progress bar when status is in-progress or due
-//     const taskProgress =
-//         (status === 'in-progress' || status === 'due') && total > 0
-//             ? { completed, total }
-//             : undefined;
+// //     // FIX: Only show progress bar when status is in-progress or due
+// //     const taskProgress =
+// //         (status === 'in-progress' || status === 'due') && total > 0
+// //             ? { completed, total }
+// //             : undefined;
 
-//     return {
-//         image: phase.coverImage,
-//         title: phase.title,
-//         description: phase.subtitle,
-//         completionTime: `Completion Time\nMonths ${phase.estMonthsMin} – ${phase.estMonthsMax}`,
-//         status,
-//         completedDate,
-//         taskProgress,
-//         showArrow: true,
-//         showCheckmark: allCompleted,
-//     } as const;
-// }
+// //     return {
+// //         image: phase.coverImage,
+// //         title: phase.title,
+// //         description: phase.subtitle,
+// //         completionTime: `Completion Time\nMonths ${phase.estMonthsMin} – ${phase.estMonthsMax}`,
+// //         status,
+// //         completedDate,
+// //         taskProgress,
+// //         showArrow: true,
+// //         showCheckmark: allCompleted,
+// //     } as const;
+// // }
 
 
-// lib/roadmap/mappers.ts - SINGLE HOOK FOR CARD DATA
+// // lib/roadmap/mappers.ts - SINGLE HOOK FOR CARD DATA
 import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
 import { Phase, Task } from './types';
 
 
-export const getPhaseNumber = (phase: Phase): number | undefined => {
+export const getPhaseNumberOld = (phase: Phase): number | undefined => {
     // Don't show phase badge for single roadmap phases
     if (phase.isSingleRoadmap) return undefined;
 
@@ -95,7 +95,7 @@ export function usePhaseCard(phase: Phase, tasks: Task[]) {
             anyDue ? 'due' :
                 anyInProgress || completed > 0 ? 'in-progress' :
                     'initial';
-    const phaseNumber = getPhaseNumber(phase);
+    const phaseNumber = getPhaseNumberOld(phase);
 
 
     return {
@@ -112,5 +112,60 @@ export function usePhaseCard(phase: Phase, tasks: Task[]) {
         showArrow: true,
         showCheckmark: allCompleted,
         phaseNumber,
+    };
+}
+
+
+// lib/roadmap/mappers.ts
+import {
+    getCardStatus,
+    getCompletionStats,
+    getPhaseNumber,
+    isSingleTask,
+    parseDurationMonths
+} from './helpers';
+import { NestedRoadmap, Roadmap, RoadmapCardData } from './types';
+
+/**
+ * Get card data for a roadmap (phase) - NO HOOK
+ */
+export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
+    const { completed, total } = getCompletionStats(roadmap);
+    const status = getCardStatus(roadmap);
+    const { min, max } = parseDurationMonths(roadmap.duration);
+    const phaseNumber = isSingleTask(roadmap) ? undefined : getPhaseNumber(roadmap.phase);
+
+    const allCompleted = completed === total && total > 0;
+    const hasProgress = status === 'in-progress' || status === 'due';
+
+    return {
+        image: roadmap.imageUrl,
+        title: roadmap.name,
+        description: roadmap.roadMapDetails,
+        completionTime: `Completion Time\nMonths ${min}${min !== max ? ` – ${max}` : ''}`,
+        status,
+        completedDate: roadmap.completedOn || undefined,
+        taskProgress: hasProgress && total > 0 ? { completed, total } : undefined,
+        showArrow: true,
+        showCheckmark: allCompleted,
+        phaseNumber,
+    };
+}
+
+/**
+ * Get card data for a nested roadmap (task) - NO HOOK
+ */
+export function getTaskCard(task: NestedRoadmap): RoadmapCardData {
+    const status = getCardStatus(task);
+    const isCompleted = status === 'completed';
+
+    return {
+        image: task.imageUrl,
+        title: task.name,
+        description: task.roadMapDetails,
+        completionTime: `Duration: ${task.duration}`,
+        status,
+        showArrow: true,
+        showCheckmark: isCompleted,
     };
 }

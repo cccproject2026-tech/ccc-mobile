@@ -1,4 +1,4 @@
-import { Interest } from "@/app/(director-tabs)/(tabs)/new-interests";
+import { Interest } from "@/app/(director)/(tabs)/new-interests";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";

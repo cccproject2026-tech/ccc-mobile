@@ -1,4 +1,3 @@
-// services/profile.service.ts
 import { InterestFormData, User } from '@/types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';

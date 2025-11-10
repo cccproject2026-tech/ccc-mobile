@@ -1,3 +1,4 @@
+// ==================== Frontend Types ====================
 export interface Assessment {
     id: string;
     type: 'CMA' | 'PMP';
@@ -15,6 +16,7 @@ export interface Assessment {
 
 export interface PreSurveyQuestion {
     id: string;
+    _id?: string;
     text: string;
     type: 'number' | 'text';
     placeholder?: string;
@@ -23,8 +25,8 @@ export interface PreSurveyQuestion {
 
 export interface AssessmentSection {
     title: string;
-    subtitle?: string; // Optional subtitle for section
-    questionGroups: QuestionGroup[]; // Changed from questions to questionGroups
+    subtitle?: string;
+    questionGroups: QuestionGroup[];
 }
 
 export interface QuestionGroup {
@@ -40,7 +42,7 @@ export interface AssessmentQuestion {
     required?: boolean;
 }
 
-// API Response Types
+// ==================== API Response Types ====================
 export interface ApiAssessmentChoice {
     text: string;
     _id: string;
@@ -70,15 +72,17 @@ export interface ApiAssessment {
     _id: string;
     name: string;
     description: string;
+    type?: 'CMA' | 'PMP'; // Optional since backend doesn't always return it
     instructions: string[];
     sections: ApiAssessmentSection[];
+    preSurvey?: PreSurveyQuestion[];
     assignments: ApiAssessmentAssignment[];
     createdAt: string;
     updatedAt: string;
     __v: number;
 }
 
-// API Request Types for Creating Assessment
+// ==================== API Request Types ====================
 export interface CreateAssessmentChoice {
     text: string;
 }
@@ -97,11 +101,13 @@ export interface CreateAssessmentSection {
 export interface CreateAssessmentRequest {
     name: string;
     description: string;
+    type: 'CMA' | 'PMP';
     instructions: string[];
     sections: CreateAssessmentSection[];
+    preSurvey?: PreSurveyQuestion[];
 }
 
-// ==================== Assessment Response (Pastor's Answers) ====================
+// ==================== Assessment Response ====================
 export interface AssessmentResponse {
     assessmentId: string;
     assessmentType: 'CMA' | 'PMP';

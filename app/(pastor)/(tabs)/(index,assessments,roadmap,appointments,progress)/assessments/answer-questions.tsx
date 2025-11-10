@@ -702,23 +702,39 @@ import SimpleSuccessModal from '@/components/atom/SimpleSuccessModal';
 import ScheduleMeetingBottomSheet, { Mentor } from '@/components/director/ScheduleMeetingBottomSheet';
 import TopBar from '@/components/director/TopBar';
 import { Colors } from '@/constants/Colors';
-import { dummyRoadMaps } from '@/lib/assessments/mock';
+import { useAssessment } from '@/hooks/assessments';
+import { mapApiToFrontend } from '@/lib/assessments/mappers';
+import { useAssessmentStore } from '@/stores/assessment.store';
+import { ApiAssessment } from '@/types/assessment.types';
+import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
+    ActivityIndicator,
     Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
-
-
 export default function AnswerQuestionPage() {
     const { assessmentId, viewMode, hasPreSurvey } = useLocalSearchParams();
+
     const router = useRouter();
+
+    // Fetch assessment data from API
+    const { data, isLoading, error } = useAssessment(assessmentId as string);
+    const assessment = useMemo(() => {
+        if (!data) return null;
+        return mapApiToFrontend(data as ApiAssessment);
+    }, [data]);
+
+    console.log('Assessment data:', data);
+    // Get draft from store
+    const getDraft = useAssessmentStore((state) => state.getDraft);
+    const previousResponse = getDraft(assessmentId as string);
 
     const [showModal, setShowModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -726,61 +742,21 @@ export default function AnswerQuestionPage() {
 
     // Track if pre-survey is completed
     const [preSurveyCompleted, setPreSurveyCompleted] = useState(
-        hasPreSurvey !== 'true' // If no pre-survey, mark as completed
+        hasPreSurvey !== 'true'
     );
 
     const scheduleMeetingBottomSheetRef = useRef<BottomSheetModal>(null);
-
-    const assessment = dummyRoadMaps.find(a => a.id === assessmentId);
-
-    if (!assessment) {
-        return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ color: 'red' }}>Error: Assessment data not found.</Text>
-            </View>
-        );
-    }
 
     const isViewMode = viewMode === 'true';
     const showPreSurvey = hasPreSurvey === 'true' && !preSurveyCompleted && !isViewMode;
 
     const mockMentors: Mentor[] = [
-        {
-            id: '1',
-            name: 'John Ross',
-            role: 'Mentor',
-            profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
-        },
-        {
-            id: '2',
-            name: 'Sarah Johnson',
-            role: 'Field Mentor',
-            profileImage: 'https://randomuser.me/api/portraits/women/2.jpg',
-        },
-        {
-            id: '3',
-            name: 'Michael Chen',
-            role: 'Mentor',
-            profileImage: 'https://randomuser.me/api/portraits/men/3.jpg',
-        },
-        {
-            id: '4',
-            name: 'Emily Davis',
-            role: 'Mentor',
-            profileImage: 'https://randomuser.me/api/portraits/women/4.jpg',
-        },
-        {
-            id: '5',
-            name: 'Robert Wilson',
-            role: 'Field Mentor',
-            profileImage: 'https://randomuser.me/api/portraits/men/5.jpg',
-        },
-        {
-            id: '6',
-            name: 'Lisa Anderson',
-            role: 'Field Mentor',
-            profileImage: 'https://randomuser.me/api/portraits/women/6.jpg',
-        },
+        { id: '1', name: 'John Ross', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/1.jpg' },
+        { id: '2', name: 'Sarah Johnson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/women/2.jpg' },
+        { id: '3', name: 'Michael Chen', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/3.jpg' },
+        { id: '4', name: 'Emily Davis', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/women/4.jpg' },
+        { id: '5', name: 'Robert Wilson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/men/5.jpg' },
+        { id: '6', name: 'Lisa Anderson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/women/6.jpg' },
     ];
 
     const handlePreSurveyComplete = () => {
@@ -813,8 +789,7 @@ export default function AnswerQuestionPage() {
         const formatDate = (dateString: string) => {
             const date = new Date(dateString);
             const day = date.getDate();
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const month = monthNames[date.getMonth()];
             const year = date.getFullYear().toString().slice(-2);
             return `${day} ${month} ${year}`;
@@ -830,20 +805,37 @@ export default function AnswerQuestionPage() {
         }, 2000);
     };
 
+    // Loading state
+    if (isLoading) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#fff" />
+                <Text style={{ color: '#fff', marginTop: 16 }}>Loading assessment...</Text>
+            </LinearGradient>
+        );
+    }
+
+    // Error state
+    if (error || !assessment) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <Ionicons name="alert-circle-outline" size={64} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 18, marginTop: 16 }}>Failed to load assessment</Text>
+                <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+                    <Text style={{ color: '#fff', textDecorationLine: 'underline' }}>Go Back</Text>
+                </TouchableOpacity>
+            </LinearGradient>
+        );
+    }
+
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
-            {/* Conditionally render TopBar based on which section is shown */}
             {showPreSurvey ? (
-                <TopBar
-                    userName="John Ross"
-                    showUserName={true}
-                    showNotifications={true}
-                />
+                <TopBar userName="John Ross" showUserName={true} showNotifications={true} />
             ) : (
                 <TopBar showDrawer={false} showNotifications={false} />
             )}
 
-            {/* Conditionally render Pre-Survey or Assessment Questions */}
             {showPreSurvey ? (
                 <PreSurveySection
                     assessment={assessment}
@@ -860,31 +852,17 @@ export default function AnswerQuestionPage() {
                 />
             )}
 
-            {/* Modals */}
-            <Modal
-                visible={showModal}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setShowModal(false)}
-            >
+            <Modal visible={showModal} transparent animationType="fade" onRequestClose={() => setShowModal(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalText}>
                             On completion of the PMP and CMA assessment tools please schedule a meeting with your mentor.
                         </Text>
-
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.skipButton]}
-                                onPress={handleSkipScheduling}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.skipButton]} onPress={handleSkipScheduling}>
                                 <Text style={styles.modalButtonText}>Skip for Now</Text>
                             </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.scheduleButton]}
-                                onPress={handleScheduleMeeting}
-                            >
+                            <TouchableOpacity style={[styles.modalButton, styles.scheduleButton]} onPress={handleScheduleMeeting}>
                                 <Text style={styles.modalButtonText}>Schedule Meeting</Text>
                             </TouchableOpacity>
                         </View>
@@ -896,9 +874,7 @@ export default function AnswerQuestionPage() {
                 ref={scheduleMeetingBottomSheetRef}
                 mentors={mockMentors}
                 mode="schedule"
-                onClose={() => {
-                    scheduleMeetingBottomSheetRef.current?.dismiss();
-                }}
+                onClose={() => scheduleMeetingBottomSheetRef.current?.dismiss()}
                 onSchedule={handleScheduleComplete}
                 colorScheme={{
                     background: Colors.darkBlueGradientOne,

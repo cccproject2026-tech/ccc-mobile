@@ -1,12 +1,15 @@
 import TopBar from '@/components/director/TopBar';
-import { useAssessment } from '@/context/AssessmentsContext';
-import { Assessment, PreSurveyQuestion } from '@/lib/assessments/types';
+import { useAssessment } from '@/hooks/assessments';
+import { mapApiToFrontend } from '@/lib/assessments/mappers';
+import { useAssessmentStore } from '@/stores/assessment.store';
+import { ApiAssessment } from '@/types/assessment.types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     StyleSheet,
     Text,
@@ -17,13 +20,22 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 export default function PreSurveyPage() {
-    const { data, assessmentId } = useLocalSearchParams();
-    const assessment: Assessment = JSON.parse(data as string);
+    const { assessmentId } = useLocalSearchParams();
     const router = useRouter();
-    const { saveResponse, getResponse } = useAssessment();
+
+    // Fetch assessment data from API
+    const { data, isLoading, error } = useAssessment(assessmentId as string);
+    const assessment = useMemo(() => {
+        if (!data) return null;
+        return mapApiToFrontend(data as ApiAssessment);
+    }, [data]);
+
+    // Get store methods
+    const saveDraft = useAssessmentStore((state) => state.saveDraft);
+    const getDraft = useAssessmentStore((state) => state.getDraft);
 
     // Load previous answers if they exist
-    const previousResponse = getResponse(assessmentId as string);
+    const previousResponse = getDraft(assessmentId as string);
     const [answers, setAnswers] = useState<Record<string, string>>(
         previousResponse?.preSurveyAnswers || {}
     );
@@ -33,6 +45,8 @@ export default function PreSurveyPage() {
     };
 
     const handleSubmit = async () => {
+        if (!assessment) return;
+
         // Basic validation (check required fields)
         const requiredQuestions = assessment.preSurvey?.filter(q => q.required) || [];
         const allAnswered = requiredQuestions.every(q => answers[q.id] && answers[q.id].trim() !== '');
@@ -42,14 +56,14 @@ export default function PreSurveyPage() {
             return;
         }
 
-        // Save pre-survey responses to context
-        await saveResponse(assessmentId as string, {
+        // Save pre-survey responses to store
+        saveDraft(assessmentId as string, {
             assessmentId: assessmentId as string,
             assessmentType: assessment.type,
             assessmentTitle: assessment.title,
             preSurveyAnswers: answers,
             sectionAnswers: previousResponse?.sectionAnswers || {},
-            status: 'Submitted',
+            status: 'Not Started',
             currentSectionIndex: 0,
         });
 
@@ -57,8 +71,9 @@ export default function PreSurveyPage() {
         router.push({
             pathname: '/assessments/answer-questions',
             params: {
-                data: JSON.stringify(assessment),
-                assessmentId
+                assessmentId,
+                viewMode: 'false',
+                hasPreSurvey: 'false', // Pre-survey completed
             },
         });
     };
@@ -66,6 +81,50 @@ export default function PreSurveyPage() {
     const handleCancel = () => {
         router.back();
     };
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <LinearGradient
+                colors={['#176192', '#1D548D', '#264387']}
+                style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}
+            >
+                <ActivityIndicator size="large" color="#fff" />
+                <Text style={{ color: '#fff', marginTop: 16 }}>Loading assessment...</Text>
+            </LinearGradient>
+        );
+    }
+
+    // Error state
+    if (error || !assessment) {
+        return (
+            <LinearGradient
+                colors={['#176192', '#1D548D', '#264387']}
+                style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}
+            >
+                <Ionicons name="alert-circle-outline" size={64} color="#fff" />
+                <Text style={{ color: '#fff', marginTop: 16 }}>Failed to load assessment</Text>
+                <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+                    <Text style={{ color: '#fff', textDecorationLine: 'underline' }}>Go Back</Text>
+                </TouchableOpacity>
+            </LinearGradient>
+        );
+    }
+
+    // No pre-survey questions
+    if (!assessment.preSurvey || assessment.preSurvey.length === 0) {
+        return (
+            <LinearGradient
+                colors={['#176192', '#1D548D', '#264387']}
+                style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}
+            >
+                <Text style={{ color: '#fff', fontSize: 16 }}>No pre-survey questions available</Text>
+                <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+                    <Text style={{ color: '#fff', textDecorationLine: 'underline' }}>Go Back</Text>
+                </TouchableOpacity>
+            </LinearGradient>
+        );
+    }
 
     return (
         <LinearGradient
@@ -78,7 +137,7 @@ export default function PreSurveyPage() {
                 showNotifications={true}
             />
 
-            {/* Header Section - Outside ScrollView */}
+            {/* Header Section */}
             <View style={styles.headerContainer}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -103,7 +162,7 @@ export default function PreSurveyPage() {
                 <View style={styles.questionsSection}>
                     <Text style={styles.sectionTitle}>Please Answer these Questions :</Text>
 
-                    {assessment.preSurvey?.map((question: PreSurveyQuestion, index: number) => (
+                    {assessment.preSurvey.map((question, index: number) => (
                         <View key={question.id} style={styles.questionCard}>
                             <Text style={styles.questionText}>
                                 {index + 1}. {question.text}

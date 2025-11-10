@@ -108,7 +108,7 @@ const RoadmapHeader = ({ handleOpenCreateRoadmapModal, activeTab }: Props) => {
             style={styles.actionButton}
             onPress={() =>
               router.push(
-                "/(director-tabs)/(tabs)/revitalization-roadmaps/select-roadmap"
+                "/(director)/(tabs)/revitalization-roadmaps/select-roadmap"
               )
             }
           >

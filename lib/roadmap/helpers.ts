@@ -1,0 +1,88 @@
+// lib/roadmap/helpers.ts
+import { NestedRoadmap, Roadmap, RoadmapCardStatus } from './types';
+
+/**
+ * Get status for card display
+ */
+export function getCardStatus(roadmap: Roadmap | NestedRoadmap): RoadmapCardStatus {
+    const statusMap: Record<string, RoadmapCardStatus> = {
+        'not started': 'initial',
+        'in-progress': 'in-progress',
+        'completed': 'completed',
+        'blocked': 'due',
+    };
+
+    return statusMap[roadmap.status] || 'initial';
+}
+
+/**
+ * Get all tasks for a roadmap (nested roadmaps)
+ */
+export function getTasks(roadmap: Roadmap): NestedRoadmap[] {
+    return roadmap.roadmaps || [];
+}
+
+/**
+ * Get tasks grouped by division
+ */
+export function getTasksByDivision(roadmap: Roadmap): Record<string, NestedRoadmap[]> {
+    const grouped: Record<string, NestedRoadmap[]> = {};
+
+    roadmap.roadmaps?.forEach(task => {
+        const division = task.phase;
+        if (!grouped[division]) {
+            grouped[division] = [];
+        }
+        grouped[division].push(task);
+    });
+
+    return grouped;
+}
+
+/**
+ * Calculate completion stats
+ */
+export function getCompletionStats(roadmap: Roadmap): { completed: number; total: number } {
+    const tasks = getTasks(roadmap);
+    const total = tasks.length;
+    const completed = tasks.filter(task => task.status === 'completed').length;
+
+    return { completed, total };
+}
+
+/**
+ * Check if roadmap is single task
+ */
+export function isSingleTask(roadmap: Roadmap): boolean {
+    return !roadmap.haveNextedRoadMaps || roadmap.roadmaps.length === 0;
+}
+
+/**
+ * Get phase number from phase string
+ * e.g., "Phase 1" -> 1
+ */
+export function getPhaseNumber(phaseString: string): number | undefined {
+    const match = phaseString.match(/\d+/);
+    return match ? parseInt(match[0], 10) : undefined;
+}
+
+/**
+ * Parse duration to months
+ */
+export function parseDurationMonths(duration: string): { min: number; max: number } {
+    const match = duration.match(/(\d+)(?:\s*-\s*(\d+))?\s*(month|week)/i);
+
+    if (match) {
+        const min = parseInt(match[1], 10);
+        const max = match[2] ? parseInt(match[2], 10) : min;
+        const unit = match[3].toLowerCase();
+
+        if (unit === 'week') {
+            return { min: Math.ceil(min / 4), max: Math.ceil(max / 4) };
+        }
+
+        return { min, max };
+    }
+
+    return { min: 1, max: 1 };
+}
