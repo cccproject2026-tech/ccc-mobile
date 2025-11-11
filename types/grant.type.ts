@@ -49,3 +49,56 @@ export interface UseGrantState {
     error: string | null;
     success: boolean;
 }
+
+export interface MicrograntApplication {
+    _id: string;
+    userId: {
+        _id: string;
+        email: string;
+    } | null;
+    formId: {
+        _id: string;
+        title: string;
+    };
+    answers: GrantApplicationData;
+    supportingDoc: string;
+    status: 'new' | 'pending' | 'approved' | 'rejected' | 'under_review';
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+}
+
+export interface MicrograntApplicationsApiResponse {
+    success: boolean;
+    message: string;
+    data: MicrograntApplication[];
+}
+
+export interface MicrograntApplicationDetail {
+    user: {
+        _id: string;
+        email: string;
+        role: string;
+    };
+    application: {
+        _id: string;
+        userId: string;
+        formId: {
+            _id: string;
+            title: string;
+            description: string;
+        };
+        answers: GrantApplicationData;
+        supportingDoc: string;
+        status: 'new' | 'pending' | 'approved' | 'rejected' | 'under_review';
+        createdAt: string;
+        updatedAt: string;
+        __v: number;
+    };
+}
+
+export interface MicrograntApplicationDetailApiResponse {
+    success: boolean;
+    message: string;
+    data: MicrograntApplicationDetail;
+}

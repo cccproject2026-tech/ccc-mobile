@@ -1,10 +1,13 @@
 import { icons } from '@/constants/images';
+import { useMicrograntApplication } from '@/hooks/grant/useMicrograntApplications';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useMemo } from 'react';
 import {
+    ActivityIndicator,
     Image,
+    Linking,
     ScrollView,
     StyleSheet,
     Text,
@@ -26,32 +29,99 @@ interface FormData {
     successMarkers: string;
 }
 
+/**
+ * Maps API application data to form data structure
+ */
+const mapApplicationToFormData = (answers: Record<string, string | string[] | null>): FormData => {
+    return {
+        churchName: (answers['Church Name'] as string) || '',
+        projectName: (answers['Purpose of Grant'] as string) || '',
+        projectImportance: (answers['Who does the project/program serve and why is it important?'] as string) || '',
+        amountRequested: (answers['Amount requested'] as string) || '',
+        denominationalSupport: (answers['Project amount of denominational support'] as string) || '',
+        actionSteps: (answers['What action steps will you take to achieve your goals?'] as string) || '',
+        resources: (answers['What resources do you already have?'] as string) || '',
+        leadership: (answers['Who will be leading and overseeing the project/program?'] as string) || '',
+        successMarkers: (answers['What are the measurable markers of your success?'] as string) || '',
+    };
+};
+
+/**
+ * Formats date from ISO string to US format
+ */
+const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'numeric', 
+        day: 'numeric' 
+    });
+};
+
 export default function MicroGrantApplicationScreen() {
     const router = useRouter();
-    const [formData, setFormData] = useState<FormData>({
-        churchName: 'Lorem ipsum dolor sit amet',
-        projectName: 'Lorem ipsum dolor sit amet',
-        projectImportance: 'Lorem ipsum dolor sit amet',
-        amountRequested: 'Lorem ipsum dolor sit amet',
-        denominationalSupport: 'Lorem ipsum dolor sit amet',
-        actionSteps: 'Lorem ipsum dolor sit amet',
-        resources: 'Lorem ipsum dolor sit amet',
-        leadership: 'Lorem ipsum dolor sit amet',
-        successMarkers: 'Lorem ipsum dolor sit amet',
-    });
-
+    const { applicationId } = useLocalSearchParams<{ applicationId: string }>();
     const { bottom } = useSafeAreaInsets();
 
-    const updateField = (field: keyof FormData, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
+    // Fetch application data from API
+    const { data: applicationData, isLoading, error } = useMicrograntApplication(applicationId || '');
 
-    const handleDownloadFile = () => {
-        console.log('Download file');
+    // Map API data to form data
+    const formData = useMemo(() => {
+        if (!applicationData?.application?.answers) {
+            return {
+                churchName: '',
+                projectName: '',
+                projectImportance: '',
+                amountRequested: '',
+                denominationalSupport: '',
+                actionSteps: '',
+                resources: '',
+                leadership: '',
+                successMarkers: '',
+            };
+        }
+        return mapApplicationToFormData(applicationData.application.answers);
+    }, [applicationData]);
+
+    const handleDownloadFile = async () => {
+        const docUrl = applicationData?.application?.supportingDoc;
+        if (docUrl) {
+            try {
+                const canOpen = await Linking.canOpenURL(docUrl);
+                if (canOpen) {
+                    await Linking.openURL(docUrl);
+                } else {
+                    console.log('Cannot open URL:', docUrl);
+                }
+            } catch (error) {
+                console.error('Error opening file:', error);
+            }
+        }
     };
 
     const handleNext = () => {
         router.push('/(director)/(tabs)/micro-grant/reporting-procedure');
+    };
+
+    const handleCall = () => {
+        // Phone number would need to be in the user data or answers
+        console.log('Call user');
+    };
+
+    const handleChat = () => {
+        console.log('Chat with user');
+    };
+
+    const handleMail = () => {
+        const email = applicationData?.user?.email;
+        if (email) {
+            Linking.openURL(`mailto:${email}`);
+        }
+    };
+
+    const handleWhatsApp = () => {
+        console.log('WhatsApp user');
     };
 
     return (
@@ -68,45 +138,73 @@ export default function MicroGrantApplicationScreen() {
                         }]}
                         showsVerticalScrollIndicator={false}
                     >
-                        {/* Header */}
-                        <View style={styles.headerContainer}>
-                            <View style={styles.headerCard}>
-                                <Text style={styles.headerText}>
-                                    The Center for Community Change{'\n'}
-                                    Micro-Grant Application
-                                </Text>
+                        {isLoading ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator color="#fff" size="large" />
+                                <Text style={styles.loadingText}>Loading application...</Text>
                             </View>
-                        </View>
-
-                        <View style={styles.profileCard}>
-                            <View style={styles.profileHeader}>
-                                <View style={styles.profileInfo}>
-                                    <Image
-                                        source={icons.myProfile}
-                                        style={styles.avatar}
-                                        resizeMode="cover"
-                                    />
-                                    <View>
-                                        <Text style={styles.userName}>John Doe</Text>
-                                        <Text style={styles.userRole}>Pastor</Text>
+                        ) : error ? (
+                            <View style={styles.errorContainer}>
+                                <Text style={styles.errorText}>Error loading application</Text>
+                                <Text style={styles.errorSubtext}>{error.message}</Text>
+                            </View>
+                        ) : !applicationData ? (
+                            <View style={styles.errorContainer}>
+                                <Text style={styles.errorText}>Application not found</Text>
+                            </View>
+                        ) : (
+                            <>
+                                {/* Header */}
+                                <View style={styles.headerContainer}>
+                                    <View style={styles.headerCard}>
+                                        <Text style={styles.headerText}>
+                                            The Center for Community Change{'\n'}
+                                            Micro-Grant Application
+                                        </Text>
                                     </View>
                                 </View>
-                                <TouchableOpacity style={styles.viewProfileButton}>
-                                    <Text style={styles.viewProfileText}>View Profile</Text>
-                                </TouchableOpacity>
-                            </View>
 
-                            <View style={styles.contactIcons}>
-                                <Ionicons name="call-outline" size={18} color="white" />
-                                <Ionicons name="chatbubble-outline" size={18} color="white" />
-                                <Ionicons name="mail-outline" size={18} color="white" />
-                                <Ionicons name="logo-whatsapp" size={18} color="white" />
-                            </View>
+                                <View style={styles.profileCard}>
+                                    <View style={styles.profileHeader}>
+                                        <View style={styles.profileInfo}>
+                                            <Image
+                                                source={icons.myProfile}
+                                                style={styles.avatar}
+                                                resizeMode="cover"
+                                            />
+                                            <View>
+                                                <Text style={styles.userName}>
+                                                    {applicationData.user?.email || 'Unknown User'}
+                                                </Text>
+                                                <Text style={styles.userRole}>
+                                                    {applicationData.application.formId.title || 'Applicant'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <TouchableOpacity style={styles.viewProfileButton}>
+                                            <Text style={styles.viewProfileText}>View Profile</Text>
+                                        </TouchableOpacity>
+                                    </View>
 
-                            <Text style={styles.applicationDate}>
-                                Application received on 8/20/2024
-                            </Text>
-                        </View>
+                                    <View style={styles.contactIcons}>
+                                        <TouchableOpacity onPress={handleCall}>
+                                            <Ionicons name="call-outline" size={18} color="white" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={handleChat}>
+                                            <Ionicons name="chatbubble-outline" size={18} color="white" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={handleMail}>
+                                            <Ionicons name="mail-outline" size={18} color="white" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={handleWhatsApp}>
+                                            <Ionicons name="logo-whatsapp" size={18} color="white" />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    <Text style={styles.applicationDate}>
+                                        Application received on {formatDate(applicationData.application.createdAt)}
+                                    </Text>
+                                </View>
 
                         <View style={styles.formContainer}>
                             <View style={styles.formCard}>
@@ -123,7 +221,7 @@ export default function MicroGrantApplicationScreen() {
                                 </Text>
                                 <TextInput
                                     value={formData.churchName}
-                                    onChangeText={(text) => updateField('churchName', text)}
+                                    editable={false}
                                     style={styles.textInput}
                                     placeholderTextColor="rgba(255,255,255,0.5)"
                                     multiline
@@ -140,7 +238,7 @@ export default function MicroGrantApplicationScreen() {
                                 </Text>
                                 <TextInput
                                     value={formData.projectName}
-                                    onChangeText={(text) => updateField('projectName', text)}
+                                    editable={false}
                                     style={styles.textInput}
                                     placeholderTextColor="rgba(255,255,255,0.5)"
                                     multiline
@@ -159,7 +257,7 @@ export default function MicroGrantApplicationScreen() {
                                 </Text>
                                 <TextInput
                                     value={formData.projectImportance}
-                                    onChangeText={(text) => updateField('projectImportance', text)}
+                                    editable={false}
                                     style={styles.textInput}
                                     placeholderTextColor="rgba(255,255,255,0.5)"
                                     multiline
@@ -175,7 +273,7 @@ export default function MicroGrantApplicationScreen() {
                                 </Text>
                                 <TextInput
                                     value={formData.amountRequested}
-                                    onChangeText={(text) => updateField('amountRequested', text)}
+                                    editable={false}
                                     style={styles.textInput}
                                     placeholderTextColor="rgba(255,255,255,0.5)"
                                     multiline
@@ -193,7 +291,7 @@ export default function MicroGrantApplicationScreen() {
                                 </Text>
                                 <TextInput
                                     value={formData.denominationalSupport}
-                                    onChangeText={(text) => updateField('denominationalSupport', text)}
+                                    editable={false}
                                     style={styles.textInput}
                                     placeholderTextColor="rgba(255,255,255,0.5)"
                                     multiline
@@ -211,7 +309,7 @@ export default function MicroGrantApplicationScreen() {
                                 </Text>
                                 <TextInput
                                     value={formData.actionSteps}
-                                    onChangeText={(text) => updateField('actionSteps', text)}
+                                    editable={false}
                                     style={styles.textInput}
                                     placeholderTextColor="rgba(255,255,255,0.5)"
                                     multiline
@@ -228,7 +326,7 @@ export default function MicroGrantApplicationScreen() {
                                 </Text>
                                 <TextInput
                                     value={formData.resources}
-                                    onChangeText={(text) => updateField('resources', text)}
+                                    editable={false}
                                     style={styles.textInput}
                                     placeholderTextColor="rgba(255,255,255,0.5)"
                                     multiline
@@ -248,7 +346,7 @@ export default function MicroGrantApplicationScreen() {
                                 </Text>
                                 <TextInput
                                     value={formData.leadership}
-                                    onChangeText={(text) => updateField('leadership', text)}
+                                    editable={false}
                                     style={styles.textInput}
                                     placeholderTextColor="rgba(255,255,255,0.5)"
                                     multiline
@@ -267,7 +365,7 @@ export default function MicroGrantApplicationScreen() {
                                 </Text>
                                 <TextInput
                                     value={formData.successMarkers}
-                                    onChangeText={(text) => updateField('successMarkers', text)}
+                                    editable={false}
                                     style={styles.textInput}
                                     placeholderTextColor="rgba(255,255,255,0.5)"
                                     multiline
@@ -292,6 +390,8 @@ export default function MicroGrantApplicationScreen() {
                                 <Text style={styles.nextButtonText}>Next</Text>
                             </TouchableOpacity>
                         </View>
+                            </>
+                        )}
                     </ScrollView>
                 </SafeAreaView>
             </LinearGradient>
@@ -466,5 +566,31 @@ const styles = StyleSheet.create({
         color: '#1C4ED8',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    loadingContainer: {
+        padding: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    loadingText: {
+        color: '#fff',
+        marginTop: 12,
+        fontSize: 16,
+    },
+    errorContainer: {
+        padding: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    errorText: {
+        color: '#FF6B6B',
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 8,
+    },
+    errorSubtext: {
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontSize: 14,
+        textAlign: 'center',
     },
 });
