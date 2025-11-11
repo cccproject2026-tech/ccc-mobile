@@ -31,6 +31,7 @@ export interface AssessmentSection {
 
 export interface QuestionGroup {
     id: string;
+    groupTitle?: string;
     questions: AssessmentQuestion[];
 }
 
@@ -118,4 +119,23 @@ export interface AssessmentResponse {
     status: 'Due' | 'Not Started' | 'Submitted' | 'Completed';
     currentSectionIndex: number;
     meetingDate?: string;
+}
+
+export interface SubmitPreSurveyPayload {
+    userId: string;
+    preSurveyAnswers: Array<{
+        questionText: string;
+        answer: string | number;
+    }>;
+}
+
+export interface SubmitAnswersPayload {
+    userId: string;
+    answers: Array<{
+        sectionId: string;
+        layers: Array<{
+            layerId: string;
+            selectedChoice: string; // This will be the choice ID
+        }>;
+    }>;
 }

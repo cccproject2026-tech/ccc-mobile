@@ -4,27 +4,34 @@ import type {
     Assessment,
     AssessmentSection,
     PreSurveyQuestion,
-} from '@/types/assessment.types'; // Use your actual path
+} from '@/types/assessment.types';
 
-/**
- * Map API assessment to frontend Assessment format
- */
 export function mapApiToFrontend(apiAssessment: ApiAssessment): Assessment {
+    let assessmentType: 'CMA' | 'PMP' = 'PMP';
+
+    if (apiAssessment.type) {
+        assessmentType = apiAssessment.type;
+    } else if (apiAssessment.preSurvey && apiAssessment.preSurvey.length > 0) {
+        assessmentType = 'CMA';
+    }
+
     return {
         id: apiAssessment._id,
-        type: apiAssessment.type || 'CMA', // Default to CMA if missing
+        type: assessmentType,
         title: apiAssessment.name,
         description: apiAssessment.description,
         status: determineStatus(apiAssessment),
-        guidelines: apiAssessment.instructions,
+        guidelines: apiAssessment.instructions || [],
         preSurvey: apiAssessment.preSurvey?.map(mapPreSurveyQuestion),
-        sections: apiAssessment.sections.map(mapApiSection),
+        sections: apiAssessment.sections?.map(mapApiSection) || [],
         completedOn: apiAssessment.updatedAt,
     };
 }
 
 /**
  * Map API section to frontend section
+ * Each layer becomes a question group
+ * Each choice becomes a separate checkbox question
  */
 function mapApiSection(apiSection: ApiAssessmentSection): AssessmentSection {
     return {
@@ -32,26 +39,20 @@ function mapApiSection(apiSection: ApiAssessmentSection): AssessmentSection {
         subtitle: apiSection.description,
         questionGroups: apiSection.layers.map(layer => ({
             id: layer._id,
-            questions: [{
-                id: layer._id,
-                text: layer.title,
-                type: 'radio' as const,
-                options: layer.choices.map(choice => ({
-                    label: choice.text,
-                    value: choice._id,
-                })),
+            groupTitle: layer.title, // "Group 1", "Group 2", etc.
+            questions: layer.choices.map(choice => ({
+                id: choice._id,
+                text: choice.text,
+                type: 'checkbox' as const,
                 required: false,
-            }],
+            })),
         })),
     };
 }
 
-/**
- * Map pre-survey question
- */
 function mapPreSurveyQuestion(q: PreSurveyQuestion): PreSurveyQuestion {
     return {
-        id: q._id || q.id,
+        id: q._id || q.id || '',
         _id: q._id,
         text: q.text,
         type: q.type,
@@ -60,9 +61,6 @@ function mapPreSurveyQuestion(q: PreSurveyQuestion): PreSurveyQuestion {
     };
 }
 
-/**
- * Determine assessment status from assignments
- */
 function determineStatus(apiAssessment: ApiAssessment): Assessment['status'] {
     if (!apiAssessment.assignments || apiAssessment.assignments.length === 0) {
         return 'Not Started';

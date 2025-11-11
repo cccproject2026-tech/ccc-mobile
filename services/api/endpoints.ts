@@ -50,7 +50,8 @@ export const ENDPOINTS = {
         GET_ASSESSMENT_BY_ID: (assessmentId: string) => `/assessment/${assessmentId}`,
         ASSIGN_ASSESSMENT: (assessmentId: string) => `/assessment/${assessmentId}/assign`,
         CREATE_ASSESSMENT: '/assessment',
-        SUBMIT_ASSESSMENT: (id: string) => `/assessment/${id}/submit`,
+        SUBMIT_ASSESSMENT_ANSWERS: (id: string) => `/assessment/${id}/answers`,
+        SUBMIT_ASSESSMENT_PRESURVEY: (id: string) => `/assessment/${id}/pre-survey`,
         FETCH_ANSWERS: (assessmentId: string, userId: string) =>
             `/assessment/${assessmentId}/answers/${userId}`,
         DELETE_ASSESSMENT: (assessmentId: string) => `/assessment/${assessmentId}`,

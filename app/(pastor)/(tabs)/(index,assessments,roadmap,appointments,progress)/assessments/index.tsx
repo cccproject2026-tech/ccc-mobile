@@ -291,7 +291,6 @@ import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { useAssessments } from "@/hooks/assessments";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
-import { useAssessmentStore } from "@/stores/assessment.store";
 import type { ApiAssessment, Assessment } from "@/types/assessment.types";
 import { getFontSize, getIconSize, getSpacing } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
@@ -322,9 +321,6 @@ export default function Survey() {
         if (!data) return [];
         return (data as ApiAssessment[]).map(mapApiToFrontend);
     }, [data]);
-
-    // Get draft responses from Zustand store
-    const draftResponses = useAssessmentStore((state) => state.draftResponses);
 
     // PMP Bottom Sheet state
     const pmpBottomSheetRef = useRef<BottomSheetModal>(null);

@@ -1,5 +1,5 @@
-import { useAssessment } from '@/context/AssessmentsContext';
-import { Assessment, AssessmentQuestion, QuestionGroup } from '@/lib/assessments/types';
+import { useAssessmentStore } from '@/stores/assessment.store';
+import { Assessment, AssessmentQuestion, QuestionGroup } from '@/types/assessment.types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
@@ -16,7 +16,7 @@ interface AssessmentQuestionsSectionProps {
     assessment: Assessment;
     assessmentId: string;
     isViewMode: boolean;
-    onSubmit: () => void;
+    onSubmit: (sectionAnswers: Record<number, Record<string, any>>) => void;
 }
 
 export default function AssessmentQuestionsSection({
@@ -25,9 +25,10 @@ export default function AssessmentQuestionsSection({
     isViewMode,
     onSubmit
 }: AssessmentQuestionsSectionProps) {
-    const { saveResponse, getResponse, completeAssessment } = useAssessment();
+    const getDraft = useAssessmentStore((state) => state.getDraft);
+    const saveDraft = useAssessmentStore((state) => state.saveDraft);
 
-    const previousResponse = getResponse(assessmentId);
+    const previousResponse = getDraft(assessmentId);
     const [answers, setAnswers] = useState<Record<number, Record<string, any>>>(
         previousResponse?.sectionAnswers || {}
     );
@@ -47,13 +48,13 @@ export default function AssessmentQuestionsSection({
     }, [answers, currentSectionIndex]);
 
     const saveProgress = async () => {
-        await saveResponse(assessmentId, {
+        saveDraft(assessmentId, {
             assessmentId,
             assessmentType: assessment.type,
             assessmentTitle: assessment.title,
             preSurveyAnswers: previousResponse?.preSurveyAnswers,
             sectionAnswers: answers,
-            status: 'Submitted',
+            status: 'Not Started',
             currentSectionIndex,
         });
     };
@@ -141,8 +142,8 @@ export default function AssessmentQuestionsSection({
                 {
                     text: "Submit",
                     onPress: async () => {
-                        await completeAssessment(assessmentId);
-                        onSubmit();
+                        // Pass answers to parent for API submission
+                        onSubmit(answers);
                     }
                 }
             ]
@@ -179,6 +180,7 @@ export default function AssessmentQuestionsSection({
 
     const renderQuestionGroup = (group: QuestionGroup) => (
         <View key={group.id} style={styles.questionGroupCard}>
+            {/* Show group title if exists */}
             {group.questions.map(renderQuestion)}
         </View>
     );

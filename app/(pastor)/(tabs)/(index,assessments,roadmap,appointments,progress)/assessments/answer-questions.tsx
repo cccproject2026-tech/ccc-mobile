@@ -703,7 +703,9 @@ import ScheduleMeetingBottomSheet, { Mentor } from '@/components/director/Schedu
 import TopBar from '@/components/director/TopBar';
 import { Colors } from '@/constants/Colors';
 import { useAssessment } from '@/hooks/assessments';
+import { useSubmitAssessmentAnswers, useSubmitPreSurvey } from '@/hooks/assessments/useSubmitAnswers';
 import { mapApiToFrontend } from '@/lib/assessments/mappers';
+import { useAuthStore } from '@/stores';
 import { useAssessmentStore } from '@/stores/assessment.store';
 import { ApiAssessment } from '@/types/assessment.types';
 import { Ionicons } from '@expo/vector-icons';
@@ -713,17 +715,18 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
+
 export default function AnswerQuestionPage() {
     const { assessmentId, viewMode, hasPreSurvey } = useLocalSearchParams();
-
     const router = useRouter();
-
+    const { user } = useAuthStore()
     // Fetch assessment data from API
     const { data, isLoading, error } = useAssessment(assessmentId as string);
     const assessment = useMemo(() => {
@@ -731,10 +734,13 @@ export default function AnswerQuestionPage() {
         return mapApiToFrontend(data as ApiAssessment);
     }, [data]);
 
-    console.log('Assessment data:', data);
     // Get draft from store
     const getDraft = useAssessmentStore((state) => state.getDraft);
     const previousResponse = getDraft(assessmentId as string);
+
+    // Submission hooks
+    const submitPreSurvey = useSubmitPreSurvey();
+    const submitAssessmentAnswers = useSubmitAssessmentAnswers();
 
     const [showModal, setShowModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -742,13 +748,17 @@ export default function AnswerQuestionPage() {
 
     // Track if pre-survey is completed
     const [preSurveyCompleted, setPreSurveyCompleted] = useState(
-        hasPreSurvey !== 'true'
+        hasPreSurvey !== 'true' || !!previousResponse?.preSurveyAnswers
     );
 
     const scheduleMeetingBottomSheetRef = useRef<BottomSheetModal>(null);
 
     const isViewMode = viewMode === 'true';
     const showPreSurvey = hasPreSurvey === 'true' && !preSurveyCompleted && !isViewMode;
+
+    // Check if pre-survey has been submitted
+    const hasPreSurveyAnswers = !!previousResponse?.preSurveyAnswers &&
+        Object.keys(previousResponse.preSurveyAnswers).length > 0;
 
     const mockMentors: Mentor[] = [
         { id: '1', name: 'John Ross', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/1.jpg' },
@@ -759,16 +769,82 @@ export default function AnswerQuestionPage() {
         { id: '6', name: 'Lisa Anderson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/women/6.jpg' },
     ];
 
-    const handlePreSurveyComplete = () => {
-        setPreSurveyCompleted(true);
+    const handlePreSurveyComplete = async (preSurveyAnswers: Record<string, string>) => {
+        if (!assessment || !assessment.preSurvey) {
+            Alert.alert('Error', 'Assessment data not found');
+            return;
+        }
+
+        try {
+            // Transform pre-survey answers to API format
+            const payload = {
+                userId: '68ef63c4ace23a03ab8b08d5', // TODO: Get from auth context
+                preSurveyAnswers: assessment.preSurvey.map(question => ({
+                    questionText: question.text,
+                    answer: preSurveyAnswers[question.id] || ''
+                }))
+            };
+
+            // Submit pre-survey
+            await submitPreSurvey.mutateAsync({
+                assessmentId: assessmentId as string,
+                payload
+            });
+
+            // Mark pre-survey as completed
+            setPreSurveyCompleted(true);
+            Alert.alert('Success', 'Pre-survey submitted successfully!');
+        } catch (error) {
+            console.error('Failed to submit pre-survey:', error);
+            Alert.alert('Error', 'Failed to submit pre-survey. Please try again.');
+        }
     };
 
     const handlePreSurveyCancel = () => {
         router.back();
     };
 
-    const handleAssessmentSubmit = () => {
-        setShowModal(true);
+    const handleAssessmentSubmit = async (sectionAnswers: Record<number, Record<string, any>>) => {
+        if (!assessment || !data) {
+            Alert.alert('Error', 'Assessment data not found');
+            return;
+        }
+
+        try {
+            // Transform section answers to API format
+            const answers = Object.entries(sectionAnswers).map(([sectionIndex, layerAnswers]) => {
+                const section = data.sections[parseInt(sectionIndex)];
+
+                const layers = Object.entries(layerAnswers).map(([layerId, selectedChoices]) => ({
+                    layerId,
+                    selectedChoice: Array.isArray(selectedChoices)
+                        ? selectedChoices[0] // If multiple, take first (adjust based on backend requirements)
+                        : selectedChoices as string
+                }));
+
+                return {
+                    sectionId: section._id,
+                    layers
+                };
+            });
+
+            const payload = {
+                userId: user?.id as string, // TODO: Get from auth context
+                answers
+            };
+
+            // Submit assessment answers
+            await submitAssessmentAnswers.mutateAsync({
+                assessmentId: assessmentId as string,
+                payload
+            });
+
+            // Show modal after successful submission
+            setShowModal(true);
+        } catch (error) {
+            console.error('Failed to submit assessment:', error);
+            Alert.alert('Error', 'Failed to submit assessment. Please try again.');
+        }
     };
 
     const handleScheduleMeeting = () => {
@@ -806,11 +882,15 @@ export default function AnswerQuestionPage() {
     };
 
     // Loading state
-    if (isLoading) {
+    if (isLoading || submitPreSurvey.isPending || submitAssessmentAnswers.isPending) {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                 <ActivityIndicator size="large" color="#fff" />
-                <Text style={{ color: '#fff', marginTop: 16 }}>Loading assessment...</Text>
+                <Text style={{ color: '#fff', marginTop: 16 }}>
+                    {submitPreSurvey.isPending ? 'Submitting pre-survey...' :
+                        submitAssessmentAnswers.isPending ? 'Submitting assessment...' :
+                            'Loading assessment...'}
+                </Text>
             </LinearGradient>
         );
     }
@@ -842,6 +922,7 @@ export default function AnswerQuestionPage() {
                     assessmentId={assessmentId as string}
                     onComplete={handlePreSurveyComplete}
                     onCancel={handlePreSurveyCancel}
+                    hasExistingAnswers={hasPreSurveyAnswers}
                 />
             ) : (
                 <AssessmentQuestionsSection

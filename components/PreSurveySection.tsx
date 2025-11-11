@@ -1,5 +1,5 @@
-import { useAssessment } from '@/context/AssessmentsContext';
 import { Assessment, PreSurveyQuestion } from '@/lib/assessments/types';
+import { useAssessmentStore } from '@/stores/assessment.store';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
@@ -16,19 +16,22 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 interface PreSurveySectionProps {
     assessment: Assessment;
     assessmentId: string;
-    onComplete: () => void;
+    onComplete: (answers: Record<string, string>) => void;
     onCancel: () => void;
+    hasExistingAnswers?: boolean;
 }
 
 export default function PreSurveySection({
     assessment,
     assessmentId,
     onComplete,
-    onCancel
+    onCancel,
+    hasExistingAnswers = false
 }: PreSurveySectionProps) {
-    const { saveResponse, getResponse } = useAssessment();
+    const getDraft = useAssessmentStore((state) => state.getDraft);
+    const saveDraft = useAssessmentStore((state) => state.saveDraft);
 
-    const previousResponse = getResponse(assessmentId);
+    const previousResponse = getDraft(assessmentId);
     const [answers, setAnswers] = useState<Record<string, string>>(
         previousResponse?.preSurveyAnswers || {}
     );
@@ -48,23 +51,24 @@ export default function PreSurveySection({
             return;
         }
 
-        // Save pre-survey responses
-        await saveResponse(assessmentId, {
+        // Save to draft store temporarily
+        saveDraft(assessmentId, {
             assessmentId,
             assessmentType: assessment.type,
             assessmentTitle: assessment.title,
             preSurveyAnswers: answers,
             sectionAnswers: previousResponse?.sectionAnswers || {},
-            status: 'Submitted',
+            status: 'Not Started',
             currentSectionIndex: 0,
         });
 
-        onComplete();
+        // Pass answers to parent for API submission
+        onComplete(answers);
     };
 
     return (
         <>
-            {/* Header Section - Outside ScrollView */}
+            {/* Header Section */}
             <View style={styles.headerContainer}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={onCancel} style={styles.backButton}>
@@ -121,7 +125,9 @@ export default function PreSurveySection({
                         onPress={handleSubmit}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.submitButtonText}>Submit</Text>
+                        <Text style={styles.submitButtonText}>
+                            {hasExistingAnswers ? 'Continue' : 'Submit'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </KeyboardAwareScrollView>

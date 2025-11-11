@@ -7,6 +7,7 @@ import WelcomeCard from "@/components/director/WelcomeCard";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useProfile } from '@/hooks/profile/useProfile';
+import { useAuthStore } from '@/stores';
 import { formatClock, formatDate } from "@/utils/date";
 import { LinearGradient } from "expo-linear-gradient";
 import { Route, useRouter } from "expo-router";
@@ -26,6 +27,7 @@ export default function PastorDashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
+  const { user } = useAuthStore();
   const { data, isLoading, isError, error } = useProfile();
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);

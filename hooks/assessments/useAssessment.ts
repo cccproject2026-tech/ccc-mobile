@@ -1,5 +1,5 @@
-import { ApiAssessment } from '@/lib/assessments/types';
 import { assessmentService } from '@/services';
+import { ApiAssessment } from '@/types/assessment.types';
 import { useQuery } from '@tanstack/react-query';
 
 export const useAssessment = (assessmentId: string | undefined) => {

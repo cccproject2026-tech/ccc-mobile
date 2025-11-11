@@ -1104,15 +1104,22 @@ interface Props {
 
 export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
     const router = useRouter();
-    const { user } = useAuthStore(); // Get userId from auth context
+    const { user } = useAuthStore();
 
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+    // Validate MongoDB ObjectId format
+    const isValidObjectId = (id: string | undefined) => {
+        if (!id) return false;
+        return /^[0-9a-fA-F]{24}$/.test(id);
+    };
+
     // Fetch existing extras data
     const { data: existingExtras, isLoading: isLoadingExtras } = useRoadmapExtras(
-        roadmapId,
-        itemId
+        isValidObjectId(roadmapId) ? roadmapId : undefined,
+        isValidObjectId(itemId) ? itemId : undefined,
+        isValidObjectId(user?.id) ? user?.id : undefined
     );
 
     // Mutations
@@ -1125,22 +1132,22 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
     // Initialize form data
     useEffect(() => {
         if (existingExtras?.extras && Array.isArray(existingExtras.extras)) {
-            // Convert extras array back to formData object
             const loadedData: Record<string, any> = {};
             existingExtras.extras.forEach((item: any) => {
-                if (item.fieldName && item.value !== undefined) {
-                    loadedData[item.fieldName] = item.value;
+                if (item.name && item.value !== undefined) {
+                    loadedData[item.name] = item.value;
                 }
             });
+            console.log('📥 Loaded existing data:', loadedData);
             setFormData(loadedData);
         } else {
-            // Load default values
             const initialData: Record<string, any> = {};
             task.extras?.forEach(extra => {
                 if (extra.date) {
                     initialData[extra.name] = extra.date;
                 }
             });
+            console.log('🆕 Using default data:', initialData);
             setFormData(initialData);
         }
     }, [existingExtras, task]);
@@ -1149,14 +1156,95 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
         setFormData(prev => ({ ...prev, [fieldName]: value }));
     };
 
+    // Helper to get all required checkboxes
+    const getRequiredCheckboxes = (): Extra[] => {
+        const requiredCheckboxes: Extra[] = [];
+
+        const findCheckboxes = (extras: Extra[]) => {
+            extras.forEach(extra => {
+                if (extra.type === 'CHECKBOX' && !extra.haveButton) {
+                    requiredCheckboxes.push(extra);
+                }
+
+                // Check nested checkboxes in DATE_PICKER, SECTION, etc.
+                if (extra.checkboxes) {
+                    extra.checkboxes.forEach(cb => {
+                        if (!cb.haveButton) {
+                            requiredCheckboxes.push(cb as any);
+                        }
+                    });
+                }
+
+                // Check nested sections
+                if (extra.sections) {
+                    findCheckboxes(extra.sections);
+                }
+            });
+        };
+
+        findCheckboxes(task.extras || []);
+        return requiredCheckboxes;
+    };
+
+    // Get submit button text
+    const getSubmitButtonText = (): string => {
+        if (isUpdateMode) return 'Update';
+
+        // Find the first checkbox with haveButton: false and buttonName
+        const requiredCheckboxes = getRequiredCheckboxes();
+        const checkboxWithButtonName = requiredCheckboxes.find(cb => cb.buttonName);
+
+        if (checkboxWithButtonName) {
+            // Check if all required checkboxes are checked
+            const allChecked = requiredCheckboxes.every(cb => formData[cb.name] === true);
+
+            if (!allChecked) {
+                return checkboxWithButtonName.buttonName || 'Submit';
+            }
+        }
+
+        return 'Submit';
+    };
+
+    // Validate form - all required checkboxes must be checked
     const validateForm = (): boolean => {
-        // Add validation logic
+        const requiredCheckboxes = getRequiredCheckboxes();
+
+        // Check if all required checkboxes (haveButton: false) are checked
+        const allCheckboxesChecked = requiredCheckboxes.every(cb => {
+            return formData[cb.name] === true;
+        });
+
+        if (!allCheckboxesChecked) {
+            Alert.alert(
+                'Validation Error',
+                'Please check all required items before submitting'
+            );
+            return false;
+        }
+
+        // Check if there's at least some data
         return Object.keys(formData).length > 0;
+    };
+
+    // Helper to get the correct type for each field
+    const getExtraType = (fieldName: string, value: any): string => {
+        const extraDef = task.extras?.find(e => e.name === fieldName);
+
+        if (extraDef) {
+            return extraDef.type;
+        }
+
+        // Fallback to inferring from value
+        if (typeof value === 'boolean') return 'CHECKBOX';
+        if (typeof value === 'object' && value.uri) return 'UPLOAD';
+        if (fieldName.toLowerCase().includes('date')) return 'DATE_PICKER';
+        if (typeof value === 'string' && value.length > 100) return 'TEXT_AREA';
+        return 'TEXT_FIELD';
     };
 
     const handleSubmit = async () => {
         if (!validateForm()) {
-            Alert.alert('Validation Error', 'Please fill in all required fields');
             return;
         }
 
@@ -1166,23 +1254,24 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
         }
 
         try {
-            // Convert formData object to extras array format for backend
-            const extrasArray = Object.entries(formData).map(([fieldName, value]) => ({
-                fieldName,
-                value,
-                type: typeof value,
+            const extrasArray = Object.entries(formData).map(([name, value]) => ({
+                type: getExtraType(name, value),
+                name: name,
+                value: value,
             }));
 
+            console.log('📤 Submitting extras:', extrasArray);
+
             if (isUpdateMode) {
-                // Update existing extras
                 await updateExtras.mutateAsync({
                     roadMapId: roadmapId!,
                     payload: {
                         extras: extrasArray,
                     },
+                    userId: user.id,
+                    nestedRoadMapItemId: itemId,
                 });
             } else {
-                // Create new extras
                 await createExtras.mutateAsync({
                     userId: user.id,
                     roadMapId: roadmapId!,
@@ -1191,16 +1280,14 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 });
             }
 
-            // Show success modal
             setShowSuccessModal(true);
-
-            // Navigate back after 2 seconds
             setTimeout(() => {
                 setShowSuccessModal(false);
                 router.back();
             }, 2000);
 
         } catch (error: any) {
+            console.error('❌ Submission error:', error);
             Alert.alert(
                 'Submission Failed',
                 error.message || 'Failed to submit. Please try again.'
@@ -1282,6 +1369,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                             </View>
                         )}
 
+                        {/* Only show button if haveButton is true */}
                         {extra.haveButton && extra.buttonName && (
                             <Pressable style={styles.button} onPress={() => console.log('Button pressed')}>
                                 <Text style={styles.buttonText}>{extra.buttonName}</Text>
@@ -1366,6 +1454,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                                 <Text style={styles.checkboxLabel}>{checkbox.name}</Text>
                                             </Pressable>
 
+                                            {/* Only show button if haveButton is true */}
                                             {checkbox.haveButton && checkbox.buttonName && (
                                                 <Pressable style={styles.button} onPress={() => console.log('Button pressed')}>
                                                     <Text style={styles.buttonText}>{checkbox.buttonName}</Text>
@@ -1388,8 +1477,6 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 );
 
             case 'UPLOAD':
-                // File upload handling would go here
-                // For now, simplified version
                 return (
                     <View key={fieldId} style={styles.fieldContainer}>
                         <Pressable
@@ -1400,7 +1487,6 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                     multiple: false,
                                 });
                                 if (!res.canceled && res.assets[0]) {
-                                    // Store file info in formData
                                     handleChange(extra.name, {
                                         uri: res.assets[0].uri,
                                         name: res.assets[0].name,
@@ -1464,7 +1550,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         <ActivityIndicator color="#1e40af" />
                     ) : (
                         <Text style={styles.signButtonText}>
-                            {isUpdateMode ? 'Update' : 'Submit'}
+                            {getSubmitButtonText()}
                         </Text>
                     )}
                 </Pressable>
@@ -1473,11 +1559,12 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
             <SimpleSuccessModal
                 visible={showSuccessModal}
                 onClose={() => setShowSuccessModal(false)}
-                title={`Task ${isUpdateMode ? 'Updated' : 'Completed'}!&#10;Your submission has been recorded successfully.`}
+                title={`Task ${isUpdateMode ? 'Updated' : 'Completed'} Your submission has been recorded successfully.`}
             />
         </>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
@@ -1648,13 +1735,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         marginTop: 8,
     },
-    textDisplay: {
-        paddingVertical: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 24,
-    },
     linkButton: {
         paddingVertical: 20,
         borderTopWidth: 1,
@@ -1671,10 +1751,18 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         textDecorationLine: 'underline',
     },
+    textDisplay: {
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        alignItems: 'center',        //
+        justifyContent: 'center',
+        marginBottom: 24,
+    },
     textDisplayText: {
         color: 'white',
         fontSize: 16,
         fontWeight: '500',
+        textAlign: 'center',
     },
     assessmentButton: {
         backgroundColor: 'rgba(64, 156, 186, 0.5)',

@@ -29,12 +29,18 @@ export function useRoadmap(roadmapId: string | undefined) {
  */
 export function useRoadmapExtras(
     roadmapId: string | undefined,
-    nestedRoadMapItemId?: string
+    nestedRoadMapItemId?: string,
+    userId?: string
 ) {
     return useQuery({
-        queryKey: ['roadmap-extras', roadmapId, nestedRoadMapItemId],
-        queryFn: () => roadmapService.getRoadmapExtras(roadmapId!, nestedRoadMapItemId),
-        enabled: !!roadmapId,
+        queryKey: ['roadmap-extras', roadmapId, nestedRoadMapItemId, userId],
+        queryFn: () => roadmapService.getRoadmapExtras(
+            roadmapId!,
+            nestedRoadMapItemId,
+            userId
+        ),
+        // Only fetch if roadmapId is valid (24 char hex string)
+        enabled: !!roadmapId && roadmapId.length === 24,
         staleTime: 2 * 60 * 1000,
     });
 }
@@ -70,8 +76,8 @@ export function useUpdateRoadmapExtras() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ roadMapId, payload }: { roadMapId: string; payload: UpdateExtrasDto }) =>
-            roadmapService.updateRoadmapExtras(roadMapId, payload),
+        mutationFn: ({ roadMapId, payload, userId, nestedRoadMapItemId }: { roadMapId: string; payload: UpdateExtrasDto; userId: string; nestedRoadMapItemId: string | undefined }) =>
+            roadmapService.updateRoadmapExtras(roadMapId, payload, userId, nestedRoadMapItemId),
         onSuccess: (data, variables) => {
             // Invalidate relevant queries
             queryClient.invalidateQueries({
