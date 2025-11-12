@@ -4,7 +4,9 @@ import { NestedRoadmap, Roadmap, RoadmapCardStatus } from './types';
 /**
  * Get status for card display
  */
-export function getCardStatus(roadmap: Roadmap | NestedRoadmap): RoadmapCardStatus {
+export function getCardStatus(roadmap: Roadmap | NestedRoadmap | undefined | null): RoadmapCardStatus {
+    if (!roadmap) return 'initial';
+    
     const statusMap: Record<string, RoadmapCardStatus> = {
         'not started': 'initial',
         'in-progress': 'in-progress',
@@ -19,7 +21,7 @@ export function getCardStatus(roadmap: Roadmap | NestedRoadmap): RoadmapCardStat
  * Get all tasks for a roadmap (nested roadmaps)
  */
 export function getTasks(roadmap: Roadmap): NestedRoadmap[] {
-    return roadmap.roadmaps || [];
+    return (roadmap?.roadmaps || []).filter(task => task != null);
 }
 
 /**
@@ -28,8 +30,9 @@ export function getTasks(roadmap: Roadmap): NestedRoadmap[] {
 export function getTasksByDivision(roadmap: Roadmap): Record<string, NestedRoadmap[]> {
     const grouped: Record<string, NestedRoadmap[]> = {};
 
-    roadmap.roadmaps?.forEach(task => {
-        const division = task.phase;
+    roadmap?.roadmaps?.forEach(task => {
+        if (!task) return;
+        const division = task.phase || 'default';
         if (!grouped[division]) {
             grouped[division] = [];
         }
@@ -45,7 +48,7 @@ export function getTasksByDivision(roadmap: Roadmap): Record<string, NestedRoadm
 export function getCompletionStats(roadmap: Roadmap): { completed: number; total: number } {
     const tasks = getTasks(roadmap);
     const total = tasks.length;
-    const completed = tasks.filter(task => task.status === 'completed').length;
+    const completed = tasks.filter(task => task && task.status === 'completed').length;
 
     return { completed, total };
 }
@@ -54,7 +57,7 @@ export function getCompletionStats(roadmap: Roadmap): { completed: number; total
  * Check if roadmap is single task
  */
 export function isSingleTask(roadmap: Roadmap): boolean {
-    return !roadmap.haveNextedRoadMaps || roadmap.roadmaps.length === 0;
+    return !roadmap?.haveNextedRoadMaps || !roadmap?.roadmaps || roadmap.roadmaps.length === 0;
 }
 
 /**

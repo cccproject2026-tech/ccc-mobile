@@ -69,7 +69,9 @@ export default function RevitalizationRoadmap() {
   
   // Transform roadmaps to RoadmapCardData
   const roadmapLibrary: RoadmapCardData[] = useMemo(() => {
-    return roadmaps.map(roadmap => getRoadmapCard(roadmap));
+    return roadmaps
+      .filter(roadmap => roadmap != null) // Filter out null/undefined roadmaps
+      .map(roadmap => getRoadmapCard(roadmap));
   }, [roadmaps]);
 
   const getFilterOptions = (): FilterOption[] => {
@@ -263,6 +265,7 @@ export default function RevitalizationRoadmap() {
   const handlePhasePress = useCallback((roadmapData: RoadmapCardData) => {
     // Find the corresponding roadmap by title
     const roadmap = roadmaps.find(r => r.name === roadmapData.title);
+    console.log('roadmap', roadmap);
     
     if (!roadmap) return;
 
