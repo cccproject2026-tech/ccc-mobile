@@ -7,6 +7,7 @@ import {
     RoadmapResponse,
     UpdateExtrasDto
 } from '@/lib/roadmap/types';
+import { CreateRoadmapRequest, CreateRoadmapResponse } from '@/lib/roadmaps/types';
 import { apiClient } from './api/client';
 
 export const roadmapService = {
@@ -16,6 +17,14 @@ export const roadmapService = {
             throw new Error(response.data.message || 'Failed to fetch roadmaps');
         }
         return response.data.data;
+    },
+
+    async createRoadmap(payload: CreateRoadmapRequest) {
+        const response = await apiClient.post<CreateRoadmapResponse>('/roadmaps', payload);
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to create roadmap');
+        }
+        return response.data;
     },
 
     async getRoadmapById(roadmapId: string) {

@@ -1,7 +1,7 @@
 // Roadmap API Types
 
 export interface RoadmapExtra {
-  type: 'TEXT_AREA' | 'TEXT_DISPLAY' | 'CHECKBOX' | 'DATE_PICKER' | 'TEXT_FIELD' | 'SECTION';
+  type: 'TEXT_AREA' | 'TEXT_DISPLAY' | 'CHECKBOX' | 'DATE_PICKER' | 'TEXT_FIELD' | 'SECTION' | 'UPLOAD' | 'ASSESSMENT';
   name: string;
   placeHolder?: string;
   date?: string;
@@ -32,6 +32,7 @@ export interface CreateRoadmapRequest {
   divisions: string[];
   phase?: string;
   totalSteps?: number;
+  extras?: RoadmapExtra[];
   roadmaps?: RoadmapItem[];
 }
 

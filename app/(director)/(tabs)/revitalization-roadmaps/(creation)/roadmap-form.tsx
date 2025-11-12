@@ -394,6 +394,7 @@ export default function RoadmapFormScreen() {
         divisions: state.phaseDetails?.phaseDivisions || [roadmapData.selectedDivision.toLowerCase()],
         phase: "Phase 1",
         totalSteps: state.roadmaps.length,
+        extras: extras.length > 0 ? extras : undefined,
         roadmaps,
       };
     } else {
