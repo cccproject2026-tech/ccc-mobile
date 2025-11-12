@@ -2,89 +2,16 @@ import ActionBottomSheet from '@/components/director/ActionSheetModal';
 import InterestCard, { Interest } from '@/components/director/InterestCard';
 import SearchBar from '@/components/director/SearchBar';
 import TopBar from '@/components/director/TopBar';
+import { useMicrograntApplications } from '@/hooks/grant/useMicrograntApplications';
+import { MicrograntApplication } from '@/types/grant.type';
+import { mapMicrograntApplicationToInterest } from '@/utils/interests';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-
-const mockInterests: (Interest & { status: 'new' | 'pending' | 'approved' })[] = [
-    {
-        id: '1',
-        name: 'John Doe',
-        role: 'Pastor',
-        time: '5 Days Ago',
-        status: 'new',
-        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-    },
-    {
-        id: '2',
-        name: 'Jane Smith',
-        role: 'Pastor',
-        time: '3 Days Ago',
-        status: 'pending',
-        profileImage: 'https://randomuser.me/api/portraits/women/44.jpg',
-    },
-    {
-        id: '3',
-        name: 'John Ross',
-        role: 'Pastor',
-        time: '5 Days Ago',
-        status: 'new',
-        profileImage: 'https://randomuser.me/api/portraits/men/33.jpg',
-    },
-    {
-        id: '4',
-        name: 'Sarah Johnson',
-        role: 'Pastor',
-        time: '1 Week Ago',
-        status: 'approved',
-        profileImage: 'https://randomuser.me/api/portraits/women/45.jpg',
-    },
-    {
-        id: '5',
-        name: 'Michael Brown',
-        role: 'Pastor',
-        time: '2 Days Ago',
-        status: 'pending',
-        profileImage: 'https://randomuser.me/api/portraits/men/34.jpg',
-    },
-    {
-        id: '6',
-        name: 'David Wilson',
-        role: 'Pastor',
-        time: '4 Days Ago',
-        status: 'approved',
-        profileImage: 'https://randomuser.me/api/portraits/men/35.jpg',
-    },
-    {
-        id: '7',
-        name: 'Emily Davis',
-        role: 'Pastor',
-        time: '6 Days Ago',
-        status: 'new',
-        profileImage: 'https://randomuser.me/api/portraits/women/46.jpg',
-    },
-    {
-        id: '8',
-        name: 'Robert Taylor',
-        role: 'Pastor',
-        time: '1 Week Ago',
-        status: 'pending',
-        profileImage: 'https://randomuser.me/api/portraits/men/36.jpg',
-    },
-    {
-        id: '9',
-        name: 'Lisa Anderson',
-        role: 'Pastor',
-        time: '3 Days Ago',
-        status: 'approved',
-        profileImage: 'https://randomuser.me/api/portraits/women/47.jpg',
-    },
-];
 
 export default function MicroGrant() {
     const router = useRouter();
@@ -93,6 +20,17 @@ export default function MicroGrant() {
     const { bottom } = useSafeAreaInsets();
     const { height } = Dimensions.get('window');
     const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
+
+    // Fetch microgrant applications from API with status filter
+    const { data: applicationsData, isLoading: isLoadingApplications } = useMicrograntApplications(activeTab);
+
+    // Map API data to component format
+    const applications = useMemo(() => {
+        if (!applicationsData) return [];
+        return applicationsData.map((application) => 
+            mapMicrograntApplicationToInterest(application)
+        );
+    }, [applicationsData]);
 
     const styles = StyleSheet.create({
         tabsContainer: {
@@ -197,23 +135,33 @@ export default function MicroGrant() {
         setActiveTab(tab);
     };
 
-    const filteredInterests = useMemo(() => {
-        let filtered = mockInterests;
+    // Fetch all applications to get counts for all tabs
+    const { data: allApplicationsData } = useMicrograntApplications();
+    
+    const allApplications = useMemo(() => {
+        if (!allApplicationsData) return [];
+        return allApplicationsData.map((application) => 
+            mapMicrograntApplicationToInterest(application)
+        );
+    }, [allApplicationsData]);
+
+    const filteredApplications = useMemo(() => {
+        let filtered = applications;
 
         if (search) {
-            filtered = filtered.filter((interest) =>
-                interest.name.toLowerCase().includes(search.toLowerCase())
+            filtered = filtered.filter((application) =>
+                application.name.toLowerCase().includes(search.toLowerCase()) ||
+                application.role.toLowerCase().includes(search.toLowerCase())
             );
         }
 
-        // Filter by status
-        filtered = filtered.filter((interest) => interest.status === activeTab);
-
+        // Applications are already filtered by status from the API
         return filtered;
-    }, [search, activeTab]);
+    }, [search, applications]);
 
-    const newCount = mockInterests.filter((m) => m.status === 'new').length;
-    const pendingCount = mockInterests.filter((m) => m.status === 'pending').length;
+    const newCount = allApplications.filter((application) => application.status === 'new').length;
+    const pendingCount = allApplications.filter((application) => application.status === 'pending').length;
+    const approvedCount = allApplications.filter((application) => application.status === 'approved').length;
 
     return (
         <LinearGradient
@@ -304,22 +252,55 @@ export default function MicroGrant() {
                             >
                                 Approved
                             </Text>
+                            {approvedCount > 0 && (
+                                <View style={{ position: 'absolute', top: -8, right: -8, backgroundColor: '#1C4ED8', borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: 'white' }} >
+                                        {approvedCount}
+                                    </Text>
+                                </View>
+                            )}
                         </Pressable>
                     </View>
 
-                    {/* Interests List */}
+                    {/* Applications List */}
                     <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-                        {filteredInterests.map((interest) => (
-                            <InterestCard
-                                key={interest.id}
-                                data={interest}
-                                onPress={() => router.push(`/(director)/(tabs)/micro-grant/micro-grand-application`)}
-                                onCall={() => console.log('Call', interest.name)}
-                                onChat={() => console.log('Chat', interest.name)}
-                                onMail={() => console.log('Mail', interest.name)}
-                                onWhatsApp={() => console.log('WhatsApp', interest.name)}
-                            />
-                        ))}
+                        {isLoadingApplications ? (
+                            <View style={{ padding: 40, alignItems: 'center' }}>
+                                <ActivityIndicator color="#fff" size="large" />
+                                <Text style={{ color: '#fff', marginTop: 12 }}>Loading applications...</Text>
+                            </View>
+                        ) : filteredApplications.length > 0 ? (
+                            filteredApplications.map((application) => (
+                                <InterestCard
+                                    key={application.id}
+                                    data={application}
+                                    onPress={() => router.push({
+                                        pathname: '/(director)/(tabs)/micro-grant/micro-grand-application',
+                                        params: { applicationId: application.id }
+                                    })}
+                                    onCall={() => {
+                                        // Extract phone from application if available
+                                        const applicationdata: MicrograntApplication | undefined = applicationsData?.find(app => app._id === application.id);
+                                        console.log('Call', applicationdata?.userId?.email || 'Unknown', applicationdata);
+                                    }}
+                                    onChat={() => console.log('Chat', application.name)}
+                                    onMail={() => {
+                                        const applicationData: MicrograntApplication | undefined = applicationsData?.find(app => app._id === application.id);
+                                        const email = applicationData?.userId?.email;
+                                        if (email) {
+                                            console.log('Mail', email);
+                                        }
+                                    }}
+                                    onWhatsApp={() => console.log('WhatsApp', application.name)}
+                                />
+                            ))
+                        ) : (
+                            <View style={{ padding: 40, alignItems: 'center' }}>
+                                <Text style={{ color: '#cfe9f3', textAlign: 'center' }}>
+                                    No applications found
+                                </Text>
+                            </View>
+                        )}
                     </ScrollView>
                 </View>
 

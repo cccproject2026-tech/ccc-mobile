@@ -1,10 +1,14 @@
 import InterestRejectedModal from '@/components/director/InterestRejectedModal';
 import RejectInterestModal from '@/components/director/RejectInterestModal';
+import { useInterests, useUpdateInterestStatus } from '@/hooks/interests/useInterests';
+import { InterestItem } from '@/types/interest.types';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
     Image,
     KeyboardAvoidingView,
     Platform,
@@ -19,49 +23,160 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LOGO = require('@/assets/logos/CCClogo.png');
 
+/**
+ * Maps API InterestItem to form data structure
+ */
+const mapInterestToFormData = (interest: InterestItem) => {
+    const church1 = interest.churchDetails?.[0] || {};
+    const church2 = interest.churchDetails?.[1] || {};
+
+    return {
+        firstName: interest.firstName || '',
+        lastName: interest.lastName || '',
+        phoneNumber: interest.phoneNumber || '',
+        email: interest.email || '',
+        churchName: church1.churchName || '',
+        churchPhone: church1.churchPhone || '',
+        churchWebsite: church1.churchWebsite || '',
+        churchAddress: church1.churchAddress || '',
+        city: church1.city || '',
+        state: church1.state || '',
+        zipCode: church1.zipCode || '',
+        country: church1.country || '',
+        church2Name: church2.churchName || '',
+        church2Phone: church2.churchPhone || '',
+        church2Website: church2.churchWebsite || '',
+        church2Address: church2.churchAddress || '',
+        city2: church2.city || '',
+        state2: church2.state || '',
+        zipCode2: church2.zipCode || '',
+        country2: church2.country || '',
+        title: interest.title || '',
+        yearsInMinistry: interest.yearsInMinistry ? `Years in Ministry : ${interest.yearsInMinistry}` : '',
+        conference: interest.conference || '',
+        serviceProjects: interest.currentCommunityProjects || '',
+        interests: interest.interests?.join('\n\n') || '',
+        comments: interest.comments || '',
+    };
+};
+
 export default function InterestFormScreen() {
     const router = useRouter();
     const { top, bottom } = useSafeAreaInsets();
+    const { interestId } = useLocalSearchParams<{ interestId: string }>();
+    
+    // Fetch all interests
+    const { data: interestsData, isLoading } = useInterests();
+    
+    // Find the specific interest by ID
+    const interest = useMemo(() => {
+        if (!interestsData || !interestId) return null;
+        return interestsData.find((item) => item.id === interestId);
+    }, [interestsData, interestId]);
+    
+    // Map interest to form data
+    const formData = useMemo(() => {
+        if (!interest) {
+            // Return empty defaults if no interest found
+            return {
+                firstName: '',
+                lastName: '',
+                phoneNumber: '',
+                email: '',
+                churchName: '',
+                churchPhone: '',
+                churchWebsite: '',
+                churchAddress: '',
+                city: '',
+                state: '',
+                zipCode: '',
+                country: '',
+                church2Name: '',
+                church2Phone: '',
+                church2Website: '',
+                church2Address: '',
+                city2: '',
+                state2: '',
+                zipCode2: '',
+                country2: '',
+                title: '',
+                yearsInMinistry: '',
+                conference: '',
+                serviceProjects: '',
+                interests: '',
+                comments: '',
+            };
+        }
+        return mapInterestToFormData(interest);
+    }, [interest]);
+    
+    // Get user name and role for display
+    const userName = useMemo(() => {
+        if (!interest) return 'Unknown';
+        const name = [interest.firstName, interest.lastName].filter(Boolean).join(' ');
+        return name || 'Unknown';
+    }, [interest]);
+    
+    const userRole = interest?.title || 'N/A';
+
     const [showRejectModal, setShowRejectModal] = useState(false);
-    const [showAcceptModal, setShowAcceptModal] = useState(false);
     const [showRejectedConfirmation, setShowRejectedConfirmation] = useState(false);
 
-    const [formData, setFormData] = useState({
-        firstName: 'John',
-        lastName: 'Ross',
-        phoneNumber: '09878564398',
-        email: 'johnross@gmail.com',
-        churchName: 'Loma linda University Church',
-        churchPhone: '09878564398',
-        churchWebsite: 'johnross@gmail.com',
-        churchAddress: 'Loma linda University Church,CA',
-        city: 'Oakland',
-        state: 'North American',
-        zipCode: '00000',
-        country: 'USA',
-        church2Name: 'Loma linda University Church',
-        church2Phone: '09878564398',
-        church2Website: 'johnross@gmail.com',
-        church2Address: 'Loma linda University Church,CA',
-        city2: 'Oakland',
-        state2: 'North American',
-        zipCode2: '00000',
-        country2: 'USA',
-        title: 'Pastor',
-        yearsInMinistry: 'Years in Ministry : 11',
-        conference: 'Okhland',
-        serviceProjects: 'Current Community Service Projects : 11',
-        interests: 'I would like to find out more about the Center for Community Change\n\nI am a conference administrator and would like to find out more about partnering with the center',
-        comments: 'I am a conference administrator and would like to find out more about partnering with the center I conference administrator and would like to find out more about partnering with the center',
-    });
+    // Mutation for updating interest status
+    const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateInterestStatus();
 
     const handleReject = () => setShowRejectModal(true);
-    // const handleNext = () => setShowAcceptModal(true);
-    const handleNext = () => router.push('/(director)/(tabs)/new-interests/assign-scholorship');
+    
+    const handleAccept = () => {
+        if (!interest?.id) {
+            Alert.alert('Error', 'Interest ID not found');
+            return;
+        }
+
+        updateStatus(
+            { interestId: interest.id, status: 'accepted' },
+            {
+                onSuccess: () => {
+                    Alert.alert('Success', 'Interest request accepted successfully', [
+                        {
+                            text: 'OK',
+                            onPress: () => router.push('/(director)/(tabs)/new-interests/assign-scholorship'),
+                        },
+                    ]);
+                },
+                onError: (error) => {
+                    Alert.alert('Error', error.message || 'Failed to accept interest request');
+                },
+            }
+        );
+    };
+
+    const handleNext = () => {
+        // If accepting, call handleAccept instead
+        handleAccept();
+    };
+
     const handleAddToPending = () => router.back();
+    
     const handleConfirmReject = () => {
-        setShowRejectModal(false);
-        setShowRejectedConfirmation(true);
+        if (!interest?.id) {
+            Alert.alert('Error', 'Interest ID not found');
+            return;
+        }
+
+        updateStatus(
+            { interestId: interest.id, status: 'rejected' },
+            {
+                onSuccess: () => {
+                    setShowRejectModal(false);
+                    setShowRejectedConfirmation(true);
+                },
+                onError: (error) => {
+                    Alert.alert('Error', error.message || 'Failed to reject interest request');
+                    setShowRejectModal(false);
+                },
+            }
+        );
     };
 
     return (
@@ -97,6 +212,30 @@ export default function InterestFormScreen() {
                     </View>
 
 
+                    {/* Loading State */}
+                    {isLoading ? (
+                        <View style={{ padding: 40, alignItems: 'center' }}>
+                            <ActivityIndicator color="#fff" size="large" />
+                            <Text style={{ color: '#fff', marginTop: 12 }}>Loading interest details...</Text>
+                        </View>
+                    ) : !interest ? (
+                        <View style={{ padding: 40, alignItems: 'center' }}>
+                            <Text style={{ color: '#fff', textAlign: 'center' }}>Interest not found</Text>
+                            <Pressable
+                                onPress={() => router.back()}
+                                style={{
+                                    marginTop: 16,
+                                    paddingHorizontal: 20,
+                                    paddingVertical: 10,
+                                    backgroundColor: 'rgba(255,255,255,0.2)',
+                                    borderRadius: 8,
+                                }}
+                            >
+                                <Text style={{ color: '#fff' }}>Go Back</Text>
+                            </Pressable>
+                        </View>
+                    ) : (
+                        <>
                     {/* User Info Card */}
                     <View style={styles.userCard}>
                         <View style={styles.userCardTop}>
@@ -104,23 +243,57 @@ export default function InterestFormScreen() {
                                 <Ionicons name="person-outline" size={Platform.OS === 'android' ? 24 : 28} color="#fff" />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.userName}>John Doe</Text>
-                                <Text style={styles.userRole}>Pastor</Text>
+                                <Text style={styles.userName}>{userName}</Text>
+                                <Text style={styles.userRole}>{userRole}</Text>
                             </View>
                         </View>
 
                         {/* Contact Icons */}
                         <View style={styles.contactIcons}>
-                            <TouchableOpacity style={styles.iconButton}>
+                            <TouchableOpacity 
+                                style={styles.iconButton}
+                                onPress={() => {
+                                    if (interest?.phoneNumber) {
+                                        // Open phone dialer
+                                        const phoneUrl = `tel:${interest.phoneNumber.replace(/[^0-9+]/g, '')}`;
+                                        // Linking.openURL(phoneUrl); // Uncomment if Linking is imported
+                                        console.log('Call:', interest.phoneNumber);
+                                    }
+                                }}
+                            >
                                 <Ionicons name="call-outline" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconButton}>
+                            <TouchableOpacity 
+                                style={styles.iconButton}
+                                onPress={() => console.log('Chat:', interest?.email)}
+                            >
                                 <Ionicons name="chatbubble-outline" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconButton}>
+                            <TouchableOpacity 
+                                style={styles.iconButton}
+                                onPress={() => {
+                                    if (interest?.email) {
+                                        // Open email client
+                                        const emailUrl = `mailto:${interest.email}`;
+                                        // Linking.openURL(emailUrl); // Uncomment if Linking is imported
+                                        console.log('Email:', interest.email);
+                                    }
+                                }}
+                            >
                                 <Ionicons name="mail-outline" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconButton}>
+                            <TouchableOpacity 
+                                style={styles.iconButton}
+                                onPress={() => {
+                                    if (interest?.phoneNumber) {
+                                        // Open WhatsApp
+                                        const phone = interest.phoneNumber.replace(/[^0-9+]/g, '');
+                                        const whatsappUrl = `https://wa.me/${phone}`;
+                                        // Linking.openURL(whatsappUrl); // Uncomment if Linking is imported
+                                        console.log('WhatsApp:', interest.phoneNumber);
+                                    }
+                                }}
+                            >
                                 <Ionicons name="logo-whatsapp" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
                             </TouchableOpacity>
                         </View>
@@ -304,11 +477,21 @@ export default function InterestFormScreen() {
 
                     {/* Action Buttons */}
                     <View style={styles.actionButtons}>
-                        <Pressable style={styles.rejectButton} onPress={handleReject}>
+                        <Pressable 
+                            style={[styles.rejectButton, isUpdatingStatus && styles.buttonDisabled]} 
+                            onPress={handleReject}
+                            disabled={isUpdatingStatus}
+                        >
                             <Text style={styles.buttonText}>REJECT</Text>
                         </Pressable>
-                        <Pressable style={styles.nextButton} onPress={handleNext}>
-                            <Text style={[styles.buttonText, { color: '#fff' }]}>NEXT</Text>
+                        <Pressable 
+                            style={[styles.nextButton, isUpdatingStatus && styles.buttonDisabled]} 
+                            onPress={handleNext}
+                            disabled={isUpdatingStatus}
+                        >
+                            <Text style={[styles.buttonText, { color: '#fff' }]}>
+                                {isUpdatingStatus ? 'PROCESSING...' : 'ACCEPT'}
+                            </Text>
                         </Pressable>
                     </View>
 
@@ -318,6 +501,8 @@ export default function InterestFormScreen() {
                             <Text style={styles.pendingButtonText}>Add to Pending</Text>
                         </Pressable>
                     </View>
+                        </>
+                    )}
 
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -493,6 +678,9 @@ const styles = StyleSheet.create({
         fontSize: Platform.OS === 'android' ? 14 : 16,
         fontWeight: '600',
         color: '#1a5b77',
+    },
+    buttonDisabled: {
+        opacity: 0.6,
     },
     pendingButtonContainer: {
         marginHorizontal: 16,

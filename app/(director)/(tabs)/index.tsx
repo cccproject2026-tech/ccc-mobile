@@ -15,15 +15,16 @@ import { icons } from "@/constants/images";
 import {
   appointments,
   exploreItems,
-  newInterests,
   stats,
 } from "@/constants/mockData";
+import { useInterests } from "@/hooks/interests/useInterests";
 import { formatClock, formatDate } from "@/utils/date";
+import { mapInterestItemToInterest } from "@/utils/interests";
 import { LinearGradient } from "expo-linear-gradient";
 import { Route, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedRef,
   useScrollViewOffset,
@@ -42,6 +43,15 @@ export default function DirectorDashboard() {
 
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [addedUser, setAddedUser] = useState({ name: "", role: "" });
+
+  // Fetch interests from API
+  const { data: interestsData, isLoading: isLoadingInterests } = useInterests();
+  
+  // Map API data to component format and take first 3 for dashboard preview
+  const newInterests = useMemo(() => {
+    if (!interestsData) return [];
+    return interestsData.slice(0, 3).map(mapInterestItemToInterest);
+  }, [interestsData]);
 
   const handleUserAdded = (name: string, role: string) => {
     setAddedUser({ name, role });
@@ -195,7 +205,7 @@ export default function DirectorDashboard() {
                         fontSize: 12,
                       }}
                     >
-                      {newInterests.length}
+                      {isLoadingInterests ? '...' : (interestsData?.length || 0)}
                     </Text>
                   </View>
                 </View>
@@ -221,16 +231,26 @@ export default function DirectorDashboard() {
                   paddingBottom: 18,
                 }}
               >
-                {newInterests.map((interest) => (
-                  <InterestCard
-                    key={interest.id}
-                    data={interest}
-                    onCall={() => console.log("Call", interest.name)}
-                    onChat={() => console.log("Chat", interest.name)}
-                    onMail={() => console.log("Mail", interest.name)}
-                    onPress={() => console.log("View", interest.name)}
-                  />
-                ))}
+                {isLoadingInterests ? (
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <ActivityIndicator color="#EAF7FF" />
+                  </View>
+                ) : newInterests.length > 0 ? (
+                  newInterests.map((interest) => (
+                    <InterestCard
+                      key={interest.id}
+                      data={interest}
+                      onCall={() => console.log("Call", interest.name)}
+                      onChat={() => console.log("Chat", interest.name)}
+                      onMail={() => console.log("Mail", interest.name)}
+                      onPress={() => console.log("View", interest.name)}
+                    />
+                  ))
+                ) : (
+                  <Text style={{ color: "#cfe9f3", textAlign: "center", padding: 16 }}>
+                    No new interests
+                  </Text>
+                )}
               </View>
             </View>
             <View

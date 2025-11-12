@@ -763,13 +763,14 @@
 
 
 import TopBar from "@/components/director/TopBar";
+import { useInterestMetadata } from "@/hooks/interests/useInterests";
 import { useSubmitInterest } from "@/hooks/onboarding/useOnboarding";
 import { useOnboardingStore } from "@/stores";
 import { ChurchInfo, InterestFormData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -784,21 +785,6 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
-const TITLE_OPTIONS = ['Pastor', 'Lay Leader', 'Seminarian'];
-
-const INTEREST_OPTIONS = [
-    'I would like to find out more about the Center for Community Change',
-    'I am interested in receiving mentoring in community engagement',
-    'I would like to talk to one of the mentors',
-    'I am a conference administrator and would like to find out more about partnering with the center',
-];
-
-const COUNTRY_OPTIONS = [
-    { label: 'USA', value: 'USA' },
-    { label: 'Canada', value: 'Canada' },
-    { label: 'Mexico', value: 'Mexico' },
-    { label: 'Brazil', value: 'Brazil' },
-];
 
 const INITIAL_CHURCH: ChurchInfo = {
     churchName: '',
@@ -830,6 +816,9 @@ export default function InterestFormScreen() {
     const { mutate: submitInterest, isPending: isLoading } = useSubmitInterest();
     const { setCurrentStep } = useOnboardingStore();
 
+    // Fetch metadata from API
+    const { data: metadata, isLoading: isLoadingMetadata } = useInterestMetadata();
+
     // Form state
     const [formData, setFormData] = useState<Partial<InterestFormData>>(
         INITIAL_FORM_DATA
@@ -839,9 +828,37 @@ export default function InterestFormScreen() {
     const [showCountryDropdown, setShowCountryDropdown] = useState<number | null>(
         null
     );
+    const [showStateDropdown, setShowStateDropdown] = useState<number | null>(
+        null
+    );
+
+    // Transform metadata to form options
+    const TITLE_OPTIONS = useMemo(() => metadata?.titles || [], [metadata]);
+    const INTEREST_OPTIONS = useMemo(() => metadata?.interests || [], [metadata]);
+    const COUNTRY_OPTIONS = useMemo(() => {
+        if (!metadata?.countries) return [];
+        return metadata.countries.map(country => ({ label: country, value: country }));
+    }, [metadata]);
+
+    // Get states for a specific country
+    const getStatesForCountry = useCallback((country: string) => {
+        if (!metadata?.countryStates) return [];
+        const countryState = metadata.countryStates.find(cs => cs.country === country);
+        return countryState?.states || [];
+    }, [metadata]);
 
     // Auto-fill function for testing
     const autoFillForm = useCallback(() => {
+        if (!metadata) {
+            Alert.alert('Error', 'Metadata not loaded yet. Please wait.');
+            return;
+        }
+
+        const firstTitle = metadata.titles?.[0] || '';
+        const firstCountry = metadata.countries?.[0] || '';
+        const firstState = getStatesForCountry(firstCountry)?.[0] || '';
+        const firstInterest = metadata.interests?.[0] || '';
+
         setFormData({
             firstName: 'John',
             lastName: 'Doe',
@@ -854,20 +871,17 @@ export default function InterestFormScreen() {
                     churchWebsite: 'www.firstcommunitychurch.org',
                     churchAddress: '123 Main Street',
                     city: 'Berrien Springs',
-                    state: 'Michigan',
+                    state: firstState,
                     zipCode: '49103',
-                    country: 'USA',
+                    country: firstCountry,
                 },
             ],
-            title: 'Pastor',
+            title: firstTitle,
             yearsInMinistry: '5',
             conference: 'Lake Union Conference',
             currentCommunityProjects:
                 'Food bank ministry, Youth mentoring program, Community outreach events',
-            interests: [
-                'I would like to find out more about the Center for Community Change',
-                'I am interested in receiving mentoring in community engagement',
-            ],
+            interests: firstInterest ? [firstInterest] : [],
             comments:
                 'I am excited to learn more about community engagement opportunities and would love to connect with other pastors doing similar work.',
         });
@@ -876,7 +890,7 @@ export default function InterestFormScreen() {
             'Form Auto-Filled!',
             'All fields have been populated with sample data.'
         );
-    }, []);
+    }, [metadata, getStatesForCountry]);
 
     // Input handlers
     const handleInputChange = useCallback((field: string, value: string) => {
@@ -978,12 +992,20 @@ export default function InterestFormScreen() {
                         { paddingBottom: bottom + 20 },
                     ]}
                 >
+                    {/* Loading Metadata */}
+                    {isLoadingMetadata && (
+                        <View style={{ padding: 20, alignItems: 'center' }}>
+                            <ActivityIndicator color="#FFD700" />
+                            <Text style={{ color: '#fff', marginTop: 8 }}>Loading form options...</Text>
+                        </View>
+                    )}
+
                     {/* Auto-Fill Button */}
                     <View style={styles.header}>
                         <TouchableOpacity
                             style={styles.autoFillButton}
                             onPress={autoFillForm}
-                            disabled={isLoading}
+                            disabled={isLoading || isLoadingMetadata}
                         >
                             <Ionicons name="flash" size={18} color="#FFD700" />
                             <Text style={styles.autoFillButtonText}>Auto-Fill</Text>
@@ -1115,16 +1137,59 @@ export default function InterestFormScreen() {
                                         }
                                         editable={!isLoading}
                                     />
-                                    <TextInput
-                                        style={[styles.input, styles.halfWidth]}
-                                        placeholder="State"
-                                        placeholderTextColor="rgba(255,255,255,0.5)"
-                                        value={church.state}
-                                        onChangeText={(text) =>
-                                            handleChurchChange(index, 'state', text)
-                                        }
-                                        editable={!isLoading}
-                                    />
+                                    {/* State Dropdown */}
+                                    <View style={[styles.halfWidth, styles.countryDropdownWrapper]}>
+                                        <TouchableOpacity
+                                            style={styles.dropdown}
+                                            onPress={() =>
+                                                setShowStateDropdown(
+                                                    showStateDropdown === index ? null : index
+                                                )
+                                            }
+                                            disabled={isLoading || !church.country}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.dropdownText,
+                                                    !church.state && styles.placeholderText,
+                                                ]}
+                                            >
+                                                {church.state || 'State'}
+                                            </Text>
+                                            <Ionicons
+                                                name={
+                                                    showStateDropdown === index
+                                                        ? 'chevron-up'
+                                                        : 'chevron-down'
+                                                }
+                                                size={20}
+                                                color="rgba(255,255,255,0.6)"
+                                            />
+                                        </TouchableOpacity>
+                                        {showStateDropdown === index && church.country && (
+                                            <View style={styles.countryDropdownMenu}>
+                                                {getStatesForCountry(church.country).map((state) => (
+                                                    <TouchableOpacity
+                                                        key={state}
+                                                        style={styles.countryDropdownItem}
+                                                        onPress={() => {
+                                                            handleChurchChange(index, 'state', state);
+                                                            setShowStateDropdown(null);
+                                                        }}
+                                                    >
+                                                        <View style={styles.countryRadio}>
+                                                            {church.state === state && (
+                                                                <View style={styles.countryRadioSelected} />
+                                                            )}
+                                                        </View>
+                                                        <Text style={styles.countryDropdownItemText}>
+                                                            {state}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        )}
+                                    </View>
                                 </View>
 
                                 <View style={styles.row}>
@@ -1181,6 +1246,8 @@ export default function InterestFormScreen() {
                                                                 'country',
                                                                 option.value
                                                             );
+                                                            // Clear state when country changes
+                                                            handleChurchChange(index, 'state', '');
                                                             setShowCountryDropdown(null);
                                                         }}
                                                     >

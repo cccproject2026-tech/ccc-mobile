@@ -60,7 +60,9 @@ export const ENDPOINTS = {
 
     GRANT: {
         GET_FORM: '/microgrant/form',
-        APPLY_GRANT: '/microgrant/apply'
+        APPLY_GRANT: '/microgrant/apply',
+        GET_APPLICATIONS: (status?: string) => status ? `/microgrant/applications?status=${status}` : '/microgrant/applications',
+        GET_APPLICATION: (applicationId: string) => `/microgrant/application/${applicationId}`,
     },
 
     APPOINTMENTS: {
@@ -73,5 +75,11 @@ export const ENDPOINTS = {
     ROADMAPS: {
         GET_ALL: '/roadmaps',
         CREATE: '/roadmaps',
+    },
+
+    INTERESTS: {
+        GET_ALL: '/interests',
+        GET_METADATA: '/interests/metadata',
+        UPDATE_STATUS: (id: string) => `/interests/request/${id}`,
     }
 } as const;
