@@ -28,7 +28,10 @@ export default function PastorDashboard() {
   const router = useRouter();
 
   const { user } = useAuthStore();
+
+  console.log("Logged in user:", user?.id);
   const { data, isLoading, isError, error } = useProfile();
+
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
 
@@ -56,7 +59,7 @@ export default function PastorDashboard() {
   // Error state
   if (isError) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'red' }}>
         <Text style={{ color: Colors.customWhite, textAlign: 'center' }}>
           Failed to load profile data: {error?.message || 'Unknown error'}
         </Text>
@@ -129,7 +132,7 @@ export default function PastorDashboard() {
               onClick={handleWelcomeRoute}
               avatar={icons.myProfile}
               message={`${data?.user?.firstName} ${data?.user?.lastName}, Welcome!`}
-              progress={data?.progress?.completed || 0}
+              progress={data?.progress?.overallProgress ?? 0}
             />
           </View>
 

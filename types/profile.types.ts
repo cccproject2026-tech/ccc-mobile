@@ -1,10 +1,12 @@
+// types/profile.types.ts
 import { User } from './auth.types';
 import { InterestFormData } from './onboarding.types';
+import { ProgressData } from './progress.types';
 
 // Profile update data (all fields optional for partial updates)
 export interface ChurchInfo {
     id?: string;
-    churchName: string;  // Changed from 'name'
+    churchName: string;
     churchPhone?: string;
     churchAddress?: string;
     city?: string;
@@ -12,9 +14,7 @@ export interface ChurchInfo {
     country?: string;
     churchWebsite?: string;
     zipCode?: string;
-    // Note: removed 'website' and 'zip' if you don't need them
 }
-
 
 export interface ProfileData {
     firstName: string;
@@ -30,11 +30,12 @@ export interface ProfileData {
     profileInfo: string;
     churches: ChurchInfo[];
 }
+
 export interface UpdateProfileData {
     firstName?: string;
     lastName?: string;
     phoneNumber?: string;
-    churches?: ChurchInfo[]; // Maps to churchDetails on API
+    churches?: ChurchInfo[];
     title?: string;
     yearsInMinistry?: string;
     conference?: string;
@@ -48,23 +49,14 @@ export interface UpdateProfileData {
 export interface CombinedProfile {
     user: User | null;
     interest: InterestFormData | null;
-    progress: {
-        completed: number;
-        total: number;
-        percentage: number;
-    };
+    progress: ProgressData;
 }
-
-
 
 export interface ProfileResponse {
     profile: InterestFormData;
     message?: string;
 }
 
-// For adding/editing individual churches
 export interface ChurchFormData extends Omit<ChurchInfo, 'id'> {
-    id?: string; // Optional for new churches
+    id?: string;
 }
-
-

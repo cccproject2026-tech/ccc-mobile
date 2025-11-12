@@ -1,87 +1,39 @@
 // hooks/useProfile.ts
-import { apiClient } from "@/services/api/client";
-import { ENDPOINTS } from "@/services/api/endpoints";
 import { profileService } from "@/services/profile.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { CombinedProfile, UpdateProfileData } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useProgress } from "../progress/useProgress";
 
 // Query Keys Factory - centralized management
 export const profileKeys = {
     all: ['profile'] as const,
     user: (userId: string) => [...profileKeys.all, 'user', userId] as const,
     interest: (email: string) => [...profileKeys.all, 'interest', email] as const,
-    progress: (userId: string) => [...profileKeys.all, 'progress', userId] as const,
     combined: (userId: string) => [...profileKeys.all, 'combined', userId] as const,
 };
 
-export const useProfile = () => {
-    const { user } = useAuthStore();
-
-    return useQuery<CombinedProfile>({
-        queryKey: profileKeys.combined(user?.id || ''),
-        queryFn: async () => {
-            if (!user?.id) throw new Error("User ID is missing");
-
-            console.log("📤 Fetching profile overview for:", user.id);
-
-            const [userRes, interestRes, progressRes] = await Promise.allSettled([
-                profileService.getMyProfile(user.id),
-                profileService.getInterestDetails(user.email),
-                apiClient.get(
-                    ENDPOINTS.USERS.GET_PROGRESS(user.id)
-                ),
-            ]);
-
-            const userData = userRes.status === "fulfilled" ? userRes.value : null;
-            const interestData = interestRes.status === "fulfilled" ? interestRes.value : null;
-
-            let progressData = {
-                completed: 0,
-                total: 0,
-                percentage: 0,
-            };
-
-            if (progressRes.status === "fulfilled" && progressRes.value?.data?.success) {
-                const data = progressRes.value.data.data;
-                progressData = {
-                    completed: data.completed ?? 0,
-                    total: data.total ?? 0,
-                    percentage:
-                        data.total && data.completed
-                            ? Math.round((data.completed / data.total) * 100)
-                            : 0,
-                };
-            }
-
-            const combinedProfile: CombinedProfile = {
-                user: userData,
-                interest: interestData,
-                progress: progressData,
-            };
-
-            console.log("📥 Combined Profile Data:", combinedProfile);
-            return combinedProfile;
-        },
-        enabled: !!user?.id,
-        staleTime: 1000 * 60 * 5, // 5 minutes
-        gcTime: 1000 * 60 * 30, // 30 minutes cache retention
-        retry: 1,
-    });
-};
-
-// Individual hooks for granular access
+// ============================================
+// INDIVIDUAL QUERY HOOKS
+// ============================================
 export const useUserProfile = () => {
     const { user } = useAuthStore();
 
     return useQuery({
         queryKey: profileKeys.user(user?.id || ''),
-        queryFn: () => {
+        queryFn: async () => {
             if (!user?.id) throw new Error("User ID is missing");
-            return profileService.getMyProfile(user.id);
+
+            console.log("📤 Fetching user profile for:", user.id);
+            const profile = await profileService.getMyProfile(user.id);
+            console.log("📥 User profile fetched:", profile);
+
+            return profile;
         },
         enabled: !!user?.id,
-        staleTime: 1000 * 60 * 10,
+        staleTime: 1000 * 60 * 10, // 10 minutes
+        gcTime: 1000 * 60 * 30, // 30 minutes
+        retry: 1,
     });
 };
 
@@ -90,38 +42,70 @@ export const useInterests = () => {
 
     return useQuery({
         queryKey: profileKeys.interest(user?.email || ''),
-        queryFn: () => {
+        queryFn: async () => {
             if (!user?.email) throw new Error("User email is missing");
-            return profileService.getInterestDetails(user.email);
+
+            console.log("📤 Fetching interests for:", user.email);
+            const interests = await profileService.getInterestDetails(user.email);
+            console.log("📥 Interests fetched:", interests);
+
+            return interests;
         },
         enabled: !!user?.email,
-        staleTime: 1000 * 60 * 5,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        gcTime: 1000 * 60 * 20, // 20 minutes
+        retry: 1,
     });
 };
 
-export const useProgress = () => {
+// ============================================
+// OPTIMIZED COMBINED PROFILE HOOK
+// ============================================
+export const useProfile = () => {
     const { user } = useAuthStore();
 
-    return useQuery({
-        queryKey: profileKeys.progress(user?.id || ''),
-        queryFn: async () => {
-            if (!user?.id) throw new Error("User ID is missing");
-            const res = await apiClient.get(
-                ENDPOINTS.USERS.GET_PROGRESS(user.id)
-            );
-            const data = res.data.data;
-            return {
-                completed: data.completed ?? 0,
-                total: data.total ?? 0,
-                percentage: data.total ? Math.round((data.completed / data.total) * 100) : 0,
-            };
-        },
-        enabled: !!user?.id,
-        staleTime: 1000 * 60 * 2,
-    });
+    // Use individual hooks for parallel queries
+    const userQuery = useUserProfile();
+    const interestQuery = useInterests();
+    const progressQuery = useProgress();
+
+    // Derive combined loading state
+    const isLoading = userQuery.isLoading || interestQuery.isLoading || progressQuery.isLoading;
+
+    // Derive combined error state
+    const isError = userQuery.isError || interestQuery.isError || progressQuery.isError;
+    const error = userQuery.error || interestQuery.error || progressQuery.error;
+
+    // Compute combined profile data
+    const data: CombinedProfile | undefined = user?.id ? {
+        user: userQuery.data || null,
+        interest: interestQuery.data || null,
+        progress: progressQuery.data || {
+            overallProgress: 0,
+            roadmaps: { total: 0, completed: 0, percentage: 0, items: [] },
+            assessments: { total: 0, completed: 0, percentage: 0, items: [] }
+        }
+    } : undefined;
+
+    // Check if all queries are successful
+    const isSuccess = userQuery.isSuccess && interestQuery.isSuccess && progressQuery.isSuccess;
+
+    return {
+        data,
+        isLoading,
+        isError,
+        error,
+        isSuccess,
+        // Individual query states for granular control
+        userQuery,
+        interestQuery,
+        progressQuery,
+    };
 };
 
-// Mutation hook for profile updates with automatic refetch
+// ============================================
+// MUTATION HOOK FOR PROFILE UPDATES
+// ============================================
 export const useUpdateProfile = () => {
     const queryClient = useQueryClient();
     const { user } = useAuthStore();
@@ -184,35 +168,30 @@ export const useUpdateProfile = () => {
                 interest: interestRes.status === "fulfilled" ? interestRes.value : null,
             };
         },
-        onSuccess: async (data) => {
-            console.log("✅ Mutation succeeded, starting cache updates...");
+        onSuccess: async () => {
+            console.log("✅ Mutation succeeded, invalidating profile queries...");
 
-            // Step 1: Invalidate all profile queries
+            // Invalidate all profile-related queries (user and interest)
             await queryClient.invalidateQueries({
                 queryKey: profileKeys.all,
             });
 
-            // Step 2: Immediately refetch the combined profile query to get fresh data
-            await queryClient.refetchQueries({
-                queryKey: profileKeys.combined(user?.id || ''),
-                type: 'active',
-            });
-
-            console.log("✅ Profile cache invalidated and refetched successfully");
+            console.log("✅ Profile cache invalidated successfully");
         },
         onError: (error: any) => {
             console.error("❌ Profile update failed:", error.message || error);
-
-            // Optionally: Show error toast/alert to user
-            // Alert.alert('Update Failed', error.message);
         },
     });
 };
 
+// ============================================
+// ADDITIONAL HOOKS
+// ============================================
 export const useGetAllUsers = (role?: string) => {
     return useQuery({
         queryKey: ['users', 'all', role || ''],
         queryFn: () => profileService.getAllUsers(role),
         staleTime: 1000 * 60 * 10, // 10 minutes
+        gcTime: 1000 * 60 * 30, // 30 minutes
     });
-}
+};

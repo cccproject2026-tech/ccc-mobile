@@ -378,7 +378,6 @@ type TabKey = StatusTabKey | string; // string for division names
 export default function RoadmapDetail() {
     const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
 
-    console.log('Roadmap ID:', phaseId);
     // Fetch single roadmap
     const { data: roadmap, isLoading, error, refetch } = useRoadmap(phaseId);
 
@@ -586,6 +585,11 @@ export default function RoadmapDetail() {
             </LinearGradient>
         );
     }
+
+    console.log({
+        filteredTasks,
+
+    });
 
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>

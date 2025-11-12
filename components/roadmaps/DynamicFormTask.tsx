@@ -1156,75 +1156,20 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
         setFormData(prev => ({ ...prev, [fieldName]: value }));
     };
 
-    // Helper to get all required checkboxes
-    const getRequiredCheckboxes = (): Extra[] => {
-        const requiredCheckboxes: Extra[] = [];
-
-        const findCheckboxes = (extras: Extra[]) => {
-            extras.forEach(extra => {
-                if (extra.type === 'CHECKBOX' && !extra.haveButton) {
-                    requiredCheckboxes.push(extra);
-                }
-
-                // Check nested checkboxes in DATE_PICKER, SECTION, etc.
-                if (extra.checkboxes) {
-                    extra.checkboxes.forEach(cb => {
-                        if (!cb.haveButton) {
-                            requiredCheckboxes.push(cb as any);
-                        }
-                    });
-                }
-
-                // Check nested sections
-                if (extra.sections) {
-                    findCheckboxes(extra.sections);
-                }
-            });
-        };
-
-        findCheckboxes(task.extras || []);
-        return requiredCheckboxes;
-    };
-
-    // Get submit button text
-    const getSubmitButtonText = (): string => {
-        if (isUpdateMode) return 'Update';
-
-        // Find the first checkbox with haveButton: false and buttonName
-        const requiredCheckboxes = getRequiredCheckboxes();
-        const checkboxWithButtonName = requiredCheckboxes.find(cb => cb.buttonName);
-
-        if (checkboxWithButtonName) {
-            // Check if all required checkboxes are checked
-            const allChecked = requiredCheckboxes.every(cb => formData[cb.name] === true);
-
-            if (!allChecked) {
-                return checkboxWithButtonName.buttonName || 'Submit';
-            }
-        }
-
-        return 'Submit';
-    };
-
-    // Validate form - all required checkboxes must be checked
+    // Validate form - allow partial submissions
     const validateForm = (): boolean => {
-        const requiredCheckboxes = getRequiredCheckboxes();
+        // Just check if there's at least some data filled in
+        const hasData = Object.keys(formData).length > 0;
 
-        // Check if all required checkboxes (haveButton: false) are checked
-        const allCheckboxesChecked = requiredCheckboxes.every(cb => {
-            return formData[cb.name] === true;
-        });
-
-        if (!allCheckboxesChecked) {
+        if (!hasData) {
             Alert.alert(
-                'Validation Error',
-                'Please check all required items before submitting'
+                'No Data',
+                'Please fill in at least one field before saving progress'
             );
             return false;
         }
 
-        // Check if there's at least some data
-        return Object.keys(formData).length > 0;
+        return true;
     };
 
     // Helper to get the correct type for each field
@@ -1369,7 +1314,6 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                             </View>
                         )}
 
-                        {/* Only show button if haveButton is true */}
                         {extra.haveButton && extra.buttonName && (
                             <Pressable style={styles.button} onPress={() => console.log('Button pressed')}>
                                 <Text style={styles.buttonText}>{extra.buttonName}</Text>
@@ -1454,7 +1398,6 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                                 <Text style={styles.checkboxLabel}>{checkbox.name}</Text>
                                             </Pressable>
 
-                                            {/* Only show button if haveButton is true */}
                                             {checkbox.haveButton && checkbox.buttonName && (
                                                 <Pressable style={styles.button} onPress={() => console.log('Button pressed')}>
                                                     <Text style={styles.buttonText}>{checkbox.buttonName}</Text>
@@ -1550,7 +1493,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         <ActivityIndicator color="#1e40af" />
                     ) : (
                         <Text style={styles.signButtonText}>
-                            {getSubmitButtonText()}
+                            {isUpdateMode ? 'Save Progress' : 'Save Progress'}
                         </Text>
                     )}
                 </Pressable>
@@ -1559,12 +1502,12 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
             <SimpleSuccessModal
                 visible={showSuccessModal}
                 onClose={() => setShowSuccessModal(false)}
-                title={`Task ${isUpdateMode ? 'Updated' : 'Completed'} Your submission has been recorded successfully.`}
+                title={`Progress Saved!
+Your work has been saved successfully.`}
             />
         </>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
