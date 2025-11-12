@@ -292,73 +292,106 @@ export default function RoadmapFormScreen() {
             return {
               type: "TEXT_AREA" as const,
               name: field.label || field.name || "Notes",
-              placeHolder: field.placeholder || "Enter your notes",
-              buttonName: field.buttonName || "",
+              ...(field.placeholder && { placeHolder: field.placeholder }),
+              ...(field.buttonName && { buttonName: field.buttonName }),
             };
           case "text":
             return {
               type: "TEXT_FIELD" as const,
               name: field.label || field.name || "Text Field",
-              placeHolder: field.placeholder || "Enter text",
-              buttonName: field.buttonName || "",
+              ...(field.placeholder && { placeHolder: field.placeholder }),
+              ...(field.buttonName && { buttonName: field.buttonName }),
             };
           case "checkbox":
             return {
               type: "CHECKBOX" as const,
               name: field.label || field.name || "Checkbox",
               haveButton: !!field.buttonName,
-              buttonName: field.buttonName || "",
+              ...(field.buttonName && { buttonName: field.buttonName }),
             };
           case "datepicker":
+            const dateCheckboxes = [
+              field.allowPastorSelect && {
+                type: "CHECKBOX" as const,
+                name: "Allow pastor to select Date",
+                haveButton: false,
+              },
+              field.showOnCard && {
+                type: "CHECKBOX" as const,
+                name: "Show date on info card",
+                haveButton: false,
+              },
+            ].filter(Boolean) as RoadmapExtra[];
+
             return {
               type: "DATE_PICKER" as const,
               name: field.label || "Date",
-              date: field.date ? new Date(field.date).toLocaleDateString("en-GB").replace(/\//g, "-") : undefined,
-              buttonName: field.buttonName || "",
-              checkboxes: [
-                field.allowPastorSelect && {
-                  type: "CHECKBOX" as const,
-                  name: "Allow pastor to select Date",
-                  haveButton: false,
-                },
-                field.showOnCard && {
-                  type: "CHECKBOX" as const,
-                  name: "Show date on info card",
-                  haveButton: false,
-                },
-              ].filter(Boolean) as RoadmapExtra[],
+              ...(field.date && { date: new Date(field.date).toISOString().split('T')[0] }),
+              ...(field.buttonName && { buttonName: field.buttonName }),
+              ...(dateCheckboxes.length > 0 && { checkboxes: dateCheckboxes }),
+            };
+          case "upload":
+            return {
+              type: "UPLOAD" as const,
+              name: field.buttonLabel || field.name || "Upload",
+            };
+          case "assessment":
+            const assessmentCheckboxes = [
+              field.scheduleMeeting && {
+                type: "CHECKBOX" as const,
+                name: "Schedule Meeting after the Assessment",
+                haveButton: false,
+              },
+            ].filter(Boolean) as RoadmapExtra[];
+
+            return {
+              type: "ASSESSMENT" as const,
+              name: field.selectedAssessment?.name || field.selectedAssessment || "Assessment",
+              ...(field.buttonName && { buttonName: field.buttonName }),
+              ...(assessmentCheckboxes.length > 0 && { checkboxes: assessmentCheckboxes }),
             };
           case "section":
+            const sectionCheckboxes = [
+              field.showDuplicateButton && {
+                type: "CHECKBOX" as const,
+                name: field.name || "Section",
+                haveButton: true,
+                buttonName: field.buttonName || "Add section steps",
+              },
+            ].filter(Boolean) as RoadmapExtra[];
+
+            const sectionFields = nestedFields.map((nestedField) => {
+              if (nestedField.type === "text") {
+                return {
+                  type: "TEXT_FIELD" as const,
+                  name: nestedField.label || nestedField.name || "Text Field",
+                  ...(nestedField.placeholder && { placeHolder: nestedField.placeholder }),
+                  ...(nestedField.buttonName && { buttonName: nestedField.buttonName }),
+                };
+              } else if (nestedField.type === "datepicker") {
+                return {
+                  type: "DATE_PICKER" as const,
+                  name: nestedField.label || "Date",
+                  ...(nestedField.date && { date: new Date(nestedField.date).toISOString().split('T')[0] }),
+                  ...(nestedField.buttonName && { buttonName: nestedField.buttonName }),
+                };
+              } else if (nestedField.type === "textarea") {
+                return {
+                  type: "TEXT_AREA" as const,
+                  name: nestedField.label || nestedField.name || "Text Area",
+                  ...(nestedField.placeholder && { placeHolder: nestedField.placeholder }),
+                  ...(nestedField.buttonName && { buttonName: nestedField.buttonName }),
+                };
+              }
+              return null;
+            }).filter(Boolean) as RoadmapExtra[];
+
             return {
               type: "SECTION" as const,
               name: field.name || "Section",
-              buttonName: field.buttonName || "",
-              checkboxes: [
-                field.showDuplicateButton && {
-                  type: "CHECKBOX" as const,
-                  name: field.name || "Section",
-                  haveButton: true,
-                  buttonName: field.buttonName || "Add section steps",
-                },
-              ].filter(Boolean) as RoadmapExtra[],
-              sections: nestedFields.map((nestedField) => {
-                if (nestedField.type === "text") {
-                  return {
-                    type: "TEXT_FIELD" as const,
-                    name: nestedField.label || nestedField.name || "Text Field",
-                    placeHolder: nestedField.placeholder || "Enter text",
-                    buttonName: nestedField.buttonName || "",
-                  };
-                } else if (nestedField.type === "datepicker") {
-                  return {
-                    type: "DATE_PICKER" as const,
-                    name: nestedField.label || "Date",
-                    date: nestedField.date ? new Date(nestedField.date).toLocaleDateString("en-GB").replace(/\//g, "-") : undefined,
-                    buttonName: nestedField.buttonName || "",
-                  };
-                }
-                return null;
-              }).filter(Boolean) as RoadmapExtra[],
+              ...(field.buttonName && { buttonName: field.buttonName }),
+              ...(sectionCheckboxes.length > 0 && { checkboxes: sectionCheckboxes }),
+              ...(sectionFields.length > 0 && { sections: sectionFields }),
             };
           default:
             return null;
@@ -373,28 +406,34 @@ export default function RoadmapFormScreen() {
 
     if (isPhaseFlow) {
       // Phase flow: create phase with multiple roadmaps
-      const roadmaps = state.roadmaps.map((roadmap) => ({
-        name: roadmap.name,
-        roadMapDetails: roadmap.subheading,
-        description: formData.descriptionVerbiage || roadmap.subheading,
-        duration: roadmap.completionTime,
-        imageUrl: roadmap.bannerImage || undefined,
-        phase: roadmap.selectedDivision.toLowerCase(),
-        totalSteps: roadmap.fields?.length || 0,
-        extras: roadmap.fields ? transformFieldsToExtras(roadmap.fields) : [],
-      }));
+      const roadmaps = state.roadmaps.map((roadmap) => {
+        const roadmapExtras = roadmap.fields ? transformFieldsToExtras(roadmap.fields) : [];
+        return {
+          name: roadmap.name,
+          ...(roadmap.subheading && { roadMapDetails: roadmap.subheading }),
+          ...(formData.descriptionVerbiage && { description: formData.descriptionVerbiage }),
+          duration: roadmap.completionTime,
+          ...(roadmap.bannerImage && { imageUrl: roadmap.bannerImage }),
+          ...(roadmap.selectedDivision && { phase: roadmap.selectedDivision.toLowerCase() }),
+          ...(roadmap.fields && roadmap.fields.length > 0 && { totalSteps: roadmap.fields.length }),
+          ...(roadmapExtras.length > 0 && { extras: roadmapExtras }),
+        };
+      });
+
+      const phaseSubheading = state.phaseDetails?.phaseSubheading || roadmapData.subheading;
+      const phaseBannerImage = state.phaseDetails?.phaseBannerImage || roadmapData.bannerImage;
 
       return {
         type: "phase",
         name: state.phaseDetails?.phaseName || roadmapData.name,
-        roadMapDetails: state.phaseDetails?.phaseSubheading || roadmapData.subheading,
-        description: formData.descriptionVerbiage,
+        ...(phaseSubheading && { roadMapDetails: phaseSubheading }),
+        ...(formData.descriptionVerbiage && { description: formData.descriptionVerbiage }),
         duration: state.phaseDetails?.phaseCompletionTime || roadmapData.completionTime,
-        imageUrl: state.phaseDetails?.phaseBannerImage || roadmapData.bannerImage || undefined,
+        ...(phaseBannerImage && { imageUrl: phaseBannerImage }),
         divisions: state.phaseDetails?.phaseDivisions || [roadmapData.selectedDivision.toLowerCase()],
-        phase: "Phase 1",
-        totalSteps: state.roadmaps.length,
-        extras: extras.length > 0 ? extras : undefined,
+        ...(state.phaseDetails?.phaseDivisions && state.phaseDetails.phaseDivisions.length > 0 && { phase: "Phase 1" }),
+        ...(state.roadmaps.length > 0 && { totalSteps: state.roadmaps.length }),
+        ...(extras.length > 0 && { extras }),
         roadmaps,
       };
     } else {
@@ -402,23 +441,23 @@ export default function RoadmapFormScreen() {
       return {
         type: "phase",
         name: roadmapData.name,
-        roadMapDetails: roadmapData.subheading,
-        description: formData.descriptionVerbiage,
+        ...(roadmapData.subheading && { roadMapDetails: roadmapData.subheading }),
+        ...(formData.descriptionVerbiage && { description: formData.descriptionVerbiage }),
         duration: roadmapData.completionTime,
-        imageUrl: roadmapData.bannerImage || undefined,
+        ...(roadmapData.bannerImage && { imageUrl: roadmapData.bannerImage }),
         divisions: [roadmapData.selectedDivision.toLowerCase()],
-        phase: roadmapData.selectedDivision,
-        totalSteps: formData.customFields.length,
+        ...(roadmapData.selectedDivision && { phase: roadmapData.selectedDivision }),
+        ...(formData.customFields.length > 0 && { totalSteps: formData.customFields.length }),
         roadmaps: [
           {
             name: roadmapData.name,
-            roadMapDetails: roadmapData.subheading,
-            description: formData.descriptionVerbiage,
+            ...(roadmapData.subheading && { roadMapDetails: roadmapData.subheading }),
+            ...(formData.descriptionVerbiage && { description: formData.descriptionVerbiage }),
             duration: roadmapData.completionTime,
-            imageUrl: roadmapData.bannerImage || undefined,
-            phase: roadmapData.selectedDivision.toLowerCase(),
-            totalSteps: formData.customFields.length,
-            extras,
+            ...(roadmapData.bannerImage && { imageUrl: roadmapData.bannerImage }),
+            ...(roadmapData.selectedDivision && { phase: roadmapData.selectedDivision.toLowerCase() }),
+            ...(formData.customFields.length > 0 && { totalSteps: formData.customFields.length }),
+            ...(extras.length > 0 && { extras }),
           },
         ],
       };

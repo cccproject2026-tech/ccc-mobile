@@ -64,14 +64,25 @@ export default function RevitalizationRoadmap() {
   const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
   const [selectedRoadmap, setSelectedRoadmap] = useState<RoadmapCardData | null>(null);
 
-  // Fetch roadmaps from API
-  const { data: roadmaps = [], isLoading: isLoadingRoadmaps, error: roadmapsError } = useRoadmaps();
+  // Fetch roadmaps from API - use 'director' role to get all roadmaps
+  const { data: roadmaps = [], isLoading: isLoadingRoadmaps, error: roadmapsError } = useRoadmaps('director');
   
   // Transform roadmaps to RoadmapCardData
   const roadmapLibrary: RoadmapCardData[] = useMemo(() => {
-    return roadmaps
+    console.log("🔄 Transforming roadmaps to cards. Total roadmaps:", roadmaps.length);
+    const transformed = roadmaps
       .filter(roadmap => roadmap != null) // Filter out null/undefined roadmaps
-      .map(roadmap => getRoadmapCard(roadmap));
+      .map(roadmap => {
+        try {
+          return getRoadmapCard(roadmap);
+        } catch (error) {
+          console.error("❌ Error transforming roadmap:", roadmap?._id, error);
+          return null;
+        }
+      })
+      .filter(card => card != null) as RoadmapCardData[];
+    console.log("✅ Transformed roadmaps count:", transformed.length);
+    return transformed;
   }, [roadmaps]);
 
   const getFilterOptions = (): FilterOption[] => {
@@ -318,6 +329,7 @@ export default function RevitalizationRoadmap() {
 
   const filteredRoadmaps = useMemo(() => {
     let filtered = roadmapLibrary;
+    console.log("🔍 Filtering roadmaps. Library count:", roadmapLibrary.length, "Search:", search);
 
     if (search) {
       filtered = filtered.filter((roadmap: RoadmapCardData) =>
@@ -326,6 +338,7 @@ export default function RevitalizationRoadmap() {
       );
     }
 
+    console.log("✅ Filtered roadmaps count:", filtered.length);
     return filtered;
   }, [roadmapLibrary, search]);
 
