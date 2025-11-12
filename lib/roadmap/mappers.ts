@@ -54,70 +54,9 @@
 
 
 // // lib/roadmap/mappers.ts - SINGLE HOOK FOR CARD DATA
-import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
-import { Phase, Task } from './types';
-
-
-export const getPhaseNumberOld = (phase: Phase): number | undefined => {
-    // Don't show phase badge for single roadmap phases
-    if (phase.isSingleRoadmap) return undefined;
-
-    // Extract phase number from phase ID (e.g., 'phase-1' → 1)
-    const match = phase.id.match(/phase-(\d+)/);
-    return match ? parseInt(match[1], 10) : undefined;
-};
-
-export function usePhaseCard(phase: Phase, tasks: Task[]) {
-    const { progress } = useRoadmapProgress();
-
-    // Calculate completion
-    const completed = tasks.filter(t =>
-        (progress[t.id]?.status || t.status) === 'COMPLETED'
-    ).length;
-    const total = tasks.length;
-
-    // Check status
-    const anyDue = tasks.some(t => {
-        const status = progress[t.id]?.status || t.status;
-        const today = new Date().toISOString().slice(0, 10);
-        return t.dueDate && t.dueDate <= today && status !== 'COMPLETED';
-    });
-
-    const anyInProgress = tasks.some(t =>
-        (progress[t.id]?.status || t.status) === 'IN_PROGRESS'
-    );
-
-    const allCompleted = completed === total && total > 0;
-
-    // Determine phase status
-    const status: 'initial' | 'in-progress' | 'completed' | 'due' =
-        allCompleted ? 'completed' :
-            anyDue ? 'due' :
-                anyInProgress || completed > 0 ? 'in-progress' :
-                    'initial';
-    const phaseNumber = getPhaseNumberOld(phase);
-
-
-    return {
-        phase: phase.id,
-        image: phase.coverImage,
-        title: phase.title,
-        description: phase.subtitle,
-        completionTime: `Completion Time\nMonths ${phase.estMonthsMin} – ${phase.estMonthsMax}`,
-        status,
-        completedDate: allCompleted ? new Date().toISOString().slice(0, 10) : undefined,
-        taskProgress: (status === 'in-progress' || status === 'due') && total > 0
-            ? { completed, total }
-            : undefined,
-        showArrow: true,
-        showCheckmark: allCompleted,
-        phaseNumber,
-    };
-}
-
-
 // lib/roadmap/mappers.ts
 import {
+    formatDate,
     getCardStatus,
     getCompletionStats,
     getPhaseNumber,
@@ -127,7 +66,8 @@ import {
 import { NestedRoadmap, Roadmap, RoadmapCardData } from './types';
 
 /**
- * Get card data for a roadmap (phase) - NO HOOK
+ * Get card data for a roadmap (phase)
+ * Status is already merged from progress data via useRoadmaps hook
  */
 export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
     if (!roadmap) {
@@ -148,7 +88,7 @@ export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
     const phaseNumber = isSingleTask(roadmap) ? undefined : getPhaseNumber(roadmap.phase || '');
 
     const allCompleted = completed === total && total > 0;
-    const hasProgress = status === 'in-progress' || status === 'due';
+    const hasProgress = (status === 'in-progress' || status === 'due') && total > 0;
 
     return {
         image: roadmap.imageUrl,
@@ -156,8 +96,8 @@ export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
         description: roadmap.roadMapDetails,
         completionTime: `Completion Time\nMonths ${min}${min !== max ? ` – ${max}` : ''}`,
         status,
-        completedDate: roadmap.completedOn || undefined,
-        taskProgress: hasProgress && total > 0 ? { completed, total } : undefined,
+        completedDate: roadmap.completedOn ? formatDate(roadmap.completedOn) : undefined,
+        taskProgress: hasProgress ? { completed, total } : undefined,
         showArrow: true,
         showCheckmark: allCompleted,
         phaseNumber,
@@ -165,7 +105,8 @@ export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
 }
 
 /**
- * Get card data for a nested roadmap (task) - NO HOOK
+ * Get card data for a nested roadmap (task)
+ * Status is already merged from progress data
  */
 export function getTaskCard(task: NestedRoadmap): RoadmapCardData {
     const status = getCardStatus(task);
@@ -175,9 +116,39 @@ export function getTaskCard(task: NestedRoadmap): RoadmapCardData {
         image: task.imageUrl,
         title: task.name,
         description: task.roadMapDetails,
-        completionTime: `Duration: ${task.duration}`,
+        completionTime: task.duration ? `Duration: ${task.duration}` : undefined,
         status,
+        completedDate: task.completedOn ? formatDate(task.completedOn) : undefined,
         showArrow: true,
         showCheckmark: isCompleted,
     };
+}
+
+/**
+ * Get simplified card data (for lists/previews)
+ */
+export function getSimpleRoadmapCard(roadmap: Roadmap): Omit<RoadmapCardData, 'completionTime' | 'taskProgress'> {
+    const status = getCardStatus(roadmap);
+    const phaseNumber = isSingleTask(roadmap) ? undefined : getPhaseNumber(roadmap.phase);
+
+    return {
+        image: roadmap.imageUrl,
+        title: roadmap.name,
+        description: roadmap.roadMapDetails,
+        status,
+        showArrow: true,
+        showCheckmark: status === 'completed',
+        phaseNumber,
+    };
+}
+
+/**
+ * Get card data with custom overrides
+ */
+export function getRoadmapCardWithOverrides(
+    roadmap: Roadmap,
+    overrides?: Partial<RoadmapCardData>
+): RoadmapCardData {
+    const baseCard = getRoadmapCard(roadmap);
+    return { ...baseCard, ...overrides };
 }

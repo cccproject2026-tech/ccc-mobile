@@ -1,3 +1,4 @@
+// hooks/useProgress.ts
 import { apiClient } from "@/services/api/client";
 import { ENDPOINTS } from "@/services/api/endpoints";
 import { useAuthStore } from "@/stores/auth.store";
@@ -15,7 +16,7 @@ export const progressKeys = {
 };
 
 // ============================================
-// PROGRESS TYPES
+// PROGRESS TYPES (Updated with nested roadmaps)
 // ============================================
 
 
@@ -86,6 +87,22 @@ export const useProgress = () => {
 // ============================================
 // GRANULAR PROGRESS HOOKS
 // ============================================
+
+/**
+ * Hook to get assigned roadmap IDs for the current user
+ */
+export const useAssignedRoadmapIds = () => {
+    const { data, isLoading, isError, error } = useProgress();
+
+    const roadmapIds = data?.roadmaps.items.map(item => item.roadMapId) || [];
+
+    return {
+        roadmapIds,
+        isLoading,
+        isError,
+        error,
+    };
+};
 
 /**
  * Hook to get only roadmap progress
@@ -161,6 +178,28 @@ export const useAssessmentProgressById = (assessmentId: string) => {
 
     return {
         data: assessmentProgress || null,
+        isLoading,
+        isError,
+        error,
+    };
+};
+
+/**
+ * Hook to get nested roadmap progress by ID
+ */
+export const useNestedRoadmapProgressById = (roadmapId: string, nestedRoadmapId: string) => {
+    const { data, isLoading, isError, error } = useProgress();
+
+    const roadmapProgress = data?.roadmaps.items.find(
+        (item) => item.roadMapId === roadmapId
+    );
+
+    const nestedProgress = roadmapProgress?.nestedRoadmaps?.find(
+        (nested) => nested.nestedRoadmapId === nestedRoadmapId
+    );
+
+    return {
+        data: nestedProgress || null,
         isLoading,
         isError,
         error,
