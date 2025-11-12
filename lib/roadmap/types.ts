@@ -262,7 +262,7 @@ export interface NestedRoadmap {
     startDate: string;
     endDate: string;
     completedOn: string;
-    phase: string; // division name
+    phase: string;
     totalSteps: number;
     extras: Extra[];
 }
@@ -305,7 +305,7 @@ export interface RoadmapCardData {
     phaseNumber?: number;
 }
 
-
+// ============= EXTRAS TYPES =============
 
 export interface CreateExtrasDto {
     userId: string;

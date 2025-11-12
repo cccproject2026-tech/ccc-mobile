@@ -3,6 +3,7 @@ import { NestedRoadmap, Roadmap, RoadmapCardStatus } from './types';
 
 /**
  * Get status for card display
+ * Note: Status is now properly set from progress data via useRoadmaps hook
  */
 export function getCardStatus(roadmap: Roadmap | NestedRoadmap): RoadmapCardStatus {
     const statusMap: Record<string, RoadmapCardStatus> = {
@@ -11,6 +12,16 @@ export function getCardStatus(roadmap: Roadmap | NestedRoadmap): RoadmapCardStat
         'completed': 'completed',
         'blocked': 'due',
     };
+
+    // Check if roadmap is overdue (only for non-completed items)
+    if ('endDate' in roadmap && roadmap.endDate && roadmap.status !== 'completed') {
+        const endDate = new Date(roadmap.endDate);
+        const now = new Date();
+
+        if (endDate < now) {
+            return 'due';
+        }
+    }
 
     return statusMap[roadmap.status] || 'initial';
 }
@@ -23,13 +34,13 @@ export function getTasks(roadmap: Roadmap): NestedRoadmap[] {
 }
 
 /**
- * Get tasks grouped by division
+ * Get tasks grouped by division/phase
  */
 export function getTasksByDivision(roadmap: Roadmap): Record<string, NestedRoadmap[]> {
     const grouped: Record<string, NestedRoadmap[]> = {};
 
     roadmap.roadmaps?.forEach(task => {
-        const division = task.phase;
+        const division = task.phase || 'Uncategorized';
         if (!grouped[division]) {
             grouped[division] = [];
         }
@@ -41,6 +52,7 @@ export function getTasksByDivision(roadmap: Roadmap): Record<string, NestedRoadm
 
 /**
  * Calculate completion stats
+ * Uses the actual status from progress data
  */
 export function getCompletionStats(roadmap: Roadmap): { completed: number; total: number } {
     const tasks = getTasks(roadmap);
@@ -48,6 +60,14 @@ export function getCompletionStats(roadmap: Roadmap): { completed: number; total
     const completed = tasks.filter(task => task.status === 'completed').length;
 
     return { completed, total };
+}
+
+/**
+ * Calculate completion percentage
+ */
+export function getCompletionPercentage(roadmap: Roadmap): number {
+    const { completed, total } = getCompletionStats(roadmap);
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
 }
 
 /**
@@ -62,15 +82,20 @@ export function isSingleTask(roadmap: Roadmap): boolean {
  * e.g., "Phase 1" -> 1
  */
 export function getPhaseNumber(phaseString: string): number | undefined {
+    if (!phaseString) return undefined;
+
     const match = phaseString.match(/\d+/);
     return match ? parseInt(match[0], 10) : undefined;
 }
 
 /**
  * Parse duration to months
+ * Handles formats like: "1 month", "2-3 months", "4 weeks"
  */
 export function parseDurationMonths(duration: string): { min: number; max: number } {
-    const match = duration.match(/(\d+)(?:\s*-\s*(\d+))?\s*(month|week)/i);
+    if (!duration) return { min: 1, max: 1 };
+
+    const match = duration.match(/(\d+)(?:\s*[-–]\s*(\d+))?\s*(month|week)/i);
 
     if (match) {
         const min = parseInt(match[1], 10);
@@ -85,4 +110,59 @@ export function parseDurationMonths(duration: string): { min: number; max: numbe
     }
 
     return { min: 1, max: 1 };
+}
+
+/**
+ * Format duration string for display
+ */
+export function formatDuration(duration: string): string {
+    const { min, max } = parseDurationMonths(duration);
+
+    if (min === max) {
+        return `${min} ${min === 1 ? 'month' : 'months'}`;
+    }
+
+    return `${min}-${max} months`;
+}
+
+/**
+ * Check if a roadmap/task is overdue
+ */
+export function isOverdue(roadmap: Roadmap | NestedRoadmap): boolean {
+    if (!('endDate' in roadmap) || !roadmap.endDate || roadmap.status === 'completed') {
+        return false;
+    }
+
+    const endDate = new Date(roadmap.endDate);
+    const now = new Date();
+
+    return endDate < now;
+}
+
+/**
+ * Get days remaining until due date
+ */
+export function getDaysRemaining(endDate: string): number | null {
+    if (!endDate) return null;
+
+    const end = new Date(endDate);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+}
+
+/**
+ * Format date for display
+ */
+export function formatDate(dateString: string): string {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
 }

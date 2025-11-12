@@ -244,7 +244,7 @@
 
 
 
-
+// screens/PhaseList.tsx
 import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import RoadmapCard from '@/components/director/ProgressRoadmapCard';
@@ -254,7 +254,8 @@ import TopBar from '@/components/director/TopBar';
 import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
 import { getCardStatus } from '@/lib/roadmap/helpers';
 import { getRoadmapCard } from '@/lib/roadmap/mappers';
-import { Roadmap } from '@/lib/roadmap/types';
+import { Roadmap, RoadmapCardStatus } from '@/lib/roadmap/types';
+import { useAuthStore } from '@/stores/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -270,13 +271,19 @@ import {
     View
 } from 'react-native';
 
-
 type TabKey = 'ALL' | 'DUE' | 'COMPLETED' | 'NOT_STARTED' | 'IN_PROGRESS';
 
-
 export default function PhaseList() {
-    const { data: roadmaps, isLoading, error, refetch, isRefetching } = useRoadmaps();
+    const { user } = useAuthStore();
 
+    // Fetch roadmaps with merged progress status
+    const {
+        data: roadmaps,
+        isLoading,
+        error,
+        refetch,
+        isRefetching,
+    } = useRoadmaps(user?.role || 'pastor');
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -284,12 +291,10 @@ export default function PhaseList() {
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<TabKey>('ALL');
 
-
     // Pull-to-refresh handler
     const onRefresh = useCallback(() => {
         refetch();
     }, [refetch]);
-
 
     const outcomeMenuItems = useCallback((): MenuItem[] => [
         {
@@ -330,7 +335,6 @@ export default function PhaseList() {
         },
     ], []);
 
-
     const outcomeData = useCallback(() => [
         { id: '1', text: 'The church is committed to the revitalization process.' },
         { id: '2', text: 'The Church is praying consistently and intentionally for revitalization.' },
@@ -340,11 +344,9 @@ export default function PhaseList() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
-
-    // Calculate phases with status
+    // Calculate phases with status (status already merged from progress)
     const phasesWithStatus = useMemo(() => {
         if (!roadmaps) return [];
-
 
         return roadmaps.map(roadmap => {
             const status = getCardStatus(roadmap);
@@ -352,30 +354,54 @@ export default function PhaseList() {
         });
     }, [roadmaps]);
 
-
-    // Filter by active tab
+    // Filter by search and active tab
     const filteredPhases = useMemo(() => {
-        if (activeTab === 'ALL') return phasesWithStatus;
+        let filtered = phasesWithStatus;
 
+        // Apply tab filter
+        if (activeTab !== 'ALL') {
+            const statusMap: Record<TabKey, RoadmapCardStatus> = {
+                ALL: 'initial', // Not used
+                COMPLETED: 'completed',
+                IN_PROGRESS: 'in-progress',
+                NOT_STARTED: 'initial',
+                DUE: 'due',
+            };
 
-        const statusMap: Record<TabKey, string> = {
-            ALL: '',
-            COMPLETED: 'completed',
-            IN_PROGRESS: 'in-progress',
-            NOT_STARTED: 'initial',
-            DUE: 'due',
-        };
+            filtered = filtered.filter(
+                ({ status }) => status === statusMap[activeTab]
+            );
+        }
 
+        // Apply search filter
+        if (search.trim()) {
+            const searchLower = search.toLowerCase();
+            filtered = filtered.filter(({ roadmap }) =>
+                roadmap.name?.toLowerCase().includes(searchLower) ||
+                roadmap.roadMapDetails?.toLowerCase().includes(searchLower) ||
+                roadmap.phase?.toLowerCase().includes(searchLower)
+            );
+        }
 
-        return phasesWithStatus.filter(
-            ({ status }) => status === statusMap[activeTab]
-        );
-    }, [phasesWithStatus, activeTab]);
-
+        return filtered;
+    }, [phasesWithStatus, activeTab, search]);
 
     const handlePhasePress = useCallback((roadmap: Roadmap) => {
-        console.log('Pressed roadmap:', { roadmap });
-        if (!roadmap.haveNextedRoadMaps && roadmap.roadmaps.length === 1) {
+        console.log('Pressed roadmap:', {
+            id: roadmap._id,
+            name: roadmap.name,
+            status: roadmap.status,
+            hasNested: roadmap.haveNextedRoadMaps,
+            taskCount: roadmap.roadmaps.length
+        });
+
+        if (!roadmap.haveNextedRoadMaps || roadmap.roadmaps.length === 0) {
+            // No tasks - might be a placeholder or error
+            console.warn('Roadmap has no tasks');
+            return;
+        }
+
+        if (roadmap.roadmaps.length === 1) {
             // Single task - go directly to task
             router.push(`/roadmap/${roadmap._id}/${roadmap.roadmaps[0]._id}`);
         } else {
@@ -384,33 +410,33 @@ export default function PhaseList() {
         }
     }, []);
 
-
     // Loading state
     if (isLoading) {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="pastor" userName="John Ross" showUserName />
+                    <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#fff" />
-                    <Text style={{ color: '#fff', marginTop: 16 }}>Loading roadmaps...</Text>
+                    <Text style={{ color: '#fff', marginTop: 16, fontSize: 16 }}>
+                        Loading your roadmaps...
+                    </Text>
                 </View>
             </LinearGradient>
         );
     }
-
 
     // Error state
     if (error) {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="pastor" userName="John Ross" showUserName />
+                    <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
                     <Ionicons name="alert-circle" size={48} color="#fff" />
-                    <Text style={{ color: '#fff', marginTop: 16, textAlign: 'center' }}>
+                    <Text style={{ color: '#fff', marginTop: 16, textAlign: 'center', fontSize: 16 }}>
                         {error instanceof Error ? error.message : 'Failed to load roadmaps'}
                     </Text>
                     <TouchableOpacity
@@ -424,13 +450,31 @@ export default function PhaseList() {
         );
     }
 
+    // No roadmaps assigned
+    if (!roadmaps || roadmaps.length === 0) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+                <View style={styles.topBarWrapper}>
+                    <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                    <Ionicons name="map-outline" size={64} color="#fff" opacity={0.5} />
+                    <Text style={{ color: '#fff', marginTop: 16, fontSize: 18, fontWeight: '600' }}>
+                        No Roadmaps Assigned
+                    </Text>
+                    <Text style={{ color: '#cfe9f3', marginTop: 8, textAlign: 'center' }}>
+                        You don't have any roadmaps assigned yet. Please contact your administrator.
+                    </Text>
+                </View>
+            </LinearGradient>
+        );
+    }
 
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
             <View style={styles.topBarWrapper}>
-                <TopBar role="pastor" userName="John Ross" showUserName />
+                <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
             </View>
-
 
             <View style={styles.headerContainer}>
                 <View style={styles.headerLeft}>
@@ -444,11 +488,13 @@ export default function PhaseList() {
                 </TouchableOpacity>
             </View>
 
-
             <View style={styles.searchWrapper}>
-                <SearchBar value={search} onChangeValue={setSearch} />
+                <SearchBar
+                    value={search}
+                    onChangeValue={setSearch}
+                    placeholder="Search roadmaps..."
+                />
             </View>
-
 
             <TabSwitcher
                 tabs={[
@@ -461,7 +507,6 @@ export default function PhaseList() {
                 activeTab={activeTab}
                 onChange={(key) => setActiveTab(key as TabKey)}
             />
-
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -477,20 +522,28 @@ export default function PhaseList() {
             >
                 {filteredPhases.length > 0 ? (
                     filteredPhases.map(({ roadmap }) => {
+                        // getRoadmapCard now uses status from merged progress data
                         const cardData = getRoadmapCard(roadmap);
                         return (
-                            <Pressable key={roadmap._id} onPress={() => handlePhasePress(roadmap)}>
+                            <Pressable
+                                key={roadmap._id}
+                                onPress={() => handlePhasePress(roadmap)}
+                            >
                                 <RoadmapCard data={cardData} />
                             </Pressable>
                         );
                     })
                 ) : (
                     <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>No roadmaps match the selected filter.</Text>
+                        <Ionicons name="search-outline" size={48} color="#fff" opacity={0.5} />
+                        <Text style={styles.emptyText}>
+                            {search.trim()
+                                ? `No roadmaps found matching "${search}"`
+                                : 'No roadmaps match the selected filter.'}
+                        </Text>
                     </View>
                 )}
             </ScrollView>
-
 
             <ContextMenu
                 visible={showOutcomeMenu}
@@ -501,7 +554,6 @@ export default function PhaseList() {
                 showIcons={false}
                 itemTextStyle={{ fontSize: 15, fontWeight: '500', color: '#1A4882' }}
             />
-
 
             <ExpectedOutcomeModal
                 visible={showOutcomeModal}
@@ -515,7 +567,6 @@ export default function PhaseList() {
         </LinearGradient>
     );
 }
-
 
 const styles = StyleSheet.create({
     topBarWrapper: { paddingBottom: 10 },
@@ -538,16 +589,27 @@ const styles = StyleSheet.create({
     },
     searchWrapper: { paddingHorizontal: 16, marginBottom: 16 },
     scrollContent: { padding: 16 },
-    emptyContainer: { alignItems: 'center', marginTop: 40 },
-    emptyText: { color: 'white', fontSize: 16 },
+    emptyContainer: {
+        alignItems: 'center',
+        marginTop: 40,
+        paddingHorizontal: 20,
+    },
+    emptyText: {
+        color: 'white',
+        fontSize: 16,
+        textAlign: 'center',
+        marginTop: 12,
+    },
     retryButton: {
         marginTop: 20,
-        padding: 12,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
         backgroundColor: '#264387',
         borderRadius: 8,
     },
     retryButtonText: {
         color: '#fff',
         fontWeight: '600',
+        fontSize: 16,
     },
 });
