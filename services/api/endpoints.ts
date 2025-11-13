@@ -30,6 +30,12 @@ export const ENDPOINTS = {
         CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
     },
 
+    MENTORS: {
+        GET_ASSIGNED_MENTORS: (menteeId: string) => `/users/${menteeId}/assigned`,
+    },
+    MENTEES: {
+        GET_ASSIGNED_MENTEES: (mentorId: string) => `/users/${mentorId}/assigned`,
+    },
     // Home
     HOME: {
         MENTEES: '/home/mentees',
