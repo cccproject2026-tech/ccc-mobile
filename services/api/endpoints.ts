@@ -75,6 +75,8 @@ export const ENDPOINTS = {
     ROADMAPS: {
         GET_ALL: '/roadmaps',
         CREATE: '/roadmaps',
+        ADD_COMMENT: (roadmapId: string) => `/roadmaps/${roadmapId}/comments`,
+        SUBMIT_QUERY: (roadmapId: string) => `/roadmaps/${roadmapId}/queries`,
     },
 
     INTERESTS: {

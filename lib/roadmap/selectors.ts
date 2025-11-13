@@ -57,7 +57,7 @@ export const getQuery = (data: RevitalizationData, id: string): Query | undefine
 
 export const getTaskQueries = (data: RevitalizationData, taskId: string): Query[] => {
     const task = getTask(data, taskId);
-    if (!task.queries || !data.queries) return [];
+    if (!task || !task.queries || !data.queries) return [];
 
     return task.queries
         .map(id => data.queries![id])

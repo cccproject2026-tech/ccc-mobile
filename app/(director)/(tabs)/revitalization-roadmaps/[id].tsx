@@ -128,7 +128,10 @@ export default function MenteeRoadmapDetailScreen() {
             onPress: () => {
                 handleCloseModal();
                 setTimeout(() => {
-                    router.push('/(director)/(tabs)/revitalization-roadmaps/assign-mentee');
+                    router.push({
+                        pathname: '/(director)/(tabs)/revitalization-roadmaps/assign-mentee',
+                        params: { roadmapId: id }
+                    });
                 }, 300);
             }
         },

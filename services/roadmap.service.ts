@@ -1,13 +1,18 @@
 // services/roadmap.service.ts
 import {
+    AddCommentRequest,
+    AddCommentResponse,
     CreateExtrasDto,
     ExtrasApiResponse,
     GetExtrasResponse,
     Roadmap,
     RoadmapResponse,
+    SubmitQueryRequest,
+    SubmitQueryResponse,
     UpdateExtrasDto
 } from '@/lib/roadmap/types';
 import { CreateRoadmapRequest, CreateRoadmapResponse } from '@/lib/roadmaps/types';
+import { ENDPOINTS } from './api/endpoints';
 import { apiClient } from './api/client';
 
 export const roadmapService = {
@@ -166,6 +171,30 @@ export const roadmapService = {
         if (!response.data.success) {
             throw new Error(response.data.message || 'Failed to delete roadmap extras');
         }
+        return response.data;
+    },
+
+    async addRoadmapComment(roadmapId: string, payload: AddCommentRequest) {
+        const response = await apiClient.post<AddCommentResponse>(
+            ENDPOINTS.ROADMAPS.ADD_COMMENT(roadmapId),
+            payload
+        );
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to add comment');
+        }
+        return response.data;
+    },
+
+    async submitRoadmapQuery(roadmapId: string, payload: SubmitQueryRequest) {
+        console.log('📤 Submitting roadmap query:', { roadmapId, payload });
+        const response = await apiClient.post<SubmitQueryResponse>(
+            ENDPOINTS.ROADMAPS.SUBMIT_QUERY(roadmapId),
+            payload
+        );
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to submit query');
+        }
+        console.log('📥 Query submitted successfully:', response.data);
         return response.data;
     },
 };

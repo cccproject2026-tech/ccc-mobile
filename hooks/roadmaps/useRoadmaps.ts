@@ -1,8 +1,10 @@
 // hooks/roadmaps/useRoadmaps.ts
 import {
+    AddCommentRequest,
     CreateExtrasDto,
     NestedRoadmap,
     Roadmap,
+    SubmitQueryRequest,
     UpdateExtrasDto
 } from "@/lib/roadmap/types";
 import { apiClient } from "@/services/api/client";
@@ -384,6 +386,62 @@ export function useDeleteRoadmapExtras() {
             });
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.detail(roadMapId)
+            });
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.all
+            });
+        },
+    });
+}
+
+/**
+ * Hook for adding a comment to a roadmap
+ */
+export function useAddRoadmapComment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            roadmapId,
+            payload
+        }: {
+            roadmapId: string;
+            payload: AddCommentRequest;
+        }) => roadmapService.addRoadmapComment(roadmapId, payload),
+        onSuccess: (data, variables) => {
+            console.log("✅ Roadmap comment added successfully");
+
+            // Invalidate relevant queries to refresh comments
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.detail(variables.roadmapId)
+            });
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.all
+            });
+        },
+    });
+}
+
+/**
+ * Hook for submitting a query to a roadmap
+ */
+export function useSubmitRoadmapQuery() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            roadmapId,
+            payload
+        }: {
+            roadmapId: string;
+            payload: SubmitQueryRequest;
+        }) => roadmapService.submitRoadmapQuery(roadmapId, payload),
+        onSuccess: (data, variables) => {
+            console.log("✅ Roadmap query submitted successfully");
+
+            // Invalidate relevant queries to refresh queries list
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.detail(variables.roadmapId)
             });
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.all

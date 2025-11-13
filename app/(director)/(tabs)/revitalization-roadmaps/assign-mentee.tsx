@@ -1,13 +1,16 @@
 import FilterModal, { FilterOption } from '@/components/director/FilterModal';
-import MenteeCard, { Mentee } from '@/components/director/MenteeCard';
+import MenteeCard from '@/components/director/MenteeCard';
 import SearchBar from '@/components/director/SearchBar';
 import TopBar from '@/components/director/TopBar';
 import { STATES } from '@/constants/mockData';
+import { useMentees } from '@/hooks/mentees/useMentees';
+import { useAssignRoadmap } from '@/hooks/progress/useAssignRoadmap';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     FlatList,
     Modal,
@@ -20,68 +23,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 
-const mockMentees: Mentee[] = [
-    {
-        id: '1',
-        name: 'John Doe',
-        description: 'Pastor interested in revitalization roadmap mentoring',
-        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-        lastContacted: '11 / 01 / 2025',
-        totalMentors: 0,
-    },
-    {
-        id: '2',
-        name: 'John Doe',
-        description: 'Pastor interested in revitalization roadmap mentoring',
-        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-        lastContacted: '10 / 28 / 2025',
-        totalMentors: 2,
-    },
-    {
-        id: '3',
-        name: 'John Doe',
-        description: 'Pastor interested in revitalization roadmap mentoring',
-        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-        lastContacted: '11 / 01 / 2025',
-        totalMentors: 2,
-    },
-    {
-        id: '4',
-        name: 'John Doe',
-        description: 'Pastor interested in revitalization roadmap mentoring',
-        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-        lastContacted: '10 / 25 / 2025',
-        totalMentors: 0,
-    },
-    {
-        id: '5',
-        name: 'John Doe',
-        description: 'Pastor interested in revitalization roadmap mentoring',
-        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-        lastContacted: '10 / 30 / 2025',
-        totalMentors: 0,
-    },
-    {
-        id: '6',
-        name: 'John Doe',
-        description: 'Pastor interested in revitalization roadmap mentoring',
-        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-        lastContacted: '10 / 15 / 2025',
-        totalMentors: 0,
-    },
-    {
-        id: '7',
-        name: 'John Doe',
-        description: 'Pastor interested in revitalization roadmap mentoring',
-        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-        lastContacted: '11 / 02 / 2025',
-        totalMentors: 0,
-    },
-];
-
 export default function AssignMenteeScreen() {
     const router = useRouter();
     const { top, bottom } = useSafeAreaInsets();
+    const { roadmapId } = useLocalSearchParams<{ roadmapId: string }>();
+
+    // Fetch mentees from API
+    const { mentees, isLoading: isLoadingMentees, error: menteesError } = useMentees();
+    const assignRoadmap = useAssignRoadmap();
 
     const [search, setSearch] = useState('');
     const [selectedMentees, setSelectedMentees] = useState<Set<string>>(new Set());
@@ -141,43 +90,46 @@ export default function AssignMenteeScreen() {
 
 
     const filteredMentees = useMemo(() => {
-        return mockMentees.filter(mentee =>
+        if (!mentees) return [];
+        return mentees.filter(mentee =>
             mentee.name.toLowerCase().includes(search.toLowerCase())
         );
-    }, [search]);
+    }, [mentees, search]);
 
-    const handleAssign = () => {
+    const handleAssign = async () => {
         if (selectedMentees.size === 0) {
             Alert.alert('No Selection', 'Please select at least one mentee to assign.');
             return;
         }
 
-        const selectedNames = mockMentees
-            .filter(m => selectedMentees.has(m.id))
-            .map(m => m.name)
-            .join(', ');
+        if (!roadmapId) {
+            Alert.alert('Error', 'Roadmap ID is missing. Please go back and try again.');
+            return;
+        }
 
-        Alert.alert(
-            'Assign Mentees',
-            `Are you sure you want to assign: ${selectedNames}?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Assign',
-                    onPress: () => {
-                        console.log('Assigned:', Array.from(selectedMentees));
-                        // Show success modal
-                        setShowSuccessModal(true);
-                    },
-                },
-            ]
-        );
+        try {
+            const userIds = Array.from(selectedMentees);
+            const result = await assignRoadmap.mutateAsync({
+                userIds,
+                roadMapIds: [roadmapId],
+            });
+            
+            console.log('✅ Roadmaps assigned successfully:', result.message);
+            setShowSuccessModal(true);
+        } catch (error) {
+            console.error('❌ Failed to assign roadmap:', error);
+            Alert.alert(
+                'Assignment Failed',
+                error instanceof Error ? error.message : 'Failed to assign roadmap. Please try again.',
+                [{ text: 'OK' }]
+            );
+        }
     };
 
     const getSelectedNamesText = () => {
         if (selectedMentees.size === 0) return 'No mentees selected';
 
-        const names = mockMentees
+        const names = mentees
             .filter(m => selectedMentees.has(m.id))
             .map(m => m.name);
 
@@ -216,24 +168,44 @@ export default function AssignMenteeScreen() {
             </View>
 
             {/* Mentees List */}
-            <FlatList
-                data={filteredMentees}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <MenteeCard
-                        data={item}
-                        layout="list"
-                        isSelected={selectedMentees.has(item.id)}
-                        onToggleSelect={() => toggleSelectMentee(item.id)}
-                        onPress={() => toggleSelectMentee(item.id)}
-                    />
-                )}
-                contentContainerStyle={[
-                    styles.listContent,
-                    { paddingBottom: 100 + bottom },
-                ]}
-                showsVerticalScrollIndicator={false}
-            />
+            {isLoadingMentees ? (
+                <View style={[styles.loadingContainer, { paddingBottom: 100 + bottom }]}>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={styles.loadingText}>Loading mentees...</Text>
+                </View>
+            ) : menteesError ? (
+                <View style={[styles.errorContainer, { paddingBottom: 100 + bottom }]}>
+                    <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
+                    <Text style={styles.errorText}>Failed to load mentees</Text>
+                    <Text style={styles.errorSubtext}>
+                        {menteesError instanceof Error ? menteesError.message : 'An unexpected error occurred'}
+                    </Text>
+                </View>
+            ) : filteredMentees.length === 0 ? (
+                <View style={[styles.emptyContainer, { paddingBottom: 100 + bottom }]}>
+                    <Ionicons name="people-outline" size={48} color="#fff" style={{ opacity: 0.5 }} />
+                    <Text style={styles.emptyText}>No mentees found</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredMentees}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <MenteeCard
+                            data={item}
+                            layout="list"
+                            isSelected={selectedMentees.has(item.id)}
+                            onToggleSelect={() => toggleSelectMentee(item.id)}
+                            onPress={() => toggleSelectMentee(item.id)}
+                        />
+                    )}
+                    contentContainerStyle={[
+                        styles.listContent,
+                        { paddingBottom: 100 + bottom },
+                    ]}
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
 
             {/* Sticky Bottom Assign Container */}
             <View style={[styles.bottomContainer, { paddingBottom: bottom + 16 }]}>
@@ -255,9 +227,13 @@ export default function AssignMenteeScreen() {
                     <TouchableOpacity
                         style={styles.assignButtonInner}
                         onPress={handleAssign}
-                        disabled={selectedMentees.size === 0}
+                        disabled={selectedMentees.size === 0 || assignRoadmap.isPending}
                     >
-                        <Text style={styles.assignButtonText}>Assign</Text>
+                        {assignRoadmap.isPending ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <Text style={styles.assignButtonText}>Assign</Text>
+                        )}
                     </TouchableOpacity>
                 </LinearGradient>
             </View>
@@ -426,5 +402,50 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: 'rgba(23, 97, 146, 1)',
         textAlign: 'center',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 40,
+    },
+    loadingText: {
+        color: '#fff',
+        marginTop: 16,
+        fontSize: 16,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 40,
+        paddingHorizontal: 20,
+    },
+    errorText: {
+        color: '#ff6b6b',
+        marginTop: 16,
+        fontSize: 16,
+        textAlign: 'center',
+        fontWeight: '600',
+    },
+    errorSubtext: {
+        color: '#fff',
+        marginTop: 8,
+        fontSize: 14,
+        textAlign: 'center',
+        opacity: 0.8,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 40,
+    },
+    emptyText: {
+        color: '#fff',
+        marginTop: 16,
+        fontSize: 16,
+        textAlign: 'center',
+        opacity: 0.7,
     },
 });

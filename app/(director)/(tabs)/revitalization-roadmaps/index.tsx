@@ -182,9 +182,17 @@ export default function RevitalizationRoadmap() {
       icon: 'person-add-outline',
       label: 'Assign to',
       onPress: () => {
+        if (!selectedRoadmap) return;
+        // Find the roadmap ID from the roadmap data
+        const roadmap = roadmaps.find(r => r.name === selectedRoadmap.title);
+        if (!roadmap) return;
+        
         handleCloseModal();
         setTimeout(() => {
-          router.push('/(director)/(tabs)/revitalization-roadmaps/assign-mentee');
+          router.push({
+            pathname: '/(director)/(tabs)/revitalization-roadmaps/assign-mentee',
+            params: { roadmapId: roadmap._id }
+          });
         }, 300);
       }
     },

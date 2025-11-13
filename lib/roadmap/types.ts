@@ -2,11 +2,12 @@
 // import { ImageSourcePropType } from "react-native";
 
 import { ExternalPathString, RelativePathString, Route } from "expo-router";
+import { ImageSourcePropType } from "react-native";
 
 export type PhaseCode = 'JUMP_START' | 'PHASE_1' | 'PHASE_2' | 'PHASE_3';
 export type Status = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
 // export type CommentStatus = 'UNREAD' | 'READ' | 'ARCHIVED';
-// export type QueryStatus = 'PENDING' | 'ANSWERED';
+export type QueryStatus = 'PENDING' | 'ANSWERED';
 
 
 
@@ -42,34 +43,34 @@ export type Status = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
 // }
 
 
-// export interface QueryAuthor {
-//     id: string;
-//     name: string;
-//     avatar?: ImageSourcePropType;
-// }
+export interface QueryAuthor {
+    id: string;
+    name: string;
+    avatar?: ImageSourcePropType;
+}
 
-// export interface QueryResponse {
-//     id: string;
-//     queryId: string;
-//     content: string;
-//     timestamp: string;
-//     author: {
-//         id: string;
-//         name: string;
-//         role?: string; // e.g., "Mentor", "Admin"
-//         avatar?: ImageSourcePropType;
-//     };
-// }
+export interface QueryResponse {
+    id: string;
+    queryId: string;
+    content: string;
+    timestamp: string;
+    author: {
+        id: string;
+        name: string;
+        role?: string; // e.g., "Mentor", "Admin"
+        avatar?: ImageSourcePropType;
+    };
+}
 
-// export interface Query {
-//     id: string;
-//     author: QueryAuthor;
-//     question: string;
-//     timestamp: string;
-//     status: QueryStatus;
-//     responses?: string[]; // Array of response IDs
-//     hasResponse: boolean;
-// }
+export interface Query {
+    id: string;
+    author: QueryAuthor;
+    question: string;
+    timestamp: string;
+    status: QueryStatus;
+    responses?: string[]; // Array of response IDs
+    hasResponse: boolean;
+}
 
 
 // export interface CommentAuthor {
@@ -338,4 +339,56 @@ export interface GetExtrasResponse {
     success: boolean;
     message: string;
     data?: ExtrasResponseDto | null;
+}
+
+// ============= COMMENT TYPES =============
+
+export interface AddCommentRequest {
+    text: string;
+    userId: string;
+    mentorId: string;
+}
+
+export interface RoadmapComment {
+    _id: string;
+    text: string;
+    addedDate: string;
+    mentorId: {
+        _id: string;
+    };
+}
+
+export interface AddCommentResponse {
+    success: boolean;
+    message: string;
+    data: {
+        _id: string;
+        userId: string;
+        roadMapId: string;
+        comments: RoadmapComment[];
+    };
+}
+
+export interface SubmitQueryRequest {
+    actualQueryText: string;
+    userId: string;
+}
+
+export interface RoadmapQuery {
+    _id: string;
+    actualQueryText: string;
+    createdDate: string;
+    repliedMentorId: string;
+    status: 'pending' | 'answered';
+}
+
+export interface SubmitQueryResponse {
+    success: boolean;
+    message: string;
+    data: {
+        _id: string;
+        userId: string;
+        roadMapId: string;
+        queries: RoadmapQuery[];
+    };
 }

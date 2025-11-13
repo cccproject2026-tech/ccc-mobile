@@ -1,13 +1,15 @@
 import TopBar from '@/components/director/TopBar';
+import { useSubmitRoadmapQuery } from '@/hooks/roadmaps/useRoadmaps';
 import { mockRevitalization } from '@/lib/roadmap/mock';
 import { getQueryResponse, getTask, getTaskQueries } from '@/lib/roadmap/selectors';
 import { Query, QueryResponse } from '@/lib/roadmap/types';
+import { useAuthStore } from '@/stores/auth.store';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // Extended Query type with response data
 type QueryWithResponse = Query & {
@@ -16,12 +18,14 @@ type QueryWithResponse = Query & {
 
 export default function QueriesScreen() {
     const router = useRouter();
-    const { taskId } = useLocalSearchParams<{ taskId: string }>(); // ✅ Changed to taskId
+    const { taskId, roadmapId } = useLocalSearchParams<{ taskId: string; roadmapId: string }>();
+    const { user } = useAuthStore();
+    const submitQuery = useSubmitRoadmapQuery();
     const [selectedTab, setSelectedTab] = useState<'NEW' | 'ANSWERED' | 'PENDING'>('NEW');
     const [queryText, setQueryText] = useState('');
 
-    const task = useMemo(() => getTask(mockRevitalization, taskId), [taskId]);
-    const allQueries = useMemo(() => getTaskQueries(mockRevitalization, taskId), [taskId]);
+    const task = useMemo(() => taskId ? getTask(mockRevitalization, taskId) : undefined, [taskId]);
+    const allQueries = useMemo(() => taskId ? getTaskQueries(mockRevitalization, taskId) : [], [taskId]);
 
     // Filter queries based on selected tab and populate response data
     const displayQueries = useMemo(() => {
@@ -42,12 +46,40 @@ export default function QueriesScreen() {
         });
     }, [allQueries, selectedTab]);
 
-    const handleSubmitQuery = () => {
-        if (queryText.trim()) {
-            console.log('Submitting query:', queryText);
+    const handleSubmitQuery = async () => {
+        if (!queryText.trim()) {
+            return;
+        }
+
+        if (!roadmapId) {
+            Alert.alert('Error', 'Roadmap ID is missing. Please go back and try again.');
+            return;
+        }
+
+        if (!user?.id) {
+            Alert.alert('Error', 'User ID is missing. Please log in again.');
+            return;
+        }
+
+        try {
+            await submitQuery.mutateAsync({
+                roadmapId,
+                payload: {
+                    actualQueryText: queryText.trim(),
+                    userId: user.id,
+                },
+            });
+
+            // Clear the input and switch to PENDING tab
             setQueryText('');
-            // After submission, switch to PENDING tab to show the new query
             setSelectedTab('PENDING');
+        } catch (error) {
+            console.error('❌ Failed to submit query:', error);
+            Alert.alert(
+                'Submission Failed',
+                error instanceof Error ? error.message : 'Failed to submit query. Please try again.',
+                [{ text: 'OK' }]
+            );
         }
     };
 
@@ -220,11 +252,15 @@ export default function QueriesScreen() {
                     </View>
 
                     <TouchableOpacity
-                        style={styles.submitButton}
+                        style={[styles.submitButton, (!queryText.trim() || submitQuery.isPending) && styles.submitButtonDisabled]}
                         onPress={handleSubmitQuery}
-                        disabled={!queryText.trim()}
+                        disabled={!queryText.trim() || submitQuery.isPending}
                     >
-                        <Text style={styles.submitButtonText}>Submit</Text>
+                        {submitQuery.isPending ? (
+                            <ActivityIndicator size="small" color="#1D548D" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>Submit</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             ) : (
@@ -338,6 +374,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#1D548D',
+    },
+    submitButtonDisabled: {
+        opacity: 0.5,
     },
     listContainer: {
         padding: 16,

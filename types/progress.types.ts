@@ -40,3 +40,27 @@ export interface ProgressData {
         items: AssessmentProgress[];
     };
 }
+
+export interface AssignRoadmapRequest {
+    userIds: string[];
+    roadMapIds: string[];
+}
+
+export interface AssignRoadmapResponse {
+    _id: string;
+    userId: string;
+    roadmaps: RoadmapProgress[];
+    totalRoadmaps: number;
+    completedRoadmaps: number;
+    overallRoadmapProgress: number;
+    assessments: AssessmentProgress[];
+    totalAssessments: number;
+    completedAssessments: number;
+    overallAssessmentProgress: number;
+}
+
+export interface AssignRoadmapApiResponse {
+    success: boolean;
+    message: string;
+    data: AssignRoadmapResponse[];
+}
