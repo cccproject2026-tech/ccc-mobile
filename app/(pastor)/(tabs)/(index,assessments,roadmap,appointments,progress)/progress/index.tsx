@@ -1,3 +1,4 @@
+// app/(pastor)/(tabs)/progress.tsx
 import { Tab } from "@/components/atom/tab";
 import PMPBottomSheet from "@/components/director/PMPBottomSheet";
 import ProgressAssessmentCard from "@/components/director/ProgressAssessmentCard";
@@ -7,27 +8,66 @@ import RoadmapCard from "@/components/director/ProgressRoadmapCard";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { usePhaseCard } from '@/lib/roadmap/mappers';
-import { mockRevitalization } from '@/lib/roadmap/mock';
-import { getPhase, getPhaseTasks } from '@/lib/roadmap/selectors';
+import { useAssessmentProgress, useProgress, useRoadmapProgress } from '@/hooks/progress/useProgress';
+import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
+import { getRoadmapCard } from '@/lib/roadmap/mappers';
+import { useAuthStore } from '@/stores/auth.store';
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useRef } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+type TabKey = 'All' | 'Completed' | 'Remaining';
 
 export default function ProgressScreen() {
-  const [roadmapTabs, setRoadmapTabs] = React.useState("All");
-  const [assessmentTabs, setAssessmentTabs] = React.useState("All");
+  const [roadmapTabs, setRoadmapTabs] = React.useState<TabKey>("All");
+  const [assessmentTabs, setAssessmentTabs] = React.useState<TabKey>("All");
   const [showCompleted, setShowCompleted] = React.useState(false);
   const pmpSheetRef = useRef<BottomSheetModal>(null);
   const { bottom } = useSafeAreaInsets();
-  const [progress, setProgress] = React.useState<{ completedPercentage: number; remainingPercentage: number }>({
-    completedPercentage: 62.5,
-    remainingPercentage: 37.5,
-  });
+  const { user } = useAuthStore();
+
+  // Fetch data using new hooks
+  const {
+    data: progressData,
+    isLoading: isProgressLoading,
+    error: progressError
+  } = useProgress();
+
+  const {
+    data: roadmaps,
+    isLoading: isRoadmapsLoading,
+    refetch: refetchRoadmaps,
+    isRefetching: isRoadmapsRefetching
+  } = useRoadmaps('pastor');
+
+  const { data: roadmapProgress } = useRoadmapProgress();
+  const { data: assessmentProgress } = useAssessmentProgress();
+
+  // Calculate overall progress
+  const overallProgress = useMemo(() => {
+    if (!progressData) return { completedPercentage: 0, remainingPercentage: 100 };
+
+    const completed = progressData.overallProgress;
+    const remaining = 100 - completed;
+
+    return {
+      completedPercentage: completed,
+      remainingPercentage: remaining,
+    };
+  }, [progressData]);
 
   const closePMPSheet = useCallback(() => {
     pmpSheetRef.current?.dismiss();
@@ -45,7 +85,6 @@ export default function ProgressScreen() {
 
   const openPMPSheet = useCallback(() => {
     console.log('Opening PMP Bottom Sheet');
-    console.log('pmpSheetRef current:', pmpSheetRef.current);
     if (pmpSheetRef.current) {
       pmpSheetRef.current.present();
     } else {
@@ -53,12 +92,11 @@ export default function ProgressScreen() {
     }
   }, []);
 
-
-  const dummyAssessment = [
+  // Dummy assessment data - replace with actual API data when available
+  const dummyAssessment = useMemo(() => [
     {
       title: "Church Assessment Evaluation(CMA)",
-      description:
-        "Interested in receiving mentoring in community engagement   ",
+      description: "Interested in receiving mentoring in community engagement",
       image: require("@/assets/images/jumpstart.png"),
       progress: "0",
       taskStatus: {
@@ -74,8 +112,7 @@ export default function ProgressScreen() {
     },
     {
       title: "Church Assessment Evaluation(CMA)",
-      description:
-        "Interested in receiving mentoring in community engagement   ",
+      description: "Interested in receiving mentoring in community engagement",
       image: require("@/assets/images/jumpstart.png"),
       progress: "0",
       taskStatus: {
@@ -90,11 +127,7 @@ export default function ProgressScreen() {
       type: "assessment",
       completed: "Customized Development Plans",
     },
-  ];
-
-
-
-
+  ], []);
 
   const availableTabs = [
     { tab: "All" },
@@ -102,76 +135,133 @@ export default function ProgressScreen() {
     { tab: "Remaining" },
   ];
 
-  // Build phase card data from mockRevitalization (matches roadmap index implementation)
-  // Note: usePhaseCard is a hook so we call it for each phase (same pattern as roadmap index)
-  const phaseCards = (mockRevitalization.program.phases || []).map(phaseId => {
-    const phase = getPhase(mockRevitalization, phaseId);
-    const tasks = getPhaseTasks(mockRevitalization, phase);
-    return usePhaseCard(phase, tasks);
-  });
+  // Filter roadmaps based on tab selection
+  const filteredRoadmaps = useMemo(() => {
+    if (!roadmaps) return [];
 
-  // Filter based on the Revitalization tabs (All / Completed / Remaining)
-  const selectablePhaseCards = useMemo(() => {
-    const key = (roadmapTabs || '').toString().toLowerCase();
-    if (key === 'all') return phaseCards;
-    if (key === 'completed') return phaseCards.filter(c => c.status === 'completed');
-    return phaseCards.filter(c => c.status !== 'completed');
-  }, [phaseCards, roadmapTabs]);
-
-  // const shuffle = (arr: any[]) => {
-  //   const a = arr.slice();
-  //   for (let i = a.length - 1; i > 0; i--) {
-  //     const j = Math.floor(Math.random() * (i + 1));
-  //     [a[i], a[j]] = [a[j], a[i]];
-  //   }
-  //   return a;
-  // };
-
-  // const selectedPhaseCards = useMemo(() => shuffle(selectablePhaseCards).slice(0, 5), [selectablePhaseCards]);
-
-
-
-  const filteredAssessments = dummyAssessment.filter((item) => {
-    if (assessmentTabs === "All") {
-      return true;
-    } else if (assessmentTabs === "Completed") {
-      return item.status === "Completed";
-    } else {
-      return item.status !== "Completed";
+    switch (roadmapTabs) {
+      case 'Completed':
+        return roadmaps.filter(r => r.status === 'completed');
+      case 'Remaining':
+        return roadmaps.filter(r => r.status !== 'completed');
+      default:
+        return roadmaps;
     }
-  });
+  }, [roadmaps, roadmapTabs]);
 
-  // Chart data for completed and in-progress states
-  const completedData: ChartData = {
-    roadmapsTotal: 5,
-    roadmapsCompleted: 5,
-    assessmentsTotal: 3,
-    assessmentsCompleted: 3,
-  };
+  // Filter assessments based on tab selection
+  const filteredAssessments = useMemo(() => {
+    switch (assessmentTabs) {
+      case 'Completed':
+        return dummyAssessment.filter(a => a.status === "Completed");
+      case 'Remaining':
+        return dummyAssessment.filter(a => a.status !== "Completed");
+      default:
+        return dummyAssessment;
+    }
+  }, [dummyAssessment, assessmentTabs]);
 
-  const inProgressData: ChartData = {
-    roadmapsTotal: 5,
-    roadmapsCompleted: 3,
-    roadmapsRemaining: 2,
-    assessmentsTotal: 3,
-    assessmentsCompleted: 2,
-    assessmentsRemaining: 1,
-  };
+  // Chart data based on actual progress
+  const chartData: ChartData = useMemo(() => {
+    if (!roadmapProgress || !assessmentProgress) {
+      return {
+        roadmapsTotal: 0,
+        roadmapsCompleted: 0,
+        roadmapsRemaining: 0,
+        assessmentsTotal: 0,
+        assessmentsCompleted: 0,
+        assessmentsRemaining: 0,
+      };
+    }
 
-  const currentData = showCompleted ? completedData : inProgressData;
+    if (showCompleted) {
+      return {
+        roadmapsTotal: roadmapProgress.completed,
+        roadmapsCompleted: roadmapProgress.completed,
+        assessmentsTotal: assessmentProgress.completed,
+        assessmentsCompleted: assessmentProgress.completed,
+      };
+    }
+
+    return {
+      roadmapsTotal: roadmapProgress.total,
+      roadmapsCompleted: roadmapProgress.completed,
+      roadmapsRemaining: roadmapProgress.total - roadmapProgress.completed,
+      assessmentsTotal: assessmentProgress.total,
+      assessmentsCompleted: assessmentProgress.completed,
+      assessmentsRemaining: assessmentProgress.total - assessmentProgress.completed,
+    };
+  }, [roadmapProgress, assessmentProgress, showCompleted]);
+
+  const handleSwitchProgress = useCallback((progressType: 'completed' | 'inprogress') => {
+    setShowCompleted(progressType === 'completed');
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    refetchRoadmaps();
+  }, [refetchRoadmaps]);
+
+  const handleRoadmapPress = useCallback((roadmapId: string, hasNested: boolean, nestedCount: number, firstNestedId?: string) => {
+    if (!hasNested || nestedCount === 0) {
+      console.warn('Roadmap has no tasks');
+      return;
+    }
+
+    if (nestedCount === 1 && firstNestedId) {
+      // Single task - go directly to task
+      router.push(`/roadmap/${roadmapId}/${firstNestedId}`);
+    } else {
+      // Multiple tasks - show task list
+      router.push(`/roadmap/${roadmapId}`);
+    }
+  }, []);
+
+  const isLoading = isProgressLoading || isRoadmapsLoading;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={{ color: '#fff', marginTop: 16, fontSize: 16 }}>
+            Loading your progress...
+          </Text>
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  // Error state
+  if (progressError) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center' }}>
+            Failed to load progress data
+          </Text>
+          <TouchableOpacity
+            onPress={handleRefresh}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+  }
+
   const currentTitle = showCompleted
     ? "Individual - Roadmaps, Assessments"
     : "Individual - Assignment, Survey";
-
-  const handleSwitchProgress = (progressType: 'completed' | 'inprogress') => {
-    if (progressType === 'completed') {
-      setProgress({ completedPercentage: 100, remainingPercentage: 0 });
-      setShowCompleted(true);
-    } else {
-      setProgress({ completedPercentage: 62.5, remainingPercentage: 37.5 });
-      setShowCompleted(false);
-    }
-  };
 
   return (
     <>
@@ -180,12 +270,12 @@ export default function ProgressScreen() {
         style={{ flex: 1 }}
       >
         <View style={styles.scrollContainer}>
-          <TopBar role="pastor" userName="John Ross" showUserName />
+          <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
           <View style={styles.headerContainer}>
             <View style={styles.headerContent}>
               <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                 <Image source={icons.forward} style={styles.backIcon} />
-                <Text style={styles.myProgressText}>My Mentors</Text>
+                <Text style={styles.myProgressText}>My Progress</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -205,7 +295,7 @@ export default function ProgressScreen() {
                   !showCompleted && styles.toggleButtonTextActive,
                 ]}
               >
-                Inprogress
+                In Progress
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -232,19 +322,31 @@ export default function ProgressScreen() {
               flexGrow: 1,
               paddingBottom: bottom * 1.3,
             }}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRoadmapsRefetching}
+                onRefresh={handleRefresh}
+                tintColor="#fff"
+                colors={['#fff']}
+                progressBackgroundColor={Colors.darkBlueGradientOne}
+              />
+            }
           >
+            {/* Overall Progress Pie Chart */}
             <ProgressPieChart
-              data={progress}
+              data={overallProgress}
               title="Overall Progress - Roadmaps & Assessments"
             />
 
+            {/* Individual Progress Bar Chart */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{currentTitle}</Text>
               <View style={styles.chartWrapper}>
-                <ProgressBarChart data={currentData} showRemaining={!showCompleted} />
+                <ProgressBarChart data={chartData} showRemaining={!showCompleted} />
               </View>
             </View>
 
+            {/* Revitalization Roadmap Progress */}
             <View style={styles.progressBlock}>
               <Text style={styles.progressBlockTitle}>Revitalization Roadmap Progress</Text>
               <ScrollView
@@ -258,51 +360,47 @@ export default function ProgressScreen() {
                     key={i}
                     data={e}
                     tabs={roadmapTabs}
-                    setTabs={setRoadmapTabs}
-                    onPress={() => setRoadmapTabs(e.tab)}
+                    setTabs={(tab: string) => setRoadmapTabs(tab as TabKey)}
+                    onPress={() => setRoadmapTabs(e.tab as TabKey)}
                   />
                 ))}
               </ScrollView>
 
               <View style={styles.cardListContainer}>
-                {selectablePhaseCards.map((card, index) => {
-                  const phase = getPhase(mockRevitalization, card.phase as string)
-                  return (
-                    <View
-                      key={`roadmap-${index}`}
-                      style={[styles.cardWrapper, { paddingTop: index === 0 ? 15 : 0 }]}
-                    >
-                      <Pressable
-                        onPress={() => {
-                          try {
-                            if (
-                              phase?.isSingleRoadmap &&
-                              Array.isArray(phase.tasks) &&
-                              phase.tasks.length === 1
-                            ) {
-                              router.push(`/roadmap/${phase.id}/${phase.tasks[0]}`, {
-                                withAnchor: true,
-                              })
-                            } else {
-                              router.push(`/roadmap/${phase.id}`, {
-                                withAnchor: true,
-                              })
-                            }
-                          } catch {
-                            router.push(`/roadmap/${card.phase}` as any, {
-                              withAnchor: true,
-                            })
-                          }
-                        }}
+                {filteredRoadmaps.length > 0 ? (
+                  filteredRoadmaps.map((roadmap, index) => {
+                    const cardData = getRoadmapCard(roadmap);
+                    return (
+                      <View
+                        key={roadmap._id}
+                        style={[styles.cardWrapper, { paddingTop: index === 0 ? 15 : 0 }]}
                       >
-                        <RoadmapCard data={{ ...card, phaseNumber: undefined }} />
-                      </Pressable>
-                    </View>
-                  )
-                })}
+                        <Pressable
+                          onPress={() => handleRoadmapPress(
+                            roadmap._id,
+                            roadmap.haveNextedRoadMaps,
+                            roadmap.roadmaps.length,
+                            roadmap.roadmaps[0]?._id
+                          )}
+                        >
+                          <RoadmapCard data={{ ...cardData, phaseNumber: undefined }} />
+                        </Pressable>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>
+                      {roadmapTabs === 'Completed'
+                        ? 'No completed roadmaps yet'
+                        : 'No roadmaps available'}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
 
+            {/* Assessment Progress */}
             <View style={styles.progressBlock}>
               <Text style={styles.progressBlockTitle}>Assessment Progress</Text>
               <ScrollView
@@ -316,24 +414,34 @@ export default function ProgressScreen() {
                     key={i}
                     data={e}
                     tabs={assessmentTabs}
-                    setTabs={setAssessmentTabs}
-                    onPress={() => setAssessmentTabs(e.tab)}
+                    setTabs={(tab: string) => setAssessmentTabs(tab as TabKey)}
+                    onPress={() => setAssessmentTabs(e.tab as TabKey)}
                   />
                 ))}
               </ScrollView>
 
               <View style={styles.cardListContainer}>
-                {filteredAssessments.map((e, i) => (
-                  <View
-                    key={`assessment-${i}`}
-                    style={[styles.cardWrapper, { paddingTop: i === 0 ? 15 : 0 }]}
-                  >
-                    <ProgressAssessmentCard
-                      onDevelopmentPlanPress={openPMPSheet}
-                      data={e as any}
-                    />
+                {filteredAssessments.length > 0 ? (
+                  filteredAssessments.map((e, i) => (
+                    <View
+                      key={`assessment-${i}`}
+                      style={[styles.cardWrapper, { paddingTop: i === 0 ? 15 : 0 }]}
+                    >
+                      <ProgressAssessmentCard
+                        onDevelopmentPlanPress={openPMPSheet}
+                        data={e as any}
+                      />
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>
+                      {assessmentTabs === 'Completed'
+                        ? 'No completed assessments yet'
+                        : 'No assessments available'}
+                    </Text>
                   </View>
-                ))}
+                )}
               </View>
             </View>
           </ScrollView>
@@ -347,8 +455,9 @@ export default function ProgressScreen() {
         </View>
       </LinearGradient>
     </>
-  )
+  );
 }
+
 const styles = StyleSheet.create({
   scrollContainer: { flex: 1 },
   headerContainer: { width: "100%", alignItems: "center" },
@@ -365,7 +474,7 @@ const styles = StyleSheet.create({
   backButton: { flexDirection: "row", alignItems: "center", gap: 8 },
   backIcon: { width: 18, height: 18, transform: [{ scaleX: -1 }] },
   separator: { height: 20, backgroundColor: "transparent", marginVertical: 10 },
-  cardWrapper: { width: "100%" },
+  cardWrapper: { width: "100%", marginBottom: 12 },
   toggleContainer: {
     flexDirection: "row",
     marginHorizontal: 16,
@@ -419,4 +528,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     width: "100%",
   },
-})
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+});

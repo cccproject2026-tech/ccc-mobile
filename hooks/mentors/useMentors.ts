@@ -38,9 +38,9 @@ export const useMentors = () => {
     // Transform the data
     const transformedData = query.data
         ? {
-              mentors: query.data.mentors.map(transformMentor),
-              total: query.data.total,
-          }
+            mentors: query.data.mentors.map(transformMentor),
+            total: query.data.total,
+        }
         : undefined;
 
     return {

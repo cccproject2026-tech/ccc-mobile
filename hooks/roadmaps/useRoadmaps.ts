@@ -98,8 +98,6 @@ export const useAllRoadmaps = () => {
             if (!response.data.success) {
                 throw new Error(response.data.message || 'Failed to fetch roadmaps');
             }
-
-            console.log("📥 All roadmaps fetched:", response.data.data);
             return response.data.data as Roadmap[];
         },
         staleTime: 1000 * 60 * 5, // 5 minutes

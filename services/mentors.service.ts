@@ -10,6 +10,15 @@ export interface MentorListItem {
     role: string;
 }
 
+export interface AssignedMentorItem {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    status: string;
+}
+
 export interface MentorDetail {
     id: string;
     firstName: string;
@@ -18,7 +27,7 @@ export interface MentorDetail {
     username: string;
     role: string;
     profileInfo: string;
-    churchDetails: any[]; // You can create a more specific type if needed
+    churchDetails: any[];
     conference: string;
 }
 
@@ -29,6 +38,12 @@ export interface GetMentorsApiResponse {
         mentors: MentorListItem[];
         total: number;
     };
+}
+
+export interface GetAssignedMentorsApiResponse {
+    success: boolean;
+    message: string;
+    data: AssignedMentorItem[];
 }
 
 export interface GetMentorByEmailApiResponse {
@@ -42,6 +57,14 @@ export const mentorsService = {
         const response = await apiClient.get<GetMentorsApiResponse>(ENDPOINTS.HOME.MENTORS);
         return response.data.data;
     },
+
+    getAssignedMentors: async (menteeId: string): Promise<AssignedMentorItem[]> => {
+        const response = await apiClient.get<GetAssignedMentorsApiResponse>(
+            ENDPOINTS.MENTORS.GET_ASSIGNED_MENTORS(menteeId)
+        );
+        return response.data.data;
+    },
+
     getMentorByEmail: async (email: string): Promise<MentorDetail> => {
         const response = await apiClient.get<GetMentorByEmailApiResponse>(
             ENDPOINTS.HOME.GET_MENTOR_BY_EMAIL(email)
@@ -49,5 +72,3 @@ export const mentorsService = {
         return response.data.data;
     },
 };
-
-

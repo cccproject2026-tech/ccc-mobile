@@ -3,7 +3,8 @@ import MentorProfileSwiper from "@/components/director/MentorProfileSwiper";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { useMentors } from "@/hooks/mentors/useMentors";
+import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
+import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -22,12 +23,16 @@ import {
 export default function MyMentorsScreen() {
     const [listToggle, setListToggle] = useState(false);
     const [searchText, setSearchText] = useState("");
-    const [showContextMenu, setShowContextMenu] = useState(false);
-    const { mentors, isLoading, isError } = useMentors();
+
+    // Get the current user's ID
+    const { user } = useAuthStore();
+    if (!user) return null;
+
+    const { mentors, isLoading, isError, isEmpty } = useAssignedMentors(user.id);
 
     // Filter mentors based on search text
     const filteredMentors = useMemo(() => {
-        if (!mentors) return [];
+        if (!mentors || mentors.length === 0) return [];
         if (!searchText.trim()) return mentors;
         const searchLower = searchText.toLowerCase();
         return mentors.filter(
@@ -37,6 +42,19 @@ export default function MyMentorsScreen() {
                 mentor.email?.toLowerCase().includes(searchLower)
         );
     }, [mentors, searchText]);
+
+    // Separate current and prior mentors based on status
+    const currentMentors = useMemo(() => {
+        return filteredMentors.filter(mentor =>
+            mentor.status === 'new' || mentor.status === 'active'
+        );
+    }, [filteredMentors]);
+
+    const priorMentors = useMemo(() => {
+        return filteredMentors.filter(mentor =>
+            mentor.status === 'inactive' || mentor.status === 'completed'
+        );
+    }, [filteredMentors]);
 
     const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
 
@@ -49,22 +67,18 @@ export default function MyMentorsScreen() {
 
     const handleCall = (mentor: MentorData) => {
         console.log("Calling", mentor.name);
-
     };
 
     const handleChat = (mentor: MentorData) => {
         console.log("Chatting with", mentor.name);
-
     };
 
     const handleMail = (mentor: MentorData) => {
         console.log("Emailing", mentor.name);
-
     };
 
     const handleWhatsApp = (mentor: MentorData) => {
         console.log("WhatsApp", mentor.name);
-
     };
 
     const handleScheduleAppointment = (mentor: MentorData) => {
@@ -95,11 +109,24 @@ export default function MyMentorsScreen() {
                 style={{ flex: 1 }}
             >
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <Text className="text-white text-center">Failed to load mentors. Please try again.</Text>
+                    <Text className="text-center text-white">Failed to load mentors. Please try again.</Text>
                 </View>
             </LinearGradient>
         );
     }
+
+    // Empty state when no mentors are assigned
+    const EmptyMentorsState = () => (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 40 }}>
+            <Ionicons name="people-outline" size={80} color="rgba(255, 255, 255, 0.3)" style={{ marginBottom: 20 }} />
+            <Text style={{ color: "white", fontSize: 20, fontWeight: "600", marginBottom: 12, textAlign: "center" }}>
+                No Mentors Assigned
+            </Text>
+            <Text style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 16, textAlign: "center", lineHeight: 24 }}>
+                You don't have any mentors assigned yet. Please contact your administrator to get assigned to a mentor.
+            </Text>
+        </View>
+    );
 
     return (
         <>
@@ -111,141 +138,168 @@ export default function MyMentorsScreen() {
                     <View style={{ paddingBottom: 10 }}>
                         <TopBar role="pastor" userName="John Ross" showUserName />
                     </View>
-                    <View style={{ flex: 1 }}>
-                        {/* Header Section */}
-                        <View style={styles.headerContainer}>
-                            <View style={styles.headerContent}>
-                                <TouchableOpacity
-                                    onPress={() => router.back()}
-                                    style={styles.backButton}
-                                >
-                                    <Image source={icons.forward} style={styles.backIcon} />
-                                    <Text style={styles.myMentorsText}>
-                                        My Mentors
-                                    </Text>
-                                </TouchableOpacity>
 
-                                <TouchableOpacity
-                                    onPress={() => setListToggle(!listToggle)}
-                                    style={styles.toggleButton}
-                                >
-                                    <Image
-                                        source={listToggle ? icons.list : icons.grid}
-                                        style={styles.toggleIcon}
+                    {isEmpty ? (
+                        <EmptyMentorsState />
+                    ) : (
+                        <View style={{ flex: 1 }}>
+                            {/* Header Section */}
+                            <View style={styles.headerContainer}>
+                                <View style={styles.headerContent}>
+                                    <TouchableOpacity
+                                        onPress={() => router.back()}
+                                        style={styles.backButton}
+                                    >
+                                        <Image source={icons.forward} style={styles.backIcon} />
+                                        <Text style={styles.myMentorsText}>
+                                            My Mentors
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        onPress={() => setListToggle(!listToggle)}
+                                        style={styles.toggleButton}
+                                    >
+                                        <Image
+                                            source={listToggle ? icons.list : icons.grid}
+                                            style={styles.toggleIcon}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* Separator */}
+                            <View style={styles.dividerLine} />
+
+                            {/* Search Section */}
+                            <View style={[styles.searchContainer, styles.searchContainerMargin]}>
+                                <View style={styles.searchBox}>
+                                    <TextInput
+                                        style={styles.searchInput}
+                                        placeholder="Search"
+                                        placeholderTextColor="white"
+                                        value={searchText}
+                                        onChangeText={setSearchText}
                                     />
-                                </TouchableOpacity>
+                                    <Ionicons
+                                        name="search"
+                                        size={20}
+                                        color="rgba(255, 255, 255, 0.6)"
+                                        style={styles.searchIcon}
+                                    />
+                                </View>
                             </View>
-                        </View>
 
-                        {/* Separator */}
-                        <View style={styles.dividerLine} />
-
-                        {/* Search Section */}
-                        <View style={[styles.searchContainer, styles.searchContainerMargin]}>
-                            <View style={styles.searchBox}>
-                                <TextInput
-                                    style={styles.searchInput}
-                                    placeholder="Search"
-                                    placeholderTextColor="white"
-                                    value={searchText}
-                                    onChangeText={setSearchText}
-                                />
-                                <Ionicons
-                                    name="search"
-                                    size={20}
-                                    color="rgba(255, 255, 255, 0.6)"
-                                    style={styles.searchIcon}
+                            {/* Quick Access Mentors - Pass actual mentor data */}
+                            <View style={styles.quickAccessContainer}>
+                                <MentorProfileSwiper
+                                    mentors={mentors}
+                                    onMentorPress={handleCardPress}
                                 />
                             </View>
+
+                            {/* Mentors List */}
+                            <ScrollView
+                                style={{ flex: 1 }}
+                                contentContainerStyle={{ paddingBottom: 20 }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                {/* Current Mentors */}
+                                {currentMentors.length > 0 && (
+                                    <View style={[styles.mentorsListContainer, styles.mentorsListContainerMargin]}>
+                                        <View style={styles.mentorsHeader}>
+                                            <Text style={styles.mentorTabText}>
+                                                Current Mentors
+                                            </Text>
+                                        </View>
+
+                                        <View
+                                            style={
+                                                listToggle ? styles.mentorsListView : styles.mentorsGrid
+                                            }
+                                        >
+                                            {currentMentors.map((mentor) => (
+                                                <MentorCard
+                                                    key={mentor.id}
+                                                    mentor={mentor as MentorData}
+                                                    layout={listToggle ? 'list' : 'card'}
+                                                    onCall={() => handleCall(mentor as MentorData)}
+                                                    onChat={() => handleChat(mentor as MentorData)}
+                                                    onMail={() => handleMail(mentor as MentorData)}
+                                                    onWhatsApp={() => handleWhatsApp(mentor as MentorData)}
+                                                    onPress={() => handleCardPress(mentor as MentorData)}
+                                                    menuItems={[
+                                                        {
+                                                            key: 'schedule',
+                                                            title: 'Schedule Appointment',
+                                                            icon: { ios: 'calendar', android: 'ic_menu_today' },
+                                                            onSelect: () => handleScheduleAppointment(mentor as MentorData)
+                                                        }
+                                                    ]}
+                                                />
+                                            ))}
+                                        </View>
+                                    </View>
+                                )}
+
+                                {/* Prior Mentors */}
+                                {priorMentors.length > 0 && (
+                                    <View style={[styles.mentorsListContainer, styles.mentorsListContainerMargin]}>
+                                        <View style={styles.mentorsHeader}>
+                                            <Text style={styles.mentorTabText}>
+                                                Prior Mentors
+                                            </Text>
+                                        </View>
+
+                                        <View
+                                            style={
+                                                listToggle ? styles.mentorsListView : styles.mentorsGrid
+                                            }
+                                        >
+                                            {priorMentors.map((mentor) => (
+                                                <MentorCard
+                                                    key={mentor.id}
+                                                    mentor={mentor as MentorData}
+                                                    layout={listToggle ? 'list' : 'card'}
+                                                    onCall={() => handleCall(mentor as MentorData)}
+                                                    onChat={() => handleChat(mentor as MentorData)}
+                                                    onMail={() => handleMail(mentor as MentorData)}
+                                                    onWhatsApp={() => handleWhatsApp(mentor as MentorData)}
+                                                    menuItems={[
+                                                        {
+                                                            key: 'schedule',
+                                                            title: 'Schedule Appointment',
+                                                            icon: { ios: 'calendar', android: 'ic_menu_today' },
+                                                            onSelect: () => handleScheduleAppointment(mentor as MentorData)
+                                                        }
+                                                    ]}
+                                                />
+                                            ))}
+                                        </View>
+                                    </View>
+                                )}
+
+                                {/* Empty search results */}
+                                {filteredMentors.length === 0 && searchText.trim() !== "" && (
+                                    <View style={{ paddingVertical: 40, paddingHorizontal: 20, alignItems: "center" }}>
+                                        <Ionicons name="search-outline" size={60} color="rgba(255, 255, 255, 0.3)" style={{ marginBottom: 16 }} />
+                                        <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>
+                                            No mentors found matching "{searchText}"
+                                        </Text>
+                                        <Text style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 14, marginTop: 8, textAlign: "center" }}>
+                                            Try adjusting your search terms
+                                        </Text>
+                                    </View>
+                                )}
+                            </ScrollView>
                         </View>
-
-                        {/* Quick Access Mentors */}
-                        <View style={styles.quickAccessContainer}>
-                            <MentorProfileSwiper />
-                        </View>
-
-                        {/* Mentors List */}
-                        <ScrollView
-                            style={{ flex: 1 }}
-                            contentContainerStyle={{ paddingBottom: 20 }}
-                            showsVerticalScrollIndicator={false}
-                        >
-                            <View style={[styles.mentorsListContainer, styles.mentorsListContainerMargin]}>
-                                <View style={styles.mentorsHeader}>
-                                    <Text style={styles.mentorTabText}>
-                                        Current Mentors
-                                    </Text>
-                                </View>
-
-                                <View
-                                    style={
-                                        listToggle ? styles.mentorsListView : styles.mentorsGrid
-                                    }
-                                >
-                                    {filteredMentors.map((mentor) => (
-                                        <MentorCard
-                                            key={mentor.id}
-                                            mentor={mentor as MentorData}
-                                            layout={listToggle ? 'list' : 'card'}
-                                            onCall={() => handleCall(mentor as MentorData)}
-                                            onChat={() => handleChat(mentor as MentorData)}
-                                            onMail={() => handleMail(mentor as MentorData)}
-                                            onWhatsApp={() => handleWhatsApp(mentor as MentorData)}
-                                            onPress={() => handleCardPress(mentor as MentorData)}
-                                            menuItems={[
-                                                {
-                                                    key: 'schedule',
-                                                    title: 'Schedule Appointment',
-                                                    icon: { ios: 'calendar', android: 'ic_menu_today' },
-                                                    onSelect: () => handleScheduleAppointment(mentor as MentorData)
-                                                }
-                                            ]}
-                                        />
-                                    ))}
-                                </View>
-                            </View>
-
-                            {/* Prior Mentors */}
-                            <View style={[styles.mentorsListContainer, styles.mentorsListContainerMargin]}>
-                                <View style={styles.mentorsHeader}>
-                                    <Text style={styles.mentorTabText}>
-                                        Prior Mentors
-                                    </Text>
-                                </View>
-
-                                <View
-                                    style={
-                                        listToggle ? styles.mentorsListView : styles.mentorsGrid
-                                    }
-                                >
-                                    {filteredMentors.map((mentor) => (
-                                        <MentorCard
-                                            key={mentor.id}
-                                            mentor={mentor as MentorData}
-                                            layout={listToggle ? 'list' : 'card'}
-                                            onCall={() => handleCall(mentor as MentorData)}
-                                            onChat={() => handleChat(mentor as MentorData)}
-                                            onMail={() => handleMail(mentor as MentorData)}
-                                            onWhatsApp={() => handleWhatsApp(mentor as MentorData)}
-                                            menuItems={[
-                                                {
-                                                    key: 'schedule',
-                                                    title: 'Schedule Appointment',
-                                                    icon: { ios: 'calendar', android: 'ic_menu_today' },
-                                                    onSelect: () => handleScheduleAppointment(mentor as MentorData)
-                                                }
-                                            ]}
-                                        />
-                                    ))}
-                                </View>
-                            </View>
-                        </ScrollView>
-                    </View>
+                    )}
                 </>
             </LinearGradient>
         </>
     );
 }
+
 
 const styles = StyleSheet.create({
     headerContainer: {

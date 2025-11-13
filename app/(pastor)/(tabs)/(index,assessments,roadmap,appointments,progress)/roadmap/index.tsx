@@ -450,7 +450,6 @@ export default function PhaseList() {
         );
     }
 
-    // No roadmaps assigned
     if (!roadmaps || roadmaps.length === 0) {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
