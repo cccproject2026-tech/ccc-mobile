@@ -4,38 +4,48 @@ import RoadmapCard from '@/components/director/ProgressRoadmapCard';
 import SearchBar from '@/components/director/SearchBar';
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from '@/components/director/TopBar';
-import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
-import { mockRevitalization } from '@/lib/roadmap/mock';
-import { getDivisionsForPhase, getPhase, getPhaseTasks, getTasksForDivision } from '@/lib/roadmap/selectors';
-import { Task } from '@/lib/roadmap/types';
+import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
+import { getTasks, getTasksByDivision } from '@/lib/roadmap/helpers';
+import { getTaskCard } from '@/lib/roadmap/mappers';
+import { NestedRoadmap } from '@/lib/roadmap/types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 type StatusTabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
 type TabKey = StatusTabKey | string; // string for division IDs
 
 export default function PhaseDetail() {
     const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
-    const phase = getPhase(mockRevitalization, phaseId!);
+    
+    // Fetch roadmap from API
+    const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
 
-    // Compute phase number from phaseId
-    let phaseNumber: number | null = null;
-    if (phaseId && phaseId.startsWith('phase-')) {
-        const num = parseInt(phaseId.replace('phase-', ''), 10);
-        if (!isNaN(num)) phaseNumber = num;
-    }
+    // Get phase number from roadmap.phase
+    const phaseNumber = useMemo(() => {
+        if (!roadmap?.phase) return null;
+        const match = roadmap.phase.match(/\d+/);
+        return match ? parseInt(match[0], 10) : null;
+    }, [roadmap]);
 
-    // Check if phase has divisions
-    const phaseDivisions = getDivisionsForPhase(mockRevitalization, phaseId!);
+    // Get divisions from roadmap.divisions array
+    const phaseDivisions = useMemo(() => {
+        if (!roadmap?.divisions || roadmap.divisions.length === 0) return [];
+        return roadmap.divisions.map((division, index) => ({
+            id: division.toLowerCase(),
+            name: division.charAt(0).toUpperCase() + division.slice(1),
+        }));
+    }, [roadmap]);
+
     const hasDivisions = phaseDivisions.length > 0;
 
-    // Get all tasks (either from divisions or direct)
-    const allTasks = getPhaseTasks(mockRevitalization, phase);
-    const { progress } = useRoadmapProgress();
+    // Get all tasks (nested roadmaps)
+    const allTasks = useMemo(() => {
+        return roadmap ? getTasks(roadmap) : [];
+    }, [roadmap]);
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -43,9 +53,14 @@ export default function PhaseDetail() {
     const [search, setSearch] = useState('');
 
     // Initialize activeTab - first division if exists, otherwise 'ALL'
-    const [activeTab, setActiveTab] = useState<TabKey>(
-        hasDivisions ? (phaseDivisions[0]?.id || 'ALL') : 'ALL'
-    );
+    const [activeTab, setActiveTab] = useState<TabKey>('ALL');
+
+    // Update activeTab when roadmap loads and divisions are available
+    useEffect(() => {
+        if (hasDivisions && phaseDivisions.length > 0 && activeTab === 'ALL') {
+            setActiveTab(phaseDivisions[0].id);
+        }
+    }, [hasDivisions, phaseDivisions, activeTab]);
 
     // Outcome menu
     const outcomeMenuItems = useCallback((): MenuItem[] => [
@@ -130,12 +145,15 @@ export default function PhaseDetail() {
 
     // Filter tasks based on active tab
     const filteredTasks = useMemo(() => {
-        let tasksToFilter: Task[] = [];
+        if (!roadmap) return [];
+
+        let tasksToFilter: NestedRoadmap[] = [];
 
         // Determine which tasks to filter
         if (isDivisionTab) {
             // Get tasks for the selected division
-            tasksToFilter = getTasksForDivision(mockRevitalization, activeTab);
+            const groupedTasks = getTasksByDivision(roadmap);
+            tasksToFilter = groupedTasks[activeTab as string] || [];
         } else if (activeTab === 'ALL') {
             // Show all tasks (only for phases without divisions)
             tasksToFilter = allTasks;
@@ -143,15 +161,15 @@ export default function PhaseDetail() {
             // Apply status filter (DUE, NOT_STARTED, COMPLETED)
             // For phases with divisions, filter across ALL tasks
             tasksToFilter = allTasks.filter(task => {
-                const status = progress[task.id]?.status || task.status;
+                const status = task.status;
 
                 if (activeTab === 'DUE') {
                     const today = new Date().toISOString().slice(0, 10);
-                    return task.dueDate && task.dueDate <= today && status !== 'COMPLETED';
+                    return task.endDate && task.endDate <= today && status !== 'completed';
                 }
 
-                if (activeTab === 'NOT_STARTED') return status === 'NOT_STARTED';
-                if (activeTab === 'COMPLETED') return status === 'COMPLETED';
+                if (activeTab === 'NOT_STARTED') return status === 'not started';
+                if (activeTab === 'COMPLETED') return status === 'completed';
 
                 return false;
             });
@@ -161,42 +179,65 @@ export default function PhaseDetail() {
         if (search.trim()) {
             const searchLower = search.toLowerCase();
             tasksToFilter = tasksToFilter.filter(task =>
-                task.title.toLowerCase().includes(searchLower) ||
-                task.description?.toLowerCase().includes(searchLower)
+                task.name.toLowerCase().includes(searchLower) ||
+                task.description?.toLowerCase().includes(searchLower) ||
+                task.roadMapDetails?.toLowerCase().includes(searchLower)
             );
         }
 
         return tasksToFilter;
-    }, [isDivisionTab, activeTab, allTasks, progress, search]);
+    }, [roadmap, isDivisionTab, activeTab, allTasks, search]);
 
-    // Convert task to card data
-    const getTaskCardData = useCallback((task: Task) => {
-        const status = progress[task.id]?.status || task.status;
-        const cardStatus: 'initial' | 'in-progress' | 'completed' | 'due' =
-            status === 'COMPLETED' ? 'completed' :
-                status === 'IN_PROGRESS' ? 'in-progress' :
-                    status === 'BLOCKED' ? 'due' :
-                        'initial';
+    // Loading state
+    if (isLoading) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+                <View style={{ paddingBottom: 10 }}>
+                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={{ color: '#fff', marginTop: 16, fontSize: 16 }}>
+                        Loading roadmap...
+                    </Text>
+                </View>
+            </LinearGradient>
+        );
+    }
 
-        return {
-            image: task.meta?.coverImage,
-            title: task.title,
-            description: task.description,
-            completionTime: `Completion Time\nMonths ${task.meta?.completionTimeMonths || '1 - 2'}`,
-            status: cardStatus,
-            completedDate: status === 'COMPLETED' ? new Date().toISOString().slice(0, 10) : undefined,
-            showArrow: true,
-            showCheckmark: status === 'COMPLETED',
-        };
-    }, [progress]);
+    // Error state
+    if (error) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+                <View style={{ paddingBottom: 10 }}>
+                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+                    <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
+                    <Text style={{ color: '#ff6b6b', marginTop: 16, fontSize: 16, textAlign: 'center', fontWeight: '600' }}>
+                        Failed to load roadmap
+                    </Text>
+                    <Text style={{ color: '#fff', marginTop: 8, fontSize: 14, textAlign: 'center', opacity: 0.8 }}>
+                        {error instanceof Error ? error.message : 'An unexpected error occurred'}
+                    </Text>
+                </View>
+            </LinearGradient>
+        );
+    }
 
-    console.log({
-        filteredTasks,
-        hasDivisions,
-        activeTab,
-        isDivisionTab,
-        totalTasks: allTasks.length
-    });
+    // No roadmap found
+    if (!roadmap) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+                <View style={{ paddingBottom: 10 }}>
+                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: 'white', fontSize: 16 }}>Roadmap not found</Text>
+                </View>
+            </LinearGradient>
+        );
+    }
 
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
@@ -241,9 +282,9 @@ export default function PhaseDetail() {
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
-                            {phase.title}
+                            {roadmap.name}
                         </Text>
-                        {phase.subtitle && (
+                        {(roadmap.roadMapDetails || roadmap.description) && (
                             <Text
                                 style={{
                                     marginTop: getSpacing(4),
@@ -253,7 +294,7 @@ export default function PhaseDetail() {
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
                             >
-                                {phase.subtitle}
+                                {roadmap.roadMapDetails || roadmap.description}
                             </Text>
                         )}
                     </View>
@@ -306,11 +347,11 @@ export default function PhaseDetail() {
             <ScrollView contentContainerStyle={{ padding: 16 }}>
                 {filteredTasks.length > 0 ? (
                     filteredTasks.map(task => {
-                        const cardData = getTaskCardData(task);
+                        const cardData = getTaskCard(task);
                         return (
                             <Pressable
-                                key={task.id}
-                                onPress={() => router.push(`/(director)/(tabs)/revitalization-roadmaps/${phaseId}/${task.id}`)}
+                                key={task._id}
+                                onPress={() => router.push(`/(director)/(tabs)/revitalization-roadmaps/${phaseId}/${task._id}`)}
                             >
                                 <RoadmapCard data={cardData} />
                             </Pressable>

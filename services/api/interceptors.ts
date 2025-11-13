@@ -30,6 +30,55 @@ apiClient.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
+        // Clean up params: remove undefined, null, empty string, and "undefined" string values
+        if (config.params) {
+            if (__DEV__) {
+                console.log('🔍 Before cleanup params:', JSON.stringify(config.params));
+            }
+            
+            const cleanedParams: Record<string, any> = {};
+            for (const [key, value] of Object.entries(config.params)) {
+                // Only include valid values (not undefined, null, empty string, or "undefined")
+                const stringValue = String(value);
+                if (
+                    value !== undefined &&
+                    value !== null &&
+                    value !== '' &&
+                    value !== 'undefined' &&
+                    stringValue !== 'undefined' &&
+                    stringValue !== 'null' &&
+                    (typeof value !== 'string' || value.trim() !== '')
+                ) {
+                    cleanedParams[key] = value;
+                } else {
+                    if (__DEV__) {
+                        console.log(`🚫 Filtered out param ${key}:`, value, typeof value);
+                    }
+                }
+            }
+            // Only set params if we have valid ones, otherwise remove it completely
+            if (Object.keys(cleanedParams).length > 0) {
+                config.params = cleanedParams;
+                if (__DEV__) {
+                    console.log('✅ After cleanup params:', JSON.stringify(config.params));
+                }
+            } else {
+                // Remove params entirely if empty
+                delete config.params;
+                if (__DEV__) {
+                    console.log('✅ Removed empty params object');
+                }
+            }
+        }
+        
+        // Also check URL params if they exist in the URL string itself
+        if (config.url && config.url.includes('undefined')) {
+            console.warn('⚠️ URL contains "undefined":', config.url);
+            config.url = config.url.replace(/[?&][^=]*=undefined/g, '');
+            // Clean up any trailing ? or &
+            config.url = config.url.replace(/[?&]$/, '');
+        }
+
         if (__DEV__) {
             console.log(`📤 ${config.method?.toUpperCase()} ${config.url}`);
         }

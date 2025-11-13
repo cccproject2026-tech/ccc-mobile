@@ -10,15 +10,15 @@ import SearchBar from '@/components/director/SearchBar';
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from '@/components/director/TopBar';
 import { mockMentees, STATES } from '@/constants/mockData';
-import { mockRevitalization } from '@/lib/roadmap/mock';
-import { getPhase } from '@/lib/roadmap/selectors';
+import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
+import { getRoadmapCard } from '@/lib/roadmap/mappers';
 import { RoadmapCardData } from '@/lib/roadmap/types';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Dimensions, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
@@ -51,18 +51,6 @@ const mockMentors: MentorData[] = [
   },
 ];
 
-// Generate roadmap library from mockRevitalization
-const mockRoadmapLibrary: RoadmapCardData[] = mockRevitalization.program.phases.map(phaseId => {
-  const phase = getPhase(mockRevitalization, phaseId);
-  return {
-    image: phase.coverImage,
-    title: phase.title,
-    description: phase.subtitle,
-    completionTime: `Completion Time Months ${phase.estMonthsMin} - ${phase.estMonthsMax}`,
-    showArrow: true,
-  };
-});
-
 export default function RevitalizationRoadmap() {
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -75,6 +63,27 @@ export default function RevitalizationRoadmap() {
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
   const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
   const [selectedRoadmap, setSelectedRoadmap] = useState<RoadmapCardData | null>(null);
+
+  // Fetch roadmaps from API - use 'director' role to get all roadmaps
+  const { data: roadmaps = [], isLoading: isLoadingRoadmaps, error: roadmapsError } = useRoadmaps('director');
+  
+  // Transform roadmaps to RoadmapCardData
+  const roadmapLibrary: RoadmapCardData[] = useMemo(() => {
+    console.log("🔄 Transforming roadmaps to cards. Total roadmaps:", roadmaps.length);
+    const transformed = roadmaps
+      .filter(roadmap => roadmap != null) // Filter out null/undefined roadmaps
+      .map(roadmap => {
+        try {
+          return getRoadmapCard(roadmap);
+        } catch (error) {
+          console.error("❌ Error transforming roadmap:", roadmap?._id, error);
+          return null;
+        }
+      })
+      .filter(card => card != null) as RoadmapCardData[];
+    console.log("✅ Transformed roadmaps count:", transformed.length);
+    return transformed;
+  }, [roadmaps]);
 
   const getFilterOptions = (): FilterOption[] => {
     return [
@@ -265,23 +274,21 @@ export default function RevitalizationRoadmap() {
   };
 
   const handlePhasePress = useCallback((roadmapData: RoadmapCardData) => {
-    // Find the corresponding phase
-    const phaseId = mockRevitalization.program.phases.find(id => {
-      const phase = getPhase(mockRevitalization, id);
-      return phase.title === roadmapData.title;
-    });
+    // Find the corresponding roadmap by title
+    const roadmap = roadmaps.find(r => r.name === roadmapData.title);
+    console.log('roadmap', roadmap);
+    
+    if (!roadmap) return;
 
-    if (!phaseId) return;
+    const roadmapId = roadmap._id;
 
-    const phase = getPhase(mockRevitalization, phaseId);
-
-    // If single roadmap with one task, go directly to task
-    if (phase.isSingleRoadmap && Array.isArray(phase.tasks) && phase.tasks.length === 1) {
-      router.push(`/(director)/(tabs)/revitalization-roadmaps/${phaseId}/${phase.tasks[0]}`);
+    // If single roadmap with one nested roadmap, go directly to task
+    if (roadmap.haveNextedRoadMaps && roadmap.roadmaps && roadmap.roadmaps.length === 1) {
+      router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}/${roadmap.roadmaps[0]._id}`);
     } else {
-      router.push(`/(director)/(tabs)/revitalization-roadmaps/${phaseId}`);
+      router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}`);
     }
-  }, []);
+  }, [roadmaps, router]);
 
 
 
@@ -321,17 +328,19 @@ export default function RevitalizationRoadmap() {
   }, [search]);
 
   const filteredRoadmaps = useMemo(() => {
-    let filtered = mockRoadmapLibrary;
+    let filtered = roadmapLibrary;
+    console.log("🔍 Filtering roadmaps. Library count:", roadmapLibrary.length, "Search:", search);
 
     if (search) {
-      filtered = filtered.filter((roadmap) =>
+      filtered = filtered.filter((roadmap: RoadmapCardData) =>
         roadmap.title.toLowerCase().includes(search.toLowerCase()) ||
         roadmap.description?.toLowerCase().includes(search.toLowerCase())
       );
     }
 
+    console.log("✅ Filtered roadmaps count:", filtered.length);
     return filtered;
-  }, [search]);
+  }, [roadmapLibrary, search]);
 
   const tabData = [
     { key: 'roadmap-library', label: 'Roadmap Library' },
@@ -412,17 +421,45 @@ export default function RevitalizationRoadmap() {
 
           {/* Content List */}
           <View className="px-4">
-            {activeTab === "roadmap-library" &&
-              /* Roadmap Library */
-              filteredRoadmaps.map((roadmap, index) => (
-                <RoadmapCard
-                  key={`roadmap-${index}`}
-                  data={roadmap}
-                  showMenu={true}
-                  onMenuPress={() => handleRoadmapMenuPress(roadmap)}
-                  onPress={() => handlePhasePress(roadmap)}
-                />
-              ))}
+            {activeTab === "roadmap-library" && (
+              <>
+                {isLoadingRoadmaps ? (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 }}>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={{ color: '#fff', marginTop: 16, fontSize: 16 }}>
+                      Loading roadmaps...
+                    </Text>
+                  </View>
+                ) : roadmapsError ? (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
+                    <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
+                    <Text style={{ color: '#ff6b6b', marginTop: 16, fontSize: 16, textAlign: 'center', fontWeight: '600' }}>
+                      Failed to load roadmaps
+                    </Text>
+                    <Text style={{ color: '#fff', marginTop: 8, fontSize: 14, textAlign: 'center', opacity: 0.8 }}>
+                      {roadmapsError instanceof Error ? roadmapsError.message : 'An unexpected error occurred'}
+                    </Text>
+                  </View>
+                ) : filteredRoadmaps.length === 0 ? (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 }}>
+                    <Ionicons name="document-outline" size={48} color="#fff" style={{ opacity: 0.5 }} />
+                    <Text style={{ color: '#fff', marginTop: 16, fontSize: 16, textAlign: 'center', opacity: 0.7 }}>
+                      No roadmaps found
+                    </Text>
+                  </View>
+                ) : (
+                  filteredRoadmaps.map((roadmap: RoadmapCardData, index: number) => (
+                    <RoadmapCard
+                      key={`roadmap-${index}`}
+                      data={roadmap}
+                      showMenu={true}
+                      onMenuPress={() => handleRoadmapMenuPress(roadmap)}
+                      onPress={() => handlePhasePress(roadmap)}
+                    />
+                  ))
+                )}
+              </>
+            )}
 
             {activeTab === "mentors" &&
               /* Mentors List */

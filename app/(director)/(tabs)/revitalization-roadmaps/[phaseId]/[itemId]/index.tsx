@@ -3,21 +3,26 @@ import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import TopBar from '@/components/director/TopBar';
 import { DynamicFormTask } from '@/components/roadmaps/DynamicFormTask';
-import { mockRevitalization } from '@/lib/roadmap/mock';
-import { getPhase, getTask } from '@/lib/roadmap/selectors';
+import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
+import { NestedRoadmap } from '@/lib/roadmap/types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ItemDetail() {
-    const { itemId } = useLocalSearchParams<{ itemId: string; returnTo?: string }>();
+    const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string; returnTo?: string }>();
     const router = useRouter();
 
-    const task = getTask(mockRevitalization, itemId!);
-    const phase = getPhase(mockRevitalization, task?.phaseId || '');
+    // Fetch parent roadmap
+    const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
+
+    // Find the specific nested roadmap (task)
+    const task = useMemo<NestedRoadmap | undefined>(() => {
+        return roadmap?.roadmaps?.find(r => r._id === itemId);
+    }, [roadmap, itemId]);
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -72,11 +77,69 @@ export default function ItemDetail() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
-    if (!task) return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ color: 'white' }}>Task not found</Text>
-        </View>
-    );
+    // Parse duration to extract months range
+    const parseDurationMonths = useCallback((duration: string | undefined): string => {
+        if (!duration) return '1 - 2';
+        // Try to extract numbers from duration string (e.g., "3 months" -> "3", "2-4 weeks" -> "2 - 4")
+        const numbers = duration.match(/\d+/g);
+        if (numbers && numbers.length >= 2) {
+            return `${numbers[0]} - ${numbers[1]}`;
+        } else if (numbers && numbers.length === 1) {
+            return `${numbers[0]} - ${numbers[0]}`;
+        }
+        return '1 - 2';
+    }, []);
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+                <View style={{ paddingBottom: 10 }}>
+                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={{ color: '#fff', marginTop: 16, fontSize: 16 }}>
+                        Loading roadmap...
+                    </Text>
+                </View>
+            </LinearGradient>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+                <View style={{ paddingBottom: 10 }}>
+                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+                    <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
+                    <Text style={{ color: '#ff6b6b', marginTop: 16, fontSize: 16, textAlign: 'center', fontWeight: '600' }}>
+                        Failed to load roadmap
+                    </Text>
+                    <Text style={{ color: '#fff', marginTop: 8, fontSize: 14, textAlign: 'center', opacity: 0.8 }}>
+                        {error instanceof Error ? error.message : 'An unexpected error occurred'}
+                    </Text>
+                </View>
+            </LinearGradient>
+        );
+    }
+
+    // Task not found state
+    if (!task || !roadmap) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+                <View style={{ paddingBottom: 10 }}>
+                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: 'white', fontSize: 16 }}>Task not found</Text>
+                </View>
+            </LinearGradient>
+        );
+    }
 
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
@@ -124,9 +187,9 @@ export default function ItemDetail() {
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
-                            {phase.title}
+                            {roadmap.name}
                         </Text>
-                        {phase.subtitle && (
+                        {(roadmap.roadMapDetails || roadmap.description) && (
                             <Text
                                 style={{
                                     marginTop: getSpacing(4),
@@ -136,7 +199,7 @@ export default function ItemDetail() {
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
                             >
-                                {phase.subtitle}
+                                {roadmap.roadMapDetails || roadmap.description}
                             </Text>
                         )}
                     </View>
@@ -172,7 +235,7 @@ export default function ItemDetail() {
                 <TouchableOpacity
                     onPress={() => router.push({
                         pathname: '/roadmap/comments',
-                        params: { taskId: task.id, phaseId: task.phaseId },
+                        params: { taskId: task._id, phaseId: phaseId },
                     })}
                     className={`px-5 py-2.5 rounded-full mr-2 flex-row items-center ${activeTab === 'comments' ? 'bg-white' : 'bg-transparent border border-white/40'
                         }`}
@@ -193,7 +256,7 @@ export default function ItemDetail() {
                 <TouchableOpacity
                     onPress={() => router.push({
                         pathname: '/roadmap/queries',
-                        params: { taskId: task.id, phaseId: task.phaseId },
+                        params: { taskId: task._id, phaseId: phaseId },
                     })}
                     className={`px-5 py-2.5 rounded-full flex-row items-center ${activeTab === 'queries' ? 'bg-white' : 'bg-transparent border border-white/40'
                         }`}
@@ -216,12 +279,9 @@ export default function ItemDetail() {
             <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
                 {/* Cover Image */}
                 <View className="relative mb-0 overflow-hidden rounded-3xl" style={{ height: 220, backgroundColor: '#1a1a1a' }}>
-                    {task.meta?.coverImage ? (
+                    {task.imageUrl ? (
                         <Image
-                            source={typeof task.meta.coverImage === 'string'
-                                ? { uri: task.meta.coverImage }
-                                : task.meta.coverImage
-                            }
+                            source={{ uri: task.imageUrl }}
                             style={{ width: '100%', height: '100%', position: 'absolute' }}
                             resizeMode="cover"
                         />
@@ -238,7 +298,7 @@ export default function ItemDetail() {
                             borderRadius: 8,
                             alignSelf: 'flex-start',
                         }}>
-                            <Text className="text-2xl font-semibold text-white">{task.title}</Text>
+                            <Text className="text-2xl font-semibold text-white">{task.name}</Text>
                         </View>
                     </View>
                 </View>
@@ -246,7 +306,7 @@ export default function ItemDetail() {
                 {/* Completion Time */}
                 <View className="px-6 py-4 border-b border-white/20" style={{ borderBottomLeftRadius: 50, borderBottomRightRadius: 50 }}>
                     <Text className="text-base font-normal text-right text-white">
-                        Completion Time Months {task.meta?.completionTimeMonths || '1 - 2'}
+                        Completion Time Months {parseDurationMonths(task.duration)}
                     </Text>
                 </View>
 
@@ -254,7 +314,7 @@ export default function ItemDetail() {
                 <Text className="px-1 mt-6 mb-3 text-xl font-semibold text-white">Roadmap</Text>
                 <View className="p-5 mb-6 rounded-2xl" style={{ backgroundColor: 'rgba(64, 156, 186, 0.5)' }}>
                     <Text className="text-base leading-6 text-white">
-                        {task.meta?.roadmapText || phase?.subtitle || task.title}
+                        {task.roadMapDetails || roadmap.roadMapDetails || roadmap.description || task.name}
                     </Text>
                 </View>
 
@@ -266,7 +326,7 @@ export default function ItemDetail() {
                     </Text>
                 </View>
 
-                <DynamicFormTask item={task} />
+                <DynamicFormTask task={task} phaseId={phaseId} itemId={itemId} />
             </ScrollView>
 
             {/* Modals */}

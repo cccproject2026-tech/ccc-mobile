@@ -148,6 +148,14 @@ export const roadmapService = {
         return response.data.data;
     },
 
+    async createRoadmap(payload: CreateRoadmapRequest) {
+        const response = await apiClient.post<CreateRoadmapResponse>('/roadmaps', payload);
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to create roadmap');
+        }
+        return response.data;
+    },
+
     async getRoadmapById(roadmapId: string) {
         const response = await apiClient.get<{
             success: boolean;
@@ -162,19 +170,53 @@ export const roadmapService = {
 
     /**
      * GET - Fetches saved extras for a roadmap
-     * Fixed: Properly send query params
+     * Fixed: Properly send query params and prevent undefined values
      */
     async getRoadmapExtras(roadMapId: string, nestedRoadMapItemId?: string, userId?: string) {
-        const params: any = {};
+        // Validate inputs first - ensure we never pass undefined
+        const validNestedId = nestedRoadMapItemId && 
+            typeof nestedRoadMapItemId === 'string' && 
+            nestedRoadMapItemId !== 'undefined' && 
+            nestedRoadMapItemId.trim() !== '' && 
+            nestedRoadMapItemId.length === 24 &&
+            /^[0-9a-fA-F]{24}$/.test(nestedRoadMapItemId)
+            ? nestedRoadMapItemId 
+            : null;
+        
+        const validUserId = userId && 
+            typeof userId === 'string' && 
+            userId !== 'undefined' && 
+            userId.trim() !== '' && 
+            userId.length === 24 &&
+            /^[0-9a-fA-F]{24}$/.test(userId)
+            ? userId 
+            : null;
 
-        // Only add params if they exist and are valid
-        if (userId) params.userId = userId;
-        if (nestedRoadMapItemId) params.nestedRoadMapItemId = nestedRoadMapItemId;
+        // Build params object - only add if we have valid values (not null, not undefined)
+        const params: Record<string, string> = {};
+        
+        if (validUserId) {
+            params.userId = validUserId;
+        }
+        
+        if (validNestedId) {
+            params.nestedRoadMapItemId = validNestedId;
+        }
 
-        const response = await apiClient.get<GetExtrasResponse>(
-            `/roadmaps/${roadMapId}/extras`,
-            { params }
-        );
+        // Build URL with query string manually if we have params, otherwise use base URL
+        let url = `/roadmaps/${roadMapId}/extras`;
+        if (Object.keys(params).length > 0) {
+            const queryString = Object.entries(params)
+                .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+                .join('&');
+            url = `${url}?${queryString}`;
+            console.log('📤 getRoadmapExtras URL:', url);
+        } else {
+            console.log('📤 getRoadmapExtras: No params, using base URL');
+        }
+
+        // Call without params config to avoid axios serialization issues
+        const response = await apiClient.get<GetExtrasResponse>(url);
 
         if (!response.data.success) {
             throw new Error(response.data.message || 'Failed to fetch roadmap extras');
@@ -196,8 +238,47 @@ export const roadmapService = {
     },
 
     async updateRoadmapExtras(roadMapId: string, payload: UpdateExtrasDto, userId: string | undefined, nestedRoadMapItemId?: string) {
+        // Validate inputs first - ensure we never pass undefined
+        const validNestedId = nestedRoadMapItemId && 
+            typeof nestedRoadMapItemId === 'string' && 
+            nestedRoadMapItemId !== 'undefined' && 
+            nestedRoadMapItemId.trim() !== '' && 
+            nestedRoadMapItemId.length === 24 &&
+            /^[0-9a-fA-F]{24}$/.test(nestedRoadMapItemId)
+            ? nestedRoadMapItemId 
+            : null;
+        
+        const validUserId = userId && 
+            typeof userId === 'string' && 
+            userId !== 'undefined' && 
+            userId.trim() !== '' && 
+            userId.length === 24 &&
+            /^[0-9a-fA-F]{24}$/.test(userId)
+            ? userId 
+            : null;
+
+        // Build URL with query string manually if we have params
+        let url = `/roadmaps/${roadMapId}/extras`;
+        const queryParams: string[] = [];
+        
+        if (validUserId) {
+            queryParams.push(`userId=${encodeURIComponent(validUserId)}`);
+        }
+        
+        if (validNestedId) {
+            queryParams.push(`nestedRoadMapItemId=${encodeURIComponent(validNestedId)}`);
+        }
+        
+        if (queryParams.length > 0) {
+            url = `${url}?${queryParams.join('&')}`;
+            console.log('📤 updateRoadmapExtras URL:', url);
+        } else {
+            console.log('📤 updateRoadmapExtras: No params, using base URL');
+        }
+
+        // Call without params config to avoid axios serialization issues
         const response = await apiClient.patch<ExtrasApiResponse>(
-            `/roadmaps/${roadMapId}/extras?userId=${userId || ''}&nestedRoadMapItemId=${nestedRoadMapItemId || ''}`,
+            url,
             payload
         );
         if (!response.data.success) {

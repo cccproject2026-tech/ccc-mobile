@@ -70,17 +70,29 @@ import { NestedRoadmap, Roadmap, RoadmapCardData } from './types';
  * Status is already merged from progress data via useRoadmaps hook
  */
 export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
+    if (!roadmap) {
+        // Return a default card if roadmap is undefined
+        return {
+            image: undefined,
+            title: 'Unknown Roadmap',
+            description: undefined,
+            completionTime: 'Completion Time\nMonths 1 - 1',
+            status: 'initial',
+            showArrow: true,
+        };
+    }
+
     const { completed, total } = getCompletionStats(roadmap);
     const status = getCardStatus(roadmap);
-    const { min, max } = parseDurationMonths(roadmap.duration);
-    const phaseNumber = isSingleTask(roadmap) ? undefined : getPhaseNumber(roadmap.phase);
+    const { min, max } = parseDurationMonths(roadmap.duration || '1 month');
+    const phaseNumber = isSingleTask(roadmap) ? undefined : getPhaseNumber(roadmap.phase || '');
 
     const allCompleted = completed === total && total > 0;
     const hasProgress = (status === 'in-progress' || status === 'due') && total > 0;
 
     return {
         image: roadmap.imageUrl,
-        title: roadmap.name,
+        title: roadmap.name || 'Untitled Roadmap',
         description: roadmap.roadMapDetails,
         completionTime: `Completion Time\nMonths ${min}${min !== max ? ` – ${max}` : ''}`,
         status,
