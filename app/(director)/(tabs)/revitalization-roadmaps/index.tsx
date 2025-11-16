@@ -200,8 +200,20 @@ export default function RevitalizationRoadmap() {
       icon: 'create-outline',
       label: 'Edit Roadmap',
       onPress: () => {
+        if (!selectedRoadmap) return;
+        const roadmap = roadmaps.find(r => r.name === selectedRoadmap.title);
+        if (!roadmap) return;
+        
         handleCloseModal();
-        console.log('Edit Roadmap:', selectedRoadmap?.title);
+        setTimeout(() => {
+          router.push({
+            pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+            params: {
+              isEditMode: 'true',
+              roadmapId: roadmap._id,
+            },
+          });
+        }, 300);
       }
     },
     {

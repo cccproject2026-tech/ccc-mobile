@@ -139,9 +139,9 @@ import {
     SubmitQueryResponse,
     UpdateExtrasDto
 } from '@/lib/roadmap/types';
-import { CreateRoadmapRequest, CreateRoadmapResponse, CreateNestedRoadmapRequest, CreateNestedRoadmapResponse } from '@/lib/roadmaps/types';
-import { ENDPOINTS } from './api/endpoints';
+import { CreateNestedRoadmapRequest, CreateNestedRoadmapResponse, CreateRoadmapRequest, CreateRoadmapResponse, UpdateRoadmapRequest, UpdateRoadmapResponse } from '@/lib/roadmaps/types';
 import { apiClient } from './api/client';
+import { ENDPOINTS } from './api/endpoints';
 
 export const roadmapService = {
     async getRoadmaps() {
@@ -157,6 +157,19 @@ export const roadmapService = {
         if (!response.data.success) {
             throw new Error(response.data.message || 'Failed to create roadmap');
         }
+        return response.data;
+    },
+
+    async updateRoadmap(roadmapId: string, payload: UpdateRoadmapRequest) {
+        console.log('📤 Updating roadmap:', { roadmapId, payload });
+        const response = await apiClient.patch<UpdateRoadmapResponse>(
+            ENDPOINTS.ROADMAPS.UPDATE(roadmapId),
+            payload
+        );
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to update roadmap');
+        }
+        console.log('📥 Roadmap updated successfully:', response.data);
         return response.data;
     },
 

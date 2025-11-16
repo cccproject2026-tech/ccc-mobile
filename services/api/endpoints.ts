@@ -81,6 +81,7 @@ export const ENDPOINTS = {
     ROADMAPS: {
         GET_ALL: '/roadmaps',
         CREATE: '/roadmaps',
+        UPDATE: (roadmapId: string) => `/roadmaps/${roadmapId}`,
         ADD_COMMENT: (roadmapId: string) => `/roadmaps/${roadmapId}/comments`,
         SUBMIT_QUERY: (roadmapId: string) => `/roadmaps/${roadmapId}/queries`,
         CREATE_NESTED: (roadmapId: string) => `/roadmaps/${roadmapId}/nested`,

@@ -81,3 +81,26 @@ export interface CreateNestedRoadmapResponse {
   data: RoadmapResponse;
 }
 
+export interface UpdateRoadmapItem extends RoadmapItem {
+  _id?: string;
+}
+
+export interface UpdateRoadmapRequest {
+  name: string;
+  roadMapDetails?: string;
+  description?: string;
+  duration: string;
+  imageUrl?: string;
+  divisions?: string[];
+  phase?: string;
+  totalSteps?: number;
+  extras?: RoadmapExtra[];
+  roadmaps?: UpdateRoadmapItem[];
+}
+
+export interface UpdateRoadmapResponse {
+  success: boolean;
+  message: string;
+  data: RoadmapResponse;
+}
+

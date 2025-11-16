@@ -140,7 +140,15 @@ export default function MenteeRoadmapDetailScreen() {
             label: 'Edit Roadmap',
             onPress: () => {
                 handleCloseModal();
-                console.log('Edit Roadmap:', selectedRoadmap?.title);
+                setTimeout(() => {
+                    router.push({
+                        pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+                        params: {
+                            isEditMode: 'true',
+                            roadmapId: id,
+                        },
+                    });
+                }, 300);
             }
         },
         {

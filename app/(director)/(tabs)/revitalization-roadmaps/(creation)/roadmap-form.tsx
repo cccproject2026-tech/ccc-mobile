@@ -8,7 +8,9 @@ import FormCheckBox from "@/components/director/forms/FormCheckBox";
 import { usePhaseCreation } from "@/context/PhaseCreationContext";
 import { useCreateRoadmap } from "@/hooks/roadmaps";
 import { useCreateNestedRoadmap } from "@/hooks/roadmaps/useCreateNestedRoadmap";
-import { CreateRoadmapRequest, RoadmapExtra } from "@/lib/roadmaps/types";
+import { useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
+import { useUpdateRoadmap } from "@/hooks/roadmaps/useUpdateRoadmap";
+import { CreateRoadmapRequest, RoadmapExtra, UpdateRoadmapRequest } from "@/lib/roadmaps/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -35,11 +37,21 @@ export default function RoadmapFormScreen() {
   const { state, updateRoadmap, clearPhaseData } = usePhaseCreation();
   const createRoadmapMutation = useCreateRoadmap();
   const createNestedRoadmapMutation = useCreateNestedRoadmap();
+  const updateRoadmapMutation = useUpdateRoadmap();
 
   const isPhaseFlow = params.isPhaseFlow === 'true';
   const isNestedRoadmap = params.isNestedRoadmap === 'true';
+  const isEditMode = params.isEditMode === 'true';
+  const isNestedEdit = params.isNestedEdit === 'true';
+  const roadmapId = params.roadmapId as string;
   const parentRoadmapId = params.parentRoadmapId as string;
+  const nestedRoadmapId = params.nestedRoadmapId as string;
   const parentPhase = params.phase as string;
+
+  // Fetch roadmap data if in edit mode
+  const { data: editRoadmapData, isLoading: isLoadingEditRoadmap } = useRoadmap(
+    (isEditMode && roadmapId) || (isNestedEdit && parentRoadmapId) ? (isNestedEdit ? parentRoadmapId : roadmapId) : undefined
+  );
 
   // Get roadmap data from context if in phase flow, otherwise from params
   const roadmapData = isPhaseFlow && state.currentRoadmap ? {
@@ -80,6 +92,169 @@ export default function RoadmapFormScreen() {
   React.useEffect(() => {
     validateForm();
   }, [formData.churchVerbiage, formData.descriptionVerbiage]);
+
+  // Transform extras back to customFields format for edit mode
+  const transformExtrasToFields = (extras: RoadmapExtra[]): any[] => {
+    const fields: any[] = [];
+    let fieldIndex = 0;
+
+    extras.forEach((extra) => {
+      const fieldId = `field_${Date.now()}_${fieldIndex++}`;
+      
+      switch (extra.type) {
+        case "TEXT_AREA":
+          fields.push({
+            id: fieldId,
+            type: "textarea",
+            label: extra.name,
+            placeholder: extra.placeHolder || "",
+            buttonName: extra.buttonName || "",
+          });
+          break;
+        case "TEXT_FIELD":
+          fields.push({
+            id: fieldId,
+            type: "text",
+            label: extra.name,
+            placeholder: extra.placeHolder || "",
+            buttonName: extra.buttonName || "",
+          });
+          break;
+        case "CHECKBOX":
+          fields.push({
+            id: fieldId,
+            type: "checkbox",
+            label: extra.name,
+            buttonName: extra.haveButton ? extra.buttonName : "",
+          });
+          break;
+        case "DATE_PICKER":
+          const dateField: any = {
+            id: fieldId,
+            type: "datepicker",
+            label: extra.name,
+            date: extra.date ? new Date(extra.date) : new Date(),
+            buttonName: extra.buttonName || "",
+            allowPastorSelect: false,
+            showOnCard: false,
+          };
+          if (extra.checkboxes) {
+            extra.checkboxes.forEach((cb) => {
+              if (cb.name === "Allow pastor to select Date") {
+                dateField.allowPastorSelect = true;
+              }
+              if (cb.name === "Show date on info card") {
+                dateField.showOnCard = true;
+              }
+            });
+          }
+          fields.push(dateField);
+          break;
+        case "UPLOAD":
+          fields.push({
+            id: fieldId,
+            type: "upload",
+            buttonLabel: extra.name,
+          });
+          break;
+        case "ASSESSMENT":
+          const assessmentField: any = {
+            id: fieldId,
+            type: "assessment",
+            selectedAssessment: extra.name,
+            buttonName: extra.buttonName || "",
+            scheduleMeeting: false,
+          };
+          if (extra.checkboxes) {
+            extra.checkboxes.forEach((cb) => {
+              if (cb.name === "Schedule Meeting after the Assessment") {
+                assessmentField.scheduleMeeting = true;
+              }
+            });
+          }
+          fields.push(assessmentField);
+          break;
+        case "SECTION":
+          const sectionField: any = {
+            id: fieldId,
+            type: "section",
+            name: extra.name,
+            buttonName: extra.buttonName || "",
+            showDuplicateButton: false,
+          };
+          if (extra.checkboxes) {
+            extra.checkboxes.forEach((cb) => {
+              if (cb.haveButton) {
+                sectionField.showDuplicateButton = true;
+                sectionField.buttonName = cb.buttonName || "";
+              }
+            });
+          }
+          // Add nested fields from sections
+          if (extra.sections) {
+            extra.sections.forEach((sectionExtra) => {
+              const nestedFieldId = `field_${Date.now()}_${fieldIndex++}`;
+              if (sectionExtra.type === "TEXT_FIELD") {
+                fields.push({
+                  id: nestedFieldId,
+                  type: "text",
+                  label: sectionExtra.name,
+                  placeholder: sectionExtra.placeHolder || "",
+                  parentSectionId: fieldId,
+                });
+              } else if (sectionExtra.type === "TEXT_AREA") {
+                fields.push({
+                  id: nestedFieldId,
+                  type: "textarea",
+                  label: sectionExtra.name,
+                  placeholder: sectionExtra.placeHolder || "",
+                  parentSectionId: fieldId,
+                });
+              } else if (sectionExtra.type === "DATE_PICKER") {
+                fields.push({
+                  id: nestedFieldId,
+                  type: "datepicker",
+                  label: sectionExtra.name,
+                  date: sectionExtra.date ? new Date(sectionExtra.date) : new Date(),
+                  parentSectionId: fieldId,
+                });
+              }
+            });
+          }
+          fields.push(sectionField);
+          break;
+        case "TEXT_DISPLAY":
+          fields.push({
+            id: fieldId,
+            type: "textarea",
+            label: extra.name,
+            placeholder: "",
+          });
+          break;
+      }
+    });
+
+    return fields;
+  };
+
+  // Pre-fill form data when in edit mode
+  React.useEffect(() => {
+    if ((isEditMode || isNestedEdit) && editRoadmapData) {
+      let roadmapToEdit = editRoadmapData;
+      
+      if (isNestedEdit && nestedRoadmapId && editRoadmapData.roadmaps) {
+        roadmapToEdit = editRoadmapData.roadmaps.find(r => r._id === nestedRoadmapId) as any;
+      }
+
+      if (roadmapToEdit) {
+        setFormData({
+          churchVerbiage: roadmapToEdit.roadMapDetails || roadmapToEdit.description || "",
+          descriptionVerbiage: roadmapToEdit.description || roadmapToEdit.roadMapDetails || "",
+          customFields: roadmapToEdit.extras ? transformExtrasToFields(roadmapToEdit.extras as RoadmapExtra[]) : [],
+        });
+      }
+    }
+  }, [isEditMode, isNestedEdit, editRoadmapData, nestedRoadmapId]);
 
   const handleEditField = (fieldId: string) => {
     const field = formData.customFields.find((f) => f.id === fieldId);
@@ -267,7 +442,9 @@ export default function RoadmapFormScreen() {
   };
 
   const handleCancel = () => {
-    if (isPhaseFlow) {
+    if (isEditMode || isNestedEdit) {
+      router.back();
+    } else if (isPhaseFlow) {
       Alert.alert(
         "Exit Phase Creation",
         "Are you sure you want to exit? Your current progress will be saved.",
@@ -405,6 +582,61 @@ export default function RoadmapFormScreen() {
       .filter(Boolean) as RoadmapExtra[];
   };
 
+  // Transform form data to API update format
+  const transformToUpdateFormat = (): UpdateRoadmapRequest => {
+    const extras = transformFieldsToExtras(formData.customFields);
+    
+    // Get the roadmap to update
+    let roadmapToUpdate = editRoadmapData;
+    if (isNestedEdit && nestedRoadmapId && editRoadmapData?.roadmaps) {
+      roadmapToUpdate = editRoadmapData.roadmaps.find(r => r._id === nestedRoadmapId) as any;
+    }
+
+    if (!roadmapToUpdate) {
+      throw new Error('Roadmap data not found');
+    }
+
+    // Build update request
+    const updateData: UpdateRoadmapRequest = {
+      name: roadmapData.name,
+      duration: roadmapData.completionTime,
+      ...(roadmapData.subheading && { roadMapDetails: roadmapData.subheading }),
+      ...(formData.descriptionVerbiage && { description: formData.descriptionVerbiage }),
+      ...(roadmapData.bannerImage && { imageUrl: roadmapData.bannerImage }),
+      ...(extras.length > 0 && { extras }),
+    };
+
+    // For main roadmap, include divisions and nested roadmaps with _id
+    if (!isNestedEdit && editRoadmapData) {
+      if (editRoadmapData.divisions) {
+        updateData.divisions = editRoadmapData.divisions;
+      }
+      if (editRoadmapData.phase) {
+        updateData.phase = editRoadmapData.phase;
+      }
+      if (editRoadmapData.totalSteps) {
+        updateData.totalSteps = editRoadmapData.totalSteps;
+      }
+      
+      // Include existing nested roadmaps with their _id
+      if (editRoadmapData.roadmaps && editRoadmapData.roadmaps.length > 0) {
+        updateData.roadmaps = editRoadmapData.roadmaps.map((nested: any) => ({
+          _id: nested._id,
+          name: nested.name,
+          ...(nested.roadMapDetails && { roadMapDetails: nested.roadMapDetails }),
+          ...(nested.description && { description: nested.description }),
+          duration: nested.duration,
+          ...(nested.imageUrl && { imageUrl: nested.imageUrl }),
+          ...(nested.phase && { phase: nested.phase }),
+          ...(nested.totalSteps && { totalSteps: nested.totalSteps }),
+          ...(nested.extras && nested.extras.length > 0 && { extras: nested.extras }),
+        }));
+      }
+    }
+
+    return updateData;
+  };
+
   // Transform form data to API request format
   const transformToApiFormat = (): CreateRoadmapRequest => {
     const extras = transformFieldsToExtras(formData.customFields);
@@ -498,6 +730,93 @@ export default function RoadmapFormScreen() {
 
     if (errors.length > 0) {
       Alert.alert("Validation Error", errors.join("\n"));
+      return;
+    }
+
+    // Handle nested roadmap editing
+    if (isNestedEdit && parentRoadmapId && nestedRoadmapId && editRoadmapData) {
+      const extras = transformFieldsToExtras(formData.customFields);
+      
+      // Update nested roadmap within parent's roadmaps array
+      const updatedRoadmaps = editRoadmapData.roadmaps?.map((nested: any) => {
+        if (nested._id === nestedRoadmapId) {
+          return {
+            _id: nested._id,
+            name: roadmapData.name,
+            roadMapDetails: roadmapData.subheading,
+            description: formData.descriptionVerbiage || roadmapData.subheading,
+            duration: roadmapData.completionTime,
+            ...(roadmapData.bannerImage && { imageUrl: roadmapData.bannerImage }),
+            phase: nested.phase || parentPhase || '',
+            ...(formData.customFields.length > 0 && { totalSteps: formData.customFields.length }),
+            ...(extras.length > 0 && { extras }),
+            status: nested.status || 'not started',
+            meetings: nested.meetings || [],
+          };
+        }
+        return nested;
+      }) || [];
+
+      const updateData: UpdateRoadmapRequest = {
+        name: editRoadmapData.name,
+        duration: editRoadmapData.duration,
+        ...(editRoadmapData.roadMapDetails && { roadMapDetails: editRoadmapData.roadMapDetails }),
+        ...(editRoadmapData.description && { description: editRoadmapData.description }),
+        ...(editRoadmapData.imageUrl && { imageUrl: editRoadmapData.imageUrl }),
+        ...(editRoadmapData.divisions && { divisions: editRoadmapData.divisions }),
+        ...(editRoadmapData.phase && { phase: editRoadmapData.phase }),
+        ...(editRoadmapData.totalSteps && { totalSteps: editRoadmapData.totalSteps }),
+        ...(editRoadmapData.extras && editRoadmapData.extras.length > 0 && { extras: editRoadmapData.extras as RoadmapExtra[] }),
+        roadmaps: updatedRoadmaps,
+      };
+
+      updateRoadmapMutation.mutate(
+        {
+          roadmapId: parentRoadmapId,
+          data: updateData,
+        },
+        {
+          onSuccess: () => {
+            setSuccessMessage("Task Updated Successfully");
+            setShowSuccess(true);
+          },
+          onError: (error) => {
+            console.error("Failed to update nested roadmap:", error);
+            Alert.alert(
+              "Error",
+              error.message || "Failed to update task. Please try again.",
+              [{ text: "OK" }]
+            );
+          },
+        }
+      );
+      return;
+    }
+
+    // Handle main roadmap editing
+    if (isEditMode && roadmapId) {
+      const updateData = transformToUpdateFormat();
+      
+      updateRoadmapMutation.mutate(
+        {
+          roadmapId: roadmapId,
+          data: updateData,
+        },
+        {
+          onSuccess: () => {
+            setSuccessMessage("Roadmap Updated Successfully");
+            setShowSuccess(true);
+          },
+          onError: (error) => {
+            console.error("Failed to update roadmap:", error);
+            Alert.alert(
+              "Error",
+              error.message || "Failed to update roadmap. Please try again.",
+              [{ text: "OK" }]
+            );
+          },
+        }
+      );
       return;
     }
 
@@ -797,7 +1116,9 @@ export default function RoadmapFormScreen() {
           >
             <Ionicons name="chevron-back" size={28} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create Roadmap</Text>
+          <Text style={styles.headerTitle}>
+            {(isEditMode || isNestedEdit) ? 'Edit Roadmap' : 'Create Roadmap'}
+          </Text>
         </View>
 
         <ScrollView
@@ -900,12 +1221,12 @@ export default function RoadmapFormScreen() {
           <TouchableOpacity
             style={[
               styles.createButton,
-              (!isFormValid || createRoadmapMutation.isPending) && styles.createButtonDisabled,
+              (!isFormValid || createRoadmapMutation.isPending || updateRoadmapMutation.isPending) && styles.createButtonDisabled,
             ]}
             onPress={handleCreateRoadmap}
-            disabled={!isFormValid || createRoadmapMutation.isPending}
+            disabled={!isFormValid || createRoadmapMutation.isPending || updateRoadmapMutation.isPending}
           >
-            {createRoadmapMutation.isPending ? (
+            {(createRoadmapMutation.isPending || updateRoadmapMutation.isPending) ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Text
@@ -914,7 +1235,7 @@ export default function RoadmapFormScreen() {
                   !isFormValid && styles.createButtonTextDisabled,
                 ]}
               >
-                Create Roadmap
+                {(isEditMode || isNestedEdit) ? 'Update Roadmap' : 'Create Roadmap'}
               </Text>
             )}
           </TouchableOpacity>

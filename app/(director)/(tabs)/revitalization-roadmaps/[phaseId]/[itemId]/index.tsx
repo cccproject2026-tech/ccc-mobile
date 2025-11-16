@@ -31,6 +31,23 @@ export default function ItemDetail() {
 
     const outcomeMenuItems = useCallback((): MenuItem[] => [
         {
+            id: 'edit-task',
+            label: 'Edit Task',
+            onPress: () => {
+                setShowOutcomeMenu(false);
+                router.push({
+                    pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+                    params: {
+                        isEditMode: 'true',
+                        isNestedEdit: 'true',
+                        parentRoadmapId: phaseId,
+                        nestedRoadmapId: itemId,
+                        phase: roadmap?.phase || '',
+                    },
+                });
+            },
+        },
+        {
             id: 'outcome-4-months',
             label: 'Expected Outcome - 4 Months',
             onPress: () => {
@@ -66,7 +83,7 @@ export default function ItemDetail() {
                 setShowOutcomeModal(true);
             },
         },
-    ], []);
+    ], [phaseId, itemId, roadmap, router]);
 
     const outcomeData = useCallback(() => [
         { id: '1', text: 'The church is committed to the revitalization process.' },

@@ -1,4 +1,5 @@
 import { usePhaseCreation } from '@/context/PhaseCreationContext';
+import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,8 +28,19 @@ export default function CreateRoadmapScreen() {
 
     const isPhaseFlow = params.isPhaseFlow === 'true';
     const isNestedRoadmap = params.isNestedRoadmap === 'true';
+    const isEditMode = params.isEditMode === 'true';
+    const isNestedEdit = params.isNestedEdit === 'true';
+    const roadmapId = params.roadmapId as string;
     const parentRoadmapId = params.parentRoadmapId as string;
+    const nestedRoadmapId = params.nestedRoadmapId as string;
     const parentPhase = params.phase as string;
+
+    // Fetch roadmap data if in edit mode
+    const roadmapQuery = useRoadmap(
+        isEditMode && roadmapId ? roadmapId : undefined
+    );
+    const editRoadmapData = roadmapQuery.data;
+    const isLoadingRoadmap = roadmapQuery.isLoading;
 
     const [formData, setFormData] = useState<{
         name: string;
@@ -73,7 +85,7 @@ export default function CreateRoadmapScreen() {
     };
 
     const handleCancel = () => {
-        if (isNestedRoadmap && parentRoadmapId) {
+        if (isNestedRoadmap || isNestedEdit || isEditMode) {
             router.back();
         } else {
             router.replace('/(director)/(tabs)/revitalization-roadmaps');
@@ -116,18 +128,23 @@ export default function CreateRoadmapScreen() {
             return;
         }
 
-        if (isNestedRoadmap) {
+        if (isNestedRoadmap || isNestedEdit) {
             // For Nested Roadmap (Task), navigate to roadmap-form with nested params
-            const queryParams = {
+            const queryParams: any = {
                 name: formData.name,
                 subheading: formData.subheading,
                 completionTime: formData.completionTime,
                 selectedDivision: formData.selectedDivision,
                 bannerImage: formData.bannerImage || '',
                 isNestedRoadmap: 'true',
-                parentRoadmapId: parentRoadmapId,
+                parentRoadmapId: isNestedEdit ? parentRoadmapId : parentRoadmapId,
                 phase: parentPhase || '',
             };
+
+            if (isNestedEdit) {
+                queryParams.isNestedEdit = 'true';
+                queryParams.nestedRoadmapId = nestedRoadmapId;
+            }
 
             router.push({
                 pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/roadmap-form',
@@ -154,13 +171,18 @@ export default function CreateRoadmapScreen() {
             });
         } else {
             // For Single Roadmap, navigate to roadmap-form with params
-            const queryParams = {
+            const queryParams: any = {
                 name: formData.name,
                 subheading: formData.subheading,
                 completionTime: formData.completionTime,
                 selectedDivision: formData.selectedDivision,
                 bannerImage: formData.bannerImage || ''
             };
+
+            if (isEditMode) {
+                queryParams.isEditMode = 'true';
+                queryParams.roadmapId = roadmapId;
+            }
 
             router.push({
                 pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/roadmap-form',
@@ -182,6 +204,36 @@ export default function CreateRoadmapScreen() {
         }
     }, [isPhaseFlow, state.currentRoadmap]);
 
+    useEffect(() => {
+        // Pre-fill form data when in edit mode
+        if (isEditMode && editRoadmapData) {
+            if (isNestedEdit && nestedRoadmapId && editRoadmapData.roadmaps) {
+                // Find the nested roadmap to edit
+                const nestedRoadmap = editRoadmapData.roadmaps.find((r: any) => r._id === nestedRoadmapId);
+                if (nestedRoadmap) {
+                    setFormData({
+                        name: nestedRoadmap.name,
+                        subheading: nestedRoadmap.roadMapDetails || nestedRoadmap.description || '',
+                        completionTime: nestedRoadmap.duration,
+                        bannerImage: nestedRoadmap.imageUrl || null,
+                        selectedDivision: nestedRoadmap.phase || 'Church'
+                    });
+                }
+            } else {
+                // Edit main roadmap
+                setFormData({
+                    name: editRoadmapData.name,
+                    subheading: editRoadmapData.roadMapDetails || editRoadmapData.description || '',
+                    completionTime: editRoadmapData.duration,
+                    bannerImage: editRoadmapData.imageUrl || null,
+                    selectedDivision: editRoadmapData.divisions?.[0] 
+                        ? editRoadmapData.divisions[0].charAt(0).toUpperCase() + editRoadmapData.divisions[0].slice(1)
+                        : 'Church'
+                });
+            }
+        }
+    }, [isEditMode, isNestedEdit, editRoadmapData, nestedRoadmapId]);
+
     return (
         <LinearGradient
             colors={['#176192', '#1D548D', '#264387']}
@@ -193,35 +245,46 @@ export default function CreateRoadmapScreen() {
                     <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Create Roadmap</Text>
+                    <Text style={styles.headerTitle}>
+                        {isEditMode ? 'Edit Roadmap' : 'Create Roadmap'}
+                    </Text>
                 </View>
 
-                <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                    {/* Banner Section */}
-                    <View style={styles.bannerSection}>
-                        <View style={styles.bannerImageContainer}>
-                            <Image
-                                source={
-                                    isPhaseFlow && state.phaseDetails?.phaseBannerImage
-                                        ? { uri: state.phaseDetails.phaseBannerImage }
-                                        : require('@/assets/images/church-2.png')
-                                }
-                                style={styles.bannerImage}
-                            />
-                            <BlurView intensity={10} style={styles.blurOverlay}>
-                                <View style={styles.bannerOverlay}>
-                                    <Text style={styles.bannerTitle}>
-                                        {isPhaseFlow && state.phaseDetails
-                                            ? state.phaseDetails.phaseName
-                                            : 'self Revitalization Phase'}
-                                    </Text>
-                                </View>
-                            </BlurView>
-                        </View>
-                        <Text style={styles.bannerSubtitle}>
-                            These Information will be shown in the info card of each Roadmap
-                        </Text>
+                {(isLoadingRoadmap && isEditMode) ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 }}>
+                        <Text style={{ color: '#fff', fontSize: 16 }}>Loading roadmap...</Text>
                     </View>
+                ) : (
+                    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                        {/* Banner Section */}
+                        <View style={styles.bannerSection}>
+                            <View style={styles.bannerImageContainer}>
+                                <Image
+                                    source={
+                                        (isEditMode && editRoadmapData?.imageUrl)
+                                            ? { uri: editRoadmapData.imageUrl }
+                                            : isPhaseFlow && state.phaseDetails?.phaseBannerImage
+                                            ? { uri: state.phaseDetails.phaseBannerImage }
+                                            : require('@/assets/images/church-2.png')
+                                    }
+                                    style={styles.bannerImage}
+                                />
+                                <BlurView intensity={10} style={styles.blurOverlay}>
+                                    <View style={styles.bannerOverlay}>
+                                        <Text style={styles.bannerTitle}>
+                                            {isEditMode && editRoadmapData
+                                                ? editRoadmapData.name
+                                                : isPhaseFlow && state.phaseDetails
+                                                ? state.phaseDetails.phaseName
+                                                : 'self Revitalization Phase'}
+                                        </Text>
+                                    </View>
+                                </BlurView>
+                            </View>
+                            <Text style={styles.bannerSubtitle}>
+                                These Information will be shown in the info card of each Roadmap
+                            </Text>
+                        </View>
 
                     {/* Form Fields */}
                     <View style={styles.formContainer}>
@@ -336,9 +399,8 @@ export default function CreateRoadmapScreen() {
                             </Text>
                         </TouchableOpacity>
                     </View>
-                </ScrollView>
-
-                {/* Action Buttons */}
+                    </ScrollView>
+                )}
 
             </View>
         </LinearGradient>
