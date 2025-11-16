@@ -26,6 +26,9 @@ export default function CreateRoadmapScreen() {
     const { state, addRoadmap, updateRoadmap, setCurrentRoadmap } = usePhaseCreation();
 
     const isPhaseFlow = params.isPhaseFlow === 'true';
+    const isNestedRoadmap = params.isNestedRoadmap === 'true';
+    const parentRoadmapId = params.parentRoadmapId as string;
+    const parentPhase = params.phase as string;
 
     const [formData, setFormData] = useState<{
         name: string;
@@ -70,25 +73,29 @@ export default function CreateRoadmapScreen() {
     };
 
     const handleCancel = () => {
-        router.replace('/(director)/(tabs)/revitalization-roadmaps');
+        if (isNestedRoadmap && parentRoadmapId) {
+            router.back();
+        } else {
+            router.replace('/(director)/(tabs)/revitalization-roadmaps');
+        }
     };
 
     const validateForm = () => {
         const errors: string[] = [];
 
         if (!formData.name.trim()) {
-            errors.push('Roadmap Name is required');
+            errors.push(isNestedRoadmap ? 'Task Name is required' : 'Roadmap Name is required');
         }
 
         if (!formData.subheading.trim()) {
-            errors.push('Roadmap Subheading is required');
+            errors.push(isNestedRoadmap ? 'Task Description is required' : 'Roadmap Subheading is required');
         }
 
         if (!formData.completionTime.trim()) {
-            errors.push('Completion Time is required');
+            errors.push(isNestedRoadmap ? 'Duration is required' : 'Completion Time is required');
         }
 
-        if (!formData.selectedDivision) {
+        if (!isNestedRoadmap && !formData.selectedDivision) {
             errors.push('Please select a division');
         }
 
@@ -109,7 +116,24 @@ export default function CreateRoadmapScreen() {
             return;
         }
 
-        if (isPhaseFlow) {
+        if (isNestedRoadmap) {
+            // For Nested Roadmap (Task), navigate to roadmap-form with nested params
+            const queryParams = {
+                name: formData.name,
+                subheading: formData.subheading,
+                completionTime: formData.completionTime,
+                selectedDivision: formData.selectedDivision,
+                bannerImage: formData.bannerImage || '',
+                isNestedRoadmap: 'true',
+                parentRoadmapId: parentRoadmapId,
+                phase: parentPhase || '',
+            };
+
+            router.push({
+                pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/roadmap-form',
+                params: queryParams
+            });
+        } else if (isPhaseFlow) {
             // For Phase flow, add roadmap to context and navigate to roadmap-form
             const roadmap = addRoadmap({
                 name: formData.name,
@@ -201,7 +225,7 @@ export default function CreateRoadmapScreen() {
 
                     {/* Form Fields */}
                     <View style={styles.formContainer}>
-                        {/* Roadmap Name */}
+                        {/* Name */}
                         <View style={styles.fieldContainer}>
                             <Text style={styles.fieldLabel}>Roadmap Name</Text>
                             <TextInput
@@ -213,7 +237,7 @@ export default function CreateRoadmapScreen() {
                             />
                         </View>
 
-                        {/* Roadmap Subheading */}
+                        {/* Subheading/Description */}
                         <View style={styles.fieldContainer}>
                             <Text style={styles.fieldLabel}>Roadmap Subheading</Text>
                             <TextInput
@@ -228,7 +252,7 @@ export default function CreateRoadmapScreen() {
                             />
                         </View>
 
-                        {/* Completion Time */}
+                        {/* Duration/Completion Time */}
                         <View style={styles.fieldContainer}>
                             <Text style={styles.fieldLabel}>Completion Time for the Roadmap</Text>
                             <TextInput
@@ -240,37 +264,39 @@ export default function CreateRoadmapScreen() {
                             />
                         </View>
 
-                        {/* Division Selection */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.fieldLabel}>
-                                Select the Division in which this Roadmap belongs to :
-                            </Text>
-                            <View style={styles.radioContainer}>
-                                <Pressable
-                                    style={styles.radioOption}
-                                    onPress={() => handleDivisionSelect('Church')}
-                                >
-                                    <View style={styles.radioButton}>
-                                        {formData.selectedDivision === 'Church' && (
-                                            <View style={styles.radioButtonSelected} />
-                                        )}
-                                    </View>
-                                    <Text style={styles.radioText}>Church</Text>
-                                </Pressable>
+                        {/* Division Selection - Only show for non-nested roadmaps */}
+                        {!isNestedRoadmap && (
+                            <View style={styles.fieldContainer}>
+                                <Text style={styles.fieldLabel}>
+                                    Select the Division in which this Roadmap belongs to :
+                                </Text>
+                                <View style={styles.radioContainer}>
+                                    <Pressable
+                                        style={styles.radioOption}
+                                        onPress={() => handleDivisionSelect('Church')}
+                                    >
+                                        <View style={styles.radioButton}>
+                                            {formData.selectedDivision === 'Church' && (
+                                                <View style={styles.radioButtonSelected} />
+                                            )}
+                                        </View>
+                                        <Text style={styles.radioText}>Church</Text>
+                                    </Pressable>
 
-                                <Pressable
-                                    style={styles.radioOption}
-                                    onPress={() => handleDivisionSelect('Pastor')}
-                                >
-                                    <View style={styles.radioButton}>
-                                        {formData.selectedDivision === 'Pastor' && (
-                                            <View style={styles.radioButtonSelected} />
-                                        )}
-                                    </View>
-                                    <Text style={styles.radioText}>Pastor</Text>
-                                </Pressable>
+                                    <Pressable
+                                        style={styles.radioOption}
+                                        onPress={() => handleDivisionSelect('Pastor')}
+                                    >
+                                        <View style={styles.radioButton}>
+                                            {formData.selectedDivision === 'Pastor' && (
+                                                <View style={styles.radioButtonSelected} />
+                                            )}
+                                        </View>
+                                        <Text style={styles.radioText}>Pastor</Text>
+                                    </Pressable>
+                                </View>
                             </View>
-                        </View>
+                        )}
 
                         {/* Banner Image Section */}
                         <View style={styles.fieldContainer}>

@@ -7,6 +7,7 @@ import AddFieldSheet, {
 import FormCheckBox from "@/components/director/forms/FormCheckBox";
 import { usePhaseCreation } from "@/context/PhaseCreationContext";
 import { useCreateRoadmap } from "@/hooks/roadmaps";
+import { useCreateNestedRoadmap } from "@/hooks/roadmaps/useCreateNestedRoadmap";
 import { CreateRoadmapRequest, RoadmapExtra } from "@/lib/roadmaps/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -33,8 +34,12 @@ export default function RoadmapFormScreen() {
   const addFieldSheetRef = useRef<AddFieldSheetRef>(null);
   const { state, updateRoadmap, clearPhaseData } = usePhaseCreation();
   const createRoadmapMutation = useCreateRoadmap();
+  const createNestedRoadmapMutation = useCreateNestedRoadmap();
 
   const isPhaseFlow = params.isPhaseFlow === 'true';
+  const isNestedRoadmap = params.isNestedRoadmap === 'true';
+  const parentRoadmapId = params.parentRoadmapId as string;
+  const parentPhase = params.phase as string;
 
   // Get roadmap data from context if in phase flow, otherwise from params
   const roadmapData = isPhaseFlow && state.currentRoadmap ? {
@@ -496,7 +501,44 @@ export default function RoadmapFormScreen() {
       return;
     }
 
-    // Transform to API format
+    // Handle nested roadmap creation
+    if (isNestedRoadmap && parentRoadmapId) {
+      const extras = transformFieldsToExtras(formData.customFields);
+      
+      const nestedRoadmapData = {
+        name: roadmapData.name,
+        duration: roadmapData.completionTime,
+        description: formData.descriptionVerbiage || roadmapData.subheading,
+        status: 'in progress' as const,
+        phase: parentPhase || '',
+        ...(formData.customFields.length > 0 && { totalSteps: formData.customFields.length }),
+        ...(extras.length > 0 && { extras }),
+      };
+
+      createNestedRoadmapMutation.mutate(
+        {
+          roadmapId: parentRoadmapId,
+          data: nestedRoadmapData,
+        },
+        {
+          onSuccess: () => {
+            setSuccessMessage("Roadmap Created Successfully");
+            setShowSuccess(true);
+          },
+          onError: (error) => {
+            console.error("Failed to create nested roadmap:", error);
+            Alert.alert(
+              "Error",
+              "Failed to create roadmap. Please try again.",
+              [{ text: "OK" }]
+            );
+          },
+        }
+      );
+      return;
+    }
+
+    // Transform to API format for regular roadmap
     const apiData = transformToApiFormat();
 
     // Submit to API
@@ -936,7 +978,11 @@ export default function RoadmapFormScreen() {
         visible={showSuccess}
         onClose={() => {
           setShowSuccess(false);
-          router.replace("/(director)/(tabs)/revitalization-roadmaps");
+          if (isNestedRoadmap && parentRoadmapId) {
+            router.back();
+          } else {
+            router.replace("/(director)/(tabs)/revitalization-roadmaps");
+          }
         }}
         title={successMessage}
       />

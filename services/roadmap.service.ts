@@ -139,7 +139,7 @@ import {
     SubmitQueryResponse,
     UpdateExtrasDto
 } from '@/lib/roadmap/types';
-import { CreateRoadmapRequest, CreateRoadmapResponse } from '@/lib/roadmaps/types';
+import { CreateRoadmapRequest, CreateRoadmapResponse, CreateNestedRoadmapRequest, CreateNestedRoadmapResponse } from '@/lib/roadmaps/types';
 import { ENDPOINTS } from './api/endpoints';
 import { apiClient } from './api/client';
 
@@ -323,6 +323,19 @@ export const roadmapService = {
             throw new Error(response.data.message || 'Failed to submit query');
         }
         console.log('📥 Query submitted successfully:', response.data);
+        return response.data;
+    },
+
+    async createNestedRoadmap(roadmapId: string, payload: CreateNestedRoadmapRequest) {
+        console.log('📤 Creating nested roadmap:', { roadmapId, payload });
+        const response = await apiClient.post<CreateNestedRoadmapResponse>(
+            ENDPOINTS.ROADMAPS.CREATE_NESTED(roadmapId),
+            payload
+        );
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to create nested roadmap');
+        }
+        console.log('📥 Nested roadmap created successfully:', response.data);
         return response.data;
     },
 

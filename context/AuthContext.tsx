@@ -45,9 +45,9 @@ function useProtectedRoute(user: User | null, isLoading: boolean, profileComplet
 
         const inRootIndex = pathname === '/';
         const inAuthGroup = segments[0] === '(login)';
-        const inPastorGroup = segments[0] === '(pastor-tabs)';
+        const inPastorGroup = segments[0] === '(pastor)';
         const inMentorGroup = segments[0] === '(mentor-tabs)';
-        const inDirectorGroup = segments[0] === '(director-tabs)';
+        const inDirectorGroup = segments[0] === '(director)';
         const inProfileSetup = pathname === '/(login)/profile';
 
         console.log('Current segments:', segments);
@@ -98,7 +98,7 @@ function useProtectedRoute(user: User | null, isLoading: boolean, profileComplet
         // If user (pastor) is signed in with complete profile and on auth pages, redirect to their dashboard
         if (user && user.role === 'pastor' && profileComplete && inAuthGroup && !inProfileSetup) {
             console.log('Redirecting to pastor dashboard - user already authenticated with complete profile');
-            router.replace('/(pastor-tabs)/(tabs)');
+            router.replace('/(pastor)/(tabs)');
         }
     }, [user, segments, isLoading, pathname, profileComplete]);
 }

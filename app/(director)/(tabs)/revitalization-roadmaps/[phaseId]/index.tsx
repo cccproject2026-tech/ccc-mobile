@@ -111,6 +111,21 @@ export default function PhaseDetail() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
+    const handleCreateTask = useCallback(() => {
+        if (!phaseId) {
+            return;
+        }
+
+        router.push({
+            pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+            params: {
+                isNestedRoadmap: 'true',
+                parentRoadmapId: phaseId,
+                phase: roadmap?.phase || '',
+            },
+        });
+    }, [phaseId, roadmap, router]);
+
     // Generate tabs: division tabs replace "All" tab, but status tabs remain
     const tabs = useMemo(() => {
         if (hasDivisions) {
@@ -300,7 +315,7 @@ export default function PhaseDetail() {
                     </View>
                 </View>
 
-                {/* Right side - Phase badge and menu */}
+                {/* Right side - Phase badge, task button and menu */}
                 <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -322,6 +337,27 @@ export default function PhaseDetail() {
                             </Text>
                         </View>
                     )}
+                    <TouchableOpacity
+                        onPress={handleCreateTask}
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: 8,
+                            paddingHorizontal: getSpacing(8),
+                            paddingVertical: getSpacing(6),
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: getSpacing(4),
+                        }}
+                    >
+                        <Ionicons name="add" size={20} color="#fff" />
+                        <Text style={{
+                            color: '#fff',
+                            fontWeight: '600',
+                            fontSize: getFontSize(13),
+                        }}>
+                            Task
+                        </Text>
+                    </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => setShowOutcomeMenu(true)}
                         style={{ padding: getSpacing(4) }}

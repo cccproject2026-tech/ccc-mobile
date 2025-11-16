@@ -83,6 +83,7 @@ export const ENDPOINTS = {
         CREATE: '/roadmaps',
         ADD_COMMENT: (roadmapId: string) => `/roadmaps/${roadmapId}/comments`,
         SUBMIT_QUERY: (roadmapId: string) => `/roadmaps/${roadmapId}/queries`,
+        CREATE_NESTED: (roadmapId: string) => `/roadmaps/${roadmapId}/nested`,
     },
 
     INTERESTS: {

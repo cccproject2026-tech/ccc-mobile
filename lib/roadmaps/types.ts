@@ -65,3 +65,19 @@ export interface CreateRoadmapResponse {
   data: RoadmapResponse;
 }
 
+export interface CreateNestedRoadmapRequest {
+  name: string;
+  duration: string;
+  description?: string;
+  status?: 'not started' | 'in progress' | 'completed' | 'blocked';
+  phase?: string;
+  totalSteps?: number;
+  extras?: RoadmapExtra[];
+}
+
+export interface CreateNestedRoadmapResponse {
+  success: boolean;
+  message: string;
+  data: RoadmapResponse;
+}
+
