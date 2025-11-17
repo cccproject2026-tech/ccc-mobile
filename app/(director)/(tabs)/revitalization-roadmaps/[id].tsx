@@ -236,9 +236,7 @@ export default function MenteeRoadmapDetailScreen() {
             />
         </LinearGradient>
     );
-}
-
-const styles = StyleSheet.create({
+}const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
@@ -282,3 +280,4 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
 });
+

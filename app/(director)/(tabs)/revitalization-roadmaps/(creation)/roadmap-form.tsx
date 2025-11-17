@@ -674,9 +674,9 @@ export default function RoadmapFormScreen() {
         roadmaps,
       };
     } else {
-      // Single roadmap flow - create as a phase with one roadmap
+      // Single roadmap flow - create as a single type roadmap
       return {
-        type: "phase",
+        type: "single",
         name: roadmapData.name,
         ...(roadmapData.subheading && { roadMapDetails: roadmapData.subheading }),
         ...(formData.descriptionVerbiage && { description: formData.descriptionVerbiage }),

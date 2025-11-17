@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Image,
@@ -42,6 +42,14 @@ export default function CreateRoadmapScreen() {
     const editRoadmapData = roadmapQuery.data;
     const isLoadingRoadmap = roadmapQuery.isLoading;
 
+    // Get available divisions from phase context or use default (reactive to state changes)
+    const availableDivisions = useMemo(() => {
+        if (isPhaseFlow && state.phaseDetails?.phaseDivisions && state.phaseDetails.phaseDivisions.length > 0) {
+            return state.phaseDetails.phaseDivisions;
+        }
+        return ['Church', 'Pastor'];
+    }, [isPhaseFlow, state.phaseDetails?.phaseDivisions]);
+
     const [formData, setFormData] = useState<{
         name: string;
         subheading: string;
@@ -53,7 +61,7 @@ export default function CreateRoadmapScreen() {
         subheading: '',
         completionTime: '',
         bannerImage: null,
-        selectedDivision: 'Church'
+        selectedDivision: ''
     });
 
     const handleImagePicker = async () => {
@@ -192,6 +200,23 @@ export default function CreateRoadmapScreen() {
     };
 
     useEffect(() => {
+        // Initialize selectedDivision with first available division if not set
+        if (!formData.selectedDivision && availableDivisions.length > 0) {
+            setFormData(prev => ({
+                ...prev,
+                selectedDivision: availableDivisions[0]
+            }));
+        }
+        // Update selected division if current selection is not in available divisions
+        else if (formData.selectedDivision && !availableDivisions.includes(formData.selectedDivision) && availableDivisions.length > 0) {
+            setFormData(prev => ({
+                ...prev,
+                selectedDivision: availableDivisions[0]
+            }));
+        }
+    }, [availableDivisions, formData.selectedDivision]);
+
+    useEffect(() => {
         // Load current roadmap data if in phase flow
         if (isPhaseFlow && state.currentRoadmap) {
             setFormData({
@@ -199,10 +224,10 @@ export default function CreateRoadmapScreen() {
                 subheading: state.currentRoadmap.subheading,
                 completionTime: state.currentRoadmap.completionTime,
                 bannerImage: state.currentRoadmap.bannerImage,
-                selectedDivision: state.currentRoadmap.selectedDivision
+                selectedDivision: state.currentRoadmap.selectedDivision || availableDivisions[0] || 'Church'
             });
         }
-    }, [isPhaseFlow, state.currentRoadmap]);
+    }, [isPhaseFlow, state.currentRoadmap, availableDivisions]);
 
     useEffect(() => {
         // Pre-fill form data when in edit mode
@@ -216,7 +241,7 @@ export default function CreateRoadmapScreen() {
                         subheading: nestedRoadmap.roadMapDetails || nestedRoadmap.description || '',
                         completionTime: nestedRoadmap.duration,
                         bannerImage: nestedRoadmap.imageUrl || null,
-                        selectedDivision: nestedRoadmap.phase || 'Church'
+                        selectedDivision: nestedRoadmap.phase || availableDivisions[0] || 'Church'
                     });
                 }
             } else {
@@ -227,12 +252,12 @@ export default function CreateRoadmapScreen() {
                     completionTime: editRoadmapData.duration,
                     bannerImage: editRoadmapData.imageUrl || null,
                     selectedDivision: editRoadmapData.divisions?.[0] 
-                        ? editRoadmapData.divisions[0].charAt(0).toUpperCase() + editRoadmapData.divisions[0].slice(1)
-                        : 'Church'
+                        ? editRoadmapData.divisions[0]
+                        : availableDivisions[0] || 'Church'
                 });
             }
         }
-    }, [isEditMode, isNestedEdit, editRoadmapData, nestedRoadmapId]);
+    }, [isEditMode, isNestedEdit, editRoadmapData, nestedRoadmapId, availableDivisions]);
 
     return (
         <LinearGradient
@@ -334,29 +359,28 @@ export default function CreateRoadmapScreen() {
                                     Select the Division in which this Roadmap belongs to :
                                 </Text>
                                 <View style={styles.radioContainer}>
-                                    <Pressable
-                                        style={styles.radioOption}
-                                        onPress={() => handleDivisionSelect('Church')}
-                                    >
-                                        <View style={styles.radioButton}>
-                                            {formData.selectedDivision === 'Church' && (
-                                                <View style={styles.radioButtonSelected} />
-                                            )}
-                                        </View>
-                                        <Text style={styles.radioText}>Church</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        style={styles.radioOption}
-                                        onPress={() => handleDivisionSelect('Pastor')}
-                                    >
-                                        <View style={styles.radioButton}>
-                                            {formData.selectedDivision === 'Pastor' && (
-                                                <View style={styles.radioButtonSelected} />
-                                            )}
-                                        </View>
-                                        <Text style={styles.radioText}>Pastor</Text>
-                                    </Pressable>
+                                    {availableDivisions.map((division) => {
+                                        // Capitalize first letter of each word for display
+                                        const displayName = division
+                                            .split(' ')
+                                            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                                            .join(' ');
+                                        
+                                        return (
+                                            <Pressable
+                                                key={division}
+                                                style={styles.radioOption}
+                                                onPress={() => handleDivisionSelect(division)}
+                                            >
+                                                <View style={styles.radioButton}>
+                                                    {formData.selectedDivision === division && (
+                                                        <View style={styles.radioButtonSelected} />
+                                                    )}
+                                                </View>
+                                                <Text style={styles.radioText}>{displayName}</Text>
+                                            </Pressable>
+                                        );
+                                    })}
                                 </View>
                             </View>
                         )}

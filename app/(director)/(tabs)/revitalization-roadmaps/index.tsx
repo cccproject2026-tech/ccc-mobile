@@ -302,10 +302,18 @@ export default function RevitalizationRoadmap() {
 
     const roadmapId = roadmap._id;
 
-    // If single roadmap with one nested roadmap, go directly to task
-    if (roadmap.haveNextedRoadMaps && roadmap.roadmaps && roadmap.roadmaps.length === 1) {
+    // Phase type roadmaps always navigate to phase detail page
+    if (roadmap.type === 'phase') {
+      router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}`);
+      return;
+    }
+
+    // Single type roadmaps always navigate directly to task detail page
+    // If it has nested roadmaps, navigate to the first one
+    if (roadmap.haveNextedRoadMaps && roadmap.roadmaps && roadmap.roadmaps.length > 0) {
       router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}/${roadmap.roadmaps[0]._id}`);
     } else {
+      // Fallback: if no nested roadmaps, still navigate to phase detail page
       router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}`);
     }
   }, [roadmaps, router]);
