@@ -4,7 +4,7 @@ import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from 'expo-router';
-import React, { forwardRef, useCallback, useMemo, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,6 +12,8 @@ export interface CreateRoadmapModalProps {
     onClose: () => void;
     onNext: (data: RoadmapFormData) => void;
     onCancel: () => void;
+    mode?: 'create' | 'edit';
+    initialData?: Partial<RoadmapFormData>;
 }
 
 export interface RoadmapFormData {
@@ -25,23 +27,52 @@ export interface RoadmapFormData {
 }
 
 const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>(
-    ({ onClose, onNext, onCancel }, ref) => {
+    ({ onClose, onNext, onCancel, mode = 'create', initialData }, ref) => {
         const { bottom } = useSafeAreaInsets();
         const router = useRouter();
         const { setPhaseDetails } = usePhaseCreation();
         const snapPoints = useMemo(() => ['90%'], []);
+        const isEditMode = mode === 'edit';
 
-        const [formData, setFormData] = useState<RoadmapFormData>({
-            type: 'Single Roadmap',
-            name: '',
-            subheading: '',
-            completionTime: '',
-            divisions: [],
-            bannerImage: undefined
-        });
+        const getInitialFormData = (): RoadmapFormData => {
+            if (initialData) {
+                return {
+                    type: initialData.type || 'Single Roadmap',
+                    name: initialData.name || '',
+                    subheading: initialData.subheading || '',
+                    completionTime: initialData.completionTime || '',
+                    divisions: initialData.divisions || [],
+                    bannerImage: initialData.bannerImage
+                };
+            }
+            return {
+                type: 'Single Roadmap',
+                name: '',
+                subheading: '',
+                completionTime: '',
+                divisions: [],
+                bannerImage: undefined
+            };
+        };
+
+        const [formData, setFormData] = useState<RoadmapFormData>(getInitialFormData());
 
         const [showTypeDropdown, setShowTypeDropdown] = useState(false);
         const [newDivision, setNewDivision] = useState('');
+
+        // Update form data when initialData changes (e.g., when modal opens for edit)
+        useEffect(() => {
+            if (initialData) {
+                setFormData({
+                    type: initialData.type || 'Single Roadmap',
+                    name: initialData.name || '',
+                    subheading: initialData.subheading || '',
+                    completionTime: initialData.completionTime || '',
+                    divisions: initialData.divisions || [],
+                    bannerImage: initialData.bannerImage
+                });
+            }
+        }, [initialData]);
 
         const resetForm = () => {
             setFormData({
@@ -70,6 +101,8 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
         );
 
         const handleTypeSelect = (type: 'Single Roadmap' | 'Phase') => {
+            // Don't allow changing type in edit mode
+            if (isEditMode) return;
             setFormData(prev => ({ ...prev, type }));
             setShowTypeDropdown(false);
         };
@@ -160,23 +193,29 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
             }
 
             if (formData.type === 'Phase') {
-                // For Phase type, save to context and navigate to create-roadmap page
-                setPhaseDetails({
-                    phaseName: formData.name,
-                    phaseSubheading: formData.subheading,
-                    phaseCompletionTime: formData.completionTime,
-                    phaseDivisions: formData.divisions,
-                    phaseBannerImage: formData.bannerImage || ''
-                });
-                
-                resetForm();
-                onCancel();
-                
-                router.push({
-                    // @ts-ignore - grouped route path
-                    pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
-                    params: { isPhaseFlow: 'true' }
-                } as any);
+                // For Phase type (create), save to context and navigate to create-roadmap page
+                // For edit mode, just call onNext and let parent handle navigation
+                if (!isEditMode) {
+                    setPhaseDetails({
+                        phaseName: formData.name,
+                        phaseSubheading: formData.subheading,
+                        phaseCompletionTime: formData.completionTime,
+                        phaseDivisions: formData.divisions,
+                        phaseBannerImage: formData.bannerImage || ''
+                    });
+                    
+                    resetForm();
+                    onCancel();
+                    
+                    router.push({
+                        // @ts-ignore - grouped route path
+                        pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+                        params: { isPhaseFlow: 'true' }
+                    } as any);
+                } else {
+                    // Edit mode: let parent (index.tsx) handle the navigation after modal closes
+                    onNext(formData);
+                }
             } else {
                 // For Single Roadmap type, navigate to roadmap-form page
                 const queryParams = {
@@ -231,7 +270,9 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                         style={styles.gradientBorder}
                     >
                         <View style={styles.header}>
-                            <Text style={styles.headerTitle}>Create New Roadmap</Text>
+                            <Text style={styles.headerTitle}>
+                                {isEditMode ? 'Edit Phase Details' : 'Create New Roadmap'}
+                            </Text>
                         </View>
                     </LinearGradient>
 
@@ -243,8 +284,8 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                 <View style={styles.fieldContainer}>
                                     <Text style={styles.fieldLabel}>Type</Text>
                                     <Pressable
-                                        style={styles.dropdown}
-                                        onPress={() => setShowTypeDropdown(!showTypeDropdown)}
+                                        style={[styles.dropdown, isEditMode && styles.dropdownDisabled]}
+                                        onPress={() => !isEditMode && setShowTypeDropdown(!showTypeDropdown)}
                                     >
                                         <Text style={styles.dropdownText}>{formData.type}</Text>
                                         <Ionicons
@@ -256,7 +297,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                         />
                                     </Pressable>
 
-                                    {showTypeDropdown && (
+                                    {showTypeDropdown && !isEditMode && (
                                         <View style={styles.dropdownOptions}>
                                             <TouchableOpacity
                                                 style={styles.dropdownOption}
@@ -435,7 +476,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                         !isFormValid() && styles.nextButtonTextDisabled,
                                     ]}
                                 >
-                                    Create
+                                    {isEditMode ? 'Continue' : 'Create'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -523,6 +564,9 @@ const styles = StyleSheet.create({
     dropdownText: {
         fontSize: 16,
         color: "#fff",
+    },
+    dropdownDisabled: {
+        opacity: 0.6,
     },
     dropdownOptions: {
         position: "absolute",
