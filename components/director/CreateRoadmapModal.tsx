@@ -21,6 +21,7 @@ export interface RoadmapFormData {
     completionTime: string;
     divisions: string[];
     bannerImage?: string;
+    selectedDivision?: string;
 }
 
 const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>(

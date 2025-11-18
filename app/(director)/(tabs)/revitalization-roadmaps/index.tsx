@@ -66,7 +66,7 @@ export default function RevitalizationRoadmap() {
 
   // Fetch roadmaps from API - use 'director' role to get all roadmaps
   const { data: roadmaps = [], isLoading: isLoadingRoadmaps, error: roadmapsError } = useRoadmaps('director');
-  
+
   // Transform roadmaps to RoadmapCardData
   const roadmapLibrary: RoadmapCardData[] = useMemo(() => {
     console.log("🔄 Transforming roadmaps to cards. Total roadmaps:", roadmaps.length);
@@ -205,15 +205,38 @@ export default function RevitalizationRoadmap() {
         if (!roadmap) return;
         
         handleCloseModal();
-        setTimeout(() => {
-          router.push({
-            pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
-            params: {
-              isEditMode: 'true',
-              roadmapId: roadmap._id,
-            },
-          });
-        }, 300);
+        
+        // For phase type, start the phase edit loop from first nested roadmap
+        if (roadmap.type === 'phase' && roadmap.roadmaps && roadmap.roadmaps.length > 0) {
+          setTimeout(() => {
+            const firstNested = roadmap.roadmaps[0];
+            router.push({
+              pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+              params: {
+                isEditMode: 'true',
+                roadmapId: roadmap._id,
+                parentRoadmapId: roadmap._id,
+                nestedRoadmapId: firstNested._id,
+                isNestedEdit: 'true',
+                phase: firstNested.phase || '',
+                phaseLoopActive: 'true',
+                phaseLoopIndex: '0',
+                phaseLoopTotal: String(roadmap.roadmaps.length),
+              },
+            });
+          }, 300);
+        } else {
+          // For single roadmap, go directly to edit
+          setTimeout(() => {
+            router.push({
+              pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+              params: {
+                isEditMode: 'true',
+                roadmapId: roadmap._id,
+              },
+            });
+          }, 300);
+        }
       }
     },
     {
@@ -283,11 +306,11 @@ export default function RevitalizationRoadmap() {
     // Here you would typically save the roadmap data
     handleCloseCreateRoadmapModal();
     // Show success message or navigate to next step
-  }, []);
+  }, [handleCloseCreateRoadmapModal]);
 
   const handleCreateRoadmapCancel = useCallback(() => {
     handleCloseCreateRoadmapModal();
-  }, []);
+  }, [handleCloseCreateRoadmapModal]);
 
   const handleTabChange = (tab: 'roadmap-library' | 'mentors' | 'mentees') => {
     setActiveTab(tab);
