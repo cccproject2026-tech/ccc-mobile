@@ -8,6 +8,7 @@ const transformMentee = (mentee: MenteeListItem): Mentee => {
         id: mentee.id,
         name: `${mentee.firstName} ${mentee.lastName}`.trim(),
         role: mentee.role,
+        email: mentee.email,
         description: '', // API doesn't provide description
         lastContacted: undefined, // API doesn't provide lastContacted
         totalMentors: undefined, // API doesn't provide totalMentors

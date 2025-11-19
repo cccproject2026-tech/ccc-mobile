@@ -1,6 +1,7 @@
 import ActionBottomSheet from '@/components/director/ActionSheetModal';
 import TopBar from '@/components/director/TopBar';
 import { icons } from '@/constants/images';
+import { useMentorByEmail } from '@/hooks/mentors/useMentorByEmail';
 import {
     getButtonHeight,
     getFontSize,
@@ -11,9 +12,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     Image,
     ScrollView,
@@ -50,11 +52,15 @@ interface ChurchInfo {
 
 export default function MentorProfile() {
     const router = useRouter();
+    const { email } = useLocalSearchParams<{ email?: string }>();
     const [isEditing, setIsEditing] = useState(false);
     const { bottom } = useSafeAreaInsets();
     const [profileImage, setProfileImage] = useState<string | null>(null);
 
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+    // Fetch mentor data by email
+    const { data: mentorData, isLoading, isError } = useMentorByEmail(email);
 
     const menuItems = [
         { icon: 'people-outline', label: 'List of Mentees', onPress: router.push.bind(router, '/(director)/(tabs)/mentors/mentor-mentees') },
@@ -69,38 +75,52 @@ export default function MentorProfile() {
     ];
 
 
-    const [profileData, setProfileData] = useState<ProfileData>({
-        firstName: 'John',
-        lastName: 'Ross',
-        phone: '09878564398',
-        email: 'johnross@gmail.com',
-        title: 'Mentor',
-        yearsInMinistry: '11',
-        conference: 'Oakland',
-        profileInfo: 'Lorem ipsum dolor sit amet, consectetur adipiscing eip ex ea commodo consequat. Duis',
-        churches: [
-            {
-                name: 'Loma linda University Church',
-                phone: '09878564398',
-                website: 'johnross@gmail.com',
-                address: 'Loma linda University Church,CA',
-                city: 'Oakland',
-                state: 'North American',
-                zip: '00000',
-                country: 'USA',
-            },
-            {
-                name: 'Loma linda University Church',
-                phone: '09878564398',
-                website: 'johnross@gmail.com',
-                address: 'Loma linda University Church,CA',
-                city: 'Oakland',
-                state: 'North American',
-                zip: '00000',
-                country: 'USA',
-            },
-        ],
-    });
+    // Map API data to ProfileData format
+    const initialProfileData = useMemo<ProfileData>(() => {
+        if (!mentorData) {
+            return {
+                firstName: '',
+                lastName: '',
+                phone: '',
+                email: email || '',
+                title: '',
+                yearsInMinistry: '',
+                conference: '',
+                profileInfo: '',
+                churches: [],
+            };
+        }
+
+        return {
+            firstName: mentorData.firstName || '',
+            lastName: mentorData.lastName || '',
+            phone: '', // API doesn't provide phone
+            email: mentorData.email || email || '',
+            title: '', // API doesn't provide title
+            yearsInMinistry: '', // API doesn't provide yearsInMinistry
+            conference: mentorData.conference || '',
+            profileInfo: mentorData.profileInfo || '',
+            churches: mentorData.churchDetails?.map((church: any) => ({
+                name: church.name || '',
+                phone: church.phone || '',
+                website: church.website || '',
+                address: church.address || '',
+                city: church.city || '',
+                state: church.state || '',
+                zip: church.zip || '',
+                country: church.country || '',
+            })) || [],
+        };
+    }, [mentorData, email]);
+
+    const [profileData, setProfileData] = useState<ProfileData>(initialProfileData);
+
+    // Update profile data when API data loads
+    useEffect(() => {
+        if (mentorData) {
+            setProfileData(initialProfileData);
+        }
+    }, [mentorData, initialProfileData]);
 
     // Bottom Sheet Handlers
     const handleOpenMenu = useCallback(() => {
@@ -171,6 +191,56 @@ export default function MentorProfile() {
     };
 
 
+    // Loading state
+    if (isLoading) {
+        return (
+            <LinearGradient
+                colors={['#176192', '#1D548D', '#264387']}
+                style={{ flex: 1 }}
+            >
+                <TopBar
+                    userName="David Roe"
+                    showUserName={true}
+                    showNotifications={true}
+                    notifications={3}
+                    showDrawer={true}
+                    showBackButton={false}
+                />
+                <View style={[styles.header, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={{ color: '#fff', marginTop: 16 }}>Loading mentor profile...</Text>
+                </View>
+            </LinearGradient>
+        );
+    }
+
+    // Error state
+    if (isError) {
+        return (
+            <LinearGradient
+                colors={['#176192', '#1D548D', '#264387']}
+                style={{ flex: 1 }}
+            >
+                <TopBar
+                    userName="David Roe"
+                    showUserName={true}
+                    showNotifications={true}
+                    notifications={3}
+                    showDrawer={true}
+                    showBackButton={false}
+                />
+                <View style={[styles.header, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+                    <Text style={{ color: '#fff', marginBottom: 16 }}>Failed to load mentor profile</Text>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.actionButton}>
+                        <Text style={styles.actionButtonText}>Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </LinearGradient>
+        );
+    }
+
+    const mentorName = mentorData ? `${mentorData.firstName} ${mentorData.lastName}`.trim() : 'Mentor';
+
     // STATE 2: Filled Profile (View Mode)
     if (!isEditing) {
         return (
@@ -191,7 +261,7 @@ export default function MentorProfile() {
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
                     <View style={styles.headerTextContainer}>
-                        <Text style={styles.headerTitle}>John Doe</Text>
+                        <Text style={styles.headerTitle}>{mentorName}</Text>
                         <Text style={styles.headerBreadcrumb}>Mentor {'>'} Profile</Text>
                     </View>
                     <TouchableOpacity style={styles.menuButton} onPress={handleOpenMenu}>
@@ -220,9 +290,9 @@ export default function MentorProfile() {
                         </LinearGradient>
 
                         <View style={styles.profileInfo}>
-                            <Text style={styles.profileName}>John Doe</Text>
+                            <Text style={styles.profileName}>{mentorName}</Text>
                             <View style={styles.roleRow}>
-                                <Text style={styles.profileRole}>Field Mentor</Text>
+                                <Text style={styles.profileRole}>{mentorData?.role || 'Mentor'}</Text>
                                 <View style={styles.menteeDot} />
                                 <Text style={styles.menteesText}>5 Mentees</Text>
                             </View>
@@ -379,7 +449,7 @@ export default function MentorProfile() {
 
                 <ActionBottomSheet
                     ref={bottomSheetModalRef}
-                    title={profileData.firstName + ' ' + profileData.lastName}
+                    title={mentorName}
                     subtitle={`5 Mentees`}
                     image={profileImage || undefined}
                     actions={menuItems}

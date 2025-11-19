@@ -11,6 +11,7 @@ export interface Mentee {
     id: string;
     name: string;
     role?: string;
+    email?: string;
     description: string;
     lastContacted?: string;
     totalMentors?: number;
