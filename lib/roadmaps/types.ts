@@ -23,7 +23,7 @@ export interface RoadmapItem {
 }
 
 export interface CreateRoadmapRequest {
-  type: 'phase';
+  type: 'phase' | 'single';
   name: string;
   roadMapDetails?: string;
   description?: string;

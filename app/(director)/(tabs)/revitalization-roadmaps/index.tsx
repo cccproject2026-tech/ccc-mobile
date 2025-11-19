@@ -12,7 +12,7 @@ import TopBar from '@/components/director/TopBar';
 import { mockMentees, STATES } from '@/constants/mockData';
 import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
 import { getRoadmapCard } from '@/lib/roadmap/mappers';
-import { RoadmapCardData } from '@/lib/roadmap/types';
+import { Roadmap, RoadmapCardData } from '@/lib/roadmap/types';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -63,10 +63,20 @@ export default function RevitalizationRoadmap() {
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
   const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
   const [selectedRoadmap, setSelectedRoadmap] = useState<RoadmapCardData | null>(null);
+  const [editingPhaseData, setEditingPhaseData] = useState<Roadmap | null>(null);
 
   // Fetch roadmaps from API - use 'director' role to get all roadmaps
   const { data: roadmaps = [], isLoading: isLoadingRoadmaps, error: roadmapsError } = useRoadmaps('director');
   
+  const mapRoadmapToFormData = useCallback((roadmap: Roadmap): RoadmapFormData => ({
+    type: roadmap.type === 'phase' ? 'Phase' : 'Single Roadmap',
+    name: roadmap.name || '',
+    subheading: roadmap.roadMapDetails || roadmap.description || '',
+    completionTime: roadmap.duration || '',
+    divisions: roadmap.divisions || [],
+    bannerImage: roadmap.imageUrl || undefined,
+  }), []);
+
   // Transform roadmaps to RoadmapCardData
   const roadmapLibrary: RoadmapCardData[] = useMemo(() => {
     console.log("🔄 Transforming roadmaps to cards. Total roadmaps:", roadmaps.length);
@@ -205,15 +215,25 @@ export default function RevitalizationRoadmap() {
         if (!roadmap) return;
         
         handleCloseModal();
-        setTimeout(() => {
-          router.push({
-            pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
-            params: {
-              isEditMode: 'true',
-              roadmapId: roadmap._id,
-            },
-          });
-        }, 300);
+        
+        // For phase type, open modal to edit phase details first
+        if (roadmap.type === 'phase') {
+          setEditingPhaseData(roadmap);
+          setTimeout(() => {
+            createRoadmapModalRef.current?.present();
+          }, 350);
+        } else {
+          // For single roadmap, go directly to edit
+          setTimeout(() => {
+            router.push({
+              pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+              params: {
+                isEditMode: 'true',
+                roadmapId: roadmap._id,
+              },
+            });
+          }, 300);
+        }
       }
     },
     {
@@ -271,23 +291,46 @@ export default function RevitalizationRoadmap() {
 
   // Create Roadmap Modal Handlers
   const handleOpenCreateRoadmapModal = useCallback(() => {
+    setEditingPhaseData(null);
     createRoadmapModalRef.current?.present();
   }, []);
 
   const handleCloseCreateRoadmapModal = useCallback(() => {
     createRoadmapModalRef.current?.dismiss();
+    setEditingPhaseData(null);
   }, []);
 
   const handleCreateRoadmapNext = useCallback((data: RoadmapFormData) => {
-    console.log('Create Roadmap Data:', data);
-    // Here you would typically save the roadmap data
-    handleCloseCreateRoadmapModal();
-    // Show success message or navigate to next step
-  }, []);
+    console.log('Create/Edit Roadmap Data:', data);
+    
+    // If editing a phase, start the nested roadmap loop after phase details are updated
+    if (editingPhaseData && editingPhaseData.roadmaps && editingPhaseData.roadmaps.length > 0) {
+      const firstNested = editingPhaseData.roadmaps[0];
+      handleCloseCreateRoadmapModal();
+      
+      setTimeout(() => {
+        router.push({
+          pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
+          params: {
+            isEditMode: 'true',
+            roadmapId: editingPhaseData._id,
+            parentRoadmapId: editingPhaseData._id,
+            nestedRoadmapId: firstNested._id,
+            isNestedEdit: 'true',
+            phase: firstNested.phase || '',
+            phaseLoopActive: 'true',
+            phaseLoopIndex: '0',
+            phaseLoopTotal: String(editingPhaseData.roadmaps.length),
+          },
+        });
+      }, 300);
+    }
+    // Otherwise modal handles navigation itself (create flow)
+  }, [editingPhaseData, handleCloseCreateRoadmapModal, router]);
 
   const handleCreateRoadmapCancel = useCallback(() => {
     handleCloseCreateRoadmapModal();
-  }, []);
+  }, [handleCloseCreateRoadmapModal]);
 
   const handleTabChange = (tab: 'roadmap-library' | 'mentors' | 'mentees') => {
     setActiveTab(tab);
@@ -302,10 +345,18 @@ export default function RevitalizationRoadmap() {
 
     const roadmapId = roadmap._id;
 
-    // If single roadmap with one nested roadmap, go directly to task
-    if (roadmap.haveNextedRoadMaps && roadmap.roadmaps && roadmap.roadmaps.length === 1) {
+    // Phase type roadmaps always navigate to phase detail page
+    if (roadmap.type === 'phase') {
+      router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}`);
+      return;
+    }
+
+    // Single type roadmaps always navigate directly to task detail page
+    // If it has nested roadmaps, navigate to the first one
+    if (roadmap.haveNextedRoadMaps && roadmap.roadmaps && roadmap.roadmaps.length > 0) {
       router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}/${roadmap.roadmaps[0]._id}`);
     } else {
+      // Fallback: if no nested roadmaps, still navigate to phase detail page
       router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}`);
     }
   }, [roadmaps, router]);
@@ -579,6 +630,8 @@ export default function RevitalizationRoadmap() {
           onClose={handleCloseCreateRoadmapModal}
           onNext={handleCreateRoadmapNext}
           onCancel={handleCreateRoadmapCancel}
+          mode={editingPhaseData ? 'edit' : 'create'}
+          initialData={editingPhaseData ? mapRoadmapToFormData(editingPhaseData) : undefined}
         />
       </View>
     </LinearGradient>

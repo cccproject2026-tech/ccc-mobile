@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Image,
@@ -34,13 +34,35 @@ export default function CreateRoadmapScreen() {
     const parentRoadmapId = params.parentRoadmapId as string;
     const nestedRoadmapId = params.nestedRoadmapId as string;
     const parentPhase = params.phase as string;
+    const phaseLoopActive = params.phaseLoopActive === 'true';
+    const phaseLoopIndex = params.phaseLoopIndex ? parseInt(params.phaseLoopIndex as string, 10) : undefined;
+    const phaseLoopTotal = params.phaseLoopTotal ? parseInt(params.phaseLoopTotal as string, 10) : undefined;
+    const isTaskFlow = isNestedRoadmap || isNestedEdit || phaseLoopActive;
 
     // Fetch roadmap data if in edit mode
+    // For nested edit, we fetch the parent to get phase context and nested roadmap data
+    // For regular edit, we fetch the roadmap directly
     const roadmapQuery = useRoadmap(
         isEditMode && roadmapId ? roadmapId : undefined
     );
     const editRoadmapData = roadmapQuery.data;
     const isLoadingRoadmap = roadmapQuery.isLoading;
+    
+    // For nested edit, extract the specific nested roadmap being edited
+    const editingNestedRoadmap = useMemo(() => {
+        if (isNestedEdit && nestedRoadmapId && editRoadmapData?.roadmaps) {
+            return editRoadmapData.roadmaps.find((r: any) => r._id === nestedRoadmapId);
+        }
+        return null;
+    }, [isNestedEdit, nestedRoadmapId, editRoadmapData]);
+
+    // Get available divisions from phase context or use default (reactive to state changes)
+    const availableDivisions = useMemo(() => {
+        if (isPhaseFlow && state.phaseDetails?.phaseDivisions && state.phaseDetails.phaseDivisions.length > 0) {
+            return state.phaseDetails.phaseDivisions;
+        }
+        return ['Church', 'Pastor'];
+    }, [isPhaseFlow, state.phaseDetails?.phaseDivisions]);
 
     const [formData, setFormData] = useState<{
         name: string;
@@ -53,7 +75,7 @@ export default function CreateRoadmapScreen() {
         subheading: '',
         completionTime: '',
         bannerImage: null,
-        selectedDivision: 'Church'
+        selectedDivision: ''
     });
 
     const handleImagePicker = async () => {
@@ -85,7 +107,7 @@ export default function CreateRoadmapScreen() {
     };
 
     const handleCancel = () => {
-        if (isNestedRoadmap || isNestedEdit || isEditMode) {
+        if (isTaskFlow || isEditMode) {
             router.back();
         } else {
             router.replace('/(director)/(tabs)/revitalization-roadmaps');
@@ -96,18 +118,18 @@ export default function CreateRoadmapScreen() {
         const errors: string[] = [];
 
         if (!formData.name.trim()) {
-            errors.push(isNestedRoadmap ? 'Task Name is required' : 'Roadmap Name is required');
+            errors.push(isTaskFlow ? 'Task Name is required' : 'Roadmap Name is required');
         }
 
         if (!formData.subheading.trim()) {
-            errors.push(isNestedRoadmap ? 'Task Description is required' : 'Roadmap Subheading is required');
+            errors.push(isTaskFlow ? 'Task Description is required' : 'Roadmap Subheading is required');
         }
 
         if (!formData.completionTime.trim()) {
-            errors.push(isNestedRoadmap ? 'Duration is required' : 'Completion Time is required');
+            errors.push(isTaskFlow ? 'Duration is required' : 'Completion Time is required');
         }
 
-        if (!isNestedRoadmap && !formData.selectedDivision) {
+        if (!isTaskFlow && !formData.selectedDivision) {
             errors.push('Please select a division');
         }
 
@@ -128,7 +150,7 @@ export default function CreateRoadmapScreen() {
             return;
         }
 
-        if (isNestedRoadmap || isNestedEdit) {
+        if (isTaskFlow) {
             // For Nested Roadmap (Task), navigate to roadmap-form with nested params
             const queryParams: any = {
                 name: formData.name,
@@ -137,13 +159,23 @@ export default function CreateRoadmapScreen() {
                 selectedDivision: formData.selectedDivision,
                 bannerImage: formData.bannerImage || '',
                 isNestedRoadmap: 'true',
-                parentRoadmapId: isNestedEdit ? parentRoadmapId : parentRoadmapId,
+                parentRoadmapId: parentRoadmapId || roadmapId,
                 phase: parentPhase || '',
             };
 
             if (isNestedEdit) {
                 queryParams.isNestedEdit = 'true';
                 queryParams.nestedRoadmapId = nestedRoadmapId;
+            }
+
+            if (phaseLoopActive) {
+                queryParams.phaseLoopActive = 'true';
+                if (typeof phaseLoopIndex === 'number') {
+                    queryParams.phaseLoopIndex = String(phaseLoopIndex);
+                }
+                if (typeof phaseLoopTotal === 'number') {
+                    queryParams.phaseLoopTotal = String(phaseLoopTotal);
+                }
             }
 
             router.push({
@@ -192,6 +224,23 @@ export default function CreateRoadmapScreen() {
     };
 
     useEffect(() => {
+        // Initialize selectedDivision with first available division if not set
+        if (!formData.selectedDivision && availableDivisions.length > 0) {
+            setFormData(prev => ({
+                ...prev,
+                selectedDivision: availableDivisions[0]
+            }));
+        }
+        // Update selected division if current selection is not in available divisions
+        else if (formData.selectedDivision && !availableDivisions.includes(formData.selectedDivision) && availableDivisions.length > 0) {
+            setFormData(prev => ({
+                ...prev,
+                selectedDivision: availableDivisions[0]
+            }));
+        }
+    }, [availableDivisions, formData.selectedDivision]);
+
+    useEffect(() => {
         // Load current roadmap data if in phase flow
         if (isPhaseFlow && state.currentRoadmap) {
             setFormData({
@@ -199,40 +248,37 @@ export default function CreateRoadmapScreen() {
                 subheading: state.currentRoadmap.subheading,
                 completionTime: state.currentRoadmap.completionTime,
                 bannerImage: state.currentRoadmap.bannerImage,
-                selectedDivision: state.currentRoadmap.selectedDivision
+                selectedDivision: state.currentRoadmap.selectedDivision || availableDivisions[0] || 'Church'
             });
         }
-    }, [isPhaseFlow, state.currentRoadmap]);
+    }, [isPhaseFlow, state.currentRoadmap, availableDivisions]);
 
     useEffect(() => {
         // Pre-fill form data when in edit mode
-        if (isEditMode && editRoadmapData) {
-            if (isNestedEdit && nestedRoadmapId && editRoadmapData.roadmaps) {
-                // Find the nested roadmap to edit
-                const nestedRoadmap = editRoadmapData.roadmaps.find((r: any) => r._id === nestedRoadmapId);
-                if (nestedRoadmap) {
-                    setFormData({
-                        name: nestedRoadmap.name,
-                        subheading: nestedRoadmap.roadMapDetails || nestedRoadmap.description || '',
-                        completionTime: nestedRoadmap.duration,
-                        bannerImage: nestedRoadmap.imageUrl || null,
-                        selectedDivision: nestedRoadmap.phase || 'Church'
-                    });
-                }
-            } else {
-                // Edit main roadmap
+        if (isEditMode) {
+            if (isNestedEdit && editingNestedRoadmap) {
+                // Editing a nested roadmap within a phase
+                setFormData({
+                    name: editingNestedRoadmap.name,
+                    subheading: editingNestedRoadmap.roadMapDetails || editingNestedRoadmap.description || '',
+                    completionTime: editingNestedRoadmap.duration,
+                    bannerImage: editingNestedRoadmap.imageUrl || null,
+                    selectedDivision: editingNestedRoadmap.phase || availableDivisions[0] || 'Church'
+                });
+            } else if (editRoadmapData && !isNestedEdit) {
+                // Edit main/single roadmap
                 setFormData({
                     name: editRoadmapData.name,
                     subheading: editRoadmapData.roadMapDetails || editRoadmapData.description || '',
                     completionTime: editRoadmapData.duration,
                     bannerImage: editRoadmapData.imageUrl || null,
                     selectedDivision: editRoadmapData.divisions?.[0] 
-                        ? editRoadmapData.divisions[0].charAt(0).toUpperCase() + editRoadmapData.divisions[0].slice(1)
-                        : 'Church'
+                        ? editRoadmapData.divisions[0]
+                        : availableDivisions[0] || 'Church'
                 });
             }
         }
-    }, [isEditMode, isNestedEdit, editRoadmapData, nestedRoadmapId]);
+    }, [isEditMode, isNestedEdit, editingNestedRoadmap, editRoadmapData, availableDivisions]);
 
     return (
         <LinearGradient
@@ -246,9 +292,21 @@ export default function CreateRoadmapScreen() {
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>
-                        {isEditMode ? 'Edit Roadmap' : 'Create Roadmap'}
+                        {isEditMode 
+                            ? 'Edit Roadmap' 
+                            : isPhaseFlow 
+                            ? 'Add Roadmap to Phase' 
+                            : isTaskFlow 
+                            ? 'Create Task' 
+                            : 'Create Roadmap'}
                     </Text>
                 </View>
+
+                {phaseLoopActive && typeof phaseLoopIndex === 'number' && typeof phaseLoopTotal === 'number' && (
+                    <Text style={styles.loopProgressText}>
+                        {`Editing Task ${phaseLoopIndex + 1} of ${phaseLoopTotal}`}
+                    </Text>
+                )}
 
                 {(isLoadingRoadmap && isEditMode) ? (
                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 }}>
@@ -256,44 +314,68 @@ export default function CreateRoadmapScreen() {
                     </View>
                 ) : (
                     <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                        {/* Banner Section */}
-                        <View style={styles.bannerSection}>
-                            <View style={styles.bannerImageContainer}>
-                                <Image
-                                    source={
-                                        (isEditMode && editRoadmapData?.imageUrl)
-                                            ? { uri: editRoadmapData.imageUrl }
-                                            : isPhaseFlow && state.phaseDetails?.phaseBannerImage
-                                            ? { uri: state.phaseDetails.phaseBannerImage }
-                                            : require('@/assets/images/church-2.png')
-                                    }
-                                    style={styles.bannerImage}
-                                />
-                                <BlurView intensity={10} style={styles.blurOverlay}>
-                                    <View style={styles.bannerOverlay}>
-                                        <Text style={styles.bannerTitle}>
-                                            {isEditMode && editRoadmapData
-                                                ? editRoadmapData.name
-                                                : isPhaseFlow && state.phaseDetails
-                                                ? state.phaseDetails.phaseName
-                                                : 'self Revitalization Phase'}
-                                        </Text>
-                                    </View>
-                                </BlurView>
+                        {/* Banner Section - Show Phase Context Banner for Phase Flow */}
+                        {isPhaseFlow && state.phaseDetails && (
+                            <View style={styles.phaseBannerSection}>
+                                <View style={styles.phaseBannerContainer}>
+                                    <Image
+                                        source={
+                                            state.phaseDetails.phaseBannerImage
+                                                ? { uri: state.phaseDetails.phaseBannerImage }
+                                                : require('@/assets/images/church-2.png')
+                                        }
+                                        style={styles.phaseBannerImage}
+                                    />
+                                    <BlurView intensity={10} style={styles.phaseBlurOverlay}>
+                                        <View style={styles.phaseBannerOverlay}>
+                                            <Text style={styles.phaseBannerTitle}>
+                                                {state.phaseDetails.phaseName}
+                                            </Text>
+                                        </View>
+                                    </BlurView>
+                                </View>
+                                <Text style={styles.phaseBannerSubtitle}>
+                                    Creating roadmap {state.roadmaps.length + 1} for this phase
+                                </Text>
                             </View>
-                            <Text style={styles.bannerSubtitle}>
-                                These Information will be shown in the info card of each Roadmap
-                            </Text>
-                        </View>
+                        )}
+
+                        {/* Banner Section - Show for Edit Mode */}
+                        {isEditMode && editRoadmapData && (
+                            <View style={styles.bannerSection}>
+                                <View style={styles.bannerImageContainer}>
+                                    <Image
+                                        source={
+                                            editRoadmapData?.imageUrl
+                                                ? { uri: editRoadmapData.imageUrl }
+                                                : require('@/assets/images/church-2.png')
+                                        }
+                                        style={styles.bannerImage}
+                                    />
+                                    <BlurView intensity={10} style={styles.blurOverlay}>
+                                        <View style={styles.bannerOverlay}>
+                                            <Text style={styles.bannerTitle}>
+                                                {editRoadmapData.name}
+                                            </Text>
+                                        </View>
+                                    </BlurView>
+                                </View>
+                                <Text style={styles.bannerSubtitle}>
+                                    Editing roadmap details
+                                </Text>
+                            </View>
+                        )}
 
                     {/* Form Fields */}
                     <View style={styles.formContainer}>
                         {/* Name */}
                         <View style={styles.fieldContainer}>
-                            <Text style={styles.fieldLabel}>Roadmap Name</Text>
+                            <Text style={styles.fieldLabel}>
+                                {isTaskFlow ? 'Task Name' : 'Roadmap Name'}
+                            </Text>
                             <TextInput
                                 style={styles.textInput}
-                                placeholder="Enter Name"
+                                placeholder={isTaskFlow ? "Enter Task Name" : "Enter Roadmap Name"}
                                 placeholderTextColor="rgba(255,255,255,0.5)"
                                 value={formData.name}
                                 onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
@@ -302,10 +384,12 @@ export default function CreateRoadmapScreen() {
 
                         {/* Subheading/Description */}
                         <View style={styles.fieldContainer}>
-                            <Text style={styles.fieldLabel}>Roadmap Subheading</Text>
+                            <Text style={styles.fieldLabel}>
+                                {isTaskFlow ? 'Task Description' : 'Roadmap Subheading'}
+                            </Text>
                             <TextInput
                                 style={[styles.textInput, styles.textArea]}
-                                placeholder="Enter Subheading"
+                                placeholder={isTaskFlow ? "Enter Task Description" : "Enter Roadmap Subheading"}
                                 placeholderTextColor="rgba(255,255,255,0.5)"
                                 value={formData.subheading}
                                 onChangeText={(text) => setFormData(prev => ({ ...prev, subheading: text }))}
@@ -317,7 +401,9 @@ export default function CreateRoadmapScreen() {
 
                         {/* Duration/Completion Time */}
                         <View style={styles.fieldContainer}>
-                            <Text style={styles.fieldLabel}>Completion Time for the Roadmap</Text>
+                            <Text style={styles.fieldLabel}>
+                                {isTaskFlow ? 'Duration' : 'Completion Time for the Roadmap'}
+                            </Text>
                             <TextInput
                                 style={styles.textInput}
                                 placeholder="Months :"
@@ -327,36 +413,35 @@ export default function CreateRoadmapScreen() {
                             />
                         </View>
 
-                        {/* Division Selection - Only show for non-nested roadmaps */}
-                        {!isNestedRoadmap && (
+                        {/* Division Selection - Only show for non-task roadmaps */}
+                        {!isTaskFlow && (
                             <View style={styles.fieldContainer}>
                                 <Text style={styles.fieldLabel}>
                                     Select the Division in which this Roadmap belongs to :
                                 </Text>
                                 <View style={styles.radioContainer}>
-                                    <Pressable
-                                        style={styles.radioOption}
-                                        onPress={() => handleDivisionSelect('Church')}
-                                    >
-                                        <View style={styles.radioButton}>
-                                            {formData.selectedDivision === 'Church' && (
-                                                <View style={styles.radioButtonSelected} />
-                                            )}
-                                        </View>
-                                        <Text style={styles.radioText}>Church</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        style={styles.radioOption}
-                                        onPress={() => handleDivisionSelect('Pastor')}
-                                    >
-                                        <View style={styles.radioButton}>
-                                            {formData.selectedDivision === 'Pastor' && (
-                                                <View style={styles.radioButtonSelected} />
-                                            )}
-                                        </View>
-                                        <Text style={styles.radioText}>Pastor</Text>
-                                    </Pressable>
+                                    {availableDivisions.map((division) => {
+                                        // Capitalize first letter of each word for display
+                                        const displayName = division
+                                            .split(' ')
+                                            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                                            .join(' ');
+                                        
+                                        return (
+                                            <Pressable
+                                                key={division}
+                                                style={styles.radioOption}
+                                                onPress={() => handleDivisionSelect(division)}
+                                            >
+                                                <View style={styles.radioButton}>
+                                                    {formData.selectedDivision === division && (
+                                                        <View style={styles.radioButtonSelected} />
+                                                    )}
+                                                </View>
+                                                <Text style={styles.radioText}>{displayName}</Text>
+                                            </Pressable>
+                                        );
+                                    })}
                                 </View>
                             </View>
                         )}
@@ -429,6 +514,14 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#fff',
     },
+    loopProgressText: {
+        textAlign: 'center',
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '500',
+        paddingHorizontal: 16,
+        marginBottom: 8,
+    },
     scrollView: {
         flex: 1,
         paddingHorizontal: 16,
@@ -489,6 +582,58 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.8)',
         textAlign: 'center',
         lineHeight: 20,
+    },
+    phaseBannerSection: {
+        marginBottom: 20,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(124, 58, 237, 0.3)',
+    },
+    phaseBannerContainer: {
+        position: 'relative',
+        height: 100,
+        borderRadius: 8,
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    phaseBannerImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    phaseBlurOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    phaseBannerOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 12,
+        backgroundColor: 'rgba(124, 58, 237, 0.4)',
+    },
+    phaseBannerTitle: {
+        fontSize: 16,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        fontWeight: '700',
+        borderRadius: 6,
+        color: '#fff',
+        textAlign: 'center',
+    },
+    phaseBannerSubtitle: {
+        fontSize: 13,
+        color: 'rgba(255,255,255,0.9)',
+        textAlign: 'center',
+        fontWeight: '500',
     },
     formContainer: {
         gap: 20,

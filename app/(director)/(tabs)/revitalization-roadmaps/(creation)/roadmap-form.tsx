@@ -47,11 +47,18 @@ export default function RoadmapFormScreen() {
   const parentRoadmapId = params.parentRoadmapId as string;
   const nestedRoadmapId = params.nestedRoadmapId as string;
   const parentPhase = params.phase as string;
+  const phaseLoopActive = params.phaseLoopActive === 'true';
+  const phaseLoopIndex = params.phaseLoopIndex ? parseInt(params.phaseLoopIndex as string, 10) : undefined;
+  const phaseLoopTotal = params.phaseLoopTotal ? parseInt(params.phaseLoopTotal as string, 10) : undefined;
 
   // Fetch roadmap data if in edit mode
   const { data: editRoadmapData, isLoading: isLoadingEditRoadmap } = useRoadmap(
     (isEditMode && roadmapId) || (isNestedEdit && parentRoadmapId) ? (isNestedEdit ? parentRoadmapId : roadmapId) : undefined
   );
+
+  const totalNestedRoadmaps = editRoadmapData?.roadmaps?.length ?? 0;
+  const isPhaseType = editRoadmapData?.type === 'phase' || totalNestedRoadmaps > 0;
+  const shouldStartPhaseLoop = isEditMode && !isNestedEdit && isPhaseType && totalNestedRoadmaps > 0;
 
   // Get roadmap data from context if in phase flow, otherwise from params
   const roadmapData = isPhaseFlow && state.currentRoadmap ? {
@@ -441,6 +448,39 @@ export default function RoadmapFormScreen() {
     setMenuVisible(true);
   };
 
+  const navigateToPhaseNested = (nextIndex: number) => {
+    const phaseId = parentRoadmapId || roadmapId;
+    const nestedList = editRoadmapData?.roadmaps || [];
+
+    if (!phaseId || nestedList.length === 0) {
+      router.replace("/(director)/(tabs)/revitalization-roadmaps");
+      return;
+    }
+
+    const nextNested = nestedList[nextIndex];
+
+    if (!nextNested) {
+      router.replace("/(director)/(tabs)/revitalization-roadmaps");
+      return;
+    }
+
+    router.replace({
+      pathname: "/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap",
+      params: {
+        isEditMode: "true",
+        roadmapId: phaseId,
+        parentRoadmapId: phaseId,
+        nestedRoadmapId: nextNested._id,
+        isNestedRoadmap: "true",
+        isNestedEdit: "true",
+        phase: nextNested.phase || editRoadmapData?.phase || "",
+        phaseLoopActive: "true",
+        phaseLoopIndex: String(nextIndex),
+        phaseLoopTotal: String(nestedList.length),
+      },
+    });
+  };
+
   const handleCancel = () => {
     if (isEditMode || isNestedEdit) {
       router.back();
@@ -674,9 +714,9 @@ export default function RoadmapFormScreen() {
         roadmaps,
       };
     } else {
-      // Single roadmap flow - create as a phase with one roadmap
+      // Single roadmap flow - create as a single type roadmap
       return {
-        type: "phase",
+        type: "single",
         name: roadmapData.name,
         ...(roadmapData.subheading && { roadMapDetails: roadmapData.subheading }),
         ...(formData.descriptionVerbiage && { description: formData.descriptionVerbiage }),
@@ -704,6 +744,12 @@ export default function RoadmapFormScreen() {
   const handleCreateRoadmap = () => {
     // Enhanced validation
     const errors: string[] = [];
+    const hasNextPhaseLoop =
+      phaseLoopActive &&
+      typeof phaseLoopIndex === "number" &&
+      typeof phaseLoopTotal === "number" &&
+      phaseLoopIndex < phaseLoopTotal - 1;
+    const nextPhaseLoopIndex = (phaseLoopIndex ?? 0) + 1;
 
     if (!formData.churchVerbiage.trim()) {
       errors.push("Church Roadmap Verbiage is required");
@@ -777,6 +823,15 @@ export default function RoadmapFormScreen() {
         },
         {
           onSuccess: () => {
+            if (phaseLoopActive) {
+              if (hasNextPhaseLoop) {
+                navigateToPhaseNested(nextPhaseLoopIndex);
+              } else {
+                setSuccessMessage("Phase Updated Successfully");
+                setShowSuccess(true);
+              }
+              return;
+            }
             setSuccessMessage("Task Updated Successfully");
             setShowSuccess(true);
           },
@@ -1299,11 +1354,8 @@ export default function RoadmapFormScreen() {
         visible={showSuccess}
         onClose={() => {
           setShowSuccess(false);
-          if (isNestedRoadmap && parentRoadmapId) {
-            router.back();
-          } else {
-            router.replace("/(director)/(tabs)/revitalization-roadmaps");
-          }
+          // Always navigate back to roadmaps list after successful creation/update
+          router.replace("/(director)/(tabs)/revitalization-roadmaps");
         }}
         title={successMessage}
       />
