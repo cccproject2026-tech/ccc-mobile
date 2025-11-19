@@ -12,19 +12,31 @@ export interface Mentor {
     username?: string;
     menteesCount?: number;
     profileImage?: string;
+    status: string;
+    isEmailVerified: boolean;
+    hasCompleted: boolean;
+    hasIssuedCertificate: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 // Transform API response to match component expectations
 const transformMentor = (mentor: MentorListItem): Mentor => {
     return {
         id: mentor.id,
-        name: `${mentor.firstName} ${mentor.lastName}`.trim(),
+        name: `${mentor.firstName} ${mentor.lastName || ''}`.trim(),
         role: mentor.role,
         email: mentor.email,
         username: mentor.username,
+        profileImage: mentor.profilePicture,
+        status: mentor.status,
+        isEmailVerified: mentor.isEmailVerified ?? false,
+        hasCompleted: mentor.hasCompleted,
+        hasIssuedCertificate: mentor.hasIssuedCertificate,
+        createdAt: mentor.createdAt ?? '',
+        updatedAt: mentor.updatedAt ?? '',
         description: undefined, // API doesn't provide description
         menteesCount: undefined, // API doesn't provide menteesCount
-        profileImage: undefined, // API doesn't provide profileImage
     };
 };
 
@@ -39,7 +51,7 @@ export const useMentors = () => {
     // Transform the data
     const transformedData = query.data
         ? {
-            mentors: query.data.mentors.map(transformMentor),
+            mentors: query.data.mentors.map(transformMentor), // Changed from mentors to users
             total: query.data.total,
         }
         : undefined;
@@ -51,4 +63,3 @@ export const useMentors = () => {
         total: transformedData?.total ?? 0,
     };
 };
-

@@ -36,9 +36,11 @@ export const ENDPOINTS = {
 
     MENTORS: {
         GET_ASSIGNED_MENTORS: (menteeId: string) => `/users/${menteeId}/assigned`,
+        GET_ALL_MENTORS: '/users?role=mentor',
     },
     MENTEES: {
         GET_ASSIGNED_MENTEES: (mentorId: string) => `/users/${mentorId}/assigned`,
+        GET_ALL_MENTEES: '/users?role=pastor',
     },
     // Home
     HOME: {

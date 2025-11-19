@@ -147,7 +147,7 @@ export default function Grant() {
     try {
       // Replace with actual userId from your auth context/state
 
-      await submitCompleteApplication(user?.id, finalAnswers);
+      await submitCompleteApplication(user?.id as string, finalAnswers);
 
       // Show success modal
       setShowSuccessModal(true);

@@ -16,10 +16,7 @@ export interface ChurchInfo {
     zipCode?: string;
 }
 
-export interface ProfileData {
-    firstName: string;
-    lastName: string;
-    email: string;
+export interface ProfileData extends User {
     phone: string;
     title: string;
     yearsInMinistry: string;

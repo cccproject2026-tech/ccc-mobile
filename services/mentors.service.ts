@@ -4,7 +4,7 @@ import { ENDPOINTS } from './api/endpoints';
 
 export const mentorsService = {
     getMentors: async (): Promise<GetMentorsApiResponse['data']> => {
-        const response = await apiClient.get<GetMentorsApiResponse>(ENDPOINTS.HOME.MENTORS);
+        const response = await apiClient.get<GetMentorsApiResponse>(ENDPOINTS.MENTORS.GET_ALL_MENTORS);
         return response.data.data;
     },
 

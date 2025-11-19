@@ -1,51 +1,116 @@
-import { Mentee } from '@/components/director/MenteeCard';
-import { MenteeListItem, menteesService } from '@/services/mentees.service';
+// import { Mentee } from '@/components/director/MenteeCard';
+// import { menteesService } from '@/services/mentees.service';
+// import { useQuery } from '@tanstack/react-query';
+
+// const transformMentee = (mentee: any): Mentee => {
+//     return {
+//         id: mentee.id,
+//         name: `${mentee.firstName} ${mentee.lastName}`.trim(),
+//         role: mentee.role || undefined,
+//         profilePicture: mentee.profilePicture || undefined,
+//         description: mentee.description || mentee.profileInfo || undefined,
+
+//         // Status mapping
+//         status: mentee.status as 'new' | 'pending' | 'approved' | 'rejected',
+
+//         // Completed + certificate fields
+//         isCompleted: mentee.hasCompleted ?? false,
+//         hasCertificate: mentee.hasIssuedCertificate ?? false,
+
+//         // Backend does NOT return a completion date
+//         completedOn: mentee.hasCompleted ? mentee.updatedAt : undefined,
+
+//         // Not provided by backend
+//         lastContacted: undefined,
+//         totalMentors: undefined,
+//         phase: undefined,
+//         phaseNumber: undefined,
+//         progress: undefined,
+//         isFieldMentor: undefined,
+//         scholarshipAmount: undefined,
+//         dateOfApproval: undefined,
+//     };
+// };
+
+// export const useMentees = () => {
+//     const query = useQuery({
+//         queryKey: ['mentees'],
+//         queryFn: () => menteesService.getMentees(),
+//         staleTime: 1000 * 60 * 5,
+//         retry: 2,
+//     });
+
+//     const transformedData = query.data
+//         ? {
+//             mentees: query.data.mentees.map(transformMentee),
+//             total: query.data.total,
+//         }
+//         : undefined;
+
+//     return {
+//         ...query,
+//         data: transformedData,
+//         mentees: transformedData?.mentees ?? [],
+//         total: transformedData?.total ?? 0,
+//     };
+// };
+
+
+// hooks/mentees/useMentees.ts
+import { apiClient } from '@/services/api/client';
+import { ENDPOINTS } from '@/services/api/endpoints';
+import { menteesService } from '@/services/mentees.service';
+import { Mentee } from '@/types/mentee.types';
 import { useQuery } from '@tanstack/react-query';
 
-// Transform API response to match component expectations
-const transformMentee = (mentee: MenteeListItem): Mentee => {
-    return {
-        id: mentee.id,
-        name: `${mentee.firstName} ${mentee.lastName}`.trim(),
-        role: mentee.role,
-        description: '', // API doesn't provide description
-        lastContacted: undefined, // API doesn't provide lastContacted
-        totalMentors: undefined, // API doesn't provide totalMentors
-        profileImage: undefined, // API doesn't provide profileImage
-        phase: undefined, // API doesn't provide phase
-        phaseNumber: undefined, // API doesn't provide phaseNumber
-        progress: undefined, // API doesn't provide progress
-        isCompleted: undefined, // API doesn't provide isCompleted
-        completedOn: undefined, // API doesn't provide completedOn
-        hasCertificate: undefined, // API doesn't provide hasCertificate
-        isFieldMentor: undefined, // API doesn't provide isFieldMentor
-        status: undefined, // API doesn't provide status
-        scholarshipAmount: undefined, // API doesn't provide scholarshipAmount
-        dateOfApproval: undefined, // API doesn't provide dateOfApproval
-    };
-};
+// Query key
+const MENTEES_KEY = ['mentees'];
 
 export const useMentees = () => {
-    const query = useQuery({
+    return useQuery({
         queryKey: ['mentees'],
-        queryFn: () => menteesService.getMentees(),
-        staleTime: 1000 * 60 * 5, // 5 minutes
-        retry: 2,
+        queryFn: async () => {
+            // fetch backend
+            const res = await menteesService.getMentees();
+
+            // FIX: backend uses `users`, not `mentees`
+            const backendMentees: Mentee[] = res.users ?? [];
+
+            // fetch progress in parallel
+            const progressResponses = await Promise.all(
+                backendMentees.map(async (m) => {
+                    try {
+                        const r = await apiClient.get(
+                            ENDPOINTS.USERS.GET_PROGRESS(m.id)
+                        );
+                        return r.data?.data ?? null;
+                    } catch {
+                        return null;
+                    }
+                })
+            );
+
+            // merge
+            const mentees = backendMentees.map((m, idx) => {
+                const progress = progressResponses[idx];
+                const firstRoadmap = progress?.roadmaps?.items?.[0] ?? null;
+
+                return {
+                    ...m,
+                    description: "",
+                    progress: progress?.overallRoadmapProgress ?? 0,
+                    phase: firstRoadmap?.phase,
+                    phaseNumber: firstRoadmap?.phaseNumber,
+                    completedOn: m.hasCompleted ? m.updatedAt : undefined,
+                };
+            });
+
+            return {
+                mentees,
+                total: res.total ?? mentees.length
+            };
+        },
+        staleTime: 1000 * 60 * 5,
+        retry: 1,
     });
-
-    // Transform the data
-    const transformedData = query.data
-        ? {
-              mentees: query.data.mentees.map(transformMentee),
-              total: query.data.total,
-          }
-        : undefined;
-
-    return {
-        ...query,
-        data: transformedData,
-        mentees: transformedData?.mentees ?? [],
-        total: transformedData?.total ?? 0,
-    };
 };
-

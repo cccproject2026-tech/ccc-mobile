@@ -1,10 +1,10 @@
-export interface MentorListItem {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    username: string;
-    role: string;
+import { User } from "./auth.types";
+
+export interface MentorListItem extends User {
+    roleId: string;
+    interestId?: string;
+    hasCompleted: boolean;
+    hasIssuedCertificate: boolean;
 }
 
 export interface AssignedMentorItem {

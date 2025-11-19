@@ -1,4 +1,3 @@
-// app/(pastor)/_layout.tsx
 import CustomDrawerContent from '@/components/director/CustomDrawer';
 import { PastorMenuItems } from '@/constants/mockData';
 import { useAuthStore } from '@/stores/auth.store';
