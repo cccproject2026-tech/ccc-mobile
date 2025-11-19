@@ -1,7 +1,14 @@
 import { grantService } from '@/services/grant.service';
-import { GrantSubmissionPayload, GrantSubmissionResponse, UseGrantState } from '@/types/grant.type';
+import { GrantFormResponse, GrantSubmissionPayload, GrantSubmissionResponse } from '@/types/grant.type';
 import { useCallback, useState } from 'react';
 
+interface UseGrantState {
+    form: GrantFormResponse | null;
+    isLoading: boolean;
+    isSubmitting: boolean;
+    error: string | null;
+    success: boolean;
+}
 
 const INITIAL_STATE: UseGrantState = {
     form: null,
@@ -69,7 +76,7 @@ export const useGrant = () => {
     );
 
     /**
-     * Check application status
+     * Check application status by ID
      */
     const checkApplicationStatus = useCallback(
         async (applicationId: string) => {
@@ -100,11 +107,11 @@ export const useGrant = () => {
      * Build and submit application in one call
      */
     const submitCompleteApplication = useCallback(
-        async (userId: string, formAnswers: Record<string, string>) => {
+        async (userId: string, formAnswers: Record<string, string>, supportingDoc?: string) => {
             const payload = grantService.buildSubmissionPayload(
                 userId,
                 formAnswers,
-                'https://example.com/uploads/proof.pdf' // Using fixed URL as backend not ready
+                supportingDoc
             );
             return submitApplication(payload);
         },

@@ -5,7 +5,7 @@ import { ChurchInfoSection, OtherInfoSection, PersonalInfoSection, ProfileInfoSe
 import TopBar from '@/components/director/TopBar';
 import { Colors } from '@/constants/Colors';
 import { icons } from '@/constants/images';
-import { useProfile, useUpdateProfile } from '@/hooks/profile/useProfile';
+import { useProfile, useUpdateProfile, useUploadProfilePicture } from '@/hooks/profile/useProfile';
 import { UpdateProfileData } from '@/types';
 import { ChurchInfo } from '@/types/profile.types';
 import { getSpacing } from '@/utils/responsive';
@@ -43,13 +43,16 @@ export default function ProfileScreen() {
   // Fetch profile data from React Query
   const { data: profileData, isLoading, isError } = useProfile();
   const updateProfile = useUpdateProfile();
+  const uploadProfilePicture = useUploadProfilePicture();
 
   // Local UI state
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<any>(null);
   const [showTitleDropdown, setShowTitleDropdown] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isFormInitialized, setIsFormInitialized] = useState(false); // NEW: Track initialization
 
   // Form state (only when editing)
   const [formData, setFormData] = useState<UpdateProfileData>({
@@ -66,9 +69,10 @@ export default function ProfileScreen() {
     bio: '',
   });
 
-  // Initialize form data when profile loads or when entering edit mode
+  // FIXED: Only initialize form data ONCE when entering edit mode
   useEffect(() => {
-    if (profileData?.user && isEditing) {
+    if (isEditing && !isFormInitialized && profileData?.user) {
+      console.log('📝 Initializing form data...');
       setFormData({
         firstName: profileData.user.firstName || '',
         lastName: profileData.user.lastName || '',
@@ -84,13 +88,21 @@ export default function ProfileScreen() {
         bio: profileData.interest?.profileInfo || '',
       });
       setProfileImage(profileData.user.profilePicture || null);
+      setSelectedImageFile(null);
+      setIsFormInitialized(true); // Mark as initialized
+      console.log('✅ Form initialized');
     }
-  }, [isEditing, profileData]);
+
+    // Reset initialization flag when exiting edit mode
+    if (!isEditing && isFormInitialized) {
+      setIsFormInitialized(false);
+    }
+  }, [isEditing, isFormInitialized, profileData?.user?.id]); // Only depend on isEditing and user ID
 
   // Calculate progress percentage
   const progressPercentage = useMemo(() => {
-    return profileData?.progress?.percentage || 0;
-  }, [profileData?.progress]);
+    return profileData?.progress?.overallProgress || 0;
+  }, [profileData?.progress?.overallProgress]); // FIXED: Use specific property
 
   // Get greeting based on time
   const greeting = useMemo(() => {
@@ -131,10 +143,12 @@ export default function ProfileScreen() {
 
   const pickImage = useCallback(async () => {
     try {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('📸 Starting image picker...');
+
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (status !== 'granted') {
+        console.log('❌ Permission denied');
         Alert.alert(
           'Permission Required',
           'Please grant permission to access your photo library to upload a profile picture.',
@@ -143,6 +157,8 @@ export default function ProfileScreen() {
         return;
       }
 
+      console.log('✅ Permission granted, launching picker...');
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
@@ -150,11 +166,27 @@ export default function ProfileScreen() {
         quality: 0.8,
       });
 
+      console.log('📷 Image picker result:', result);
+
       if (!result.canceled && result.assets?.[0]) {
-        setProfileImage(result.assets[0].uri);
+        const asset = result.assets[0];
+        console.log('✅ Image selected:', asset.uri);
+
+        setProfileImage(asset.uri);
+
+        const fileObj = {
+          uri: asset.uri,
+          type: asset.mimeType || 'image/jpeg', // FIXED: Use mimeType from asset
+          fileName: asset.fileName || `profile-${Date.now()}.jpg`,
+        };
+
+        console.log('💾 File object created:', fileObj);
+        setSelectedImageFile(fileObj);
+      } else {
+        console.log('ℹ️ Image selection cancelled');
       }
     } catch (error) {
-      console.error('Error picking image:', error);
+      console.error('❌ Error picking image:', error);
       Alert.alert('Error', 'Failed to pick image. Please try again.');
     }
   }, []);
@@ -185,12 +217,14 @@ export default function ProfileScreen() {
   );
 
   const handleEditPress = useCallback(() => {
+    console.log('✏️ Edit button pressed');
     setShowSuccessModal(false);
     setShowConfirmModal(false);
     setIsEditing(true);
   }, []);
 
   const handleSavePress = useCallback(() => {
+    console.log('💾 Save button pressed');
     setShowConfirmModal(true);
   }, []);
 
@@ -212,9 +246,21 @@ export default function ProfileScreen() {
   };
 
   const handleConfirmSave = useCallback(async () => {
+    console.log('🔄 Starting save process...');
+    console.log('📸 Selected image file:', selectedImageFile);
     setShowConfirmModal(false);
 
     try {
+      // Step 1: Upload profile picture first if a new one was selected
+      if (selectedImageFile) {
+        console.log('📤 Uploading profile picture...');
+        await uploadProfilePicture.mutateAsync(selectedImageFile);
+        console.log('✅ Profile picture uploaded successfully');
+      } else {
+        console.log('ℹ️ No new profile picture to upload');
+      }
+
+      // Step 2: Update other profile fields
       const cleanedChurches = sanitizeChurches(formData.churches);
 
       const updateData: UpdateProfileData = {
@@ -230,20 +276,20 @@ export default function ProfileScreen() {
         interests: formData.interests,
         comments: formData.comments,
         bio: formData.bio,
-        avatar: profileImage || undefined,
       };
 
-      console.log('📤 Submitting cleaned profile update:', updateData);
+      console.log('📤 Submitting profile update:', updateData);
 
       await updateProfile.mutateAsync(updateData);
 
       setIsEditing(false);
+      setSelectedImageFile(null);
 
       setTimeout(() => {
         setShowSuccessModal(true);
       }, 100);
 
-      console.log('✅ Profile saved and UI updated successfully');
+      console.log('✅ Profile saved successfully');
     } catch (error: any) {
       console.error('❌ Failed to update profile:', error);
       Alert.alert(
@@ -253,16 +299,19 @@ export default function ProfileScreen() {
         'Failed to update profile. Please try again.'
       );
     }
-  }, [formData, profileImage, updateProfile]);
+  }, [formData, selectedImageFile, updateProfile, uploadProfilePicture]);
 
   const handleCancelSave = useCallback(() => {
     setShowConfirmModal(false);
   }, []);
 
   const handleCancel = useCallback(() => {
+    console.log('❌ Cancel button pressed');
     setShowConfirmModal(false);
     setShowSuccessModal(false);
     setIsEditing(false);
+    setSelectedImageFile(null);
+    setIsFormInitialized(false); // Reset initialization flag
     if (profileData?.user) {
       setFormData({
         firstName: profileData.user.firstName || '',
@@ -308,7 +357,13 @@ export default function ProfileScreen() {
         style={styles.avatarImage}
       />
       {isEditing && (
-        <TouchableOpacity style={styles.editAvatarBadge} onPress={pickImage}>
+        <TouchableOpacity
+          style={styles.editAvatarBadge}
+          onPress={() => {
+            console.log('🖼️ Edit avatar button pressed');
+            pickImage();
+          }}
+        >
           <Image source={icons.edit} style={styles.editIcon} />
         </TouchableOpacity>
       )}
@@ -361,17 +416,19 @@ export default function ProfileScreen() {
       <TouchableOpacity
         style={[styles.actionButton2, styles.cancelButton]}
         onPress={handleCancel}
-        disabled={updateProfile.isPending}
+        disabled={updateProfile.isPending || uploadProfilePicture.isPending}
       >
         <Text style={styles.cancelButtonText}>Cancel</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.actionButton2, styles.saveButton]}
         onPress={handleSavePress}
-        disabled={updateProfile.isPending}
+        disabled={updateProfile.isPending || uploadProfilePicture.isPending}
       >
         <Text style={styles.saveButtonText}>
-          {updateProfile.isPending ? 'Saving...' : 'Save'}
+          {uploadProfilePicture.isPending || updateProfile.isPending
+            ? 'Saving...'
+            : 'Save'}
         </Text>
       </TouchableOpacity>
     </View>
@@ -419,6 +476,9 @@ export default function ProfileScreen() {
     );
   }
 
+
+  console.log('👤 Rendering profile for:', profileData.user);
+  console.log('📝 Profile Image:', profileImage);
   // ============= MAIN RENDER =============
   return (
     <LinearGradient
@@ -457,7 +517,7 @@ export default function ProfileScreen() {
                 formData={formData}
                 onUpdateField={updateField}
                 onPickImage={pickImage}
-                profileImage={profileImage}
+                profileImage={profileData.user.profilePicture as string}
                 showTitleDropdown={showTitleDropdown}
                 onTitleSelect={handleTitleSelect}
                 onToggleTitleDropdown={setShowTitleDropdown}
@@ -602,6 +662,7 @@ export default function ProfileScreen() {
     </LinearGradient>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

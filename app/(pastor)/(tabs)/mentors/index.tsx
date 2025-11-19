@@ -128,6 +128,7 @@ export default function MyMentorsScreen() {
         </View>
     );
 
+    console.log("👥 Total Mentors:", mentors);
     return (
         <>
             <LinearGradient

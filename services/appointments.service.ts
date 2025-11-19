@@ -1,8 +1,13 @@
 import {
     Appointment,
+    AppointmentPlatform,
     AppointmentResponse,
     CreateAppointmentPayload,
+    GetMonthlyAvailabilityApiResponse,
+    GetWeeklyAvailabilityApiResponse,
+    MonthlyAvailabilityDay,
     UpdateAppointmentPayload,
+    WeeklyAvailability,
 } from '../types/appointment.types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
@@ -40,6 +45,30 @@ export const appointmentService = {
             console.error('Error fetching mentor appointments:', error);
             throw error;
         }
+    },
+
+    /**
+     * Fetch weekly appointments for a mentor
+    */
+    getWeeklyAvailability: async (mentorId: string): Promise<WeeklyAvailability> => {
+        const response = await apiClient.get<GetWeeklyAvailabilityApiResponse>(
+            ENDPOINTS.APPOINTMENTS.GET_WEEKLY_AVAILABILITY(mentorId)
+        );
+        return response.data.data;
+    },
+
+    /**
+     * Fetch monthly appointments for a mentor
+    */
+    getMonthlyAvailability: async (
+        mentorId: string,
+        month: number,
+        year: number
+    ): Promise<MonthlyAvailabilityDay[]> => {
+        const response = await apiClient.get<GetMonthlyAvailabilityApiResponse>(
+            ENDPOINTS.APPOINTMENTS.GET_MONTHLY_AVAILABILITY(mentorId, month, year)
+        );
+        return response.data.data;
     },
 
     /**
@@ -90,7 +119,7 @@ export const appointmentService = {
         userId: string,
         mentorId: string,
         meetingDate: string,
-        platform: string,
+        platform: AppointmentPlatform,
         meetingLink?: string,
         notes?: string
     ): CreateAppointmentPayload => {
@@ -98,10 +127,46 @@ export const appointmentService = {
             userId,
             mentorId,
             meetingDate,
-            platform: platform as any,
+            platform,
             ...(meetingLink && { meetingLink }),
             ...(notes && { notes }),
         };
+    },
+
+    /**
+     * Convert date and time slot to ISO string
+     */
+    createMeetingDate: (dateString: string, timeSlot: {
+        startTime: string;
+        startPeriod: 'AM' | 'PM';
+    }): string => {
+        const date = new Date(dateString);
+
+        // Convert time to 24-hour format
+        let hour = parseInt(timeSlot.startTime);
+        if (timeSlot.startPeriod === 'PM' && hour !== 12) {
+            hour += 12;
+        } else if (timeSlot.startPeriod === 'AM' && hour === 12) {
+            hour = 0;
+        }
+
+        date.setHours(hour, 0, 0, 0);
+
+        return date.toISOString();
+    },
+
+    /**
+     * Map UI platform labels to API platform values
+     */
+    mapPlatformToApiValue: (platformLabel: string): AppointmentPlatform => {
+        const platformMap: Record<string, AppointmentPlatform> = {
+            'Zoom': 'zoom',
+            'Google Meet': 'google_meet',
+            'Microsoft Teams': 'teams',
+            'Phone Call': 'phone',
+            'In-Person Meeting': 'in_person',
+        };
+        return platformMap[platformLabel] || 'zoom';
     },
 
     /**

@@ -1,4 +1,5 @@
-import { MentorListItem, mentorsService } from '@/services/mentors.service';
+import { mentorsService } from '@/services/mentors.service';
+import { MentorListItem } from '@/types/mentors.types';
 import { useQuery } from '@tanstack/react-query';
 
 // Transformed mentor type that matches component expectations

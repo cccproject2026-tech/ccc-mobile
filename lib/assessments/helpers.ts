@@ -1,4 +1,5 @@
-import type { Assessment, AssessmentResponse, SubmitAnswersPayload, SubmitPreSurveyPayload } from '@/types/assessment.types';
+import type { Assessment, AssessmentResponse, SubmitAnswersPayload, SubmitPreSurveyPayload, SubmittedAnswersResponse } from '@/types/assessment.types';
+import { ApiAssessment } from './types';
 
 /**
  * Format date to readable string
@@ -77,4 +78,50 @@ export function transformPreSurveyToPayload(
         questionText: question.text,
         answer: preSurveyAnswers[question.id] || ''
     }));
+}
+
+
+
+export function transformSubmittedAnswersToStore(
+    submittedAnswers: SubmittedAnswersResponse,
+    assessment: Assessment,
+    apiAssessment: ApiAssessment
+): {
+    preSurveyAnswers: Record<string, string>;
+    sectionAnswers: Record<number, Record<string, boolean>>;
+} {
+    // Transform pre-survey answers
+    const preSurveyAnswers: Record<string, string> = {};
+    if (submittedAnswers.preSurveyAnswers && assessment.preSurvey) {
+        submittedAnswers.preSurveyAnswers.forEach((answer) => {
+            const question = assessment.preSurvey?.find(q => q.text === answer.questionText);
+            if (question) {
+                preSurveyAnswers[question.id] = answer.answer;
+            }
+        });
+    }
+
+    // Transform section answers
+    const sectionAnswers: Record<number, Record<string, boolean>> = {};
+
+    submittedAnswers.sections.forEach((submittedSection) => {
+        const sectionIndex = apiAssessment.sections.findIndex(
+            section => section._id === submittedSection.sectionId
+        );
+
+        if (sectionIndex !== -1) {
+            sectionAnswers[sectionIndex] = {};
+
+            submittedSection.layers.forEach((layer) => {
+                // Convert string "true" to boolean true
+                // Backend sends "true" as string, frontend needs boolean
+                sectionAnswers[sectionIndex][layer.layerId] =
+                    layer.selectedChoice === 'true' ||
+                    layer.selectedChoice === 'TRUE' ||
+                    Boolean(layer.selectedChoice); // Convert any truthy string to boolean
+            });
+        }
+    });
+
+    return { preSurveyAnswers, sectionAnswers };
 }

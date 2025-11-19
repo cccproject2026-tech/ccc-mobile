@@ -1176,6 +1176,7 @@ export const InputCard = ({
   description = "",
   fileUpload = false,
   answer = true,
+  multiline = false,
 }: {
   title: string;
   setValue: (value: string) => void;
@@ -1184,6 +1185,7 @@ export const InputCard = ({
   description: string;
   fileUpload?: boolean;
   answer?: boolean;
+  multiline?: boolean;
 }) => {
   return (
     <View
@@ -1222,7 +1224,7 @@ export const InputCard = ({
             }}
             selectedFile={null}
             setSelectedFile={() => { }}
-          ></UploadPDFButton>
+          />
         </View>
       )}
       {description !== "" && (
@@ -1245,13 +1247,18 @@ export const InputCard = ({
             placeholderTextColor={"#b4c7d6"}
             value={value}
             onChangeText={(val) => setValue(val)}
+            multiline={multiline}
+            numberOfLines={multiline ? 4 : 1}
+            textAlignVertical={multiline ? "top" : "center"}
             style={{
               fontSize: getFontSize(15),
               color: "white",
-              minHeight: getSpacing(40),
+              minHeight: multiline ? getSpacing(100) : getSpacing(40),
+              maxHeight: multiline ? getSpacing(200) : getSpacing(40),
               width: "100%",
+              paddingTop: multiline ? getSpacing(8) : 0,
             }}
-          ></TextInput>
+          />
           <View
             style={{
               borderWidth: 0.5,
@@ -1259,12 +1266,13 @@ export const InputCard = ({
               width: "100%",
               marginTop: getSpacing(5)
             }}
-          ></View>
+          />
         </>
       )}
     </View>
   );
 };
+
 
 export const AssessmentCard = ({
   data,

@@ -1,4 +1,4 @@
-import { GrantFormResponse, GrantSubmissionPayload, GrantSubmissionResponse, MicrograntApplication, MicrograntApplicationsApiResponse, MicrograntApplicationDetail, MicrograntApplicationDetailApiResponse } from '@/types/grant.type';
+import { GrantFormResponse, GrantSubmissionPayload, GrantSubmissionResponse, MicrograntApplication, MicrograntApplicationDetail, MicrograntApplicationDetailApiResponse, MicrograntApplicationsApiResponse } from '@/types/grant.type';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 

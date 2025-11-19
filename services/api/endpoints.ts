@@ -22,6 +22,10 @@ export const ENDPOINTS = {
         GET_INTERESTS: (email: string) => `/interests/by-email/${email}`,
         UPDATE_INTERESTS: (email: string) => `/interests/by-email/${email}`,
         GET_PROGRESS: (userId: string) => `/progress/${userId}`,
+        UPDATE_PROFILE_PICTURE: (userId: string) => `/users/${userId}/profile-picture`,
+        GET_DOCUMENTS: (userId: string) => `/users/${userId}/documents`,
+        UPLOAD_DOCUMENT: (userId: string) => `/users/${userId}/documents`,
+        DELETE_DOCUMENT: (userId: string) => `/users/${userId}/documents`,
     },
 
     // Pastor Onboarding (if separate from auth)
@@ -75,7 +79,9 @@ export const ENDPOINTS = {
         GET: (userId: string) => `/appointments/user/${userId}`,
         CREATE: '/appointments',
         GET_BY_MENTOR: (mentorId: string) => `/appointments/mentor/${mentorId}`,
-        UPDATE: (appointmentId: string) => `/appointments/${appointmentId}`
+        UPDATE: (appointmentId: string) => `/appointments/${appointmentId}`,
+        GET_WEEKLY_AVAILABILITY: (mentorId: string) => `/appointments/availability/${mentorId}`,
+        GET_MONTHLY_AVAILABILITY: (mentorId: string, month: number, year: number) => `/appointments/availability/${mentorId}/month?month=${month}&year=${year}`,
     },
 
     ROADMAPS: {

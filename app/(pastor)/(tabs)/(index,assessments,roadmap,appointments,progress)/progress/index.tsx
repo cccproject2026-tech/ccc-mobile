@@ -8,6 +8,7 @@ import RoadmapCard from "@/components/director/ProgressRoadmapCard";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useAssessmentProgress, useProgress, useRoadmapProgress } from '@/hooks/progress/useProgress';
 import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
 import { getRoadmapCard } from '@/lib/roadmap/mappers';
@@ -53,6 +54,13 @@ export default function ProgressScreen() {
     isRefetching: isRoadmapsRefetching
   } = useRoadmaps('pastor');
 
+  const {
+    data: assessments,
+    isLoading: isAssessmentsLoading,
+    refetch: refetchAssessments,
+    isRefetching: isAssessmentsRefetching
+  } = useAssignedAssessments();
+
   const { data: roadmapProgress } = useRoadmapProgress();
   const { data: assessmentProgress } = useAssessmentProgress();
 
@@ -93,41 +101,7 @@ export default function ProgressScreen() {
   }, []);
 
   // Dummy assessment data - replace with actual API data when available
-  const dummyAssessment = useMemo(() => [
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description: "Interested in receiving mentoring in community engagement",
-      image: require("@/assets/images/jumpstart.png"),
-      progress: "0",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-      dueDate: "20 Oct 2024",
-      status: "Completed",
-      type: "assessment",
-    },
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description: "Interested in receiving mentoring in community engagement",
-      image: require("@/assets/images/jumpstart.png"),
-      progress: "0",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-      submittedDate: "20 Oct 2024",
-      status: "due",
-      type: "assessment",
-      completed: "Customized Development Plans",
-    },
-  ], []);
+
 
   const availableTabs = [
     { tab: "All" },
@@ -153,13 +127,13 @@ export default function ProgressScreen() {
   const filteredAssessments = useMemo(() => {
     switch (assessmentTabs) {
       case 'Completed':
-        return dummyAssessment.filter(a => a.status === "Completed");
+        return assessments.filter(a => a.status === "Completed");
       case 'Remaining':
-        return dummyAssessment.filter(a => a.status !== "Completed");
+        return assessments.filter(a => a.status !== "Completed");
       default:
-        return dummyAssessment;
+        return assessments;
     }
-  }, [dummyAssessment, assessmentTabs]);
+  }, [assessments, assessmentTabs]);
 
   // Chart data based on actual progress
   const chartData: ChartData = useMemo(() => {

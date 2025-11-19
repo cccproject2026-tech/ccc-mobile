@@ -1,4 +1,3 @@
-// hooks/useProgress.ts
 import { apiClient } from "@/services/api/client";
 import { ENDPOINTS } from "@/services/api/endpoints";
 import { useAuthStore } from "@/stores/auth.store";
@@ -14,11 +13,6 @@ export const progressKeys = {
     roadmaps: (userId: string) => [...progressKeys.all, 'roadmaps', userId] as const,
     assessments: (userId: string) => [...progressKeys.all, 'assessments', userId] as const,
 };
-
-// ============================================
-// PROGRESS TYPES (Updated with nested roadmaps)
-// ============================================
-
 
 // ============================================
 // MAIN PROGRESS HOOK

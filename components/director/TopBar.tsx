@@ -15,6 +15,8 @@ type Props = {
     showNotifications?: boolean;
     showDrawer?: boolean;
     showBackButton?: boolean;
+    showBackButtonText?: boolean;
+    onPressBack?: () => void;
     size?: number;
     color?: string;
     onProfilePress?: () => void;
@@ -28,6 +30,8 @@ const TopBar: React.FC<Props> = ({
     showNotifications = true,
     showDrawer = true,
     showBackButton = false,
+    showBackButtonText = false,
+    onPressBack,
     size = 36,
     color = "#fff",
     onProfilePress,
@@ -48,6 +52,14 @@ const TopBar: React.FC<Props> = ({
         }
     }
 
+    const handleBackPress = () => {
+        if (onPressBack) {
+            onPressBack();
+        } else {
+            router.back();
+        }
+    };
+
     return (
         <View style={[styles.headerRow, { paddingTop: top + 10, minHeight: top + 54 }]}>
             {/* Left */}
@@ -58,9 +70,26 @@ const TopBar: React.FC<Props> = ({
                     </Pressable>
                 )}
                 {showBackButton && (
-                    <Pressable hitSlop={10} onPress={() => router.back()} style={styles.backButtonBox}>
-                        <Ionicons name="arrow-back" size={size - 8} color={color} />
-                    </Pressable>
+                    <>
+                        {showBackButtonText ? (
+                            <Pressable
+                                hitSlop={10}
+                                onPress={handleBackPress}
+                                style={styles.backButtonWithText}
+                            >
+                                <Ionicons name="chevron-back" size={24} color="#fff" />
+                                <Text style={styles.backButtonTextStyle}>Back</Text>
+                            </Pressable>
+                        ) : (
+                            <Pressable
+                                hitSlop={10}
+                                onPress={handleBackPress}
+                                style={styles.backButtonBox}
+                            >
+                                <Ionicons name="arrow-back" size={size - 8} color={color} />
+                            </Pressable>
+                        )}
+                    </>
                 )}
             </View>
             {/* Center */}
@@ -112,15 +141,32 @@ const styles = StyleSheet.create({
         backgroundColor: "transparent",
     },
     leftIconBox: {
-        // minWidth: 44,
-        // alignItems: "flex-start",
-        // justifyContent: "center",
         flexDirection: "row",
         flex: 0.2,
     },
     backButtonBox: {
         paddingHorizontal: 4,
     },
+    backButtonWithText: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(139, 168, 189, 0.8)", // More opaque blue-gray
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        paddingLeft: 10,
+        paddingRight: 16,
+        borderRadius: 12,
+        gap: 8,
+        minWidth: 90,
+    },
+    backButtonTextStyle: {
+        color: "#fff",
+        fontSize: 20,
+        fontWeight: "700",
+        letterSpacing: 0.5,
+    },
+
     centerArea: {
         flex: 1,
         alignItems: "center",
@@ -147,7 +193,6 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     rightIconBox: {
-        // minWidth: 55,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "flex-end",

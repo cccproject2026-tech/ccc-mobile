@@ -289,9 +289,8 @@ import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
-import { useAssessments } from "@/hooks/assessments";
-import { mapApiToFrontend } from "@/lib/assessments/mappers";
-import type { ApiAssessment, Assessment } from "@/types/assessment.types";
+import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
+import type { Assessment } from "@/types/assessment.types";
 import { getFontSize, getIconSize, getSpacing } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -308,19 +307,21 @@ import {
 } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 export default function Survey() {
     const [search, setSearch] = useState("");
     const [tabs, setTabs] = useState("All");
     const { bottom } = useSafeAreaInsets();
 
-    // Fetch assessments from API
-    const { data, isLoading, error, refetch, isRefetching } = useAssessments();
-
-    // Map API data to frontend format
-    const assessments = useMemo(() => {
-        if (!data) return [];
-        return (data as ApiAssessment[]).map(mapApiToFrontend);
-    }, [data]);
+    // CHANGED: Use assigned assessments instead of all assessments
+    const {
+        data: assessments,
+        isLoading,
+        error,
+        refetch,
+        isRefetching,
+        assignedCount
+    } = useAssignedAssessments();
 
     // PMP Bottom Sheet state
     const pmpBottomSheetRef = useRef<BottomSheetModal>(null);
@@ -387,7 +388,7 @@ export default function Survey() {
     // Calculate available tabs with counts
     const availableTabs = useMemo(() => {
         return [
-            { key: "All", label: "All" },
+            { key: "All", label: "All", badge: assignedCount },
             ...statusKeys.map(tab => {
                 const count = searchedAssessments.filter(
                     item => item.status === tab.label
@@ -395,13 +396,15 @@ export default function Survey() {
                 return count > 0 ? { ...tab, badge: count } : tab;
             })
         ];
-    }, [searchedAssessments]);
+    }, [searchedAssessments, assignedCount]);
 
     // Filter by selected tab
     const filteredAssessments = useMemo(() => {
         if (tabs === "All") return searchedAssessments;
         return searchedAssessments.filter((item) => item.status === tabs);
     }, [searchedAssessments, tabs]);
+
+    // ... rest of your handlers remain the same ...
 
     const handleCardPress = (assessment: Assessment) => {
         router.push({
@@ -462,7 +465,7 @@ export default function Survey() {
     }
 
     // Error state
-    if (error && !data) {
+    if (error && !assessments.length) {
         return (
             <LinearGradient
                 colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
@@ -528,11 +531,17 @@ export default function Survey() {
                                         size={64}
                                         color="rgba(255,255,255,0.3)"
                                     />
-                                    <Text style={styles.emptyText}>No assessments found</Text>
+                                    <Text style={styles.emptyText}>
+                                        {assignedCount === 0
+                                            ? "No assessments assigned"
+                                            : "No assessments found"}
+                                    </Text>
                                     <Text style={styles.emptySubtext}>
                                         {search
                                             ? "Try adjusting your search"
-                                            : "Pull down to refresh"}
+                                            : assignedCount === 0
+                                                ? "Contact your director to assign assessments"
+                                                : "Pull down to refresh"}
                                     </Text>
                                 </View>
                             ) : (

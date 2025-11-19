@@ -60,3 +60,13 @@ export interface ProfileResponse {
 export interface ChurchFormData extends Omit<ChurchInfo, 'id'> {
     id?: string;
 }
+
+
+export interface Document {
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSize: number;
+    uploadedAt: string;
+}

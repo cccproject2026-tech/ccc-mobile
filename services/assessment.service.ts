@@ -1,8 +1,12 @@
-import { ApiAssessment, CreateAssessmentRequest, SubmitAnswersPayload, SubmitPreSurveyPayload } from '@/types/assessment.types';
+import {
+    ApiAssessment,
+    CreateAssessmentRequest,
+    SubmitAnswersPayload,
+    SubmitPreSurveyPayload,
+    SubmittedAnswersResponse
+} from '@/types/assessment.types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
-
-
 
 export const assessmentService = {
     // Get all assessments
@@ -80,7 +84,7 @@ export const assessmentService = {
         return response.data;
     },
 
-    // Submit pre-survey answers (NEW)
+    // Submit pre-survey answers
     submitPreSurvey: async (
         assessmentId: string,
         payload: SubmitPreSurveyPayload
@@ -90,35 +94,43 @@ export const assessmentService = {
             ENDPOINTS.ASSESSMENTS.SUBMIT_ASSESSMENT_PRESURVEY(assessmentId),
             payload
         );
-        console.log('📥 Pre-survey submitted:', response.data.data);
+        console.log('📥 Pre-survey submitted:', response.data);
         return response.data;
     },
 
-    // Submit assessment answers (UPDATED)
+    // Submit assessment answers
     submitAssessmentAnswers: async (
         assessmentId: string,
         payload: SubmitAnswersPayload
     ): Promise<any> => {
         console.log('📤 Submitting assessment answers:', assessmentId);
-        console.log({ payload });
+        console.log('Payload:', payload);
         const response = await apiClient.post(
             ENDPOINTS.ASSESSMENTS.SUBMIT_ASSESSMENT_ANSWERS(assessmentId),
             payload
         );
-        console.log('📥 Assessment answers submitted:', response.data.data);
+        console.log('📥 Assessment answers submitted:', response.data);
         return response.data;
     },
 
-    // Fetch assessment answers
+    // Fetch submitted answers - UPDATED
     fetchAnswers: async (
         assessmentId: string,
         userId: string
-    ): Promise<any> => {
+    ): Promise<SubmittedAnswersResponse> => {
         console.log('📤 Fetching answers for assessment:', assessmentId, 'user:', userId);
-        const response = await apiClient.get(
+
+        const response = await apiClient.get<{
+            success: boolean;
+            message: string;
+            data: SubmittedAnswersResponse;
+        }>(
             ENDPOINTS.ASSESSMENTS.FETCH_ANSWERS(assessmentId, userId)
         );
+
         console.log('📥 Answers fetched:', response.data);
-        return response.data;
+
+        // Return the data object from the response
+        return response.data.data;
     },
 };
