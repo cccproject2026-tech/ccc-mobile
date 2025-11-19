@@ -91,5 +91,11 @@ export const ENDPOINTS = {
         GET_ALL: '/interests',
         GET_METADATA: '/interests/metadata',
         UPDATE_STATUS: (id: string) => `/interests/request/${id}`,
+    },
+
+    // Progress
+    PROGRESS: {
+        ASSIGN_ASSESSMENT: '/progress/assign-assessment',
+        ASSIGN_ROADMAP: '/progress/assign-roadmap',
     }
 } as const;
