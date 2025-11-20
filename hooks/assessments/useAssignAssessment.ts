@@ -1,20 +1,40 @@
-import { ApiAssessment } from '@/lib/assessments/types';
-import { assessmentService } from '@/services';
+import { progressService } from '@/services/progress.service';
+import { AssignAssessmentRequest } from '@/types/progress.types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { progressKeys } from '../progress/useProgress';
 
 export const useAssignAssessment = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({
+        mutationFn: async ({
             assessmentId,
             userIds,
         }: {
             assessmentId: string;
             userIds: string[];
-        }) => assessmentService.assignAssessment(assessmentId, userIds),
+        }) => {
+            // Call the API for each user (new API accepts single user)
+            const results = await Promise.all(
+                userIds.map((userId) =>
+                    progressService.assignAssessment({
+                        userId,
+                        assessmentId,
+                    })
+                )
+            );
+            // Return the last result for compatibility
+            return results[results.length - 1];
+        },
 
         onSuccess: (data, variables) => {
+            // Invalidate progress queries for all affected users
+            variables.userIds.forEach((userId) => {
+                queryClient.invalidateQueries({
+                    queryKey: progressKeys.user(userId),
+                });
+            });
+
             // Invalidate assessments list to refetch
             queryClient.invalidateQueries({ queryKey: ['assessments'] });
             // Invalidate the specific assessment

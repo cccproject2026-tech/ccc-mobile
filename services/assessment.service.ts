@@ -29,24 +29,6 @@ export const assessmentService = {
         return response.data;
     },
 
-    // Assign assessment to users
-    assignAssessment: async (
-        assessmentId: string,
-        userIds: string[]
-    ): Promise<ApiAssessment> => {
-        console.log('📤 Assigning assessment:', assessmentId, 'to users:', userIds);
-        const response = await apiClient.post<{
-            success: boolean;
-            message: string;
-            data: ApiAssessment;
-        }>(
-            ENDPOINTS.ASSESSMENTS.ASSIGN_ASSESSMENT(assessmentId),
-            { userIds }
-        );
-        console.log('📥 Assessment assigned:', response.data);
-        return response.data.data;
-    },
-
     // Create new assessment
     createAssessment: async (
         data: CreateAssessmentRequest

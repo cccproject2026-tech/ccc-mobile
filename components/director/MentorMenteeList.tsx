@@ -1,39 +1,52 @@
-import React, { useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMentees } from '@/hooks/mentees/useMentees';
+import { useMentors } from '@/hooks/mentors/useMentors';
+import { useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { ActivityIndicator, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import MentorMenteeCard from './MentorMenteeCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
 
-type Mentor = {
-    id: string;
-    name: string;
-    role: string;
-    menteeCount: number;
-};
-
-type Mentee = {
-    id: string;
-    name: string;
-    role: string;
-    lastContactedDays: number;
-};
-
 const MentorMenteeList: React.FC = () => {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<'mentors' | 'mentees'>('mentors');
+    
+    // Fetch mentors and mentees from API
+    const { mentors: allMentors, isLoading: isLoadingMentors, isError: isErrorMentors } = useMentors();
+    const { mentees: allMentees, isLoading: isLoadingMentees, isError: isErrorMentees } = useMentees();
 
-    // Mock data
-    const mentors: Mentor[] = [
-        { id: '1', name: 'John Doe', role: 'Mentor', menteeCount: 5 },
-        { id: '2', name: 'John Doe', role: 'Mentor', menteeCount: 5 },
-        { id: '3', name: 'John Doe', role: 'Mentor', menteeCount: 5 },
-    ];
+    // Limit to first 3 items
+    const mentors = useMemo(() => {
+        return allMentors.slice(0, 3);
+    }, [allMentors]);
 
-    const mentees: Mentee[] = [
-        { id: '1', name: 'John Ross', role: 'Pastor', lastContactedDays: 5 },
-        { id: '2', name: 'John Ross', role: 'Pastor', lastContactedDays: 5 },
-        { id: '3', name: 'John Ross', role: 'Pastor', lastContactedDays: 5 },
-    ];
+    const mentees = useMemo(() => {
+        return allMentees.slice(0, 3);
+    }, [allMentees]);
+
+    const isLoading = activeTab === 'mentors' ? isLoadingMentors : isLoadingMentees;
+    const isError = activeTab === 'mentors' ? isErrorMentors : isErrorMentees;
+
+    const handleMentorPress = (mentorId: string) => {
+        const mentor = allMentors.find(m => m.id === mentorId);
+        const email = mentor?.email || '';
+        router.push(`/(director)/(tabs)/mentors/${mentorId}${email ? `?email=${encodeURIComponent(email)}` : ''}` as any);
+    };
+
+    const handleMenteePress = (menteeId: string) => {
+        const mentee = allMentees.find(m => m.id === menteeId);
+        const email = mentee?.email || '';
+        router.push(`/(director)/(tabs)/mentees/${menteeId}${email ? `?email=${encodeURIComponent(email)}` : ''}` as any);
+    };
+
+    const handleSeeAll = () => {
+        if (activeTab === 'mentors') {
+            router.push('/(director)/(tabs)/mentors');
+        } else {
+            router.push('/(director)/(tabs)/mentees');
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -69,35 +82,61 @@ const MentorMenteeList: React.FC = () => {
                     </Pressable>
                 </View>
 
-                <Pressable>
+                <Pressable onPress={handleSeeAll}>
                     <Text style={styles.seeAll}>See all</Text>
                 </Pressable>
             </View>
 
             {/* List */}
             <View style={styles.listContainer}>
-                {activeTab === 'mentors' &&
-                    mentors.map((mentor) => (
-                        <MentorMenteeCard
-                            key={mentor.id}
-                            name={mentor.name}
-                            role={mentor.role}
-                            metricLabel={`${mentor.menteeCount} Mentees`}
-                            onPress={() => console.log('View mentor', mentor.name)}
-                        />
-                    ))}
+                {isLoading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="small" color="#EAF7FF" />
+                    </View>
+                ) : isError ? (
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>
+                            Failed to load {activeTab === 'mentors' ? 'mentors' : 'mentees'}
+                        </Text>
+                    </View>
+                ) : (
+                    <>
+                        {activeTab === 'mentors' &&
+                            (mentors.length > 0 ? (
+                                mentors.map((mentor) => (
+                                    <MentorMenteeCard
+                                        key={mentor.id}
+                                        name={mentor.name}
+                                        role={mentor.role}
+                                        metricLabel={mentor.menteesCount ? `${mentor.menteesCount} Mentees` : 'Mentor'}
+                                        onPress={() => handleMentorPress(mentor.id)}
+                                    />
+                                ))
+                            ) : (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>No mentors found</Text>
+                                </View>
+                            ))}
 
-                {activeTab === 'mentees' &&
-                    mentees.map((mentee) => (
-                        <MentorMenteeCard
-                            key={mentee.id}
-                            name={mentee.name}
-                            role={mentee.role}
-                            metricLabel="Last Contacted :"
-                            metricValue={`${mentee.lastContactedDays} Days Ago`}
-                            onPress={() => console.log('View mentee', mentee.name)}
-                        />
-                    ))}
+                        {activeTab === 'mentees' &&
+                            (mentees.length > 0 ? (
+                                mentees.map((mentee) => (
+                                    <MentorMenteeCard
+                                        key={mentee.id}
+                                        name={mentee.name}
+                                        role={mentee.role || 'Pastor'}
+                                        metricLabel="Last Contacted :"
+                                        metricValue={mentee.lastContacted ? `${mentee.lastContacted} Days Ago` : 'N/A'}
+                                        onPress={() => handleMenteePress(mentee.id)}
+                                    />
+                                ))
+                            ) : (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>No mentees found</Text>
+                                </View>
+                            ))}
+                    </>
+                )}
             </View>
         </View>
     );
@@ -147,5 +186,30 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         paddingBottom: 20,
+    },
+    loadingContainer: {
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    errorContainer: {
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    errorText: {
+        color: '#ff6b6b',
+        fontSize: isSmallDevice ? 13 : 14,
+        fontWeight: '500',
+    },
+    emptyContainer: {
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyText: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: isSmallDevice ? 13 : 14,
+        fontWeight: '500',
     },
 });

@@ -64,3 +64,27 @@ export interface AssignRoadmapApiResponse {
     message: string;
     data: AssignRoadmapResponse[];
 }
+
+export interface AssignAssessmentRequest {
+    userId: string;
+    assessmentId: string;
+}
+
+export interface AssignAssessmentResponse {
+    _id: string;
+    userId: string;
+    roadmaps: RoadmapProgress[];
+    totalRoadmaps: number;
+    completedRoadmaps: number;
+    overallRoadmapProgress: number;
+    assessments: AssessmentProgress[];
+    totalAssessments: number;
+    completedAssessments: number;
+    overallAssessmentProgress: number;
+}
+
+export interface AssignAssessmentApiResponse {
+    success: boolean;
+    message: string;
+    data: AssignAssessmentResponse;
+}

@@ -1,6 +1,7 @@
 import ActionBottomSheet from '@/components/director/ActionSheetModal';
 import TopBar from '@/components/director/TopBar';
 import { icons } from '@/constants/images';
+import { useMenteeByEmail } from '@/hooks/mentees/useMenteeByEmail';
 import {
     getButtonHeight,
     getFontSize,
@@ -12,9 +13,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     Image,
     ScrollView,
@@ -65,12 +67,16 @@ interface MenteeData extends ProfileData {
 
 export default function MenteeProfile() {
     const router = useRouter();
+    const { email } = useLocalSearchParams<{ email?: string }>();
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState<Partial<ProfileData & { role?: string }>>({});
     const { bottom } = useSafeAreaInsets();
     const [profileImage, setProfileImage] = useState<string | null>(null);
 
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+    // Fetch mentee data by email
+    const { data: menteeDataFromApi, isLoading, isError } = useMenteeByEmail(email);
 
     const menuItems = [
         { icon: 'people-outline', label: 'List of Mentors', onPress: () => console.log('List of Mentors') },
@@ -83,39 +89,74 @@ export default function MenteeProfile() {
         { icon: 'create-outline', label: 'Edit Profile', onPress: () => setIsEditing(true) },
     ];
 
-    const [menteeData, setMenteeData] = useState<MenteeData>({
-        firstName: 'John',
-        lastName: 'Ross',
-        phone: '09878564398',
-        email: 'johnross@gmail.com',
-        role: 'Pastor',
-        title: 'Mentee',
-        yearsInMinistry: '5',
-        conference: 'Oakland',
-        profileInfo: 'Lorem ipsum dolor sit amet, consectetur adipiscing eip ex ea commodo consequat. Duis',
-        phase: 'Church Empowerment',
-        phaseNumber: 2,
-        progress: 70, // Change this to test different states: 70, 100
-        isCompleted: false, // Set to false to see progress bar
-        completedOn: '20 Oct 2024',
-        hasCertificate: false, // Set to true to see "Invite as Field Mentor"
-        isFieldMentor: false,
-        fieldMentorStatus: 'not_invited', // 'invited' | 'accepted' | 'not_invited'
-        totalMentors: 5,
-        lastContacted: '5 Days Ago',
-        churches: [
-            {
-                name: 'Loma linda University Church',
-                phone: '09878564398',
-                website: 'johnross@gmail.com',
-                address: 'Loma linda University Church,CA',
-                city: 'Oakland',
-                state: 'North American',
-                zip: '00000',
-                country: 'USA',
-            },
-        ],
-    });
+    // Map API data to MenteeData format
+    const initialMenteeData = useMemo<MenteeData>(() => {
+        if (!menteeDataFromApi) {
+            return {
+                firstName: '',
+                lastName: '',
+                phone: '',
+                email: email || '',
+                role: '',
+                title: '',
+                yearsInMinistry: '',
+                conference: '',
+                profileInfo: '',
+                phase: undefined,
+                phaseNumber: undefined,
+                progress: undefined,
+                isCompleted: false,
+                completedOn: undefined,
+                hasCertificate: false,
+                isFieldMentor: false,
+                fieldMentorStatus: 'not_invited',
+                totalMentors: 0,
+                lastContacted: undefined,
+                churches: [],
+            };
+        }
+
+        return {
+            firstName: menteeDataFromApi.firstName || '',
+            lastName: menteeDataFromApi.lastName || '',
+            phone: '', // API doesn't provide phone
+            email: menteeDataFromApi.email || email || '',
+            role: menteeDataFromApi.role || 'Pastor',
+            title: '', // API doesn't provide title
+            yearsInMinistry: '', // API doesn't provide yearsInMinistry
+            conference: menteeDataFromApi.conference || '',
+            profileInfo: menteeDataFromApi.profileInfo || '',
+            phase: undefined, // API doesn't provide phase
+            phaseNumber: undefined, // API doesn't provide phaseNumber
+            progress: undefined, // API doesn't provide progress
+            isCompleted: false, // API doesn't provide isCompleted
+            completedOn: undefined, // API doesn't provide completedOn
+            hasCertificate: false, // API doesn't provide hasCertificate
+            isFieldMentor: false, // API doesn't provide isFieldMentor
+            fieldMentorStatus: 'not_invited', // API doesn't provide fieldMentorStatus
+            totalMentors: 0, // API doesn't provide totalMentors
+            lastContacted: undefined, // API doesn't provide lastContacted
+            churches: menteeDataFromApi.churchDetails?.map((church: any) => ({
+                name: church.name || '',
+                phone: church.phone || '',
+                website: church.website || '',
+                address: church.address || '',
+                city: church.city || '',
+                state: church.state || '',
+                zip: church.zip || '',
+                country: church.country || '',
+            })) || [],
+        };
+    }, [menteeDataFromApi, email]);
+
+    const [menteeData, setMenteeData] = useState<MenteeData>(initialMenteeData);
+
+    // Update mentee data when API data loads
+    useEffect(() => {
+        if (menteeDataFromApi) {
+            setMenteeData(initialMenteeData);
+        }
+    }, [menteeDataFromApi, initialMenteeData]);
 
     // Bottom Sheet Handlers
     const handleOpenMenu = useCallback(() => {
@@ -198,6 +239,50 @@ export default function MenteeProfile() {
         setMenteeData(prev => ({ ...prev, isFieldMentor: true, fieldMentorStatus: 'accepted' }));
         Alert.alert('Accepted', 'Field Mentor role accepted (mock).');
     };
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+                <TopBar
+                    userName="David Roe"
+                    showUserName={true}
+                    showNotifications={true}
+                    notifications={3}
+                    showDrawer={true}
+                    showBackButton={false}
+                />
+                <View style={[styles.header, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={{ color: '#fff', marginTop: 16 }}>Loading mentee profile...</Text>
+                </View>
+            </LinearGradient>
+        );
+    }
+
+    // Error state
+    if (isError) {
+        return (
+            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+                <TopBar
+                    userName="David Roe"
+                    showUserName={true}
+                    showNotifications={true}
+                    notifications={3}
+                    showDrawer={true}
+                    showBackButton={false}
+                />
+                <View style={[styles.header, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+                    <Text style={{ color: '#fff', marginBottom: 16 }}>Failed to load mentee profile</Text>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.actionButton}>
+                        <Text style={styles.actionButtonText}>Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </LinearGradient>
+        );
+    }
+
+    const menteeName = menteeDataFromApi ? `${menteeDataFromApi.firstName} ${menteeDataFromApi.lastName}`.trim() : 'Mentee';
 
     // Determine which button to show
     const getActionButton = () => {
@@ -293,7 +378,7 @@ export default function MenteeProfile() {
                         <Ionicons name="chevron-back" size={getIconSize(28)} color="#fff" />
                     </TouchableOpacity>
                     <View style={styles.headerTextContainer}>
-                        <Text style={styles.headerTitle}>{menteeData.firstName} {menteeData.lastName}</Text>
+                        <Text style={styles.headerTitle}>{menteeName}</Text>
                         <Text style={styles.headerBreadcrumb}>Mentee {'>'} Profile</Text>
                     </View>
                     <TouchableOpacity style={styles.menuButton} onPress={handleOpenMenu}>
@@ -323,7 +408,7 @@ export default function MenteeProfile() {
 
                         <View style={styles.profileInfo}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={styles.profileName}>{menteeData.firstName} {menteeData.lastName}</Text>
+                                <Text style={styles.profileName}>{menteeName}</Text>
                                 <View style={styles.nameBadges}>
                                     {menteeData.hasCertificate && (
                                         <Image source={icons.certificateBadge} style={[styles.nameBadgeIcon, { width: getIconSize(20), height: getIconSize(20) }]} />
@@ -542,7 +627,7 @@ export default function MenteeProfile() {
                 {/* Bottom Sheet Modal */}
                 <ActionBottomSheet
                     ref={bottomSheetModalRef}
-                    title={menteeData.firstName + ' ' + menteeData.lastName}
+                    title={menteeName}
                     subtitle={`${menteeData.totalMentors} Mentors`}
                     image={profileImage || undefined}
                     actions={menuItems}
