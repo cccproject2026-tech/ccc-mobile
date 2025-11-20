@@ -6,8 +6,10 @@ import { icons } from "@/constants/images";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -18,11 +20,18 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
+import { formatTimeSlot, useMonthlyAvailability } from "@/hooks/mentors/useMentorsAvailability";
+import { appointmentService } from "@/services/appointments.service";
+import { useAuthStore } from "@/stores";
+import { TimeSlot as APITimeSlot } from "@/types/appointment.types";
+
 interface TimeSlot {
   id: string;
   startTime: string;
   endTime: string;
   label: string;
+  apiSlot: APITimeSlot; // Reference to original API slot
 }
 
 interface MeetingOption {
@@ -39,22 +48,41 @@ const MEETING_OPTIONS: MeetingOption[] = [
   { id: 'in-person', label: 'In-Person Meeting', icon: 'people-outline' },
 ];
 
-const BASE_TIME_SLOTS: TimeSlot[] = [
-  { id: '1', startTime: '09:00', endTime: '10:00', label: '09:00 am - 10:00 am' },
-  { id: '2', startTime: '11:00', endTime: '12:00', label: '11:00 am - 12:00 pm' },
-  { id: '3', startTime: '01:00', endTime: '02:00', label: '01:00 pm - 02:00 pm' },
-  { id: '4', startTime: '03:00', endTime: '04:00', label: '03:00 pm - 04:00 pm' },
-];
-
-const AVAILABLE_DATES = [
-  '2025-10-20', '2025-10-21', '2025-10-22', '2025-10-23', '2025-10-24',
-  '2025-10-27', '2025-10-28', '2025-10-29', '2025-10-30',
-];
-
 const ScheduleMeeting = () => {
   const params = useLocalSearchParams();
   const { bottom } = useSafeAreaInsets();
   const mentorData = params.mentorData ? JSON.parse(params.mentorData as string) : null;
+  const { user } = useAuthStore();
+  const { createAppointmentAsync: createAppointment, isCreating } = useCreateAppointment({
+    onSuccess: (appointment) => {
+      console.log('✅ Appointment created successfully!', appointment);
+      setShowSuccessModal(true);
+    },
+    onError: (error) => {
+      console.error('❌ Appointment creation failed:', error);
+      Alert.alert(
+        'Booking Failed',
+        error.message || 'Failed to schedule appointment. Please try again.',
+        [{ text: 'OK' }]
+      );
+    },
+  });
+
+
+  const currentDate = new Date();
+  const [currentMonth] = useState(currentDate.getMonth() + 1);
+  const [currentYear] = useState(currentDate.getFullYear());
+
+  // Fetch monthly availability from API
+  const {
+    availability: monthlyAvailability,
+    isLoading,
+    isError
+  } = useMonthlyAvailability({
+    mentorId: mentorData?.id || null,
+    month: currentMonth,
+    year: currentYear,
+  });
 
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null);
@@ -62,28 +90,102 @@ const ScheduleMeeting = () => {
   const [showMeetingOptions, setShowMeetingOptions] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+  // Transform API availability to available dates array
+  const availableDates = useMemo(() => {
+    if (!monthlyAvailability) return [];
+    return monthlyAvailability
+      .filter(day => day.slots.length > 0)
+      .map(day => day.date);
+  }, [monthlyAvailability]);
+
+  // Get days of week that have availability for recurring pattern
+  const availableDaysOfWeek = useMemo(() => {
+    if (!monthlyAvailability) return [];
+    const daysSet = new Set(
+      monthlyAvailability
+        .filter(day => day.slots.length > 0)
+        .map(day => day.day)
+    );
+    return Array.from(daysSet);
+  }, [monthlyAvailability]);
+
+  // Transform API slots for selected date
   const getTimeSlotsForDate = useCallback((dateString: string): TimeSlot[] => {
-    if (!dateString) return [];
+    if (!dateString || !monthlyAvailability) return [];
 
-    const date = new Date(dateString);
-    const dayOfWeek = date.getDay();
+    const dayData = monthlyAvailability.find(day => day.date === dateString);
+    if (!dayData || dayData.slots.length === 0) return [];
 
-    if (dayOfWeek === 1 || dayOfWeek === 3) {
-      return BASE_TIME_SLOTS.slice(0, 2);
-    } else if (dayOfWeek === 2 || dayOfWeek === 4) {
-      return BASE_TIME_SLOTS.slice(1, 4);
-    }
-    return BASE_TIME_SLOTS;
-  }, []);
+    // ✅ This is correct - you're using the API slots directly
+    return dayData.slots.map((slot, index) => ({
+      id: slot._id || `${dateString}-${index}`,
+      startTime: `${slot.startTime} ${slot.startPeriod}`,
+      endTime: `${slot.endTime} ${slot.endPeriod}`,
+      label: formatTimeSlot(slot),
+      apiSlot: slot,  // ✅ Keep the original slot
+    }));
+  }, [monthlyAvailability]);
 
-  const timeSlots = useMemo(() => getTimeSlotsForDate(selectedDate), [selectedDate, getTimeSlotsForDate]);
+  const timeSlots = useMemo(() =>
+    getTimeSlotsForDate(selectedDate),
+    [selectedDate, getTimeSlotsForDate]
+  );
+
   const isScheduleValid = selectedDate && selectedTime;
 
-  const handleSchedule = useCallback(() => {
-    if (isScheduleValid) {
-      setShowSuccessModal(true);
+  // Reset selected time when date changes
+  useEffect(() => {
+    setSelectedTime(null);
+  }, [selectedDate]);
+
+  const handleSchedule = useCallback(async () => {
+    if (!isScheduleValid || !selectedTime || !user?.id || !mentorData?.id) {
+      return;
     }
-  }, [isScheduleValid]);
+
+    try {
+      console.log('🎯 Selected slot:', selectedTime.apiSlot);
+      console.log('📅 Selected date:', selectedDate);
+
+      const meetingDate = appointmentService.createMeetingDate(
+        selectedDate,
+        selectedTime.apiSlot
+      );
+
+      console.log('⏰ Meeting date (UTC):', meetingDate);
+      console.log('⏰ Meeting date (IST):', new Date(meetingDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+
+      const platform = appointmentService.mapPlatformToApiValue(meetingOption);
+
+      let meetingLink: string | undefined;
+      if (platform === 'zoom') {
+        meetingLink = 'https://zoom.us/j/123456789';
+      } else if (platform === 'google_meet') {
+        meetingLink = 'https://meet.google.com/abc-defg-hij';
+      } else if (platform === 'teams') {
+        meetingLink = 'https://teams.microsoft.com/l/meetup-join/...';
+      }
+
+      const appointmentPayload = appointmentService.buildCreatePayload(
+        user.id,
+        mentorData.id,
+        meetingDate,
+        platform,
+        meetingLink,
+        `Meeting with ${mentorData.name}`
+      );
+
+      console.log('📤 Appointment Payload:', appointmentPayload);
+
+      // This will trigger onCreateSuccess when successful
+      await createAppointment(appointmentPayload);
+
+      console.log('🎉 Create appointment call completed');
+    } catch (error) {
+      console.error('💥 Error in handleSchedule:', error);
+      // Error is already handled by onCreateError callback
+    }
+  }, [isScheduleValid, selectedTime, user?.id, mentorData?.id, selectedDate, meetingOption, createAppointment]);
 
   const handleSuccessModalClose = useCallback(() => {
     setShowSuccessModal(false);
@@ -123,7 +225,14 @@ const ScheduleMeeting = () => {
             style={styles.gradientBorder}
           >
             <View style={styles.avatarInner}>
-              <Image source={icons.dummyUser} style={styles.avatarImg} />
+              {mentorData?.profileImage ? (
+                <Image
+                  source={{ uri: mentorData.profileImage }}
+                  style={styles.avatarImg}
+                />
+              ) : (
+                <Image source={icons.dummyUser} style={styles.avatarImg} />
+              )}
             </View>
           </LinearGradient>
           <View style={styles.mentorDetails}>
@@ -259,6 +368,44 @@ const ScheduleMeeting = () => {
     </View>
   );
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={styles.container}
+      >
+        <TopBar role="pastor" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.loadingText}>Loading availability...</Text>
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={styles.container}
+      >
+        <TopBar role="pastor" />
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={60} color="rgba(255, 255, 255, 0.5)" />
+          <Text style={styles.errorText}>Failed to load mentor availability</Text>
+          <Text style={styles.errorSubText}>Please try again later</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
+            <Text style={styles.retryButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+  }
+
+
+
   return (
     <>
       <LinearGradient
@@ -289,31 +436,45 @@ const ScheduleMeeting = () => {
                 <View style={styles.schedulingCard}>
                   <Text style={styles.sectionTitle}>Select Available Date</Text>
 
-                  <View style={styles.calendarContainer}>
-                    <GradientCalendar
-                      selected={selectedDate}
-                      setSelected={setSelectedDate}
-                      recurringAvailability={{
-                        type: 'weekly',
-                        daysOfWeek: [1, 2, 3, 4, 5, 6],
-                      }}
-                      availableDates={AVAILABLE_DATES}
-                      showHeader={false}
-                      disablePastDates={true}
-                      markToday={true}
-                    />
-                  </View>
-
-                  {selectedDate && (
-                    <>
-                      <Text style={styles.sectionSubtitle}>Select a Time</Text>
-                      {renderTimeSlots()}
-
-                      <Text style={styles.sectionSubtitle}>
-                        Preferred Meeting Option
+                  {availableDates.length === 0 ? (
+                    <View style={styles.noAvailabilityContainer}>
+                      <Ionicons name="calendar-outline" size={48} color="rgba(255, 255, 255, 0.3)" />
+                      <Text style={styles.noAvailabilityText}>
+                        No availability for this month
                       </Text>
-                      {renderMeetingOptions()}
-                      {renderActionButtons()}
+                      <Text style={styles.noAvailabilitySubText}>
+                        Please check back later or contact the mentor
+                      </Text>
+                    </View>
+                  ) : (
+                    <>
+                      <View style={styles.calendarContainer}>
+                        <GradientCalendar
+                          selected={selectedDate}
+                          setSelected={setSelectedDate}
+                          recurringAvailability={{
+                            type: 'weekly',
+                            daysOfWeek: availableDaysOfWeek,
+                          }}
+                          availableDates={availableDates}
+                          showHeader={false}
+                          disablePastDates={true}
+                          markToday={true}
+                        />
+                      </View>
+
+                      {selectedDate && (
+                        <>
+                          <Text style={styles.sectionSubtitle}>Select a Time</Text>
+                          {renderTimeSlots()}
+
+                          <Text style={styles.sectionSubtitle}>
+                            Preferred Meeting Option
+                          </Text>
+                          {renderMeetingOptions()}
+                          {renderActionButtons()}
+                        </>
+                      )}
                     </>
                   )}
                 </View>
@@ -333,12 +494,54 @@ const ScheduleMeeting = () => {
   );
 };
 
-export default ScheduleMeeting;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  errorText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorSubText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
   scrollContainer: {
     flex: 1,
   },
@@ -401,6 +604,23 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "400",
     marginBottom: 8,
+  },
+  noAvailabilityContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  noAvailabilityText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  noAvailabilitySubText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
   },
   mentorIconContainer: {
     flexDirection: "row",
@@ -588,3 +808,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
+export default ScheduleMeeting;

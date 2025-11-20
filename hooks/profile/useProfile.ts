@@ -195,3 +195,121 @@ export const useGetAllUsers = (role?: string) => {
         gcTime: 1000 * 60 * 30, // 30 minutes
     });
 };
+
+// ============================================
+// PROFILE PICTURE UPLOAD MUTATION
+// ============================================
+export const useUploadProfilePicture = () => {
+    const queryClient = useQueryClient();
+    const { user } = useAuthStore();
+
+    return useMutation({
+        mutationFn: async (file: any) => {
+            if (!user?.id) {
+                throw new Error("User ID is required");
+            }
+
+            console.log("📤 Uploading profile picture for user:", user.id);
+            return await profileService.uploadProfilePicture(user.id, file);
+        },
+        onSuccess: async (updatedUser) => {
+            console.log("✅ Profile picture uploaded, invalidating cache...");
+
+            // Invalidate all profile queries to refetch with new picture
+            await queryClient.invalidateQueries({
+                queryKey: profileKeys.all,
+            });
+
+            console.log("✅ Cache invalidated successfully");
+        },
+        onError: (error: any) => {
+            console.error("❌ Profile picture upload failed:", error.message || error);
+        },
+    });
+};
+
+// ============================================
+// DOCUMENT MANAGEMENT HOOKS
+// ============================================
+
+// Get documents
+export const useDocuments = () => {
+    const { user } = useAuthStore();
+
+    return useQuery({
+        queryKey: ['documents', user?.id || ''],
+        queryFn: async () => {
+            if (!user?.id) throw new Error("User ID is missing");
+
+            console.log("📤 Fetching documents for:", user.id);
+            const documents = await profileService.getDocuments(user.id);
+            console.log("📥 Documents fetched:", documents);
+
+            return documents;
+        },
+        enabled: !!user?.id,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        gcTime: 1000 * 60 * 20, // 20 minutes
+        retry: 1,
+    });
+};
+
+// Upload document
+export const useUploadDocument = () => {
+    const queryClient = useQueryClient();
+    const { user } = useAuthStore();
+
+    return useMutation({
+        mutationFn: async (file: any) => {
+            if (!user?.id) {
+                throw new Error("User ID is required");
+            }
+
+            console.log("📤 Uploading document...");
+            return await profileService.uploadDocument(user.id, file);
+        },
+        onSuccess: async (newDocument) => {
+            console.log("✅ Document uploaded successfully, invalidating cache...");
+
+            // Invalidate documents query to refetch
+            await queryClient.invalidateQueries({
+                queryKey: ['documents', user?.id || ''],
+            });
+
+            console.log("✅ Documents cache invalidated");
+        },
+        onError: (error: any) => {
+            console.error("❌ Document upload failed:", error.message || error);
+        },
+    });
+};
+
+// Delete document
+export const useDeleteDocument = () => {
+    const queryClient = useQueryClient();
+    const { user } = useAuthStore();
+
+    return useMutation({
+        mutationFn: async (documentUrl: string) => {
+            if (!user?.id) {
+                throw new Error("User ID is required");
+            }
+
+            console.log("📤 Deleting document...");
+            return await profileService.deleteDocument(user.id, documentUrl);
+        },
+        onSuccess: async () => {
+            console.log("✅ Document deleted successfully, invalidating cache...");
+
+            // Invalidate documents query to refetch
+            await queryClient.invalidateQueries({
+                queryKey: ['documents', user?.id || ''],
+            });
+
+            console.log("✅ Documents cache invalidated");
+        },
+        onError: (error: any) => {
+            console.error("❌ Document delete failed:", error.message || error);
+        },
+    });
+};

@@ -703,7 +703,9 @@ import ScheduleMeetingBottomSheet, { Mentor } from '@/components/director/Schedu
 import TopBar from '@/components/director/TopBar';
 import { Colors } from '@/constants/Colors';
 import { useAssessment } from '@/hooks/assessments';
+import { useFetchAnswers } from '@/hooks/assessments/useFetchAnswers';
 import { useSubmitAssessmentAnswers, useSubmitPreSurvey } from '@/hooks/assessments/useSubmitAnswers';
+import { transformSubmittedAnswersToStore } from '@/lib/assessments/helpers';
 import { mapApiToFrontend } from '@/lib/assessments/mappers';
 import { useAuthStore } from '@/stores';
 import { useAssessmentStore } from '@/stores/assessment.store';
@@ -712,7 +714,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -726,7 +728,8 @@ import {
 export default function AnswerQuestionPage() {
     const { assessmentId, viewMode, hasPreSurvey } = useLocalSearchParams();
     const router = useRouter();
-    const { user } = useAuthStore()
+    const { user } = useAuthStore();
+
     // Fetch assessment data from API
     const { data, isLoading, error } = useAssessment(assessmentId as string);
     const assessment = useMemo(() => {
@@ -734,8 +737,21 @@ export default function AnswerQuestionPage() {
         return mapApiToFrontend(data as ApiAssessment);
     }, [data]);
 
+    const isViewMode = viewMode === 'true';
+
+    // ONLY fetch submitted answers in VIEW MODE (not for regular editing)
+    const {
+        data: submittedAnswers,
+        isLoading: isLoadingSubmitted
+    } = useFetchAnswers(
+        assessmentId as string,
+        user?.id,
+        isViewMode
+    );
+
     // Get draft from store
     const getDraft = useAssessmentStore((state) => state.getDraft);
+    const setDraft = useAssessmentStore((state) => state.saveDraft);
     const previousResponse = getDraft(assessmentId as string);
 
     // Submission hooks
@@ -746,18 +762,40 @@ export default function AnswerQuestionPage() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
-    // Track if pre-survey is completed
+    // Load submitted answers into store (ONLY for view mode)
+    useEffect(() => {
+        if (isViewMode && submittedAnswers && assessment && data && user?.id) {
+            const transformed = transformSubmittedAnswersToStore(
+                submittedAnswers,
+                assessment,
+                data
+            );
+
+            setDraft(assessmentId as string, {
+                assessmentId: assessmentId as string,
+                assessmentType: assessment.type,
+                assessmentTitle: assessment.title,
+                preSurveyAnswers: transformed.preSurveyAnswers,
+                sectionAnswers: transformed.sectionAnswers,
+                status: 'Submitted',
+                currentSectionIndex: 0,
+            });
+        }
+    }, [isViewMode, submittedAnswers, assessment, data, assessmentId, user?.id, setDraft]);
+
+    // Track if pre-survey is completed - SIMPLE logic like before
     const [preSurveyCompleted, setPreSurveyCompleted] = useState(
         hasPreSurvey !== 'true' || !!previousResponse?.preSurveyAnswers
     );
 
     const scheduleMeetingBottomSheetRef = useRef<BottomSheetModal>(null);
 
-    const isViewMode = viewMode === 'true';
     const showPreSurvey = hasPreSurvey === 'true' && !preSurveyCompleted && !isViewMode;
 
     // Check if pre-survey has been submitted
-    const hasPreSurveyAnswers = !!previousResponse?.preSurveyAnswers &&
+    const hasPreSurveyAnswers = isViewMode
+        ? !!submittedAnswers?.preSurveyAnswers
+        : !!previousResponse?.preSurveyAnswers &&
         Object.keys(previousResponse.preSurveyAnswers).length > 0;
 
     const mockMentors: Mentor[] = [
@@ -776,22 +814,19 @@ export default function AnswerQuestionPage() {
         }
 
         try {
-            // Transform pre-survey answers to API format
             const payload = {
-                userId: '68ef63c4ace23a03ab8b08d5', // TODO: Get from auth context
+                userId: user?.id as string,
                 preSurveyAnswers: assessment.preSurvey.map(question => ({
                     questionText: question.text,
                     answer: preSurveyAnswers[question.id] || ''
                 }))
             };
 
-            // Submit pre-survey
             await submitPreSurvey.mutateAsync({
                 assessmentId: assessmentId as string,
                 payload
             });
 
-            // Mark pre-survey as completed
             setPreSurveyCompleted(true);
             Alert.alert('Success', 'Pre-survey submitted successfully!');
         } catch (error) {
@@ -811,35 +846,34 @@ export default function AnswerQuestionPage() {
         }
 
         try {
-            // Transform section answers to API format
             const answers = Object.entries(sectionAnswers).map(([sectionIndex, layerAnswers]) => {
                 const section = data.sections[parseInt(sectionIndex)];
 
-                const layers = Object.entries(layerAnswers).map(([layerId, selectedChoices]) => ({
-                    layerId,
-                    selectedChoice: Array.isArray(selectedChoices)
-                        ? selectedChoices[0] // If multiple, take first (adjust based on backend requirements)
-                        : selectedChoices as string
-                }));
+                const layers = Object.entries(layerAnswers)
+                    .filter(([_, value]) => value)
+                    .map(([layerId, selectedChoices]) => ({
+                        layerId,
+                        selectedChoice: Array.isArray(selectedChoices)
+                            ? selectedChoices[0]
+                            : String(selectedChoices)
+                    }));
 
                 return {
                     sectionId: section._id,
                     layers
                 };
-            });
+            }).filter(section => section.layers.length > 0);
 
             const payload = {
-                userId: user?.id as string, // TODO: Get from auth context
+                userId: user?.id as string,
                 answers
             };
 
-            // Submit assessment answers
             await submitAssessmentAnswers.mutateAsync({
                 assessmentId: assessmentId as string,
                 payload
             });
 
-            // Show modal after successful submission
             setShowModal(true);
         } catch (error) {
             console.error('Failed to submit assessment:', error);
@@ -882,14 +916,15 @@ export default function AnswerQuestionPage() {
     };
 
     // Loading state
-    if (isLoading || submitPreSurvey.isPending || submitAssessmentAnswers.isPending) {
+    if (isLoading || (isViewMode && isLoadingSubmitted) || submitPreSurvey.isPending || submitAssessmentAnswers.isPending) {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                 <ActivityIndicator size="large" color="#fff" />
                 <Text style={{ color: '#fff', marginTop: 16 }}>
                     {submitPreSurvey.isPending ? 'Submitting pre-survey...' :
                         submitAssessmentAnswers.isPending ? 'Submitting assessment...' :
-                            'Loading assessment...'}
+                            isLoadingSubmitted ? 'Loading submitted answers...' :
+                                'Loading assessment...'}
                 </Text>
             </LinearGradient>
         );
@@ -930,6 +965,9 @@ export default function AnswerQuestionPage() {
                     assessmentId={assessmentId as string}
                     isViewMode={isViewMode}
                     onSubmit={handleAssessmentSubmit}
+                    onClose={() => {
+                        router.back();
+                    }}
                 />
             )}
 
@@ -978,54 +1016,13 @@ export default function AnswerQuestionPage() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.3)',
-    },
-    modalContent: {
-        backgroundColor: 'white',
-        borderRadius: 16,
-        padding: 32,
-        alignItems: 'center',
-        elevation: 2,
-        margin: 20,
-        maxWidth: 400,
-    },
-    modalText: {
-        textAlign: 'center',
-        fontSize: 18,
-        marginBottom: 24,
-        color: '#176192',
-        lineHeight: 24,
-    },
-    modalButtons: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    modalButton: {
-        paddingHorizontal: 24,
-        paddingVertical: 16,
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 4,
-    },
-    skipButton: {
-        backgroundColor: '#6B7280',
-    },
-    scheduleButton: {
-        backgroundColor: '#223A74',
-    },
-    modalButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+    container: { flex: 1 },
+    modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
+    modalContent: { backgroundColor: 'white', borderRadius: 16, padding: 32, alignItems: 'center', elevation: 2, margin: 20, maxWidth: 400 },
+    modalText: { textAlign: 'center', fontSize: 18, marginBottom: 24, color: '#176192', lineHeight: 24 },
+    modalButtons: { flexDirection: 'row', gap: 12 },
+    modalButton: { paddingHorizontal: 24, paddingVertical: 16, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
+    skipButton: { backgroundColor: '#6B7280' },
+    scheduleButton: { backgroundColor: '#223A74' },
+    modalButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

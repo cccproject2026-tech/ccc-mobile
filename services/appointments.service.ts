@@ -1,8 +1,13 @@
 import {
     Appointment,
+    AppointmentPlatform,
     AppointmentResponse,
     CreateAppointmentPayload,
+    GetMonthlyAvailabilityApiResponse,
+    GetWeeklyAvailabilityApiResponse,
+    MonthlyAvailabilityDay,
     UpdateAppointmentPayload,
+    WeeklyAvailability,
 } from '../types/appointment.types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
@@ -43,6 +48,30 @@ export const appointmentService = {
     },
 
     /**
+     * Fetch weekly appointments for a mentor
+    */
+    getWeeklyAvailability: async (mentorId: string): Promise<WeeklyAvailability> => {
+        const response = await apiClient.get<GetWeeklyAvailabilityApiResponse>(
+            ENDPOINTS.APPOINTMENTS.GET_WEEKLY_AVAILABILITY(mentorId)
+        );
+        return response.data.data;
+    },
+
+    /**
+     * Fetch monthly appointments for a mentor
+    */
+    getMonthlyAvailability: async (
+        mentorId: string,
+        month: number,
+        year: number
+    ): Promise<MonthlyAvailabilityDay[]> => {
+        const response = await apiClient.get<GetMonthlyAvailabilityApiResponse>(
+            ENDPOINTS.APPOINTMENTS.GET_MONTHLY_AVAILABILITY(mentorId, month, year)
+        );
+        return response.data.data;
+    },
+
+    /**
      * Create a new appointment
      */
     createAppointment: async (
@@ -70,6 +99,7 @@ export const appointmentService = {
         payload: UpdateAppointmentPayload
     ): Promise<Appointment> => {
         try {
+            console.log('Updating appointment ID:', appointmentId, 'with payload:', payload);
             const response = await apiClient.patch<AppointmentResponse>(
                 ENDPOINTS.APPOINTMENTS.UPDATE(appointmentId),
                 payload
@@ -84,13 +114,39 @@ export const appointmentService = {
     },
 
     /**
+     * Reschedule an existing appointment
+     */
+    rescheduleAppointment: async (
+        appointmentId: string,
+        payload: {
+            newDate: string;
+            startTime: string;
+            startPeriod: 'AM' | 'PM';
+        }
+    ): Promise<Appointment> => {
+        try {
+            const response = await apiClient.patch<AppointmentResponse>(
+                ENDPOINTS.APPOINTMENTS.RESCHEDULE(appointmentId),
+                payload
+            );
+            return Array.isArray(response.data.data)
+                ? response.data.data[0]
+                : response.data.data;
+        } catch (error) {
+            console.error('Error rescheduling appointment:', error);
+            throw error;
+        }
+    },
+
+
+    /**
      * Build appointment payload with validation
      */
     buildCreatePayload: (
         userId: string,
         mentorId: string,
         meetingDate: string,
-        platform: string,
+        platform: AppointmentPlatform,
         meetingLink?: string,
         notes?: string
     ): CreateAppointmentPayload => {
@@ -98,10 +154,53 @@ export const appointmentService = {
             userId,
             mentorId,
             meetingDate,
-            platform: platform as any,
+            platform,
             ...(meetingLink && { meetingLink }),
             ...(notes && { notes }),
         };
+    },
+
+    /**
+     * Convert date and time slot to ISO string
+     */
+    createMeetingDate: (
+        dateString: string,
+        timeSlot: { startTime: string; startPeriod: 'AM' | 'PM' }
+    ): string => {
+        // Parse date string (format: "2025-11-22")
+        const [year, month, day] = dateString.split('-').map(Number);
+
+        // Convert to 24-hour format
+        let hour = parseInt(timeSlot.startTime, 10);
+        if (timeSlot.startPeriod === 'PM' && hour !== 12) {
+            hour += 12;
+        } else if (timeSlot.startPeriod === 'AM' && hour === 12) {
+            hour = 0;
+        }
+
+        // Create date in IST timezone (treating it as UTC first)
+        // For 11 AM IST: we want 05:30 UTC
+        const istDate = new Date(Date.UTC(year, month - 1, day, hour, 0, 0, 0));
+
+        // IST is UTC+5:30, so subtract 5.5 hours to get UTC
+        const utcTimestamp = istDate.getTime() - (5.5 * 60 * 60 * 1000);
+
+        return new Date(utcTimestamp).toISOString();
+    },
+
+
+    /**
+     * Map UI platform labels to API platform values
+     */
+    mapPlatformToApiValue: (platformLabel: string): AppointmentPlatform => {
+        const platformMap: Record<string, AppointmentPlatform> = {
+            'Zoom': 'zoom',
+            'Google Meet': 'google_meet',
+            'Microsoft Teams': 'teams',
+            'Phone Call': 'phone',
+            'In-Person Meeting': 'in_person',
+        };
+        return platformMap[platformLabel] || 'zoom';
     },
 
     /**

@@ -52,7 +52,7 @@ const mapInterestToFormData = (interest: InterestItem) => {
         zipCode2: church2.zipCode || '',
         country2: church2.country || '',
         title: interest.title || '',
-        yearsInMinistry: interest.yearsInMinistry ? `Years in Ministry : ${interest.yearsInMinistry}` : '',
+        yearsInMinistry: interest.yearsInMinistry ? `${interest.yearsInMinistry}` : '',
         conference: interest.conference || '',
         serviceProjects: interest.currentCommunityProjects || '',
         interests: interest.interests?.join('\n\n') || '',
@@ -64,16 +64,16 @@ export default function InterestFormScreen() {
     const router = useRouter();
     const { top, bottom } = useSafeAreaInsets();
     const { interestId } = useLocalSearchParams<{ interestId: string }>();
-    
+
     // Fetch all interests
     const { data: interestsData, isLoading } = useInterests();
-    
-    // Find the specific interest by ID
-    const interest = useMemo(() => {
-        if (!interestsData || !interestId) return null;
-        return interestsData.find((item) => item.id === interestId);
+
+    // Find the specific interest by ID (using _id from backend)
+    const interest: InterestItem | undefined = useMemo(() => {
+        if (!interestsData || !interestId) return undefined;
+        return interestsData.find((item) => item._id === interestId);
     }, [interestsData, interestId]);
-    
+
     // Map interest to form data
     const formData = useMemo(() => {
         if (!interest) {
@@ -109,14 +109,14 @@ export default function InterestFormScreen() {
         }
         return mapInterestToFormData(interest);
     }, [interest]);
-    
+
     // Get user name and role for display
     const userName = useMemo(() => {
         if (!interest) return 'Unknown';
         const name = [interest.firstName, interest.lastName].filter(Boolean).join(' ');
         return name || 'Unknown';
     }, [interest]);
-    
+
     const userRole = interest?.title || 'N/A';
 
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -126,15 +126,15 @@ export default function InterestFormScreen() {
     const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateInterestStatus();
 
     const handleReject = () => setShowRejectModal(true);
-    
+
     const handleAccept = () => {
-        if (!interest?.id) {
+        if (!interest?._id) {
             Alert.alert('Error', 'Interest ID not found');
             return;
         }
 
         updateStatus(
-            { interestId: interest.id, status: 'accepted' },
+            { interestId: interest._id, status: 'accepted' },
             {
                 onSuccess: () => {
                     Alert.alert('Success', 'Interest request accepted successfully', [
@@ -157,15 +157,15 @@ export default function InterestFormScreen() {
     };
 
     const handleAddToPending = () => router.back();
-    
+
     const handleConfirmReject = () => {
-        if (!interest?.id) {
+        if (!interest?._id) {
             Alert.alert('Error', 'Interest ID not found');
             return;
         }
 
         updateStatus(
-            { interestId: interest.id, status: 'rejected' },
+            { interestId: interest._id, status: 'rejected' },
             {
                 onSuccess: () => {
                     setShowRejectModal(false);
@@ -211,7 +211,6 @@ export default function InterestFormScreen() {
                         </Pressable>
                     </View>
 
-
                     {/* Loading State */}
                     {isLoading ? (
                         <View style={{ padding: 40, alignItems: 'center' }}>
@@ -220,7 +219,9 @@ export default function InterestFormScreen() {
                         </View>
                     ) : !interest ? (
                         <View style={{ padding: 40, alignItems: 'center' }}>
-                            <Text style={{ color: '#fff', textAlign: 'center' }}>Interest not found</Text>
+                            <Text style={{ color: '#fff', textAlign: 'center', fontSize: 16 }}>
+                                Interest not found
+                            </Text>
                             <Pressable
                                 onPress={() => router.back()}
                                 style={{
@@ -236,274 +237,277 @@ export default function InterestFormScreen() {
                         </View>
                     ) : (
                         <>
-                    {/* User Info Card */}
-                    <View style={styles.userCard}>
-                        <View style={styles.userCardTop}>
-                            <View style={styles.avatarContainer}>
-                                <Ionicons name="person-outline" size={Platform.OS === 'android' ? 24 : 28} color="#fff" />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.userName}>{userName}</Text>
-                                <Text style={styles.userRole}>{userRole}</Text>
-                            </View>
-                        </View>
-
-                        {/* Contact Icons */}
-                        <View style={styles.contactIcons}>
-                            <TouchableOpacity 
-                                style={styles.iconButton}
-                                onPress={() => {
-                                    if (interest?.phoneNumber) {
-                                        // Open phone dialer
-                                        const phoneUrl = `tel:${interest.phoneNumber.replace(/[^0-9+]/g, '')}`;
-                                        // Linking.openURL(phoneUrl); // Uncomment if Linking is imported
-                                        console.log('Call:', interest.phoneNumber);
-                                    }
-                                }}
-                            >
-                                <Ionicons name="call-outline" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={styles.iconButton}
-                                onPress={() => console.log('Chat:', interest?.email)}
-                            >
-                                <Ionicons name="chatbubble-outline" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={styles.iconButton}
-                                onPress={() => {
-                                    if (interest?.email) {
-                                        // Open email client
-                                        const emailUrl = `mailto:${interest.email}`;
-                                        // Linking.openURL(emailUrl); // Uncomment if Linking is imported
-                                        console.log('Email:', interest.email);
-                                    }
-                                }}
-                            >
-                                <Ionicons name="mail-outline" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={styles.iconButton}
-                                onPress={() => {
-                                    if (interest?.phoneNumber) {
-                                        // Open WhatsApp
-                                        const phone = interest.phoneNumber.replace(/[^0-9+]/g, '');
-                                        const whatsappUrl = `https://wa.me/${phone}`;
-                                        // Linking.openURL(whatsappUrl); // Uncomment if Linking is imported
-                                        console.log('WhatsApp:', interest.phoneNumber);
-                                    }
-                                }}
-                            >
-                                <Ionicons name="logo-whatsapp" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* Personal Information */}
-                    <View style={{
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.3)',
-                        borderRadius: Platform.OS === 'android' ? 16 : 20,
-                        marginHorizontal: Platform.OS === 'android' ? 12 : 16,
-                        paddingVertical: Platform.OS === 'android' ? 12 : 16,
-                    }}>
-
-                        <View style={styles.sectionBorder}>
-                            <View style={styles.section}>
-                                <Text style={styles.sectionTitle}>Personal Information</Text>
-
-                                <View style={styles.row}>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>First Name</Text>
-                                        <Text style={styles.fieldValue}>{formData.firstName}</Text>
+                            {/* User Info Card */}
+                            <View style={styles.userCard}>
+                                <View style={styles.userCardTop}>
+                                    <View style={styles.avatarContainer}>
+                                        <Ionicons name="person-outline" size={Platform.OS === 'android' ? 24 : 28} color="#fff" />
                                     </View>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Last Name</Text>
-                                        <Text style={styles.fieldValue}>{formData.lastName}</Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.userName}>{userName}</Text>
+                                        <Text style={styles.userRole}>{userRole}</Text>
                                     </View>
                                 </View>
 
-                                <View style={styles.row}>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Phone Number</Text>
-                                        <Text style={styles.fieldValue}>{formData.phoneNumber}</Text>
-                                    </View>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Email</Text>
-                                        <Text style={styles.fieldValue}>{formData.email}</Text>
-                                    </View>
+                                {/* Contact Icons */}
+                                <View style={styles.contactIcons}>
+                                    <TouchableOpacity
+                                        style={styles.iconButton}
+                                        onPress={() => {
+                                            if (interest?.phoneNumber) {
+                                                // Open phone dialer
+                                                const phoneUrl = `tel:${interest.phoneNumber.replace(/[^0-9+]/g, '')}`;
+                                                // Linking.openURL(phoneUrl); // Uncomment if Linking is imported
+                                                console.log('Call:', interest.phoneNumber);
+                                            }
+                                        }}
+                                    >
+                                        <Ionicons name="call-outline" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.iconButton}
+                                        onPress={() => console.log('Chat:', interest?.email)}
+                                    >
+                                        <Ionicons name="chatbubble-outline" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.iconButton}
+                                        onPress={() => {
+                                            if (interest?.email) {
+                                                // Open email client
+                                                const emailUrl = `mailto:${interest.email}`;
+                                                // Linking.openURL(emailUrl); // Uncomment if Linking is imported
+                                                console.log('Email:', interest.email);
+                                            }
+                                        }}
+                                    >
+                                        <Ionicons name="mail-outline" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.iconButton}
+                                        onPress={() => {
+                                            if (interest?.phoneNumber) {
+                                                // Open WhatsApp
+                                                const phone = interest.phoneNumber.replace(/[^0-9+]/g, '');
+                                                const whatsappUrl = `https://wa.me/${phone}`;
+                                                // Linking.openURL(whatsappUrl); // Uncomment if Linking is imported
+                                                console.log('WhatsApp:', interest.phoneNumber);
+                                            }
+                                        }}
+                                    >
+                                        <Ionicons name="logo-whatsapp" size={Platform.OS === 'android' ? 20 : 22} color="#fff" />
+                                    </TouchableOpacity>
                                 </View>
                             </View>
-                        </View>
-                        {/* Current Church -1 Information */}
-                        <View style={styles.sectionBorder}>
 
-                            <View style={styles.section}>
-                                <Text style={styles.sectionTitle}>Current Church -1 Information</Text>
+                            {/* Personal Information */}
+                            <View style={{
+                                borderWidth: 1,
+                                borderColor: 'rgba(255,255,255,0.3)',
+                                borderRadius: Platform.OS === 'android' ? 16 : 20,
+                                marginHorizontal: Platform.OS === 'android' ? 12 : 16,
+                                paddingVertical: Platform.OS === 'android' ? 12 : 16,
+                            }}>
 
-                                <View style={[styles.input, styles.readOnlyField]}>
-                                    <Text style={styles.fieldLabel}>Church Name</Text>
-                                    <Text style={styles.fieldValue}>{formData.churchName}</Text>
+                                <View style={styles.sectionBorder}>
+                                    <View style={styles.section}>
+                                        <Text style={styles.sectionTitle}>Personal Information</Text>
+
+                                        <View style={styles.row}>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>First Name</Text>
+                                                <Text style={styles.fieldValue}>{formData.firstName || 'N/A'}</Text>
+                                            </View>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Last Name</Text>
+                                                <Text style={styles.fieldValue}>{formData.lastName || 'N/A'}</Text>
+                                            </View>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Phone Number</Text>
+                                                <Text style={styles.fieldValue}>{formData.phoneNumber || 'N/A'}</Text>
+                                            </View>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Email</Text>
+                                                <Text style={styles.fieldValue}>{formData.email || 'N/A'}</Text>
+                                            </View>
+                                        </View>
+                                    </View>
                                 </View>
 
-                                <View style={styles.row}>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Church Phone</Text>
-                                        <Text style={styles.fieldValue}>{formData.churchPhone}</Text>
-                                    </View>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Church Website</Text>
-                                        <Text style={styles.fieldValue}>{formData.churchWebsite}</Text>
+                                {/* Current Church -1 Information */}
+                                <View style={styles.sectionBorder}>
+                                    <View style={styles.section}>
+                                        <Text style={styles.sectionTitle}>Current Church -1 Information</Text>
+
+                                        <View style={[styles.input, styles.readOnlyField]}>
+                                            <Text style={styles.fieldLabel}>Church Name</Text>
+                                            <Text style={styles.fieldValue}>{formData.churchName || 'N/A'}</Text>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Church Phone</Text>
+                                                <Text style={styles.fieldValue}>{formData.churchPhone || 'N/A'}</Text>
+                                            </View>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Church Website</Text>
+                                                <Text style={styles.fieldValue}>{formData.churchWebsite || 'N/A'}</Text>
+                                            </View>
+                                        </View>
+
+                                        <View style={[styles.input, styles.readOnlyField]}>
+                                            <Text style={styles.fieldLabel}>Church Address</Text>
+                                            <Text style={styles.fieldValue}>{formData.churchAddress || 'N/A'}</Text>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>City</Text>
+                                                <Text style={styles.fieldValue}>{formData.city || 'N/A'}</Text>
+                                            </View>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>State</Text>
+                                                <Text style={styles.fieldValue}>{formData.state || 'N/A'}</Text>
+                                            </View>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Zip Code</Text>
+                                                <Text style={styles.fieldValue}>{formData.zipCode || 'N/A'}</Text>
+                                            </View>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Country</Text>
+                                                <Text style={styles.fieldValue}>{formData.country || 'N/A'}</Text>
+                                            </View>
+                                        </View>
                                     </View>
                                 </View>
 
-                                <View style={[styles.input, styles.readOnlyField]}>
-                                    <Text style={styles.fieldLabel}>Church Address</Text>
-                                    <Text style={styles.fieldValue}>{formData.churchAddress}</Text>
-                                </View>
+                                {/* Current Church -2 Information */}
+                                {formData.church2Name && (
+                                    <View style={styles.sectionBorder}>
+                                        <View style={styles.section}>
+                                            <Text style={styles.sectionTitle}>Current Church -2 Information</Text>
 
-                                <View style={styles.row}>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>City</Text>
-                                        <Text style={styles.fieldValue}>{formData.city}</Text>
-                                    </View>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>State</Text>
-                                        <Text style={styles.fieldValue}>{formData.state}</Text>
-                                    </View>
-                                </View>
+                                            <View style={[styles.input, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Current Church</Text>
+                                                <Text style={styles.fieldValue}>{formData.church2Name || 'N/A'}</Text>
+                                            </View>
 
-                                <View style={styles.row}>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Zip Code</Text>
-                                        <Text style={styles.fieldValue}>{formData.zipCode}</Text>
+                                            <View style={styles.row}>
+                                                <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                    <Text style={styles.fieldLabel}>Church Phone</Text>
+                                                    <Text style={styles.fieldValue}>{formData.church2Phone || 'N/A'}</Text>
+                                                </View>
+                                                <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                    <Text style={styles.fieldLabel}>Church Website</Text>
+                                                    <Text style={styles.fieldValue}>{formData.church2Website || 'N/A'}</Text>
+                                                </View>
+                                            </View>
+
+                                            <View style={[styles.input, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Church Address</Text>
+                                                <Text style={styles.fieldValue}>{formData.church2Address || 'N/A'}</Text>
+                                            </View>
+
+                                            <View style={styles.row}>
+                                                <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                    <Text style={styles.fieldLabel}>City</Text>
+                                                    <Text style={styles.fieldValue}>{formData.city2 || 'N/A'}</Text>
+                                                </View>
+                                                <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                    <Text style={styles.fieldLabel}>State</Text>
+                                                    <Text style={styles.fieldValue}>{formData.state2 || 'N/A'}</Text>
+                                                </View>
+                                            </View>
+
+                                            <View style={styles.row}>
+                                                <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                    <Text style={styles.fieldLabel}>Zip Code</Text>
+                                                    <Text style={styles.fieldValue}>{formData.zipCode2 || 'N/A'}</Text>
+                                                </View>
+                                                <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                    <Text style={styles.fieldLabel}>Country</Text>
+                                                    <Text style={styles.fieldValue}>{formData.country2 || 'N/A'}</Text>
+                                                </View>
+                                            </View>
+                                        </View>
                                     </View>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Country</Text>
-                                        <Text style={styles.fieldValue}>{formData.country}</Text>
+                                )}
+
+                                {/* Other Information */}
+                                <View>
+                                    <View style={styles.section}>
+                                        <Text style={styles.sectionTitle}>Other Information</Text>
+
+                                        <View style={[styles.input, styles.readOnlyField]}>
+                                            <Text style={styles.fieldLabel}>Title</Text>
+                                            <Text style={styles.fieldValue}>{formData.title || 'N/A'}</Text>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Years in Ministry</Text>
+                                                <Text style={styles.fieldValue}>{formData.yearsInMinistry || 'N/A'}</Text>
+                                            </View>
+                                            <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
+                                                <Text style={styles.fieldLabel}>Conference</Text>
+                                                <Text style={styles.fieldValue}>{formData.conference || 'N/A'}</Text>
+                                            </View>
+                                        </View>
+
+                                        <View style={[styles.input, styles.readOnlyField]}>
+                                            <Text style={styles.fieldLabel}>Current Community Service Projects</Text>
+                                            <Text style={styles.fieldValue}>{formData.serviceProjects || 'N/A'}</Text>
+                                        </View>
+
+                                        <View style={[styles.input, styles.textArea, styles.readOnlyField]}>
+                                            <Text style={styles.fieldLabel}>Interests</Text>
+                                            <Text style={styles.fieldValue}>{formData.interests || 'N/A'}</Text>
+                                        </View>
+
+                                        <View style={[styles.input, styles.textArea, styles.readOnlyField]}>
+                                            <Text style={styles.fieldLabel}>Comments</Text>
+                                            <Text style={styles.fieldValue}>{formData.comments || 'N/A'}</Text>
+                                        </View>
                                     </View>
                                 </View>
                             </View>
-                        </View>
-                        {/* Current Church -2 Information */}
-                        <View style={styles.sectionBorder}>
 
-                            <View style={styles.section}>
-                                <Text style={styles.sectionTitle}>Current Church -2 Information</Text>
-
-                                <View style={[styles.input, styles.readOnlyField]}>
-                                    <Text style={styles.fieldLabel}>Current Church</Text>
-                                    <Text style={styles.fieldValue}>{formData.church2Name}</Text>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Church Phone</Text>
-                                        <Text style={styles.fieldValue}>{formData.church2Phone}</Text>
-                                    </View>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Church Website</Text>
-                                        <Text style={styles.fieldValue}>{formData.church2Website}</Text>
-                                    </View>
-                                </View>
-
-                                <View style={[styles.input, styles.readOnlyField]}>
-                                    <Text style={styles.fieldLabel}>Church Address</Text>
-                                    <Text style={styles.fieldValue}>{formData.church2Address}</Text>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>City</Text>
-                                        <Text style={styles.fieldValue}>{formData.city2}</Text>
-                                    </View>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>State</Text>
-                                        <Text style={styles.fieldValue}>{formData.state2}</Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Zip Code</Text>
-                                        <Text style={styles.fieldValue}>{formData.zipCode2}</Text>
-                                    </View>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Country</Text>
-                                        <Text style={styles.fieldValue}>{formData.country2}</Text>
-                                    </View>
-                                </View>
+                            {/* Action Buttons */}
+                            <View style={styles.actionButtons}>
+                                <Pressable
+                                    style={[styles.rejectButton, isUpdatingStatus && styles.buttonDisabled]}
+                                    onPress={handleReject}
+                                    disabled={isUpdatingStatus}
+                                >
+                                    <Text style={styles.buttonText}>REJECT</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[styles.nextButton, isUpdatingStatus && styles.buttonDisabled]}
+                                    onPress={handleNext}
+                                    disabled={isUpdatingStatus}
+                                >
+                                    {isUpdatingStatus ? (
+                                        <ActivityIndicator color="#fff" size="small" />
+                                    ) : (
+                                        <Text style={[styles.buttonText, { color: '#fff' }]}>ACCEPT</Text>
+                                    )}
+                                </Pressable>
                             </View>
-                        </View>
-                        {/* Other Information */}
-                        <View>
 
-                            <View style={styles.section}>
-                                <Text style={styles.sectionTitle}>Other Information</Text>
-
-                                <View style={[styles.input, styles.readOnlyField]}>
-                                    <Text style={styles.fieldLabel}>Title</Text>
-                                    <Text style={styles.fieldValue}>{formData.title}</Text>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Years in Ministry</Text>
-                                        <Text style={styles.fieldValue}>{formData.yearsInMinistry}</Text>
-                                    </View>
-                                    <View style={[styles.input, styles.halfInput, styles.readOnlyField]}>
-                                        <Text style={styles.fieldLabel}>Conference</Text>
-                                        <Text style={styles.fieldValue}>{formData.conference}</Text>
-                                    </View>
-                                </View>
-
-                                <View style={[styles.input, styles.readOnlyField]}>
-                                    <Text style={styles.fieldLabel}>Current Community Service Projects</Text>
-                                    <Text style={styles.fieldValue}>{formData.serviceProjects}</Text>
-                                </View>
-
-                                <View style={[styles.input, styles.textArea, styles.readOnlyField]}>
-                                    <Text style={styles.fieldLabel}>Interests</Text>
-                                    <Text style={styles.fieldValue}>{formData.interests}</Text>
-                                </View>
-
-                                <View style={[styles.input, styles.textArea, styles.readOnlyField]}>
-                                    <Text style={styles.fieldLabel}>Comments</Text>
-                                    <Text style={styles.fieldValue}>{formData.comments}</Text>
-                                </View>
+                            <View style={styles.pendingButtonContainer}>
+                                <Pressable style={styles.pendingButton} onPress={handleAddToPending}>
+                                    <Ionicons name="arrow-back" size={Platform.OS === 'android' ? 18 : 20} color="#fff" />
+                                    <Text style={styles.pendingButtonText}>Add to Pending</Text>
+                                </Pressable>
                             </View>
-                        </View>
-                    </View>
-
-                    {/* Action Buttons */}
-                    <View style={styles.actionButtons}>
-                        <Pressable 
-                            style={[styles.rejectButton, isUpdatingStatus && styles.buttonDisabled]} 
-                            onPress={handleReject}
-                            disabled={isUpdatingStatus}
-                        >
-                            <Text style={styles.buttonText}>REJECT</Text>
-                        </Pressable>
-                        <Pressable 
-                            style={[styles.nextButton, isUpdatingStatus && styles.buttonDisabled]} 
-                            onPress={handleNext}
-                            disabled={isUpdatingStatus}
-                        >
-                            <Text style={[styles.buttonText, { color: '#fff' }]}>
-                                {isUpdatingStatus ? 'PROCESSING...' : 'ACCEPT'}
-                            </Text>
-                        </Pressable>
-                    </View>
-
-                    <View style={styles.pendingButtonContainer}>
-                        <Pressable style={styles.pendingButton} onPress={handleAddToPending}>
-                            <Ionicons name="arrow-back" size={Platform.OS === 'android' ? 18 : 20} color="#fff" />
-                            <Text style={styles.pendingButtonText}>Add to Pending</Text>
-                        </Pressable>
-                    </View>
                         </>
                     )}
-
                 </ScrollView>
             </KeyboardAvoidingView>
 
@@ -512,6 +516,7 @@ export default function InterestFormScreen() {
                 visible={showRejectModal}
                 onCancel={() => setShowRejectModal(false)}
                 onConfirmReject={handleConfirmReject}
+            // isLoading={isUpdatingStatus}
             />
 
             <InterestRejectedModal

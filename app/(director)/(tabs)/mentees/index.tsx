@@ -1,12 +1,13 @@
 import ActionBottomSheet from '@/components/director/ActionSheetModal';
 import FilterModal, { FilterOption } from '@/components/director/FilterModal';
-import MenteeCard, { Mentee } from '@/components/director/MenteeCard';
+import MenteeCard from '@/components/director/MenteeCard';
 import MentorProfileSwiper from '@/components/director/MentorProfileSwiper';
 import SearchBar from '@/components/director/SearchBar';
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from '@/components/director/TopBar';
 import { STATES } from '@/constants/mockData';
 import { useMentees } from '@/hooks/mentees/useMentees';
+import { Mentee } from '@/types/mentee.types';
 import { getFontSize, getIconSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -18,19 +19,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 
-
 export default function Mentees() {
     const router = useRouter();
     const [search, setSearch] = useState('');
-    const [activeTab, setActiveTab] = useState<'all' | 'in-progress' | 'completed'>('in-progress');
+    const [activeTab, setActiveTab] = useState<'all' | 'not-started' | 'in-progress' | 'completed'>('in-progress');
     const [filterModalVisible, setFilterModalVisible] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('Course Completion : Oldest');
     const { bottom } = useSafeAreaInsets();
     const { height } = Dimensions.get('window');
     const [viewMode, setViewMode] = useState<'list' | 'card'>('card');
     const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
-    const { mentees, isLoading, isError } = useMentees();
+    const { data: mentees, isLoading, isError, error } = useMentees();
 
+    if (isError) {
+        console.log('Error : ', error)
+    }
     const getFilterOptions = (): FilterOption[] => {
         return [
             {
@@ -49,8 +52,6 @@ export default function Mentees() {
             }
         ];
     };
-
-
 
     const menuItems = [
         {
@@ -100,9 +101,8 @@ export default function Mentees() {
         { icon: 'calendar-outline', label: 'Product and Services', onPress: () => console.log('Schedule a Meeting') },
     ];
 
+
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-
-
 
     const handleMenuPress = useCallback((mentee: Mentee) => {
         setSelectedMentee(mentee);
@@ -111,8 +111,6 @@ export default function Mentees() {
         }, 0);
     }, []);
 
-
-
     const handleCloseModal = useCallback(() => {
         bottomSheetModalRef.current?.dismiss();
         setTimeout(() => {
@@ -120,25 +118,22 @@ export default function Mentees() {
         }, 300);
     }, []);
 
-
     const handleTabChange = (key: string) => {
-        if (key === 'all' || key === 'in-progress' || key === 'completed') {
+        if (key === 'all' || key === 'not-started' || key === 'in-progress' || key === 'completed') {
             setActiveTab(key);
         }
     };
 
-    const getFilterDisplayText = () => {
-        if (STATES.includes(selectedFilter)) {
-            return `State: ${selectedFilter}`;
-        }
-        return selectedFilter || `Course Completion : ${selectedFilter}`;
-    };
-
     const filterOptions = useMemo(() => getFilterOptions(), []);
 
+    // ============================
+    // TAB + SEARCH FILTERING
+    // ============================
     const filteredMentees = useMemo(() => {
-        let filtered = mentees;
+        const menteeList = Array.isArray(mentees) ? mentees : mentees?.mentees || [];
+        let filtered = menteeList;
 
+        // Search filter
         if (search) {
             filtered = filtered.filter((mentee) =>
                 mentee.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -147,27 +142,69 @@ export default function Mentees() {
             );
         }
 
-        // Note: API doesn't provide isCompleted field, so we can't filter by completion status
-        // If you need this functionality, you'll need to add it to the API response
-        if (activeTab === 'completed') {
-            filtered = filtered.filter((mentee) => mentee.isCompleted === true);
-        } else if (activeTab === 'in-progress') {
-            filtered = filtered.filter((mentee) => mentee.isCompleted !== true);
+        // TAB FILTERING BASED ON PROGRESS
+        if (activeTab === 'not-started') {
+            filtered = filtered.filter(
+                (mentee) => (mentee.progress ?? 0) === 0
+            );
+        }
+        else if (activeTab === 'in-progress') {
+            filtered = filtered.filter(
+                (mentee) =>
+                    (mentee.progress ?? 0) > 0 &&
+                    (mentee.progress ?? 0) < 100
+            );
+        }
+        else if (activeTab === 'completed') {
+            filtered = filtered.filter(
+                (mentee) =>
+                    mentee.progress === 100 ||
+                    mentee.hasCompleted === true
+            );
         }
 
         return filtered;
     }, [mentees, search, activeTab]);
 
-    const inProgressCount = useMemo(() => {
-        return mentees.filter((m) => m.isCompleted !== true).length;
-    }, [mentees]);
+    // ============================
+    // TAB BADGE COUNTS
+    // ============================
+    const menteeList = Array.isArray(mentees) ? mentees : mentees?.mentees || [];
+
+    const notStartedCount = useMemo(
+        () => menteeList.filter((m) => (m.progress ?? 0) === 0).length,
+        [mentees]
+    );
+
+    const inProgressCount = useMemo(
+        () =>
+            menteeList.filter(
+                (m) =>
+                    (m.progress ?? 0) > 0 &&
+                    (m.progress ?? 0) < 100
+            ).length,
+        [mentees]
+    );
+
+    const completedCount = useMemo(
+        () =>
+            menteeList.filter(
+                (m) => m.progress === 100 || m.hasCompleted === true
+            ).length,
+        [mentees]
+    );
 
     const tabs = [
         { key: 'all', label: 'All' },
+        { key: 'not-started', label: 'Not Started', badge: notStartedCount },
         { key: 'in-progress', label: 'In-progress', badge: inProgressCount },
-        { key: 'completed', label: 'Completed' }
+        { key: 'completed', label: 'Completed', badge: completedCount }
     ];
 
+
+    // ============================
+    // LOADING / ERROR STATES
+    // ============================
     if (isLoading) {
         return (
             <LinearGradient
@@ -202,10 +239,13 @@ export default function Mentees() {
         );
     }
 
+    // ============================
+    // MAIN UI
+    // ============================
     return (
         <LinearGradient
             colors={['#176192', '#1D548D', '#264387']}
-            style={[styles.container,]}
+            style={[styles.container]}
         >
             <View style={styles.innerContainer}>
                 <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
@@ -250,6 +290,7 @@ export default function Mentees() {
                         <MentorProfileSwiper />
                     </View>
 
+                    {/* Sort */}
                     <View style={styles.sortContainer}>
                         <Text style={styles.sortLabel}>Sort by</Text>
                         <Pressable
@@ -257,12 +298,13 @@ export default function Mentees() {
                             style={styles.sortButton}
                         >
                             <Text style={styles.sortButtonText} numberOfLines={1}>
-                                {getFilterDisplayText()}
+                                {selectedFilter}
                             </Text>
                             <Ionicons name="chevron-down" size={getIconSize(18)} color="#fff" />
                         </Pressable>
                     </View>
 
+                    {/* Mentee List */}
                     <FlatList
                         style={styles.flatList}
                         data={filteredMentees}
@@ -297,13 +339,15 @@ export default function Mentees() {
                     />
                 </View>
 
+                {/* MODALS */}
                 <ActionBottomSheet
                     ref={bottomSheetModalRef}
-                    title={selectedMentee?.name || ''}
-                    image={selectedMentee?.profileImage}
+                    title={selectedMentee?.username || selectedMentee?.firstName || ''}
+                    image={selectedMentee?.profilePicture}
                     actions={menuItems}
                     onClose={handleCloseModal}
                 />
+
                 <FilterModal
                     visible={filterModalVisible}
                     onClose={() => setFilterModalVisible(false)}

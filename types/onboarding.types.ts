@@ -1,4 +1,3 @@
-import { UserStatus } from './auth.types';
 import { ChurchInfo } from './profile.types';
 export type InterestStatus = 'new' | 'pending' | 'accepted' | 'rejected';
 
@@ -20,6 +19,7 @@ export interface InterestFormData {
     comments?: string;
     submittedAt?: string;
     status?: "pending" | "accepted" | "rejected";
+    userId?: string;
 }
 // API Response for interest submission
 export interface SubmitInterestResponse {
@@ -31,13 +31,7 @@ export interface SubmitInterestResponse {
 
 // API Response for approval status check
 export interface ApprovalStatusResponse {
-    data: {
-        status: UserStatus
-    }
-    applicationId: string;
-    status: InterestStatus;
-    approvedAt?: string;
-    approvedBy?: string; // Director who approved
-    rejectedAt?: string;
-    rejectionReason?: string;
+    success: boolean;
+    message: string;
+    data: InterestFormData
 }

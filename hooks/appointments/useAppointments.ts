@@ -1,110 +1,66 @@
 import { appointmentService } from '@/services/appointments.service';
-import {
-    Appointment,
-    CreateAppointmentPayload,
-    UpdateAppointmentPayload,
-} from '@/types/appointment.types';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AppointmentStatus } from '@/types/appointment.types';
+import { useQuery } from '@tanstack/react-query';
 
-export const useAppointments = (userId?: string, mentorId?: string) => {
-    const queryClient = useQueryClient();
+interface UseAppointmentsOptions {
+    userId?: string;
+    mentorId?: string;
+}
 
-    // Fetch user appointments (for pastors)
+export const useAppointments = (options?: UseAppointmentsOptions) => {
+    const { userId, mentorId } = options || {};
+
+    // Fetch user appointments
     const userQuery = useQuery({
         queryKey: ['appointments', 'user', userId],
         queryFn: () => appointmentService.getUserAppointments(userId!),
         enabled: !!userId,
+        staleTime: 1000 * 60 * 5, // 5 minutes
     });
 
-    // Fetch mentor appointments (for mentors)
+    // Fetch mentor appointments
     const mentorQuery = useQuery({
         queryKey: ['appointments', 'mentor', mentorId],
         queryFn: () => appointmentService.getMentorAppointments(mentorId!),
         enabled: !!mentorId,
+        staleTime: 1000 * 60 * 5, // 5 minutes
     });
 
-    // Create appointment
-    const createMutation = useMutation({
-        mutationFn: (payload: CreateAppointmentPayload) =>
-            appointmentService.createAppointment(payload),
-        onSuccess: (newApt) => {
-            // Update the relevant cache
-            if (userId) {
-                queryClient.setQueryData(
-                    ['appointments', 'user', userId],
-                    (old: Appointment[] = []) => [...old, newApt]
-                );
-            }
-            if (mentorId) {
-                queryClient.setQueryData(
-                    ['appointments', 'mentor', mentorId],
-                    (old: Appointment[] = []) => [...old, newApt]
-                );
-            }
-        },
-    });
-
-    // Update appointment
-    const updateMutation = useMutation({
-        mutationFn: ({ id, payload }: { id: string; payload: UpdateAppointmentPayload }) =>
-            appointmentService.updateAppointment(id, payload),
-        onSuccess: (updated) => {
-            // Update the relevant cache
-            if (userId) {
-                queryClient.setQueryData(
-                    ['appointments', 'user', userId],
-                    (old: Appointment[] = []) =>
-                        old.map(apt => (apt.id === updated.id ? updated : apt))
-                );
-            }
-            if (mentorId) {
-                queryClient.setQueryData(
-                    ['appointments', 'mentor', mentorId],
-                    (old: Appointment[] = []) =>
-                        old.map(apt => (apt.id === updated.id ? updated : apt))
-                );
-            }
-        },
-    });
-
-    // Get the right data based on what was passed
+    // Get the right data
     const appointments = userId ? (userQuery.data || []) : (mentorQuery.data || []);
     const isLoading = userId ? userQuery.isLoading : mentorQuery.isLoading;
+    const isError = userId ? userQuery.isError : mentorQuery.isError;
     const error = userId ? userQuery.error : mentorQuery.error;
 
-    // Filter by date
+    // Filter helpers
+    const getAppointmentsByStatus = (status: AppointmentStatus) => {
+        return appointments.filter(apt => apt.status === status);
+    };
+
     const getAppointmentsByDate = (date: string) => {
         return appointments.filter(apt => apt.meetingDate.split('T')[0] === date);
     };
 
-    // Mock available dates
-    const getMentorAvailableDates = () => {
-        return [
-            '2025-11-10',
-            '2025-11-12',
-            '2025-11-14',
-            '2025-11-15',
-            '2025-11-17',
-        ];
+    const getUpcomingAppointments = () => {
+        return appointments.filter(apt => appointmentService.isUpcoming(apt.meetingDate));
+    };
+
+    const getPastAppointments = () => {
+        return appointments.filter(apt => !appointmentService.isUpcoming(apt.meetingDate));
     };
 
     return {
         // Data
         appointments,
         isLoading,
+        isError,
         error,
 
-        // Mutations
-        createAppointment: (payload: CreateAppointmentPayload) =>
-            createMutation.mutateAsync(payload),
-        updateAppointment: (id: string, payload: UpdateAppointmentPayload) =>
-            updateMutation.mutateAsync({ id, payload }),
-        isCreating: createMutation.isPending,
-        isUpdating: updateMutation.isPending,
-
         // Filters
+        getAppointmentsByStatus,
         getAppointmentsByDate,
-        getMentorAvailableDates,
+        getUpcomingAppointments,
+        getPastAppointments,
 
         // Refetch
         refetch: userId ? userQuery.refetch : mentorQuery.refetch,

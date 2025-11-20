@@ -9,6 +9,8 @@ export interface User {
     firstName: string;
     lastName?: string;
     role: UserRole;
+    username?: string;
+    interestId?: string;
     status: UserStatus;
     isEmailVerified?: boolean;
     profilePicture?: string;

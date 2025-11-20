@@ -9,8 +9,36 @@ export type ChurchDetails = {
 	country?: string;
 };
 
-export type InterestItem = {
+export type InterestStatus = 'new' | 'pending' | 'accepted' | 'rejected';
+
+// ============================================
+// API RESPONSE TYPES (Backend contract)
+// ============================================
+
+export type InterestCardViewModel = {
 	id: string;
+	name: string;
+	role: string;
+	time: string;
+	date: string; // Full date for sorting
+	state: string;
+	country: string;
+	email?: string;
+	phoneNumber?: string;
+	conference?: string;
+	status?: InterestStatus;
+	// For accepted users
+	mentors?: number;
+	mentorsAssigned?: boolean;
+	hasLoggedIn?: boolean;
+	loginDate?: string;
+	profileImage?: string;
+};
+
+
+// What the backend returns for interests
+export type InterestItem = {
+	_id: string;
 	firstName?: string;
 	lastName?: string;
 	phoneNumber?: string;
@@ -22,6 +50,9 @@ export type InterestItem = {
 	currentCommunityProjects?: string;
 	interests: string[];
 	comments?: string;
+	createdAt?: string;
+	updatedAt?: string;
+	status?: InterestStatus; // Add this if backend supports it
 };
 
 export type InterestsApiResponse = {
@@ -63,5 +94,3 @@ export type UpdateInterestStatusResponse = {
 		isEmailVerified: boolean;
 	};
 };
-
-

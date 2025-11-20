@@ -1,3 +1,4 @@
+import { Mentor } from '@/hooks/mentors/useGetAssignedMentors';
 import {
     getCardImageSize,
     getFontSize,
@@ -12,14 +13,6 @@ import React from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as DropdownMenu from 'zeego/dropdown-menu';
 
-export interface MentorData {
-    id: string;
-    name: string;
-    role: string;
-    menteesCount?: number;
-    description?: string;
-    profileImage?: string;
-}
 
 export interface MenuItem {
     key: string;
@@ -30,7 +23,7 @@ export interface MenuItem {
 }
 
 interface MentorCardProps {
-    mentor: MentorData;
+    mentor: Mentor;
     layout?: 'card' | 'list';
     onCall?: () => void;
     onChat?: () => void;
@@ -174,9 +167,9 @@ export default function MentorCard({
                     onPress={isSelectionMode ? onToggleSelect : onPress}>
 
                     <View style={styles.listImageContainer}>
-                        {mentor.profileImage ? (
+                        {mentor.profilePicture ? (
                             <Image
-                                source={{ uri: mentor.profileImage }}
+                                source={{ uri: mentor.profilePicture }}
                                 style={styles.profileImage}
                                 resizeMode="cover"
                             />
@@ -234,9 +227,9 @@ export default function MentorCard({
             <View style={[styles.listContainer, isSelected && styles.selectedCard]}>
 
                 <View style={styles.listImageContainer}>
-                    {mentor.profileImage ? (
+                    {mentor.profilePicture ? (
                         <Image
-                            source={{ uri: mentor.profileImage }}
+                            source={{ uri: mentor.profilePicture }}
                             style={styles.profileImage}
                             resizeMode="cover"
                         />
@@ -310,9 +303,9 @@ export default function MentorCard({
                         width: imageSize,
                         height: imageSize
                     }]}>
-                        {mentor.profileImage ? (
+                        {mentor.profilePicture ? (
                             <Image
-                                source={{ uri: mentor.profileImage }}
+                                source={{ uri: mentor.profilePicture }}
                                 style={styles.profileImage}
                                 resizeMode="cover"
                             />
@@ -380,9 +373,9 @@ export default function MentorCard({
                     width: imageSize,
                     height: imageSize
                 }]}>
-                    {mentor.profileImage ? (
+                    {mentor.profilePicture ? (
                         <Image
-                            source={{ uri: mentor.profileImage }}
+                            source={{ uri: mentor.profilePicture }}
                             style={styles.profileImage}
                             resizeMode="cover"
                         />

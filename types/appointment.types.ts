@@ -1,4 +1,4 @@
-export type AppointmentPlatform = 'zoom' | 'google_meet' | 'teams' | 'phone' | 'in_person';
+export type AppointmentPlatform = 'zoom' | 'gmeet'
 export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
 
 export interface CreateAppointmentPayload {
@@ -54,4 +54,42 @@ export interface AppointmentFilter {
     status?: AppointmentStatus;
     startDate?: string;
     endDate?: string;
+}
+
+
+export interface TimeSlot {
+    startTime: string;
+    startPeriod: 'AM' | 'PM';
+    endTime: string;
+    endPeriod: 'AM' | 'PM';
+    _id: string;
+}
+
+export interface MonthlyAvailabilityDay {
+    date: string; // Format: "2025-11-01"
+    day: number; // Day of week: 0 (Sunday) - 6 (Saturday)
+    slots: TimeSlot[];
+}
+
+export interface WeeklySlot {
+    day: number; // Day of week: 0 (Sunday) - 6 (Saturday)
+    date: string; // ISO format: "2025-11-17T00:00:00.000Z"
+    rawSlots: TimeSlot[];
+}
+
+export interface WeeklyAvailability {
+    mentorId: string;
+    weeklySlots: WeeklySlot[];
+}
+
+export interface GetWeeklyAvailabilityApiResponse {
+    success: boolean;
+    message: string;
+    data: WeeklyAvailability;
+}
+
+export interface GetMonthlyAvailabilityApiResponse {
+    success: boolean;
+    message: string;
+    data: MonthlyAvailabilityDay[];
 }

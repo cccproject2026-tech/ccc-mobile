@@ -1,0 +1,56 @@
+import { User } from "./auth.types";
+
+
+export interface MentorListItem extends User {
+    roleId: string;
+    interestId?: string;
+    hasCompleted: boolean;
+    hasIssuedCertificate: boolean;
+}
+
+export interface AssignedMentorItem {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    status: string;
+    profilePicture?: string;
+    profileInfo?: string;
+}
+
+export interface MentorDetail {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    username: string;
+    role: string;
+    profileInfo: string;
+    churchDetails: any[];
+    conference: string;
+}
+
+
+
+export interface GetMentorsApiResponse {
+    success: boolean;
+    message: string;
+    data: {
+        mentors: MentorListItem[];
+        total: number;
+    };
+}
+
+export interface GetAssignedMentorsApiResponse {
+    success: boolean;
+    message: string;
+    data: AssignedMentorItem[];
+}
+
+export interface GetMentorByEmailApiResponse {
+    success: boolean;
+    message: string;
+    data: MentorDetail;
+}
+

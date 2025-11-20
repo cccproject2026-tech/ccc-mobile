@@ -25,7 +25,7 @@ export const useSubmitInterest = () => {
             console.log('✅ Interest form submitted successfully');
 
             // Extract userId and applicationId from response
-            const userId = response.data?.userId || response.data?.id;
+            const userId = response.data?.userId
             const applicationId = response.data?.id;
 
             // Store in Zustand for later use

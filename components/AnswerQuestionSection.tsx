@@ -17,13 +17,15 @@ interface AssessmentQuestionsSectionProps {
     assessmentId: string;
     isViewMode: boolean;
     onSubmit: (sectionAnswers: Record<number, Record<string, any>>) => void;
+    onClose?: () => void;
 }
 
 export default function AssessmentQuestionsSection({
     assessment,
     assessmentId,
     isViewMode,
-    onSubmit
+    onSubmit,
+    onClose,
 }: AssessmentQuestionsSectionProps) {
     const getDraft = useAssessmentStore((state) => state.getDraft);
     const saveDraft = useAssessmentStore((state) => state.saveDraft);
@@ -95,6 +97,12 @@ export default function AssessmentQuestionsSection({
         if (isViewMode) {
             if (currentSectionIndex < totalSections - 1) {
                 setCurrentSectionIndex(prev => prev + 1);
+            }
+            else {
+                // Last section - Close
+                if (onClose) {
+                    onClose();
+                }
             }
             return;
         }

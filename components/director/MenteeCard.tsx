@@ -1,4 +1,5 @@
 import { icons } from '@/constants/images';
+import { Mentee } from '@/types/mentee.types';
 import { getFontSize, getIconSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,26 +8,7 @@ import { Dimensions, Image, Pressable, StyleSheet, Text, TouchableOpacity, View 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
 
-export interface Mentee {
-    id: string;
-    name: string;
-    role?: string;
-    email?: string;
-    description: string;
-    lastContacted?: string;
-    totalMentors?: number;
-    profileImage?: string;
-    phase?: string;
-    phaseNumber?: number;
-    progress?: number;
-    isCompleted?: boolean;
-    completedOn?: string;
-    hasCertificate?: boolean;
-    isFieldMentor?: boolean;
-    status?: 'new' | 'pending' | 'approved' | 'rejected';
-    scholarshipAmount?: number | string;
-    dateOfApproval?: string;
-}
+
 
 interface MenteeCardProps {
     data: Mentee;
@@ -60,15 +42,14 @@ export default function MenteeCard({
     onInviteAsFieldMentor,
 }: MenteeCardProps) {
     const isSelectionMode = onToggleSelect !== undefined;
-
     // LIST VIEW (Compact)
     if (layout === 'list') {
         return (
             <Pressable style={[styles.listContainer, isSelected && styles.selectedCard]}
                 onPress={isSelectionMode ? onToggleSelect : onPress}>
                 <View style={styles.listImageContainer}>
-                    {data.profileImage ? (
-                        <Image source={{ uri: data.profileImage }} style={styles.image} resizeMode="cover" />
+                    {data.profilePicture ? (
+                        <Image source={{ uri: data.profilePicture }} style={styles.image} resizeMode="cover" />
                     ) : (
                         <View style={styles.placeholderImage}>
                             <Ionicons name="person-outline" size={getIconSize(28)} color="#fff" />
@@ -78,13 +59,13 @@ export default function MenteeCard({
 
                 <View style={styles.listNameSection}>
                     <Text style={styles.listName} numberOfLines={1}>
-                        {data.name}
+                        {data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '')}
                     </Text>
                 </View>
 
-                {data.isCompleted && (data.hasCertificate || data.isFieldMentor) && (
+                {data.hasCompleted && (data.hasIssuedCertificate || data.isFieldMentor) && (
                     <View style={styles.listBadges}>
-                        {data.hasCertificate && (
+                        {data.hasIssuedCertificate && (
                             <View style={styles.listBadgeIcon}>
                                 <Image source={icons.certificateBadge} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                             </View>
@@ -152,8 +133,8 @@ export default function MenteeCard({
 
                 <View style={styles.topSection}>
                     <View style={styles.imageContainer}>
-                        {data.profileImage ? (
-                            <Image source={{ uri: data.profileImage }} style={styles.image} resizeMode="cover" />
+                        {data.profilePicture ? (
+                            <Image source={{ uri: data.profilePicture }} style={styles.image} resizeMode="cover" />
                         ) : (
                             <View style={styles.placeholderImage}>
                                 <Ionicons name="person-outline" size={getIconSize(40)} color="#fff" />
@@ -163,7 +144,7 @@ export default function MenteeCard({
 
                     <View style={styles.contentSection}>
                         <Text style={styles.name} numberOfLines={1}>
-                            {data.name}
+                            {data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '')}
                         </Text>
 
                         <Text style={styles.description} numberOfLines={3}>
@@ -227,9 +208,9 @@ export default function MenteeCard({
             )}
 
             {/* Top Badges */}
-            {data.isCompleted && (data.hasCertificate || data.isFieldMentor) && (
+            {data.hasCompleted && (data.hasIssuedCertificate || data.isFieldMentor) && (
                 <View style={styles.topBadges}>
-                    {data.hasCertificate && (
+                    {data.hasIssuedCertificate && (
                         <View style={styles.badgeIcon}>
                             <Image source={icons.certificateBadge} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                         </View>
@@ -245,8 +226,8 @@ export default function MenteeCard({
             {/* Top Section */}
             <View style={styles.topSection}>
                 <View style={styles.imageContainer}>
-                    {data.profileImage ? (
-                        <Image source={{ uri: data.profileImage }} style={styles.image} resizeMode="cover" />
+                    {data.profilePicture ? (
+                        <Image source={{ uri: data.profilePicture }} style={styles.image} resizeMode="cover" />
                     ) : (
                         <View style={styles.placeholderImage}>
                             <Ionicons name="person-outline" size={getIconSize(40)} color="#fff" />
@@ -256,7 +237,7 @@ export default function MenteeCard({
 
                 <View style={styles.contentSection}>
                     <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-                        {data.name}{data.role && ` (${data.role})`}
+                        {data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '')}{data.role && ` (${data.role})`}
                     </Text>
 
                     <Text style={styles.description} numberOfLines={3}>
@@ -283,7 +264,7 @@ export default function MenteeCard({
                     )}
 
                     {/* LEGACY INFO (when not showing scholarship) */}
-                    {!data.scholarshipAmount && !data.isCompleted && (
+                    {!data.scholarshipAmount && !data.hasCompleted && (
                         <>
                             {data.lastContacted && (
                                 <Text style={styles.infoRow}>
@@ -329,11 +310,11 @@ export default function MenteeCard({
                 </View>
 
                 {/* Phase or Completed Badge on Right */}
-                {data.isCompleted && data.completedOn ? (
+                {data.hasCompleted && data.completedOn ? (
                     <View style={styles.statusBadge}>
                         <Text style={styles.statusText}>Completed on :{data.completedOn}</Text>
                     </View>
-                ) : data.phase && data.phaseNumber && !data.isCompleted ? (
+                ) : data.phase && data.phaseNumber && !data.hasCompleted ? (
                     <View style={styles.statusBadge}>
                         <Text style={styles.statusText}>
                             Phase {data.phaseNumber} : {data.phase}
@@ -344,7 +325,7 @@ export default function MenteeCard({
 
             {/* Conditional Rendering Based on State */}
             {(() => {
-                if (!data.isCompleted && data.progress !== undefined && data.progress < 100) {
+                if (!data.hasCompleted && data.progress !== undefined && data.progress < 100) {
                     return (
                         <View style={styles.progressSection}>
                             <Text style={styles.progressLabel}>Progress</Text>
@@ -356,7 +337,7 @@ export default function MenteeCard({
                     );
                 }
 
-                if (!data.isCompleted && data.progress === 100 && onMarkComplete) {
+                if (!data.hasCompleted && data.progress === 100 && onMarkComplete) {
                     return (
                         <>
                             <View style={styles.progressSection}>
@@ -377,7 +358,7 @@ export default function MenteeCard({
                     );
                 }
 
-                if (data.isCompleted && !data.hasCertificate && onIssueCertificate) {
+                if (data.hasCompleted && !data.hasIssuedCertificate && onIssueCertificate) {
                     return (
                         <LinearGradient colors={['#7C3AED', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientBorder}>
                             <TouchableOpacity style={styles.actionButton} onPress={(e) => { e.stopPropagation(); onIssueCertificate(); }}>
@@ -387,7 +368,7 @@ export default function MenteeCard({
                     );
                 }
 
-                if (data.isCompleted && data.hasCertificate && !data.isFieldMentor && onInviteAsFieldMentor) {
+                if (data.hasCompleted && data.hasIssuedCertificate && !data.isFieldMentor && onInviteAsFieldMentor) {
                     return (
                         <LinearGradient colors={['#7C3AED', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientBorder}>
                             <TouchableOpacity style={styles.actionButton} onPress={(e) => { e.stopPropagation(); onInviteAsFieldMentor(); }}>

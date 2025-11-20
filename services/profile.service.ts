@@ -1,4 +1,4 @@
-import { InterestFormData, User } from '@/types';
+import { Document, InterestFormData, User } from '@/types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
@@ -74,16 +74,18 @@ export const profileService = {
         return response.data.data;
     },
     // Upload avatar
-    uploadAvatar: async (file: any): Promise<{ avatarUrl: string }> => {
+    uploadProfilePicture: async (userId: string, file: any): Promise<User> => {
+        console.log('📤 Uploading profile picture for user:', userId);
+
         const formData = new FormData();
-        formData.append('avatar', {
+        formData.append('file', {
             uri: file.uri,
-            type: file.type,
-            name: file.fileName,
+            type: file.type || 'image/jpeg',
+            name: file.fileName || 'profile-picture.jpg',
         } as any);
 
-        const response = await apiClient.post<{ success: boolean; data: { avatarUrl: string } }>(
-            ENDPOINTS.PROFILE.UPLOAD_AVATAR,
+        const response = await apiClient.patch<{ success: boolean; data: User }>(
+            ENDPOINTS.USERS.UPDATE_PROFILE_PICTURE(userId),
             formData,
             {
                 headers: {
@@ -91,6 +93,57 @@ export const profileService = {
                 },
             }
         );
+
+        console.log('✅ Profile picture uploaded successfully:', response.data.data);
         return response.data.data;
+    },
+    getDocuments: async (userId: string): Promise<Document[]> => {
+        console.log('📤 Fetching documents for user:', userId);
+
+        const response = await apiClient.get<{ success: boolean; data: Document[] }>(
+            ENDPOINTS.USERS.GET_DOCUMENTS(userId)
+        );
+
+        console.log('📥 Documents fetched:', response.data.data);
+        return response.data.data;
+    },
+
+    // Upload document
+    uploadDocument: async (userId: string, file: any): Promise<Document> => {
+        console.log('📤 Uploading document for user:', userId);
+
+        const formData = new FormData();
+        formData.append('file', {
+            uri: file.uri,
+            type: file.mimeType || file.type || 'application/octet-stream',
+            name: file.name || file.fileName || `document-${Date.now()}`,
+        } as any);
+
+        const response = await apiClient.post<{ success: boolean; data: Document }>(
+            ENDPOINTS.USERS.UPLOAD_DOCUMENT(userId),
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            }
+        );
+
+        console.log('✅ Document uploaded successfully:', response.data.data);
+        return response.data.data;
+    },
+
+    // Delete document
+    deleteDocument: async (userId: string, documentUrl: string): Promise<void> => {
+        console.log('📤 Deleting document for user:', userId, documentUrl);
+
+        await apiClient.delete(
+            ENDPOINTS.USERS.DELETE_DOCUMENT(userId),
+            {
+                data: { documentUrl },
+            }
+        );
+
+        console.log('✅ Document deleted successfully');
     },
 };

@@ -6,16 +6,20 @@ export interface GrantField {
     _id: string;
 }
 
+export interface GrantFormData {
+    _id: string;
+    title: string;
+    description: string;
+    fields: GrantField[];
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+}
+
 export interface GrantFormResponse {
-    data: {
-        _id: string;
-        title: string;
-        description: string;
-        fields: GrantField[];
-        createdAt: string;
-        updatedAt: string;
-        __v: number;
-    }
+    success: boolean;
+    message: string;
+    data: GrantFormData;
 }
 
 export interface GrantApplicationData {
@@ -101,4 +105,15 @@ export interface MicrograntApplicationDetailApiResponse {
     success: boolean;
     message: string;
     data: MicrograntApplicationDetail;
+}
+
+export interface GrantStatusResponse {
+    success: boolean;
+    message: string;
+    data: {
+        applicationId: string;
+        status: 'new' | 'pending' | 'approved' | 'rejected' | 'under_review';
+        submittedAt: string;
+        lastUpdated: string;
+    };
 }

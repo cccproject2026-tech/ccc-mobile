@@ -17,7 +17,7 @@ export default function ItemDetail() {
     const router = useRouter();
 
     // Fetch parent roadmap
-    const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
+    const { data: roadmap, isLoading, error } = useRoadmap(phaseId, false);
 
     // Find the specific nested roadmap (task)
     const task = useMemo<NestedRoadmap | undefined>(() => {

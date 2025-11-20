@@ -23,11 +23,11 @@ export const onboardingService = {
 
     // Check approval status
     checkApprovalStatus: async (
-        userId: string
+        applicationId: string
     ): Promise<ApprovalStatusResponse> => {
-        console.log('📤 Checking approval status for:', userId);
+        console.log('📤 Checking approval status for:', applicationId);
         const response = await apiClient.get<ApprovalStatusResponse>(
-            ENDPOINTS.USERS.CHECK_STATUS(userId)
+            ENDPOINTS.USERS.CHECK_STATUS(applicationId)
         );
         return response.data;
     },

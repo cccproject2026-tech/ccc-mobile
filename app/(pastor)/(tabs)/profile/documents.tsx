@@ -1,11 +1,14 @@
 import TopBar from '@/components/director/TopBar';
 import { icons } from '@/constants/images';
+import { useDeleteDocument, useDocuments, useUploadDocument } from '@/hooks/profile/useProfile';
+import { useAuthStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     FlatList,
     Image,
@@ -17,87 +20,72 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-interface Document {
-    id: string;
-    name: string;
-    date: string;
-    uri: string;
-    size: number;
-    mimeType: string;
-}
 
 export default function PastorDocumentsScreen() {
     const router = useRouter();
     const { bottom } = useSafeAreaInsets();
+    const { user } = useAuthStore();
+
+    // React Query hooks
+    const { data: documents = [], isLoading, refetch } = useDocuments();
+    const uploadDocument = useUploadDocument();
+    const deleteDocument = useDeleteDocument();
+
     const [activeTab, setActiveTab] = useState<'myDocuments' | 'mentors'>('myDocuments');
-    const [documents, setDocuments] = useState<Document[]>([
-        {
-            id: '1',
-            name: 'My Educational Documents 1.pdf',
-            date: '15 / 09 / 2024',
-            uri: '',
-            size: 0,
-            mimeType: 'application/pdf',
-        },
-        {
-            id: '2',
-            name: 'My Experience Document 1.pdf',
-            date: '15 / 09 / 2024',
-            uri: '',
-            size: 0,
-            mimeType: 'application/pdf',
-        },
-        {
-            id: '3',
-            name: 'My Educational Certificate 1.pdf',
-            date: '15 / 09 / 2024',
-            uri: '',
-            size: 0,
-            mimeType: 'application/pdf',
-        },
-    ]);
 
     const pickDocument = async () => {
         try {
+            console.log('📄 Starting document picker...');
+
             const result = await DocumentPicker.getDocumentAsync({
                 type: ['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
                 copyToCacheDirectory: true,
             });
 
+            console.log('📄 Document picker result:', result);
+
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const file = result.assets[0];
-                const newDocument: Document = {
-                    id: Date.now().toString(),
-                    name: file.name,
-                    date: new Date().toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                    }).replace(/\//g, ' / '),
+
+                console.log('📤 Uploading document:', file.name);
+
+                // Upload using mutation
+                await uploadDocument.mutateAsync({
                     uri: file.uri,
-                    size: file.size || 0,
+                    name: file.name,
+                    fileName: file.name,
                     mimeType: file.mimeType || 'application/octet-stream',
-                };
-                setDocuments([newDocument, ...documents]);
+                    size: file.size || 0,
+                });
+
                 Alert.alert('Success', 'Document uploaded successfully!');
+                console.log('✅ Document uploaded successfully');
             }
         } catch (error) {
-            console.error('Error picking document:', error);
-            Alert.alert('Error', 'Failed to pick document. Please try again.');
+            console.error('❌ Error picking/uploading document:', error);
+            Alert.alert('Error', 'Failed to upload document. Please try again.');
         }
     };
 
-    const deleteDocument = (id: string) => {
+    const handleDeleteDocument = (documentUrl: string, fileName: string) => {
         Alert.alert(
             'Delete Document',
-            'Are you sure you want to delete this document?',
+            `Are you sure you want to delete "${fileName}"?`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () => {
-                        setDocuments(documents.filter(doc => doc.id !== id));
+                    onPress: async () => {
+                        try {
+                            console.log('🗑️ Deleting document:', documentUrl);
+                            await deleteDocument.mutateAsync(documentUrl);
+                            Alert.alert('Success', 'Document deleted successfully!');
+                            console.log('✅ Document deleted successfully');
+                        } catch (error) {
+                            console.error('❌ Error deleting document:', error);
+                            Alert.alert('Error', 'Failed to delete document. Please try again.');
+                        }
                     },
                 },
             ]
@@ -105,29 +93,45 @@ export default function PastorDocumentsScreen() {
     };
 
     const isImage = (mimeType: string) => {
-        return mimeType.startsWith('image/');
+        return mimeType?.startsWith('image/');
     };
 
-    const renderDocument = ({ item }: { item: Document }) => (
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        }).replace(/\//g, ' / ');
+    };
+
+    const renderDocument = ({ item }: { item: any }) => (
         <View style={styles.documentItem}>
             <View style={styles.documentIcon}>
-                {isImage(item.mimeType) && item.uri ? (
-                    <Image source={{ uri: item.uri }} style={styles.documentThumbnail} />
+                {isImage(item.fileType) && item.fileUrl ? (
+                    <Image source={{ uri: item.fileUrl }} style={styles.documentThumbnail} />
                 ) : (
                     <Image source={icons.certificateImage} style={styles.pdfIcon} />
                 )}
             </View>
             <View style={styles.documentInfo}>
                 <Text style={styles.documentName} numberOfLines={1}>
-                    {item.name}
+                    {item.fileName}
                 </Text>
-                <Text style={styles.documentDate}>{item.date}</Text>
+                <Text style={styles.documentDate}>
+                    {formatDate(item.uploadedAt)}
+                </Text>
             </View>
             <TouchableOpacity
                 style={styles.deleteButton}
-                onPress={() => deleteDocument(item.id)}
+                onPress={() => handleDeleteDocument(item.fileUrl, item.fileName)}
+                disabled={deleteDocument.isPending}
             >
-                <Ionicons name="trash-outline" size={24} color="#fff" />
+                <Ionicons
+                    name="trash-outline"
+                    size={24}
+                    color={deleteDocument.isPending ? "rgba(255,255,255,0.5)" : "#fff"}
+                />
             </TouchableOpacity>
         </View>
     );
@@ -147,12 +151,23 @@ export default function PastorDocumentsScreen() {
                     </TouchableOpacity>
                     <View>
                         <Text style={styles.headerTitle}>Documents</Text>
-                        <Text style={styles.headerSubtitle}>John Ross</Text>
+                        <Text style={styles.headerSubtitle}>
+                            {user?.firstName} {user?.lastName}
+                        </Text>
                     </View>
                 </View>
-                <TouchableOpacity style={styles.uploadButton} onPress={pickDocument}>
+                <TouchableOpacity
+                    style={[
+                        styles.uploadButton,
+                        uploadDocument.isPending && styles.uploadButtonDisabled
+                    ]}
+                    onPress={pickDocument}
+                    disabled={uploadDocument.isPending}
+                >
                     <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
-                    <Text style={styles.uploadButtonText}>Upload</Text>
+                    <Text style={styles.uploadButtonText}>
+                        {uploadDocument.isPending ? 'Uploading...' : 'Upload'}
+                    </Text>
                 </TouchableOpacity>
             </View>
 
@@ -193,34 +208,45 @@ export default function PastorDocumentsScreen() {
             </View>
 
             {/* Documents List */}
-            {
-                activeTab === 'myDocuments' ? (
+            {activeTab === 'myDocuments' ? (
+                isLoading ? (
+                    <View style={styles.emptyContainer}>
+                        <ActivityIndicator size="large" color="#fff" />
+                        <Text style={styles.emptyText}>Loading documents...</Text>
+                    </View>
+                ) : (
                     <FlatList
                         data={documents}
                         renderItem={renderDocument}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item) => item.id || item.fileUrl}
                         contentContainerStyle={[
                             styles.listContent,
                             { paddingBottom: bottom + 20 },
                         ]}
                         showsVerticalScrollIndicator={false}
+                        refreshing={isLoading}
+                        onRefresh={refetch}
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
                                 <Ionicons name="document-outline" size={64} color="rgba(255,255,255,0.3)" />
                                 <Text style={styles.emptyText}>No documents uploaded yet</Text>
-                                <TouchableOpacity style={styles.emptyButton} onPress={pickDocument}>
+                                <TouchableOpacity
+                                    style={styles.emptyButton}
+                                    onPress={pickDocument}
+                                    disabled={uploadDocument.isPending}
+                                >
                                     <Text style={styles.emptyButtonText}>Upload Document</Text>
                                 </TouchableOpacity>
                             </View>
                         }
                     />
-                ) : (
-                    <View style={styles.emptyContainer}>
-                        <Ionicons name="people-outline" size={64} color="rgba(255,255,255,0.3)" />
-                        <Text style={styles.emptyText}>No mentors documents</Text>
-                    </View>
                 )
-            }
+            ) : (
+                <View style={styles.emptyContainer}>
+                    <Ionicons name="people-outline" size={64} color="rgba(255,255,255,0.3)" />
+                    <Text style={styles.emptyText}>No mentors documents</Text>
+                </View>
+            )}
         </LinearGradient>
     );
 }
@@ -365,5 +391,8 @@ const styles = StyleSheet.create({
         color: '#1E3A5F',
         fontSize: 16,
         fontWeight: '600',
+    },
+    uploadButtonDisabled: {
+        opacity: 0.6,
     },
 });

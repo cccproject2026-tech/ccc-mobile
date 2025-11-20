@@ -139,3 +139,60 @@ export interface SubmitAnswersPayload {
         }>;
     }>;
 }
+
+
+// ==================== Assessment Response ====================
+export interface AssessmentResponse {
+    assessmentId: string;
+    assessmentType: 'CMA' | 'PMP';
+    assessmentTitle: string;
+    preSurveyAnswers?: Record<string, string>;
+    sectionAnswers: Record<string, any>;
+    completedAt?: string;
+    status: 'Due' | 'Not Started' | 'Submitted' | 'Completed';
+    currentSectionIndex: number;
+    meetingDate?: string;
+}
+
+export interface SubmitPreSurveyPayload {
+    userId: string;
+    preSurveyAnswers: Array<{
+        questionText: string;
+        answer: string | number;
+    }>;
+}
+
+export interface SubmitAnswersPayload {
+    userId: string;
+    answers: Array<{
+        sectionId: string;
+        layers: Array<{
+            layerId: string;
+            selectedChoice: string;
+        }>;
+    }>;
+}
+
+// ==================== Submitted Answers Response ====================
+export interface SubmittedAnswersResponse {
+    _id: string;
+    assessmentId: string;
+    userId: string;
+    preSurveyAnswers?: Array<{
+        questionText: string;
+        answer: string;
+        _id: string;
+    }>;
+    preSurveySubmittedAt?: string;
+    sections: Array<{
+        sectionId: string;
+        layers: Array<{
+            layerId: string;
+            selectedChoice: string;
+            answeredAt: string;
+            _id: string;
+        }>;
+        _id: string;
+    }>;
+    createdAt: string;
+}

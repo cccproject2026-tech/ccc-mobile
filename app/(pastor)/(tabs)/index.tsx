@@ -2,10 +2,11 @@ import RoadMapCardNew from '@/components/atom/RoadMapCard';
 import AppointmentCard from '@/components/director/AppointmentCard';
 import ExploreCard from "@/components/director/ExploreCard";
 import HeaderHero from "@/components/director/HeroHeader";
-import MentorCard, { MentorData } from "@/components/director/MentorCard";
+import MentorCard from "@/components/director/MentorCard";
 import WelcomeCard from "@/components/director/WelcomeCard";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useAssignedMentors } from '@/hooks/mentors/useGetAssignedMentors';
 import { useProfile } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores';
 import { formatClock, formatDate } from "@/utils/date";
@@ -31,6 +32,7 @@ export default function PastorDashboard() {
 
   console.log("Logged in user:", user?.id);
   const { data, isLoading, isError, error } = useProfile();
+  const { mentors, isEmpty } = useAssignedMentors(user?.id as string);
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
@@ -87,10 +89,10 @@ export default function PastorDashboard() {
     { phase: 'Questionnaires', title: 'Survey', status: 'Remaining' },
   ];
 
-  const mockMentors: MentorData[] = [
-    { id: '1', name: 'John Ross', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/1.jpg' },
-    { id: '2', name: 'John Ross', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/men/2.jpg' },
-  ];
+  // const mockMentors: MentorData[] = [
+  //   { id: '1', name: 'John Ross', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/1.jpg' },
+  //   { id: '2', name: 'John Ross', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/men/2.jpg' },
+  // ];
 
   const appointments = [
     {
@@ -227,7 +229,7 @@ export default function PastorDashboard() {
               <Text style={styles.mentorTitle}>My Mentors</Text>
               <Text style={styles.mentorSeeAll}>See all</Text>
             </View>
-            {mockMentors.map((e, i) => (
+            {mentors.map((e, i) => (
               <MentorCard key={i} mentor={e} layout="list" onMenuPress={() => { }} />
             ))}
           </View>

@@ -1,13 +1,16 @@
 import TopBar from '@/components/director/TopBar';
 import { useAssessment } from '@/hooks/assessments';
+import { useFetchAnswers } from '@/hooks/assessments/useFetchAnswers';
+import { transformSubmittedAnswersToStore } from '@/lib/assessments/helpers';
 import { mapApiToFrontend } from '@/lib/assessments/mappers';
+import { useAuthStore } from '@/stores';
 import { useAssessmentStore } from '@/stores/assessment.store';
 import { ApiAssessment } from '@/types/assessment.types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -23,50 +26,121 @@ const { height } = Dimensions.get('window');
 export default function SurveyGuidelinesPage() {
     const { assessmentId } = useLocalSearchParams();
     const router = useRouter();
+    const { user } = useAuthStore();
 
-    // Fetch assessment from API (server state)
+    // Fetch assessment from API
     const { data, isLoading, error, refetch } = useAssessment(assessmentId as string);
     const assessment = useMemo(() => {
         if (!data) return null;
         return mapApiToFrontend(data as ApiAssessment);
     }, [data]);
 
-    // Get draft from store (client state)
+    // Fetch submitted answers - returns SubmittedAnswersResponse directly
+    const {
+        data: submittedAnswers,
+        isLoading: isLoadingAnswers
+    } = useFetchAnswers(
+        assessmentId as string,
+        user?.id
+    );
+
+    // Get draft from store
     const getDraft = useAssessmentStore((state) => state.getDraft);
+    const setDraft = useAssessmentStore((state) => state.saveDraft);
     const clearDraft = useAssessmentStore((state) => state.clearDraft);
     const draftResponse = getDraft(assessmentId as string);
 
-    // Check if completed from server data
-    const isCompleted = assessment?.status === 'Completed';
+    // Load submitted answers into store
+    useEffect(() => {
+        if (submittedAnswers && assessment && data && user?.id) {
+            const transformed = transformSubmittedAnswersToStore(
+                submittedAnswers,
+                assessment,
+                data
+            );
 
-    // Check if has draft in progress
-    const hasDraft = !!draftResponse;
+            setDraft(assessmentId as string, {
+                assessmentId: assessmentId as string,
+                assessmentType: assessment.type,
+                assessmentTitle: assessment.title,
+                preSurveyAnswers: transformed.preSurveyAnswers,
+                sectionAnswers: transformed.sectionAnswers,
+                status: 'Submitted',
+                currentSectionIndex: 0,
+            });
+        }
+    }, [submittedAnswers, assessment, data, assessmentId, user?.id, setDraft]);
+
+    // Determine submission state
+    const submissionState = useMemo(() => {
+        if (!submittedAnswers) {
+            return {
+                preSurveySubmitted: false,
+                answersSubmitted: false,
+                isFullyCompleted: false,
+                hasLocalDraft: !!draftResponse
+            };
+        }
+
+        const preSurveySubmitted = !!submittedAnswers.preSurveySubmittedAt;
+        const answersSubmitted = submittedAnswers.sections && submittedAnswers.sections.length > 0;
+        const isFullyCompleted = preSurveySubmitted && answersSubmitted;
+
+        return {
+            preSurveySubmitted,
+            answersSubmitted,
+            isFullyCompleted,
+            hasLocalDraft: !!draftResponse
+        };
+    }, [submittedAnswers, draftResponse]);
 
     // Refresh on focus
     useFocusEffect(
         useCallback(() => {
-            refetch(); // Refresh assessment data from server
-        }, [assessmentId])
+            refetch();
+        }, [refetch])
     );
 
-    const handleStart = () => {
+    // NEW: Separate handler for fresh start (Start Now / Repeat)
+    const handleFreshStart = () => {
         if (!assessment) return;
-        console.log('Starting assessment:', assessmentId);
-        console.log('Assessment type:', assessment.type);
-        console.log('Has pre-survey:', assessment.sections[0]);
+
+        // Check if assessment has pre-survey based on backend data
+
+        const hasPreSurvey = !!(assessment.preSurvey && assessment.preSurvey.length > 0);
+
+        console.log('Has Pre-Survey:', hasPreSurvey);
         router.push({
             pathname: '/assessments/answer-questions',
             params: {
                 assessmentId,
-                hasPreSurvey: (assessment.type === 'CMA' && assessment.preSurvey) ? 'true' : 'false'
+                hasPreSurvey: hasPreSurvey ? 'true' : 'false'
+            },
+        });
+    };
+
+    // NEW: Handler for continuing (Continue Assessment)
+    const handleContinue = () => {
+        if (!assessment) return;
+
+        // Check if assessment has pre-survey
+        const hasPreSurvey = !!(assessment.preSurvey && assessment.preSurvey.length > 0);
+
+        router.push({
+            pathname: '/assessments/answer-questions',
+            params: {
+                assessmentId,
+                hasPreSurvey: hasPreSurvey ? 'true' : 'false'
             },
         });
     };
 
     const handleRepeatSurvey = async () => {
-        // Clear any existing draft
+        // Clear draft from store
         clearDraft(assessmentId as string);
-        handleStart();
+
+        // Start fresh (will show pre-survey if available)
+        handleFreshStart();
     };
 
     const handleViewResponse = () => {
@@ -100,8 +174,27 @@ export default function SurveyGuidelinesPage() {
 
     const cardContent = getCardContent();
 
+    // Button text logic
+    const getButtonText = () => {
+        if (submissionState.isFullyCompleted) {
+            return null; // Show repeat + view response buttons
+        }
+
+        if (submissionState.preSurveySubmitted || submissionState.answersSubmitted || submissionState.hasLocalDraft) {
+            return 'Continue Assessment';
+        }
+
+        return 'Start Now';
+    };
+
+    const buttonText = getButtonText();
+
+    // Determine which handler to use
+    const isFirstTime = !submissionState.preSurveySubmitted && !submissionState.answersSubmitted && !submissionState.hasLocalDraft;
+    const handleButtonClick = isFirstTime ? handleFreshStart : handleContinue;
+
     // Loading state
-    if (isLoading) {
+    if (isLoading || isLoadingAnswers) {
         return (
             <LinearGradient
                 colors={['#176192', '#1D548D', '#264387']}
@@ -183,9 +276,9 @@ export default function SurveyGuidelinesPage() {
                                 Due: {assessment.dueDate}
                             </Text>
                         )}
-                        {isCompleted && assessment.completionDate && (
+                        {submissionState.isFullyCompleted && submittedAnswers?.createdAt && (
                             <Text style={styles.completedDate}>
-                                Completed on: {assessment.completionDate}
+                                Completed on: {new Date(submittedAnswers.createdAt).toLocaleDateString('en-GB')}
                             </Text>
                         )}
                     </View>
@@ -213,8 +306,10 @@ export default function SurveyGuidelinesPage() {
                     </LinearGradient>
                 )}
 
+
+
                 {/* Show guidelines only if not completed */}
-                {!isCompleted && (
+                {!submissionState.isFullyCompleted && (
                     <View style={styles.guidelinesSection}>
                         <Text style={styles.guidelinesTitle}>Assessment Guidelines</Text>
                         <View style={styles.guidelinesBox}>
@@ -231,7 +326,7 @@ export default function SurveyGuidelinesPage() {
                 )}
 
                 {/* Action Buttons */}
-                {isCompleted ? (
+                {submissionState.isFullyCompleted ? (
                     <View style={styles.completedButtonContainer}>
                         <TouchableOpacity
                             style={styles.repeatButton}
@@ -253,12 +348,10 @@ export default function SurveyGuidelinesPage() {
                 ) : (
                     <TouchableOpacity
                         style={styles.startButton}
-                        onPress={handleStart}
+                        onPress={handleButtonClick}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.startButtonText}>
-                            {hasDraft ? 'Continue Assessment' : 'Start Now'}
-                        </Text>
+                        <Text style={styles.startButtonText}>{buttonText}</Text>
                     </TouchableOpacity>
                 )}
             </ScrollView>

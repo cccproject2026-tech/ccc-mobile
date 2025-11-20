@@ -34,7 +34,7 @@ const mockProfiles = [
 interface MentorProfile {
   id: string;
   name: string;
-  profileImage?: string;
+  profilePicture?: string;
   email?: string;
 }
 
@@ -55,7 +55,7 @@ export default function MentorProfileSwiper({
       return mentors.map(mentor => ({
         id: mentor.id,
         name: mentor.name,
-        image: mentor.profileImage,
+        image: mentor.profilePicture,
         mentorData: mentor,
       }));
     }
