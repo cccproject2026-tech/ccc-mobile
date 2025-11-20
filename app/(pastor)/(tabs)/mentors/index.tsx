@@ -1,9 +1,9 @@
-import MentorCard, { MentorData } from "@/components/director/MentorCard";
+import MentorCard from "@/components/director/MentorCard";
 import MentorProfileSwiper from "@/components/director/MentorProfileSwiper";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
+import { Mentor as MentorData, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -195,7 +195,7 @@ export default function MyMentorsScreen() {
                             <View style={styles.quickAccessContainer}>
                                 <MentorProfileSwiper
                                     mentors={mentors}
-                                    onMentorPress={handleCardPress}
+                                // onMentorPress={handleCardPress}
                                 />
                             </View>
 

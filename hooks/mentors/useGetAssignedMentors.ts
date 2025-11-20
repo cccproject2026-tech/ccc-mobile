@@ -1,4 +1,5 @@
-import { AssignedMentorItem, mentorsService } from '@/services/mentors.service';
+import { mentorsService } from '@/services/mentors.service';
+import { AssignedMentorItem } from '@/types/mentors.types';
 import { useQuery } from '@tanstack/react-query';
 
 // Transformed mentor type that matches component expectations
@@ -10,7 +11,8 @@ export interface Mentor {
     email?: string;
     username?: string;
     menteesCount?: number;
-    profileImage?: string;
+    profilePicture?: string;
+    profileInfo?: string;
     status?: string;
 }
 
@@ -21,15 +23,22 @@ const transformAssignedMentor = (mentor: AssignedMentorItem): Mentor => {
         name: `${mentor.firstName} ${mentor.lastName}`.trim(),
         role: mentor.role,
         email: mentor.email,
-        username: undefined,
         description: undefined,
         menteesCount: undefined,
-        profileImage: undefined,
+        profilePicture: mentor.profilePicture,
+        profileInfo: mentor.profileInfo,
         status: mentor.status,
     };
 };
 
-export const useAssignedMentors = (menteeId: string | null) => {
+export const useAssignedMentors = (
+    menteeId: string | null
+): {
+    mentors: Mentor[];
+    total: number;
+    isEmpty: boolean;
+    [key: string]: any;
+} => {
     const query = useQuery({
         queryKey: ['assigned-mentors', menteeId],
         queryFn: () => mentorsService.getAssignedMentors(menteeId!),

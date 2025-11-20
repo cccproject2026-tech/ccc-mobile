@@ -31,7 +31,7 @@ export function useUpdateInterestStatus() {
     const queryClient = useQueryClient();
 
     return useMutation<UpdateInterestStatusResponse, Error, { interestId: string; status: 'accepted' | 'rejected' | 'pending' }>({
-        mutationFn: ({ interestId, status }) => 
+        mutationFn: ({ interestId, status }) =>
             interestsService.updateStatus(interestId, status),
         onSuccess: () => {
             // Invalidate interests list to refetch updated data

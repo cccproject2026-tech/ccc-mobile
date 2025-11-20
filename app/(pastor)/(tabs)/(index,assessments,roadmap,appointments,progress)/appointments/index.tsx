@@ -2,22 +2,23 @@ import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
-import ScheduleMeetingBottomSheet, { Mentor } from "@/components/director/ScheduleMeetingBottomSheet";
+import ScheduleMeetingBottomSheet from "@/components/director/ScheduleMeetingBottomSheet";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
+import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
+import { useUpdateAppointment } from "@/hooks/appointments/useUpadteAppointment";
+import { Mentor } from "@/hooks/mentors/useGetAssignedMentors";
 import { useAuthStore } from "@/stores";
-import { Appointment, AppointmentPlatform, UpdateAppointmentPayload } from "@/types/appointment.types";
+import { Appointment, AppointmentPlatform } from "@/types/appointment.types";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo } from "react";
-import { Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import { ActivityIndicator, Alert, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-
 
 const Appointments = () => {
   const today = new Date().toISOString().split('T')[0];
@@ -33,6 +34,9 @@ const Appointments = () => {
 
   const { user } = useAuthStore();
 
+  // ✅ Move state declaration BEFORE the hook
+  const [rescheduleData, setRescheduleData] = React.useState<Appointment | null>(null);
+
   if (!user?.id) {
     return (
       <LinearGradient
@@ -43,17 +47,36 @@ const Appointments = () => {
       </LinearGradient>
     );
   }
-  // Use the simplified hook - that's it!
+
+  // Fetch appointments
   const {
     appointments,
     isLoading,
+    isError,
     error,
-    createAppointment,
-    updateAppointment,
     refetch,
     getAppointmentsByDate,
-  } = useAppointments(user.id);
+  } = useAppointments({ userId: user.id });
 
+
+  // Create/Reschedule appointment hook
+  const {
+    createAppointmentAsync,
+    rescheduleAppointmentAsync,
+    isCreating,
+    isRescheduling
+  } = useCreateAppointment({
+    onSuccess: () => {
+      scheduleMeetingBottomSheetRef.current?.dismiss();
+      setRescheduleData(null);
+    },
+    onError: (error) => {
+      Alert.alert('Error', error.message || 'Failed to schedule meeting');
+    },
+  });
+
+  // Update appointment
+  const { updateAppointmentAsync, isUpdating } = useUpdateAppointment();
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
 
   React.useEffect(() => {
@@ -70,14 +93,24 @@ const Appointments = () => {
       if (!mentorMap.has(apt.mentorId)) {
         mentorMap.set(apt.mentorId, {
           id: apt.mentorId,
-          name: `Mentor ${apt.mentorId.slice(-4)}`,
-          role: 'Mentor',
-          profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
+          name: 'Ananthu Mohan',
+          role: 'Field Mentor',
+          profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg',
         });
       }
     });
     return Array.from(mentorMap.values());
   }, [appointments]);
+
+  const formatTimeIST = useCallback((isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Kolkata'
+    });
+  }, []);
 
   const formatDisplayDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -93,20 +126,13 @@ const Appointments = () => {
     return dateString === today;
   };
 
-  // Use the hook's getAppointmentsByDate method
   const selectedDateAppointments = getAppointmentsByDate(selectedDate);
 
-  const [rescheduleData, setRescheduleData] = React.useState<{
-    appointment: Appointment;
-    mentor: Mentor;
-  } | null>(null);
+  // ✅ Removed duplicate declaration (moved to top)
 
   const handleReschedule = (appointment: Appointment) => {
-    const mentor = mentorsFromAppointments.find(m => m.id === appointment.mentorId);
-    if (mentor) {
-      setRescheduleData({ appointment, mentor });
-      scheduleMeetingBottomSheetRef.current?.present();
-    }
+    setRescheduleData(appointment);
+    scheduleMeetingBottomSheetRef.current?.present();
   };
 
   const handleCancel = (appointment: Appointment) => {
@@ -120,7 +146,10 @@ const Appointments = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await updateAppointment(appointment.id, { status: 'cancelled' });
+              await updateAppointmentAsync({
+                id: appointment.id,
+                payload: { status: 'cancelled' }
+              });
               Alert.alert('Success', 'Meeting cancelled successfully');
             } catch (error) {
               Alert.alert('Error', 'Failed to cancel meeting');
@@ -136,19 +165,27 @@ const Appointments = () => {
     scheduleMeetingBottomSheetRef.current?.present();
   };
 
-  const handleScheduleMeeting = async (data: any) => {
+  const handleScheduleMeeting = async (data: {
+    mentorId: string;
+    meetingDate: string;
+    startTime: string;
+    startPeriod: 'AM' | 'PM';
+    platform: string;
+    meetingLink?: string;
+    notes?: string;
+  }) => {
     try {
       if (rescheduleData) {
-        const updatePayload: UpdateAppointmentPayload = {
-          meetingDate: data.meetingDate,
-          platform: data.platform as AppointmentPlatform,
-          meetingLink: data.meetingLink,
-          notes: data.notes,
-        };
-        await updateAppointment(rescheduleData.appointment.id, updatePayload);
-        Alert.alert('Success', 'Meeting rescheduled successfully');
+        // Reschedule existing appointment
+        await rescheduleAppointmentAsync({
+          appointmentId: rescheduleData.id,
+          newDate: data.meetingDate,
+          startTime: data.startTime,
+          startPeriod: data.startPeriod,
+        });
       } else {
-        await createAppointment({
+        // Create new appointment
+        await createAppointmentAsync({
           userId: user.id,
           mentorId: data.mentorId,
           meetingDate: data.meetingDate,
@@ -156,7 +193,6 @@ const Appointments = () => {
           meetingLink: data.meetingLink,
           notes: data.notes,
         });
-        Alert.alert('Success', 'Meeting scheduled successfully');
       }
 
       if (openSheet === 'true') {
@@ -165,8 +201,8 @@ const Appointments = () => {
         });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to schedule meeting');
       console.error('Schedule error:', error);
+      // Error already handled by hook
     }
   };
 
@@ -183,21 +219,32 @@ const Appointments = () => {
 
   const meetingModes: AppointmentPlatform[] = [
     'zoom',
-    'google_meet',
-    'teams',
-    'phone',
-    'in_person',
+    'gmeet',
+    // 'teams',
+    // 'phone',
+    // 'in_person',
   ];
 
   const getModeLabel = (mode: AppointmentPlatform): string => {
     const labels: Record<AppointmentPlatform, string> = {
       zoom: 'Zoom',
-      google_meet: 'Google Meet',
-      teams: 'Teams',
-      phone: 'Phone call',
-      in_person: 'In Person',
+      gmeet: 'Google Meet',
+      // teams: 'Teams',
+      // phone: 'Phone call',
+      // in_person: 'In Person',
     };
     return labels[mode];
+  };
+
+  const getPlatformIcon = (mode: AppointmentPlatform) => {
+    const iconsMap: Record<AppointmentPlatform, any> = {
+      zoom: icons.duoMeet,
+      gmeet: icons.googleMeet,
+      // teams: icons.duoMeet,
+      // phone: icons.phone,
+      // in_person: icons.profile,
+    };
+    return iconsMap[mode];
   };
 
   const handleChangeMode = (appointment: Appointment) => {
@@ -209,8 +256,10 @@ const Appointments = () => {
   const handleChooseMode = async () => {
     if (!selectedAppointmentForMode) return;
     try {
-      await updateAppointment(selectedAppointmentForMode.id, {
-        platform: selectedMode,
+      console.log('Changing mode to:', selectedMode);
+      await updateAppointmentAsync({
+        id: selectedAppointmentForMode.id,
+        payload: { platform: selectedMode }
       });
       setChangeModeModalVisible(false);
       setModeSuccessText(`Meeting Mode has been\nChanged to ${getModeLabel(selectedMode)}`);
@@ -232,7 +281,7 @@ const Appointments = () => {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <LinearGradient
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
@@ -325,39 +374,43 @@ const Appointments = () => {
                       </Text>
                     </View>
                     <View style={{ gap: 10 }}>
-                      {selectedDateAppointments.map((appointment) => (
-                        <AppointmentCard
-                          key={appointment.id}
-                          date={appointment.meetingDate.split('T')[0]}
-                          time={`${appointment.meetingDate.split('T')[1]?.slice(0, 5)} - ${appointment.endTime?.split('T')[1]?.slice(0, 5)}`}
-                          tz="UTC"
-                          person={mentorsFromAppointments.find(m => m.id === appointment.mentorId)?.name || 'Unknown'}
-                          role={mentorsFromAppointments.find(m => m.id === appointment.mentorId)?.role || 'Mentor'}
-                          mode={getModeLabel(appointment.platform)}
-                          platformIcon={appointment.platform}
-                          menuItems={[
-                            {
-                              key: 'reschedule',
-                              title: 'Reschedule Meeting',
-                              icon: { ios: 'calendar.badge.clock', android: 'ic_event_available' },
-                              onSelect: () => handleReschedule(appointment)
-                            },
-                            {
-                              key: 'change_mode',
-                              title: 'Change Mode',
-                              icon: { ios: 'arrow.2.circlepath', android: 'ic_sync' },
-                              onSelect: () => handleChangeMode(appointment)
-                            },
-                            {
-                              key: 'cancel',
-                              title: 'Cancel Meeting',
-                              destructive: true,
-                              icon: { ios: 'trash', android: 'ic_menu_delete' },
-                              onSelect: () => handleCancel(appointment)
-                            }
-                          ]}
-                        />
-                      ))}
+                      {selectedDateAppointments.map((appointment) => {
+                        const mentor = mentorsFromAppointments.find(m => m.id === appointment.mentorId);
+
+                        return (
+                          <AppointmentCard
+                            key={appointment.id}
+                            date={appointment.meetingDate.split('T')[0]}
+                            time={`${formatTimeIST(appointment.meetingDate)} - ${formatTimeIST(appointment.endTime)}`}
+                            tz="IST"
+                            person={mentor?.name || 'Ananthu Mohan'}
+                            role={mentor?.role || 'Field Mentor'}
+                            mode={getModeLabel(appointment.platform)}
+                            platformIcon={getPlatformIcon(appointment.platform)}
+                            menuItems={[
+                              {
+                                key: 'reschedule',
+                                title: 'Reschedule Meeting',
+                                icon: { ios: 'calendar.badge.clock', android: 'ic_event_available' },
+                                onSelect: () => handleReschedule(appointment)
+                              },
+                              {
+                                key: 'change_mode',
+                                title: 'Change Mode',
+                                icon: { ios: 'arrow.2.circlepath', android: 'ic_sync' },
+                                onSelect: () => handleChangeMode(appointment)
+                              },
+                              {
+                                key: 'cancel',
+                                title: 'Cancel Meeting',
+                                destructive: true,
+                                icon: { ios: 'trash', android: 'ic_menu_delete' },
+                                onSelect: () => handleCancel(appointment)
+                              }
+                            ]}
+                          />
+                        );
+                      })}
                     </View>
                   </View>
                 )}
@@ -389,7 +442,7 @@ const Appointments = () => {
         ref={scheduleMeetingBottomSheetRef}
         mentors={mentorsFromAppointments}
         mode={rescheduleData ? 'reschedule' : 'schedule'}
-        existingAppointment={rescheduleData?.appointment}
+        existingAppointment={rescheduleData}
         onClose={handleCloseScheduleBottomSheet}
         onSchedule={handleScheduleMeeting}
         colorScheme={{
@@ -423,15 +476,24 @@ const Appointments = () => {
               <Text style={{ color: 'white', fontSize: 22, fontWeight: '700', flex: 1, textAlign: 'center' }}>
                 Choose your meeting option
               </Text>
-              <Pressable onPress={() => setChangeModeModalVisible(false)} style={{ marginLeft: 8 }}>
+              <Pressable
+                onPress={() => {
+                  setChangeModeModalVisible(false);
+                  setSelectedAppointmentForMode(null);
+                }}
+                style={{ marginLeft: 8 }}
+                disabled={isUpdating}
+              >
                 <Text style={{ color: 'white', fontSize: 28, fontWeight: '400' }}>×</Text>
               </Pressable>
             </View>
+
             {meetingModes.map((mode) => (
               <Pressable
                 key={mode}
                 onPress={() => setSelectedMode(mode)}
                 style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, minHeight: 36 }}
+                disabled={isUpdating}
               >
                 <View style={{
                   width: 26,
@@ -452,11 +514,25 @@ const Appointments = () => {
                 </Text>
               </Pressable>
             ))}
+
             <Pressable
               onPress={handleChooseMode}
-              style={{ backgroundColor: 'white', borderRadius: 12, paddingVertical: 14, marginTop: 10, marginBottom: 2 }}
+              style={{
+                backgroundColor: isUpdating ? 'rgba(255, 255, 255, 0.5)' : 'white',
+                borderRadius: 12,
+                paddingVertical: 14,
+                marginTop: 10,
+                marginBottom: 2
+              }}
+              disabled={isUpdating}
             >
-              <Text style={{ color: '#1535A8', fontSize: 19, fontWeight: '700', textAlign: 'center' }}>Choose</Text>
+              {isUpdating ? (
+                <ActivityIndicator size="small" color="#1535A8" />
+              ) : (
+                <Text style={{ color: '#1535A8', fontSize: 19, fontWeight: '700', textAlign: 'center' }}>
+                  Choose
+                </Text>
+              )}
             </Pressable>
           </LinearGradient>
         </View>
@@ -472,6 +548,9 @@ const Appointments = () => {
 };
 
 export default Appointments;
+
+
+
 const styles = StyleSheet.create({
   // Calendar Container
   calendarContainer: {

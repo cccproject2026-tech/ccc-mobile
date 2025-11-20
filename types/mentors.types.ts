@@ -1,5 +1,6 @@
 import { User } from "./auth.types";
 
+
 export interface MentorListItem extends User {
     roleId: string;
     interestId?: string;
@@ -14,6 +15,8 @@ export interface AssignedMentorItem {
     email: string;
     role: string;
     status: string;
+    profilePicture?: string;
+    profileInfo?: string;
 }
 
 export interface MentorDetail {

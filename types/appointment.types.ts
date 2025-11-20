@@ -1,4 +1,4 @@
-export type AppointmentPlatform = 'zoom' | 'google_meet' | 'teams' | 'phone' | 'in_person';
+export type AppointmentPlatform = 'zoom' | 'gmeet'
 export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
 
 export interface CreateAppointmentPayload {

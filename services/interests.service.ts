@@ -40,6 +40,6 @@ export const interestsService = {
 		);
 		return response.data;
 	},
-};
+}
 
 

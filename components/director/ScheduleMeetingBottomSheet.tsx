@@ -1,3 +1,6 @@
+import { Mentor } from '@/hooks/mentors/useGetAssignedMentors';
+import { formatTimeSlot, useMonthlyAvailability } from '@/hooks/mentors/useMentorsAvailability';
+import { TimeSlot as APITimeSlot, Appointment } from '@/types/appointment.types';
 import {
     getDeviceType,
     getFontSize,
@@ -9,67 +12,33 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { forwardRef, useCallback, useMemo, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import GradientCalendar from '../atom/calendar';
 import SimpleSuccessModal from '../atom/SimpleSuccessModal';
 import SearchBar from './SearchBar';
 
-export interface Mentor {
-    id: string;
-    name: string;
-    role: string;
-    profileImage?: string;
-}
-
-export interface TimeSlot {
+interface TimeSlot {
     id: string;
     startTime: string;
     endTime: string;
     label: string;
+    apiSlot: APITimeSlot;
 }
 
 export interface ScheduleMeetingBottomSheetProps {
     mentors: Mentor[];
     onClose: () => void;
     onSchedule: (data: {
-        selectedMentor: Mentor;
-        selectedDate: string;
-        selectedTime: TimeSlot;
-        meetingOption: string;
+        mentorId: string;
+        meetingDate: string;
+        platform: string;
+        meetingLink?: string;
+        notes?: string;
     }) => void;
-    actionType?: 'scheduled' | 'rescheduled';
-    colorScheme?: {
-        background?: string;
-        text?: string;
-        accent?: string;
-        cardBackground?: string;
-    };
-
-
-    disableOutsideClose?: boolean; // Prevent closing by clicking outside or swiping down
-    showCancelButton?: boolean; // Control whether cancel button is shown in step 1
-    onScheduleComplete?: () => void; // Callback after successful scheduling for context updates
-}
-export interface ScheduleMeetingBottomSheetProps {
-    mentors: Mentor[];
-    onClose: () => void;
-    onSchedule: (data: {
-        selectedMentor: Mentor;
-        selectedDate: string;
-        selectedTime: TimeSlot;
-        meetingOption: string;
-    }) => void;
-    mode?: 'schedule' | 'reschedule'; // NEW: Determine which mode
-    existingAppointment?: {
-        mentor: Mentor;
-        date: string;
-        time: TimeSlot;
-        meetingOption: string;
-    } | null;  // ⬅️ ADD | null
-
-    actionType?: 'scheduled' | 'rescheduled';
+    mode?: 'schedule' | 'reschedule';
+    existingAppointment?: Appointment | null;
     colorScheme?: {
         background?: string;
         text?: string;
@@ -80,16 +49,14 @@ export interface ScheduleMeetingBottomSheetProps {
     showCancelButton?: boolean;
     onScheduleComplete?: () => void;
 }
-
 const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingBottomSheetProps>(
     (
         {
             mentors,
             onClose,
             onSchedule,
-            mode = 'schedule', // NEW: Default to schedule mode
-            existingAppointment, // NEW: Pre-filled data for reschedule
-            actionType = 'scheduled',
+            mode = 'schedule',
+            existingAppointment,
             colorScheme = {
                 background: '#1E3A6F',
                 text: '#FFFFFF',
@@ -105,65 +72,121 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
         const { bottom } = useSafeAreaInsets();
         const deviceType = getDeviceType();
         const snapPoints = useMemo(() => {
-            if (deviceType === 'small') {
-                return ['88%'];
-            } else if (deviceType === 'medium') {
-                return ['82%'];
-            }
+            if (deviceType === 'small') return ['88%'];
+            else if (deviceType === 'medium') return ['82%'];
             return ['78%'];
         }, [deviceType]);
 
-        // Determine initial step based on mode
+        // ✅ Initialize mentor BEFORE using it
+        const initialMentor = useMemo(() => {
+            if (mode === 'reschedule' && existingAppointment) {
+                return mentors.find(m => m.id === existingAppointment.mentorId) || null;
+            }
+            return null;
+        }, [mode, existingAppointment, mentors]);
+
+        // Initialize state
         const [currentStep, setCurrentStep] = useState<1 | 2>(mode === 'reschedule' ? 2 : 1);
         const [searchQuery, setSearchQuery] = useState('');
-
-        // Pre-fill data for reschedule mode
-        const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(
-            mode === 'reschedule' && existingAppointment ? existingAppointment.mentor : null
-        );
+        const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(initialMentor);
         const [selectedDate, setSelectedDate] = useState<string>(
-            mode === 'reschedule' && existingAppointment ? existingAppointment.date : ''
+            mode === 'reschedule' && existingAppointment
+                ? existingAppointment.meetingDate.split('T')[0]
+                : ''
         );
-        const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(
-            mode === 'reschedule' && existingAppointment ? existingAppointment.time : null
-        );
-        const [meetingOption, setMeetingOption] = useState(
-            mode === 'reschedule' && existingAppointment ? existingAppointment.meetingOption : 'Zoom'
-        );
+        const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null);
+        const [meetingOption, setMeetingOption] = useState('Zoom');
         const [showMeetingOptions, setShowMeetingOptions] = useState(false);
         const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-        // Time slots logic remains the same
-        const getTimeSlotsForDate = (dateString: string): TimeSlot[] => {
-            if (!dateString) return [];
+        // Get current month and year for availability
+        const currentDate = new Date();
+        const [currentMonth] = useState(currentDate.getMonth() + 1);
+        const [currentYear] = useState(currentDate.getFullYear());
 
-            const baseSlots = [
-                { id: '1', startTime: '09:00', endTime: '10:00', label: '09:00 am - 10:00 am' },
-                { id: '2', startTime: '11:00', endTime: '12:00', label: '11:00 am - 12:00 pm' },
-                { id: '3', startTime: '01:00', endTime: '02:00', label: '01:00 pm - 02:00 pm' },
-                { id: '4', startTime: '03:00', endTime: '04:00', label: '03:00 pm - 04:00 pm' },
-            ];
-
-            const date = new Date(dateString);
-            const dayOfWeek = date.getDay();
-
-            if (dayOfWeek === 1 || dayOfWeek === 3) {
-                return baseSlots.slice(0, 2);
-            } else if (dayOfWeek === 2 || dayOfWeek === 4) {
-                return baseSlots.slice(1, 4);
-            } else {
-                return baseSlots;
+        // ✅ Fix: Make sure selectedMentor is set before fetching availability
+        const mentorIdForAvailability = useMemo(() => {
+            if (selectedMentor?.id) {
+                return selectedMentor.id;
             }
-        };
+            // In reschedule mode, use the appointment's mentor ID
+            if (mode === 'reschedule' && existingAppointment) {
+                return existingAppointment.mentorId;
+            }
+            return null;
+        }, [selectedMentor, mode, existingAppointment]);
 
-        const timeSlots = getTimeSlotsForDate(selectedDate);
+        // Fetch availability for selected mentor
+        const {
+            availability: monthlyAvailability,
+            isLoading: isLoadingAvailability,
+        } = useMonthlyAvailability({
+            mentorId: mentorIdForAvailability,
+            month: currentMonth,
+            year: currentYear,
+        });
+
+        // ✅ Debug log to see what's happening
+        useEffect(() => {
+            console.log('🔍 Reschedule Debug:', {
+                mode,
+                mentorId: mentorIdForAvailability,
+                hasAvailability: !!monthlyAvailability,
+                availabilityLength: monthlyAvailability?.length || 0,
+            });
+        }, [mode, mentorIdForAvailability, monthlyAvailability]);
+
+        // Transform API availability to available dates
+        const availableDates = useMemo(() => {
+            if (!monthlyAvailability) {
+                console.log('⚠️ No monthly availability data');
+                return [];
+            }
+            const dates = monthlyAvailability
+                .filter(day => day.slots.length > 0)
+                .map(day => day.date);
+            console.log('📅 Available dates:', dates);
+            return dates;
+        }, [monthlyAvailability]);
+
+        // Get days of week that have availability
+        const availableDaysOfWeek = useMemo(() => {
+            if (!monthlyAvailability) return [];
+            const daysSet = new Set(
+                monthlyAvailability
+                    .filter(day => day.slots.length > 0)
+                    .map(day => day.day)
+            );
+            return Array.from(daysSet);
+        }, [monthlyAvailability]);
+
+        // Transform API slots for selected date
+        const getTimeSlotsForDate = useCallback((dateString: string): TimeSlot[] => {
+            if (!dateString || !monthlyAvailability) return [];
+
+            const dayData = monthlyAvailability.find(day => day.date === dateString);
+            if (!dayData || dayData.slots.length === 0) return [];
+
+            return dayData.slots.map((slot, index) => ({
+                id: slot._id || `${dateString}-${index}`,
+                startTime: `${slot.startTime} ${slot.startPeriod}`,
+                endTime: `${slot.endTime} ${slot.endPeriod}`,
+                label: formatTimeSlot(slot),
+                apiSlot: slot,
+            }));
+        }, [monthlyAvailability]);
+
+        const timeSlots = useMemo(() =>
+            getTimeSlotsForDate(selectedDate),
+            [selectedDate, getTimeSlotsForDate]
+        );
 
         const meetingOptions = [
             { id: 'zoom', label: 'Zoom', icon: 'videocam-outline' },
-            { id: 'google-meet', label: 'Google Meet', icon: 'videocam-outline' },
+            { id: 'google_meet', label: 'Google Meet', icon: 'videocam-outline' },
             { id: 'teams', label: 'Microsoft Teams', icon: 'videocam-outline' },
             { id: 'phone', label: 'Phone Call', icon: 'call-outline' },
-            { id: 'in-person', label: 'In-Person Meeting', icon: 'people-outline' },
+            { id: 'in_person', label: 'In-Person Meeting', icon: 'people-outline' },
         ];
 
         const filteredMentors = useMemo(() => {
@@ -194,7 +217,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
         };
 
         const handleBack = () => {
-            // In reschedule mode, close instead of going back
             if (mode === 'reschedule') {
                 handleClose();
             } else if (currentStep === 2) {
@@ -204,11 +226,37 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
 
         const handleSchedule = () => {
             if (selectedMentor && selectedDate && selectedTime) {
+                // Build meeting date in ISO format
+                const [year, month, day] = selectedDate.split('-').map(Number);
+                let hour = parseInt(selectedTime.apiSlot.startTime, 10);
+                if (selectedTime.apiSlot.startPeriod === 'PM' && hour !== 12) {
+                    hour += 12;
+                } else if (selectedTime.apiSlot.startPeriod === 'AM' && hour === 12) {
+                    hour = 0;
+                }
+
+                const istDate = new Date(Date.UTC(year, month - 1, day, hour, 0, 0, 0));
+                const utcTimestamp = istDate.getTime() - (5.5 * 60 * 60 * 1000);
+                const meetingDate = new Date(utcTimestamp).toISOString();
+
+                // Map platform
+                const platformMap: Record<string, string> = {
+                    'Zoom': 'zoom',
+                    'Google Meet': 'google_meet',
+                    'Microsoft Teams': 'teams',
+                    'Phone Call': 'phone',
+                    'In-Person Meeting': 'in_person',
+                };
+                const platform = platformMap[meetingOption] || 'zoom';
+
                 onSchedule({
-                    selectedMentor,
-                    selectedDate,
-                    selectedTime,
-                    meetingOption,
+                    mentorId: selectedMentor.id,
+                    meetingDate,
+                    startTime: selectedTime.apiSlot.startTime,
+                    startPeriod: selectedTime.apiSlot.startPeriod,
+                    platform,
+                    meetingLink: platform === 'zoom' ? 'https://zoom.us/j/123456789' : undefined,
+                    notes: `Meeting with ${selectedMentor.name}`,
                 });
 
                 if (onScheduleComplete) {
@@ -226,11 +274,11 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
 
         const resetForm = () => {
             setCurrentStep(mode === 'reschedule' ? 2 : 1);
-            setSelectedMentor(mode === 'reschedule' && existingAppointment ? existingAppointment.mentor : null);
-            setSelectedDate(mode === 'reschedule' && existingAppointment ? existingAppointment.date : '');
-            setSelectedTime(mode === 'reschedule' && existingAppointment ? existingAppointment.time : null);
+            setSelectedMentor(initialMentor);
+            setSelectedDate('');
+            setSelectedTime(null);
             setSearchQuery('');
-            setMeetingOption(mode === 'reschedule' && existingAppointment ? existingAppointment.meetingOption : 'Zoom');
+            setMeetingOption('Zoom');
             setShowMeetingOptions(false);
             setShowSuccessModal(false);
         };
@@ -247,7 +295,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
         const isStep1Valid = selectedMentor !== null;
         const isStep2Valid = selectedDate && selectedTime;
 
-        // Determine which step to show
         const showMentorSelection = mode === 'schedule' && currentStep === 1;
         const showDateTimeSelection = mode === 'reschedule' || currentStep === 2;
 
@@ -274,7 +321,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                         >
                             <View>
                                 {showMentorSelection ? (
-                                    // Step 1: Select Mentor (Only in Schedule mode)
+                                    // Step 1: Select Mentor
                                     <View style={styles.stepContent}>
                                         <View style={[styles.titleContainer, { borderColor: 'rgba(255, 255, 255, 0.3)' }]}>
                                             <Text style={[styles.stepTitleLarge, { color: colorScheme.text }]}>
@@ -310,8 +357,8 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                         )}
                                                     </View>
 
-                                                    {mentor.profileImage ? (
-                                                        <Image source={{ uri: mentor.profileImage }} style={styles.mentorImageStep1} />
+                                                    {mentor.profilePicture ? (
+                                                        <Image source={{ uri: mentor.profilePicture }} style={styles.mentorImageStep1} />
                                                     ) : (
                                                         <View style={[styles.mentorImagePlaceholderStep1, { backgroundColor: colorScheme.cardBackground }]}>
                                                             <Ionicons name="person" size={getIconSize(18)} color={colorScheme.text} />
@@ -341,7 +388,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                 style={[
                                                     styles.nextButton,
                                                     {
-                                                        backgroundColor: isStep1Valid ? 'rgba(30, 54, 111, 1)' : 'rgba(30, 54, 111, 1)',
+                                                        backgroundColor: 'rgba(30, 54, 111, 1)',
                                                         borderWidth: 1,
                                                         borderColor: isStep1Valid ? '#fff' : 'rgba(74, 91, 204, 0.5)',
                                                         flex: showCancelButton ? undefined : 1,
@@ -359,7 +406,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                 ) : showDateTimeSelection ? (
                                     // Step 2: Schedule/Reschedule Date & Time
                                     <View style={styles.stepContent}>
-                                        {/* Show mentor info for reschedule mode */}
                                         {mode === 'reschedule' && selectedMentor && (
                                             <View style={[styles.titleContainer, { borderColor: 'rgba(255, 255, 255, 0.3)', marginBottom: 16 }]}>
                                                 <Text style={[styles.sectionTitle, { color: colorScheme.text }]}>
@@ -378,14 +424,10 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                 setSelected={setSelectedDate}
                                                 recurringAvailability={{
                                                     type: 'weekly',
-                                                    daysOfWeek: [1, 2, 3, 4, 5, 6],
+                                                    daysOfWeek: availableDaysOfWeek,
                                                 }}
-                                                availableDates={Array.from({ length: 60 }, (_, i) => {
-                                                    const date = new Date();
-                                                    date.setDate(date.getDate() + i);
-                                                    return date.toISOString().split('T')[0];
-                                                })}
-                                                showHeader={false}
+                                                availableDates={availableDates}
+                                                showHeader={true}
                                                 disablePastDates={true}
                                                 markToday={true}
                                             />
@@ -397,7 +439,13 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                     Select a Time
                                                 </Text>
 
-                                                {timeSlots.length > 0 ? (
+                                                {isLoadingAvailability ? (
+                                                    <View style={styles.noTimeSlotsContainer}>
+                                                        <Text style={[styles.noTimeSlotsText, { color: `${colorScheme.text}80` }]}>
+                                                            Loading available slots...
+                                                        </Text>
+                                                    </View>
+                                                ) : timeSlots.length > 0 ? (
                                                     <ScrollView
                                                         horizontal
                                                         showsHorizontalScrollIndicator={false}
@@ -457,7 +505,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                             onPress={() => setShowMeetingOptions(!showMeetingOptions)}
                                         >
                                             <Text style={[styles.dropdownText, { color: colorScheme.text }]}>
-                                                {meetingOptions.find(option => option.id === meetingOption.toLowerCase().replace(' ', '-'))?.label || meetingOption}
+                                                {meetingOption}
                                             </Text>
                                             <Ionicons
                                                 name={showMeetingOptions ? "chevron-up" : "chevron-down"}
@@ -503,7 +551,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                 style={[
                                                     styles.scheduleButton,
                                                     {
-                                                        backgroundColor: isStep2Valid ? 'rgba(30, 54, 111, 1)' : 'rgba(30, 54, 111, 1)',
+                                                        backgroundColor: 'rgba(30, 54, 111, 1)',
                                                         borderWidth: 1,
                                                         borderColor: isStep2Valid ? '#fff' : 'rgba(74, 91, 204, 0.5)',
                                                     }
@@ -532,7 +580,6 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
         );
     }
 );
-
 
 const styles = StyleSheet.create({
     bottomSheetBackground: {

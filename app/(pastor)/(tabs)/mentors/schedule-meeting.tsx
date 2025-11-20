@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAppointments } from "@/hooks/appointments/useAppointments";
+import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
 import { formatTimeSlot, useMonthlyAvailability } from "@/hooks/mentors/useMentorsAvailability";
 import { appointmentService } from "@/services/appointments.service";
 import { useAuthStore } from "@/stores";
@@ -53,8 +53,22 @@ const ScheduleMeeting = () => {
   const { bottom } = useSafeAreaInsets();
   const mentorData = params.mentorData ? JSON.parse(params.mentorData as string) : null;
   const { user } = useAuthStore();
-  const { createAppointment } = useAppointments();
-  // Get current month and year
+  const { createAppointmentAsync: createAppointment, isCreating } = useCreateAppointment({
+    onSuccess: (appointment) => {
+      console.log('✅ Appointment created successfully!', appointment);
+      setShowSuccessModal(true);
+    },
+    onError: (error) => {
+      console.error('❌ Appointment creation failed:', error);
+      Alert.alert(
+        'Booking Failed',
+        error.message || 'Failed to schedule appointment. Please try again.',
+        [{ text: 'OK' }]
+      );
+    },
+  });
+
+
   const currentDate = new Date();
   const [currentMonth] = useState(currentDate.getMonth() + 1);
   const [currentYear] = useState(currentDate.getFullYear());
@@ -102,12 +116,13 @@ const ScheduleMeeting = () => {
     const dayData = monthlyAvailability.find(day => day.date === dateString);
     if (!dayData || dayData.slots.length === 0) return [];
 
+    // ✅ This is correct - you're using the API slots directly
     return dayData.slots.map((slot, index) => ({
       id: slot._id || `${dateString}-${index}`,
       startTime: `${slot.startTime} ${slot.startPeriod}`,
       endTime: `${slot.endTime} ${slot.endPeriod}`,
       label: formatTimeSlot(slot),
-      apiSlot: slot,
+      apiSlot: slot,  // ✅ Keep the original slot
     }));
   }, [monthlyAvailability]);
 
@@ -129,33 +144,48 @@ const ScheduleMeeting = () => {
     }
 
     try {
-      // Create meeting date in ISO format
+      console.log('🎯 Selected slot:', selectedTime.apiSlot);
+      console.log('📅 Selected date:', selectedDate);
+
       const meetingDate = appointmentService.createMeetingDate(
         selectedDate,
         selectedTime.apiSlot
       );
 
-      // Map platform label to API value
+      console.log('⏰ Meeting date (UTC):', meetingDate);
+      console.log('⏰ Meeting date (IST):', new Date(meetingDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+
       const platform = appointmentService.mapPlatformToApiValue(meetingOption);
 
-      // Build the appointment payload - THIS IS PERFECT!
+      let meetingLink: string | undefined;
+      if (platform === 'zoom') {
+        meetingLink = 'https://zoom.us/j/123456789';
+      } else if (platform === 'google_meet') {
+        meetingLink = 'https://meet.google.com/abc-defg-hij';
+      } else if (platform === 'teams') {
+        meetingLink = 'https://teams.microsoft.com/l/meetup-join/...';
+      }
+
       const appointmentPayload = appointmentService.buildCreatePayload(
-        user.id,                    // userId
-        mentorData.id,              // mentorId
-        meetingDate,                // ISO date string
-        platform,                   // 'zoom', 'google_meet', etc.
-        `Meeting with ${mentorData.name}` // notes (optional)
+        user.id,
+        mentorData.id,
+        meetingDate,
+        platform,
+        meetingLink,
+        `Meeting with ${mentorData.name}`
       );
 
       console.log('📤 Appointment Payload:', appointmentPayload);
-      // Create the appointment
+
+      // This will trigger onCreateSuccess when successful
       await createAppointment(appointmentPayload);
+
+      console.log('🎉 Create appointment call completed');
     } catch (error) {
-      console.error('Error creating appointment:', error);
-      Alert.alert('Error', 'Failed to prepare appointment data. Please try again.');
+      console.error('💥 Error in handleSchedule:', error);
+      // Error is already handled by onCreateError callback
     }
   }, [isScheduleValid, selectedTime, user?.id, mentorData?.id, selectedDate, meetingOption, createAppointment]);
-
 
   const handleSuccessModalClose = useCallback(() => {
     setShowSuccessModal(false);
@@ -373,6 +403,8 @@ const ScheduleMeeting = () => {
       </LinearGradient>
     );
   }
+
+
 
   return (
     <>
