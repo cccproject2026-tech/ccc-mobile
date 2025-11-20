@@ -148,7 +148,13 @@ export default function RevitalizationRoadmap() {
         }, 300);
       }
     },
-    { icon: 'person-add-outline', label: 'Assessments', onPress: () => console.log('Assessments') },
+    { icon: 'person-add-outline', label: 'Assessments', onPress: () => {
+        handleCloseModal();
+        setTimeout(() => {
+          router.push('/(director)/(tabs)/assessments');
+        }, 300);
+      }
+    },
     { icon: 'person-remove-outline', label: 'Assignments', onPress: () => console.log('Assignments') },
     { icon: 'clipboard-outline', label: 'Roadmaps of Mentees', onPress: () => console.log('Roadmaps of Mentees') },
     {
@@ -170,7 +176,13 @@ export default function RevitalizationRoadmap() {
     { icon: 'person-add-outline', label: 'Assign New Mentee', onPress: () => router.push('/(director)/(tabs)/mentors/assign-mentee') },
     { icon: 'person-remove-outline', label: 'Remove a Mentee', onPress: () => router.push('/(director)/(tabs)/mentors/remove-mentee') },
     { icon: 'clipboard-outline', label: 'Roadmaps of Mentees', onPress: () => console.log('Roadmaps of Mentees') },
-    { icon: 'checkmark-done-outline', label: 'Assessments of Mentees', onPress: () => console.log('Assessments of Mentees') },
+    { icon: 'checkmark-done-outline', label: 'Assessments of Mentees', onPress: () => {
+        handleCloseModal();
+        setTimeout(() => {
+          router.push('/(director)/(tabs)/assessments');
+        }, 300);
+      }
+    },
     { icon: 'book-outline', label: 'Assignments of Mentees', onPress: () => console.log('Assignments of Mentees') },
     { icon: 'stats-chart-outline', label: 'Progress of Mentees', onPress: () => console.log('Progress of Mentees') },
     { icon: 'calendar-outline', label: 'Schedule a Meeting', onPress: () => console.log('Schedule a Meeting') },

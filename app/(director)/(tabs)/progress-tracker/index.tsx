@@ -76,7 +76,7 @@ export default function ProgressTracker() {
             }
         },
 
-        { icon: 'person-add-outline', label: 'Assessments', onPress: () => console.log('Assessments') },
+        { icon: 'person-add-outline', label: 'Assessments', onPress: () => router.push('/(director)/(tabs)/assessments') },
         { icon: 'person-remove-outline', label: 'Assignments', onPress: () => console.log('Assignments') },
         { icon: 'clipboard-outline', label: 'Roadmaps of Mentees', onPress: () => console.log('Roadmaps of Mentees') },
         {

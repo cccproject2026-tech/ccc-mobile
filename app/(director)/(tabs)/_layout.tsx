@@ -79,6 +79,10 @@ export default function DirectorTabLayout() {
       
       // Creation flow routes
       /\/revitalization-roadmaps\/\(creation\)/,
+
+      // Assessment assignment routes
+      /\/assessments\/assign-mentee$/,
+      /\/assessments\/create-assessment$/,
     ];
 
     const shouldHide = hideTabBarPatterns.some((pattern) => {

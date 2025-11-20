@@ -458,7 +458,7 @@ export const MENU_ITEMS: MenuItem[] = [
     { id: 'track-progress', label: 'Track Progress', icon: 'bar-chart-outline', route: '/(director)/(tabs)/progress-tracker' },
     { id: 'schedule', label: 'Schedule', icon: 'calendar-outline', route: '/(director)/(tabs)/appointments' },
     { id: 'roadmaps', label: 'Revitalization Roadmaps', icon: 'clipboard-outline', route: '/(director)/(tabs)/revitalization-roadmaps' },
-    { id: 'assessments', label: 'Assessments', icon: 'list-outline', route: '/(director)/(tabs)' },
+    { id: 'assessments', label: 'Assessments', icon: 'checkmark-done-outline', route: '/(director)/(tabs)/assessments' },
     { id: 'courses', label: 'Courses', icon: 'book-outline', route: '/(director)/(tabs)' },
     {
         id: 'ccc',

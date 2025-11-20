@@ -67,7 +67,7 @@ export default function MentorProfile() {
         { icon: 'person-add-outline', label: 'Assign New Mentee', onPress: router.push.bind(router, '/(director)/(tabs)/mentors/assign-mentee') },
         { icon: 'person-remove-outline', label: 'Remove a Mentee', onPress: router.push.bind(router, '/(director)/(tabs)/mentors/remove-mentee') },
         { icon: 'clipboard-outline', label: 'Roadmaps of Mentees', onPress: () => console.log('Roadmaps of Mentees') },
-        { icon: 'checkmark-done-outline', label: 'Assessments of Mentees', onPress: () => console.log('Assessments of Mentees') },
+        { icon: 'checkmark-done-outline', label: 'Assessments of Mentees', onPress: () => router.push.bind(router, '/(director)/(tabs)/assessments' ) },
         { icon: 'book-outline', label: 'Assignments of Mentees', onPress: () => console.log('Assignments of Mentees') },
         { icon: 'stats-chart-outline', label: 'Progress of Mentees', onPress: () => console.log('Progress of Mentees') },
         { icon: 'calendar-outline', label: 'Schedule a Meeting', onPress: () => console.log('Schedule a Meeting') },
