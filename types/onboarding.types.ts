@@ -8,6 +8,7 @@ export interface InterestFormData {
     lastName?: string;
     phoneNumber?: string;
     email?: string;
+    profilePicture?: string;
     churchDetails?: ChurchInfo[]; // default to [] in code
     interests?: string[];         // default to [] in code
     // optional extras:
@@ -18,14 +19,30 @@ export interface InterestFormData {
     currentCommunityProjects?: string;
     comments?: string;
     submittedAt?: string;
-    status?: "pending" | "accepted" | "rejected";
+    status?: "pending" | "accepted" | "rejected" | "new";
     userId?: string;
 }
 // API Response for interest submission
 export interface SubmitInterestResponse {
+    success: boolean;
+    message: string;
     data: {
         id: string;
+        profileInfo?: string;
+        firstName: string;
+        lastName: string;
+        phoneNumber: string;
+        email: string;
+        profilePicture?: string;
+        churchDetails?: ChurchInfo[];
+        title?: string;
+        conference?: string;
+        yearsInMinistry?: string;
+        currentCommunityProjects?: string;
+        interests?: string[];
+        comments?: string;
         userId: string;
+        status: string;
     }
 }
 
