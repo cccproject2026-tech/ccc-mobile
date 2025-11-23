@@ -36,7 +36,7 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
     };
 
     const [expandedItems, setExpandedItems] = useState(() =>
-        initializeExpandedItems(props.menuItems, !!props.expandAllByDefault)
+        initializeExpandedItems(props.menuItems || [], !!props.expandAllByDefault)
     );
 
     const toggleExpand = (id: string) => {
@@ -209,9 +209,9 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                {props.menuItems.map((item, index) =>
+                {props.menuItems && Array.isArray(props.menuItems) ? props.menuItems.map((item, index) =>
                     renderMenuItem(item, false, index, props.menuItems.length)
-                )}
+                ) : null}
             </ScrollView>
 
             {/* Footer - Contact Information */}

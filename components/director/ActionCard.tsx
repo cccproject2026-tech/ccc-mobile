@@ -1,14 +1,19 @@
+import { icons } from '@/constants/images';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface ActionCardProps {
-    icon: 'ribbon-outline' | 'school-outline';
+    icon: ImageSourcePropType;
     title: string;
     count?: number;
     onPress?: () => void;
 }
 
+const Icons = {
+    ribbon: icons.certificateBadge,
+    school: icons.fieldMentorIcon,
+}
 const ActionCard: React.FC<ActionCardProps> = ({
     icon,
     title,
@@ -25,11 +30,7 @@ const ActionCard: React.FC<ActionCardProps> = ({
         >
             <View style={styles.leftContent}>
                 <View style={styles.iconContainer}>
-                    <Ionicons
-                        name={icon}
-                        size={isSmallDevice ? 18 : 20}
-                        color="#A5C9E3"
-                    />
+                    <Image source={icon} style={{ width: 24, height: 24 }} />
                 </View>
                 <Text style={[styles.title, isSmallDevice && styles.titleSmall]}>
                     {title}
@@ -63,13 +64,13 @@ const ActionCardList: React.FC = () => {
     return (
         <View style={styles.listContainer}>
             <ActionCard
-                icon="ribbon-outline"
+                icon={Icons.ribbon}
                 title="Course Completed"
                 count={5}
                 onPress={() => console.log('Course Completed pressed')}
             />
             <ActionCard
-                icon="school-outline"
+                icon={Icons.school}
                 title="Invite to be a Field Mentor"
                 onPress={() => console.log('Field Mentor pressed')}
             />
@@ -105,7 +106,6 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 6,
-        backgroundColor: 'rgba(165, 201, 227, 0.18)',
         alignItems: 'center',
         justifyContent: 'center',
     },

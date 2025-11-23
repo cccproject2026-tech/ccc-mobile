@@ -14,16 +14,17 @@ const MentorMenteeList: React.FC = () => {
     
     // Fetch mentors and mentees from API
     const { mentors: allMentors, isLoading: isLoadingMentors, isError: isErrorMentors } = useMentors();
-    const { mentees: allMentees, isLoading: isLoadingMentees, isError: isErrorMentees } = useMentees();
+    const { data: menteesData, isLoading: isLoadingMentees, isError: isErrorMentees } = useMentees();
 
     // Limit to first 3 items
     const mentors = useMemo(() => {
-        return allMentors.slice(0, 3);
+        return allMentors && Array.isArray(allMentors) ? allMentors.slice(0, 3) : [];
     }, [allMentors]);
 
     const mentees = useMemo(() => {
-        return allMentees.slice(0, 3);
-    }, [allMentees]);
+        const allMentees = menteesData?.mentees ?? [];
+        return Array.isArray(allMentees) ? allMentees.slice(0, 3) : [];
+    }, [menteesData]);
 
     const isLoading = activeTab === 'mentors' ? isLoadingMentors : isLoadingMentees;
     const isError = activeTab === 'mentors' ? isErrorMentors : isErrorMentees;
@@ -35,7 +36,8 @@ const MentorMenteeList: React.FC = () => {
     };
 
     const handleMenteePress = (menteeId: string) => {
-        const mentee = allMentees.find(m => m.id === menteeId);
+        const allMentees = menteesData?.mentees ?? [];
+        const mentee = allMentees.find((m: any) => m.id === menteeId);
         const email = mentee?.email || '';
         router.push(`/(director)/(tabs)/mentees/${menteeId}${email ? `?email=${encodeURIComponent(email)}` : ''}` as any);
     };
@@ -120,10 +122,10 @@ const MentorMenteeList: React.FC = () => {
 
                         {activeTab === 'mentees' &&
                             (mentees.length > 0 ? (
-                                mentees.map((mentee) => (
+                                mentees.map((mentee: any) => (
                                     <MentorMenteeCard
                                         key={mentee.id}
-                                        name={mentee.name}
+                                        name={`${mentee.firstName} ${mentee.lastName || ''}`.trim()}
                                         role={mentee.role || 'Pastor'}
                                         metricLabel="Last Contacted :"
                                         metricValue={mentee.lastContacted ? `${mentee.lastContacted} Days Ago` : 'N/A'}

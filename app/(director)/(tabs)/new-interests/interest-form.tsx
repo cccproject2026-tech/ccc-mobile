@@ -6,7 +6,7 @@ import FormDropdown from '@/components/director/forms/FormDropDown';
 import FormTextArea from '@/components/director/forms/FormTextArea';
 import FormTextField from '@/components/director/forms/FormTextField';
 import { FormField, FormSection, interestFormConfig } from '@/constants/interestFormConfig';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { JSX, useRef, useState } from 'react';
@@ -464,7 +464,7 @@ export default function InterestFormScreen() {
                 ) : (
                     <View style={[styles.bottomContainer, { paddingBottom: bottom + 20 }]}>
                         <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                            <Ionicons name="create-outline" size={20} color="#1A4882" />
+                            <Feather name="edit" size={20} color="#ffffff" />
                             <Text style={styles.editButtonText}>Edit</Text>
                         </TouchableOpacity>
                     </View>
@@ -572,6 +572,13 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 10,
         marginTop: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     addMoreButtonText: {
         fontSize: 15,
@@ -593,18 +600,18 @@ const styles = StyleSheet.create({
     editButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
         paddingHorizontal: 24,
         paddingVertical: 12,
         borderRadius: 10,
         gap: 8,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.3)',
+        borderColor: 'rgba(255,255,255,1)',
     },
     editButtonText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1A4882',
+        color: '#ffffff',
     },
     bottomButtons: {
         position: 'absolute',
@@ -615,7 +622,7 @@ const styles = StyleSheet.create({
         gap: 16,
         paddingHorizontal: 16,
         paddingTop: 16,
-        backgroundColor: '#176192',
+        backgroundColor: '#234487',
     },
     cancelButton: {
         flex: 1,

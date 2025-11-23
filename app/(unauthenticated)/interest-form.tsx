@@ -1525,6 +1525,13 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 10,
         marginTop: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     sectionHeaderRow: {
         flexDirection: 'row',

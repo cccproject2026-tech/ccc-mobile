@@ -1,4 +1,4 @@
-import { Mentee } from "@/components/director/MenteeCard";
+// import { Mentee } from "@/components/director/MenteeCard";
 import { icons } from "./images";
 
 export const appointments = [
@@ -48,11 +48,11 @@ export const newInterests = [
 
 export const exploreItems = [
     { id: '1', icon: icons.progress, title: 'Track Progress', route: '/(director-tabs)/(tabs)/progress-tracker' },
-    { id: '2', icon: icons.Assessments, title: 'Schedule', route: '/(director-tabs)/(tabs)/appointments' },
+    { id: '2', icon: icons.schedule, title: 'Schedule', route: '/(director-tabs)/(tabs)/appointments' },
     { id: '3', icon: icons.microGrant, title: 'Microgrant', route: '/(director-tabs)/(tabs)/micro-grant' },
     { id: '4', icon: icons.Revitalization, title: 'Revitalization Roadmap', route: '/(director-tabs)/(tabs)/revitalization-roadmaps' },
     { id: '5', icon: icons.Assessments, title: 'Assessment', },
-    { id: '6', icon: icons.assignment, title: 'Assignment' },
+    { id: '6', icon: icons.assignmentIcon, title: 'Assignment' },
 ];
 
 export const mentorExploreItems = [
@@ -70,128 +70,128 @@ export const stats = [
 ];
 
 
-export const mockMentees: Mentee[] = [
-    // STATE 1: Progress < 100% - Show phase + progress bar ONLY
-    {
-        id: '1',
-        name: 'John Doe',
-        role: 'Pastor',
-        description: 'Sub text area write something here. That you can read more about him',
-        lastContacted: '5 Days Ago',
-        totalMentors: 5,
-        phase: 'Church Empowerment',
-        phaseNumber: 2,
-        progress: 70,
-        isCompleted: false,
-        profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
-    },
-    {
-        id: '2',
-        name: 'Jane Smith',
-        role: 'Pastor',
-        description: 'Sub text area write something here. That you can read more about him',
-        lastContacted: '3 Days Ago',
-        totalMentors: 5,
-        phase: 'Self Revitalization',
-        phaseNumber: 3,
-        progress: 45,
-        isCompleted: false,
-        profileImage: 'https://randomuser.me/api/portraits/women/44.jpg',
-    },
+// export const mockMentees: Mentee[] = [
+//     // STATE 1: Progress < 100% - Show phase + progress bar ONLY
+//     {
+//         id: '1',
+//         name: 'John Doe',
+//         role: 'Pastor',
+//         description: 'Sub text area write something here. That you can read more about him',
+//         lastContacted: '5 Days Ago',
+//         totalMentors: 5,
+//         phase: 'Church Empowerment',
+//         phaseNumber: 2,
+//         progress: 70,
+//         isCompleted: false,
+//         profileImage: 'https://randomuser.me/api/portraits/men/32.jpg',
+//     },
+//     {
+//         id: '2',
+//         name: 'Jane Smith',
+//         role: 'Pastor',
+//         description: 'Sub text area write something here. That you can read more about him',
+//         lastContacted: '3 Days Ago',
+//         totalMentors: 5,
+//         phase: 'Self Revitalization',
+//         phaseNumber: 3,
+//         progress: 45,
+//         isCompleted: false,
+//         profileImage: 'https://randomuser.me/api/portraits/women/44.jpg',
+//     },
 
-    // STATE 2: Progress = 100% but NOT marked complete - Show "Mark as Complete" button
-    {
-        id: '3',
-        name: 'John Ross',
-        role: 'Pastor',
-        description: 'Sub text area write something here. That you can read more about him',
-        lastContacted: '5 Days Ago',
-        totalMentors: 5,
-        phase: 'Community Revitalization and Multiplication',
-        phaseNumber: 1,
-        progress: 100,
-        isCompleted: false,
-        profileImage: 'https://randomuser.me/api/portraits/men/33.jpg',
-    },
+//     // STATE 2: Progress = 100% but NOT marked complete - Show "Mark as Complete" button
+//     {
+//         id: '3',
+//         name: 'John Ross',
+//         role: 'Pastor',
+//         description: 'Sub text area write something here. That you can read more about him',
+//         lastContacted: '5 Days Ago',
+//         totalMentors: 5,
+//         phase: 'Community Revitalization and Multiplication',
+//         phaseNumber: 1,
+//         progress: 100,
+//         isCompleted: false,
+//         profileImage: 'https://randomuser.me/api/portraits/men/33.jpg',
+//     },
 
-    // STATE 3: Marked complete but NO certificate - Show "Issue Certificate" button
-    {
-        id: '4',
-        name: 'Sarah Johnson',
-        role: 'Pastor',
-        description: 'Sub text area write something here. That you can read more about him',
-        totalMentors: 5,
-        isCompleted: true,
-        completedOn: '20 Oct 2024',
-        hasCertificate: false,
-        isFieldMentor: false,
-        profileImage: 'https://randomuser.me/api/portraits/women/45.jpg',
-    },
-    {
-        id: '5',
-        name: 'Michael Brown',
-        role: 'Pator',
-        description: 'Sub text area write something here. That you can read more about him',
-        totalMentors: 5,
-        isCompleted: true,
-        completedOn: '15 Oct 2024',
-        hasCertificate: false,
-        isFieldMentor: false,
-        profileImage: 'https://randomuser.me/api/portraits/men/34.jpg',
-    },
+//     // STATE 3: Marked complete but NO certificate - Show "Issue Certificate" button
+//     {
+//         id: '4',
+//         name: 'Sarah Johnson',
+//         role: 'Pastor',
+//         description: 'Sub text area write something here. That you can read more about him',
+//         totalMentors: 5,
+//         isCompleted: true,
+//         completedOn: '20 Oct 2024',
+//         hasCertificate: false,
+//         isFieldMentor: false,
+//         profileImage: 'https://randomuser.me/api/portraits/women/45.jpg',
+//     },
+//     {
+//         id: '5',
+//         name: 'Michael Brown',
+//         role: 'Pator',
+//         description: 'Sub text area write something here. That you can read more about him',
+//         totalMentors: 5,
+//         isCompleted: true,
+//         completedOn: '15 Oct 2024',
+//         hasCertificate: false,
+//         isFieldMentor: false,
+//         profileImage: 'https://randomuser.me/api/portraits/men/34.jpg',
+//     },
 
-    // STATE 4: Certificate issued but NOT field mentor - Show "Invite as Field Mentor" button + certificate badge
-    {
-        id: '6',
-        name: 'David Wilson',
-        role: 'Pastor',
-        description: 'Sub text area write something here. That you can read more about him',
-        totalMentors: 5,
-        isCompleted: true,
-        completedOn: '10 Oct 2024',
-        hasCertificate: true,
-        isFieldMentor: false,
-        profileImage: 'https://randomuser.me/api/portraits/men/35.jpg',
-    },
-    {
-        id: '7',
-        name: 'Emily Davis',
-        role: 'Pastor',
-        description: 'Sub text area write something here. That you can read more about him',
-        totalMentors: 5,
-        isCompleted: true,
-        completedOn: '12 Oct 2024',
-        hasCertificate: true,
-        isFieldMentor: false,
-        profileImage: 'https://randomuser.me/api/portraits/women/46.jpg',
-    },
+//     // STATE 4: Certificate issued but NOT field mentor - Show "Invite as Field Mentor" button + certificate badge
+//     {
+//         id: '6',
+//         name: 'David Wilson',
+//         role: 'Pastor',
+//         description: 'Sub text area write something here. That you can read more about him',
+//         totalMentors: 5,
+//         isCompleted: true,
+//         completedOn: '10 Oct 2024',
+//         hasCertificate: true,
+//         isFieldMentor: false,
+//         profileImage: 'https://randomuser.me/api/portraits/men/35.jpg',
+//     },
+//     {
+//         id: '7',
+//         name: 'Emily Davis',
+//         role: 'Pastor',
+//         description: 'Sub text area write something here. That you can read more about him',
+//         totalMentors: 5,
+//         isCompleted: true,
+//         completedOn: '12 Oct 2024',
+//         hasCertificate: true,
+//         isFieldMentor: false,
+//         profileImage: 'https://randomuser.me/api/portraits/women/46.jpg',
+//     },
 
-    // STATE 5: Both certificate AND field mentor - Show only badges, no button
-    {
-        id: '8',
-        name: 'Robert Taylor',
-        role: 'Pastor',
-        description: 'Sub text area write something here. That you can read more about him',
-        totalMentors: 5,
-        isCompleted: true,
-        completedOn: '5 Oct 2024',
-        hasCertificate: true,
-        isFieldMentor: true,
-        profileImage: 'https://randomuser.me/api/portraits/men/36.jpg',
-    },
-    {
-        id: '9',
-        name: 'Lisa Anderson',
-        role: 'Pastor',
-        description: 'Sub text area write something here. That you can read more about him',
-        totalMentors: 5,
-        isCompleted: true,
-        completedOn: '8 Oct 2024',
-        hasCertificate: true,
-        isFieldMentor: true,
-        profileImage: 'https://randomuser.me/api/portraits/women/47.jpg',
-    },
-];
+//     // STATE 5: Both certificate AND field mentor - Show only badges, no button
+//     {
+//         id: '8',
+//         name: 'Robert Taylor',
+//         role: 'Pastor',
+//         description: 'Sub text area write something here. That you can read more about him',
+//         totalMentors: 5,
+//         isCompleted: true,
+//         completedOn: '5 Oct 2024',
+//         hasCertificate: true,
+//         isFieldMentor: true,
+//         profileImage: 'https://randomuser.me/api/portraits/men/36.jpg',
+//     },
+//     {
+//         id: '9',
+//         name: 'Lisa Anderson',
+//         role: 'Pastor',
+//         description: 'Sub text area write something here. That you can read more about him',
+//         totalMentors: 5,
+//         isCompleted: true,
+//         completedOn: '8 Oct 2024',
+//         hasCertificate: true,
+//         isFieldMentor: true,
+//         profileImage: 'https://randomuser.me/api/portraits/women/47.jpg',
+//     },
+// ];
 
 export const STATES = ['North American', 'Canada', 'Mexico', 'Brazil'];
 

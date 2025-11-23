@@ -12,11 +12,10 @@ import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
 import { mentorExploreItems } from "@/constants/mockData"
 import { useMentors } from "@/hooks/mentors/useMentors"
-import { formatClock, formatDate } from "@/utils/date"
 import { LinearGradient } from "expo-linear-gradient"
 import { useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
-import React, { useMemo, useState } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native"
 import MapView, { Marker } from "react-native-maps"
 import Animated, {
@@ -27,7 +26,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export default function MentorDashboard() {
   const [searchText, setSearchText] = useState("")
-  const [now] = useState(new Date())
+  const [greetingPeriod, setGreetingPeriod] = useState<'morning' | 'afternoon' | 'evening'>('morning')
   const router = useRouter();
   const [mapRegion] = useState({
     latitude: 37.78825,
@@ -77,12 +76,17 @@ export default function MentorDashboard() {
     },
     // Add more users as needed
   ]
+
+  // Handle greeting period change from HeaderHero
+  const handleGreetingPeriodChange = useCallback((period: 'morning' | 'afternoon' | 'evening') => {
+    setGreetingPeriod(period);
+  }, []);
+
   const greeting = useMemo(() => {
-    const h = now.getHours()
-    if (h < 12) return "Good Morning"
-    if (h < 18) return "Good Afternoon"
+    if (greetingPeriod === 'morning') return "Good Morning"
+    if (greetingPeriod === 'afternoon') return "Good Afternoon"
     return "Good Evening"
-  }, [now])
+  }, [greetingPeriod])
 
   const dummyAppointments = [
     {
@@ -139,9 +143,8 @@ export default function MentorDashboard() {
             height={280}
             image={icons.backgroundImage}
             bottomBlendColor={Colors.lightBlueGradientOne}
-            clock={formatClock(now)}
-            date={formatDate(now)}
             scrollOffset={scrollOffset}
+            onGreetingPeriodChange={handleGreetingPeriodChange}
           />
           <LinearGradient
             colors={[Colors.lightBlueGradientOne, "transparent"]}

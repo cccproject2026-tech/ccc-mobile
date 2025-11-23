@@ -49,10 +49,10 @@ export const useMentors = () => {
     });
 
     // Transform the data
-    const transformedData = query.data
+    const transformedData = query.data && query.data.mentors && Array.isArray(query.data.mentors)
         ? {
-            mentors: query.data.mentors.map(transformMentor), // Changed from mentors to users
-            total: query.data.total,
+            mentors: query.data.mentors.map(transformMentor),
+            total: query.data.total ?? 0,
         }
         : undefined;
 

@@ -25,12 +25,12 @@ export const useSubmitInterest = () => {
             console.log('✅ Interest form submitted successfully');
 
             // Extract userId and applicationId from response
-            const userId = response.data?.userId
+            const userId = response.data?.userId;
             const applicationId = response.data?.id;
 
             // Store in Zustand for later use
-            setUserId(userId);
-            setApplicationId(applicationId);
+            if (userId) setUserId(userId);
+            if (applicationId) setApplicationId(applicationId);
             setInterestStatus('pending');
             setInterestData(variables);
 
@@ -40,8 +40,13 @@ export const useSubmitInterest = () => {
                 status: 'pending',
             });
 
-            // Navigate back to landing screen
-            router.push('/(unauthenticated)');
+            // Only navigate if this is the unauthenticated flow
+            // Director flow handles navigation separately
+            if (router.canGoBack()) {
+                // Don't auto-navigate for director flow
+            } else {
+                router.push('/(unauthenticated)');
+            }
         },
         onError: (error: any) => {
             console.error('❌ Submit interest failed:', error.message);
