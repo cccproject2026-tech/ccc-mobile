@@ -9,10 +9,9 @@ import { icons } from "@/constants/images";
 import { useAssignedMentors } from '@/hooks/mentors/useGetAssignedMentors';
 import { useProfile } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores';
-import { formatClock, formatDate } from "@/utils/date";
 import { LinearGradient } from "expo-linear-gradient";
 import { Route, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image, Pressable, ScrollView, StyleSheet,
@@ -24,7 +23,7 @@ import Animated, { useAnimatedRef, useScrollViewOffset } from "react-native-rean
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PastorDashboard() {
-  const [now, setNow] = useState(new Date());
+  const [greetingPeriod, setGreetingPeriod] = useState<'morning' | 'afternoon' | 'evening'>('morning');
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -41,12 +40,16 @@ export default function PastorDashboard() {
     router.push('/(pastor)/(tabs)/profile');
   };
 
+  // Handle greeting period change from HeaderHero
+  const handleGreetingPeriodChange = useCallback((period: 'morning' | 'afternoon' | 'evening') => {
+    setGreetingPeriod(period);
+  }, []);
+
   const greeting = useMemo(() => {
-    const h = now.getHours();
-    if (h < 12) return 'Good Morning';
-    if (h < 18) return 'Good Afternoon';
+    if (greetingPeriod === 'morning') return 'Good Morning';
+    if (greetingPeriod === 'afternoon') return 'Good Afternoon';
     return 'Good Evening';
-  }, [now]);
+  }, [greetingPeriod]);
 
   // Loading state
   if (isLoading) {
@@ -121,10 +124,9 @@ export default function PastorDashboard() {
           height={280}
           image={icons.backgroundImage}
           bottomBlendColor={Colors.lightBlueGradientOne}
-          clock={formatClock(now)}
-          date={formatDate(now)}
           scrollOffset={scrollOffset}
           role="pastor"
+          onGreetingPeriodChange={handleGreetingPeriodChange}
         />
 
         <LinearGradient colors={[Colors.lightBlueGradientOne, 'transparent']} style={{ minHeight: '100%' }}>

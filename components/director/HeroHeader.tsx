@@ -1,4 +1,5 @@
-import React from 'react';
+import { formatClock, formatDate } from '@/utils/date';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ImageBackground, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
 import Animated, { SharedValue, interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import TopBar from './TopBar';
@@ -8,20 +9,64 @@ type Props = {
     image: ImageSourcePropType;
     bottomBlendColor: string;
     blendHeight?: number;
-    clock: string;
-    date: string;
     scrollOffset: SharedValue<number>;
     role: 'director' | 'pastor' | 'mentor';
+    // Optional props for backward compatibility - if provided, use them instead of internal state
+    clock?: string;
+    date?: string;
+    // Callback for when greeting period changes (only used when clock/date are not provided)
+    onGreetingPeriodChange?: (period: 'morning' | 'afternoon' | 'evening') => void;
 };
 
 const HeaderHero: React.FC<Props> = ({
     height,
     image,
-    clock,
-    date,
     scrollOffset,
-    role
+    role,
+    clock: externalClock,
+    date: externalDate,
+    onGreetingPeriodChange
 }) => {
+    const [now, setNow] = useState(new Date());
+    const previousPeriodRef = useRef<'morning' | 'afternoon' | 'evening' | null>(null);
+
+    // If external clock/date provided, use them (backward compatibility)
+    // Otherwise, manage state internally
+    const useInternalState = externalClock === undefined && externalDate === undefined;
+
+    // Get current greeting period
+    const getGreetingPeriod = useCallback((date: Date): 'morning' | 'afternoon' | 'evening' => {
+        const h = date.getHours();
+        if (h < 12) return 'morning';
+        if (h < 18) return 'afternoon';
+        return 'evening';
+    }, []);
+
+    useEffect(() => {
+        if (!useInternalState) return;
+
+        const updateTime = () => {
+            const currentTime = new Date();
+            setNow(currentTime);
+            
+            // Check if greeting period changed
+            const currentPeriod = getGreetingPeriod(currentTime);
+            if (onGreetingPeriodChange && previousPeriodRef.current !== currentPeriod) {
+                previousPeriodRef.current = currentPeriod;
+                onGreetingPeriodChange(currentPeriod);
+            }
+        };
+
+        // Update immediately
+        updateTime();
+        
+        // Set interval to update every second
+        const id = setInterval(updateTime, 1000);
+        return () => clearInterval(id);
+    }, [useInternalState, onGreetingPeriodChange]);
+
+    const clock = useInternalState ? formatClock(now) : externalClock!;
+    const date = useInternalState ? formatDate(now) : externalDate!;
     const animStyle = useAnimatedStyle(() => ({
         transform: [
             {

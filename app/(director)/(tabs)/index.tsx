@@ -18,12 +18,11 @@ import {
   stats,
 } from "@/constants/mockData";
 import { useInterests } from "@/hooks/interests/useInterests";
-import { formatClock, formatDate } from "@/utils/date";
 import { mapInterestItemToInterest } from "@/utils/interests";
 import { LinearGradient } from "expo-linear-gradient";
 import { Route, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedRef,
@@ -34,7 +33,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const HEADER_HEIGHT = 280;
 
 export default function DirectorDashboard() {
-  const [now, setNow] = useState(new Date());
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -43,13 +41,14 @@ export default function DirectorDashboard() {
 
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [addedUser, setAddedUser] = useState({ name: "", role: "" });
+  const [greetingPeriod, setGreetingPeriod] = useState<'morning' | 'afternoon' | 'evening'>('morning');
 
   // Fetch interests from API
   const { data: interestsData, isLoading: isLoadingInterests } = useInterests();
   
   // Map API data to component format and take first 3 for dashboard preview
   const newInterests = useMemo(() => {
-    if (!interestsData) return [];
+    if (!interestsData || !Array.isArray(interestsData)) return [];
     return interestsData.slice(0, 3).map(mapInterestItemToInterest);
   }, [interestsData]);
 
@@ -67,17 +66,16 @@ export default function DirectorDashboard() {
     // Navigate to assignment screen
   };
 
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
+  // Handle greeting period change from HeaderHero
+  const handleGreetingPeriodChange = useCallback((period: 'morning' | 'afternoon' | 'evening') => {
+    setGreetingPeriod(period);
   }, []);
 
   const greeting = useMemo(() => {
-    const h = now.getHours();
-    if (h < 12) return "Good Morning";
-    if (h < 18) return "Good Afternoon";
+    if (greetingPeriod === 'morning') return "Good Morning";
+    if (greetingPeriod === 'afternoon') return "Good Afternoon";
     return "Good Evening";
-  }, [now]);
+  }, [greetingPeriod]);
 
   const handleWelcomRoute = () => {
     router.push("/(director)/(tabs)/profile");
@@ -102,10 +100,9 @@ export default function DirectorDashboard() {
             height={HEADER_HEIGHT}
             image={icons.backgroundImage}
             bottomBlendColor={topColor}
-            clock={formatClock(now)}
-            date={formatDate(now)}
             scrollOffset={scrollOffset}
             role="director"
+            onGreetingPeriodChange={handleGreetingPeriodChange}
           />
 
           <LinearGradient
@@ -205,7 +202,7 @@ export default function DirectorDashboard() {
                         fontSize: 12,
                       }}
                     >
-                      {isLoadingInterests ? '...' : (interestsData?.length || 0)}
+                      {isLoadingInterests ? '...' : (Array.isArray(interestsData) ? interestsData.length : 0)}
                     </Text>
                   </View>
                 </View>
