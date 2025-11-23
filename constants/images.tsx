@@ -78,6 +78,8 @@ interface Icons {
   rescheduleIcon: ImageSourcePropType;
   profileTabIcon: ImageSourcePropType;
   homeTabIcon: ImageSourcePropType;
+  schedule: ImageSourcePropType;
+  assignmentIcon: ImageSourcePropType;
 }
 
 export const icons: Icons = {
@@ -158,4 +160,6 @@ export const icons: Icons = {
   rescheduleIcon: require("@/assets/icons/reschedule.png"),
   profileTabIcon: require("@/assets/icons/profile-tab.png"),
   homeTabIcon: require("@/assets/icons/home-tab.png"),
+  schedule: require("@/assets/icons/schedule.png"),
+  assignmentIcon: require("@/assets/icons/assignment.png"),
 };
