@@ -36,6 +36,9 @@ export interface ScheduleMeetingBottomSheetProps {
         platform: string;
         meetingLink?: string;
         notes?: string;
+        // Optional fields for rescheduling (not required for initial schedule)
+        startTime?: string;
+        startPeriod?: 'AM' | 'PM' | string;
     }) => void;
     mode?: 'schedule' | 'reschedule';
     existingAppointment?: Appointment | null;
@@ -252,11 +255,13 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                 onSchedule({
                     mentorId: selectedMentor.id,
                     meetingDate,
-                    startTime: selectedTime.apiSlot.startTime,
-                    startPeriod: selectedTime.apiSlot.startPeriod,
                     platform,
                     meetingLink: platform === 'zoom' ? 'https://zoom.us/j/123456789' : undefined,
                     notes: `Meeting with ${selectedMentor.name}`,
+                    ...(mode === 'reschedule' && {
+                        startTime: selectedTime.apiSlot.startTime,
+                        startPeriod: selectedTime.apiSlot.startPeriod,
+                    }),
                 });
 
                 if (onScheduleComplete) {

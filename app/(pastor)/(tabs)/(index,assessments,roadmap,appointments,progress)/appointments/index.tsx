@@ -168,20 +168,26 @@ const Appointments = () => {
   const handleScheduleMeeting = async (data: {
     mentorId: string;
     meetingDate: string;
-    startTime: string;
-    startPeriod: 'AM' | 'PM';
+    // startTime/startPeriod are only required when rescheduling; make them optional here
+    startTime?: string;
+    startPeriod?: 'AM' | 'PM' | string;
     platform: string;
     meetingLink?: string;
     notes?: string;
   }) => {
     try {
       if (rescheduleData) {
-        // Reschedule existing appointment
+        // Reschedule existing appointment - ensure startTime/startPeriod present
+        if (!data.startTime || !data.startPeriod) {
+          Alert.alert('Error', 'Start time or period missing for reschedule');
+          return;
+        }
+
         await rescheduleAppointmentAsync({
           appointmentId: rescheduleData.id,
           newDate: data.meetingDate,
           startTime: data.startTime,
-          startPeriod: data.startPeriod,
+          startPeriod: data.startPeriod as 'AM' | 'PM',
         });
       } else {
         // Create new appointment
