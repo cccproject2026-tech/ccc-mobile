@@ -151,10 +151,6 @@ export default function InterestFormScreen() {
         );
     };
 
-    const handleNext = () => {
-        // If accepting, call handleAccept instead
-        handleAccept();
-    };
 
     const handleAddToPending = () => router.back();
 
@@ -489,7 +485,7 @@ export default function InterestFormScreen() {
                                 </Pressable>
                                 <Pressable
                                     style={[styles.nextButton, isUpdatingStatus && styles.buttonDisabled]}
-                                    onPress={handleNext}
+                                    onPress={handleAccept}
                                     disabled={isUpdatingStatus}
                                 >
                                     {isUpdatingStatus ? (
