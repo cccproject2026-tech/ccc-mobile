@@ -528,7 +528,7 @@ export default function RoleSelectionScreen() {
             } else if (role === 'mentor') {
                 // Mentor - Direct access for testing
                 console.log('🧪 Navigating to mentor (testing)');
-                router.push('/(mentor-tabs)');
+                router.push('/(mentor-tabs)/(tabs)');
             } else if (role === 'director') {
                 // Director - Direct access for testing
                 console.log('🧪 Navigating to director (testing)');

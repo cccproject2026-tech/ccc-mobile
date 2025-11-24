@@ -3,6 +3,7 @@ import TopBar from '@/components/director/TopBar';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { icons } from '@/constants/images';
+import { useUploadDocument, useUploadProfilePicture } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores/auth.store';
 import { useOnboardingStore } from '@/stores/onboarding.store';
 import * as DocumentPicker from 'expo-document-picker';
@@ -21,12 +22,17 @@ import {
     View,
 } from 'react-native';
 
+
 export default function ProfileUpload() {
     const router = useRouter();
 
     // Store hooks
     const { setCurrentStep, setHasProfilePicture } = useOnboardingStore();
     const { user } = useAuthStore();
+
+    // Backend upload mutations
+    const uploadProfilePicture = useUploadProfilePicture();
+    const uploadDocument = useUploadDocument();
 
     // Loading states
     const [imageLoading, setImageLoading] = useState(false);
@@ -39,17 +45,7 @@ export default function ProfileUpload() {
 
     const hasUploaded = !!profileImage || !!documentName;
 
-    // Mock backend upload function
-    const mockBackendUpload = useCallback(
-        async (fileUri: string, type: 'image' | 'document') => {
-            console.log(`📤 Uploading ${type} to backend:`, fileUri);
-            await new Promise((resolve) => setTimeout(resolve, 1200));
-            console.log(`✅ ${type} uploaded successfully`);
-        },
-        []
-    );
-
-    // Handle image upload
+    // ⭐ REAL BACKEND: IMAGE UPLOAD
     const handleImageUpload = useCallback(async () => {
         try {
             setImageLoading(true);
@@ -72,14 +68,20 @@ export default function ProfileUpload() {
             });
 
             if (!result.canceled && result.assets?.[0]) {
-                const imageUri = result.assets[0].uri;
+                const asset = result.assets[0];
+                const imageUri = asset.uri;
+
                 setProfileImage(imageUri);
 
-                // Simulate backend upload
-                await mockBackendUpload(imageUri, 'image');
+                // ⬇️ SEND TO REAL BACKEND
+                await uploadProfilePicture.mutateAsync({
+                    uri: asset.uri,
+                    type: asset.mimeType || 'image/jpeg',
+                    name: asset.fileName || `profile-${Date.now()}.jpg`,
+                });
 
                 Alert.alert('Success', 'Profile image uploaded successfully!');
-                console.log('✅ Profile image set');
+                console.log('✅ Uploaded:', asset.uri);
             }
         } catch (error) {
             console.error('❌ Image upload error:', error);
@@ -87,9 +89,9 @@ export default function ProfileUpload() {
         } finally {
             setImageLoading(false);
         }
-    }, [mockBackendUpload]);
+    }, [uploadProfilePicture]);
 
-    // Handle document upload
+    // ⭐ REAL BACKEND: DOCUMENT UPLOAD
     const handleDocumentUpload = useCallback(async () => {
         try {
             setDocumentLoading(true);
@@ -101,10 +103,15 @@ export default function ProfileUpload() {
 
             if (result.assets && result.assets.length > 0) {
                 const doc = result.assets[0];
+
                 setDocumentName(doc.name);
 
-                // Simulate backend upload
-                await mockBackendUpload(doc.uri, 'document');
+                // ⬇️ SEND DOCUMENT TO BACKEND
+                await uploadDocument.mutateAsync({
+                    uri: doc.uri,
+                    name: doc.name,
+                    type: doc.mimeType || 'application/pdf',
+                });
 
                 Alert.alert('Success', 'Document uploaded successfully!');
                 console.log('✅ Document uploaded:', doc.name);
@@ -115,26 +122,18 @@ export default function ProfileUpload() {
         } finally {
             setDocumentLoading(false);
         }
-    }, [mockBackendUpload]);
+    }, [uploadDocument]);
 
     // Handle continue
     const handleContinue = useCallback(async () => {
         try {
             setActionLoading(true);
 
-            if (hasUploaded) {
-                // Mock backend sync
-                await new Promise((resolve) => setTimeout(resolve, 1000));
-                console.log('✅ Profile uploads synced to backend');
-            }
+            // nothing to upload here — uploads already happened in handlers above
 
-            // ✅ NEW: Mark that user has uploaded profile picture
             setHasProfilePicture(true);
-
-            // Update onboarding step
             setCurrentStep('complete');
 
-            // Navigate to pastor dashboard
             router.replace('/(pastor)/(tabs)');
         } catch (error) {
             console.error('❌ Continue error:', error);
@@ -142,7 +141,7 @@ export default function ProfileUpload() {
         } finally {
             setActionLoading(false);
         }
-    }, [hasUploaded, setCurrentStep, setHasProfilePicture, router]);
+    }, [setCurrentStep, setHasProfilePicture, router]);
 
     const userName = user?.firstName || 'User';
 

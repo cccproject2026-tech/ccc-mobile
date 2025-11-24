@@ -3,6 +3,7 @@ import {
     LoginResponse,
     RefreshTokenRequest,
     RefreshTokenResponse,
+    ResetPasswordRequest,
     SendOtpRequest,
     SendOtpResponse,
     SetPasswordRequest,
@@ -34,26 +35,26 @@ export const authService = {
         console.log('📤 Sending OTP (MOCK) to:', data.email);
 
         // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // await new Promise(resolve => setTimeout(resolve, 1500));
 
-        console.log('✅ OTP sent successfully (MOCK)');
+        // console.log('✅ OTP sent successfully (MOCK)');
 
-        return {
-            success: true,
-            data: {
-                message: 'OTP sent successfully',
-                expiresIn: 300,
-            },
-        };
+        // return {
+        //     success: true,
+        //     data: {
+        //         message: 'OTP sent successfully',
+        //         expiresIn: 300,
+        //     },
+        // };
 
         // ✅ REAL API (uncomment when backend is ready)
-        /*
+
         const response = await apiClient.post<SendOtpResponse>(
-          ENDPOINTS.AUTH.SEND_OTP,
-          data
+            ENDPOINTS.AUTH.SEND_OTP,
+            data
         );
         return response.data;
-        */
+
     },
 
     // ✅ MOCK: Verify OTP code
@@ -61,33 +62,33 @@ export const authService = {
         console.log('📤 Verifying OTP (MOCK):', data.otp, 'for email:', data.email);
 
         // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // await new Promise(resolve => setTimeout(resolve, 1500));
 
         // Accept "1234" as valid OTP for testing
-        if (data.otp === '1234') {
-            console.log('✅ OTP verified successfully (MOCK)');
+        // if (data.otp === '1234') {
+        //     console.log('✅ OTP verified successfully (MOCK)');
 
-            return {
-                success: true,
-                data: {
-                    isValid: true,
-                    token: `mock_otp_token_${Date.now()}`,
-                    message: 'Email verified successfully',
-                },
-            };
-        } else {
-            console.log('❌ Invalid OTP (MOCK)');
-            throw new Error('Invalid OTP. Use 1234 for testing.');
-        }
+        //     return {
+        //         success: true,
+        //         data: {
+        //             isValid: true,
+        //             token: `mock_otp_token_${Date.now()}`,
+        //             message: 'Email verified successfully',
+        //         },
+        //     };
+        // } else {
+        //     console.log('❌ Invalid OTP (MOCK)');
+        //     throw new Error('Invalid OTP. Use 1234 for testing.');
+        // }
 
         // ✅ REAL API (uncomment when backend is ready)
-        /*
+
         const response = await apiClient.post<VerifyOtpResponse>(
-          ENDPOINTS.AUTH.VERIFY_OTP,
-          data
+            ENDPOINTS.AUTH.VERIFY_OTP,
+            data
         );
         return response.data;
-        */
+
     },
 
     // Set password
@@ -129,14 +130,10 @@ export const authService = {
 
     // Reset password
     resetPassword: async (
-        token: string,
-        newPassword: string
+        data: ResetPasswordRequest
     ): Promise<{ message: string }> => {
         console.log('📤 Resetting password');
-        const response = await apiClient.post(ENDPOINTS.AUTH.RESET_PASSWORD, {
-            token,
-            newPassword,
-        });
+        const response = await apiClient.post(ENDPOINTS.AUTH.RESET_PASSWORD, data);
         return response.data;
     },
 };

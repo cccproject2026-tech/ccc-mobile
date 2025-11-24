@@ -1,9 +1,9 @@
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
-import { useAuth } from "@/context/AuthContext";
+import { useResetPassword, useSendOtp } from "@/hooks/auth/useAuth";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
     ActivityIndicator,
@@ -16,105 +16,99 @@ import {
     View,
 } from "react-native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { OtpInput } from "react-native-otp-entry";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 export default function ForgotPasswordScreen() {
-    const { top, bottom } = useSafeAreaInsets();
-    const { resetPassword, isLoading } = useAuth();
+    const { bottom } = useSafeAreaInsets();
 
-    // Step 1: Email, Step 2: OTP + New Password
+    const sendOtp = useSendOtp();
+    const resetPasswordMutation = useResetPassword();
+
+    // Step 1 → Email input, Step 2 → OTP + New pw
     const [step, setStep] = useState<1 | 2>(1);
-    const [email, setEmail] = useState("john.doe@example.com");
-    const [otp, setOtp] = useState(["", "", "", ""]);
-    const [newPassword, setNewPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+    const [email, setEmail] = useState('');
+
+    // ⭐ Updated to 6-digit OTP
+    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
 
-    // Refs for OTP inputs
     const otpRefs = useRef<Array<TextInput | null>>([]);
 
-    const handleVerifyEmail = async () => {
+    const isBusy = sendOtp.isPending || resetPasswordMutation.isPending;
+
+    // STEP 1: SEND OTP
+    const handleVerifyEmail = () => {
         if (!email) {
-            Alert.alert("Error", "Please enter your email address");
-            return;
+            return Alert.alert("Error", "Please enter your email");
         }
 
-        // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            Alert.alert("Error", "Please enter a valid email address");
-            return;
+            return Alert.alert("Error", "Enter a valid email address");
         }
 
-        setLoading(true);
-        try {
-            // Mock API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            Alert.alert("OTP Sent", "A 4-digit OTP has been sent to your email.");
-            setStep(2);
-        } catch (error) {
-            Alert.alert("Error", "Failed to send OTP. Please try again.");
-        } finally {
-            setLoading(false);
-        }
+        sendOtp.mutate(
+            { email, purpose: "password_reset" },
+            {
+                onSuccess: () => {
+                    Alert.alert("OTP Sent", "A 6-digit OTP has been sent to your email.");
+                    setStep(2);
+                },
+                onError: (error: any) => {
+                    Alert.alert("Error", error?.message || "Failed to send OTP");
+                }
+            }
+        );
     };
 
+    // HANDLE 6-digit OTP input
     const handleOTPChange = (value: string, index: number) => {
         if (value.length > 1) return;
 
-        const newOtp = [...otp];
-        newOtp[index] = value;
-        setOtp(newOtp);
+        const newArr = [...otp];
+        newArr[index] = value;
+        setOtp(newArr);
 
-        // Auto-focus next input
-        if (value && index < 3) {
+        // Auto move to next (index < 5)
+        if (value && index < 5) {
             otpRefs.current[index + 1]?.focus();
         }
     };
 
-    const handleResetPassword = async () => {
+    // STEP 2: RESET PASSWORD
+    const handleResetPassword = () => {
         const otpValue = otp.join("");
 
-        if (otpValue.length !== 4) {
-            Alert.alert("Error", "Please enter the 4-digit OTP");
-            return;
+        if (otpValue.length !== 6) {
+            return Alert.alert("Error", "Enter the 6-digit OTP");
         }
-
         if (!newPassword || !confirmPassword) {
-            Alert.alert("Error", "Please fill in all password fields");
-            return;
+            return Alert.alert("Error", "All fields are required");
         }
-
         if (newPassword.length < 6) {
-            Alert.alert("Error", "Password must be at least 6 characters");
-            return;
+            return Alert.alert("Error", "Password must be at least 6 characters");
         }
-
         if (newPassword !== confirmPassword) {
-            Alert.alert("Error", "Passwords do not match");
-            return;
+            return Alert.alert("Error", "Passwords do not match");
         }
 
-        try {
-            // Call resetPassword from context
-            await resetPassword(email, newPassword);
-
-            Alert.alert(
-                "Success!",
-                "Your password has been reset successfully. You can now login with your new password.",
-                [
-                    {
-                        text: "OK",
-                        onPress: () => router.replace("/(unauthenticated)/login-form"),
-                    },
-                ]
-            );
-        } catch (error) {
-            Alert.alert("Error", "Failed to reset password. Please try again.");
-        }
+        resetPasswordMutation.mutate(
+            {
+                email,
+                otp: otpValue,
+                newPassword,
+                confirmPassword,
+            },
+            {
+                onError: (err: any) => {
+                    Alert.alert("Error", err?.message || "Password reset failed");
+                },
+            }
+        );
     };
 
     return (
@@ -135,9 +129,8 @@ export default function ForgotPasswordScreen() {
                         <Image source={icons.communityImage} style={styles.logo} resizeMode="contain" />
                     </View>
 
-                    {/* Form */}
                     <View style={styles.formContainer}>
-                        {/* Step 1: Email Verification */}
+                        {/* STEP 1 */}
                         {step === 1 && (
                             <>
                                 <TextInput
@@ -148,13 +141,13 @@ export default function ForgotPasswordScreen() {
                                     onChangeText={setEmail}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
-                                    editable={!loading}
+                                    editable={!isBusy}
                                 />
 
                                 <TouchableOpacity
                                     style={styles.verifyButton}
                                     onPress={handleVerifyEmail}
-                                    disabled={loading}
+                                    disabled={isBusy}
                                 >
                                     <LinearGradient
                                         colors={["#7C3AED", "#3B82F6"]}
@@ -162,7 +155,7 @@ export default function ForgotPasswordScreen() {
                                         end={{ x: 1, y: 0 }}
                                         style={styles.gradientButton}
                                     >
-                                        {loading ? (
+                                        {sendOtp.isPending ? (
                                             <ActivityIndicator color="#fff" />
                                         ) : (
                                             <Text style={styles.buttonText}>Verify Email ID</Text>
@@ -172,31 +165,41 @@ export default function ForgotPasswordScreen() {
                             </>
                         )}
 
-                        {/* Step 2: OTP + New Password */}
+                        {/* STEP 2 */}
                         {step === 2 && (
                             <>
-                                <Text style={styles.otpLabel}>
-                                    An OTP has been sent to your email.{"\n"}
-                                    Please enter the OTP to verify your email
-                                </Text>
+                                <Text style={styles.otpLabel}>Enter the OTP sent to your email</Text>
 
-                                {/* OTP Inputs */}
-                                <View style={styles.otpContainer}>
-                                    {otp.map((digit, index) => (
-                                        <TextInput
-                                            key={index}
-                                            ref={(ref) => { otpRefs.current[index] = ref; }}
-                                            style={[styles.otpInput, digit && styles.otpInputFilled]}
-                                            value={digit}
-                                            onChangeText={(value) => handleOTPChange(value, index)}
-                                            keyboardType="number-pad"
-                                            maxLength={1}
-                                            selectTextOnFocus
-                                        />
-                                    ))}
-                                </View>
+                                <OtpInput
+                                    numberOfDigits={6}
+                                    onTextChange={(value) => setOtp(value.split(""))}
+                                    onFilled={(value) => setOtp(value.split(""))}
+                                    theme={{
+                                        containerStyle: {
+                                            width: "85%",
+                                            alignSelf: "center",
+                                            marginBottom: 24,
+                                        },
+                                        inputsContainerStyle: {
+                                            justifyContent: "space-between",
+                                        },
+                                        pinCodeContainerStyle: {
+                                            width: 48,
+                                            height: 56,
+                                            borderRadius: 10,
+                                            borderWidth: 2,
+                                            backgroundColor: "rgba(255,255,255,0.15)",
+                                            borderColor: "rgba(255,255,255,0.3)",
+                                        },
+                                        pinCodeTextStyle: {
+                                            color: "#fff",
+                                            fontSize: 22,
+                                            fontWeight: "600",
+                                        },
+                                    }}
+                                />
 
-                                {/* New Password */}
+                                {/* PASSWORD */}
                                 <View style={styles.passwordContainer}>
                                     <TextInput
                                         style={styles.passwordInput}
@@ -206,6 +209,7 @@ export default function ForgotPasswordScreen() {
                                         onChangeText={setNewPassword}
                                         secureTextEntry={!showNewPassword}
                                         autoCapitalize="none"
+                                        editable={!isBusy}
                                     />
                                     <TouchableOpacity
                                         onPress={() => setShowNewPassword(!showNewPassword)}
@@ -219,7 +223,7 @@ export default function ForgotPasswordScreen() {
                                     </TouchableOpacity>
                                 </View>
 
-                                {/* Confirm Password */}
+                                {/* CONFIRM PASSWORD */}
                                 <View style={styles.passwordContainer}>
                                     <TextInput
                                         style={styles.passwordInput}
@@ -229,6 +233,7 @@ export default function ForgotPasswordScreen() {
                                         onChangeText={setConfirmPassword}
                                         secureTextEntry={!showConfirmPassword}
                                         autoCapitalize="none"
+                                        editable={!isBusy}
                                     />
                                     <TouchableOpacity
                                         onPress={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -242,13 +247,13 @@ export default function ForgotPasswordScreen() {
                                     </TouchableOpacity>
                                 </View>
 
-                                {/* Reset Password Button */}
+                                {/* RESET PASSWORD */}
                                 <TouchableOpacity
                                     style={styles.resetButton}
                                     onPress={handleResetPassword}
-                                    disabled={isLoading}
+                                    disabled={isBusy}
                                 >
-                                    {isLoading ? (
+                                    {resetPasswordMutation.isPending ? (
                                         <ActivityIndicator color="#1A5490" />
                                     ) : (
                                         <Text style={styles.resetButtonText}>Reset Password</Text>
@@ -258,7 +263,7 @@ export default function ForgotPasswordScreen() {
                         )}
                     </View>
 
-                    {/* Andrews University Logo */}
+                    {/* Bottom Logo */}
                     <View style={styles.universityLogoContainer}>
                         <Image source={icons.universityIcon} style={styles.universityLogo} resizeMode="contain" />
                     </View>
@@ -267,6 +272,9 @@ export default function ForgotPasswordScreen() {
         </>
     );
 }
+
+
+
 
 const styles = StyleSheet.create({
     container: {
@@ -325,22 +333,25 @@ const styles = StyleSheet.create({
     },
     otpContainer: {
         flexDirection: "row",
-        justifyContent: "center",
-        gap: 12,
-        marginBottom: 40,
+        justifyContent: "space-between",
+        alignSelf: "center",
+        width: "85%",
+        marginBottom: 24,
     },
+
     otpInput: {
-        width: 60,
-        height: 60,
-        backgroundColor: "transparent",
+        width: 48,
+        height: 56,
+        backgroundColor: "rgba(255,255,255,0.15)",
         borderWidth: 2,
-        borderColor: "rgba(255,255,255,0.8)",
+        borderColor: "rgba(255,255,255,0.3)",
         borderRadius: 10,
         textAlign: "center",
-        fontSize: 24,
+        fontSize: 22,
         color: "#fff",
-        fontWeight: "bold",
+        fontWeight: "600",
     },
+
     otpInputFilled: {
         borderColor: "#FFD700",
     },

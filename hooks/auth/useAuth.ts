@@ -74,7 +74,7 @@ export const useLogin = () => {
                 if (user.role === 'pastor') {
                     router.replace('/(pastor)/(tabs)');
                 } else if (user.role === 'mentor') {
-                    router.replace('/(mentor-tabs)');
+                    router.replace('/(mentor-tabs)/(tabs)');
                 } else if (user.role === 'director') {
                     router.replace('/(director)/(tabs)');
                 }
@@ -97,7 +97,6 @@ export const useSendOtp = () => {
         mutationFn: (data: SendOtpRequest) => authService.sendOtp(data),
         onSuccess: (response) => {
             console.log('✅ OTP sent successfully');
-            console.log('⏱️ Expires in:', response.data.expiresIn, 'seconds');
         },
         onError: (error: any) => {
             console.error('❌ Send OTP failed:', error.message);
@@ -114,7 +113,7 @@ export const useVerifyOtp = () => {
         onSuccess: (response) => {
             console.log('✅ OTP verified successfully');
 
-            if (response.data.isValid) {
+            if (response.success) {
                 // Store OTP token temporarily (will be used for password setting)
                 console.log('🔐 OTP token received (valid)');
                 setEmailVerified(true);
@@ -188,12 +187,9 @@ export const useResetPassword = () => {
 
     return useMutation({
         mutationFn: (data: ResetPasswordRequest) =>
-            authService.resetPassword(data.token, data.newPassword),
+            authService.resetPassword(data), // send full object
         onSuccess: (response) => {
             console.log('✅ Password reset successful');
-            console.log('📝 Message:', response.message);
-
-            // Navigate to login
             router.replace('/(unauthenticated)/login-form');
         },
         onError: (error: any) => {
@@ -201,6 +197,7 @@ export const useResetPassword = () => {
         },
     });
 };
+
 
 // ============= LOGOUT MUTATION =============
 export const useLogout = () => {

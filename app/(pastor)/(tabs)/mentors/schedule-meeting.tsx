@@ -160,7 +160,7 @@ const ScheduleMeeting = () => {
       let meetingLink: string | undefined;
       if (platform === 'zoom') {
         meetingLink = 'https://zoom.us/j/123456789';
-      } else if (platform === 'google_meet') {
+      } else if (platform === 'gmeet') {
         meetingLink = 'https://meet.google.com/abc-defg-hij';
       } else if (platform === 'teams') {
         meetingLink = 'https://teams.microsoft.com/l/meetup-join/...';

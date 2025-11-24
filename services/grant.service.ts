@@ -40,10 +40,10 @@ export const grantService = {
     /**
      * Get grant application status
      */
-    getGrantStatus: async (applicationId: string): Promise<any> => {
+    getGrantStatus: async (userId: string): Promise<any> => {
         try {
             const response = await apiClient.get(
-                `${ENDPOINTS.GRANT.APPLY_GRANT}/${applicationId}`
+                `${ENDPOINTS.GRANT.APPLY_GRANT}/${userId}`
             );
             return response.data;
         } catch (error) {

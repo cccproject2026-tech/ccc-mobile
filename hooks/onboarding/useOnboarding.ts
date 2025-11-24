@@ -13,46 +13,41 @@ export const onboardingKeys = {
 };
 
 // Submit interest mutation
+// Submit interest mutation
 export const useSubmitInterest = () => {
     const router = useRouter();
-    const { setUserId, setApplicationId, setInterestStatus, setInterestData } =
-        useOnboardingStore();
+    const {
+        setUserId,
+        setApplicationId,
+        setInterestStatus,
+        setInterestData
+    } = useOnboardingStore();
 
     return useMutation({
         mutationFn: (data: InterestFormData) =>
             onboardingService.submitInterest(data),
+
         onSuccess: (response, variables) => {
             console.log('✅ Interest form submitted successfully');
 
-            // Extract userId and applicationId from response
             const userId = response.data?.userId;
             const applicationId = response.data?.id;
 
-            // Store in Zustand for later use
+            // Save to store
             if (userId) setUserId(userId);
             if (applicationId) setApplicationId(applicationId);
             setInterestStatus('pending');
             setInterestData(variables);
 
-            console.log('📋 Data stored:', {
-                userId,
-                applicationId,
-                status: 'pending',
-            });
-
-            // Only navigate if this is the unauthenticated flow
-            // Director flow handles navigation separately
-            if (router.canGoBack()) {
-                // Don't auto-navigate for director flow
-            } else {
-                router.push('/(unauthenticated)');
-            }
+            router.replace('/(unauthenticated)');
         },
+
         onError: (error: any) => {
-            console.error('❌ Submit interest failed:', error.message);
+            console.error('❌ Submit interest failed:', error?.message);
         },
     });
 };
+
 
 // Check approval status query
 export const useCheckApprovalStatus = (enabled: boolean = false) => {

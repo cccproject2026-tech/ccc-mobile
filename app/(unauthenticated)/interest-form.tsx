@@ -761,7 +761,6 @@
 // });
 
 
-
 import TopBar from "@/components/director/TopBar";
 import { useInterestMetadata } from "@/hooks/interests/useInterests";
 import { useSubmitInterest } from "@/hooks/onboarding/useOnboarding";

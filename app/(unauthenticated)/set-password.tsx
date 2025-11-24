@@ -18,15 +18,13 @@ import {
     View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { OtpInput } from "react-native-otp-entry";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-// import { useSendOtp, useVerifyOtp, useSetPassword } from "@/hooks"; // ✅ Commented for now
-
 
 export default function VerifyEmailScreen() {
     const { bottom } = useSafeAreaInsets();
     const router = useRouter();
 
-    // Onboarding store
     const {
         interestData,
         email,
@@ -35,14 +33,12 @@ export default function VerifyEmailScreen() {
         setPasswordSet,
     } = useOnboardingStore();
 
-    // Auth mutations
     const { mutate: sendOtp, isPending: isSending } = useSendOtp();
     const { mutate: verifyOtp, isPending: isVerifying } = useVerifyOtp();
     const { mutate: setPassword, isPending: isSettingPassword } = useSetPassword();
 
-    // Local state
     const [step, setStep] = useState<1 | 2 | 3>(1);
-    const [otp, setOtp] = useState(['', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [passwordInput, setPasswordInput] = useState('');
     const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -54,30 +50,20 @@ export default function VerifyEmailScreen() {
     const userEmail = email || interestData?.email || '';
     const isLoading = isSending || isVerifying || isSettingPassword;
 
-    // ============= HANDLERS =============
-
     const handleVerifyEmail = () => {
         if (!userEmail) {
-            Alert.alert(
-                'Error',
-                'No email found. Please submit an interest form first.'
-            );
+            Alert.alert('Error', 'No email found. Please submit an interest form first.');
             return;
         }
 
         sendOtp(
-            { email: userEmail },
+            { email: userEmail, purpose: 'email_verification' },
             {
                 onSuccess: () => {
                     Alert.alert(
                         'OTP Sent',
-                        `A 4-digit OTP has been sent to ${userEmail}\n\n🧪 For testing, use: 1234`,
-                        [
-                            {
-                                text: 'OK',
-                                onPress: () => setStep(2),
-                            },
-                        ]
+                        `A 6-digit OTP has been sent to ${userEmail}.`,
+                        [{ text: 'OK', onPress: () => setStep(2) }]
                     );
                 },
                 onError: (error: any) => {
@@ -94,7 +80,7 @@ export default function VerifyEmailScreen() {
         newOtp[index] = value;
         setOtp(newOtp);
 
-        if (value && index < 3) {
+        if (value && index < 5) {
             otpRefs.current[index + 1]?.focus();
         }
     };
@@ -102,8 +88,8 @@ export default function VerifyEmailScreen() {
     const handleVerifyOtp = () => {
         const otpValue = otp.join('');
 
-        if (otpValue.length !== 4) {
-            Alert.alert('Error', 'Please enter the 4-digit OTP');
+        if (otpValue.length !== 6) {
+            Alert.alert('Error', 'Please enter the 6-digit OTP');
             return;
         }
 
@@ -111,15 +97,12 @@ export default function VerifyEmailScreen() {
             { email: userEmail, otp: otpValue },
             {
                 onSuccess: (response) => {
-                    if (response.data.isValid) {
+                    if (response.success) {
                         setEmailVerified(true);
                         setIsOtpVerified(true);
                         setStep(3);
 
-                        Alert.alert(
-                            'Success',
-                            'OTP verified successfully. Please set your password.'
-                        );
+                        Alert.alert('Success', 'OTP verified successfully. Please set your password.');
                     } else {
                         Alert.alert('Error', 'Invalid OTP. Please try again.');
                     }
@@ -160,12 +143,7 @@ export default function VerifyEmailScreen() {
                     Alert.alert(
                         'Success!',
                         'Your password has been set successfully. You can now log in and complete your profile.',
-                        [
-                            {
-                                text: 'OK',
-                                onPress: () => router.replace('/(unauthenticated)/login-form'),
-                            },
-                        ]
+                        [{ text: 'OK', onPress: () => router.replace('/(unauthenticated)/login-form') }]
                     );
                 },
                 onError: (error: any) => {
@@ -183,34 +161,23 @@ export default function VerifyEmailScreen() {
                 style={[styles.container, { paddingBottom: bottom }]}
             >
                 <TopBar showDrawer={false} showNotifications={false} />
+
                 <KeyboardAwareScrollView
-                    contentContainerStyle={[
-                        styles.scrollContent,
-                        { paddingBottom: bottom + 20 },
-                    ]}
+                    contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 20 }]}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Welcome Banner */}
                     <View style={styles.welcomeBanner}>
                         <Text style={styles.welcomeTitle}>WELCOME !</Text>
                         <Text style={styles.welcomeSubtitle}>
-                            You are now enrolled in the CCC mentoring program at Andrews
-                            University Seminary
+                            You are now enrolled in the CCC mentoring program at Andrews University Seminary
                         </Text>
                     </View>
 
-                    {/* Logo */}
                     <View style={styles.cccLogoContainer}>
-                        <Image
-                            source={icons.communityImage}
-                            style={styles.cccLogo}
-                            resizeMode="contain"
-                        />
+                        <Image source={icons.communityImage} style={styles.cccLogo} resizeMode="contain" />
                     </View>
 
-                    {/* Form */}
                     <View style={styles.formContainer}>
-                        {/* Email (Read-only) */}
                         <TextInput
                             style={[styles.input, styles.inputDisabled]}
                             placeholder="Username (Auto populated) Email ID"
@@ -219,7 +186,6 @@ export default function VerifyEmailScreen() {
                             editable={false}
                         />
 
-                        {/* Step 1: Verify Email Button */}
                         {step === 1 && (
                             <TouchableOpacity
                                 style={styles.verifyButton}
@@ -241,48 +207,49 @@ export default function VerifyEmailScreen() {
                             </TouchableOpacity>
                         )}
 
-                        {/* Step 2: OTP Entry */}
                         {step === 2 && (
                             <>
                                 <Text style={styles.otpLabel}>
-                                    An OTP has been sent to your Registered Email ID.{'\n'}
-                                    Please fill the OTP to verify Email ID
-                                    {'\n\n'}
-                                    <Text
-                                        style={{
-                                            color: '#FFD700',
-                                            fontSize: 14,
-                                            fontWeight: '600',
-                                        }}
-                                    >
-                                        🧪 For testing, use: 1234
-                                    </Text>
+                                    A 6-digit OTP has been sent to your email.{'\n'}
+                                    Please enter it to verify your Email ID.
                                 </Text>
 
-                                {/* OTP Inputs */}
-                                <View style={styles.otpContainer}>
-                                    {otp.map((digit, index) => (
-                                        <TextInput
-                                            key={index}
-                                            ref={(ref) => {
-                                                otpRefs.current[index] = ref;
-                                            }}
-                                            style={[styles.otpInput, digit && styles.otpInputFilled]}
-                                            value={digit}
-                                            onChangeText={(value) => handleOTPChange(value, index)}
-                                            keyboardType="number-pad"
-                                            maxLength={1}
-                                            selectTextOnFocus
-                                            editable={!isLoading}
-                                        />
-                                    ))}
-                                </View>
+                                {/* NEW OTP INPUT USING react-native-otp-entry */}
+                                <OtpInput
+                                    numberOfDigits={6}
+                                    onTextChange={(value) => setOtp(value.split(""))}
+                                    onFilled={(value) => {
+                                        setOtp(value.split(""));
+                                    }}
+                                    theme={{
+                                        containerStyle: {
+                                            width: "85%",
+                                            alignSelf: "center",
+                                            marginBottom: 24,
+                                        },
+                                        inputsContainerStyle: {
+                                            justifyContent: "space-between",
+                                        },
+                                        pinCodeContainerStyle: {
+                                            width: 48,
+                                            height: 56,
+                                            borderRadius: 10,
+                                            borderWidth: 2,
+                                            backgroundColor: "rgba(255,255,255,0.15)",
+                                            borderColor: "rgba(255,255,255,0.3)",
+                                        },
+                                        pinCodeTextStyle: {
+                                            color: "#fff",
+                                            fontSize: 22,
+                                            fontWeight: "600",
+                                        },
+                                    }}
+                                />
 
-                                {/* Verify OTP Button */}
                                 <TouchableOpacity
                                     style={styles.submitButton}
                                     onPress={handleVerifyOtp}
-                                    disabled={isLoading || otp.join('').length !== 4}
+                                    disabled={isLoading || otp.join('').length !== 6}
                                 >
                                     {isLoading ? (
                                         <ActivityIndicator color="#1A5490" />
@@ -293,7 +260,7 @@ export default function VerifyEmailScreen() {
                             </>
                         )}
 
-                        {/* Step 3: Password Entry */}
+
                         {step === 3 && isOtpVerified && (
                             <>
                                 <Text
@@ -308,7 +275,6 @@ export default function VerifyEmailScreen() {
                                     Create your account password
                                 </Text>
 
-                                {/* Password Inputs */}
                                 <View style={styles.passwordInputs}>
                                     <View style={styles.passwordContainer}>
                                         <TextInput
@@ -326,9 +292,7 @@ export default function VerifyEmailScreen() {
                                             style={styles.eyeIcon}
                                         >
                                             <Ionicons
-                                                name={
-                                                    showPassword ? 'eye-off-outline' : 'eye-outline'
-                                                }
+                                                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                                                 size={24}
                                                 color="rgba(255,255,255,0.6)"
                                             />
@@ -347,17 +311,11 @@ export default function VerifyEmailScreen() {
                                             editable={!isLoading}
                                         />
                                         <TouchableOpacity
-                                            onPress={() =>
-                                                setShowConfirmPassword(!showConfirmPassword)
-                                            }
+                                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                                             style={styles.eyeIcon}
                                         >
                                             <Ionicons
-                                                name={
-                                                    showConfirmPassword
-                                                        ? 'eye-off-outline'
-                                                        : 'eye-outline'
-                                                }
+                                                name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
                                                 size={24}
                                                 color="rgba(255,255,255,0.6)"
                                             />
@@ -365,7 +323,6 @@ export default function VerifyEmailScreen() {
                                     </View>
                                 </View>
 
-                                {/* Set Password Button */}
                                 <TouchableOpacity
                                     style={styles.submitButton}
                                     onPress={handleSetPassword}
@@ -381,7 +338,6 @@ export default function VerifyEmailScreen() {
                         )}
                     </View>
 
-                    {/* Andrews University Logo */}
                     <View style={styles.universityLogoContainer}>
                         <Image
                             source={icons.universityIcon}
@@ -396,12 +352,8 @@ export default function VerifyEmailScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    scrollContent: {
-        flexGrow: 1,
-    },
+    container: { flex: 1 },
+    scrollContent: { flexGrow: 1 },
     cccLogoContainer: {
         alignItems: "center",
         marginTop: 40,
@@ -412,25 +364,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderRadius: 6,
     },
-    cccLogo: {
-        width: "100%",
-        height: 90,
-    },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-    },
-    shareButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: "rgba(255,255,255,0.2)",
-        justifyContent: "center",
-        alignItems: "center",
-    },
+    cccLogo: { width: "100%", height: 90 },
     welcomeBanner: {
         alignItems: "center",
         paddingHorizontal: 20,
@@ -448,9 +382,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         lineHeight: 20,
     },
-    formContainer: {
-        paddingHorizontal: 20,
-    },
+    formContainer: { paddingHorizontal: 20 },
     input: {
         backgroundColor: "rgba(255,255,255,0.15)",
         borderWidth: 1,
@@ -461,22 +393,13 @@ const styles = StyleSheet.create({
         color: "#fff",
         marginBottom: 16,
     },
-    inputDisabled: {
-        opacity: 0.7,
-    },
-    verifyButton: {
-        marginTop: 20,
-        marginBottom: 40,
-    },
+    inputDisabled: { opacity: 0.7 },
+    verifyButton: { marginTop: 20, marginBottom: 40 },
     gradientButton: {
-        padding: 16,
-        borderRadius: 10,
-        alignItems: "center",
+        padding: 16, borderRadius: 10, alignItems: "center",
     },
     buttonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "600",
+        color: "#fff", fontSize: 16, fontWeight: "600",
     },
     otpLabel: {
         color: "#fff",
@@ -487,28 +410,25 @@ const styles = StyleSheet.create({
     },
     otpContainer: {
         flexDirection: "row",
-        justifyContent: "center",
-        gap: 12,
+        justifyContent: "space-between",
+        alignSelf: "center",
+        width: "85%",
         marginBottom: 24,
     },
     otpInput: {
-        width: 60,
-        height: 60,
+        width: 48,
+        height: 56,
         backgroundColor: "rgba(255,255,255,0.15)",
         borderWidth: 2,
         borderColor: "rgba(255,255,255,0.3)",
         borderRadius: 10,
         textAlign: "center",
-        fontSize: 24,
+        fontSize: 22,
         color: "#fff",
-        fontWeight: "bold",
+        fontWeight: "600",
     },
-    otpInputFilled: {
-        borderColor: "#FFD700",
-    },
-    passwordInputs: {
-        marginBottom: 16,
-    },
+    otpInputFilled: { borderColor: "#FFD700" },
+    passwordInputs: { marginBottom: 16 },
     passwordContainer: {
         position: "relative",
         marginBottom: 16,
@@ -528,17 +448,6 @@ const styles = StyleSheet.create({
         right: 14,
         top: 14,
     },
-    errorContainer: {
-        backgroundColor: "rgba(255,0,0,0.1)",
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 16,
-    },
-    errorText: {
-        color: "#FFB4B4",
-        fontSize: 14,
-        textAlign: "center",
-    },
     submitButton: {
         backgroundColor: "#fff",
         padding: 16,
@@ -550,17 +459,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "600",
     },
-    bottomLogo: {
-        alignItems: "center",
-        paddingBottom: 20,
-    },
     universityLogoContainer: {
         alignItems: "center",
         marginBottom: 30,
         marginTop: 40,
     },
-    universityLogo: {
-        width: 220,
-        height: 50,
-    },
+    universityLogo: { width: 220, height: 50 },
 });

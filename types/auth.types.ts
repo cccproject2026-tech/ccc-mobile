@@ -43,6 +43,7 @@ export interface LoginResponse {
 // OTP flow
 export interface SendOtpRequest {
     email: string;
+    purpose?: string;
 }
 
 export interface SendOtpResponse {
@@ -103,9 +104,10 @@ export interface ForgotPasswordResponse {
 
 // Reset password
 export interface ResetPasswordRequest {
-    token: string;
+    email: string;
+    otp: string;
     newPassword: string;
-    confirmNewPassword: string;
+    confirmPassword: string;
 }
 
 export interface ResetPasswordResponse {

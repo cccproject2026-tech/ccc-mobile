@@ -79,10 +79,10 @@ export const useGrant = () => {
      * Check application status by ID
      */
     const checkApplicationStatus = useCallback(
-        async (applicationId: string) => {
+        async (userId: string) => {
             setState((prev) => ({ ...prev, isLoading: true, error: null }));
             try {
-                const statusData = await grantService.getGrantStatus(applicationId);
+                const statusData = await grantService.getGrantStatus(userId);
                 setState((prev) => ({
                     ...prev,
                     isLoading: false,
