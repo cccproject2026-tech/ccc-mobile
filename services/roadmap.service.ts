@@ -1,132 +1,4 @@
 // services/roadmap.service.ts
-// import {
-//     CreateExtrasDto,
-//     ExtrasApiResponse,
-//     GetExtrasResponse,
-//     Roadmap,
-//     RoadmapResponse,
-//     UpdateExtrasDto
-// } from '@/lib/roadmap/types';
-// import { CreateRoadmapRequest, CreateRoadmapResponse } from '@/lib/roadmaps/types';
-// import { apiClient } from './api/client';
-// import { ENDPOINTS } from './api/endpoints';
-
-// export const roadmapService = {
-//     /**
-//      * Fetches all roadmaps
-//      */
-//     async getRoadmaps() {
-//         const response = await apiClient.get<RoadmapResponse>('/roadmaps');
-
-//         if (!response.data.success) {
-//             throw new Error(response.data.message || 'Failed to fetch roadmaps');
-//         }
-
-//         return response.data.data;
-//     },
-
-//     /**
-//      * Fetches a single roadmap by ID
-//      */
-//     async getRoadmapById(roadmapId: string) {
-//         const response = await apiClient.get<{
-//             success: boolean;
-//             message: string;
-//             data: Roadmap;
-//         }>(`/roadmaps/${roadmapId}`);
-
-//         if (!response.data.success) {
-//             throw new Error(response.data.message || 'Failed to fetch roadmap');
-//         }
-
-//         return response.data.data;
-//     },
-
-//     /**
-//      * GET - Fetches saved extras for a roadmap
-//      * Note: Backend uses roadMapId in URL, but might filter by nestedRoadMapItemId on backend
-//      */
-//     async getRoadmapExtras(roadMapId: string, nestedRoadMapItemId?: string, userId?: string) {
-//         const url = `/roadmaps/${roadMapId}/extras?userId=${userId || ''}&nestedRoadMapItemId=${nestedRoadMapItemId || ''}`;
-//         const params = nestedRoadMapItemId ? { nestedRoadMapItemId } : undefined;
-
-//         const response = await apiClient.get<GetExtrasResponse>(url, { params });
-
-//         if (!response.data.success) {
-//             throw new Error(response.data.message || 'Failed to fetch roadmap extras');
-//         }
-
-//         return response.data.data;
-//     },
-
-//     /**
-//      * POST - Creates new extras/form data
-//      */
-//     async createRoadmapExtras(payload: CreateExtrasDto) {
-//         const response = await apiClient.post<ExtrasApiResponse>(
-//             `/roadmaps/${payload.roadMapId}/extras`,
-//             payload
-//         );
-
-//         if (!response.data.success) {
-//             throw new Error(response.data.message || 'Failed to create roadmap extras');
-//         }
-
-//         return response.data;
-//     },
-
-//     /**
-//      * PATCH - Updates existing extras/form data
-//      */
-//     async updateRoadmapExtras(roadMapId: string, payload: UpdateExtrasDto) {
-//         const response = await apiClient.patch<ExtrasApiResponse>(
-//             `/roadmaps/${roadMapId}/extras`,
-//             payload
-//         );
-
-//         if (!response.data.success) {
-//             throw new Error(response.data.message || 'Failed to update roadmap extras');
-//         }
-
-//         return response.data;
-//     },
-
-//     /**
-//      * DELETE - Deletes extras/form data
-//      */
-//     async deleteRoadmapExtras(roadMapId: string) {
-//         const response = await apiClient.delete<{
-//             success: boolean;
-//             message: string;
-//         }>(`/roadmaps/${roadMapId}/extras`);
-
-//         if (!response.data.success) {
-//             throw new Error(response.data.message || 'Failed to delete roadmap extras');
-//         }
-
-//         return response.data;
-//     },
-
-//     /**
-//      * POST - Creates a new roadmap (phase or single)
-//      */
-//     async createRoadmap(data: CreateRoadmapRequest): Promise<CreateRoadmapResponse> {
-//         console.log('📤 Creating roadmap:', data.name);
-
-//         const response = await apiClient.post<CreateRoadmapResponse>(
-//             ENDPOINTS.ROADMAPS.CREATE,
-//             data
-//         );
-
-//         console.log('📥 Roadmap created:', response.data);
-//         return response.data;
-//     },
-// };
-
-
-
-
-// services/roadmap.service.ts
 import {
     AddCommentRequest,
     AddCommentResponse,
@@ -143,6 +15,35 @@ import { CreateNestedRoadmapRequest, CreateNestedRoadmapResponse, CreateRoadmapR
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
+// Helper to append data to FormData with support for nested objects/arrays
+const buildFormData = (formData: FormData, data: any, parentKey?: string) => {
+    if (data && typeof data === 'object' && !(data instanceof Date) && !(data instanceof File) && !(data instanceof Blob)) {
+        Object.keys(data).forEach(key => {
+            const value = data[key];
+            if (value === undefined || value === null) return; // Skip undefined/null
+
+            const formKey = parentKey ? `${parentKey}[${key}]` : key;
+            
+            if (Array.isArray(value)) {
+                value.forEach((item, index) => {
+                    const arrayKey = `${formKey}[${index}]`;
+                    if (typeof item === 'object') {
+                        buildFormData(formData, item, arrayKey);
+                    } else {
+                        formData.append(arrayKey, String(item));
+                    }
+                });
+            } else if (typeof value === 'object') {
+                buildFormData(formData, value, formKey);
+            } else {
+                formData.append(formKey, String(value));
+            }
+        });
+    } else if (data !== undefined && data !== null) {
+        formData.append(parentKey || '', String(data));
+    }
+};
+
 export const roadmapService = {
     async getRoadmaps() {
         const response = await apiClient.get<RoadmapResponse>('/roadmaps');
@@ -153,7 +54,44 @@ export const roadmapService = {
     },
 
     async createRoadmap(payload: CreateRoadmapRequest) {
-        const response = await apiClient.post<CreateRoadmapResponse>('/roadmaps', payload);
+        const formData = new FormData();
+
+        // Handle Banner Image
+        if (payload.imageUrl && !payload.imageUrl.startsWith('http')) {
+            const uri = payload.imageUrl;
+            const filename = uri.split('/').pop() || 'banner.jpg';
+            const match = /\.(\w+)$/.exec(filename);
+            const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+            formData.append('image', {
+                uri,
+                name: filename,
+                type,
+            } as any);
+        }
+
+        // Clone payload and remove imageUrl to avoid duplication or sending it as text if it was a local URI
+        // If it was a http URL, we might want to keep it? The requirement says "field named image will be included for the banner image".
+        // Usually, if we upload a file, we don't send the URL field. 
+        // We'll append the rest of the payload.
+        const { imageUrl, ...restPayload } = payload;
+        
+        // Append all other fields
+        buildFormData(formData, restPayload);
+        
+        // If there was an existing http imageUrl (not a file upload), we might want to include it?
+        // But the requirement implies this is for creating, so usually it's an upload or nothing.
+        // If imageUrl is remote, we should probably send it as 'imageUrl' field if the backend supports reusing an image.
+        if (payload.imageUrl && payload.imageUrl.startsWith('http')) {
+             formData.append('imageUrl', payload.imageUrl);
+        }
+
+        const response = await apiClient.post<CreateRoadmapResponse>('/roadmaps', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        
         if (!response.data.success) {
             throw new Error(response.data.message || 'Failed to create roadmap');
         }
@@ -351,6 +289,4 @@ export const roadmapService = {
         console.log('📥 Nested roadmap created successfully:', response.data);
         return response.data;
     },
-
-
 };
