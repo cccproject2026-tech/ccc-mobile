@@ -73,6 +73,7 @@ export const ENDPOINTS = {
     GRANT: {
         GET_FORM: '/microgrant/form',
         APPLY_GRANT: '/microgrant/apply',
+        CHECK_APPLICATION: (userId: string) => `/microgrant/application/check/${userId}`,
         GET_APPLICATIONS: (status?: string) => status ? `/microgrant/applications?status=${status}` : '/microgrant/applications',
         GET_APPLICATION: (applicationId: string) => `/microgrant/application/${applicationId}`,
     },

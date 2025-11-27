@@ -6,6 +6,7 @@ import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { customColors } from "@/constants/config/customColors";
+import { useCheckApplication } from "@/hooks/grant/useCheckApplication";
 import { useGrant } from "@/hooks/grant/useGrant";
 import { useAuthStore } from "@/stores";
 import { getFontSize, getSpacing, isSmallDevice } from "@/utils/responsive";
@@ -15,6 +16,7 @@ import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -49,12 +51,23 @@ export default function Grant() {
   });
   const [isVisible, setIsVisible] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [showAlreadyAppliedModal, setShowAlreadyAppliedModal] = React.useState(false);
   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+
+  // Check if user has already applied
+  const { data: checkApplicationData, isLoading: isCheckingApplication } = useCheckApplication(user?.id);
 
   // Fetch form on mount
   useEffect(() => {
     fetchGrantForm();
   }, []);
+
+  // Check if user has already applied and show modal
+  useEffect(() => {
+    if (checkApplicationData?.data?.applied) {
+      setShowAlreadyAppliedModal(true);
+    }
+  }, [checkApplicationData]);
 
 
 
@@ -257,7 +270,7 @@ export default function Grant() {
   };
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || isCheckingApplication) {
     return (
       <LinearGradient
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
@@ -651,7 +664,7 @@ export default function Grant() {
                   </View>
                 )}
 
-                {step <= 2 && (
+                {step <= 2 && !checkApplicationData?.data?.applied && (
                   <View
                     style={{
                       flexDirection: isSmallDevice ? "column" : "row",
@@ -770,6 +783,76 @@ export default function Grant() {
             />
           </Pressable>
         </Pressable>
+
+        {/* Already Applied Modal */}
+        <Modal
+          visible={showAlreadyAppliedModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => {
+            setShowAlreadyAppliedModal(false);
+            router.back();
+          }}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 16,
+            }}
+            onPress={() => {
+              setShowAlreadyAppliedModal(false);
+              router.back();
+            }}
+          >
+            <Pressable
+              style={{
+                width: "100%",
+                maxWidth: 400,
+                gap: 12,
+                padding: 24,
+                backgroundColor: "white",
+                borderRadius: 12,
+              }}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <Text
+                style={{
+                  fontWeight: "600",
+                  fontSize: 16,
+                  lineHeight: 24,
+                  color: "#176192",
+                  textAlign: "center",
+                }}
+              >
+                Application Already Submitted
+              </Text>
+              <Text
+                style={{
+                  fontWeight: "500",
+                  fontSize: 14,
+                  lineHeight: 20,
+                  color: "#1E366F",
+                  textAlign: "center",
+                  marginTop: 8,
+                }}
+              >
+                You have already applied for a microgrant. {checkApplicationData?.data?.status && `Your application status is: ${checkApplicationData.data.status}.`}
+              </Text>
+              <Button
+                title="Close"
+                type="submit"
+                onPress={() => {
+                  setShowAlreadyAppliedModal(false);
+                  router.back();
+                }}
+                style={{ marginTop: 12 }}
+              />
+            </Pressable>
+          </Pressable>
+        </Modal>
       </LinearGradient>
     </>
   );

@@ -1,4 +1,4 @@
-import { GrantFormResponse, GrantSubmissionPayload, GrantSubmissionResponse, MicrograntApplication, MicrograntApplicationDetail, MicrograntApplicationDetailApiResponse, MicrograntApplicationsApiResponse } from '@/types/grant.type';
+import { CheckApplicationResponse, GrantFormResponse, GrantSubmissionPayload, GrantSubmissionResponse, MicrograntApplication, MicrograntApplicationDetail, MicrograntApplicationDetailApiResponse, MicrograntApplicationsApiResponse } from '@/types/grant.type';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
@@ -48,6 +48,21 @@ export const grantService = {
             return response.data;
         } catch (error) {
             console.error('Error fetching grant status:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Check if user has already applied for microgrant
+     */
+    checkApplication: async (userId: string): Promise<CheckApplicationResponse> => {
+        try {
+            const response = await apiClient.get<CheckApplicationResponse>(
+                ENDPOINTS.GRANT.CHECK_APPLICATION(userId)
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error checking application:', error);
             throw error;
         }
     },

@@ -225,7 +225,7 @@ const Appointments = () => {
 
   const meetingModes: AppointmentPlatform[] = [
     'zoom',
-    'gmeet',
+    'google_meet',
     // 'teams',
     // 'phone',
     // 'in_person',
@@ -234,10 +234,10 @@ const Appointments = () => {
   const getModeLabel = (mode: AppointmentPlatform): string => {
     const labels: Record<AppointmentPlatform, string> = {
       zoom: 'Zoom',
-      gmeet: 'Google Meet',
-      // teams: 'Teams',
-      // phone: 'Phone call',
-      // in_person: 'In Person',
+      google_meet: 'Google Meet',
+      teams: 'Teams',
+      phone: 'Phone call',
+      in_person: 'In Person',
     };
     return labels[mode];
   };
@@ -245,10 +245,10 @@ const Appointments = () => {
   const getPlatformIcon = (mode: AppointmentPlatform) => {
     const iconsMap: Record<AppointmentPlatform, any> = {
       zoom: icons.duoMeet,
-      gmeet: icons.googleMeet,
-      // teams: icons.duoMeet,
-      // phone: icons.phone,
-      // in_person: icons.profile,
+      google_meet: icons.googleMeet,
+      teams: icons.duoMeet,
+      phone: icons.phone,
+      in_person: icons.profile,
     };
     return iconsMap[mode];
   };

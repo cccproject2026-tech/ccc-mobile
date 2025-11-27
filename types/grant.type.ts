@@ -117,3 +117,13 @@ export interface GrantStatusResponse {
         lastUpdated: string;
     };
 }
+
+export interface CheckApplicationResponse {
+    success: boolean;
+    message: string;
+    data: {
+        applied: boolean;
+        status: 'pending' | 'approved' | 'rejected' | 'under_review';
+        applicationId: string;
+    };
+}
