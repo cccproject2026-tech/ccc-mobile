@@ -26,6 +26,7 @@ interface ButtonProps {
   icon?: ImageSourcePropType | "";
   iconStyles?: StyleProp<ImageStyle>;
   textColor?: string;
+  disabled?: boolean;
 }
 
 // Interface for UploadPDFButton component props
@@ -47,7 +48,8 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle = {},
   icon = "",
   iconStyles = {},
-  textColor = ""
+  textColor = "",
+  disabled = false
 }) => {
   // Base styles for better maintainability
   const baseButtonStyle: ViewStyle = {
@@ -64,11 +66,13 @@ export const Button: React.FC<ButtonProps> = ({
     return (
       <TouchableOpacity
         onPress={onPress}
+        disabled={disabled}
         style={[
           baseButtonStyle,
           {
             backgroundColor: "white",
             justifyContent: "center",
+            opacity: disabled ? 0.5 : 1,
           },
           style,
         ]}
@@ -82,6 +86,7 @@ export const Button: React.FC<ButtonProps> = ({
     return (
       <TouchableOpacity
         onPress={onPress}
+        disabled={disabled}
         style={[
           baseButtonStyle,
           {
@@ -89,6 +94,7 @@ export const Button: React.FC<ButtonProps> = ({
             borderColor: "white",
             backgroundColor: "#1e366e",
             justifyContent: "center",
+            opacity: disabled ? 0.5 : 1,
           },
           style,
         ]}
@@ -102,6 +108,7 @@ export const Button: React.FC<ButtonProps> = ({
     return (
       <TouchableOpacity
         onPress={onPress}
+        disabled={disabled}
         style={[
           baseButtonStyle,
           {
@@ -109,6 +116,7 @@ export const Button: React.FC<ButtonProps> = ({
             borderColor: "white",
             backgroundColor: "#1e366f",
             justifyContent: "center",
+            opacity: disabled ? 0.5 : 1,
           },
           style,
         ]}
@@ -122,6 +130,7 @@ export const Button: React.FC<ButtonProps> = ({
     return (
       <TouchableOpacity
         onPress={onPress}
+        disabled={disabled}
         style={[
           {
             borderWidth: 1,
@@ -133,6 +142,7 @@ export const Button: React.FC<ButtonProps> = ({
             gap: 10,
             justifyContent: "center",
             alignItems: "center",
+            opacity: disabled ? 0.5 : 1,
           },
           style,
         ]}
@@ -152,6 +162,7 @@ export const Button: React.FC<ButtonProps> = ({
     return (
       <TouchableOpacity
         onPress={onPress}
+        disabled={disabled}
         style={[
           {
             borderWidth: 1,
@@ -163,6 +174,7 @@ export const Button: React.FC<ButtonProps> = ({
             gap: 10,
             justifyContent: "center",
             alignItems: "center",
+            opacity: disabled ? 0.5 : 1,
           },
           style,
         ]}
