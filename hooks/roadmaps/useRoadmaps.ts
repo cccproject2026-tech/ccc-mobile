@@ -258,28 +258,28 @@ export function useRoadmapExtras(
     userId?: string
 ) {
     // Validate that roadmapId is a valid MongoDB ObjectId (24 hex characters)
-    const isValidRoadmapId = roadmapId && 
+    const isValidRoadmapId = roadmapId &&
         typeof roadmapId === 'string' &&
-        roadmapId.length === 24 && 
+        roadmapId.length === 24 &&
         /^[0-9a-fA-F]{24}$/.test(roadmapId);
-    
+
     // Only pass valid IDs (not undefined, not empty string, not "undefined")
-    const validNestedId = nestedRoadMapItemId && 
+    const validNestedId = nestedRoadMapItemId &&
         typeof nestedRoadMapItemId === 'string' &&
-        nestedRoadMapItemId !== 'undefined' && 
+        nestedRoadMapItemId !== 'undefined' &&
         nestedRoadMapItemId.trim() !== '' &&
         nestedRoadMapItemId.length === 24 &&
         /^[0-9a-fA-F]{24}$/.test(nestedRoadMapItemId)
-        ? nestedRoadMapItemId 
+        ? nestedRoadMapItemId
         : undefined;
-    
-    const validUserId = userId && 
+
+    const validUserId = userId &&
         typeof userId === 'string' &&
-        userId !== 'undefined' && 
+        userId !== 'undefined' &&
         userId.trim() !== '' &&
         userId.length === 24 &&
         /^[0-9a-fA-F]{24}$/.test(userId)
-        ? userId 
+        ? userId
         : undefined;
 
     return useQuery({
@@ -288,13 +288,13 @@ export function useRoadmapExtras(
             // Only pass valid values - explicitly pass undefined if not valid (service will filter)
             const finalNestedId = validNestedId || undefined;
             const finalUserId = validUserId || undefined;
-            
-            console.log('📤 Fetching roadmap extras:', { 
-                roadmapId, 
-                nestedRoadMapItemId: finalNestedId || 'not provided', 
-                userId: finalUserId || 'not provided' 
+
+            console.log('📤 Fetching roadmap extras:', {
+                roadmapId,
+                nestedRoadMapItemId: finalNestedId || 'not provided',
+                userId: finalUserId || 'not provided'
             });
-            
+
             return roadmapService.getRoadmapExtras(
                 roadmapId!,
                 finalNestedId,

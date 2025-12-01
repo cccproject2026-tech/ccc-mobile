@@ -526,9 +526,19 @@ export default function RoleSelectionScreen() {
                     router.push('/(unauthenticated)');
                 }
             } else if (role === 'mentor') {
-                // Mentor - Direct access for testing
-                console.log('🧪 Navigating to mentor (testing)');
-                router.push('/(mentor-tabs)/(tabs)');
+                // // Mentor - Direct access for testing
+                // console.log('🧪 Navigating to mentor (testing)');
+                // router.push('/(mentor-tabs)/(tabs)');
+
+                if (isAuthenticated && user?.role === 'mentor') {
+                    // Authenticated mentor goes to dashboard
+                    console.log('✅ Navigating to mentor dashboard');
+                    router.push('/(mentor-tabs)/(tabs)');
+                } else {
+                    // Not authenticated, go to login/welcome
+                    console.log('📝 Navigating to unauthenticated flow')
+                    router.push('/(unauthenticated)')
+                };
             } else if (role === 'director') {
                 // Director - Direct access for testing
                 console.log('🧪 Navigating to director (testing)');

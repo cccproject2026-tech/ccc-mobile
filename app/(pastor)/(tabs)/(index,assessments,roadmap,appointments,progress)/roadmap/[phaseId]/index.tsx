@@ -352,9 +352,6 @@
 // }
 
 
-
-
-// app/roadmap/[roadmapId]/index.tsx
 import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import RoadmapCard from '@/components/director/ProgressRoadmapCard';
@@ -413,8 +410,16 @@ export default function RoadmapDetail() {
     });
 
     // Update active tab when divisions change
+    // FIX: Update active tab logic
     useMemo(() => {
-        if (hasDivisions && divisions.length > 0 && !divisions.includes(activeTab as string)) {
+        // defined valid keys for status tabs
+        const statusKeys = ['ALL', 'DUE', 'NOT_STARTED', 'COMPLETED'];
+
+        // Only reset if it's NOT a division AND NOT a status key
+        if (hasDivisions &&
+            divisions.length > 0 &&
+            !divisions.includes(activeTab as string) &&
+            !statusKeys.includes(activeTab as string)) {
             setActiveTab(divisions[0]);
         }
     }, [hasDivisions, divisions, activeTab]);
@@ -504,28 +509,51 @@ export default function RoadmapDetail() {
         return roadmap ? getTasks(roadmap) : [];
     }, [roadmap]);
 
+    console.log({ allTasks });
+    // Filter tasks based on active tab
     // Filter tasks based on active tab
     const filteredTasks = useMemo(() => {
         if (!roadmap) return [];
 
         let tasksToFilter: NestedRoadmap[] = [];
 
+        // DEBUG: Uncomment these to see exactly what is happening in your console
+        // console.log('Active Tab:', activeTab);
+        // console.log('Divisions:', divisions);
+        // console.log('Is Division Tab:', isDivisionTab);
+
         // Step 1: Determine which tasks to filter
         if (isDivisionTab) {
-            // Get tasks for the selected division
             const groupedTasks = getTasksByDivision(roadmap);
-            tasksToFilter = groupedTasks[activeTab as string] || [];
+
+            // FIX 1: specific safety check to ensure we match the key regardless of casing
+            // Try exact match first, then fallback to lowercase match
+            const exactMatch = groupedTasks[activeTab as string];
+
+            if (exactMatch) {
+                tasksToFilter = exactMatch;
+            } else {
+                // Find the key that matches loosely (e.g., 'church' vs 'Church')
+                const matchingKey = Object.keys(groupedTasks).find(
+                    key => key.toLowerCase() === (activeTab as string).toLowerCase()
+                );
+                tasksToFilter = matchingKey ? groupedTasks[matchingKey] : [];
+            }
+
         } else if (activeTab === 'ALL') {
-            // Show all tasks (only for roadmaps without divisions)
             tasksToFilter = allTasks;
         } else {
             // Apply status filter (DUE, NOT_STARTED, COMPLETED)
             tasksToFilter = allTasks.filter(task => {
-                const status = task.status;
+                const status = task.status ? task.status.toLowerCase() : ''; // Safety lowercasing
 
                 if (activeTab === 'DUE') {
+                    // FIX 2: Handle tasks with no endDate. 
+                    // If you want tasks without dates to appear in 'Due', remove the 'task.endDate &&' part.
+                    if (!task.endDate) return false;
+
                     const today = new Date().toISOString().slice(0, 10);
-                    return task.endDate && task.endDate <= today && status !== 'completed';
+                    return task.endDate <= today && status !== 'completed';
                 }
 
                 if (activeTab === 'NOT_STARTED') return status === 'not started';
@@ -539,9 +567,9 @@ export default function RoadmapDetail() {
         if (search.trim()) {
             const searchLower = search.toLowerCase();
             tasksToFilter = tasksToFilter.filter(task =>
-                task.name.toLowerCase().includes(searchLower) ||
-                task.roadMapDetails?.toLowerCase().includes(searchLower) ||
-                task.description?.toLowerCase().includes(searchLower)
+                (task.name && task.name.toLowerCase().includes(searchLower)) ||
+                (task.roadMapDetails && task.roadMapDetails.toLowerCase().includes(searchLower)) ||
+                (task.description && task.description.toLowerCase().includes(searchLower))
             );
         }
 

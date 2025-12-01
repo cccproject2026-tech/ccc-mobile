@@ -685,4 +685,6 @@ export const MentorMenuItems: MenuItem[] = [
             { id: 'turnOffNotifications', label: 'Turn Off Notifications', icon: icons.turnOffNotification, iconType: 'image', route: '/(mentor-tabs)/notifications' },
         ],
     },
+    { id: 'logout', label: 'Log out', icon: 'log-out-outline', route: '/' },
+
 ];

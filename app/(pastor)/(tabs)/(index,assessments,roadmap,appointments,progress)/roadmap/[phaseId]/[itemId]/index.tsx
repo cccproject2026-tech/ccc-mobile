@@ -410,6 +410,7 @@ import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import TopBar from '@/components/director/TopBar';
 import { DynamicFormTask } from '@/components/roadmaps/DynamicFormTask';
 import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
+import { getTasks } from '@/lib/roadmap/helpers';
 import { NestedRoadmap } from '@/lib/roadmap/types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
@@ -421,7 +422,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 export default function ItemDetail() {
     const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string }>();
     const router = useRouter();
-    console.log({ phaseId, itemId });
+
     // Fetch parent roadmap
     const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
 
@@ -432,9 +433,11 @@ export default function ItemDetail() {
 
     // Find the specific nested roadmap (task)
     const task = useMemo<NestedRoadmap | undefined>(() => {
-        return roadmap?.roadmaps?.find(r => r._id === itemId);
+        if (!roadmap) return undefined;
+        const allTasks = getTasks(roadmap);
+        console.log(allTasks);
+        return allTasks.find(r => r._id === itemId);
     }, [roadmap, itemId]);
-
     // Get phase number
     const phaseNumber = useMemo(() => {
         if (!roadmap?.phase) return null;

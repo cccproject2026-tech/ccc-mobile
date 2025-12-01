@@ -401,7 +401,7 @@ export default function PhaseList() {
             return;
         }
 
-        if (roadmap.roadmaps.length === 1) {
+        if (roadmap.roadmaps.length === 1 && !roadmap.haveNextedRoadMaps) {
             // Single task - go directly to task
             router.push(`/roadmap/${roadmap._id}/${roadmap.roadmaps[0]._id}`);
         } else {

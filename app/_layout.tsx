@@ -156,7 +156,6 @@ function RootLayoutNav() {
   // Guard conditions
   const isPastor = isAuthenticated && (user?.role === 'pastor');
   const isMentor = isAuthenticated && user?.role === 'mentor';
-  const isDirector = isAuthenticated && user?.role === 'director';
   const showIndex = !isAuthenticated && !user;
   const isUnauthenticated = !isAuthenticated;
 
@@ -183,7 +182,7 @@ function RootLayoutNav() {
 
       {/* Mentor Routes */}
       <Stack.Protected guard={isMentor}>
-        <Stack.Screen name="(mentor)" />
+        <Stack.Screen name="(mentor-tabs)" />
       </Stack.Protected>
 
       {/* Director Routes */}

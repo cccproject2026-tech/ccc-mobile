@@ -23,7 +23,7 @@ const buildFormData = (formData: FormData, data: any, parentKey?: string) => {
             if (value === undefined || value === null) return; // Skip undefined/null
 
             const formKey = parentKey ? `${parentKey}[${key}]` : key;
-            
+
             if (Array.isArray(value)) {
                 value.forEach((item, index) => {
                     const arrayKey = `${formKey}[${index}]`;
@@ -75,15 +75,15 @@ export const roadmapService = {
         // Usually, if we upload a file, we don't send the URL field. 
         // We'll append the rest of the payload.
         const { imageUrl, ...restPayload } = payload;
-        
+
         // Append all other fields
         buildFormData(formData, restPayload);
-        
+
         // If there was an existing http imageUrl (not a file upload), we might want to include it?
         // But the requirement implies this is for creating, so usually it's an upload or nothing.
         // If imageUrl is remote, we should probably send it as 'imageUrl' field if the backend supports reusing an image.
         if (payload.imageUrl && payload.imageUrl.startsWith('http')) {
-             formData.append('imageUrl', payload.imageUrl);
+            formData.append('imageUrl', payload.imageUrl);
         }
 
         const response = await apiClient.post<CreateRoadmapResponse>('/roadmaps', formData, {
@@ -91,7 +91,7 @@ export const roadmapService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        
+
         if (!response.data.success) {
             throw new Error(response.data.message || 'Failed to create roadmap');
         }
@@ -129,31 +129,31 @@ export const roadmapService = {
      */
     async getRoadmapExtras(roadMapId: string, nestedRoadMapItemId?: string, userId?: string) {
         // Validate inputs first - ensure we never pass undefined
-        const validNestedId = nestedRoadMapItemId && 
-            typeof nestedRoadMapItemId === 'string' && 
-            nestedRoadMapItemId !== 'undefined' && 
-            nestedRoadMapItemId.trim() !== '' && 
+        const validNestedId = nestedRoadMapItemId &&
+            typeof nestedRoadMapItemId === 'string' &&
+            nestedRoadMapItemId !== 'undefined' &&
+            nestedRoadMapItemId.trim() !== '' &&
             nestedRoadMapItemId.length === 24 &&
             /^[0-9a-fA-F]{24}$/.test(nestedRoadMapItemId)
-            ? nestedRoadMapItemId 
+            ? nestedRoadMapItemId
             : null;
-        
-        const validUserId = userId && 
-            typeof userId === 'string' && 
-            userId !== 'undefined' && 
-            userId.trim() !== '' && 
+
+        const validUserId = userId &&
+            typeof userId === 'string' &&
+            userId !== 'undefined' &&
+            userId.trim() !== '' &&
             userId.length === 24 &&
             /^[0-9a-fA-F]{24}$/.test(userId)
-            ? userId 
+            ? userId
             : null;
 
         // Build params object - only add if we have valid values (not null, not undefined)
         const params: Record<string, string> = {};
-        
+
         if (validUserId) {
             params.userId = validUserId;
         }
-        
+
         if (validNestedId) {
             params.nestedRoadMapItemId = validNestedId;
         }
@@ -194,36 +194,36 @@ export const roadmapService = {
 
     async updateRoadmapExtras(roadMapId: string, payload: UpdateExtrasDto, userId: string | undefined, nestedRoadMapItemId?: string) {
         // Validate inputs first - ensure we never pass undefined
-        const validNestedId = nestedRoadMapItemId && 
-            typeof nestedRoadMapItemId === 'string' && 
-            nestedRoadMapItemId !== 'undefined' && 
-            nestedRoadMapItemId.trim() !== '' && 
+        const validNestedId = nestedRoadMapItemId &&
+            typeof nestedRoadMapItemId === 'string' &&
+            nestedRoadMapItemId !== 'undefined' &&
+            nestedRoadMapItemId.trim() !== '' &&
             nestedRoadMapItemId.length === 24 &&
             /^[0-9a-fA-F]{24}$/.test(nestedRoadMapItemId)
-            ? nestedRoadMapItemId 
+            ? nestedRoadMapItemId
             : null;
-        
-        const validUserId = userId && 
-            typeof userId === 'string' && 
-            userId !== 'undefined' && 
-            userId.trim() !== '' && 
+
+        const validUserId = userId &&
+            typeof userId === 'string' &&
+            userId !== 'undefined' &&
+            userId.trim() !== '' &&
             userId.length === 24 &&
             /^[0-9a-fA-F]{24}$/.test(userId)
-            ? userId 
+            ? userId
             : null;
 
         // Build URL with query string manually if we have params
         let url = `/roadmaps/${roadMapId}/extras`;
         const queryParams: string[] = [];
-        
+
         if (validUserId) {
             queryParams.push(`userId=${encodeURIComponent(validUserId)}`);
         }
-        
+
         if (validNestedId) {
             queryParams.push(`nestedRoadMapItemId=${encodeURIComponent(validNestedId)}`);
         }
-        
+
         if (queryParams.length > 0) {
             url = `${url}?${queryParams.join('&')}`;
             console.log('📤 updateRoadmapExtras URL:', url);
