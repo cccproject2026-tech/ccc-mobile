@@ -2,7 +2,6 @@ import {
   MentorDetailedCard,
   MentorShortCard,
 } from "@/components/build-components"
-import { Mentee } from "@/components/director/MenteeCard"
 import { TabSwitcher } from "@/components/director/TabSwitcher"
 import MenteeMenuBottomSheet, { MenteeMenuBottomSheetRef } from "@/components/mentor/MenteeMenuBottomSheet"
 import ScheduleMeetingBottomSheet, { ScheduleMeetingBottomSheetRef } from "@/components/mentor/ScheduleMeetingBottomSheet"
@@ -10,6 +9,7 @@ import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
 import { useMentees } from "@/hooks/mentees/useMentees"
+import { Mentee } from "@/types/mentee.types"
 import { Feather, Ionicons } from "@expo/vector-icons"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { LinearGradient } from "expo-linear-gradient"
@@ -50,17 +50,19 @@ export default function MyMentees() {
   const [selectedConference, setSelectedConference] = useState<string | null>(null)
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null)
 
-  const { mentees, isLoading, isError } = useMentees()
+  const { data: mentees, isLoading, isError } = useMentees()
 
   // Filter mentees based on search text and active tab
   const filteredMentees = useMemo(() => {
-    let filtered = mentees
+    let filtered = mentees?.mentees ?? []
 
     if (searchText.trim()) {
       const searchLower = searchText.toLowerCase()
       filtered = filtered.filter(
         (mentee) =>
-          mentee.name.toLowerCase().includes(searchLower) ||
+          mentee.firstName?.toLowerCase().includes(searchLower) ||
+          mentee.lastName?.toLowerCase().includes(searchLower) ||
+          mentee.email?.toLowerCase().includes(searchLower) ||
           mentee.role?.toLowerCase().includes(searchLower) ||
           mentee.description?.toLowerCase().includes(searchLower)
       )
@@ -68,9 +70,9 @@ export default function MyMentees() {
 
     // Filter by tab (note: API doesn't provide isCompleted, so this may not work until API is updated)
     if (activeTab === "COMPLETED") {
-      filtered = filtered.filter((mentee) => mentee.isCompleted === true)
+      filtered = filtered.filter((mentee) => mentee.hasCompleted === true)
     } else if (activeTab === "IN_PROGRESS") {
-      filtered = filtered.filter((mentee) => mentee.isCompleted !== true)
+      filtered = filtered.filter((mentee) => mentee.hasCompleted !== true)
     }
 
     return filtered
@@ -79,7 +81,6 @@ export default function MyMentees() {
   const menteeMenuRef = useRef<MenteeMenuBottomSheetRef>(null)
   const scheduleMeetingRef = useRef<ScheduleMeetingBottomSheetRef>(null)
 
-  const phaseOptions = ["Self Revitalization", "Phase 1", "Phase 2"]
 
   const tabData = [
     { key: "ALL", label: "All" },
@@ -136,7 +137,7 @@ export default function MyMentees() {
 
   const handleScheduleMeeting = (date: Date, time: string, option: string) => {
     console.log("Meeting scheduled:", {
-      mentee: selectedMentee?.name,
+      mentee: selectedMentee?.firstName + " " + selectedMentee?.lastName,
       date: date.toDateString(),
       time,
       option,
@@ -271,7 +272,7 @@ export default function MyMentees() {
                         gap: 10,
                       }}
                     >
-                      {filteredMentees.slice(0, 8).map((mentee) => (
+                      {filteredMentees?.slice(0, 8).map((mentee) => (
                         <TouchableOpacity
                           key={mentee.id}
                           activeOpacity={0.85}
@@ -279,7 +280,7 @@ export default function MyMentees() {
                           onPress={() =>
                             router.push({
                               pathname: "/(mentor-tabs)/mentee-profile",
-                              params: { menteeId: mentee.id },
+                              params: { menteeId: mentee.id, email: mentee.email },
                             })
                           }
                         >
@@ -325,7 +326,7 @@ export default function MyMentees() {
                               marginTop: 8,
                             }}
                           >
-                            {mentee.name}
+                            {mentee.firstName + " " + mentee.lastName}
                           </Text>
                         </TouchableOpacity>
                       ))}

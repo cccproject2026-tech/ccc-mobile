@@ -1,10 +1,12 @@
 import { icons } from "@/constants/images"
-import { menteeProfiles } from "@/constants/mockMentees"
+import { useMenteeByEmail } from "@/hooks/mentees/useMenteeByEmail"
+import { useMentees } from "@/hooks/mentees/useMentees"
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack, useLocalSearchParams } from "expo-router"
 import React, { useMemo } from "react"
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -15,13 +17,159 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function MenteeProfileScreen() {
-  const { menteeId } = useLocalSearchParams()
+  const { menteeId, email: emailParam } = useLocalSearchParams<{ menteeId?: string; email?: string }>()
+  
+  // Get mentees list to look up email if needed
+  const { data: menteesData } = useMentees()
+  
+  // Get email from param or look it up from menteeId
+  const email = useMemo(() => {
+    if (emailParam) return emailParam
+    if (menteeId) {
+      // Look up email from mentees list
+      const mentee = menteesData?.mentees?.find((m) => m.id === menteeId)
+      return mentee?.email
+    }
+    return undefined
+  }, [emailParam, menteeId, menteesData])
+
+  // Fetch mentee data by email
+  const { data: menteeData, isLoading, isError } = useMenteeByEmail(email)
+
+  // Map API data to UI structure
   const mentee = useMemo(() => {
-    const id = typeof menteeId === "string" ? menteeId : undefined
-    return menteeProfiles[id ?? "john-ross"] ?? menteeProfiles["john-ross"]
-  }, [menteeId])
+    if (!menteeData) {
+      return {
+        name: "",
+        firstName: "",
+        lastName: "",
+        role: "",
+        email: email || "",
+        phone: "",
+        avatar: icons.myProfile,
+        progress: {
+          percent: 0,
+          status: "in-progress" as const,
+          updatedOn: "",
+        },
+        primaryChurch: {
+          name: "",
+          phone: "",
+          website: "",
+          address: "",
+          city: "",
+          state: "",
+          zipCode: "",
+          country: "",
+        },
+        secondaryChurch: {
+          name: "",
+          phone: "",
+          website: "",
+          address: "",
+          city: "",
+          state: "",
+          zipCode: "",
+          country: "",
+        },
+        otherInfo: {
+          title: "",
+          yearsInMinistry: "",
+          conference: "",
+        },
+      }
+    }
+
+    const firstName = menteeData.firstName || ""
+    const lastName = menteeData.lastName || ""
+    const name = `${firstName} ${lastName}`.trim() || email || "Unknown"
+    const churches = menteeData.churchDetails || []
+    const primaryChurch = churches[0] || {}
+    const secondaryChurch = churches[1] || {}
+
+    return {
+      id: menteeData.id,
+      name,
+      firstName,
+      lastName,
+      role: menteeData.role || "Pastor",
+      email: menteeData.email || email || "",
+      phone: "", // API doesn't provide phone
+      avatar: menteeData.profilePicture ? { uri: menteeData.profilePicture } : icons.myProfile,
+      progress: {
+        percent: 0, // Will be updated from progress API if available
+        status: "in-progress" as const,
+        updatedOn: "",
+      },
+      primaryChurch: {
+        name: primaryChurch.name || "",
+        phone: primaryChurch.phone || "",
+        website: primaryChurch.website || "",
+        address: primaryChurch.address || "",
+        city: primaryChurch.city || "",
+        state: primaryChurch.state || "",
+        zipCode: primaryChurch.zip || primaryChurch.zipCode || "",
+        country: primaryChurch.country || "",
+      },
+      secondaryChurch: {
+        name: secondaryChurch.name || "",
+        phone: secondaryChurch.phone || "",
+        website: secondaryChurch.website || "",
+        address: secondaryChurch.address || "",
+        city: secondaryChurch.city || "",
+        state: secondaryChurch.state || "",
+        zipCode: secondaryChurch.zip || secondaryChurch.zipCode || "",
+        country: secondaryChurch.country || "",
+      },
+      otherInfo: {
+        title: "", // API doesn't provide title
+        yearsInMinistry: "", // API doesn't provide yearsInMinistry
+        conference: menteeData.conference || "",
+      },
+    }
+  }, [menteeData, email])
 
   const isComplete = mentee.progress.percent >= 100
+
+  if (isLoading) {
+    return (
+      <LinearGradient
+        colors={["#0D588E", "#0D4578", "#0E3563"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </SafeAreaView>
+      </LinearGradient>
+    )
+  }
+
+  if (isError || !menteeData) {
+    return (
+      <LinearGradient
+        colors={["#0D588E", "#0D4578", "#0E3563"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
+          <Text style={{ color: "#FFFFFF", fontSize: 16, textAlign: "center" }}>
+            Failed to load mentee profile. Please try again.
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ marginTop: 20, padding: 12, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 8 }}
+          >
+            <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>Go Back</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </LinearGradient>
+    )
+  }
 
   return (
     <LinearGradient
@@ -154,7 +302,7 @@ export default function MenteeProfileScreen() {
                 onPress={() =>
                   router.push({
                     pathname: "/(mentor-tabs)/mentee-documents",
-                    params: { menteeId: mentee.id },
+                    params: { menteeId: mentee.id || menteeId },
                   })
                 }
               >
@@ -170,121 +318,125 @@ export default function MenteeProfileScreen() {
           <View style={styles.infoSection}>
             <Text style={styles.sectionTitle}>Personal Information</Text>
             <View style={styles.infoGrid}>
-              {renderInfoPill("First Name", mentee.firstName, "personal-first")}
-              {renderInfoPill("Last Name", mentee.lastName, "personal-last")}
-              {renderInfoPill("Phone Number", mentee.phone, "personal-phone")}
-              {renderInfoPill("Email", mentee.email, "personal-email")}
+              {renderInfoPill("First Name", mentee.firstName || "N/A", "personal-first")}
+              {renderInfoPill("Last Name", mentee.lastName || "N/A", "personal-last")}
+              {renderInfoPill("Phone Number", mentee.phone || "N/A", "personal-phone")}
+              {renderInfoPill("Email", mentee.email || "N/A", "personal-email")}
             </View>
           </View>
 
-          <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>
-              Current Church - 1 Information
-            </Text>
-            <View style={styles.infoGrid}>
-              {renderInfoPill(
-                "Current Church",
-                mentee.primaryChurch.name,
-                "church1-name"
-              )}
-              {renderInfoPill(
-                "Church Phone",
-                mentee.primaryChurch.phone,
-                "church1-phone"
-              )}
-              {renderInfoPill(
-                "Church Website",
-                mentee.primaryChurch.website,
-                "church1-website"
-              )}
-              {renderInfoPill(
-                "Church Address",
-                mentee.primaryChurch.address,
-                "church1-address"
-              )}
-              {renderInfoPill(
-                "City",
-                mentee.primaryChurch.city,
-                "church1-city"
-              )}
-              {renderInfoPill(
-                "State",
-                mentee.primaryChurch.state,
-                "church1-state"
-              )}
-              {renderInfoPill(
-                "Zip Code",
-                mentee.primaryChurch.zipCode,
-                "church1-zip"
-              )}
-              {renderInfoPill(
-                "Country",
-                mentee.primaryChurch.country,
-                "church1-country"
-              )}
+          {mentee.primaryChurch.name && (
+            <View style={styles.infoSection}>
+              <Text style={styles.sectionTitle}>
+                Current Church - 1 Information
+              </Text>
+              <View style={styles.infoGrid}>
+                {renderInfoPill(
+                  "Current Church",
+                  mentee.primaryChurch.name || "N/A",
+                  "church1-name"
+                )}
+                {renderInfoPill(
+                  "Church Phone",
+                  mentee.primaryChurch.phone || "N/A",
+                  "church1-phone"
+                )}
+                {renderInfoPill(
+                  "Church Website",
+                  mentee.primaryChurch.website || "N/A",
+                  "church1-website"
+                )}
+                {renderInfoPill(
+                  "Church Address",
+                  mentee.primaryChurch.address || "N/A",
+                  "church1-address"
+                )}
+                {renderInfoPill(
+                  "City",
+                  mentee.primaryChurch.city || "N/A",
+                  "church1-city"
+                )}
+                {renderInfoPill(
+                  "State",
+                  mentee.primaryChurch.state || "N/A",
+                  "church1-state"
+                )}
+                {renderInfoPill(
+                  "Zip Code",
+                  mentee.primaryChurch.zipCode || "N/A",
+                  "church1-zip"
+                )}
+                {renderInfoPill(
+                  "Country",
+                  mentee.primaryChurch.country || "N/A",
+                  "church1-country"
+                )}
+              </View>
             </View>
-          </View>
+          )}
 
-          <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>
-              Current Church - 2 Information
-            </Text>
-            <View style={styles.infoGrid}>
-              {renderInfoPill(
-                "Current Church",
-                mentee.secondaryChurch.name,
-                "church2-name"
-              )}
-              {renderInfoPill(
-                "Church Phone",
-                mentee.secondaryChurch.phone,
-                "church2-phone"
-              )}
-              {renderInfoPill(
-                "Church Website",
-                mentee.secondaryChurch.website,
-                "church2-website"
-              )}
-              {renderInfoPill(
-                "Church Address",
-                mentee.secondaryChurch.address,
-                "church2-address"
-              )}
-              {renderInfoPill(
-                "City",
-                mentee.secondaryChurch.city,
-                "church2-city"
-              )}
-              {renderInfoPill(
-                "State",
-                mentee.secondaryChurch.state,
-                "church2-state"
-              )}
-              {renderInfoPill(
-                "Zip Code",
-                mentee.secondaryChurch.zipCode,
-                "church2-zip"
-              )}
-              {renderInfoPill(
-                "Country",
-                mentee.secondaryChurch.country,
-                "church2-country"
-              )}
+          {mentee.secondaryChurch.name && (
+            <View style={styles.infoSection}>
+              <Text style={styles.sectionTitle}>
+                Current Church - 2 Information
+              </Text>
+              <View style={styles.infoGrid}>
+                {renderInfoPill(
+                  "Current Church",
+                  mentee.secondaryChurch.name || "N/A",
+                  "church2-name"
+                )}
+                {renderInfoPill(
+                  "Church Phone",
+                  mentee.secondaryChurch.phone || "N/A",
+                  "church2-phone"
+                )}
+                {renderInfoPill(
+                  "Church Website",
+                  mentee.secondaryChurch.website || "N/A",
+                  "church2-website"
+                )}
+                {renderInfoPill(
+                  "Church Address",
+                  mentee.secondaryChurch.address || "N/A",
+                  "church2-address"
+                )}
+                {renderInfoPill(
+                  "City",
+                  mentee.secondaryChurch.city || "N/A",
+                  "church2-city"
+                )}
+                {renderInfoPill(
+                  "State",
+                  mentee.secondaryChurch.state || "N/A",
+                  "church2-state"
+                )}
+                {renderInfoPill(
+                  "Zip Code",
+                  mentee.secondaryChurch.zipCode || "N/A",
+                  "church2-zip"
+                )}
+                {renderInfoPill(
+                  "Country",
+                  mentee.secondaryChurch.country || "N/A",
+                  "church2-country"
+                )}
+              </View>
             </View>
-          </View>
+          )}
 
           <View style={styles.infoSection}>
             <Text style={styles.sectionTitle}>Other Information</Text>
             <View style={styles.infoGrid}>
-              {renderInfoPill("Title", mentee.otherInfo.title, "other-title")}
+              {renderInfoPill("Title", mentee.otherInfo.title || "N/A", "other-title")}
               {renderInfoPill(
                 "Years in Ministry",
-                mentee.otherInfo.yearsInMinistry,
+                mentee.otherInfo.yearsInMinistry || "N/A",
                 "other-years"
               )}
               {renderInfoPill(
                 "Conference",
-                mentee.otherInfo.conference,
+                mentee.otherInfo.conference || "N/A",
                 "other-conference"
               )}
             </View>
@@ -549,4 +701,3 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 })
-

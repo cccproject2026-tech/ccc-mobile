@@ -1,4 +1,5 @@
 import GradientCalendar from "@/components/atom/calendar"
+import { Mentee } from "@/types/mentee.types"
 import { Ionicons } from "@expo/vector-icons"
 import {
   BottomSheetBackdrop,
@@ -15,19 +16,13 @@ import {
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-interface MenteeData {
-  id: string
-  name: string
-  role?: string
-}
-
 export interface ScheduleMeetingBottomSheetRef {
   present: () => void
   dismiss: () => void
 }
 
 interface ScheduleMeetingBottomSheetProps {
-  mentee: MenteeData | null
+  mentee: Mentee | null
   onClose?: () => void
   onSchedule?: (date: Date, time: string, option: string) => void
 }

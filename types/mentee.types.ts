@@ -33,3 +33,21 @@ export interface GetMenteesApiResponse {
         total: number;
     };
 }
+
+export interface MenteeDetail {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    username: string;
+    role: string;
+    profileInfo: string;
+    churchDetails: any[];
+    conference: string;
+}
+
+export interface GetMenteeByEmailApiResponse {
+    success: boolean;
+    message: string;
+    data: MenteeDetail;
+}

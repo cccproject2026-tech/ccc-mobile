@@ -1,27 +1,24 @@
 import { icons } from "@/constants/images"
+import { Mentee } from "@/types/mentee.types"
 import { Ionicons } from "@expo/vector-icons"
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+} from "@gorhom/bottom-sheet"
 import { LinearGradient } from "expo-linear-gradient"
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react"
 import {
   Image,
+  ImageSourcePropType,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native"
-import BottomSheet, {
-  BottomSheetBackdrop,
-  BottomSheetScrollView,
-  BottomSheetModal,
-} from "@gorhom/bottom-sheet"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-interface MenteeData {
-  id: string
-  name: string
-  role?: string
-  avatar?: any
-}
+
 
 interface MenuAction {
   id: string
@@ -36,9 +33,9 @@ export interface MenteeMenuBottomSheetRef {
 }
 
 interface MenteeMenuBottomSheetProps {
-  mentee: MenteeData | null
+  mentee: Mentee | null
   onClose?: () => void
-  onAction?: (action: string, mentee: MenteeData) => void
+  onAction?: (action: string, mentee: Mentee) => void
 }
 
 const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBottomSheetProps>(
@@ -143,11 +140,11 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
             <View style={styles.menuHeader}>
               <View style={styles.menuHeaderContent}>
                 <Image
-                  source={mentee?.avatar || icons.myProfile}
+                  source={mentee?.profilePicture as ImageSourcePropType || icons.myProfile}
                   style={styles.menuAvatar}
                 />
                 <Text style={styles.menuHeaderName}>
-                  {mentee?.name || "John Doe"}
+                  {mentee?.firstName + " " + mentee?.lastName || ""}
                 </Text>
               </View>
               <TouchableOpacity

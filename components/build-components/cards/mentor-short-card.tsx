@@ -1,4 +1,6 @@
 import { icons } from "@/constants/images";
+import { Mentee } from "@/types/mentee.types";
+import { Router } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 export default function MentorShortCard({
@@ -7,9 +9,9 @@ export default function MentorShortCard({
   navigation,
   onMenuPress,
 }: {
-  data: any;
+  data: Mentee;
   dataKey: string;
-  navigation: any;
+  navigation: Router;
   onMenuPress: () => void;
 }) {
   return (
@@ -17,7 +19,7 @@ export default function MentorShortCard({
       <View className="flex-row items-center">
         <Image source={icons.dummyUser} className="w-10 h-10 rounded-lg" />
         <Text className="ml-8 font-medium text-white text-base">
-          {data.name}
+          {data.firstName + " " + data.lastName}
         </Text>
       </View>
       <View className="flex-row items-center gap-3">

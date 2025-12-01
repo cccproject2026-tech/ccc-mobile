@@ -1,18 +1,18 @@
 import ActionBottomSheet from "@/components/director/ActionSheetModal";
 import FilterModal, { FilterOption } from "@/components/director/FilterModal";
-import MenteeCard, { Mentee } from "@/components/director/MenteeCard";
+import MenteeCard from "@/components/director/MenteeCard";
+import { Mentee } from "@/types/mentee.types";
 import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
-import { mockMentees, STATES } from "@/constants/mockData";
-import { menteeProfiles } from "@/constants/mockMentees";
+import { useMentees } from "@/hooks/mentees/useMentees";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function ProgressTracker() {
   const [search, setSearch] = useState("");
@@ -23,18 +23,13 @@ export default function ProgressTracker() {
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-
-  // Debug: Log initial mockMentees
-  React.useEffect(() => {
-    console.log("=== PROGRESS TRACKER DEBUG ===");
-    console.log("mockMentees count:", mockMentees.length);
-    console.log("mockMentees data:", JSON.stringify(mockMentees.slice(0, 2), null, 2));
-  }, []);
+  const { data, isLoading, isError } = useMentees();
 
   const getFilterOptions = (): FilterOption[] => {
     return [
       { label: "Course Completion", options: ["Latest", "Oldest"], isExpandable: true },
-      { label: "State", options: STATES, isExpandable: true },
+      // TODO: Replace with dynamic state list from backend metadata if available
+      { label: "State", options: [], isExpandable: true },
       { label: "Conference", isExpandable: true },
     ];
   };
@@ -42,31 +37,31 @@ export default function ProgressTracker() {
   const filterOptions = useMemo(() => getFilterOptions(), []);
 
   const filteredMentees = useMemo(() => {
-    console.log("=== FILTERING DEBUG ===");
-    console.log("Initial mockMentees length:", mockMentees.length);
-    console.log("Search term:", search);
-    console.log("Active tab:", activeTab);
-    
-    let filtered = mockMentees;
-    console.log("Before search filter:", filtered.length);
-    
+    const mentees = data?.mentees ?? [];
+
+    let filtered = mentees;
+
     if (search) {
-      filtered = filtered.filter((m) => m.name.toLowerCase().includes(search.toLowerCase()));
-      console.log("After search filter:", filtered.length);
+      filtered = filtered.filter((m) =>
+        m.firstName?.toLowerCase().includes(search.toLowerCase()) || m.lastName?.toLowerCase().includes(search.toLowerCase()) || m.email?.toLowerCase().includes(search.toLowerCase())
+      );
     }
-    
+
     if (activeTab === "completed") {
-      filtered = filtered.filter((m) => m.isCompleted);
-      console.log("After completed filter:", filtered.length);
+      filtered = filtered.filter((m) => m.hasCompleted);
     } else if (activeTab === "in-progress") {
-      filtered = filtered.filter((m) => !m.isCompleted);
-      console.log("After in-progress filter:", filtered.length);
+      filtered = filtered.filter((m) => !m.hasCompleted);
     }
-    
-    console.log("Final filtered count:", filtered.length);
-    console.log("Filtered mentees:", filtered.map(m => ({ id: m.id, name: m.name, isCompleted: m.isCompleted })));
+
+    // Default sort: latest completion / creation first
+    filtered = [...filtered].sort((a, b) => {
+      const aDate = a.completedOn ?? a.updatedAt ?? a.createdAt ?? "";
+      const bDate = b.completedOn ?? b.updatedAt ?? b.createdAt ?? "";
+      return (bDate || "").localeCompare(aDate || "");
+    });
+
     return filtered;
-  }, [search, activeTab]);
+  }, [data?.mentees, search, activeTab]);
 
   const tabs = [
     { key: "all", label: "All" },
@@ -85,10 +80,7 @@ export default function ProgressTracker() {
   }, []);
 
   const mapMenteeToProfileId = (mentee: Mentee): string => {
-    const match = Object.values(menteeProfiles).find(
-      (p) => p.name.toLowerCase() === mentee.name.toLowerCase()
-    );
-    return match?.id || "john-ross";
+    return mentee.id;
   };
 
   const menuItems = [
@@ -109,6 +101,22 @@ export default function ProgressTracker() {
     { icon: "logo-whatsapp", label: "WhatsApp", onPress: () => handleCloseModal() },
   ];
 
+  const handleCall = (mentee: Mentee) => {
+    Linking.openURL(`tel:${mentee.phone}`);
+  };
+
+  const handleChat = (mentee: Mentee) => {
+    Linking.openURL(`sms:${mentee.phone}`);
+  };
+
+  const handleMail = (mentee: Mentee) => {
+    Linking.openURL(`mailto:${mentee.email}`);
+  };
+
+  const handleWhatsApp = (mentee: Mentee) => {
+    Linking.openURL(`https://wa.me/${mentee.phone}`);
+  };
+
   return (
     <LinearGradient colors={["#176192", "#1D548D", "#264387"]} style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -117,6 +125,21 @@ export default function ProgressTracker() {
           <TopBar userName="John Doe" notifications={3} showUserName showNotifications />
 
           <View className="flex-1 pt-6">
+            {isLoading && (
+              <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+                <ActivityIndicator size="large" color="#fff" />
+                <Text style={{ color: "#fff", marginTop: 8 }}>Loading mentees...</Text>
+              </View>
+            )}
+
+            {isError && !isLoading && (
+              <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 16 }}>
+                <Text style={{ color: "#fff", textAlign: "center" }}>
+                  Unable to load mentees. Please try again later.
+                </Text>
+              </View>
+            )}
+
             {/* Header Row */}
             <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, marginBottom: 16 }}>
               <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center" }}>
@@ -143,51 +166,41 @@ export default function ProgressTracker() {
             <TabSwitcher tabs={tabs} activeTab={activeTab} onChange={(k: string) => setActiveTab(k as any)} />
 
             {/* List */}
-            <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-              <View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 }}>
-                <Text style={{ color: '#fff', opacity: 0.7, fontSize: 12 }}>Results: {filteredMentees.length}</Text>
-              </View>
-              {(() => {
-                console.log("=== RENDER DEBUG ===");
-                console.log("About to render filteredMentees:", filteredMentees.length);
-                console.log("View mode:", viewMode);
-                return null;
-              })()}
-              {filteredMentees.length === 0 && (
-                <View style={{ paddingHorizontal: 16, paddingVertical: 24, alignItems: "center" }}>
-                  <Text style={{ color: "#fff", opacity: 0.8 }}>No mentees found</Text>
+            {!isLoading && !isError && (
+              <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+                <View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 }}>
+                  <Text style={{ color: '#fff', opacity: 0.7, fontSize: 12 }}>Results: {filteredMentees.length}</Text>
                 </View>
-              )}
-              {filteredMentees.map((mentee) => {
-                console.log(`Rendering mentee: ${mentee.id} - ${mentee.name}`);
-                return (
+                {filteredMentees.length === 0 && (
+                  <View style={{ paddingHorizontal: 16, paddingVertical: 24, alignItems: "center" }}>
+                    <Text style={{ color: "#fff", opacity: 0.8 }}>No mentees found</Text>
+                  </View>
+                )}
+                {filteredMentees.map((mentee) => (
                   <MenteeCard
                     key={mentee.id}
                     data={mentee}
                     layout={viewMode}
                     onPress={() => {
-                      console.log(`Mentee card pressed: ${mentee.name}`);
                       router.push({ pathname: "/(mentor-tabs)/mentee-progress", params: { menteeId: mapMenteeToProfileId(mentee) } });
                     }}
-                    onCall={() => console.log(`Call ${mentee.name}`)}
-                    onChat={() => console.log(`Chat ${mentee.name}`)}
-                    onMail={() => console.log(`Mail ${mentee.name}`)}
-                    onWhatsApp={() => console.log(`WhatsApp ${mentee.name}`)}
+                    onCall={() => handleCall(mentee)}
+                    onChat={() => handleChat(mentee)}
+                    onMail={() => handleMail(mentee)}
+                    onWhatsApp={() => handleWhatsApp(mentee)}
                     onMenuPress={() => {
-                      console.log(`Menu pressed for ${mentee.name}`);
                       handleMenuPress(mentee);
                     }}
                     onMarkComplete={() => {
-                      console.log(`Mark complete for ${mentee.name}`);
                       handleMenuPress(mentee);
                     }}
                   />
-                );
-              })}
-            </ScrollView>
+                ))}
+              </ScrollView>
+            )}
           </View>
 
-          <ActionBottomSheet ref={bottomSheetModalRef} title={selectedMentee?.name || ""} image={selectedMentee?.profileImage} actions={menuItems} onClose={handleCloseModal} />
+          <ActionBottomSheet ref={bottomSheetModalRef} title={selectedMentee?.firstName + " " + selectedMentee?.lastName || ""} image={selectedMentee?.profilePicture} actions={menuItems} onClose={handleCloseModal} />
           <FilterModal
             visible={filterModalVisible}
             onClose={() => setFilterModalVisible(false)}

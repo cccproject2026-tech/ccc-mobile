@@ -1,4 +1,6 @@
 import { icons } from "@/constants/images";
+import { Mentee } from "@/types/mentee.types";
+import { Router } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 export default function MentorDetailedCard({
@@ -7,9 +9,9 @@ export default function MentorDetailedCard({
   navigation,
   onMenuPress,
 }: {
-  data: any;
+  data: Mentee;
   key: string;
-  navigation: any;
+  navigation: Router;
   onMenuPress: () => void;
 }) {
   return (
@@ -52,7 +54,7 @@ export default function MentorDetailedCard({
 
         <View className="flex-1 pr-5">
           <Text className="text-white text-base font-medium mb-1">
-            {data.name}
+            {data.firstName + " " + data.lastName}
           </Text>
           <Text className="text-white text-base font-medium mb-2">
             {data?.role}
