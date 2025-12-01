@@ -6,9 +6,12 @@ import MentorCard from "@/components/director/MentorCard";
 import WelcomeCard from "@/components/director/WelcomeCard";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useAppointments } from '@/hooks/appointments/useAppointments';
 import { useAssignedMentors } from '@/hooks/mentors/useGetAssignedMentors';
 import { useProfile } from '@/hooks/profile/useProfile';
+import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
 import { useAuthStore } from '@/stores';
+import { AppointmentPlatform } from '@/types/appointment.types';
 import { LinearGradient } from "expo-linear-gradient";
 import { Route, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -32,6 +35,19 @@ export default function PastorDashboard() {
   console.log("Logged in user:", user?.id);
   const { data, isLoading, isError, error } = useProfile();
   const { mentors, isEmpty } = useAssignedMentors(user?.id as string);
+  
+  // Fetch appointments
+  const {
+    appointments: allAppointments,
+    isLoading: isAppointmentsLoading,
+    getUpcomingAppointments,
+  } = useAppointments({ userId: user?.id });
+  
+  // Fetch roadmaps
+  const {
+    data: roadmaps,
+    isLoading: isRoadmapsLoading,
+  } = useRoadmaps('pastor');
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
@@ -50,6 +66,83 @@ export default function PastorDashboard() {
     if (greetingPeriod === 'afternoon') return 'Good Afternoon';
     return 'Good Evening';
   }, [greetingPeriod]);
+
+  // Format time for appointments
+  const formatTimeIST = useCallback((isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }, []);
+
+  // Get platform icon
+  const getPlatformIcon = useCallback((mode: AppointmentPlatform) => {
+    const iconsMap: Record<AppointmentPlatform, any> = {
+      zoom: icons.duoMeet,
+      google_meet: icons.googleMeet,
+      teams: icons.duoMeet,
+      phone: icons.phone,
+      in_person: icons.profile,
+    };
+    return iconsMap[mode];
+  }, []);
+
+  // Get mode label
+  const getModeLabel = useCallback((mode: AppointmentPlatform): string => {
+    const labels: Record<AppointmentPlatform, string> = {
+      zoom: 'Zoom',
+      google_meet: 'Google Meet',
+      teams: 'Teams',
+      phone: 'Phone call',
+      in_person: 'In Person',
+    };
+    return labels[mode];
+  }, []);
+
+  // Get upcoming appointments (limit to 3 for dashboard)
+  const upcomingAppointments = useMemo(() => {
+    if (!allAppointments || allAppointments.length === 0) return [];
+    const upcoming = getUpcomingAppointments();
+    return upcoming.slice(0, 3).map(apt => {
+      const mentor = mentors.find(m => m.id === apt.mentorId);
+      return {
+        id: apt.id,
+        date: apt.meetingDate.split('T')[0],
+        time: formatTimeIST(apt.meetingDate),
+        tz: 'EST',
+        person: mentor?.name || 'Mentor',
+        role: mentor?.role || 'Mentor',
+        mode: getModeLabel(apt.platform),
+        icon: getPlatformIcon(apt.platform),
+        appointment: apt,
+      };
+    });
+  }, [allAppointments, mentors, getUpcomingAppointments, formatTimeIST, getModeLabel, getPlatformIcon]);
+
+  // Transform roadmaps for RoadMapCard (limit to 3 for dashboard)
+  const dashboardRoadmaps = useMemo(() => {
+    if (!roadmaps || roadmaps.length === 0) return [];
+    return roadmaps.slice(0, 3).map(roadmap => {
+      // Map roadmap status to card status
+      let status = 'Remaining';
+      if (roadmap.status === 'completed') {
+        status = 'Completed';
+      } else if (roadmap.status === 'in-progress' ) {
+        status = 'In progress';
+      } else if (roadmap.status === 'not started') {
+        status = 'Not Started';
+      }
+
+      return {
+        phase: roadmap.phase || 'Phase',
+        title: roadmap.name || 'Roadmap',
+        status: status,
+        roadmapId: roadmap._id,
+      };
+    });
+  }, [roadmaps]);
 
   // Loading state
   if (isLoading) {
@@ -77,38 +170,6 @@ export default function PastorDashboard() {
       </View>
     );
   }
-
-  // if (!data?.user) {
-  //   return (
-  //     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-  //       <Text style={{ color: Colors.customWhite }}>No profile data available.</Text>
-  //     </View>
-  //   );
-  // }
-
-  const dummyRoadMaps = [
-    { phase: 'Phase 1', title: 'Revitalization RoadMap', status: 'Due' },
-    { phase: 'Phase 2', title: 'Revitalization RoadMapRevitaliza', status: 'In progress' },
-    { phase: 'Questionnaires', title: 'Survey', status: 'Remaining' },
-  ];
-
-  // const mockMentors: MentorData[] = [
-  //   { id: '1', name: 'John Ross', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/1.jpg' },
-  //   { id: '2', name: 'John Ross', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/men/2.jpg' },
-  // ];
-
-  const appointments = [
-    {
-      id: '1',
-      date: '2025-11-09',
-      time: '10:00 AM',
-      tz: 'IST',
-      person: 'Alex',
-      role: 'Advisor',
-      mode: 'Online',
-      icon: icons.video,
-    },
-  ];
 
   return (
     <LinearGradient colors={[Colors.lightBlueGradientOne, '#1D548D', '#264387']} style={{ flex: 1 }}>
@@ -162,30 +223,38 @@ export default function PastorDashboard() {
           <View style={{ paddingHorizontal: 16, marginTop: 14, marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 15, color: '#e7f6fc', fontWeight: '700' }}>Upcoming Appointments</Text>
-              <Pressable>
+              <Pressable onPress={() => router.push('/(pastor)/(tabs)/(appointments)/appointments')}>
                 <Text style={{ color: '#cfe9f3', fontWeight: '600', fontSize: 13 }}>See all</Text>
               </Pressable>
             </View>
 
             <View style={{ marginTop: 10, gap: 12, borderBottomColor: '#ffffff22', borderBottomWidth: 1, paddingBottom: 18 }}>
-              {appointments.map((a) => (
-                <TouchableOpacity key={a.id} activeOpacity={0.8} onPress={() => router.push('/appointments')}>
-                  <AppointmentCard
-                    date={a.date}
-                    time={a.time}
-                    tz={a.tz}
-                    person={a.person}
-                    role={a.role}
-                    mode={a.mode}
-                    platformIcon={a.icon}
-                    avatar={icons.myProfile}
-                    onPressChevron={() => { }}
-                    onCall={() => { }}
-                    onChat={() => { }}
-                    onMail={() => { }}
-                  />
-                </TouchableOpacity>
-              ))}
+              {upcomingAppointments.length > 0 ? (
+                upcomingAppointments.map((a) => (
+                  <TouchableOpacity key={a.id} activeOpacity={0.8} onPress={() => router.push('/(pastor)/(tabs)/(appointments)/appointments')}>
+                    <AppointmentCard
+                      date={a.date}
+                      time={a.time}
+                      tz={a.tz}
+                      person={a.person}
+                      role={a.role}
+                      mode={a.mode}
+                      platformIcon={a.icon}
+                      avatar={icons.myProfile}
+                      onPressChevron={() => { }}
+                      onCall={() => { }}
+                      onChat={() => { }}
+                      onMail={() => { }}
+                    />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                  <Text style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: 14 }}>
+                    No upcoming appointments
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -193,12 +262,32 @@ export default function PastorDashboard() {
           <View style={styles.RoadMapContainer}>
             <View style={styles.RoadMapHeaderRow}>
               <Text style={styles.roadmapTitle}>Today's Roadmap List</Text>
-              <Text style={styles.roadmapSeeAll}>See all</Text>
+              <Pressable onPress={() => router.push('/(pastor)/(tabs)/(roadmap)/roadmap')}>
+                <Text style={styles.roadmapSeeAll}>See all</Text>
+              </Pressable>
             </View>
             <View style={styles.roadmapList}>
-              {dummyRoadMaps.map((e, i) => (
-                <RoadMapCardNew data={e} dataKey={i.toString()} key={i} />
-              ))}
+              {dashboardRoadmaps.length > 0 ? (
+                dashboardRoadmaps.map((e, i) => (
+                  <TouchableOpacity
+                    key={e.roadmapId || i}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      if (e.roadmapId) {
+                        router.push(`/(pastor)/(tabs)/(roadmap)/roadmap/${e.roadmapId}`);
+                      }
+                    }}
+                  >
+                    <RoadMapCardNew data={e} dataKey={i.toString()} />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                  <Text style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: 14 }}>
+                    No roadmaps assigned
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -229,7 +318,9 @@ export default function PastorDashboard() {
           <View style={[styles.mentorContainer, { marginBottom: 24 }]}>
             <View style={styles.mentorHeaderContainer}>
               <Text style={styles.mentorTitle}>My Mentors</Text>
-              <Text style={styles.mentorSeeAll}>See all</Text>
+              <Pressable onPress={() => router.push('/(pastor)/(tabs)/mentors')}>
+                <Text style={styles.mentorSeeAll}>See all</Text>
+              </Pressable>
             </View>
             {mentors.map((e, i) => (
               <MentorCard key={i} mentor={e} layout="list" onMenuPress={() => { }} />
