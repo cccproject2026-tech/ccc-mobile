@@ -32,8 +32,6 @@ export const authService = {
 
     // Send OTP to email
     sendOtp: async (data: SendOtpRequest): Promise<SendOtpResponse> => {
-        console.log('📤 Sending OTP (MOCK) to:', data.email);
-
         // Simulate API delay
         // await new Promise(resolve => setTimeout(resolve, 1500));
 

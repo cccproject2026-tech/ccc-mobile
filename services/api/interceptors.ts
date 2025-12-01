@@ -35,7 +35,7 @@ apiClient.interceptors.request.use(
             if (__DEV__) {
                 console.log('🔍 Before cleanup params:', JSON.stringify(config.params));
             }
-            
+
             const cleanedParams: Record<string, any> = {};
             for (const [key, value] of Object.entries(config.params)) {
                 // Only include valid values (not undefined, null, empty string, or "undefined")
@@ -70,7 +70,7 @@ apiClient.interceptors.request.use(
                 }
             }
         }
-        
+
         // Also check URL params if they exist in the URL string itself
         if (config.url && config.url.includes('undefined')) {
             console.warn('⚠️ URL contains "undefined":', config.url);
@@ -147,10 +147,10 @@ apiClient.interceptors.response.use(
                 await storage.setTokens(accessToken, newRefreshToken);
 
                 // Update Zustand store
-                useAuthStore.getState().setTokens({
-                    accessToken,
-                    refreshToken: newRefreshToken
-                });
+                // useAuthStore.getState().setTokens({
+                //     accessToken,
+                //     refreshToken: newRefreshToken
+                // });
 
                 // Process queued requests
                 processQueue(null, accessToken);

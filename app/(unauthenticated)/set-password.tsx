@@ -5,8 +5,8 @@ import { useSendOtp, useSetPassword, useVerifyOtp } from "@/hooks/auth/useAuth";
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -24,7 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function VerifyEmailScreen() {
     const { bottom } = useSafeAreaInsets();
     const router = useRouter();
-
+    const { email: interestEmail } = useLocalSearchParams<{ email?: string }>();
     const {
         interestData,
         email,
@@ -45,9 +45,8 @@ export default function VerifyEmailScreen() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isOtpVerified, setIsOtpVerified] = useState(false);
 
-    const otpRefs = useRef<Array<TextInput | null>>([]);
 
-    const userEmail = email || interestData?.email || '';
+    const userEmail = interestEmail || email || interestData?.email || '';
     const isLoading = isSending || isVerifying || isSettingPassword;
 
     const handleVerifyEmail = () => {
@@ -71,18 +70,6 @@ export default function VerifyEmailScreen() {
                 },
             }
         );
-    };
-
-    const handleOTPChange = (value: string, index: number) => {
-        if (value.length > 1) return;
-
-        const newOtp = [...otp];
-        newOtp[index] = value;
-        setOtp(newOtp);
-
-        if (value && index < 5) {
-            otpRefs.current[index + 1]?.focus();
-        }
     };
 
     const handleVerifyOtp = () => {
@@ -286,6 +273,7 @@ export default function VerifyEmailScreen() {
                                             secureTextEntry={!showPassword}
                                             autoCapitalize="none"
                                             editable={!isLoading}
+
                                         />
                                         <TouchableOpacity
                                             onPress={() => setShowPassword(!showPassword)}

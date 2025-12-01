@@ -83,10 +83,7 @@ export const useLogin = () => {
             }
         },
         onError: (error: any) => {
-            console.error('❌ Login failed:', {
-                message: error.message,
-                statusCode: error.statusCode,
-            });
+            return error;
         },
     });
 };

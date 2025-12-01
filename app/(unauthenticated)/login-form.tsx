@@ -5,7 +5,7 @@ import { useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -29,6 +29,42 @@ export default function LoginFormScreen() {
     const [email, setEmail] = useState(interestData?.email || '');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+
+
+    useEffect(() => {
+        if (!error) return;
+
+        const status = error?.statusCode;
+        const message = error?.message?.toLowerCase() || "";
+
+        console.log("🔥 ERROR CHECK:", status, message);
+
+        if (
+            status === 400 &&
+            (message.includes("email not verified") ||
+                message.includes("verify email") ||
+                message.includes("unverified"))
+        ) {
+            Alert.alert(
+                "Email Not Verified",
+                "Please verify your email to continue.",
+                [
+                    {
+                        text: "Verify Now",
+                        onPress: () => {
+                            router.push({
+                                pathname: "/(unauthenticated)/set-password",
+                                params: { email },
+                            });
+                        },
+                    },
+                ]
+            );
+            return;
+        }
+    }, [error]);
+
+
 
     // Handle login
     const handleLogin = useCallback(() => {
@@ -123,13 +159,21 @@ export default function LoginFormScreen() {
                         {/* Error Message */}
                         {error && (
                             <View style={styles.errorContainer}>
-                                <Ionicons name="alert-circle" size={20} color="#FF6B6B" />
+                                <Ionicons
+                                    name="alert-circle"
+                                    size={20}
+                                    color="#FF4D4D"
+                                    style={styles.errorIcon}
+                                />
+
                                 <Text style={styles.errorText}>
-                                    {error.message ||
-                                        'Login failed. Please check your credentials.'}
+                                    {error?.response?.data?.message ||
+                                        error?.message ||
+                                        "Something went wrong"}
                                 </Text>
                             </View>
                         )}
+
 
                         {/* Login Button */}
                         <TouchableOpacity
@@ -199,6 +243,7 @@ export default function LoginFormScreen() {
         </>
     );
 }
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -257,16 +302,28 @@ const styles = StyleSheet.create({
         top: 16,
     },
     errorContainer: {
-        backgroundColor: "rgba(255,0,0,0.1)",
-        padding: 12,
-        borderRadius: 8,
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(255, 71, 87, 0.15)", // softer red
+        borderColor: "rgba(255, 71, 87, 0.35)",
+        borderWidth: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderRadius: 10,
         marginBottom: 16,
     },
-    errorText: {
-        color: "#FFB4B4",
-        fontSize: 14,
-        textAlign: "center",
+
+    errorIcon: {
+        marginRight: 8,
     },
+
+    errorText: {
+        color: "#FF4D4D",
+        fontSize: 15,
+        flexShrink: 1,
+        fontWeight: "500",
+    },
+
     loginButton: {
         backgroundColor: "#fff",
         padding: 18,
