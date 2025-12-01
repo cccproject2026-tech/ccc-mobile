@@ -1,7 +1,7 @@
 import {
-    AppointmentCard,
-    MentorCard,
-    RoadMapCard
+  AppointmentCard,
+  MentorCard,
+  RoadMapCard
 } from "@/components/atom/cards"
 import { Search } from "@/components/atom/Search"
 import { Button } from "@/components/build-components"
@@ -11,7 +11,11 @@ import WelcomeCard from "@/components/director/WelcomeCard"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
 import { mentorExploreItems } from "@/constants/mockData"
+import { useAppointments } from "@/hooks/appointments/useAppointments"
 import { useMentors } from "@/hooks/mentors/useMentors"
+import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps"
+import { useAuthStore } from "@/stores/auth.store"
+import { Appointment } from "@/types/appointment.types"
 import { LinearGradient } from "expo-linear-gradient"
 import { useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
@@ -19,8 +23,8 @@ import React, { useCallback, useMemo, useState } from "react"
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native"
 import MapView, { Marker } from "react-native-maps"
 import Animated, {
-    useAnimatedRef,
-    useScrollViewOffset,
+  useAnimatedRef,
+  useScrollViewOffset,
 } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -88,39 +92,90 @@ export default function MentorDashboard() {
     return "Good Evening"
   }, [greetingPeriod])
 
-  const dummyAppointments = [
-    {
-      date: "04 Aug 24",
-      time: "11:30 hrs EST",
-      name: "John Ross",
-      role: "Mentor",
-      mode: "duo",
-    },
-    {
-      date: "11 Aug 24",
-      time: "11:30 hrs EST",
-      name: "John Ross",
-      role: "Field Mentor",
-      mode: "meet",
-    },
-  ]
-  const dummyRoadMaps = [
-    {
-      phase: "Phase 1",
-      title: "Revitalization RoadMap",
-      status: "Due",
-    },
-    {
-      phase: "Phase 2",
-      title: "Revitalization RoadMap",
-      status: "In progress",
-    },
-    {
-      phase: "Questionnaires",
-      title: "Survey",
-      status: "Remaining",
-    },
-  ]
+  // Get current user
+  const { user } = useAuthStore();
+
+  // Fetch appointments for mentor
+  const { appointments, isLoading: isLoadingAppointments, getAppointmentsByDate } = useAppointments({
+    mentorId: user?.id
+  });
+
+  // Fetch roadmaps
+  const { data: roadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
+
+  // Format date for display (US format: "DD MMM YY")
+  const formatDate = useCallback((dateString: string): string => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[date.getMonth()];
+    const year = date.getFullYear().toString().slice(-2);
+    return `${day.toString().padStart(2, '0')} ${month} ${year}`;
+  }, []);
+
+  // Format time for display (US format: "HH:MM hrs EST")
+  const formatTime = useCallback((dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'America/New_York'
+    }) + ' hrs EST';
+  }, []);
+
+  // Get today's date in YYYY-MM-DD format
+  const today = useMemo(() => {
+    return new Date().toISOString().split('T')[0];
+  }, []);
+
+  // Get today's appointments and format them
+  const todayAppointments = useMemo(() => {
+    if (!appointments || !getAppointmentsByDate) return [];
+    
+    const todayApts = getAppointmentsByDate(today);
+    return todayApts.map((apt: Appointment) => {
+      // Map platform to mode for AppointmentCard
+      const mode = apt.platform === 'zoom' ? 'duo' : 'meet';
+      
+      return {
+        date: formatDate(apt.meetingDate),
+        time: formatTime(apt.meetingDate),
+        name: "Mentee", // TODO: Get actual mentee name from userId
+        role: "Mentee",
+        mode: mode,
+      };
+    });
+  }, [appointments, getAppointmentsByDate, today, formatDate, formatTime]);
+
+  // Format roadmaps for RoadMapCard
+  const formattedRoadmaps = useMemo(() => {
+    if (!roadmaps || roadmaps.length === 0) return [];
+    
+    return roadmaps.slice(0, 3).map((roadmap) => {
+      // Map status to display format
+      let status = "Remaining";
+      if (roadmap.status === 'in-progress') {
+        status = "In progress";
+      } else if (roadmap.status === 'completed') {
+        status = "Completed";
+      } else if (roadmap.status === 'blocked') {
+        status = "Blocked";
+      } else if (roadmap.status === 'not started') {
+        status = "Remaining";
+      }
+
+      // Extract phase from roadmap name or use default
+      const phase = roadmap.phase || "Phase 1";
+      
+      return {
+        phase: phase,
+        title: roadmap.name || "Roadmap",
+        status: status,
+      };
+    });
+  }, [roadmaps]);
   
   const { mentors } = useMentors();
   const displayMentors = mentors.slice(0, 2); // Show only first 2 for reminders
@@ -159,7 +214,7 @@ export default function MentorDashboard() {
               <WelcomeCard
                 onClick={() => { }}
                 avatar={icons.myProfile}
-                message="John Doe, Welcome !"
+                message={user?.firstName  + ", Welcome !"}
               />
             </View>
             <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
@@ -230,14 +285,24 @@ export default function MentorDashboard() {
                   paddingBottom: 18,
                 }}
               >
-                {dummyAppointments.map((e, i) => (
-                  <AppointmentCard
-                    data={e}
-                    dataKey={i.toString()}
-                    type={"mentor"}
-                    key={i}
-                  />
-                ))}
+                {isLoadingAppointments ? (
+                  <Text style={{ color: "#e7f6fc", fontSize: 14, textAlign: "center", paddingVertical: 20 }}>
+                    Loading appointments...
+                  </Text>
+                ) : todayAppointments.length > 0 ? (
+                  todayAppointments.map((e, i) => (
+                    <AppointmentCard
+                      data={e}
+                      dataKey={i.toString()}
+                      type={"mentor"}
+                      key={i}
+                    />
+                  ))
+                ) : (
+                  <Text style={{ color: "#e7f6fc", fontSize: 14, textAlign: "center", paddingVertical: 20 }}>
+                    No appointments today
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -251,9 +316,19 @@ export default function MentorDashboard() {
                 </Text>
               </View>
               <View className="gap-2">
-                {dummyRoadMaps.map((e, i) => (
-                  <RoadMapCard data={e} dataKey={i.toString()} key={i} />
-                ))}
+                {isLoadingRoadmaps ? (
+                  <Text style={{ color: "#e7f6fc", fontSize: 14, textAlign: "center", paddingVertical: 20 }}>
+                    Loading roadmaps...
+                  </Text>
+                ) : formattedRoadmaps.length > 0 ? (
+                  formattedRoadmaps.map((e, i) => (
+                    <RoadMapCard data={e} dataKey={i.toString()} key={i} />
+                  ))
+                ) : (
+                  <Text style={{ color: "#e7f6fc", fontSize: 14, textAlign: "center", paddingVertical: 20 }}>
+                    No roadmaps available
+                  </Text>
+                )}
               </View>
               <View className="flex justify-end w-full">
                 <Button

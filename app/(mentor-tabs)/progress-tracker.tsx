@@ -1,12 +1,12 @@
 import ActionBottomSheet from "@/components/director/ActionSheetModal";
 import FilterModal, { FilterOption } from "@/components/director/FilterModal";
 import MenteeCard from "@/components/director/MenteeCard";
-import { Mentee } from "@/types/mentee.types";
 import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { useMentees } from "@/hooks/mentees/useMentees";
+import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
