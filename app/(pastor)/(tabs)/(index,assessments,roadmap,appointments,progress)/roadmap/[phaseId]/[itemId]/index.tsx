@@ -648,23 +648,25 @@ export default function ItemDetail() {
                     >
                         Comments
                     </Text>
-                    <View
-                        style={[
-                            styles.badge,
-                            activeTab === 'comments' ? styles.badgeActive : styles.badgeInactive,
-                        ]}
-                    >
-                        <Text
+                    {comments && comments.comments.length > 0 && (
+
+                        <View
                             style={[
-                                styles.badgeText,
-                                activeTab === 'comments' ? styles.badgeTextActive : styles.badgeTextInactive,
+                                styles.badge,
+                                activeTab === 'comments' ? styles.badgeActive : styles.badgeInactive,
                             ]}
                         >
-                            {comments && comments.comments.length}
-                        </Text>
-                    </View>
+                            <Text
+                                style={[
+                                    styles.badgeText,
+                                    activeTab === 'comments' ? styles.badgeTextActive : styles.badgeTextInactive,
+                                ]}
+                            >
+                                {comments && comments.comments.length}
+                            </Text>
+                        </View>
+                    )}
                 </TouchableOpacity>
-
                 <TouchableOpacity
                     onPress={() =>
                         router.push({
@@ -686,21 +688,23 @@ export default function ItemDetail() {
                     >
                         Queries
                     </Text>
-                    <View
-                        style={[
-                            styles.badge,
-                            activeTab === 'queries' ? styles.badgeActive : styles.badgeInactive,
-                        ]}
-                    >
-                        <Text
+                    {queries && queries.length > 0 && (
+                        <View
                             style={[
-                                styles.badgeText,
-                                activeTab === 'queries' ? styles.badgeTextActive : styles.badgeTextInactive,
+                                styles.badge,
+                                activeTab === 'queries' ? styles.badgeActive : styles.badgeInactive,
                             ]}
                         >
-                            {queries && queries.length}
-                        </Text>
-                    </View>
+                            <Text
+                                style={[
+                                    styles.badgeText,
+                                    activeTab === 'queries' ? styles.badgeTextActive : styles.badgeTextInactive,
+                                ]}
+                            >
+                                {queries && queries.length}
+                            </Text>
+                        </View>
+                    )}
                 </TouchableOpacity>
             </View>
 

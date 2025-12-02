@@ -227,17 +227,26 @@ export const roadmapService = {
         return response.data; // { success: true, documents: [...] }
     },
 
-    async deleteRoadmapDocument(roadMapId: string, userId: string, nestedId: string, fileUrl: string) {
+    async deleteRoadmapDocument(
+        roadMapId: string,
+        userId: string,
+        nestedId: string,
+        fileUrl: string,
+        uploadBatchId: string
+    ) {
         const url =
-            `/roadmaps/${roadMapId}/extras/documents` +
+            `/roadmaps/${roadMapId}/extras/documents/file` +
             `?userId=${userId}` +
+            `&fileUrl=${encodeURIComponent(fileUrl)}` +
             `&nestedRoadMapItemId=${nestedId}` +
-            `&fileUrl=${encodeURIComponent(fileUrl)}`;
+            `&uploadBatchId=${uploadBatchId}`;
 
-        console.log('Deleting roadmap document with URL:', url);
+        console.log("🗑️ Deleting roadmap document:", url);
+
         const response = await apiClient.delete(url);
         return response.data;
     },
+
 
     async createRoadmapExtras(payload: CreateExtrasDto) {
         console.log('Creating roadmap extras with payload:', payload);

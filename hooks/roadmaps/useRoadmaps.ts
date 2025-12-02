@@ -426,19 +426,20 @@ export const useDeleteRoadmapDocument = () => {
             userId,
             nestedId,
             fileUrl,
-            extraName
+            uploadBatchId
         }: {
             roadMapId: string;
             userId: string;
             nestedId: string;
             fileUrl: string;
-            extraName: string;
+            uploadBatchId: string;
         }) =>
             roadmapService.deleteRoadmapDocument(
                 roadMapId,
                 userId,
                 nestedId,
-                fileUrl
+                fileUrl,
+                uploadBatchId
             ),
 
         onSuccess: (_data, vars) => {
@@ -447,13 +448,13 @@ export const useDeleteRoadmapDocument = () => {
                     "roadmap-documents",
                     vars.roadMapId,
                     vars.nestedId,
-                    vars.userId,
-                    vars.extraName
-                ],
+                    vars.userId
+                ]
             });
         }
     });
 };
+
 
 
 /**

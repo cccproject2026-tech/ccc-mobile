@@ -190,7 +190,7 @@ export default function ShareMedia() {
                                     nestedId,
                                     userId: user.id,
                                     fileUrl: m.fileUrl,
-                                    extraName: extraName as string,
+                                    uploadBatchId: m.uploadBatchId as string,
                                 });
                             }
                         });
@@ -360,7 +360,8 @@ export default function ShareMedia() {
                                     </View>
 
                                     <View style={styles.selectionHeaderRight}>
-                                        <TouchableOpacity onPress={deleteSelected}>
+                                        <TouchableOpacity
+                                            onPress={deleteSelected}>
                                             <Ionicons
                                                 name="trash-outline"
                                                 size={24}
@@ -370,12 +371,12 @@ export default function ShareMedia() {
                                     </View>
                                 </View>
 
-                                <TouchableOpacity
+                                {/* <TouchableOpacity
                                     onPress={selectAll}
                                     style={styles.selectAllButton}
                                 >
                                     <Text style={styles.selectAllText}>Select all</Text>
-                                </TouchableOpacity>
+                                </TouchableOpacity> */}
                             </>
                         )}
 

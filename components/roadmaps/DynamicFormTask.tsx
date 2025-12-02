@@ -1276,7 +1276,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                 userId: user!.id,
                                 nestedId: itemId!,
                                 fileUrl: doc.fileUrl,
-                                extraName,
+                                uploadBatchId: doc.uploadBatchId,
                             });
                         },
                     },
@@ -1377,12 +1377,14 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                         </Pressable>
 
                                         {/* If you enable delete later */}
-                                        {/* <Pressable
-                                onPress={() => confirmDelete(doc)}
-                                style={styles.removeIconWrapper}
-                            >
-                                <Ionicons name="trash" size={20} color="#ef4444" />
-                            </Pressable> */}
+                                        {!isMediaUpload && (
+                                            <Pressable
+                                                onPress={() => confirmDelete(doc)}
+                                                style={styles.removeIconWrapper}
+                                            >
+                                                <Ionicons name="trash" size={20} color="#ef4444" />
+                                            </Pressable>
+                                        )}
                                     </View>
                                 ))
                             )}
