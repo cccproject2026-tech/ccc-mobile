@@ -585,36 +585,36 @@ export const PastorMenuItems: MenuItem[] = [
             },
         ],
     },
-    {
-        id: 'settings',
-        label: 'Settings',
-        icon: icons.settings,
-        iconType: 'image',
-        showChevron: true,
-        children: [
-            {
-                id: 'changePassword',
-                label: 'Change Password',
-                icon: icons.changePass,
-                iconType: 'image',
-                route: '/(pastor-tabs)/profile',
-            },
-            {
-                id: 'turnOffNotifications',
-                label: 'Turn Off Notifications',
-                icon: icons.turnOffNotification,
-                iconType: 'image',
-                route: '/(pastor-tabs)/notifications',
-            },
-            {
-                id: 'changeMentor',
-                label: 'Change Mentor',
-                icon: icons.changeMentor,
-                iconType: 'image',
-                route: '/(pastor-tabs)/',
-            },
-        ],
-    },
+    // {
+    //     id: 'settings',
+    //     label: 'Settings',
+    //     icon: icons.settings,
+    //     iconType: 'image',
+    //     showChevron: true,
+    //     children: [
+    //         {
+    //             id: 'changePassword',
+    //             label: 'Change Password',
+    //             icon: icons.changePass,
+    //             iconType: 'image',
+    //             route: '/(pastor-tabs)/profile',
+    //         },
+    //         {
+    //             id: 'turnOffNotifications',
+    //             label: 'Turn Off Notifications',
+    //             icon: icons.turnOffNotification,
+    //             iconType: 'image',
+    //             route: '/(pastor-tabs)/notifications',
+    //         },
+    //         {
+    //             id: 'changeMentor',
+    //             label: 'Change Mentor',
+    //             icon: icons.changeMentor,
+    //             iconType: 'image',
+    //             route: '/(pastor-tabs)/',
+    //         },
+    //     ],
+    // },
     { id: 'logout', label: 'Log out', icon: 'log-out-outline', route: '/' },
 ];
 

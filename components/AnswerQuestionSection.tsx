@@ -195,7 +195,7 @@ export default function AssessmentQuestionsSection({
 
     return (
         <>
-            {!isViewMode && (
+            {__DEV__ && !isViewMode && (
                 <View style={{ alignItems: 'flex-end', margin: 12 }}>
                     <TouchableOpacity
                         onPress={() => {

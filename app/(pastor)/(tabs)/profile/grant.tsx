@@ -16,7 +16,6 @@ import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -27,15 +26,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Grant() {
   const { bottom } = useSafeAreaInsets();
-  const router = useRouter()
-  const { user } = useAuthStore()
-  // Use the custom hook
+  const router = useRouter();
+  const { user } = useAuthStore();
+
   const {
     form,
     isLoading,
     isSubmitting,
     error,
-    success,
     fetchGrantForm,
     submitCompleteApplication,
     resetState,
@@ -51,27 +49,23 @@ export default function Grant() {
   });
   const [isVisible, setIsVisible] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
-  const [showAlreadyAppliedModal, setShowAlreadyAppliedModal] = React.useState(false);
   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
-  // Check if user has already applied
-  const { data: checkApplicationData, isLoading: isCheckingApplication } = useCheckApplication(user?.id);
+  const { data: checkApplicationData, isLoading: isCheckingApplication } =
+    useCheckApplication(user?.id);
 
-  // Fetch form on mount
+  // Fetch form
   useEffect(() => {
     fetchGrantForm();
   }, []);
 
-  // Check if user has already applied and show modal
+  // If already applied → LOCK to Step 3 forever
   useEffect(() => {
     if (checkApplicationData?.data?.applied) {
-      setShowAlreadyAppliedModal(true);
+      setStep(3);
     }
   }, [checkApplicationData]);
 
-
-
-  // Static reporting procedure options
   const reportingProcedureText = [
     "If approved, you will sign a grant agreement based on the submitted Action Steps—the CCC may modify, suspend, or stop payment of grant funds if the terms of the agreement are changed or not followed",
     "Upon completion of the project, the grantee must submit a grant report regarding the use of funds consisting of a narrative report and financial accounting—the report ought to include copies of relevant receipts and records of expenditures.",
@@ -85,27 +79,18 @@ export default function Grant() {
   ];
 
   const handleInputChange = (fieldLabel: string, value: string) => {
-    setFormAnswers((prev) => ({
-      ...prev,
-      [fieldLabel]: value,
-    }));
+    setFormAnswers((prev) => ({ ...prev, [fieldLabel]: value }));
 
-    // Clear validation error when user starts typing
     if (validationErrors[fieldLabel]) {
       setValidationErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldLabel];
-        return newErrors;
+        const updated = { ...prev };
+        delete updated[fieldLabel];
+        return updated;
       });
     }
   };
 
-  const handleReportingOptionChange = (option: string) => {
-    setSelectedReportingOption(option);
-  };
-
-  // Validate required fields
-  const validateCurrentStep = (): boolean => {
+  const validateCurrentStep = () => {
     if (step === 1) {
       const errors: Record<string, string> = {};
 
@@ -120,52 +105,38 @@ export default function Grant() {
 
       setValidationErrors(errors);
 
-      if (Object.keys(errors).length > 0) {
-        // Show alert with first error
-        const firstError = Object.values(errors)[0];
-        Alert.alert("Validation Error", firstError);
+      if (Object.keys(errors).length) {
+        Alert.alert("Validation Error", Object.values(errors)[0]);
         return false;
       }
       return true;
     }
 
-    if (step === 2) {
-      if (!selectedReportingOption) {
-        Alert.alert("Validation Error", "Please select a reporting procedure option");
-        return false;
-      }
-      return true;
+    if (step === 2 && !selectedReportingOption) {
+      Alert.alert("Validation Error", "Please select a reporting procedure option");
+      return false;
     }
 
     return true;
   };
 
   const handleNext = () => {
-    if (validateCurrentStep()) {
-      setStep(step + 1);
-    }
+    if (validateCurrentStep()) setStep(step + 1);
   };
 
   const handleSubmit = async () => {
-    if (!validateCurrentStep()) {
-      return;
-    }
+    if (!validateCurrentStep()) return;
 
-    // Add reporting procedure to answers
     const finalAnswers = {
       ...formAnswers,
       reportingProcedure: selectedReportingOption,
     };
 
     try {
-      // Replace with actual userId from your auth context/state
-
       await submitCompleteApplication(user?.id as string, finalAnswers);
 
-      // Show success modal
       setShowSuccessModal(true);
 
-      // After 2 seconds, hide modal and move to next step
       setTimeout(() => {
         setShowSuccessModal(false);
         setStep(3);
@@ -173,146 +144,100 @@ export default function Grant() {
     } catch (err: any) {
       setResponseModal({
         visible: true,
-        message: err.message || "Failed to submit application. Please try again.",
+        message: err.message || "Failed to submit application",
         buttonText: "OK",
       });
     }
   };
 
   const handleClearForm = () => {
-    Alert.alert(
-      "Clear Form",
-      "Are you sure you want to clear all form data?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
+    Alert.alert("Clear Form", "Are you sure you want to clear all form data?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Clear",
+        style: "destructive",
+        onPress: () => {
+          setFormAnswers({});
+          setSelectedReportingOption("");
+          setValidationErrors({});
+          setStep(1);
+          resetState();
         },
-        {
-          text: "Clear",
-          onPress: () => {
-            setFormAnswers({});
-            setSelectedReportingOption("");
-            setValidationErrors({});
-            setStep(1);
-            resetState();
-          },
-          style: "destructive"
-        }
-      ]
-    );
+      },
+    ]);
   };
 
   const renderFormField = (field: any) => {
-    const fieldValue = formAnswers[field.label] || "";
+    const value = formAnswers[field.label] || "";
     const hasError = !!validationErrors[field.label];
 
-    switch (field.type) {
-      case "text":
-      case "textarea":
-        return (
-          <View key={field._id}>
-            <InputCard
-              title={field.label + (field.required ? " *" : "")}
-              setValue={(value: string) => handleInputChange(field.label, value)}
-              description=""
-              value={fieldValue}
-              required={field.required}
-              multiline={field.type === "textarea"}
-            />
-            {hasError && (
-              <Text
-                style={{
-                  color: "#FF6B6B",
-                  fontSize: getFontSize(12),
-                  marginTop: getSpacing(-12),
-                  marginBottom: getSpacing(8),
-                  marginLeft: getSpacing(4),
-                }}
-              >
-                {validationErrors[field.label]}
-              </Text>
-            )}
-          </View>
-        );
-
-      case "file":
-        return (
-          <View key={field._id}>
-            <InputCard
-              title={field.label + (field.required ? " *" : "")}
-              setValue={(value: string) => handleInputChange(field.label, value)}
-              description="[Upload up to 10 supported files. Max 100 MB per file.]"
-              value={fieldValue}
-              required={field.required}
-              fileUpload={true}
-              answer={false}
-            />
-            {hasError && (
-              <Text
-                style={{
-                  color: "#FF6B6B",
-                  fontSize: getFontSize(12),
-                  marginTop: getSpacing(-12),
-                  marginBottom: getSpacing(8),
-                  marginLeft: getSpacing(4),
-                }}
-              >
-                {validationErrors[field.label]}
-              </Text>
-            )}
-          </View>
-        );
-
-      default:
-        return null;
-    }
+    return (
+      <View key={field._id}>
+        <InputCard
+          title={field.label + (field.required ? " *" : "")}
+          value={value}
+          setValue={(v: string) => handleInputChange(field.label, v)}
+          description={field.type === "file" ? "[Upload up to 10 files. Max 100MB.]" : ""}
+          required={field.required}
+          multiline={field.type === "textarea"}
+          fileUpload={field.type === "file"}
+          answer={false}
+        />
+        {hasError && (
+          <Text
+            style={{
+              color: "#FF6B6B",
+              fontSize: getFontSize(12),
+              marginTop: getSpacing(-12),
+              marginBottom: getSpacing(8),
+              marginLeft: getSpacing(4),
+            }}
+          >
+            {validationErrors[field.label]}
+          </Text>
+        )}
+      </View>
+    );
   };
 
   // Loading state
   if (isLoading || isCheckingApplication) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={{ color: "#ffffff", marginTop: 16, fontSize: getFontSize(16) }}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={{ color: "#fff", marginTop: 16, fontSize: getFontSize(16) }}>
             Loading form...
           </Text>
         </View>
       </LinearGradient>
     );
   }
+
+  // ❗ BACK BUTTON LOGIC FIXED
   const onBackPress = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    } else {
+    if (checkApplicationData?.data?.applied) {
+      // Already applied → DO NOT GO TO FORM
       router.back();
+      return;
     }
+
+    if (step > 1) setStep(step - 1);
+    else router.back();
   };
 
   // Error state
   if (error && !form) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
-          <Text style={{ color: "#ffffff", fontSize: getFontSize(18), textAlign: "center", marginBottom: 16 }}>
+          <Text style={{ color: "#fff", fontSize: getFontSize(18), textAlign: "center", marginBottom: 16 }}>
             Failed to load form
           </Text>
-          <Text style={{ color: "#ffffff", fontSize: getFontSize(14), textAlign: "center", marginBottom: 24 }}>
+          <Text style={{ color: "#fff", fontSize: getFontSize(14), textAlign: "center", marginBottom: 24 }}>
             {error}
           </Text>
-          <Button
-            title="Retry"
-            type="submit"
-            onPress={fetchGrantForm}
-            style={{ width: "50%" }}
-          />
+          <Button title="Retry" type="submit" onPress={fetchGrantForm} style={{ width: "50%" }} />
         </View>
       </LinearGradient>
     );
@@ -320,47 +245,30 @@ export default function Grant() {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
         <TopBar
           showDrawer={false}
           showBackButton={true}
-          showBackButtonText={true} // Add this to show "Back" text
+          showBackButtonText={true}
           onPressBack={onBackPress}
           showNotifications={true}
-          onProfilePress={() => {
-            console.log("Profile pressed");
-          }}
+          onProfilePress={() => { }}
           role="pastor"
         />
-        <View style={{ flex: 1 }}>
 
-          <View
-            style={{
-              width: "100%",
-              alignItems: "center",
-              marginTop: 16,
-              flex: 1,
-            }}
-          >
+        <View style={{ flex: 1 }}>
+          <View style={{ width: "100%", alignItems: "center", marginTop: 16, flex: 1 }}>
             <ScrollView
               contentContainerStyle={{
-                paddingBottom: Platform.OS === 'android' ? bottom : bottom * 1.5,
+                paddingBottom: Platform.OS === "android" ? bottom : bottom * 1.5,
                 paddingHorizontal: getSpacing(16),
                 flexGrow: 1,
               }}
               style={{ width: "100%" }}
             >
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "column",
-                  justifyContent: "flex-start",
-                  alignItems: "stretch",
-                }}
-              >
+              <View style={{ width: "100%", flexDirection: "column" }}>
+
+                {/* TITLE */}
                 <HeaderTitle
                   title={form?.data?.title || "Micro-Grant Application"}
                   textStyle={{
@@ -372,354 +280,244 @@ export default function Grant() {
                   }}
                 />
 
-                <View
-                  style={{
-                    width: "100%",
-                    paddingVertical: getSpacing(8),
-                  }}
-                >
+                <View style={{ width: "100%", paddingVertical: getSpacing(8) }}>
                   <Text
                     style={{
                       color: "white",
                       fontSize: getFontSize(14),
                       lineHeight: getFontSize(20),
                       fontWeight: "500",
-                      textAlign: "left",
                     }}
                   >
-                    {form?.data?.description || "Please keep in mind that the church applying for a grant must become a partner with the CCC by signing a MOU."}
+                    {form?.data?.description ||
+                      "Please keep in mind that the church applying for a grant must become a partner with the CCC by signing a MOU."}
                   </Text>
                 </View>
 
-                {step <= 2 && (
-                  <View
-                    style={{
-                      borderWidth: 1,
-                      borderColor: "white",
-                      borderRadius: getSpacing(10),
-                      backgroundColor: "#14517d",
-                      marginVertical: getSpacing(16),
-                      paddingVertical: getSpacing(16),
-                      paddingHorizontal: getSpacing(16),
-                      width: "100%",
-                    }}
-                  >
-                    <View
-                      style={{
-                        flexDirection: "column",
-                        gap: getSpacing(8),
-                        justifyContent: "flex-start",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "white",
-                          fontSize: getFontSize(16),
-                          lineHeight: getFontSize(20),
-                          fontWeight: "600",
-                        }}
-                      >
-                        {step}. {step == 1 ? "Cover Sheet" : "Reporting Procedures"}
-                      </Text>
-                      {step == 1 && (
-                        <Text
-                          style={{
-                            color: "white",
-                            fontSize: getFontSize(14),
-                            lineHeight: getFontSize(18),
-                            fontWeight: "500",
-                            marginTop: getSpacing(4),
-                          }}
-                        >
-                          Please answer the questions succinctly following prompts
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                )}
+                {/* === STEP 3: SHOW ONLY STATUS (if already applied) === */}
+                {STEP_3_VIEW()}
 
-                {step == 1 && (
-                  <View
-                    style={{
-                      width: "100%",
-                      alignItems: "flex-end",
-                      paddingVertical: getSpacing(8),
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "yellow",
-                        fontSize: getFontSize(14),
-                        lineHeight: getFontSize(18),
-                        fontWeight: "500",
-                      }}
-                    >
-                      * Indicates required questions
-                    </Text>
-                  </View>
-                )}
-
-                {step == 1 ? (
+                {/* === IF NOT APPLIED → SHOW FORM === */}
+                {!checkApplicationData?.data?.applied && (
                   <>
-                    {form?.data?.fields?.map((field) => renderFormField(field))}
-                  </>
-                ) : step == 2 ? (
-                  <View
-                    style={{
-                      width: "100%",
-                      flexDirection: "column",
-                      gap: 20,
-                      justifyContent: "center",
-                      paddingVertical: 20,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: "100%",
-                        flexDirection: "column",
-                        borderRadius: 8,
-                        paddingVertical: 8,
-                        borderWidth: 1,
-                        borderColor: "white",
-                      }}
-                    >
-                      {reportingProcedureText.map((text, i) => (
+                    {step === 1 && (
+                      <>
                         <View
-                          key={i}
                           style={{
+                            borderWidth: 1,
+                            borderColor: "white",
+                            borderRadius: getSpacing(10),
+                            backgroundColor: "#14517d",
+                            marginVertical: getSpacing(16),
+                            paddingVertical: getSpacing(16),
+                            paddingHorizontal: getSpacing(16),
                             width: "100%",
-                            flexDirection: "row",
-                            borderRadius: 8,
-                            paddingHorizontal: 20,
-                            paddingVertical: 8,
-                            gap: 20,
                           }}
                         >
                           <Text
                             style={{
-                              fontSize: 15,
-                              fontWeight: "100",
-                              fontFamily: "AlbertSans-Medium",
-                              color: customColors.customWhiteEighty,
-                              textAlign: "center",
+                              color: "white",
+                              fontSize: getFontSize(16),
+                              fontWeight: "600",
                             }}
                           >
-                            ⭐
+                            1. Cover Sheet
                           </Text>
+                          <Text
+                            style={{
+                              color: "white",
+                              fontSize: getFontSize(14),
+                              marginTop: getSpacing(4),
+                            }}
+                          >
+                            Please answer the questions succinctly following prompts
+                          </Text>
+                        </View>
+
+                        <View style={{ width: "100%", alignItems: "flex-end", paddingVertical: getSpacing(8) }}>
+                          <Text
+                            style={{
+                              color: "yellow",
+                              fontSize: getFontSize(14),
+                              fontWeight: "500",
+                            }}
+                          >
+                            * Indicates required questions
+                          </Text>
+                        </View>
+
+                        {form?.data?.fields?.map((field) => renderFormField(field))}
+                      </>
+                    )}
+
+                    {step === 2 && (
+                      <View style={{ width: "100%", paddingVertical: 20, gap: 20 }}>
+                        <View
+                          style={{
+                            borderWidth: 1,
+                            borderColor: "white",
+                            borderRadius: 8,
+                            paddingVertical: 8,
+                          }}
+                        >
+                          {reportingProcedureText.map((text, i) => (
+                            <View
+                              key={i}
+                              style={{
+                                flexDirection: "row",
+                                paddingVertical: 8,
+                                paddingHorizontal: 20,
+                                gap: 20,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 15,
+                                  color: customColors.customWhiteEighty,
+                                }}
+                              >
+                                ⭐
+                              </Text>
+                              <Text
+                                style={{
+                                  fontSize: 16,
+                                  fontWeight: "500",
+                                  color: customColors.customWhite,
+                                  paddingRight: 30,
+                                }}
+                              >
+                                {text}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+
+                        <View
+                          style={{
+                            borderWidth: 1,
+                            borderColor: "white",
+                            borderRadius: 8,
+                            paddingVertical: 8,
+                          }}
+                        >
                           <Text
                             style={{
                               fontSize: 16,
                               fontWeight: "500",
-                              lineHeight: 28,
-                              fontFamily: "AlbertSans-Medium",
                               color: customColors.customWhite,
-                              paddingRight: 30,
+                              paddingLeft: 20,
                             }}
                           >
-                            {text}
+                            Please review the grant application thoroughly before
+                            submission and ensure that all required sections are
+                            completed accurately
                           </Text>
-                        </View>
-                      ))}
-                    </View>
 
-                    <View
-                      style={{
-                        width: "100%",
-                        flexDirection: "column",
-                        borderRadius: 8,
-                        paddingVertical: 8,
-                        borderWidth: 1,
-                        borderColor: "white",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "500",
-                          lineHeight: 28,
-                          fontFamily: "AlbertSans-Medium",
-                          color: customColors.customWhite,
-                          paddingLeft: 20,
-                        }}
-                      >
-                        Please review the grant application thoroughly before submission and ensure that all required sections are completed accurately
-                      </Text>
-                      {reportingOptions.map((option, i) => (
-                        <Pressable
-                          key={i}
-                          style={{
-                            width: "100%",
-                            flexDirection: "row",
-                            borderRadius: 8,
-                            paddingHorizontal: 20,
-                            paddingVertical: 8,
-                            gap: 20,
-                            alignItems: "center",
-                          }}
-                          onPress={() => handleReportingOptionChange(option)}
-                        >
-                          {/* Radio button */}
-                          <View
-                            style={{
-                              width: 20,
-                              height: 20,
-                              borderRadius: 10,
-                              borderWidth: 2,
-                              borderColor: "white",
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            {selectedReportingOption === option && (
+                          {reportingOptions.map((option, i) => (
+                            <Pressable
+                              key={i}
+                              onPress={() => setSelectedReportingOption(option)}
+                              style={{
+                                flexDirection: "row",
+                                paddingHorizontal: 20,
+                                paddingVertical: 8,
+                                gap: 20,
+                                alignItems: "center",
+                              }}
+                            >
                               <View
                                 style={{
-                                  width: 12,
-                                  height: 12,
-                                  borderRadius: 6,
-                                  backgroundColor: "white",
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: 10,
+                                  borderWidth: 2,
+                                  borderColor: "white",
+                                  justifyContent: "center",
+                                  alignItems: "center",
                                 }}
-                              />
-                            )}
-                          </View>
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              fontWeight: "500",
-                              lineHeight: 22,
-                              fontFamily: "AlbertSans-Medium",
-                              color: customColors.customWhite,
-                              paddingRight: 30,
-                              flex: 1,
-                            }}
-                          >
-                            {option}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-                ) : (
-                  <View
-                    style={{
-                      width: "100%",
-                      flexDirection: "column",
-                      gap: 20,
-                      justifyContent: "center",
-                      paddingVertical: 20,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: "100%",
-                        flexDirection: "column",
-                        borderRadius: 8,
-                        paddingVertical: 8,
-                        borderWidth: 1,
-                        borderColor: "white",
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: "100%",
-                          flexDirection: "column",
-                          borderRadius: 8,
-                          justifyContent: "center",
-                          paddingHorizontal: 20,
-                          paddingVertical: 8,
-                          gap: 20,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "500",
-                            lineHeight: 22,
-                            fontFamily: "AlbertSans-Medium",
-                            color: customColors.customWhiteEighty,
-                            textAlign: "center",
-                          }}
-                        >
-                          You have successfully submitted the application for the grant. Please check the status of your application for updates.
-                        </Text>
-                        <View
-                          style={{
-                            width: "100%",
-                            flexDirection: "row",
-                            borderRadius: 8,
-                            justifyContent: "center",
-                            paddingHorizontal: 20,
-                            paddingVertical: 8,
-                            gap: 20,
-                          }}
-                        >
-                          <Button
-                            title={"Check Status"}
-                            type={"cancel"}
-                            style={{ width: "40%" }}
-                            onPress={() => setIsVisible(true)}
-                          />
+                              >
+                                {selectedReportingOption === option && (
+                                  <View
+                                    style={{
+                                      width: 12,
+                                      height: 12,
+                                      borderRadius: 6,
+                                      backgroundColor: "white",
+                                    }}
+                                  />
+                                )}
+                              </View>
+
+                              <Text
+                                style={{
+                                  fontSize: 16,
+                                  fontWeight: "500",
+                                  flex: 1,
+                                  color: customColors.customWhite,
+                                  paddingRight: 30,
+                                }}
+                              >
+                                {option}
+                              </Text>
+                            </Pressable>
+                          ))}
                         </View>
                       </View>
-                    </View>
-                  </View>
-                )}
+                    )}
 
-                {step <= 2 && !checkApplicationData?.data?.applied && (
-                  <View
-                    style={{
-                      flexDirection: isSmallDevice ? "column" : "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: getSpacing(16),
-                      marginTop: getSpacing(24),
-                      paddingHorizontal: getSpacing(16),
-                    }}
-                  >
-                    <Button
-                      title={"Clear Form"}
-                      type={"cancel"}
-                      onPress={handleClearForm}
-                      style={{
-                        flex: isSmallDevice ? undefined : 1,
-                        width: isSmallDevice ? "100%" : undefined,
-                        minHeight: getSpacing(44)
-                      }}
-                    />
-                    <Button
-                      onPress={() => step == 2 ? handleSubmit() : handleNext()}
-                      title={step == 2 ? "Submit" : "Next"}
-                      type={"submit"}
-                      disabled={isSubmitting}
-                      style={{
-                        flex: isSmallDevice ? undefined : 1,
-                        width: isSmallDevice ? "100%" : undefined,
-                        minHeight: getSpacing(44)
-                      }}
-                    />
-                  </View>
+                    {step <= 2 && (
+                      <View
+                        style={{
+                          flexDirection: isSmallDevice ? "column" : "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: getSpacing(16),
+                          marginTop: getSpacing(24),
+                          paddingHorizontal: getSpacing(16),
+                        }}
+                      >
+                        <Button
+                          title={"Clear Form"}
+                          type={"cancel"}
+                          onPress={handleClearForm}
+                          style={{
+                            flex: isSmallDevice ? undefined : 1,
+                            width: isSmallDevice ? "100%" : undefined,
+                            minHeight: getSpacing(44),
+                          }}
+                        />
+
+                        <Button
+                          onPress={() => (step == 2 ? handleSubmit() : handleNext())}
+                          title={step == 2 ? "Submit" : "Next"}
+                          type={"submit"}
+                          disabled={isSubmitting}
+                          style={{
+                            flex: isSmallDevice ? undefined : 1,
+                            width: isSmallDevice ? "100%" : undefined,
+                            minHeight: getSpacing(44),
+                          }}
+                        />
+                      </View>
+                    )}
+                  </>
                 )}
               </View>
             </ScrollView>
 
+            {/* Response modal */}
             <ResponseModal
               buttonText={responseModal.buttonText}
-              buttonPress={() => {
-                setResponseModal((prev) => ({ ...prev, visible: false }));
-              }}
+              buttonPress={() => setResponseModal((prev) => ({ ...prev, visible: false }))}
               isModalVisible={responseModal.visible}
               responseText={responseModal.message}
               closeMenu={() =>
-                setResponseModal((prev) => ({
-                  ...prev,
-                  visible: false,
-                  message: "",
-                }))
+                setResponseModal((prev) => ({ ...prev, visible: false, message: "" }))
               }
             />
           </View>
         </View>
 
-        {/* Success Modal - Using SimpleSuccessModal */}
         <SimpleSuccessModal
           visible={showSuccessModal}
           onClose={() => setShowSuccessModal(false)}
@@ -764,6 +562,7 @@ export default function Grant() {
             >
               Application Status
             </Text>
+
             <Text
               style={{
                 fontWeight: "500",
@@ -773,8 +572,10 @@ export default function Grant() {
                 textAlign: "center",
               }}
             >
-              Your application is currently under review. We will notify you once it has been processed.
+              Your application is currently under review. We will notify you once it has
+              been processed.
             </Text>
+
             <Button
               title="Close"
               type="submit"
@@ -783,80 +584,82 @@ export default function Grant() {
             />
           </Pressable>
         </Pressable>
-
-        {/* Already Applied Modal */}
-        <Modal
-          visible={showAlreadyAppliedModal}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => {
-            setShowAlreadyAppliedModal(false);
-            router.back();
-          }}
-        >
-          <Pressable
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              justifyContent: "center",
-              alignItems: "center",
-              paddingHorizontal: 16,
-            }}
-            onPress={() => {
-              setShowAlreadyAppliedModal(false);
-              router.back();
-            }}
-          >
-            <Pressable
-              style={{
-                width: "100%",
-                maxWidth: 400,
-                gap: 12,
-                padding: 24,
-                backgroundColor: "white",
-                borderRadius: 12,
-              }}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <Text
-                style={{
-                  fontWeight: "600",
-                  fontSize: 16,
-                  lineHeight: 24,
-                  color: "#176192",
-                  textAlign: "center",
-                }}
-              >
-                Application Already Submitted
-              </Text>
-              <Text
-                style={{
-                  fontWeight: "500",
-                  fontSize: 14,
-                  lineHeight: 20,
-                  color: "#1E366F",
-                  textAlign: "center",
-                  marginTop: 8,
-                }}
-              >
-                You have already applied for a microgrant. {checkApplicationData?.data?.status && `Your application status is: ${checkApplicationData.data.status}.`}
-              </Text>
-              <Button
-                title="Close"
-                type="submit"
-                onPress={() => {
-                  setShowAlreadyAppliedModal(false);
-                  router.back();
-                }}
-                style={{ marginTop: 12 }}
-              />
-            </Pressable>
-          </Pressable>
-        </Modal>
       </LinearGradient>
     </>
   );
+
+  // === Extracted Step 3 section for clean code ===
+  function STEP_3_VIEW() {
+    if (step !== 3) return null;
+
+    return (
+      <View
+        style={{
+          width: "100%",
+          flexDirection: "column",
+          gap: 20,
+          justifyContent: "center",
+          paddingVertical: 20,
+        }}
+      >
+        <View
+          style={{
+            width: "100%",
+            flexDirection: "column",
+            borderRadius: 8,
+            paddingVertical: 8,
+            borderWidth: 1,
+            borderColor: "white",
+          }}
+        >
+          <View
+            style={{
+              width: "100%",
+              flexDirection: "column",
+              borderRadius: 8,
+              justifyContent: "center",
+              paddingHorizontal: 20,
+              paddingVertical: 8,
+              gap: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "500",
+                lineHeight: 22,
+                color: customColors.customWhiteEighty,
+                textAlign: "center",
+              }}
+            >
+              You have successfully submitted the application for the grant.
+              Please check the status of your application for updates.
+            </Text>
+
+            <View
+              style={{
+                width: "100%",
+                flexDirection: "row",
+                justifyContent: "center",
+                paddingHorizontal: 20,
+                paddingVertical: 8,
+              }}
+            >
+              <Button
+                title={"Check Status"}
+                type={"cancel"}
+                style={{ width: "40%" }}
+                onPress={() => setIsVisible(true)}
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
 }
+
+
 
 
 

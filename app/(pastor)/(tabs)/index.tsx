@@ -8,6 +8,7 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAppointments } from '@/hooks/appointments/useAppointments';
 import { useAssignedMentors } from '@/hooks/mentors/useGetAssignedMentors';
+import { Mentor } from '@/hooks/mentors/useMentors';
 import { useProfile } from '@/hooks/profile/useProfile';
 import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
 import { useAuthStore } from '@/stores';
@@ -17,11 +18,12 @@ import { Route, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Image, Pressable, ScrollView, StyleSheet,
+  Alert,
+  Image, Linking, Pressable, ScrollView, StyleSheet,
   Text,
   TouchableOpacity,
   View
-} from "react-native";
+} from 'react-native';
 import Animated, { useAnimatedRef, useScrollViewOffset } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,14 +37,77 @@ export default function PastorDashboard() {
   console.log("Logged in user:", user?.id);
   const { data, isLoading, isError, error } = useProfile();
   const { mentors, isEmpty } = useAssignedMentors(user?.id as string);
-  
+
+  const handleCall = (mentor: Mentor) => {
+    if (!mentor.phoneNumber) {
+      return Alert.alert("Phone number not available");
+    }
+    const url = `tel:${mentor.phoneNumber}`;
+    Linking.openURL(url);
+  };
+
+  const handleChat = (mentor: Mentor) => {
+    if (!mentor.phoneNumber) {
+      return Alert.alert("Phone number not available");
+    }
+    const url = `sms:${mentor.phoneNumber}`;
+    Linking.openURL(url);
+
+  };
+
+  const handleMail = async (mentor: Mentor) => {
+    if (!mentor.email) {
+      return Alert.alert("Email not available");
+    }
+
+    const gmailApp = `googlegmail://co?to=${mentor.email}`;
+    const gmailWeb = `https://mail.google.com/mail/?view=cm&fs=1&to=${mentor.email}`;
+
+    try {
+      // Try Gmail app first
+      const canOpenGmail = await Linking.canOpenURL(gmailApp);
+      if (canOpenGmail) {
+        console.log("Opening Gmail app");
+        await Linking.openURL(gmailApp);
+        return;
+      }
+
+      // Always open Gmail Web as fallback (100% works)
+      console.log("Opening Gmail web");
+      await Linking.openURL(gmailWeb);
+    } catch (error) {
+      console.log("Mail open error:", error);
+      // Final fallback: Gmail web again (just in case)
+      await Linking.openURL(gmailWeb);
+    }
+  };
+
+
+
+
+  const handleWhatsApp = async (mentor: Mentor) => {
+    if (!mentor.phoneNumber) {
+      return Alert.alert("Phone number not available");
+    }
+
+    const url = `whatsapp://send?phone=${mentor.phoneNumber}`;
+
+    const canOpen = await Linking.canOpenURL(url);
+    if (!canOpen) {
+      // Fallback to WhatsApp web
+      return Linking.openURL(`https://wa.me/${mentor.phoneNumber}`);
+    }
+
+    Linking.openURL(url);
+
+  };
   // Fetch appointments
   const {
     appointments: allAppointments,
     isLoading: isAppointmentsLoading,
     getUpcomingAppointments,
   } = useAppointments({ userId: user?.id });
-  
+
   // Fetch roadmaps
   const {
     data: roadmaps,
@@ -60,6 +125,21 @@ export default function PastorDashboard() {
   const handleGreetingPeriodChange = useCallback((period: 'morning' | 'afternoon' | 'evening') => {
     setGreetingPeriod(period);
   }, []);
+
+  const handleScheduleAppointment = (mentor: Mentor) => {
+    console.log("Schedule appointment with", mentor.name);
+    router.push({
+      pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
+      params: { mentorData: JSON.stringify(mentor) },
+    });
+  };
+
+  const handleCardPress = (mentor: Mentor) => {
+    router.push({
+      pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
+      params: { mentorData: JSON.stringify(mentor) },
+    });
+  };
 
   const greeting = useMemo(() => {
     if (greetingPeriod === 'morning') return 'Good Morning';
@@ -129,7 +209,7 @@ export default function PastorDashboard() {
       let status = 'Remaining';
       if (roadmap.status === 'completed') {
         status = 'Completed';
-      } else if (roadmap.status === 'in-progress' ) {
+      } else if (roadmap.status === 'in-progress') {
         status = 'In progress';
       } else if (roadmap.status === 'not started') {
         status = 'Not Started';
@@ -323,7 +403,20 @@ export default function PastorDashboard() {
               </Pressable>
             </View>
             {mentors.map((e, i) => (
-              <MentorCard key={i} mentor={e} layout="list" onMenuPress={() => { }} />
+              <MentorCard key={i} mentor={e} layout="list"
+                onMail={() => handleMail(e as Mentor)}
+                onWhatsApp={() => handleWhatsApp(e as Mentor)}
+                onCall={() => handleCall(e as Mentor)}
+                onChat={() => handleChat(e as Mentor)}
+                onPress={() => handleCardPress(e as Mentor)}
+                menuItems={[
+                  {
+                    key: 'schedule',
+                    title: 'Schedule Appointment',
+                    icon: { ios: 'calendar', android: 'ic_menu_today' },
+                    onSelect: () => handleScheduleAppointment(e as Mentor)
+                  }
+                ]} />
             ))}
           </View>
         </LinearGradient>

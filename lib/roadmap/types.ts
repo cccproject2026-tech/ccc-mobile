@@ -72,38 +72,9 @@ export interface Query {
     hasResponse: boolean;
 }
 
+// types/roadmap-comments.types.ts
 
-// export interface CommentAuthor {
-//     id: string;
-//     name: string;
-//     role: string;
-//     avatar?: ImageSourcePropType;
-// }
 
-// export interface Comment {
-//     id: string;
-//     taskId: string;
-//     author: CommentAuthor;
-//     content: string;
-//     timestamp: string;
-//     status?: CommentStatus;
-//     attachments?: CommentAttachment[];
-//     parentCommentId?: string;
-// }
-
-// export interface CommentAttachment {
-//     id: string;
-//     fileName: string;
-//     fileUrl: string;
-//     fileType: string;
-//     fileSize?: number;
-// }
-
-// export interface Program {
-//     id: string;
-//     title: string;
-//     phases: string[];
-// }
 
 export interface Phase {
     id: string;
@@ -343,6 +314,24 @@ export interface GetExtrasResponse {
 
 // ============= COMMENT TYPES =============
 
+export interface RoadmapCommentAuthor {
+    _id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    profilePicture: string;
+    role: string; // mentor | director | pastor
+}
+
+
+
+export interface RoadmapCommentsThread {
+    _id: string;
+    userId: string;
+    roadMapId: string;
+    comments: RoadmapComment[];
+}
+
 export interface AddCommentRequest {
     text: string;
     userId: string;
@@ -353,9 +342,7 @@ export interface RoadmapComment {
     _id: string;
     text: string;
     addedDate: string;
-    mentorId: {
-        _id: string;
-    };
+    mentorId: RoadmapCommentAuthor;
 }
 
 export interface AddCommentResponse {
@@ -374,12 +361,26 @@ export interface SubmitQueryRequest {
     userId: string;
 }
 
+export interface MentorInfo {
+    _id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    profilePicture: string;
+    role: string;
+}
+
 export interface RoadmapQuery {
     _id: string;
     actualQueryText: string;
     createdDate: string;
-    repliedMentorId: string;
-    status: 'pending' | 'answered';
+
+    // Answer Fields
+    repliedAnswer?: string;
+    repliedDate?: string;
+    repliedMentorId?: MentorInfo | string;
+
+    status: "pending" | "answered";
 }
 
 export interface SubmitQueryResponse {
@@ -391,4 +392,18 @@ export interface SubmitQueryResponse {
         roadMapId: string;
         queries: RoadmapQuery[];
     };
+}
+
+
+export interface RoadmapQueryThread {
+    _id: string;
+    userId: string;
+    roadMapId: string;
+    queries: RoadmapQuery[];
+}
+
+export interface GetQueriesResponse {
+    success: boolean;
+    message: string;
+    data: RoadmapQueryThread[];
 }

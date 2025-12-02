@@ -15,6 +15,8 @@ export interface User {
     status: UserStatus;
     isEmailVerified?: boolean;
     profilePicture?: string;
+    hasCompleted?: boolean;
+    hasIssuedCertificate?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }

@@ -1,4 +1,3 @@
-// app/(director)/certificate.tsx
 import { Button } from '@/components/atom/buttons';
 import ConfirmModal from '@/components/atom/ConfirmModal';
 import SuccessModal from '@/components/atom/SuccessModal';
@@ -381,24 +380,25 @@ export default function Certificate() {
             <View style={styles.divider} />
 
             {/* Download Certificate Button */}
-            <LinearGradient
-              colors={['#21B6E9', '#B83AF3']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.gradientButtonBorder}
-            >
-              <View style={styles.downloadButtonContainer}>
-                <Image
-                  source={icons.gradientDownload}
-                  style={styles.buttonIcon}
-                />
-                <Text style={styles.downloadButtonText}>Download Certificate</Text>
-                <View style={styles.badgeNumber}>
-                  <Text style={styles.badgeText}>1</Text>
+            {profileData.user.hasIssuedCertificate && (
+              <LinearGradient
+                colors={['#21B6E9', '#B83AF3']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientButtonBorder}
+              >
+                <View style={styles.downloadButtonContainer}>
+                  <Image
+                    source={icons.gradientDownload}
+                    style={styles.buttonIcon}
+                  />
+                  <Text style={styles.downloadButtonText}>Download Certificate</Text>
+                  <View style={styles.badgeNumber}>
+                    <Text style={styles.badgeText}>1</Text>
+                  </View>
                 </View>
-              </View>
-            </LinearGradient>
-
+              </LinearGradient>
+            )}
             {/* Mentor Invitation */}
             <LinearGradient
               colors={['#21B6E9', '#B83AF3']}

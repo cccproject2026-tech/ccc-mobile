@@ -793,7 +793,7 @@ const INITIAL_CHURCH: ChurchInfo = {
     city: '',
     state: '',
     zipCode: '',
-    country: 'USA',
+    country: '',
 };
 
 const INITIAL_FORM_DATA: Partial<InterestFormData> = {
@@ -818,6 +818,7 @@ export default function InterestFormScreen() {
     // Fetch metadata from API
     const { data: metadata, isLoading: isLoadingMetadata } = useInterestMetadata();
 
+    console.log('Metadata:', metadata?.countryStates);
     // Form state
     const [formData, setFormData] = useState<Partial<InterestFormData>>(
         INITIAL_FORM_DATA
@@ -840,11 +841,20 @@ export default function InterestFormScreen() {
     }, [metadata]);
 
     // Get states for a specific country
-    const getStatesForCountry = useCallback((country: string) => {
-        if (!metadata?.countryStates) return [];
-        const countryState = metadata.countryStates.find(cs => cs.country === country);
-        return countryState?.states || [];
-    }, [metadata]);
+    const getStatesForCountry = useCallback(
+        (country: string) => {
+            if (!metadata?.countryStates) return [];
+
+            // FIX: normalize for exact match
+            const match = metadata.countryStates.find(
+                (c) => c.country.trim().toLowerCase() === country.trim().toLowerCase()
+            );
+
+            return match?.states || [];
+        },
+        [metadata]
+    );
+
 
     // Auto-fill function for testing
     const autoFillForm = useCallback(() => {

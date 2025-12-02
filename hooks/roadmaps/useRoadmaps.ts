@@ -4,6 +4,7 @@ import {
     CreateExtrasDto,
     NestedRoadmap,
     Roadmap,
+    RoadmapCommentsThread,
     SubmitQueryRequest,
     UpdateExtrasDto
 } from "@/lib/roadmap/types";
@@ -25,6 +26,7 @@ export const roadmapKeys = {
     list: (filters?: string) => [...roadmapKeys.lists(), { filters }] as const,
     details: () => [...roadmapKeys.all, 'detail'] as const,
     detail: (id: string) => [...roadmapKeys.details(), id] as const,
+    queries: (roadmapId: string, userId: string) => [...roadmapKeys.all, 'queries', roadmapId, userId] as const,
     assigned: (userId: string) => [...roadmapKeys.all, 'assigned', userId] as const,
     extras: (roadmapId: string, nestedId?: string, userId?: string) =>
         [...roadmapKeys.all, 'extras', roadmapId, nestedId, userId] as const,
@@ -331,6 +333,128 @@ export function useCreateRoadmapExtras() {
         },
     });
 }
+export function useUploadRoadmapDocument() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            roadMapId,
+            userId,
+            nestedRoadMapItemId,
+            extraName,
+            file
+        }: {
+            roadMapId: string;
+            userId: string;
+            nestedRoadMapItemId: string;
+            extraName: string;
+            file: any;
+        }) =>
+            roadmapService.uploadDocument(
+                roadMapId,
+                userId,
+                nestedRoadMapItemId,
+                extraName,
+                file
+            ),
+
+        onSuccess: (_data, vars) => {
+            queryClient.invalidateQueries({
+                queryKey: [
+                    "roadmap-documents",
+                    vars.roadMapId,
+                    vars.nestedRoadMapItemId,
+                    vars.userId,
+                    vars.extraName,
+                ],
+            });
+        },
+    });
+}
+
+
+export const useRoadmapDocuments = (
+    roadMapId?: string,
+    nestedId?: string,
+    userId?: string,
+    extraName?: string
+) => {
+    return useQuery({
+        queryKey: ["roadmap-documents", roadMapId, nestedId, userId, extraName],
+        queryFn: async () => {
+            if (!roadMapId || !nestedId || !userId) return [];
+
+            const res = await roadmapService.getRoadmapDocuments(
+                roadMapId,
+                userId,
+                nestedId
+            );
+
+            // Backend returns { success, message, data: [...] }
+            const allBatches = res.data ?? [];
+
+            // Flatten into single array of files and attach batch info
+            const flatFiles = allBatches.flatMap((batch: any) =>
+                batch.files.map((f: any) => ({
+                    ...f,
+                    extraName: batch.name,
+                    uploadBatchId: batch.uploadBatchId
+                }))
+            );
+
+            console.log("Fetched and flattened roadmap documents:", flatFiles);
+
+            // Filter by field name ("extraName")
+            if (extraName) {
+                return flatFiles.filter((f: any) => f.extraName === extraName);
+            }
+
+            return flatFiles;
+        },
+        enabled: !!roadMapId && !!nestedId && !!userId,
+    });
+};
+
+
+
+export const useDeleteRoadmapDocument = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            roadMapId,
+            userId,
+            nestedId,
+            fileUrl,
+            extraName
+        }: {
+            roadMapId: string;
+            userId: string;
+            nestedId: string;
+            fileUrl: string;
+            extraName: string;
+        }) =>
+            roadmapService.deleteRoadmapDocument(
+                roadMapId,
+                userId,
+                nestedId,
+                fileUrl
+            ),
+
+        onSuccess: (_data, vars) => {
+            queryClient.invalidateQueries({
+                queryKey: [
+                    "roadmap-documents",
+                    vars.roadMapId,
+                    vars.nestedId,
+                    vars.userId,
+                    vars.extraName
+                ],
+            });
+        }
+    });
+};
+
 
 /**
  * Hook for updating roadmap extras
@@ -445,5 +569,42 @@ export function useSubmitRoadmapQuery() {
                 queryKey: roadmapKeys.all
             });
         },
+    });
+}
+
+
+export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
+    return useQuery({
+        queryKey: roadmapKeys.queries(roadmapId!, userId!),
+        queryFn: async () => {
+            if (!roadmapId || !userId) return [];
+
+            const threads = await roadmapService.getRoadmapQueries(roadmapId, userId);
+
+            // Flatten threads → single list of queries with threadId
+            const flat = threads.flatMap(t =>
+                t.queries.map(q => ({
+                    ...q,
+                    threadId: t._id
+                }))
+            );
+
+            return flat;
+        },
+        enabled: !!roadmapId && !!userId
+    });
+};
+
+
+export function useRoadmapComments(roadMapId?: string, userId?: string) {
+    console.log('Using useRoadmapComments with:', { roadMapId, userId });
+    return useQuery<RoadmapCommentsThread>({
+        queryKey: [
+            "roadmap-comments",
+            roadMapId,
+            userId,
+        ],
+        queryFn: () => roadmapService.getRoadmapComments(roadMapId!, userId!),
+        enabled: !!roadMapId && !!userId,
     });
 }

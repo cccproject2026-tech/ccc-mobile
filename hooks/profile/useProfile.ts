@@ -333,3 +333,12 @@ export const useDeleteDocument = () => {
         },
     });
 };
+
+
+export const useNotifications = (userId?: string) => {
+    return useQuery({
+        queryKey: ["notifications", userId],
+        queryFn: () => profileService.getNotifications(userId!),
+        enabled: !!userId,
+    });
+};

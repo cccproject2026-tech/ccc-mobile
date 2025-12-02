@@ -26,6 +26,7 @@ export const ENDPOINTS = {
         GET_DOCUMENTS: (userId: string) => `/users/${userId}/documents`,
         UPLOAD_DOCUMENT: (userId: string) => `/users/${userId}/documents`,
         DELETE_DOCUMENT: (userId: string) => `/users/${userId}/documents`,
+        GET_NOTIFICATIONS: (userId: string) => `/home/notifications?userId=${userId}`,
     },
 
     // Pastor Onboarding (if separate from auth)
@@ -93,7 +94,8 @@ export const ENDPOINTS = {
         CREATE: '/roadmaps',
         UPDATE: (roadmapId: string) => `/roadmaps/${roadmapId}`,
         ADD_COMMENT: (roadmapId: string) => `/roadmaps/${roadmapId}/comments`,
-        SUBMIT_QUERY: (roadmapId: string) => `/roadmaps/${roadmapId}/queries`,
+        SUBMIT_QUERY: (roadmapId: string, userId: string) => `/roadmaps/${roadmapId}/queries?userId=${userId}`,
+        GET_QUERIES: (roadmapId: string, userId: string) => `/roadmaps/${roadmapId}/queries?userId=${userId}`,
         CREATE_NESTED: (roadmapId: string) => `/roadmaps/${roadmapId}/nested`,
     },
 

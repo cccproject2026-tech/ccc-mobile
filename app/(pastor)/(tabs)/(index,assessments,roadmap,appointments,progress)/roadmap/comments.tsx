@@ -1,44 +1,30 @@
 import TopBar from "@/components/director/TopBar";
-import { mockRevitalization } from "@/lib/roadmap/mock";
-import { getTask, getTaskComments } from "@/lib/roadmap/selectors";
-import { Comment } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React from "react";
 import {
     FlatList,
     Image,
-    Linking,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
+
+import { useRoadmapComments } from "@/hooks/roadmaps/useRoadmaps";
+import { RoadmapComment } from "@/lib/roadmap/types";
+import { useAuthStore } from "@/stores";
+
 
 export default function CommentsScreen() {
     const router = useRouter();
-    const { taskId, phaseId } = useLocalSearchParams<{ taskId: string; phaseId: string }>();
+    const { user } = useAuthStore();
 
-    const task = useMemo(() => getTask(mockRevitalization, taskId), [taskId]);
-    const comments = useMemo(() => getTaskComments(mockRevitalization, taskId), [taskId]);
-    const phase = useMemo(() => mockRevitalization.phases[phaseId], [phaseId]);
+    const { roadmapId: phaseId } = useLocalSearchParams<{ roadmapId: string }>();
 
-    const handleCall = (phoneNumber: string) => {
-        Linking.openURL(`tel:${phoneNumber}`);
-    };
-
-    const handleMessage = (userId: string) => {
-        // router.push(`/messages/${userId}`);
-    };
-
-    const handleEmail = (email: string) => {
-        Linking.openURL(`mailto:${email}`);
-    };
-
-    const handleWhatsApp = (phoneNumber: string) => {
-        Linking.openURL(`whatsapp://send?phone=${phoneNumber}`);
-    };
+    const { data, isLoading } = useRoadmapComments(phaseId, user?.id!);
+    const comments = data?.comments ?? [];
 
     const formatTimestamp = (timestamp: string): string => {
         const commentDate = new Date(timestamp);
@@ -71,46 +57,40 @@ export default function CommentsScreen() {
         return `${month}/${day}/${year}`;
     };
 
-    const renderComment = ({ item }: { item: Comment }) => (
-        <View style={[styles.commentCard, item.status === "UNREAD" && styles.unreadCard]}>
+    const renderComment = ({ item }: { item: RoadmapComment }) => (
+        <View style={styles.commentCard}>
             <View style={styles.rowContainer}>
-                <Image source={item.author.avatar} style={styles.avatar} />
+                <Image
+                    source={{ uri: item.mentorId.profilePicture || undefined }}
+                    style={styles.avatar}
+                />
                 <View style={styles.contentContainer}>
                     <View style={styles.contentHeader}>
-                        <Text style={styles.authorName} numberOfLines={1} ellipsizeMode="tail">
-                            {item.author.name} ({item.author.role})
+                        <Text style={styles.authorName} numberOfLines={1}>
+                            {item.mentorId.firstName} {item.mentorId.lastName} ({item.mentorId.role})
                         </Text>
-                        {item.status === "UNREAD" && <View style={styles.unreadDot} />}
                     </View>
 
-                    <Text style={styles.commentText}>{item.content}</Text>
+                    <Text style={styles.commentText}>{item.text}</Text>
 
                     <View style={styles.footerRow}>
                         <View style={styles.actionIcons}>
-                            <TouchableOpacity style={styles.iconButton} onPress={() => handleCall("+1234567890")}>
+                            <TouchableOpacity style={styles.iconButton}>
                                 <Ionicons name="call-outline" size={18} color="#FFFFFF" />
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.iconButton}
-                                onPress={() => handleMessage(item.author.id)}
-                            >
+
+                            <TouchableOpacity style={styles.iconButton}>
                                 <Ionicons name="chatbubble-outline" size={18} color="#FFFFFF" />
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.iconButton}
-                                onPress={() => handleEmail("user@example.com")}
-                            >
+
+                            <TouchableOpacity style={styles.iconButton}>
                                 <Ionicons name="mail-outline" size={18} color="#FFFFFF" />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.iconButton}
-                                onPress={() => handleWhatsApp("+1234567890")}
-                            >
-                                <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" />
                             </TouchableOpacity>
                         </View>
 
-                        <Text style={styles.timestamp}>{formatTimestamp(item.timestamp)}</Text>
+                        <Text style={styles.timestamp}>
+                            {formatTimestamp(item.addedDate)}
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -128,11 +108,10 @@ export default function CommentsScreen() {
                     <TouchableOpacity onPress={() => router.back()}>
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
+
                     <View style={styles.headerTextWrapper}>
                         <Text style={styles.headerTitle}>Comments</Text>
-                        <Text style={styles.headerSubtitle}>
-                            Revitalization Roadmap  &gt; {task?.title}
-                        </Text>
+                        <Text style={styles.headerSubtitle}>Revitalization Roadmap</Text>
                     </View>
                 </View>
             </View>
@@ -140,12 +119,14 @@ export default function CommentsScreen() {
             <FlatList
                 data={comments}
                 renderItem={renderComment}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item._id}
                 contentContainerStyle={styles.listContainer}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>No comments yet</Text>
+                        <Text style={styles.emptyText}>
+                            {isLoading ? "Loading..." : "No comments yet"}
+                        </Text>
                     </View>
                 }
             />

@@ -26,7 +26,7 @@ export default function LoginFormScreen() {
     const { mutate: login, isPending: isLoading, error } = useLogin();
 
     // Form state
-    const [email, setEmail] = useState(interestData?.email || 'hipyvide@forexzig.com');
+    const [email, setEmail] = useState(interestData?.email || (__DEV__ ? 'hipyvide@forexzig.com' : ''));
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 

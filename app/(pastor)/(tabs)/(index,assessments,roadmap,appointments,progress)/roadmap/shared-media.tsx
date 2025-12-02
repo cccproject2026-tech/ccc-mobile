@@ -1,20 +1,27 @@
 import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import TopBar from '@/components/director/TopBar';
-import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
+
+import {
+    useDeleteRoadmapDocument,
+    useRoadmapDocuments
+} from '@/hooks/roadmaps/useRoadmaps';
 import { mockRevitalization } from '@/lib/roadmap/mock';
 import { getTask } from '@/lib/roadmap/selectors';
+import { useAuthStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
+    Alert,
     Dimensions,
+    Image,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -23,8 +30,53 @@ const CONTAINER_PADDING = 16;
 const GAP = 12;
 const imageWidth = (width - (PADDING * 2) - (CONTAINER_PADDING * 2) - GAP) / 2;
 
+// Shape of each flattened document item from useRoadmapDocuments
+type RoadmapMedia = {
+    _id: string;
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSize: number;
+    uploadedAt?: string;
+    extraName?: string;
+    uploadBatchId?: string;
+};
+
 export default function ShareMedia() {
-    const { progress } = useRoadmapProgress();
+    const { user } = useAuthStore();
+
+    const { taskId, extraName, roadMapId, nestedId } =
+        useLocalSearchParams<{
+            taskId?: string;
+            extraName?: string;
+            roadMapId?: string;
+            nestedId?: string;
+        }>();
+
+    const deleteDocument = useDeleteRoadmapDocument();
+
+    // Fetch all documents for this roadmap item + extraName
+    const { data: docs = [] } = useRoadmapDocuments(
+        roadMapId,
+        nestedId,
+        user?.id,
+        extraName
+    ) as { data: RoadmapMedia[] | undefined } as any;
+
+    interface RoadmapMedia {
+        _id: string;
+        fileName: string;
+        fileUrl: string;
+        fileType: string;
+        fileSize: number;
+        uploadedAt?: string;
+        extraName?: string;
+        uploadBatchId?: string;
+    }
+
+    const photos: RoadmapMedia[] = (docs || []).filter((f: RoadmapMedia) => f.fileType?.startsWith('image/'));
+    const videos: RoadmapMedia[] = (docs || []).filter((f: RoadmapMedia) => f.fileType?.startsWith('video/'));
+
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
     const [selectedOutcome, setSelectedOutcome] = useState('');
@@ -32,58 +84,20 @@ export default function ShareMedia() {
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
-    const { taskId } = useLocalSearchParams<{ mediaId?: string; taskId?: string }>();
+    const currentMedia: RoadmapMedia[] = activeTab === 'photos' ? photos : videos;
 
     const taskTitle = useMemo(() => {
-        if (!taskId) return 'Complete a Community Engagement Project';
+        if (!taskId) return 'Shared Media';
+
         try {
             const task = getTask(mockRevitalization, taskId);
-            return task?.title || 'Complete a Community Engagement Project';
+            return task?.title || 'Shared Media';
         } catch {
-            return 'Complete a Community Engagement Project';
+            return 'Shared Media';
         }
     }, [taskId]);
 
-    const mockPhotos = [
-        { id: '1', uri: 'book-nature', date: '20 Oct 2024' },
-        { id: '2', uri: 'hands-praying', date: '20 Oct 2024' },
-        { id: '3', uri: 'hands-praying-2', date: '20 Oct 2024' },
-        { id: '4', uri: 'book-nature-2', date: '20 Oct 2024' },
-        { id: '5', uri: 'book-nature-3', date: '20 Oct 2024' },
-        { id: '6', uri: 'hands-praying-3', date: '20 Oct 2024' },
-    ];
-
-    const mockVideos = [
-        { id: '1', uri: 'video-thumbnail', date: '20 Oct 2024' },
-        { id: '2', uri: 'video-thumbnail-2', date: '20 Oct 2024' },
-    ];
-
-    const currentMedia = activeTab === 'photos' ? mockPhotos : mockVideos;
-
-    const toggleSelectionMode = useCallback(() => {
-        setSelectionMode(!selectionMode);
-        if (selectionMode) setSelectedItems(new Set());
-    }, [selectionMode]);
-
-    const toggleItemSelection = useCallback((id: string) => {
-        setSelectedItems(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(id)) newSet.delete(id);
-            else newSet.add(id);
-            return newSet;
-        });
-    }, []);
-
-    const selectAll = useCallback(() => {
-        setSelectedItems(new Set(currentMedia.map(item => item.id)));
-    }, [currentMedia]);
-
-    const deleteSelected = useCallback(() => {
-        console.log('Delete selected items:', Array.from(selectedItems));
-        setSelectedItems(new Set());
-        setSelectionMode(false);
-    }, [selectedItems]);
-
+    // ---------------- OUTCOME MENU + DATA (restored) ----------------
     const outcomeMenuItems = useCallback((): MenuItem[] => [
         {
             id: 'outcome-4-months',
@@ -132,32 +146,99 @@ export default function ShareMedia() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
+    // ---------------- SELECTION HANDLERS ----------------
+
+    const toggleSelectionMode = useCallback(() => {
+        setSelectionMode(prev => {
+            if (prev) {
+                // turning OFF → clear selection
+                setSelectedItems(new Set());
+            }
+            return !prev;
+        });
+    }, []);
+
+    const toggleItemSelection = useCallback((id: string) => {
+        setSelectedItems(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) newSet.delete(id);
+            else newSet.add(id);
+            return newSet;
+        });
+    }, []);
+
+    const selectAll = useCallback(() => {
+        setSelectedItems(new Set(currentMedia.map(item => item._id)));
+    }, [currentMedia]);
+
+    const deleteSelected = useCallback(() => {
+        if (!roadMapId || !nestedId || !user?.id) return;
+
+        Alert.alert(
+            'Delete Items',
+            'Are you sure you want to delete the selected items?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => {
+                        currentMedia.forEach(m => {
+                            if (selectedItems.has(m._id)) {
+                                deleteDocument.mutate({
+                                    roadMapId,
+                                    nestedId,
+                                    userId: user.id,
+                                    fileUrl: m.fileUrl,
+                                    extraName: extraName as string,
+                                });
+                            }
+                        });
+                        setSelectionMode(false);
+                        setSelectedItems(new Set());
+                    },
+                },
+            ]
+        );
+    }, [selectedItems, currentMedia, deleteDocument, roadMapId, nestedId, user?.id, extraName]);
+
+    // ---------------- RENDER MEDIA ITEM ----------------
+
     const renderMediaItem = useCallback(
-        ({ item, index }: { item: typeof mockPhotos[0]; index: number }) => {
-            const isSelected = selectedItems.has(item.id);
+        ({ item, index }: { item: RoadmapMedia; index: number }) => {
+            const isSelected = selectedItems.has(item._id);
             const isRightColumn = index % 2 === 1;
 
             return (
                 <TouchableOpacity
-                    onPress={() => selectionMode && toggleItemSelection(item.id)}
+                    onPress={() => selectionMode && toggleItemSelection(item._id)}
                     onLongPress={() => {
                         if (!selectionMode) {
                             setSelectionMode(true);
-                            toggleItemSelection(item.id);
+                            toggleItemSelection(item._id);
                         }
                     }}
-                    style={[{ width: imageWidth, marginLeft: isRightColumn ? GAP : 0 }]}
+                    style={{ width: imageWidth, marginLeft: isRightColumn ? GAP : 0 }}
                 >
                     <View style={styles.mediaItemWrapper}>
-                        <View style={[styles.thumbnail, { width: imageWidth }]}>
-                            {activeTab === 'videos' && (
+                        {/* IMAGE thumbnail */}
+                        {item.fileType.startsWith('image/') && (
+                            <Image
+                                source={{ uri: item.fileUrl }}
+                                style={[styles.thumbnail, { width: imageWidth }]}
+                            />
+                        )}
+
+                        {/* VIDEO thumbnail (gray box + play icon only, no actual player) */}
+                        {item.fileType.startsWith('video/') && (
+                            <View style={[styles.thumbnail, { width: imageWidth }]}>
                                 <View style={styles.playIconWrapper}>
                                     <View style={styles.playIconCircle}>
                                         <Ionicons name="play" size={32} color="#1D548D" />
                                     </View>
                                 </View>
-                            )}
-                        </View>
+                            </View>
+                        )}
 
                         {selectionMode && (
                             <View style={styles.checkboxWrapper}>
@@ -167,63 +248,82 @@ export default function ShareMedia() {
                                         isSelected ? styles.checkboxSelected : styles.checkboxUnselected,
                                     ]}
                                 >
-                                    {isSelected && <Ionicons name="checkmark" size={18} color="#1D548D" />}
+                                    {isSelected && (
+                                        <Ionicons name="checkmark" size={18} color="#1D548D" />
+                                    )}
                                 </View>
                             </View>
                         )}
                     </View>
-                    <Text style={styles.mediaDate}>{item.date}</Text>
+
+                    <Text style={styles.mediaDate}>
+                        {item.uploadedAt
+                            ? new Date(item.uploadedAt).toLocaleDateString()
+                            : ''}
+                    </Text>
                 </TouchableOpacity>
             );
         },
-        [activeTab, selectionMode, selectedItems, toggleItemSelection]
+        [selectionMode, selectedItems, toggleItemSelection]
     );
 
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                {/* Top Bar */}
                 <View style={styles.topBarWrapper}>
                     <TopBar role="pastor" userName="John Ross" showUserName />
                 </View>
 
+                {/* Header */}
                 <View style={styles.headerContainer}>
                     <View style={styles.headerRow}>
                         <TouchableOpacity onPress={() => router.back()}>
                             <Ionicons name="chevron-back" size={28} color="#fff" />
                         </TouchableOpacity>
+
                         <View style={styles.headerTextContainer}>
                             <Text style={styles.headerTitle}>{taskTitle}</Text>
-                            <Text style={styles.headerSubtitle}>Phase 2</Text>
+                            <Text style={styles.headerSubtitle}>Shared Media</Text>
                         </View>
                     </View>
+
                     <TouchableOpacity onPress={() => setShowOutcomeMenu(true)}>
                         <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
                     </TouchableOpacity>
                 </View>
 
+                {/* Tabs */}
                 <View style={styles.section}>
                     <View style={styles.sharedMediaBox}>
-                        <Text style={styles.sharedMediaTitle}>Shared Media</Text>
+                        <Text style={styles.sharedMediaTitle}>{extraName}</Text>
                     </View>
 
                     <View style={styles.tabRow}>
-                        {['photos', 'videos'].map(tab => (
+                        {(['photos', 'videos'] as const).map(tab => (
                             <TouchableOpacity
                                 key={tab}
                                 onPress={() => {
-                                    setActiveTab(tab as 'photos' | 'videos');
+                                    setActiveTab(tab);
                                     setSelectionMode(false);
                                     setSelectedItems(new Set());
                                 }}
                                 style={[
                                     styles.tabButton,
-                                    activeTab === tab ? styles.tabButtonActive : styles.tabButtonInactive,
+                                    activeTab === tab
+                                        ? styles.tabButtonActive
+                                        : styles.tabButtonInactive,
                                 ]}
                             >
                                 <Text
                                     style={[
                                         styles.tabButtonText,
-                                        activeTab === tab ? styles.tabTextActive : styles.tabTextInactive,
+                                        activeTab === tab
+                                            ? styles.tabTextActive
+                                            : styles.tabTextInactive,
                                     ]}
                                 >
                                     {tab === 'photos' ? 'Photos' : 'Videos'}
@@ -233,60 +333,96 @@ export default function ShareMedia() {
                     </View>
                 </View>
 
+                {/* Media Grid */}
                 <View style={styles.mediaContainer}>
                     <View style={styles.mediaBorderBox}>
+                        {/* Selection Header */}
                         {selectionMode && (
-                            <View style={styles.selectionHeader}>
-                                <View style={styles.selectionHeaderLeft}>
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setSelectionMode(false);
-                                            setSelectedItems(new Set());
-                                        }}
-                                        style={styles.closeIcon}
-                                    >
-                                        <Ionicons name="close" size={24} color="#fff" />
-                                    </TouchableOpacity>
-                                    <Text style={styles.selectionText}>
-                                        {selectedItems.size > 0 ? `${selectedItems.size} ` : ''}Selected Items
-                                    </Text>
+                            <>
+                                <View style={styles.selectionHeader}>
+                                    <View style={styles.selectionHeaderLeft}>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setSelectionMode(false);
+                                                setSelectedItems(new Set());
+                                            }}
+                                            style={styles.closeIcon}
+                                        >
+                                            <Ionicons name="close" size={24} color="#fff" />
+                                        </TouchableOpacity>
+
+                                        <Text style={styles.selectionText}>
+                                            {selectedItems.size > 0
+                                                ? `${selectedItems.size} `
+                                                : ''}
+                                            Selected Items
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.selectionHeaderRight}>
+                                        <TouchableOpacity onPress={deleteSelected}>
+                                            <Ionicons
+                                                name="trash-outline"
+                                                size={24}
+                                                color="#fff"
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
 
-                                <View style={styles.selectionHeaderRight}>
-                                    <TouchableOpacity onPress={deleteSelected}>
-                                        <Ionicons name="trash-outline" size={24} color="#fff" />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => setShowOutcomeMenu(true)}>
-                                        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
+                                <TouchableOpacity
+                                    onPress={selectAll}
+                                    style={styles.selectAllButton}
+                                >
+                                    <Text style={styles.selectAllText}>Select all</Text>
+                                </TouchableOpacity>
+                            </>
                         )}
 
-                        {selectionMode && (
-                            <TouchableOpacity onPress={selectAll} style={styles.selectAllButton}>
-                                <Text style={styles.selectAllText}>Select all</Text>
-                            </TouchableOpacity>
+                        {/* Empty state */}
+                        {currentMedia.length === 0 && (
+                            <Text
+                                style={{
+                                    color: '#fff',
+                                    textAlign: 'center',
+                                    marginTop: 20,
+                                }}
+                            >
+                                No {activeTab} uploaded yet.
+                            </Text>
                         )}
 
-                        {currentMedia.reduce((rows: any[][], item, index) => {
-                            if (index % 2 === 0) rows.push([item]);
-                            else rows[rows.length - 1].push(item);
-                            return rows;
-                        }, []).map((row, rowIndex) => (
-                            <View key={rowIndex} style={styles.mediaRow}>
-                                {row.map((item, colIndex) => {
-                                    const index = rowIndex * 2 + colIndex;
-                                    return <View key={item.id}>{renderMediaItem({ item, index })}</View>;
-                                })}
-                                {row.length === 1 && <View style={{ width: imageWidth }} />}
-                            </View>
-                        ))}
+                        {/* Media Grid */}
+                        {currentMedia.length > 0 &&
+                            currentMedia
+                                .reduce<RoadmapMedia[][]>((rows, item, index) => {
+                                    if (index % 2 === 0) rows.push([item]);
+                                    else rows[rows.length - 1].push(item);
+                                    return rows;
+                                }, [])
+                                .map((row, rowIndex) => (
+                                    <View key={rowIndex} style={styles.mediaRow}>
+                                        {row.map((item, colIndex) => {
+                                            const index = rowIndex * 2 + colIndex;
+                                            return (
+                                                <View key={item._id}>
+                                                    {renderMediaItem({ item, index })}
+                                                </View>
+                                            );
+                                        })}
+                                        {row.length === 1 && (
+                                            <View style={{ width: imageWidth }} />
+                                        )}
+                                    </View>
+                                ))}
                     </View>
 
-                    {!selectionMode && (
+                    {!selectionMode && currentMedia.length > 0 && (
                         <View style={styles.selectionToggleWrapper}>
-                            <TouchableOpacity onPress={toggleSelectionMode} style={styles.selectionToggleButton}>
+                            <TouchableOpacity
+                                onPress={toggleSelectionMode}
+                                style={styles.selectionToggleButton}
+                            >
                                 <Ionicons name="checkmark" size={20} color="#1D548D" />
                             </TouchableOpacity>
                         </View>
@@ -294,6 +430,7 @@ export default function ShareMedia() {
                 </View>
             </ScrollView>
 
+            {/* Context Menu – full outcome menu restored */}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={outcomeMenuItems()}
@@ -301,9 +438,9 @@ export default function ShareMedia() {
                 position={{ top: 60, right: 16 }}
                 minWidth={280}
                 showIcons={false}
-                itemTextStyle={{ fontSize: 15, fontWeight: '500', color: '#1A4882' }}
             />
 
+            {/* Outcome Modal – full behaviour restored */}
             <ExpectedOutcomeModal
                 visible={showOutcomeModal}
                 onClose={() => setShowOutcomeModal(false)}

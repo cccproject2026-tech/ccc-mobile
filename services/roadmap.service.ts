@@ -5,7 +5,9 @@ import {
     CreateExtrasDto,
     ExtrasApiResponse,
     GetExtrasResponse,
+    GetQueriesResponse,
     Roadmap,
+    RoadmapCommentsThread,
     RoadmapResponse,
     SubmitQueryRequest,
     SubmitQueryResponse,
@@ -98,6 +100,7 @@ export const roadmapService = {
         return response.data;
     },
 
+
     async updateRoadmap(roadmapId: string, payload: UpdateRoadmapRequest) {
         console.log('📤 Updating roadmap:', { roadmapId, payload });
         const response = await apiClient.patch<UpdateRoadmapResponse>(
@@ -178,6 +181,62 @@ export const roadmapService = {
         }
 
         return response.data.data;
+    },
+
+    async uploadDocument(
+        roadMapId: string,
+        userId: string,
+        nestedRoadMapItemId: string,
+        extraName: string, // this becomes ?name=<fieldName>
+        file: any
+    ) {
+        const formData = new FormData();
+
+        // Field name must be "files" because of FilesInterceptor('files')
+        formData.append("files", {
+            uri: file.uri,
+            name: file.name,
+            type: file.type,
+        } as any);
+
+        const url =
+            `/roadmaps/${roadMapId}/extras/documents` +
+            `?userId=${userId}` +
+            `&nestedRoadMapItemId=${nestedRoadMapItemId}` +
+            `&name=${encodeURIComponent(extraName)}`;
+
+        const response = await apiClient.post(url, formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        if (!response.data.success) {
+            throw new Error(response.data.message || "File upload failed");
+        }
+
+        return response.data;
+    },
+
+
+    async getRoadmapDocuments(roadMapId: string, userId: string, nestedId: string) {
+        const url =
+            `/roadmaps/${roadMapId}/extras/documents?userId=${userId}&nestedRoadMapItemId=${nestedId}`;
+
+
+        const response = await apiClient.get(url);
+        console.log("Fetched roadmap documents:", response.data);
+        return response.data; // { success: true, documents: [...] }
+    },
+
+    async deleteRoadmapDocument(roadMapId: string, userId: string, nestedId: string, fileUrl: string) {
+        const url =
+            `/roadmaps/${roadMapId}/extras/documents` +
+            `?userId=${userId}` +
+            `&nestedRoadMapItemId=${nestedId}` +
+            `&fileUrl=${encodeURIComponent(fileUrl)}`;
+
+        console.log('Deleting roadmap document with URL:', url);
+        const response = await apiClient.delete(url);
+        return response.data;
     },
 
     async createRoadmapExtras(payload: CreateExtrasDto) {
@@ -267,7 +326,7 @@ export const roadmapService = {
     async submitRoadmapQuery(roadmapId: string, payload: SubmitQueryRequest) {
         console.log('📤 Submitting roadmap query:', { roadmapId, payload });
         const response = await apiClient.post<SubmitQueryResponse>(
-            ENDPOINTS.ROADMAPS.SUBMIT_QUERY(roadmapId),
+            ENDPOINTS.ROADMAPS.SUBMIT_QUERY(roadmapId, payload.userId),
             payload
         );
         if (!response.data.success) {
@@ -275,6 +334,18 @@ export const roadmapService = {
         }
         console.log('📥 Query submitted successfully:', response.data);
         return response.data;
+    },
+
+    async getRoadmapQueries(roadmapId: string, userId: string) {
+        const response = await apiClient.get<GetQueriesResponse>(
+            ENDPOINTS.ROADMAPS.GET_QUERIES(roadmapId, userId)
+        );
+
+        if (!response.data.success) {
+            throw new Error(response.data.message || "Failed to fetch queries");
+        }
+
+        return response.data.data;
     },
 
     async createNestedRoadmap(roadmapId: string, payload: CreateNestedRoadmapRequest) {
@@ -289,4 +360,13 @@ export const roadmapService = {
         console.log('📥 Nested roadmap created successfully:', response.data);
         return response.data;
     },
+
+    async getRoadmapComments(roadMapId: string, userId: string) {
+        const url = `/roadmaps/${roadMapId}/comments?userId=${userId}`;
+        console.log('Fetching roadmap comments with URL:', url);
+        const res = await apiClient.get(url);
+
+        return res.data.data as RoadmapCommentsThread;
+    }
+
 };

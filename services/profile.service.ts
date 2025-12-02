@@ -146,4 +146,21 @@ export const profileService = {
 
         console.log('✅ Document deleted successfully');
     },
+
+    getNotifications: async (userId: string): Promise<any[]> => {
+        console.log("📤 Fetching notifications for user:", userId);
+
+        const response = await apiClient.get<{
+            success: boolean;
+            data: {
+                notifications: any[];
+            };
+        }>(ENDPOINTS.USERS.GET_NOTIFICATIONS(userId));
+
+        const notifications = response.data.data?.notifications || [];
+
+        console.log("📥 Notifications fetched:", notifications);
+
+        return notifications;
+    },
 };

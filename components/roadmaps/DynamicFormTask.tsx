@@ -1086,15 +1086,33 @@
 
 
 // components/roadmaps/DynamicFormTask.tsx
-import SimpleSuccessModal from '@/components/atom/SimpleSuccessModal';
-import { useCreateRoadmapExtras, useRoadmapExtras, useUpdateRoadmapExtras } from '@/hooks/roadmaps/useRoadmaps';
-import { Extra, NestedRoadmap } from '@/lib/roadmap/types';
-import { useAuthStore } from '@/stores';
-import { Ionicons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
+import {
+    useCreateRoadmapExtras,
+    useDeleteRoadmapDocument,
+    useRoadmapDocuments,
+    useRoadmapExtras,
+    useUpdateRoadmapExtras,
+    useUploadRoadmapDocument,
+} from "@/hooks/roadmaps/useRoadmaps";
+
+import { Extra, NestedRoadmap } from "@/lib/roadmap/types";
+import { useAuthStore } from "@/stores";
+import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import { useRouter } from "expo-router";
+import { JSX, useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    Linking,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from "react-native";
 
 interface Props {
     task: NestedRoadmap;
@@ -1107,48 +1125,42 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
     const { user } = useAuthStore();
 
     const [formData, setFormData] = useState<Record<string, any>>({});
+    const [pendingFiles, setPendingFiles] = useState<Record<string, any[]>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-    // Validate MongoDB ObjectId format
-    const isValidObjectId = (id: string | undefined) => {
-        if (!id) return false;
-        return /^[0-9a-fA-F]{24}$/.test(id);
-    };
+    const isValidObjectId = (id: string | undefined) =>
+        !!id && /^[0-9a-fA-F]{24}$/.test(id);
 
-    // Fetch existing extras data
+    /** Load existing extras from API */
     const { data: existingExtras, isLoading: isLoadingExtras } = useRoadmapExtras(
         isValidObjectId(roadmapId) ? roadmapId : undefined,
         isValidObjectId(itemId) ? itemId : undefined,
         isValidObjectId(user?.id) ? user?.id : undefined
     );
 
-    // Mutations
     const createExtras = useCreateRoadmapExtras();
     const updateExtras = useUpdateRoadmapExtras();
+    const uploadDocument = useUploadRoadmapDocument();
+    const deleteDocument = useDeleteRoadmapDocument();
 
-    // Determine if this is update mode
     const isUpdateMode = !!existingExtras;
 
-    // Initialize form data
+    /** Initialise formData from API or default dates */
     useEffect(() => {
         if (existingExtras?.extras && Array.isArray(existingExtras.extras)) {
-            const loadedData: Record<string, any> = {};
+            const loaded: Record<string, any> = {};
             existingExtras.extras.forEach((item: any) => {
                 if (item.name && item.value !== undefined) {
-                    loadedData[item.name] = item.value;
+                    loaded[item.name] = item.value;
                 }
             });
-            console.log('📥 Loaded existing data:', loadedData);
-            setFormData(loadedData);
+            setFormData(loaded);
         } else {
-            const initialData: Record<string, any> = {};
+            const init: Record<string, any> = {};
             task.extras?.forEach(extra => {
-                if (extra.date) {
-                    initialData[extra.name] = extra.date;
-                }
+                if (extra.date) init[extra.name] = extra.date;
             });
-            console.log('🆕 Using default data:', initialData);
-            setFormData(initialData);
+            setFormData(init);
         }
     }, [existingExtras, task]);
 
@@ -1156,63 +1168,46 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
         setFormData(prev => ({ ...prev, [fieldName]: value }));
     };
 
-    // Validate form - allow partial submissions
-    const validateForm = (): boolean => {
-        // Just check if there's at least some data filled in
-        const hasData = Object.keys(formData).length > 0;
+    const validateForm = () => Object.keys(formData).length > 0;
 
-        if (!hasData) {
-            Alert.alert(
-                'No Data',
-                'Please fill in at least one field before saving progress'
-            );
-            return false;
-        }
-
-        return true;
-    };
-
-    // Helper to get the correct type for each field
+    /** Infer extra type – used when building payload */
     const getExtraType = (fieldName: string, value: any): string => {
         const extraDef = task.extras?.find(e => e.name === fieldName);
+        if (extraDef) return extraDef.type;
 
-        if (extraDef) {
-            return extraDef.type;
-        }
-
-        // Fallback to inferring from value
-        if (typeof value === 'boolean') return 'CHECKBOX';
-        if (typeof value === 'object' && value.uri) return 'UPLOAD';
-        if (fieldName.toLowerCase().includes('date')) return 'DATE_PICKER';
-        if (typeof value === 'string' && value.length > 100) return 'TEXT_AREA';
-        return 'TEXT_FIELD';
+        if (typeof value === "boolean") return "CHECKBOX";
+        if (typeof value === "object" && value?.uri) return "UPLOAD";
+        if (fieldName.toLowerCase().includes("date")) return "DATE_PICKER";
+        if (typeof value === "string" && value.length > 100) return "TEXT_AREA";
+        return "TEXT_FIELD";
     };
 
+    /** Save progress – text extras + pending file uploads */
     const handleSubmit = async () => {
         if (!validateForm()) {
+            Alert.alert("No Data", "Please fill in at least one field before saving progress");
             return;
         }
-
         if (!user?.id) {
-            Alert.alert('Error', 'User not authenticated');
+            Alert.alert("Error", "User not authenticated");
             return;
         }
 
         try {
-            const extrasArray = Object.entries(formData).map(([name, value]) => ({
-                type: getExtraType(name, value),
-                name: name,
-                value: value,
-            }));
-
-            console.log('📤 Submitting extras:', extrasArray);
+            // 1️⃣ Build extras payload (including upload fields as boolean flags)
+            const extrasArray = Object.entries(formData).map(([name, value]) => {
+                const type = getExtraType(name, value);
+                return {
+                    type,
+                    name,
+                    value: type === "UPLOAD" ? true : value,
+                };
+            });
 
             if (isUpdateMode) {
                 await updateExtras.mutateAsync({
                     roadMapId: roadmapId!,
-                    payload: {
-                        extras: extrasArray,
-                    },
+                    payload: { extras: extrasArray },
                     userId: user.id,
                     nestedRoadMapItemId: itemId,
                 });
@@ -1225,42 +1220,234 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 });
             }
 
+            // 2️⃣ Upload each pending file batch
+            for (const [extraName, files] of Object.entries(pendingFiles)) {
+                for (const file of files) {
+                    await uploadDocument.mutateAsync({
+                        roadMapId: roadmapId!,
+                        userId: user.id,
+                        nestedRoadMapItemId: itemId!,
+                        extraName,
+                        file,
+                    });
+                }
+            }
+
             setShowSuccessModal(true);
             setTimeout(() => {
                 setShowSuccessModal(false);
                 router.back();
-            }, 2000);
-
-        } catch (error: any) {
-            console.error('❌ Submission error:', error);
-            Alert.alert(
-                'Submission Failed',
-                error.message || 'Failed to submit. Please try again.'
-            );
+            }, 1800);
+        } catch (err: any) {
+            console.error("❌ Submission error:", err);
+            Alert.alert("Submission Failed", err?.message || "Failed to submit. Please try again.");
         }
     };
 
-    const renderExtra = (extra: Extra, index: number) => {
-        const fieldId = `${extra.name}-${index}`;
+    /** ───────────────────── UPLOAD FIELD ───────────────────── */
+
+    const UploadField = ({ extraName }: { extraName: string }) => {
+        const { data: docs = [], isLoading } = useRoadmapDocuments(
+            roadmapId!,
+            itemId!,
+            user!.id,
+            extraName
+        );
+
+        // Heuristic: treat as media upload if name hints at image/video/media
+        const isMediaUpload =
+            extraName.toLowerCase().includes("image") ||
+            extraName.toLowerCase().includes("video") ||
+            extraName.toLowerCase().includes("photo") ||
+            extraName.toLowerCase().includes("media");
+
+        const confirmDelete = (doc: any) => {
+            Alert.alert(
+                "Delete Document",
+                `Are you sure you want to delete "${decodeURIComponent(doc.fileName)}"?`,
+                [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () => {
+                            deleteDocument.mutate({
+                                roadMapId: roadmapId!,
+                                userId: user!.id,
+                                nestedId: itemId!,
+                                fileUrl: doc.fileUrl,
+                                extraName,
+                            });
+                        },
+                    },
+                ]
+            );
+        };
+
+        const pickFile = async () => {
+            const res = await DocumentPicker.getDocumentAsync({
+                type: "*/*",
+                multiple: true, // ✅ support multiple like old version
+            });
+            if (res.canceled) return;
+
+            const newFiles = res.assets.map(a => ({
+                id: `${a.name}-${Date.now()}`,
+                uri: a.uri,
+                name: a.name,
+                type: a.mimeType,
+                size: a.size,
+            }));
+
+            setPendingFiles(prev => ({
+                ...prev,
+                [extraName]: [...(prev[extraName] || []), ...newFiles],
+            }));
+        };
+
+        const deletePendingLocal = (fileId: string) => {
+            setPendingFiles(prev => ({
+                ...prev,
+                [extraName]: prev[extraName]?.filter(f => f.id !== fileId) || [],
+            }));
+        };
+
+        const hasServerFiles = docs.length > 0;
+        const hasPendingFiles = (pendingFiles[extraName]?.length ?? 0) > 0;
+
+        // Match old button label logic
+        const buttonText = isMediaUpload
+            ? hasServerFiles || hasPendingFiles
+                ? "Re-Submit"
+                : extraName
+            : hasServerFiles || hasPendingFiles
+                ? "Upload New Strategy"
+                : extraName;
+
+        return (
+            <View style={{ marginBottom: 20 }}>
+                {/* Loading */}
+                {isLoading ? (
+                    <ActivityIndicator color="#fff" style={{ marginTop: 8 }} />
+                ) : (
+                    hasServerFiles && (
+                        <View style={[styles.uploadedFilesContainer]}>
+
+                            {/* Only for NON-media uploads */}
+                            {!isMediaUpload && (
+                                <Text style={styles.uploadedFilesLabel}>You Uploaded :</Text>
+                            )}
+
+                            {/* --- MEDIA UPLOAD FIELD: Show ONE "View Shared Media" --- */}
+                            {isMediaUpload ? (
+                                <Pressable
+                                    onPress={() =>
+                                        router.push({
+                                            pathname: "/roadmap/shared-media",
+                                            params: {
+                                                taskId: task._id,
+                                                extraName: extraName,
+                                                roadMapId: roadmapId!,
+                                                nestedId: itemId,
+                                            },
+                                        })
+                                    }
+                                    style={{ alignItems: "center", width: "100%", paddingVertical: 6 }}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.fileName,
+                                            { textDecorationLine: "underline", textAlign: "center" },
+                                        ]}
+                                    >
+                                        View Shared Media
+                                    </Text>
+                                </Pressable>
+                            ) : (
+                                /* --- NORMAL FILES: Show each file --- */
+                                docs.map((doc: any) => (
+                                    <View key={doc._id} style={styles.fileRow}>
+                                        <Pressable
+                                            onPress={() => Linking.openURL(doc.fileUrl)}
+                                            style={{ flex: 1 }}
+                                        >
+                                            <Text style={styles.fileName}>
+                                                : {decodeURIComponent(doc.fileName)}
+                                            </Text>
+                                        </Pressable>
+
+                                        {/* If you enable delete later */}
+                                        {/* <Pressable
+                                onPress={() => confirmDelete(doc)}
+                                style={styles.removeIconWrapper}
+                            >
+                                <Ionicons name="trash" size={20} color="#ef4444" />
+                            </Pressable> */}
+                                    </View>
+                                ))
+                            )}
+                        </View>
+                    )
+                )}
+
+                {/* Pending (not yet uploaded) files */}
+                {hasPendingFiles &&
+                    pendingFiles[extraName]?.map((f) => (
+                        <View
+                            key={f.id}
+                            style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}
+                        >
+                            <Text style={{ color: "white", flex: 1 }}>• {f.name} (pending)</Text>
+
+                            <Pressable onPress={() => deletePendingLocal(f.id)}>
+                                <Ionicons name="close-circle" size={20} color="#ef4444" />
+                            </Pressable>
+                        </View>
+                    ))}
+
+                {/* Upload button */}
+                <Pressable
+                    style={[styles.uploadButton, styles.uploadButtonWhite]}
+                    onPress={pickFile}
+                >
+                    <Ionicons name="attach" size={22} color="#2563eb" />
+                    <Text style={styles.uploadButtonText}>{buttonText}</Text>
+                </Pressable>
+            </View>
+
+        );
+    };
+
+    /** ───────────────────── RENDER FIELDS ───────────────────── */
+
+    const renderExtra = (extra: Extra, index: number): JSX.Element | null => {
+        const id = `${extra.name}-${index}`;
 
         switch (extra.type) {
-            case 'TEXT_FIELD':
+            case "UPLOAD":
                 return (
-                    <View key={fieldId} style={styles.fieldContainer}>
+                    <View key={id} style={styles.fieldContainer}>
+                        <UploadField extraName={extra.name} />
+                    </View>
+                );
+
+            case "TEXT_FIELD":
+                return (
+                    <View key={id} style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>{extra.name}</Text>
                         <TextInput
                             style={styles.textInput}
                             placeholder={extra.placeHolder}
                             placeholderTextColor="#9cc2ff"
-                            value={formData[extra.name] || ''}
+                            value={formData[extra.name] || ""}
                             onChangeText={v => handleChange(extra.name, v)}
                         />
                     </View>
                 );
 
-            case 'TEXT_AREA':
+            case "TEXT_AREA":
                 return (
-                    <View key={fieldId} style={styles.fieldContainer}>
+                    <View key={id} style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>{extra.name}</Text>
                         <TextInput
                             style={[styles.textInput, styles.textArea]}
@@ -1268,65 +1455,117 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                             placeholderTextColor="#9cc2ff"
                             multiline
                             numberOfLines={4}
-                            value={formData[extra.name] || ''}
+                            value={formData[extra.name] || ""}
                             onChangeText={v => handleChange(extra.name, v)}
                         />
                     </View>
                 );
 
-            case 'TEXT_DISPLAY':
+            case "TEXT_DISPLAY":
                 return (
-                    <View key={fieldId} style={styles.textDisplay}>
+                    <View key={id} style={styles.textDisplay}>
                         <Text style={styles.textDisplayText}>{extra.name}</Text>
                     </View>
                 );
 
-            case 'CHECKBOX':
+            case "CHECKBOX":
                 return (
-                    <View key={fieldId} style={styles.fieldContainer}>
+                    <View key={id} style={styles.fieldContainer}>
+                        {/* Parent checkbox */}
                         <Pressable
                             onPress={() => handleChange(extra.name, !formData[extra.name])}
                             style={styles.checkboxRow}
                         >
-                            <View style={[styles.checkbox, formData[extra.name] && styles.checkboxChecked]}>
-                                {formData[extra.name] && <Text style={styles.checkmark}>✓</Text>}
+                            <View
+                                style={[
+                                    styles.checkbox,
+                                    formData[extra.name] && styles.checkboxChecked,
+                                ]}
+                            >
+                                {formData[extra.name] && (
+                                    <Text style={styles.checkmark}>✓</Text>
+                                )}
                             </View>
                             <Text style={styles.checkboxLabel}>{extra.name}</Text>
                         </Pressable>
 
+                        {/* Sub-checkboxes */}
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginLeft: 36, marginTop: 8 }}>
                                 {extra.checkboxes.map((checkbox, cbIndex) => {
                                     const cbId = `${extra.name}-${cbIndex}`;
+                                    const isChecked = !!formData[cbId];
+
                                     return (
-                                        <Pressable
-                                            key={cbId}
-                                            onPress={() => handleChange(cbId, !formData[cbId])}
-                                            style={styles.checkboxRow}
-                                        >
-                                            <View style={[styles.checkbox, formData[cbId] && styles.checkboxChecked]}>
-                                                {formData[cbId] && <Text style={styles.checkmark}>✓</Text>}
-                                            </View>
-                                            <Text style={styles.checkboxLabel}>{checkbox.name}</Text>
-                                        </Pressable>
+                                        <View key={cbId} style={{ marginBottom: 6 }}>
+                                            <Pressable
+                                                onPress={() =>
+                                                    handleChange(cbId, !isChecked)
+                                                }
+                                                style={styles.checkboxRow}
+                                            >
+                                                <View
+                                                    style={[
+                                                        styles.checkbox,
+                                                        isChecked && styles.checkboxChecked,
+                                                    ]}
+                                                >
+                                                    {isChecked && (
+                                                        <Text style={styles.checkmark}>
+                                                            ✓
+                                                        </Text>
+                                                    )}
+                                                </View>
+                                                <Text style={styles.checkboxLabel}>
+                                                    {checkbox.name}
+                                                </Text>
+                                            </Pressable>
+
+                                            {checkbox.haveButton &&
+                                                checkbox.buttonName && (
+                                                    <Pressable
+                                                        style={styles.button}
+                                                        onPress={() =>
+                                                            console.log(
+                                                                "Button pressed",
+                                                                checkbox.buttonName
+                                                            )
+                                                        }
+                                                    >
+                                                        <Text style={styles.buttonText}>
+                                                            {checkbox.buttonName}
+                                                        </Text>
+                                                    </Pressable>
+                                                )}
+                                        </View>
                                     );
                                 })}
                             </View>
                         )}
 
+                        {/* Optional button on main checkbox */}
                         {extra.haveButton && extra.buttonName && (
-                            <Pressable style={styles.button} onPress={() => console.log('Button pressed')}>
-                                <Text style={styles.buttonText}>{extra.buttonName}</Text>
+                            <Pressable
+                                style={[styles.button, { marginTop: 8 }]}
+                                onPress={() =>
+                                    console.log("Button pressed", extra.buttonName)
+                                }
+                            >
+                                <Text style={styles.buttonText}>
+                                    {extra.buttonName}
+                                </Text>
                             </Pressable>
                         )}
                     </View>
                 );
 
-            case 'DATE_PICKER':
+            case "DATE_PICKER":
                 return (
-                    <View key={fieldId} style={styles.fieldContainer}>
+                    <View key={id} style={styles.fieldContainer}>
                         <View style={styles.fieldRow}>
-                            <Text style={[styles.fieldLabel, { marginBottom: 0, flex: 1 }]}>
+                            <Text
+                                style={[styles.fieldLabel, { marginBottom: 0, flex: 1 }]}
+                            >
                                 {extra.name}
                             </Text>
                             <View style={styles.dateInputContainer}>
@@ -1334,83 +1573,155 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                     style={styles.dateInput}
                                     placeholder="DD / MM / YY"
                                     placeholderTextColor="#9cc2ff"
-                                    value={formData[extra.name] || extra.date || ''}
+                                    value={formData[extra.name] || extra.date || ""}
                                     keyboardType="number-pad"
                                     maxLength={14}
                                     onChangeText={v => {
-                                        const raw = v.replace(/\D/g, '');
-                                        let formatted = '';
+                                        const raw = v.replace(/\D/g, "");
+                                        let formatted = "";
                                         if (raw.length >= 1) formatted = raw.slice(0, 2);
-                                        if (raw.length >= 3) formatted += ' / ' + raw.slice(2, 4);
-                                        if (raw.length >= 5) formatted += ' / ' + raw.slice(4, 6);
+                                        if (raw.length >= 3)
+                                            formatted += " / " + raw.slice(2, 4);
+                                        if (raw.length >= 5)
+                                            formatted += " / " + raw.slice(4, 6);
                                         handleChange(extra.name, formatted);
                                     }}
                                 />
                             </View>
                         </View>
 
+                        {/* Date-related checkboxes */}
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginTop: 12 }}>
                                 {extra.checkboxes.map((checkbox, cbIndex) => {
                                     const cbId = `${extra.name}-checkbox-${cbIndex}`;
+                                    const checked = !!formData[cbId];
+
                                     return (
-                                        <Pressable
-                                            key={cbId}
-                                            onPress={() => handleChange(cbId, !formData[cbId])}
-                                            style={styles.checkboxRow}
-                                        >
-                                            <View style={[styles.checkbox, formData[cbId] && styles.checkboxChecked]}>
-                                                {formData[cbId] && <Text style={styles.checkmark}>✓</Text>}
-                                            </View>
-                                            <Text style={styles.checkboxLabel}>{checkbox.name}</Text>
-                                        </Pressable>
-                                    );
-                                })}
-                            </View>
-                        )}
-
-                        {extra.buttonName && (
-                            <Pressable style={styles.button} onPress={() => console.log('Button pressed')}>
-                                <Text style={styles.buttonText}>{extra.buttonName}</Text>
-                            </Pressable>
-                        )}
-                    </View>
-                );
-
-            case 'SECTION':
-                return (
-                    <View key={fieldId} style={styles.sectionBox}>
-                        <Text style={styles.sectionBoxTitle}>{extra.name}</Text>
-
-                        {extra.checkboxes && extra.checkboxes.length > 0 && (
-                            <View>
-                                {extra.checkboxes.map((checkbox, cbIndex) => {
-                                    const cbId = `${extra.name}-checkbox-${cbIndex}`;
-                                    return (
-                                        <View key={cbId}>
+                                        <View key={cbId} style={{ marginBottom: 6 }}>
                                             <Pressable
-                                                onPress={() => handleChange(cbId, !formData[cbId])}
+                                                onPress={() =>
+                                                    handleChange(cbId, !checked)
+                                                }
                                                 style={styles.checkboxRow}
                                             >
-                                                <View style={[styles.checkbox, formData[cbId] && styles.checkboxChecked]}>
-                                                    {formData[cbId] && <Text style={styles.checkmark}>✓</Text>}
+                                                <View
+                                                    style={[
+                                                        styles.checkbox,
+                                                        checked && styles.checkboxChecked,
+                                                    ]}
+                                                >
+                                                    {checked && (
+                                                        <Text style={styles.checkmark}>
+                                                            ✓
+                                                        </Text>
+                                                    )}
                                                 </View>
-                                                <Text style={styles.checkboxLabel}>{checkbox.name}</Text>
+                                                <Text style={styles.checkboxLabel}>
+                                                    {checkbox.name}
+                                                </Text>
                                             </Pressable>
 
-                                            {checkbox.haveButton && checkbox.buttonName && (
-                                                <Pressable style={styles.button} onPress={() => console.log('Button pressed')}>
-                                                    <Text style={styles.buttonText}>{checkbox.buttonName}</Text>
-                                                </Pressable>
-                                            )}
+                                            {checkbox.haveButton &&
+                                                checkbox.buttonName && (
+                                                    <Pressable
+                                                        style={styles.button}
+                                                        onPress={() =>
+                                                            console.log(
+                                                                "Button pressed",
+                                                                checkbox.buttonName
+                                                            )
+                                                        }
+                                                    >
+                                                        <Text style={styles.buttonText}>
+                                                            {checkbox.buttonName}
+                                                        </Text>
+                                                    </Pressable>
+                                                )}
                                         </View>
                                     );
                                 })}
                             </View>
                         )}
 
+                        {/* Optional button under date picker */}
+                        {extra.buttonName && (
+                            <Pressable
+                                style={[styles.button, { marginTop: 8 }]}
+                                onPress={() =>
+                                    console.log("Button pressed", extra.buttonName)
+                                }
+                            >
+                                <Text style={styles.buttonText}>
+                                    {extra.buttonName}
+                                </Text>
+                            </Pressable>
+                        )}
+                    </View>
+                );
+
+            case "SECTION":
+                return (
+                    <View key={id} style={styles.sectionBox}>
+                        <Text style={styles.sectionBoxTitle}>{extra.name}</Text>
+
+                        {/* Section-level checkboxes */}
+                        {extra.checkboxes && extra.checkboxes.length > 0 && (
+                            <View style={{ marginTop: 8 }}>
+                                {extra.checkboxes.map((checkbox, cbIndex) => {
+                                    const cbId = `${extra.name}-checkbox-${cbIndex}`;
+                                    const checked = !!formData[cbId];
+
+                                    return (
+                                        <View key={cbId} style={{ marginBottom: 6 }}>
+                                            <Pressable
+                                                onPress={() =>
+                                                    handleChange(cbId, !checked)
+                                                }
+                                                style={styles.checkboxRow}
+                                            >
+                                                <View
+                                                    style={[
+                                                        styles.checkbox,
+                                                        checked && styles.checkboxChecked,
+                                                    ]}
+                                                >
+                                                    {checked && (
+                                                        <Text style={styles.checkmark}>
+                                                            ✓
+                                                        </Text>
+                                                    )}
+                                                </View>
+                                                <Text style={styles.checkboxLabel}>
+                                                    {checkbox.name}
+                                                </Text>
+                                            </Pressable>
+
+                                            {checkbox.haveButton &&
+                                                checkbox.buttonName && (
+                                                    <Pressable
+                                                        style={styles.button}
+                                                        onPress={() =>
+                                                            console.log(
+                                                                "Button pressed",
+                                                                checkbox.buttonName
+                                                            )
+                                                        }
+                                                    >
+                                                        <Text style={styles.buttonText}>
+                                                            {checkbox.buttonName}
+                                                        </Text>
+                                                    </Pressable>
+                                                )}
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        )}
+
+                        {/* Nested sections / fields */}
                         {extra.sections && extra.sections.length > 0 && (
-                            <View>
+                            <View style={{ marginTop: 8 }}>
                                 {extra.sections.map((section, sectionIndex) =>
                                     renderExtra(section, sectionIndex)
                                 )}
@@ -1419,39 +1730,12 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                     </View>
                 );
 
-            case 'UPLOAD':
+            case "BUTTON":
                 return (
-                    <View key={fieldId} style={styles.fieldContainer}>
-                        <Pressable
-                            style={[styles.uploadButton, styles.uploadButtonWhite]}
-                            onPress={async () => {
-                                const res = await DocumentPicker.getDocumentAsync({
-                                    type: '*/*',
-                                    multiple: false,
-                                });
-                                if (!res.canceled && res.assets[0]) {
-                                    handleChange(extra.name, {
-                                        uri: res.assets[0].uri,
-                                        name: res.assets[0].name,
-                                        type: res.assets[0].mimeType,
-                                    });
-                                }
-                            }}
-                        >
-                            <Ionicons name="attach" size={22} color="#2563eb" />
-                            <Text style={styles.uploadButtonText}>
-                                {formData[extra.name] ? 'File Selected' : extra.name}
-                            </Text>
-                        </Pressable>
-                    </View>
-                );
-
-            case 'BUTTON':
-                return (
-                    <View key={fieldId} style={styles.fieldContainer}>
+                    <View key={id} style={styles.fieldContainer}>
                         <Pressable
                             style={styles.button}
-                            onPress={() => console.log('Button pressed:', extra.name)}
+                            onPress={() => console.log("Button pressed:", extra.name)}
                         >
                             <Text style={styles.buttonText}>{extra.name}</Text>
                         </Pressable>
@@ -1463,18 +1747,21 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
         }
     };
 
-    if (!task.extras || task.extras.length === 0) {
-        return null;
-    }
+    if (!task.extras || task.extras.length === 0) return null;
 
     if (isLoadingExtras) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+            <View style={{ padding: 20 }}>
                 <ActivityIndicator size="large" color="#fff" />
-                <Text style={{ color: '#fff', marginTop: 16 }}>Loading form data...</Text>
+                <Text style={{ color: "#fff", marginTop: 10 }}>
+                    Loading form data…
+                </Text>
             </View>
         );
     }
+
+    const isSaving =
+        createExtras.isPending || updateExtras.isPending || uploadDocument.isPending;
 
     return (
         <>
@@ -1484,17 +1771,15 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 <Pressable
                     style={[
                         styles.signButton,
-                        (createExtras.isPending || updateExtras.isPending) && styles.signButtonDisabled
+                        isSaving && styles.signButtonDisabled,
                     ]}
                     onPress={handleSubmit}
-                    disabled={createExtras.isPending || updateExtras.isPending}
+                    disabled={isSaving}
                 >
-                    {(createExtras.isPending || updateExtras.isPending) ? (
+                    {isSaving ? (
                         <ActivityIndicator color="#1e40af" />
                     ) : (
-                        <Text style={styles.signButtonText}>
-                            {isUpdateMode ? 'Save Progress' : 'Save Progress'}
-                        </Text>
+                        <Text style={styles.signButtonText}>Save Progress</Text>
                     )}
                 </Pressable>
             </ScrollView>
@@ -1502,12 +1787,12 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
             <SimpleSuccessModal
                 visible={showSuccessModal}
                 onClose={() => setShowSuccessModal(false)}
-                title={`Progress Saved!
-Your work has been saved successfully.`}
+                title="Progress Saved!"
             />
         </>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: { flex: 1 },

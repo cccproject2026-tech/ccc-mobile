@@ -3,7 +3,8 @@ import MentorProfileSwiper from "@/components/director/MentorProfileSwiper";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { Mentor as MentorData, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
+import { Mentor, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
+import { Mentor as MentorData } from "@/hooks/mentors/useMentors";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -11,7 +12,9 @@ import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
     ActivityIndicator,
+    Alert,
     Image,
+    Linking,
     ScrollView,
     StyleSheet,
     Text,
@@ -46,7 +49,7 @@ export default function MyMentorsScreen() {
     // Separate current and prior mentors based on status
     const currentMentors = useMemo(() => {
         return filteredMentors.filter(mentor =>
-            mentor.status === 'new' || mentor.status === 'active'
+            mentor.status === 'new' || mentor.status === 'pending' || mentor.status === 'accepted'
         );
     }, [filteredMentors]);
 
@@ -56,7 +59,7 @@ export default function MyMentorsScreen() {
         );
     }, [filteredMentors]);
 
-    const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
+    const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
 
     const handleCardPress = (mentor: MentorData) => {
         router.push({
@@ -66,19 +69,67 @@ export default function MyMentorsScreen() {
     };
 
     const handleCall = (mentor: MentorData) => {
-        console.log("Calling", mentor.name);
+        if (!mentor.phoneNumber) {
+            return Alert.alert("Phone number not available");
+        }
+        const url = `tel:${mentor.phoneNumber}`;
+        Linking.openURL(url);
     };
 
     const handleChat = (mentor: MentorData) => {
-        console.log("Chatting with", mentor.name);
+        if (!mentor.phoneNumber) {
+            return Alert.alert("Phone number not available");
+        }
+        const url = `sms:${mentor.phoneNumber}`;
+        Linking.openURL(url);
+
     };
 
-    const handleMail = (mentor: MentorData) => {
-        console.log("Emailing", mentor.name);
+    const handleMail = async (mentor: Mentor) => {
+        if (!mentor.email) {
+            return Alert.alert("Email not available");
+        }
+
+        const gmailApp = `googlegmail://co?to=${mentor.email}`;
+        const gmailWeb = `https://mail.google.com/mail/?view=cm&fs=1&to=${mentor.email}`;
+
+        try {
+            // Try Gmail app first
+            const canOpenGmail = await Linking.canOpenURL(gmailApp);
+            if (canOpenGmail) {
+                console.log("Opening Gmail app");
+                await Linking.openURL(gmailApp);
+                return;
+            }
+
+            // Always open Gmail Web as fallback (100% works)
+            console.log("Opening Gmail web");
+            await Linking.openURL(gmailWeb);
+        } catch (error) {
+            console.log("Mail open error:", error);
+            // Final fallback: Gmail web again (just in case)
+            await Linking.openURL(gmailWeb);
+        }
     };
 
-    const handleWhatsApp = (mentor: MentorData) => {
-        console.log("WhatsApp", mentor.name);
+
+
+
+    const handleWhatsApp = async (mentor: MentorData) => {
+        if (!mentor.phoneNumber) {
+            return Alert.alert("Phone number not available");
+        }
+
+        const url = `whatsapp://send?phone=${mentor.phoneNumber}`;
+
+        const canOpen = await Linking.canOpenURL(url);
+        if (!canOpen) {
+            // Fallback to WhatsApp web
+            return Linking.openURL(`https://wa.me/${mentor.phoneNumber}`);
+        }
+
+        Linking.openURL(url);
+
     };
 
     const handleScheduleAppointment = (mentor: MentorData) => {

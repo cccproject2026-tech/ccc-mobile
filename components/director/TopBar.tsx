@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -40,7 +41,7 @@ const TopBar: React.FC<Props> = ({
     const { top } = useSafeAreaInsets();
     const navigation = useNavigation();
     const router = useRouter();
-
+    const { user } = useAuthStore();
     const onMenuPress = () => navigation.dispatch(DrawerActions.openDrawer());
     const handleNotificationsPress = () => {
         if (role === 'director') {
@@ -94,7 +95,7 @@ const TopBar: React.FC<Props> = ({
             </View>
             {/* Center */}
             <View style={styles.centerArea}>
-                {showUserName && userName && (
+                {showUserName && (
                     <LinearGradient
                         colors={["#7C3AED", "#38BDF8"]}
                         start={{ x: 0, y: 0 }}
@@ -102,7 +103,7 @@ const TopBar: React.FC<Props> = ({
                         style={styles.gradientBorder}
                     >
                         <View style={styles.innerNameContainer}>
-                            <Text style={styles.nameText} numberOfLines={1}>{userName}</Text>
+                            <Text style={styles.nameText} numberOfLines={1}>{user?.firstName + " " + (user?.lastName || "")}</Text>
                         </View>
                     </LinearGradient>
                 )}

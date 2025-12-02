@@ -9,13 +9,13 @@ import { useAssessments } from "@/hooks/assessments/useAssessments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { useProgressByUserId } from "@/hooks/progress/useProgress";
 import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
-import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
+import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput } from "react-native";
+import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MenteeProgressScreen() {
@@ -144,7 +144,7 @@ export default function MenteeProgressScreen() {
       return {
         title: assessment.title,
         description: assessment.description,
-        image: require("@/assets/images/assessment.png"),
+        image: icons.Assessments,
         progress: taskStatus.toComplete > 0 ? "1" : "0",
         taskStatus,
         dueDate: progress?.dueDate,
@@ -235,7 +235,7 @@ export default function MenteeProgressScreen() {
             }}
           >
             <PastorNavigationHeader showNameTag={true} />
-            
+
             {/* Header Section */}
             <View style={styles.headerContainer}>
               <View style={styles.headerContent}>
@@ -250,7 +250,7 @@ export default function MenteeProgressScreen() {
                   </View>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.addCommentsButton}
                   onPress={handleAddComments}
                 >
@@ -479,7 +479,7 @@ export default function MenteeProgressScreen() {
               style={{ marginTop: 20 }}
             >
               <Text
-                className="text-white px-4"
+                className="px-4 text-white"
                 style={{ fontWeight: 600, fontSize: 16 }}
               >
                 Revitalization Roadmap Progress
@@ -505,7 +505,7 @@ export default function MenteeProgressScreen() {
                     onPress={() => {
                       setRoadmapTabs(e.tab);
                     }}
-                    className=" flex-1 w-full"
+                    className="flex-1 w-full "
                   />
                 ))}
               </ScrollView>
@@ -534,7 +534,7 @@ export default function MenteeProgressScreen() {
               style={{ marginTop: 20 }}
             >
               <Text
-                className="text-white px-4"
+                className="px-4 text-white"
                 style={{ fontWeight: 600, fontSize: 16 }}
               >
                 Assessment Progress
@@ -560,7 +560,7 @@ export default function MenteeProgressScreen() {
                     onPress={() => {
                       setAssessmentTabs(e.tab);
                     }}
-                    className=" flex-1 w-full"
+                    className="flex-1 w-full "
                   />
                 ))}
               </ScrollView>

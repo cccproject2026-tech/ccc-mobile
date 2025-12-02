@@ -1,63 +1,48 @@
 import TopBar from '@/components/director/TopBar';
-import { useSubmitRoadmapQuery } from '@/hooks/roadmaps/useRoadmaps';
-import { mockRevitalization } from '@/lib/roadmap/mock';
-import { getQueryResponse, getTask, getTaskQueries } from '@/lib/roadmap/selectors';
-import { Query, QueryResponse } from '@/lib/roadmap/types';
+import { useRoadmapQueries, useSubmitRoadmapQuery } from '@/hooks/roadmaps/useRoadmaps';
 import { useAuthStore } from '@/stores/auth.store';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-// Extended Query type with response data
-type QueryWithResponse = Query & {
-    responseData?: QueryResponse;
-};
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 
 export default function QueriesScreen() {
     const router = useRouter();
-    const { taskId, roadmapId } = useLocalSearchParams<{ taskId: string; roadmapId: string }>();
+    const { roadmapId } = useLocalSearchParams<{ roadmapId: string }>();
     const { user } = useAuthStore();
+
     const submitQuery = useSubmitRoadmapQuery();
+
+    const { data: allQueries = [] } = useRoadmapQueries(
+        roadmapId,
+        user?.id
+    );
+
     const [selectedTab, setSelectedTab] = useState<'NEW' | 'ANSWERED' | 'PENDING'>('NEW');
     const [queryText, setQueryText] = useState('');
 
-    const task = useMemo(() => taskId ? getTask(mockRevitalization, taskId) : undefined, [taskId]);
-    const allQueries = useMemo(() => taskId ? getTaskQueries(mockRevitalization, taskId) : [], [taskId]);
-
-    // Filter queries based on selected tab and populate response data
     const displayQueries = useMemo(() => {
         if (selectedTab === 'NEW') return [];
 
-        const filteredQueries = allQueries.filter(q => q.status === selectedTab);
-
-        // Populate response data for answered queries
-        return filteredQueries.map(query => {
-            if (query.hasResponse && query.responses && query.responses.length > 0) {
-                const responseData = getQueryResponse(mockRevitalization, query.responses[0]);
-                return {
-                    ...query,
-                    responseData
-                } as QueryWithResponse;
-            }
-            return query as QueryWithResponse;
-        });
-    }, [allQueries, selectedTab]);
+        return allQueries.filter(q => q.status === selectedTab.toLowerCase());
+    }, [selectedTab, allQueries]);
 
     const handleSubmitQuery = async () => {
-        if (!queryText.trim()) {
-            return;
-        }
+        if (!queryText.trim()) return;
 
-        if (!roadmapId) {
-            Alert.alert('Error', 'Roadmap ID is missing. Please go back and try again.');
-            return;
-        }
-
-        if (!user?.id) {
-            Alert.alert('Error', 'User ID is missing. Please log in again.');
+        if (!roadmapId || !user?.id) {
+            Alert.alert('Error', 'Missing roadmap ID or user ID.');
             return;
         }
 
@@ -66,20 +51,14 @@ export default function QueriesScreen() {
                 roadmapId,
                 payload: {
                     actualQueryText: queryText.trim(),
-                    userId: user.id,
-                },
+                    userId: user.id
+                }
             });
 
-            // Clear the input and switch to PENDING tab
             setQueryText('');
             setSelectedTab('PENDING');
-        } catch (error) {
-            console.error('❌ Failed to submit query:', error);
-            Alert.alert(
-                'Submission Failed',
-                error instanceof Error ? error.message : 'Failed to submit query. Please try again.',
-                [{ text: 'OK' }]
-            );
+        } catch (err: any) {
+            Alert.alert('Submission Failed', err?.message || 'Try again.');
         }
     };
 
@@ -91,34 +70,45 @@ export default function QueriesScreen() {
         });
     };
 
-    const renderQuery = ({ item }: { item: QueryWithResponse }) => (
+    const renderQuery = ({ item }: { item: any }) => (
         <View style={styles.queryCard}>
-            {/* User Question */}
+            {/* USER QUESTION */}
             <View style={styles.questionSection}>
                 <View style={styles.queryHeader}>
-                    <Image source={item.author.avatar} style={styles.avatar} />
+                    <Ionicons name="person-circle-outline" size={40} color="#FFFFFF" />
+
                     <View style={styles.queryInfo}>
-                        <Text style={styles.authorName}>{item.author.name}</Text>
-                        <Text style={styles.queryDate}>{formatDate(item.timestamp)}</Text>
+                        <Text style={styles.authorName}>Me</Text>
+                        <Text style={styles.queryDate}>{formatDate(item.createdDate)}</Text>
                     </View>
                 </View>
-                <Text style={styles.queryText}>{item.question}</Text>
+
+                <Text style={styles.queryText}>{item.actualQueryText}</Text>
             </View>
 
-            {/* Response Section */}
-            {item.status === 'ANSWERED' && item.responseData ? (
+            {/* RESPONSE */}
+            {item.status === "answered" ? (
                 <View style={styles.responseSection}>
                     <View style={styles.queryHeader}>
-                        <Image source={item.responseData.author.avatar} style={styles.avatar} />
+                        <Ionicons
+                            name="person-circle-outline"
+                            size={40}
+                            color="#FFFFFF"
+                        />
+
                         <View style={styles.queryInfo}>
                             <Text style={styles.authorName}>
-                                {item.responseData.author.name}
+                                {item.repliedMentorId?.firstName} {item.repliedMentorId?.lastName}
                             </Text>
-                            <Text style={styles.roleText}>{item.responseData.author.role || 'Mentor'}</Text>
+                            <Text style={styles.roleText}>
+                                {item.repliedMentorId?.role || "Mentor"}
+                            </Text>
                         </View>
-                        <Text style={styles.queryDate}>{formatDate(item.responseData.timestamp)}</Text>
+
+                        <Text style={styles.queryDate}>{formatDate(item.repliedDate)}</Text>
                     </View>
-                    <Text style={styles.responseText}>{item.responseData.content}</Text>
+
+                    <Text style={styles.responseText}>{item.repliedAnswer}</Text>
                 </View>
             ) : (
                 <View style={styles.waitingBadge}>
@@ -135,126 +125,97 @@ export default function QueriesScreen() {
                 <TopBar role="pastor" userName="John Ross" showUserName />
             </View>
 
-            {/* Header */}
-            {/* <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={28} color="#fff" />
-                </TouchableOpacity>
-                <View style={styles.headerTextContainer}>
-                    <Text style={styles.headerTitle}>Queries</Text>
-                    <Text style={styles.breadcrumb}>
-                        Revitalization Roadmap › {task?.title}
-                    </Text>
-                </View>
-            </View> */}
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                paddingHorizontal: getSpacing(8),
-                paddingVertical: getSpacing(16),
-                marginBottom: getSpacing(16),
-                borderBottomWidth: 1,
-                borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-            }}>
-                {/* Left side - Back button and Text */}
-                <View style={{
+            {/* HEADER */}
+            <View
+                style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    flex: 1,
-                    marginRight: getSpacing(12), // Add space before right elements
-                }}>
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        style={{ marginRight: getSpacing(8) }}
+                    justifyContent: 'flex-start',
+                    paddingHorizontal: getSpacing(8),
+                    paddingVertical: getSpacing(16),
+                    marginBottom: getSpacing(16),
+                    borderBottomWidth: 1,
+                    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+                }}
+            >
+                <TouchableOpacity onPress={() => router.back()} style={{ marginRight: getSpacing(8) }}>
+                    <Ionicons name="chevron-back" size={28} color="#fff" />
+                </TouchableOpacity>
+
+                <View style={{ flex: 1 }}>
+                    <Text
+                        style={{
+                            fontSize: isAndroid ? getFontSize(18) : getFontSize(15),
+                            fontWeight: '700',
+                            color: '#FFFFFF',
+                        }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
                     >
-                        <Ionicons name="chevron-back" size={28} color="#fff" />
-                    </TouchableOpacity>
+                        Queries
+                    </Text>
 
-                    {/* Text Container with flex to prevent overflow */}
-                    <View style={{ flex: 1, marginRight: getSpacing(8) }}>
-                        <Text
-                            style={{
-                                fontSize: isAndroid ? getFontSize(18) : getFontSize(15),
-                                fontWeight: '700',
-                                lineHeight: getFontSize(18),
-                                color: '#FFFFFF',
-                            }}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                        >
-                            Queries
-                        </Text>
-
-                        <Text
-                            style={{
-                                marginTop: getSpacing(4),
-                                fontSize: getFontSize(12),
-                                color: 'rgba(255, 255, 255, 0.8)',
-                            }}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                        >
-                            Revitalization Roadmap &gt; {task?.title}
-                        </Text>
-
-                    </View>
+                    <Text
+                        style={{
+                            marginTop: getSpacing(4),
+                            fontSize: getFontSize(12),
+                            color: 'rgba(255, 255, 255, 0.8)',
+                        }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
+                        Revitalization Roadmap
+                    </Text>
                 </View>
             </View>
 
-
-            {/* Tabs */}
+            {/* TABS */}
             <View style={styles.tabContainer}>
-                <TouchableOpacity
-                    style={[styles.tab, selectedTab === 'NEW' && styles.activeTab]}
-                    onPress={() => setSelectedTab('NEW')}
-                >
-                    <Text style={[styles.tabText, selectedTab === 'NEW' && styles.activeTabText]}>
-                        New
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, selectedTab === 'ANSWERED' && styles.activeTab]}
-                    onPress={() => setSelectedTab('ANSWERED')}
-                >
-                    <Text style={[styles.tabText, selectedTab === 'ANSWERED' && styles.activeTabText]}>
-                        Answered
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, selectedTab === 'PENDING' && styles.activeTab]}
-                    onPress={() => setSelectedTab('PENDING')}
-                >
-                    <Text style={[styles.tabText, selectedTab === 'PENDING' && styles.activeTabText]}>
-                        Pending
-                    </Text>
-                </TouchableOpacity>
+                {['NEW', 'ANSWERED', 'PENDING'].map(tab => (
+                    <TouchableOpacity
+                        key={tab}
+                        style={[styles.tab, selectedTab === tab && styles.activeTab]}
+                        onPress={() => setSelectedTab(tab as any)}
+                    >
+                        <Text
+                            style={[
+                                styles.tabText,
+                                selectedTab === tab && styles.activeTabText
+                            ]}
+                        >
+                            {tab.charAt(0) + tab.slice(1).toLowerCase()}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
             </View>
 
-            {/* Content based on selected tab */}
+            {/* CONTENT */}
             {selectedTab === 'NEW' ? (
                 <View style={styles.inputSection}>
                     <Text style={styles.inputLabel}>Submit your question here.</Text>
+
                     <TextInput
                         style={styles.textInput}
-                        placeholder=""
-                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
                         multiline
                         value={queryText}
-                        onChangeText={setQueryText}
                         maxLength={250}
+                        onChangeText={setQueryText}
+                        placeholder=""
+                        placeholderTextColor="rgba(255,255,255,0.5)"
                     />
+
                     <View style={styles.inputFooter}>
                         <Text style={styles.wordCount}>({queryText.length} Words)</Text>
-                        <TouchableOpacity>
-                            <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
-                        </TouchableOpacity>
+                        <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.submitButton, (!queryText.trim() || submitQuery.isPending) && styles.submitButtonDisabled]}
                         onPress={handleSubmitQuery}
                         disabled={!queryText.trim() || submitQuery.isPending}
+                        style={[
+                            styles.submitButton,
+                            (!queryText.trim() || submitQuery.isPending) && styles.submitButtonDisabled
+                        ]}
                     >
                         {submitQuery.isPending ? (
                             <ActivityIndicator size="small" color="#1D548D" />
@@ -267,15 +228,14 @@ export default function QueriesScreen() {
                 <FlatList
                     data={displayQueries}
                     renderItem={renderQuery}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={item => item._id}
                     contentContainerStyle={styles.listContainer}
-                    showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <Text style={styles.emptyText}>
-                                {selectedTab === 'PENDING'
-                                    ? 'No pending queries'
-                                    : 'No answered queries yet'}
+                                {selectedTab === "PENDING"
+                                    ? "No pending queries"
+                                    : "No answered queries yet"}
                             </Text>
                         </View>
                     }
@@ -284,6 +244,7 @@ export default function QueriesScreen() {
         </LinearGradient>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {

@@ -409,9 +409,10 @@ import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import TopBar from '@/components/director/TopBar';
 import { DynamicFormTask } from '@/components/roadmaps/DynamicFormTask';
-import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
+import { useRoadmap, useRoadmapComments, useRoadmapQueries } from '@/hooks/roadmaps/useRoadmaps';
 import { getTasks } from '@/lib/roadmap/helpers';
 import { NestedRoadmap } from '@/lib/roadmap/types';
+import { useAuthStore } from '@/stores';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -422,9 +423,12 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 export default function ItemDetail() {
     const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string }>();
     const router = useRouter();
-
     // Fetch parent roadmap
     const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
+    const { user } = useAuthStore();
+
+    const { data: comments } = useRoadmapComments(phaseId, user?.id);
+    const { data: queries } = useRoadmapQueries(phaseId, user?.id);
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -627,7 +631,7 @@ export default function ItemDetail() {
                     onPress={() =>
                         router.push({
                             pathname: '/roadmap/comments',
-                            params: { taskId: task._id, roadmapId: phaseId },
+                            params: { roadmapId: phaseId },
                         })
                     }
                     style={[
@@ -644,7 +648,6 @@ export default function ItemDetail() {
                     >
                         Comments
                     </Text>
-                    {/* TODO: Get actual comment count from API */}
                     <View
                         style={[
                             styles.badge,
@@ -657,7 +660,7 @@ export default function ItemDetail() {
                                 activeTab === 'comments' ? styles.badgeTextActive : styles.badgeTextInactive,
                             ]}
                         >
-                            0
+                            {comments && comments.comments.length}
                         </Text>
                     </View>
                 </TouchableOpacity>
@@ -683,7 +686,6 @@ export default function ItemDetail() {
                     >
                         Queries
                     </Text>
-                    {/* TODO: Get actual query count from API */}
                     <View
                         style={[
                             styles.badge,
@@ -696,7 +698,7 @@ export default function ItemDetail() {
                                 activeTab === 'queries' ? styles.badgeTextActive : styles.badgeTextInactive,
                             ]}
                         >
-                            0
+                            {queries && queries.length}
                         </Text>
                     </View>
                 </TouchableOpacity>
