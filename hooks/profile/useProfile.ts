@@ -254,6 +254,26 @@ export const useDocuments = () => {
     });
 };
 
+// Get documents for a specific user (for mentors viewing mentee documents)
+export const useDocumentsByUserId = (userId: string | undefined) => {
+    return useQuery({
+        queryKey: ['documents', userId || ''],
+        queryFn: async () => {
+            if (!userId) throw new Error("User ID is missing");
+
+            console.log("📤 Fetching documents for user:", userId);
+            const documents = await profileService.getDocuments(userId);
+            console.log("📥 Documents fetched:", documents);
+
+            return documents;
+        },
+        enabled: !!userId,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        gcTime: 1000 * 60 * 20, // 20 minutes
+        retry: 1,
+    });
+};
+
 // Upload document
 export const useUploadDocument = () => {
     const queryClient = useQueryClient();

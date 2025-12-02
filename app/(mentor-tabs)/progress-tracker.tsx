@@ -102,11 +102,11 @@ export default function ProgressTracker() {
   ];
 
   const handleCall = (mentee: Mentee) => {
-    Linking.openURL(`tel:${mentee.phone}`);
+    Linking.openURL(`tel:${mentee.phoneNumber}`);
   };
 
   const handleChat = (mentee: Mentee) => {
-    Linking.openURL(`sms:${mentee.phone}`);
+    Linking.openURL(`sms:${mentee.phoneNumber}`);
   };
 
   const handleMail = (mentee: Mentee) => {
@@ -114,7 +114,7 @@ export default function ProgressTracker() {
   };
 
   const handleWhatsApp = (mentee: Mentee) => {
-    Linking.openURL(`https://wa.me/${mentee.phone}`);
+    Linking.openURL(`https://wa.me/${mentee.phoneNumber}`);
   };
 
   return (

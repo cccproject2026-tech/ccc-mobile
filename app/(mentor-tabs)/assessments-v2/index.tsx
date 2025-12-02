@@ -4,9 +4,11 @@ import AssessmentCard from "@/components/build-components/cards/assessment-card"
 import DeleteConfirmationModal from "@/components/build-components/DeleteConfirmationModal";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
-import { menteeProfiles } from "@/constants/mockMentees";
 import { useAssessments, useDeleteAssessment } from "@/hooks/assessments";
+import { useMentees } from "@/hooks/mentees/useMentees";
+import { useAuthStore } from "@/stores/auth.store";
 import { ApiAssessment, Assessment } from "@/lib/assessments/types";
+import { icons } from "@/constants/images";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -70,7 +72,21 @@ export default function MentorAssessmentsLibrary() {
     const [assessmentToDelete, setAssessmentToDelete] = React.useState<Assessment | null>(null);
     const bottomSheetRef = React.useRef<BottomSheetModal>(null);
 
-    const mentees = React.useMemo(() => Object.values(menteeProfiles), []);
+    // Get current user for TopBar
+    const { user } = useAuthStore();
+
+    // Fetch mentees for avatars
+    const { data: menteesData } = useMentees();
+    
+    // Format mentees for display
+    const mentees = React.useMemo(() => {
+        if (!menteesData?.mentees) return [];
+        return menteesData.mentees.map((mentee) => ({
+            id: mentee.id,
+            name: `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee",
+            avatar: mentee.profilePicture ? { uri: mentee.profilePicture } : icons.myProfile,
+        }));
+    }, [menteesData]);
 
     // Use TanStack Query hooks
     const { data: apiAssessments, isLoading: loading, error: queryError, refetch } = useAssessments();
@@ -173,7 +189,7 @@ export default function MentorAssessmentsLibrary() {
     return (
         <LinearGradient colors={["#155C93", "#1B2B60"]} style={{ flex: 1 }}>
             <TopBar
-                userName="John Doe"
+                userName={user?.firstName || "Mentor"}
                 showUserName
                 notifications={3}
                 role="mentor"

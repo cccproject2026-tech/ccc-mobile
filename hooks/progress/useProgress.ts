@@ -199,3 +199,65 @@ export const useNestedRoadmapProgressById = (roadmapId: string, nestedRoadmapId:
         error,
     };
 };
+
+/**
+ * Hook to get progress for a specific user (for mentors viewing mentee progress)
+ */
+export const useProgressByUserId = (userId: string | undefined) => {
+    return useQuery({
+        queryKey: progressKeys.user(userId || ''),
+        queryFn: async () => {
+            if (!userId) throw new Error("User ID is missing");
+
+            console.log("📤 Fetching progress for user:", userId);
+
+            const response = await apiClient.get(ENDPOINTS.USERS.GET_PROGRESS(userId));
+
+            // Handle null data case (no progress record)
+            if (!response.data.success || !response.data.data) {
+                console.log("⚠️ No progress record found for user");
+                return {
+                    overallProgress: 0,
+                    roadmaps: {
+                        total: 0,
+                        completed: 0,
+                        percentage: 0,
+                        items: []
+                    },
+                    assessments: {
+                        total: 0,
+                        completed: 0,
+                        percentage: 0,
+                        items: []
+                    }
+                };
+            }
+
+            const data = response.data.data;
+
+            const progressData: ProgressData = {
+                overallProgress: data.overallRoadmapProgress ?? 0,
+                roadmaps: {
+                    total: data.totalRoadmaps ?? 0,
+                    completed: data.completedRoadmaps ?? 0,
+                    percentage: data.overallRoadmapProgress ?? 0,
+                    items: data.roadmaps || []
+                },
+                assessments: {
+                    total: data.totalAssessments ?? 0,
+                    completed: data.completedAssessments ?? 0,
+                    percentage: data.overallAssessmentProgress ?? 0,
+                    items: data.assessments || []
+                }
+            };
+
+            console.log("📥 Progress data fetched:", progressData);
+            return progressData;
+        },
+        enabled: !!userId,
+        staleTime: 1000 * 60 * 2, // 2 minutes - progress changes frequently
+        gcTime: 1000 * 60 * 10, // 10 minutes cache retention
+        retry: 1,
+        refetchOnWindowFocus: true, // Refetch when user comes back to the app
+    });
+};

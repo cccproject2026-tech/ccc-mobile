@@ -6,6 +6,7 @@ export type UserStatus = 'new' | 'pending' | 'accepted' | 'rejected';
 export interface User {
     id: string;
     email: string;
+    phoneNumber: string;
     firstName: string;
     lastName?: string;
     role: UserRole;

@@ -125,7 +125,7 @@ export default function SelectAssessmentPage() {
   return (
     <LinearGradient colors={["#155C93", "#1B2B60"]} style={{ flex: 1 }}>
       <TopBar
-        userName="John Doe"
+        userName="Mentor"
         showUserName
         notifications={3}
         role="mentor"
@@ -202,24 +202,7 @@ export default function SelectAssessmentPage() {
               {error}
             </Text>
             <Pressable
-              onPress={async () => {
-                try {
-                  setLoading(true);
-                  setError(null);
-                  const apiAssessments = await assessmentService.getAssessments();
-                  const mappedAssessments = apiAssessments.map(mapApiAssessmentToAssessment);
-                  setAssessments(mappedAssessments);
-                  if (mappedAssessments.length > 0) {
-                    setSelectedAssessments(
-                      new Set(mappedAssessments.slice(0, 3).map((a) => a.id))
-                    );
-                  }
-                } catch (err) {
-                  setError('Failed to load assessments. Please try again.');
-                } finally {
-                  setLoading(false);
-                }
-              }}
+              onPress={() => refetch()}
               style={{
                 backgroundColor: '#5EB3D1',
                 paddingHorizontal: 24,

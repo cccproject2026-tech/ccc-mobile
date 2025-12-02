@@ -5,24 +5,172 @@ import { Tab } from "@/components/atom/tab";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { menteeProfiles } from "@/constants/mockMentees";
-import { dummyRoadMaps, dummyAssessment, dummyRoadMapsCompleted, dummyAssessmentCompleted } from "@/constants/mockData";
+import { useAssessments } from "@/hooks/assessments/useAssessments";
+import { useMentees } from "@/hooks/mentees/useMentees";
+import { useProgressByUserId } from "@/hooks/progress/useProgress";
+import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { getRoadmapCard } from "@/lib/roadmap/mappers";
+import { mapApiToFrontend } from "@/lib/assessments/mappers";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput } from "react-native";
+import React, { useMemo, useState } from "react";
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MenteeProgressScreen() {
   const params = useLocalSearchParams();
   const menteeId = params.menteeId as string;
-  const mentee = menteeProfiles[menteeId];
 
   const [roadmapTabs, setRoadmapTabs] = useState("All");
   const [assessmentTabs, setAssessmentTabs] = useState("All");
   const [showCommentsModal, setShowCommentsModal] = useState(false);
-  const [finalComments, setFinalComments] = useState(mentee?.progress.finalComments || "");
+  const [finalComments, setFinalComments] = useState("");
+
+  // Fetch mentee data
+  const { data: menteesData, isLoading: isLoadingMentees } = useMentees();
+  const mentee = useMemo(() => {
+    return menteesData?.mentees?.find((m) => m.id === menteeId);
+  }, [menteesData, menteeId]);
+
+  // Fetch progress data for the mentee
+  const { data: progressData, isLoading: isLoadingProgress } = useProgressByUserId(menteeId);
+
+  // Fetch all roadmaps
+  const { data: allRoadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
+
+  // Fetch all assessments
+  const { data: allAssessments, isLoading: isLoadingAssessments } = useAssessments();
+
+  // Get assigned roadmap IDs from progress
+  const assignedRoadmapIds = useMemo(() => {
+    return progressData?.roadmaps.items.map((item) => item.roadMapId) || [];
+  }, [progressData]);
+
+  // Get assigned assessment IDs from progress
+  const assignedAssessmentIds = useMemo(() => {
+    return progressData?.assessments.items.map((item) => item.assessmentId) || [];
+  }, [progressData]);
+
+  // Format roadmaps for ProgressCard
+  const roadmapsData = useMemo(() => {
+    if (!allRoadmaps || !progressData) return [];
+
+    // Filter to only assigned roadmaps
+    const assignedRoadmaps = allRoadmaps.filter((roadmap) =>
+      assignedRoadmapIds.includes(roadmap._id)
+    );
+
+    // Create a map of progress data
+    const progressMap = new Map();
+    progressData.roadmaps.items.forEach((item) => {
+      progressMap.set(item.roadMapId, item);
+    });
+
+    return assignedRoadmaps.map((roadmap) => {
+      const progress = progressMap.get(roadmap._id);
+      const roadmapCard = getRoadmapCard(roadmap);
+
+      // Map status to ProgressCard format
+      let status: 'Due' | 'In Progress' | 'Not Started Yet' | 'Completed' = 'Not Started Yet';
+      if (roadmapCard.status === 'completed') {
+        status = 'Completed';
+      } else if (roadmapCard.status === 'due') {
+        status = 'Due';
+      } else if (roadmapCard.status === 'in-progress') {
+        status = 'In Progress';
+      }
+
+      // Calculate task status
+      const taskStatus = {
+        notStarted: roadmapCard.status === 'initial',
+        started: roadmapCard.status !== 'initial',
+        inProgress: roadmapCard.taskProgress?.completed || 0,
+        toComplete: roadmapCard.taskProgress?.total || 0,
+        completed: roadmapCard.status === 'completed',
+      };
+
+      return {
+        title: roadmapCard.title,
+        description: roadmapCard.description,
+        time: roadmapCard.completionTime,
+        status,
+        image: roadmapCard.image ? { uri: roadmapCard.image } : require("@/assets/images/jumpstart.png"),
+        progress: taskStatus.toComplete > 0 ? "1" : "0",
+        taskStatus,
+        completedTime: roadmapCard.completedDate,
+        type: "roadmap" as const,
+        dueDate: progress?.endDate,
+      };
+    });
+  }, [allRoadmaps, progressData, assignedRoadmapIds]);
+
+  // Format assessments for ProgressCard
+  const assessmentsData = useMemo(() => {
+    if (!allAssessments || !progressData) return [];
+
+    // Filter to only assigned assessments
+    const assignedAssessments = allAssessments.filter((assessment) =>
+      assignedAssessmentIds.includes(assessment._id)
+    );
+
+    // Create a map of progress data
+    const progressMap = new Map();
+    progressData.assessments.items.forEach((item) => {
+      progressMap.set(item.assessmentId, item);
+    });
+
+    return assignedAssessments.map((apiAssessment) => {
+      const assessment = mapApiToFrontend(apiAssessment);
+      const progress = progressMap.get(apiAssessment._id);
+
+      // Map status to ProgressCard format
+      let status: 'Due' | 'Completed' | 'due' = 'Due';
+      if (assessment.status === 'Completed') {
+        status = 'Completed';
+      } else if (assessment.status === 'Due') {
+        status = 'Due';
+      }
+
+      // Calculate task status (using progress data if available)
+      const taskStatus = {
+        notStarted: assessment.status === 'Not Started',
+        started: assessment.status !== 'Not Started',
+        inProgress: progress?.completedSections || 0,
+        toComplete: progress?.totalSections || 0,
+        completed: assessment.status === 'Completed',
+      };
+
+      return {
+        title: assessment.title,
+        description: assessment.description,
+        image: require("@/assets/images/assessment.png"),
+        progress: taskStatus.toComplete > 0 ? "1" : "0",
+        taskStatus,
+        dueDate: progress?.dueDate,
+        submittedDate: assessment.status === 'Completed' ? assessment.completedOn : undefined,
+        status,
+        type: "assessment" as const,
+        completed: assessment.completedOn,
+      };
+    });
+  }, [allAssessments, progressData, assignedAssessmentIds]);
+
+  const isLoading = isLoadingMentees || isLoadingProgress || isLoadingRoadmaps || isLoadingAssessments;
+
+  if (isLoading) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="white" />
+          <Text style={{ color: "white", fontSize: 18, marginTop: 16 }}>Loading progress...</Text>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
 
   if (!mentee) {
     return (
@@ -42,10 +190,6 @@ export default function MenteeProgressScreen() {
     { tab: "Completed" },
     { tab: "Remaining" },
   ];
-
-  // Use completed data if mentee is 100% complete, otherwise use regular data
-  const roadmapsData = mentee.progress.percent === 100 ? dummyRoadMapsCompleted : dummyRoadMaps;
-  const assessmentsData = mentee.progress.percent === 100 ? dummyAssessmentCompleted : dummyAssessment;
 
   const filteredRoadMaps = roadmapsData.filter((item) => {
     if (roadmapTabs === "All") {
@@ -101,7 +245,7 @@ export default function MenteeProgressScreen() {
                 >
                   <Image source={icons.forward} style={styles.backIcon} />
                   <View>
-                    <Text style={styles.headerTitle}>Pr. {mentee.name}</Text>
+                    <Text style={styles.headerTitle}>Pr. {mentee.firstName} {mentee.lastName}</Text>
                     <Text style={styles.headerSubtitle}>Progress</Text>
                   </View>
                 </TouchableOpacity>
@@ -460,7 +604,7 @@ export default function MenteeProgressScreen() {
               >
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>
-                    Pr. {mentee.name} - Final Comments
+                    Pr. {mentee.firstName} {mentee.lastName} - Final Comments
                   </Text>
                   <TouchableOpacity
                     onPress={() => setShowCommentsModal(false)}
@@ -474,26 +618,17 @@ export default function MenteeProgressScreen() {
 
             {/* Content */}
             <View style={styles.modalContent}>
-              {mentee.progress.isMarkedComplete ? (
-                // Read-only view
-                <View style={styles.commentsDisplay}>
-                  <Text style={styles.commentsText}>
-                    {mentee.progress.finalComments}
-                  </Text>
-                </View>
-              ) : (
-                // Editable view
-                <TextInput
-                  style={styles.commentsInput}
-                  placeholder="Write the Comments here..."
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                  multiline
-                  numberOfLines={6}
-                  value={finalComments}
-                  onChangeText={setFinalComments}
-                  textAlignVertical="top"
-                />
-              )}
+              {/* Editable view - TODO: Add API integration for saving comments */}
+              <TextInput
+                style={styles.commentsInput}
+                placeholder="Write the Comments here..."
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                multiline
+                numberOfLines={6}
+                value={finalComments}
+                onChangeText={setFinalComments}
+                textAlignVertical="top"
+              />
 
               {/* Buttons */}
               <View style={styles.modalButtons}>
@@ -504,14 +639,12 @@ export default function MenteeProgressScreen() {
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
 
-                {!mentee.progress.isMarkedComplete && (
-                  <TouchableOpacity
-                    style={styles.submitButton}
-                    onPress={handleSubmitComments}
-                  >
-                    <Text style={styles.submitButtonText}>Submit</Text>
-                  </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleSubmitComments}
+                >
+                  <Text style={styles.submitButtonText}>Submit</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
