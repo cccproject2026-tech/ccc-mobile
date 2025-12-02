@@ -39,6 +39,7 @@ export interface ProgressData {
         percentage: number;
         items: AssessmentProgress[];
     };
+    finalComments?: FinalComment[];
 }
 
 export interface AssignRoadmapRequest {
@@ -87,4 +88,71 @@ export interface AssignAssessmentApiResponse {
     success: boolean;
     message: string;
     data: AssignAssessmentResponse;
+}
+
+export interface FinalComment {
+    _id: string;
+    commentorId: string;
+    comment: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AddFinalCommentRequest {
+    userId: string;
+    commentorId: string;
+    comment: string;
+}
+
+export interface AddFinalCommentResponse {
+    _id: string;
+    userId: string;
+    roadmaps: RoadmapProgress[];
+    totalRoadmaps: number;
+    completedRoadmaps: number;
+    overallRoadmapProgress: number;
+    assessments: AssessmentProgress[];
+    totalAssessments: number;
+    completedAssessments: number;
+    overallAssessmentProgress: number;
+    totalItems: number;
+    completedItems: number;
+    overallProgress: number;
+    overallCompleted: boolean;
+    finalComments: FinalComment[];
+}
+
+export interface AddFinalCommentApiResponse {
+    success: boolean;
+    message: string;
+    data: AddFinalCommentResponse;
+}
+
+export interface GetFinalCommentsApiResponse {
+    success: boolean;
+    message: string;
+    data: FinalComment[];
+}
+
+export interface UpdateFinalCommentRequest {
+    userId: string;
+    commentId: string;
+    comment: string;
+}
+
+export interface UpdateFinalCommentApiResponse {
+    success: boolean;
+    message: string;
+    data: AddFinalCommentResponse;
+}
+
+export interface DeleteFinalCommentRequest {
+    userId: string;
+    commentId: string;
+}
+
+export interface DeleteFinalCommentApiResponse {
+    success: boolean;
+    message: string;
+    data: AddFinalCommentResponse;
 }

@@ -109,5 +109,7 @@ export const ENDPOINTS = {
     PROGRESS: {
         ASSIGN_ASSESSMENT: '/progress/assign-assessment',
         ASSIGN_ROADMAP: '/progress/assign-roadmap',
+        FINAL_COMMENTS: '/progress/final-comments',
+        GET_FINAL_COMMENTS: (userId: string) => `/progress/${userId}/final-comments`,
     }
 } as const;

@@ -7,15 +7,16 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssessments } from "@/hooks/assessments/useAssessments";
 import { useMentees } from "@/hooks/mentees/useMentees";
-import { useProgressByUserId } from "@/hooks/progress/useProgress";
+import { useAddFinalComment, useDeleteFinalComment, useProgressByUserId, useUpdateFinalComment } from "@/hooks/progress/useProgress";
 import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
+import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MenteeProgressScreen() {
@@ -26,6 +27,12 @@ export default function MenteeProgressScreen() {
   const [assessmentTabs, setAssessmentTabs] = useState("All");
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [finalComments, setFinalComments] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const { user } = useAuthStore();
+  const addFinalCommentMutation = useAddFinalComment();
+  const updateFinalCommentMutation = useUpdateFinalComment();
+  const deleteFinalCommentMutation = useDeleteFinalComment();
+
 
   // Fetch mentee data
   const { data: menteesData, isLoading: isLoadingMentees } = useMentees();
@@ -41,6 +48,11 @@ export default function MenteeProgressScreen() {
 
   // Fetch all assessments
   const { data: allAssessments, isLoading: isLoadingAssessments } = useAssessments();
+
+  // Get existing final comments from progress data
+  const existingComments = useMemo(() => {
+    return progressData?.finalComments || [];
+  }, [progressData?.finalComments]);
 
   // Get assigned roadmap IDs from progress
   const assignedRoadmapIds = useMemo(() => {
@@ -215,9 +227,104 @@ export default function MenteeProgressScreen() {
     setShowCommentsModal(true);
   };
 
-  const handleSubmitComments = () => {
-    console.log("Submitting final comments:", finalComments);
+  const handleEditComment = (commentId: string, commentText: string) => {
+    setEditingCommentId(commentId);
+    setFinalComments(commentText);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setFinalComments("");
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    Alert.alert(
+      'Delete Comment',
+      'Are you sure you want to delete this comment? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            if (!menteeId) {
+              return;
+            }
+
+            deleteFinalCommentMutation.mutate(
+              {
+                userId: menteeId,
+                commentId: commentId,
+              },
+              {
+                onSuccess: () => {
+                  // Comments will be automatically updated via query invalidation
+                },
+                onError: (error) => {
+                  console.error("Failed to delete final comment:", error);
+                  Alert.alert('Error', 'Failed to delete comment. Please try again.');
+                },
+              }
+            );
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCloseModal = () => {
     setShowCommentsModal(false);
+    setEditingCommentId(null);
+    setFinalComments("");
+  };
+
+  const handleSubmitComments = () => {
+    if (!finalComments.trim() || !user?.id || !menteeId) {
+      return;
+    }
+
+    if (editingCommentId) {
+      // Update existing comment
+      updateFinalCommentMutation.mutate(
+        {
+          userId: menteeId,
+          commentId: editingCommentId,
+          comment: finalComments.trim(),
+        },
+        {
+          onSuccess: () => {
+            setFinalComments("");
+            setEditingCommentId(null);
+            setShowCommentsModal(false);
+          },
+          onError: (error) => {
+            console.error("Failed to update final comment:", error);
+          },
+        }
+      );
+    } else {
+      // Add new comment
+      addFinalCommentMutation.mutate(
+        {
+          userId: menteeId,
+          commentorId: user.id,
+          comment: finalComments.trim(),
+        },
+        {
+          onSuccess: () => {
+            setFinalComments("");
+            setShowCommentsModal(false);
+          },
+          onError: (error) => {
+            console.error("Failed to submit final comment:", error);
+            // You might want to show an error toast here
+          },
+        }
+      );
+    }
   };
 
   return (
@@ -607,7 +714,7 @@ export default function MenteeProgressScreen() {
                     Pr. {mentee.firstName} {mentee.lastName} - Final Comments
                   </Text>
                   <TouchableOpacity
-                    onPress={() => setShowCommentsModal(false)}
+                    onPress={handleCloseModal}
                     style={styles.closeButton}
                   >
                     <Ionicons name="close" size={24} color="white" />
@@ -618,33 +725,91 @@ export default function MenteeProgressScreen() {
 
             {/* Content */}
             <View style={styles.modalContent}>
-              {/* Editable view - TODO: Add API integration for saving comments */}
-              <TextInput
-                style={styles.commentsInput}
-                placeholder="Write the Comments here..."
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                multiline
-                numberOfLines={6}
-                value={finalComments}
-                onChangeText={setFinalComments}
-                textAlignVertical="top"
-              />
+              {/* Display existing comments */}
+              {existingComments.length > 0 && !editingCommentId && (
+                <View style={styles.commentsDisplay}>
+                  {existingComments.map((comment, index) => (
+                    <View key={comment._id} style={index > 0 ? styles.commentSeparator : undefined}>
+                      {/* Edit and Delete button row */}
+                      <View style={styles.commentHeader}>
+                        <TouchableOpacity
+                          onPress={() => handleEditComment(comment._id, comment.comment)}
+                          style={styles.editButton}
+                        >
+                          <Ionicons name="create-outline" size={18} color="#FFFFFF" />
+                          <Text style={styles.editButtonText}>Edit</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleDeleteComment(comment._id)}
+                          style={styles.deleteButton}
+                        >
+                          <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
+                          <Text style={styles.deleteButtonText}>Delete</Text>
+                        </TouchableOpacity>
+                      </View>
+                      
+                      <Text style={styles.commentsText}>{comment.comment}</Text>
+                      <Text style={styles.commentMeta}>
+                        {new Date(comment.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Input for new comment or editing (only if less than 2 comments OR editing) */}
+              {(existingComments.length < 2 || editingCommentId) && (
+                <TextInput
+                  style={styles.commentsInput}
+                  placeholder={editingCommentId ? "Edit your comment..." : "Write the Comments here..."}
+                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  multiline
+                  numberOfLines={6}
+                  value={finalComments}
+                  onChangeText={setFinalComments}
+                  textAlignVertical="top"
+                />
+              )}
+
+              {existingComments.length >= 2 && !editingCommentId && (
+                <Text style={styles.maxCommentsText}>
+                  Maximum of 2 final comments allowed.
+                </Text>
+              )}
 
               {/* Buttons */}
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={styles.cancelButton}
-                  onPress={() => setShowCommentsModal(false)}
+                  onPress={editingCommentId ? handleCancelEdit : handleCloseModal}
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={styles.cancelButtonText}>
+                    {editingCommentId ? 'Cancel Edit' : 'Cancel'}
+                  </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.submitButton}
-                  onPress={handleSubmitComments}
-                >
-                  <Text style={styles.submitButtonText}>Submit</Text>
-                </TouchableOpacity>
+                {(existingComments.length < 2 || editingCommentId) && (
+                  <TouchableOpacity
+                    style={[
+                      styles.submitButton,
+                      (!finalComments.trim() || addFinalCommentMutation.isPending || updateFinalCommentMutation.isPending) && styles.submitButtonDisabled
+                    ]}
+                    onPress={handleSubmitComments}
+                    disabled={!finalComments.trim() || addFinalCommentMutation.isPending || updateFinalCommentMutation.isPending}
+                  >
+                    <Text style={styles.submitButtonText}>
+                      {addFinalCommentMutation.isPending || updateFinalCommentMutation.isPending 
+                        ? 'Submitting...' 
+                        : editingCommentId 
+                          ? 'Update' 
+                          : 'Submit'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </View>
@@ -766,6 +931,65 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 15,
     lineHeight: 22,
+  },
+  commentSeparator: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.2)",
+  },
+  commentMeta: {
+    color: "rgba(255, 255, 255, 0.6)",
+    fontSize: 12,
+    marginTop: 8,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 12,
+    gap: 8,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    gap: 6,
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.5)',
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    gap: 6,
+  },
+  deleteButtonText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  maxCommentsText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 14,
+    fontStyle: "italic",
+    textAlign: "center",
+    paddingVertical: 16,
+  },
+  submitButtonDisabled: {
+    opacity: 0.5,
   },
   modalButtons: {
     flexDirection: "row",

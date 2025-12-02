@@ -1,8 +1,9 @@
 import { apiClient } from "@/services/api/client";
 import { ENDPOINTS } from "@/services/api/endpoints";
+import { progressService } from "@/services/progress.service";
 import { useAuthStore } from "@/stores/auth.store";
-import { ProgressData } from "@/types/progress.types";
-import { useQuery } from "@tanstack/react-query";
+import { AddFinalCommentRequest, DeleteFinalCommentRequest, ProgressData, UpdateFinalCommentRequest } from "@/types/progress.types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ============================================
 // PROGRESS QUERY KEYS
@@ -12,6 +13,7 @@ export const progressKeys = {
     user: (userId: string) => [...progressKeys.all, 'user', userId] as const,
     roadmaps: (userId: string) => [...progressKeys.all, 'roadmaps', userId] as const,
     assessments: (userId: string) => [...progressKeys.all, 'assessments', userId] as const,
+    finalComments: (userId: string) => [...progressKeys.all, 'final-comments', userId] as const,
 };
 
 // ============================================
@@ -45,7 +47,8 @@ export const useProgress = () => {
                         completed: 0,
                         percentage: 0,
                         items: []
-                    }
+                    },
+                    finalComments: []
                 };
             }
 
@@ -64,7 +67,8 @@ export const useProgress = () => {
                     completed: data.completedAssessments ?? 0,
                     percentage: data.overallAssessmentProgress ?? 0,
                     items: data.assessments || []
-                }
+                },
+                finalComments: data.finalComments || []
             };
 
             console.log("📥 Progress data fetched:", progressData);
@@ -229,7 +233,8 @@ export const useProgressByUserId = (userId: string | undefined) => {
                         completed: 0,
                         percentage: 0,
                         items: []
-                    }
+                    },
+                    finalComments: []
                 };
             }
 
@@ -248,7 +253,8 @@ export const useProgressByUserId = (userId: string | undefined) => {
                     completed: data.completedAssessments ?? 0,
                     percentage: data.overallAssessmentProgress ?? 0,
                     items: data.assessments || []
-                }
+                },
+                finalComments: data.finalComments || []
             };
 
             console.log("📥 Progress data fetched:", progressData);
@@ -259,5 +265,82 @@ export const useProgressByUserId = (userId: string | undefined) => {
         gcTime: 1000 * 60 * 10, // 10 minutes cache retention
         retry: 1,
         refetchOnWindowFocus: true, // Refetch when user comes back to the app
+    });
+};
+
+/**
+ * Hook to get final comments for a user's progress
+ */
+export const useFinalComments = (userId: string | undefined) => {
+    return useQuery({
+        queryKey: progressKeys.finalComments(userId || ''),
+        queryFn: async () => {
+            if (!userId) throw new Error("User ID is missing");
+            const response = await progressService.getFinalComments(userId);
+            return response.data;
+        },
+        enabled: !!userId,
+        staleTime: 1000 * 60 * 2, // 2 minutes
+        gcTime: 1000 * 60 * 10, // 10 minutes cache retention
+    });
+};
+
+/**
+ * Hook to add final comment for a user's progress
+ */
+export const useAddFinalComment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: AddFinalCommentRequest) => progressService.addFinalComment(payload),
+        onSuccess: (data, variables) => {
+            // Invalidate progress queries for the user to refetch updated data
+            queryClient.invalidateQueries({ queryKey: progressKeys.user(variables.userId) });
+            queryClient.invalidateQueries({ queryKey: progressKeys.finalComments(variables.userId) });
+            console.log("✅ Final comment added successfully");
+        },
+        onError: (error) => {
+            console.error("❌ Failed to add final comment:", error);
+        },
+    });
+};
+
+/**
+ * Hook to update an existing final comment
+ */
+export const useUpdateFinalComment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: UpdateFinalCommentRequest) => progressService.updateFinalComment(payload),
+        onSuccess: (data, variables) => {
+            // Invalidate progress queries for the user to refetch updated data
+            queryClient.invalidateQueries({ queryKey: progressKeys.user(variables.userId) });
+            queryClient.invalidateQueries({ queryKey: progressKeys.finalComments(variables.userId) });
+            console.log("✅ Final comment updated successfully");
+        },
+        onError: (error) => {
+            console.error("❌ Failed to update final comment:", error);
+        },
+    });
+};
+
+/**
+ * Hook to delete a final comment
+ */
+export const useDeleteFinalComment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: DeleteFinalCommentRequest) => progressService.deleteFinalComment(payload),
+        onSuccess: (data, variables) => {
+            // Invalidate progress queries for the user to refetch updated data
+            queryClient.invalidateQueries({ queryKey: progressKeys.user(variables.userId) });
+            queryClient.invalidateQueries({ queryKey: progressKeys.finalComments(variables.userId) });
+            console.log("✅ Final comment deleted successfully");
+        },
+        onError: (error) => {
+            console.error("❌ Failed to delete final comment:", error);
+        },
     });
 };
