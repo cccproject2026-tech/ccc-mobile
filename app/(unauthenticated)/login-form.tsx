@@ -128,8 +128,12 @@ export default function LoginFormScreen() {
                             onChangeText={setEmail}
                             keyboardType="email-address"
                             autoCapitalize="none"
+                            autoCorrect={false}
+                            contextMenuHidden={false}
+                            textContentType="none"
                             editable={!isLoading}
                         />
+
 
                         {/* Password Input */}
                         <View style={styles.passwordContainer}>
@@ -141,8 +145,13 @@ export default function LoginFormScreen() {
                                 onChangeText={setPassword}
                                 secureTextEntry={!showPassword}
                                 autoCapitalize="none"
+                                autoCorrect={false}
+                                contextMenuHidden={false}
+                                textContentType="none"
+                                passwordRules=""
                                 editable={!isLoading}
                             />
+
                             <TouchableOpacity
                                 onPress={() => setShowPassword(!showPassword)}
                                 style={styles.eyeIcon}

@@ -372,7 +372,7 @@ export default function ShareMedia() {
                                 </View>
 
                                 {/* <TouchableOpacity
-                                    onPress={selectAll}
+                                     onPress={selectAll}
                                     style={styles.selectAllButton}
                                 >
                                     <Text style={styles.selectAllText}>Select all</Text>
