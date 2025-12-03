@@ -94,8 +94,10 @@ export const ENDPOINTS = {
         CREATE: '/roadmaps',
         UPDATE: (roadmapId: string) => `/roadmaps/${roadmapId}`,
         ADD_COMMENT: (roadmapId: string) => `/roadmaps/${roadmapId}/comments`,
-        SUBMIT_QUERY: (roadmapId: string, userId: string) => `/roadmaps/${roadmapId}/queries?userId=${userId}`,
+        GET_COMMENTS: (roadmapId: string, userId: string) => `/roadmaps/${roadmapId}/comments?userId=${userId}`,
+        SUBMIT_QUERY: (roadmapId: string) => `/roadmaps/${roadmapId}/queries`,
         GET_QUERIES: (roadmapId: string, userId: string) => `/roadmaps/${roadmapId}/queries?userId=${userId}`,
+        REPLY_QUERY: (roadmapId: string, queryId: string) => `/roadmaps/${roadmapId}/queries/${queryId}/reply`,
         CREATE_NESTED: (roadmapId: string) => `/roadmaps/${roadmapId}/nested`,
     },
 

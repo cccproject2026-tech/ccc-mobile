@@ -100,7 +100,7 @@ export default function AssessmentsScreen() {
             colors={['#176192', '#1D548D', '#264387']}
             style={styles.container}
         >
-            <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+            <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
             {/* Header */}
             <View style={styles.header}>

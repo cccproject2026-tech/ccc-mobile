@@ -6,6 +6,8 @@ import {
     ExtrasApiResponse,
     GetExtrasResponse,
     GetQueriesResponse,
+    ReplyQueryRequest,
+    ReplyQueryResponse,
     Roadmap,
     RoadmapCommentsThread,
     RoadmapResponse,
@@ -335,7 +337,7 @@ export const roadmapService = {
     async submitRoadmapQuery(roadmapId: string, payload: SubmitQueryRequest) {
         console.log('📤 Submitting roadmap query:', { roadmapId, payload });
         const response = await apiClient.post<SubmitQueryResponse>(
-            ENDPOINTS.ROADMAPS.SUBMIT_QUERY(roadmapId, payload.userId),
+            ENDPOINTS.ROADMAPS.SUBMIT_QUERY(roadmapId),
             payload
         );
         if (!response.data.success) {
@@ -357,6 +359,19 @@ export const roadmapService = {
         return response.data.data;
     },
 
+    async replyRoadmapQuery(roadmapId: string, queryId: string, payload: ReplyQueryRequest) {
+        console.log('📤 Replying to roadmap query:', { roadmapId, queryId, payload });
+        const response = await apiClient.patch<ReplyQueryResponse>(
+            ENDPOINTS.ROADMAPS.REPLY_QUERY(roadmapId, queryId),
+            payload
+        );
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to reply to query');
+        }
+        console.log('📥 Query reply submitted successfully:', response.data);
+        return response.data;
+    },
+
     async createNestedRoadmap(roadmapId: string, payload: CreateNestedRoadmapRequest) {
         console.log('📤 Creating nested roadmap:', { roadmapId, payload });
         const response = await apiClient.post<CreateNestedRoadmapResponse>(
@@ -371,11 +386,17 @@ export const roadmapService = {
     },
 
     async getRoadmapComments(roadMapId: string, userId: string) {
-        const url = `/roadmaps/${roadMapId}/comments?userId=${userId}`;
-        console.log('Fetching roadmap comments with URL:', url);
-        const res = await apiClient.get(url);
-
-        return res.data.data as RoadmapCommentsThread;
+        const response = await apiClient.get<{
+            success: boolean;
+            message: string;
+            data: RoadmapCommentsThread;
+        }>(ENDPOINTS.ROADMAPS.GET_COMMENTS(roadMapId, userId));
+        
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to fetch roadmap comments');
+        }
+        
+        return response.data.data;
     }
 
 };

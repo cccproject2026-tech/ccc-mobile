@@ -166,7 +166,7 @@
 //                 style={{ flex: 1 }}
 //             >
 //                 <View style={styles.scrollContainer}>
-//                     <TopBar role="pastor" userName="John Doe" showUserName />
+//                     <TopBar role="pastor" showUserName />
 
 //                     {/* Header Section */}
 //                     <View style={styles.header}>
@@ -485,7 +485,7 @@ export default function Survey() {
                 style={{ flex: 1 }}
             >
                 <View style={styles.scrollContainer}>
-                    <TopBar role="pastor" userName="John Doe" showUserName />
+                    <TopBar role="pastor" showUserName />
 
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

@@ -2,10 +2,15 @@ import { Button, ScreenLayout } from "@/components/build-components";
 import TextAreaField from "@/components/build-components/text-area";
 import { primary_color } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useReplyRoadmapQuery, useRoadmapQueries } from "@/hooks/roadmaps/useRoadmaps";
+import { RoadmapQuery } from "@/lib/roadmap/types";
+import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   StyleSheet,
@@ -13,84 +18,38 @@ import {
   View
 } from "react-native";
 
-interface Query {
-  id: string;
-  name: string;
-  role: string;
-  avatar: any;
-  date: string;
-  message: string;
-  status: "pending" | "answered";
-  response?: string;
-}
-
-const mockQueries: Query[] = [
-  {
-    id: "1",
-    name: "John Ross",
-    role: "Pastor",
-    avatar: icons.myProfile,
-    date: "22/09/2024",
-    message:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing eip ex ea commodo consequat. Duis ?",
-    status: "pending",
-  },
-  {
-    id: "2",
-    name: "John Ross",
-    role: "Pastor",
-    avatar: icons.myProfile,
-    date: "22/09/2024",
-    message:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing eip ex ea commodo consequat. Duis ?",
-    status: "pending",
-  },
-  {
-    id: "3",
-    name: "John Ross",
-    role: "Pastor",
-    avatar: icons.myProfile,
-    date: "22/09/2024",
-    message:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing eip ex ea commodo consequat. Duis ?",
-    status: "pending",
-  },
-  {
-    id: "4",
-    name: "Jane Smith",
-    role: "Pastor",
-    avatar: icons.myProfile,
-    date: "20/09/2024",
-    message: "How should I proceed with the community outreach program?",
-    status: "answered",
-    response:
-      "You should start by identifying the key stakeholders in your community and scheduling initial meetings with them.",
-  },
-  {
-    id: "5",
-    name: "Michael Brown",
-    role: "Pastor",
-    avatar: icons.myProfile,
-    date: "18/09/2024",
-    message: "What resources are available for youth ministry development?",
-    status: "answered",
-    response:
-      "Please refer to the Youth Ministry Toolkit document in your library. It contains comprehensive resources and best practices.",
-  },
-];
-
 export default function QueriesScreen() {
-  const { data: dataParam } = useLocalSearchParams();
+  const { data: dataParam, roadmapId, userId } = useLocalSearchParams<{
+    data?: string;
+    roadmapId?: string;
+    userId?: string;
+  }>();
   const data = dataParam ? JSON.parse(dataParam as string) : null;
+  
+  // Get roadmapId and userId from params or parsed data
+  const finalRoadmapId = roadmapId || data?.roadmapId;
+  const menteeId = userId || data?.userId;
+  
+  const { user } = useAuthStore();
+  const replyQueryMutation = useReplyRoadmapQuery();
+  
+  const { data: allQueries = [], isLoading } = useRoadmapQueries(
+    finalRoadmapId,
+    menteeId
+  );
 
   const [activeTab, setActiveTab] = useState<"pending" | "answered">("pending");
   const [expandedQueryId, setExpandedQueryId] = useState<string | null>(null);
   const [responses, setResponses] = useState<Record<string, string>>({});
 
-  const filteredQueries = mockQueries.filter(
-    (query) => query.status === activeTab
-  );
-  const pendingCount = mockQueries.filter((q) => q.status === "pending").length;
+  // Filter queries by status
+  const filteredQueries = useMemo(() => {
+    return allQueries.filter((query) => query.status === activeTab);
+  }, [allQueries, activeTab]);
+
+  const pendingCount = useMemo(() => {
+    return allQueries.filter((q) => q.status === "pending").length;
+  }, [allQueries]);
 
   const handleToggleExpand = (queryId: string) => {
     setExpandedQueryId(expandedQueryId === queryId ? null : queryId);
@@ -100,12 +59,45 @@ export default function QueriesScreen() {
     setResponses((prev) => ({ ...prev, [queryId]: text }));
   };
 
-  const handleSubmit = (queryId: string) => {
-    console.log("Submitting response for query:", queryId);
-    console.log("Response:", responses[queryId]);
-    // Handle submission logic here
-    setResponses((prev) => ({ ...prev, [queryId]: "" }));
-    setExpandedQueryId(null);
+  const handleSubmit = async (query: RoadmapQuery) => {
+    if (!responses[query._id]?.trim()) {
+      Alert.alert("Error", "Please enter a response");
+      return;
+    }
+
+    if (!finalRoadmapId || !user?.id) {
+      Alert.alert("Error", "Missing roadmap ID or user ID");
+      return;
+    }
+
+    try {
+      await replyQueryMutation.mutateAsync({
+        roadmapId: finalRoadmapId,
+        queryId: query._id,
+        payload: {
+          repliedAnswer: responses[query._id].trim(),
+          repliedMentorId: user.id,
+        },
+      });
+
+      setResponses((prev) => ({ ...prev, [query._id]: "" }));
+      setExpandedQueryId(null);
+    } catch (error: any) {
+      Alert.alert("Error", error?.message || "Failed to submit reply");
+    }
+  };
+
+  const formatDate = (timestamp: string): string => {
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const getMenteeName = (query: RoadmapQuery): string => {
+    // Since queries are fetched for a specific userId, we can get the name from data or use a default
+    return data?.menteeName || "Mentee";
   };
 
   const renderTab = (
@@ -140,23 +132,31 @@ export default function QueriesScreen() {
     );
   };
 
-  const renderQueryCard = (query: Query) => {
-    const isExpanded = expandedQueryId === query.id;
+  const renderQueryCard = (query: RoadmapQuery) => {
+    const isExpanded = expandedQueryId === query._id;
+    const isSubmitting = replyQueryMutation.isPending && expandedQueryId === query._id;
+    const menteeName = getMenteeName(query);
+    const repliedMentor = typeof query.repliedMentorId === "object" 
+      ? query.repliedMentorId 
+      : null;
 
     return (
-      <View key={query.id} style={styles.queryCard}>
+      <View key={query._id} style={styles.queryCard}>
         {/* Query Header */}
         <View style={styles.queryHeader}>
           <View style={styles.queryHeaderLeft}>
-            <Image source={query.avatar} style={styles.avatar} />
+            <Image 
+              source={icons.myProfile} 
+              style={styles.avatar} 
+            />
             <View style={styles.queryInfo}>
-              <Text style={styles.queryName}>{query.name}</Text>
-              <Text style={styles.queryRole}>{query.role}</Text>
-              <Text style={styles.queryDate}>{query.date}</Text>
+              <Text style={styles.queryName}>{menteeName}</Text>
+              <Text style={styles.queryRole}>Pastor</Text>
+              <Text style={styles.queryDate}>{formatDate(query.createdDate)}</Text>
             </View>
           </View>
           <Pressable
-            onPress={() => handleToggleExpand(query.id)}
+            onPress={() => handleToggleExpand(query._id)}
             style={styles.expandButton}
           >
             <Ionicons
@@ -168,7 +168,7 @@ export default function QueriesScreen() {
         </View>
 
         {/* Query Message */}
-        <Text style={styles.queryMessage}>{query.message}</Text>
+        <Text style={styles.queryMessage}>{query.actualQueryText}</Text>
 
         {/* Expanded Section - Response Area or Existing Response */}
         {isExpanded && (
@@ -178,29 +178,53 @@ export default function QueriesScreen() {
                 <View style={styles.responseInputContainer}>
                   <TextAreaField
                     label="Write your Response here..."
-                    value={responses[query.id] || ""}
-                    onChangeText={(text) => handleResponseChange(query.id, text)}
+                    value={responses[query._id] || ""}
+                    onChangeText={(text) => handleResponseChange(query._id, text)}
                     inputClass={{ backgroundColor: primary_color }}
                     numberOfLines={5}
+                    editable={!isSubmitting}
                   />
                 </View>
                 <View style={{ width: '100%', alignItems: 'flex-end' }}>
                   <View style={{ width: '45%' }}>
                     <Button
-                      onPress={() => handleSubmit(query.id)}
+                      onPress={() => {
+                        if (!isSubmitting && responses[query._id]?.trim()) {
+                          handleSubmit(query);
+                        }
+                      }}
                       wrapperClass=""
                       buttonClass="!h-11"
                       variant="secondary"
+                      buttonStyle={{
+                        opacity: (isSubmitting || !responses[query._id]?.trim()) ? 0.5 : 1
+                      }}
                     >
-                      Submit
+                      {isSubmitting ? (
+                        <ActivityIndicator size="small" color="#1A4882" />
+                      ) : (
+                        "Submit"
+                      )}
                     </Button>
                   </View>
                 </View>
               </>
             ) : (
               <View style={styles.responseContainer}>
-                <Text style={styles.responseLabel}>Response:</Text>
-                <Text style={styles.responseText}>{query.response}</Text>
+                <View style={styles.responseHeader}>
+                  <Text style={styles.responseLabel}>Response:</Text>
+                  {repliedMentor && (
+                    <Text style={styles.mentorName}>
+                      by {repliedMentor.firstName} {repliedMentor.lastName}
+                    </Text>
+                  )}
+                </View>
+                <Text style={styles.responseText}>{query.repliedAnswer}</Text>
+                {query.repliedDate && (
+                  <Text style={styles.responseDate}>
+                    {formatDate(query.repliedDate)}
+                  </Text>
+                )}
               </View>
             )}
           </View>
@@ -230,7 +254,11 @@ export default function QueriesScreen() {
 
         {/* Queries List */}
         <View style={styles.queriesList}>
-          {filteredQueries.length > 0 ? (
+          {isLoading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator size="large" color="white" />
+            </View>
+          ) : filteredQueries.length > 0 ? (
             filteredQueries.map((query) => renderQueryCard(query))
           ) : (
             <View style={styles.emptyState}>
@@ -368,16 +396,32 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
   },
+  responseHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   responseLabel: {
     color: "rgba(255, 255, 255, 0.7)",
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 8,
+  },
+  mentorName: {
+    color: "rgba(255, 255, 255, 0.6)",
+    fontSize: 12,
+    fontStyle: "italic",
   },
   responseText: {
     color: "white",
     fontSize: 15,
     lineHeight: 22,
+    marginBottom: 4,
+  },
+  responseDate: {
+    color: "rgba(255, 255, 255, 0.5)",
+    fontSize: 12,
+    marginTop: 4,
   },
   emptyState: {
     flex: 1,

@@ -183,7 +183,7 @@ export default function MenteeRoadmapDetailScreen() {
             style={[styles.container, { paddingBottom: bottom + height * 0.05 }]}
         >
             <View style={styles.content}>
-                <TopBar userName="John Doe" notifications={4} showUserName={true} showNotifications={true} />
+                <TopBar notifications={4} showUserName={true} showNotifications={true} />
 
                 {/* Header */}
                 <View style={styles.header}>

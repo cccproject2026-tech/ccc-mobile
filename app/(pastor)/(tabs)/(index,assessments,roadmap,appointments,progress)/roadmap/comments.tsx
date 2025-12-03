@@ -100,7 +100,7 @@ export default function CommentsScreen() {
     return (
         <LinearGradient colors={["#176192", "#1D548D", "#264387"]} style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
-                <TopBar role="pastor" userName="John Ross" showUserName />
+                <TopBar role="pastor" showUserName />
             </View>
 
             <View style={styles.headerContainer}>

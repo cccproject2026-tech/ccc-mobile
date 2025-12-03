@@ -132,7 +132,7 @@ export default function PhaseList() {
             style={{ flex: 1 }}
         >
             <View style={{ paddingBottom: 10 }}>
-                <TopBar role="pastor" userName="John Ross" showUserName />
+                <TopBar role="pastor" showUserName />
             </View>
 
             {/* Header */}

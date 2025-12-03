@@ -10,7 +10,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const LOGO = require('@/assets/logos/CCClogo.png');
 
 type Props = {
-    userName?: string;
     showUserName?: boolean;
     notifications?: number;
     showNotifications?: boolean;
@@ -25,7 +24,6 @@ type Props = {
 };
 
 const TopBar: React.FC<Props> = ({
-    userName,
     showUserName = false,
     notifications = 0,
     showNotifications = true,
@@ -103,7 +101,11 @@ const TopBar: React.FC<Props> = ({
                         style={styles.gradientBorder}
                     >
                         <View style={styles.innerNameContainer}>
-                            <Text style={styles.nameText} numberOfLines={1}>{user?.firstName + " " + (user?.lastName || "")}</Text>
+                            <Text style={styles.nameText} numberOfLines={1}>
+                                {user?.firstName && user?.lastName 
+                                    ? `${user.firstName} ${user.lastName}`
+                                    : user?.firstName || user?.lastName || 'User'}
+                            </Text>
                         </View>
                     </LinearGradient>
                 )}

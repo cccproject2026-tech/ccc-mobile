@@ -188,7 +188,7 @@ export default function MyMentorsScreen() {
             >
                 <>
                     <View style={{ paddingBottom: 10 }}>
-                        <TopBar role="pastor" userName="John Ross" showUserName />
+                        <TopBar role="pastor" showUserName />
                     </View>
 
                     {isEmpty ? (

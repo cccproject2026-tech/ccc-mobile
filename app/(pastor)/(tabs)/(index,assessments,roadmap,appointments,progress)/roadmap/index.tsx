@@ -415,7 +415,7 @@ export default function PhaseList() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
+                    <TopBar role="pastor" showUserName />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -432,7 +432,7 @@ export default function PhaseList() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
+                    <TopBar role="pastor" showUserName />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
                     <Ionicons name="alert-circle" size={48} color="#fff" />
@@ -454,7 +454,7 @@ export default function PhaseList() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
+                    <TopBar role="pastor" showUserName />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
                     <Ionicons name="map-outline" size={64} color="#fff" opacity={0.5} />
@@ -472,7 +472,7 @@ export default function PhaseList() {
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
             <View style={styles.topBarWrapper}>
-                <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
+                <TopBar role="pastor" showUserName />
             </View>
 
             <View style={styles.headerContainer}>

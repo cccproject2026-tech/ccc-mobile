@@ -3,6 +3,7 @@ import {
     AddCommentRequest,
     CreateExtrasDto,
     NestedRoadmap,
+    ReplyQueryRequest,
     Roadmap,
     RoadmapCommentsThread,
     SubmitQueryRequest,
@@ -561,6 +562,33 @@ export function useSubmitRoadmapQuery() {
         }) => roadmapService.submitRoadmapQuery(roadmapId, payload),
         onSuccess: (data, variables) => {
             console.log("✅ Roadmap query submitted successfully");
+
+            // Invalidate relevant queries to refresh queries list
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.detail(variables.roadmapId)
+            });
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.all
+            });
+        },
+    });
+}
+
+export function useReplyRoadmapQuery() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            roadmapId,
+            queryId,
+            payload
+        }: {
+            roadmapId: string;
+            queryId: string;
+            payload: ReplyQueryRequest;
+        }) => roadmapService.replyRoadmapQuery(roadmapId, queryId, payload),
+        onSuccess: (data, variables) => {
+            console.log("✅ Roadmap query reply submitted successfully");
 
             // Invalidate relevant queries to refresh queries list
             queryClient.invalidateQueries({

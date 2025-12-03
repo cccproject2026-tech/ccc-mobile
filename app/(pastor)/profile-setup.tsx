@@ -143,15 +143,13 @@ export default function ProfileUpload() {
         }
     }, [setCurrentStep, setHasProfilePicture, router]);
 
-    const userName = user?.firstName || 'User';
-
     return (
         <LinearGradient
             colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
             style={{ flex: 1, justifyContent: 'space-between' }}
         >
             <View style={styles.scrollContainer}>
-                <TopBar role="pastor" showUserName userName={userName} />
+                <TopBar role="pastor" showUserName />
                 <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
                     <View style={styles.content}>
                         {/* Header */}

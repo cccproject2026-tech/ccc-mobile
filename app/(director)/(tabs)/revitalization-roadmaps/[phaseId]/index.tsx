@@ -222,7 +222,7 @@ export default function PhaseDetail() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
-                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                    <TopBar notifications={3} showUserName={true} showNotifications={true} />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -239,7 +239,7 @@ export default function PhaseDetail() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
-                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                    <TopBar notifications={3} showUserName={true} showNotifications={true} />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
                     <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
@@ -259,7 +259,7 @@ export default function PhaseDetail() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
-                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                    <TopBar notifications={3} showUserName={true} showNotifications={true} />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ color: 'white', fontSize: 16 }}>Roadmap not found</Text>
@@ -271,7 +271,7 @@ export default function PhaseDetail() {
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
-                <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                <TopBar notifications={3} showUserName={true} showNotifications={true} />
             </View>
 
             {/* Header */}

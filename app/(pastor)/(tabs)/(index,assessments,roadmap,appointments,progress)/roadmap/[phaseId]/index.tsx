@@ -201,7 +201,7 @@
 //     return (
 //         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
 //             <View style={{ paddingBottom: 10 }}>
-//                 <TopBar role="pastor" userName="John Ross" showUserName />
+//                 <TopBar role="pastor" showUserName />
 //             </View>
 
 //             {/* Header */}
@@ -581,7 +581,7 @@ export default function RoadmapDetail() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
-                    <TopBar role="pastor" userName="John Ross" showUserName />
+                    <TopBar role="pastor" showUserName />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -596,7 +596,7 @@ export default function RoadmapDetail() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
-                    <TopBar role="pastor" userName="John Ross" showUserName />
+                    <TopBar role="pastor" showUserName />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
                     <Ionicons name="alert-circle" size={48} color="#fff" />
@@ -622,7 +622,7 @@ export default function RoadmapDetail() {
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
-                <TopBar role="pastor" userName="John Ross" showUserName />
+                <TopBar role="pastor" showUserName />
             </View>
 
             {/* Header */}

@@ -247,7 +247,7 @@ export default function AnswerQuestionPage() {
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
             {showPreSurvey ? (
-                <TopBar userName="John Ross" showUserName={true} showNotifications={true} />
+                <TopBar showUserName={true} showNotifications={true} />
             ) : (
                 <TopBar showDrawer={false} showNotifications={false} />
             )}

@@ -407,3 +407,19 @@ export interface GetQueriesResponse {
     message: string;
     data: RoadmapQueryThread[];
 }
+
+export interface ReplyQueryRequest {
+    repliedAnswer: string;
+    repliedMentorId: string;
+}
+
+export interface ReplyQueryResponse {
+    success: boolean;
+    message: string;
+    data: {
+        _id: string;
+        userId: string;
+        roadMapId: string;
+        queries: RoadmapQuery[];
+    };
+}

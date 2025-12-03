@@ -212,7 +212,7 @@ export default function Mentees() {
                 style={[styles.container]}
             >
                 <View style={styles.innerContainer}>
-                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                    <TopBar notifications={3} showUserName={true} showNotifications={true} />
                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                         <ActivityIndicator size="large" color="#fff" />
                     </View>
@@ -228,7 +228,7 @@ export default function Mentees() {
                 style={[styles.container]}
             >
                 <View style={styles.innerContainer}>
-                    <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                    <TopBar notifications={3} showUserName={true} showNotifications={true} />
                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: getSpacing(16) }}>
                         <Text style={{ color: '#fff', textAlign: 'center', fontSize: getFontSize(16) }}>
                             Failed to load mentees. Please try again.
@@ -248,7 +248,7 @@ export default function Mentees() {
             style={[styles.container]}
         >
             <View style={styles.innerContainer}>
-                <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View style={styles.contentContainer}>
                     {/* Header */}

@@ -1,22 +1,23 @@
-import MentorCard, { MentorData } from "@/components/director/MentorCard";
+import MentorCard from "@/components/director/MentorCard";
 import MentorProfileSwiper from "@/components/director/MentorProfileSwiper";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { useMentors } from "@/hooks/mentors/useMentors";
+import { Mentor, useMentors } from "@/hooks/mentors/useMentors";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function MyMentorsScreen() {
@@ -38,33 +39,99 @@ export default function MyMentorsScreen() {
     );
   }, [mentors, searchText]);
 
-  const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
+  const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
 
-  const handleCardPress = (mentor: MentorData) => {
+  const handleCardPress = (mentor: Mentor) => {
     router.push({
       pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
       params: { mentorData: JSON.stringify(mentor) },
     });
   };
 
-  const handleCall = (mentor: MentorData) => {
+  const handleCall = (mentor: Mentor) => {
     console.log("Calling", mentor.name);
-    // Implement call functionality
+    if (mentor.phoneNumber) {
+      // Ensure US formatting and open a tel: link
+      const phone = mentor.phoneNumber.replace(/[^0-9]/g, "");
+      // US numbers should start with +1
+      const formattedPhone = phone.length === 10 ? `+1${phone}` : `+${phone}`;
+      try {
+        // Only proceed if the Linking API is available in this context
+        if (typeof Linking !== "undefined" && Linking.openURL) {
+          Linking.openURL(`tel:${formattedPhone}`);
+        } else {
+          console.warn("Linking not available to open call link.");
+        }
+      } catch (err) {
+        console.error("Failed to open dialer for:", formattedPhone, err);
+      }
+    } else {
+      console.warn("No phone number available for mentor:", mentor.name);
+    }
+
   };
 
-  const handleChat = (mentor: MentorData) => {
+  const handleChat = (mentor: Mentor) => {
     console.log("Chatting with", mentor.name);
     // Implement chat functionality
+    if (mentor.phoneNumber) {
+      // Format phone number to US standard without any non-digit characters
+      const phone = mentor.phoneNumber.replace(/[^0-9]/g, "");
+      // US numbers should be used as 10 digits, prefixed with +1
+      const formattedPhone = phone.length === 10 ? `+1${phone}` : `+${phone}`;
+      try {
+        if (typeof Linking !== "undefined" && Linking.openURL) {
+          Linking.openURL(`sms:${formattedPhone}`);
+        } else {
+          console.warn("Linking not available for chat (sms):", formattedPhone);
+        }
+      } catch (err) {
+        console.error("Failed to initiate chat (sms) for:", formattedPhone, err);
+      }
+    } else {
+      console.warn("No phone number available for mentor:", mentor.name);
+    }
   };
 
-  const handleMail = (mentor: MentorData) => {
+  const handleMail = (mentor: Mentor) => {
     console.log("Emailing", mentor.name);
     // Implement email functionality
+    if (mentor.email) {
+      // Compose an email to the mentor's address
+      try {
+        if (typeof Linking !== "undefined" && Linking.openURL) {
+          Linking.openURL(`mailto:${mentor.email}`);
+        } else {
+          console.warn("Linking not available for email:", mentor.email);
+        }
+      } catch (err) {
+        console.error("Failed to initiate email for:", mentor.email, err);
+      }
+    } else {
+      console.warn("No email available for mentor:", mentor.name);
+    }
   };
 
-  const handleWhatsApp = (mentor: MentorData) => {
+  const handleWhatsApp = (mentor: Mentor) => {
     console.log("WhatsApp", mentor.name);
-    // Implement WhatsApp functionality
+  // Implement WhatsApp functionality
+    if (mentor.phoneNumber) {
+      // Remove non-digit characters and ensure US-based WhatsApp link
+      const phone = mentor.phoneNumber.replace(/[^0-9]/g, "");
+      // WhatsApp in US: must use 1 + 10 digit number
+      const formattedPhone = phone.length === 10 ? `1${phone}` : phone;
+      try {
+        if (typeof Linking !== "undefined" && Linking.openURL) {
+          Linking.openURL(`https://wa.me/${formattedPhone}`);
+        } else {
+          console.warn("Linking not available for WhatsApp:", formattedPhone);
+        }
+      } catch (err) {
+        console.error("Failed to initiate WhatsApp for:", formattedPhone, err);
+      }
+    } else {
+      console.warn("No phone number available for mentor:", mentor.name);
+    }
   };
 
   if (isLoading) {
@@ -101,7 +168,7 @@ export default function MyMentorsScreen() {
       >
         <>
           <View style={{ paddingBottom: 10 }}>
-            <TopBar role="pastor" userName="John Ross" showUserName />
+            <TopBar role="pastor" showUserName />
           </View>
           <View style={{ flex: 1 }}>
             {/* Header Section */}
@@ -177,13 +244,13 @@ export default function MyMentorsScreen() {
                   {filteredMentors.map((mentor) => (
                     <MentorCard
                       key={mentor.id}
-                      mentor={mentor as MentorData}
+                      mentor={mentor}
                       layout={listToggle ? 'list' : 'card'}
-                      onCall={() => handleCall(mentor as MentorData)}
-                      onChat={() => handleChat(mentor as MentorData)}
-                      onMail={() => handleMail(mentor as MentorData)}
-                      onWhatsApp={() => handleWhatsApp(mentor as MentorData)}
-                      onPress={() => handleCardPress(mentor as MentorData)}
+                      onCall={() => handleCall(mentor)}
+                      onChat={() => handleChat(mentor)}
+                      onMail={() => handleMail(mentor)}
+                      onWhatsApp={() => handleWhatsApp(mentor)}
+                      onPress={() => handleCardPress(mentor)}
                     />
                   ))}
                 </View>
@@ -205,12 +272,12 @@ export default function MyMentorsScreen() {
                   {filteredMentors.map((mentor) => (
                     <MentorCard
                       key={mentor.id}
-                      mentor={mentor as MentorData}
+                      mentor={mentor}
                       layout={listToggle ? 'list' : 'card'}
-                      onCall={() => handleCall(mentor as MentorData)}
-                      onChat={() => handleChat(mentor as MentorData)}
-                      onMail={() => handleMail(mentor as MentorData)}
-                      onWhatsApp={() => handleWhatsApp(mentor as MentorData)}
+                      onCall={() => handleCall(mentor)}
+                      onChat={() => handleChat(mentor)}
+                      onMail={() => handleMail(mentor)}
+                      onWhatsApp={() => handleWhatsApp(mentor)}
                     />
                   ))}
                 </View>

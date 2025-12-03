@@ -88,7 +88,7 @@ export default function SelectRoadmapScreen() {
             style={[styles.container, {}]}
         >
             <View style={styles.content}>
-                <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 {/* Header */}
                 <View style={styles.header}>

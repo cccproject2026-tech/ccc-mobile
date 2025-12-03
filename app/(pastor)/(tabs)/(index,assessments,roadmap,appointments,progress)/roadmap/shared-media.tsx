@@ -275,7 +275,7 @@ export default function ShareMedia() {
             >
                 {/* Top Bar */}
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="pastor" userName="John Ross" showUserName />
+                    <TopBar role="pastor" showUserName />
                 </View>
 
                 {/* Header */}

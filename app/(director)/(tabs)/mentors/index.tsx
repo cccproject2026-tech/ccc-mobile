@@ -227,7 +227,7 @@ export default function Mentors() {
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
             <View className="flex-1">
-                <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View className="flex-1 pt-6">
                     <View style={styles.headerContainer}>

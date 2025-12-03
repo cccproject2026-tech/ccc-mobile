@@ -12,7 +12,6 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
-    Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -117,7 +116,7 @@ export default function AssignAssessmentMenteeScreen() {
             style={[styles.container]}
         >
             {/* Top Bar */}
-            <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+            <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
             {/* Header */}
             <View style={styles.header}>

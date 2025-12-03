@@ -120,7 +120,7 @@ export default function ProgressScreen() {
   if (isLoading) {
     return (
       <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
-        <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
+        <TopBar role="pastor" showUserName />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={{ color: '#fff', marginTop: 16 }}>Loading your progress...</Text>
@@ -133,7 +133,7 @@ export default function ProgressScreen() {
   if (progressError) {
     return (
       <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
-        <TopBar role="pastor" userName={user?.firstName || 'User'} showUserName />
+        <TopBar role="pastor" showUserName />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
           <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center' }}>
             Failed to load progress data
@@ -152,7 +152,7 @@ export default function ProgressScreen() {
     <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
       <View style={styles.scrollContainer}>
         {/* Top Bar */}
-        <TopBar role="pastor" userName={user?.firstName || "User"} showUserName />
+        <TopBar role="pastor" showUserName />
 
         {/* Header */}
         <View style={styles.headerContainer}>

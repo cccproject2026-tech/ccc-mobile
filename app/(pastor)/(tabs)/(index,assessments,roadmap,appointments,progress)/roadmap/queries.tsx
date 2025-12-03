@@ -122,7 +122,7 @@ export default function QueriesScreen() {
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
             <View style={{ paddingBottom: 10 }}>
-                <TopBar role="pastor" userName="John Ross" showUserName />
+                <TopBar role="pastor" showUserName />
             </View>
 
             {/* HEADER */}

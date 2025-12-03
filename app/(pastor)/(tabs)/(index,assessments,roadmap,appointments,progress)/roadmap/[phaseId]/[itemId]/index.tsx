@@ -502,7 +502,7 @@ export default function ItemDetail() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="pastor" userName="John Ross" showUserName />
+                    <TopBar role="pastor" showUserName />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -517,7 +517,7 @@ export default function ItemDetail() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="pastor" userName="John Ross" showUserName />
+                    <TopBar role="pastor" showUserName />
                 </View>
                 <View style={styles.notFoundContainer}>
                     <Ionicons name="alert-circle" size={48} color="#fff" />
@@ -538,7 +538,7 @@ export default function ItemDetail() {
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
             <View style={styles.topBarWrapper}>
-                <TopBar role="pastor" userName="John Ross" showUserName />
+                <TopBar role="pastor" showUserName />
             </View>
 
             {/* Header */}

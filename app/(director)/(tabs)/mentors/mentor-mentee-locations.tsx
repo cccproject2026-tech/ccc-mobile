@@ -104,7 +104,7 @@ export default function MenteesLocation() {
             style={{ flex: 1, paddingBottom: bottom + height * 0.05 }}
         >
             <View className="flex-1">
-                <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View className="flex-1 pt-6">
                     <View className="flex-row items-center justify-between px-4 pb-3 mb-4 border-b border-white/30">

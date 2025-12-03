@@ -455,7 +455,7 @@ export default function InterestReceivedScreen() {
             style={{ flex: 1 }}
         >
             <View className="flex-1">
-                <TopBar userName="David Roe" notifications={3} showUserName={true} showNotifications={true} />
+                <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View className="flex-1 pt-6">
                     <TouchableOpacity

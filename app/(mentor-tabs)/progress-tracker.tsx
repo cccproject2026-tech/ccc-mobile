@@ -122,7 +122,7 @@ export default function ProgressTracker() {
       <Stack.Screen options={{ headerShown: false }} />
       <View className="flex-1">
         <View className="flex-1">
-          <TopBar userName="John Doe" notifications={3} showUserName showNotifications />
+          <TopBar notifications={3} showUserName showNotifications />
 
           <View className="flex-1 pt-6">
             {isLoading && (
