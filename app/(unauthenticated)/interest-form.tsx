@@ -991,7 +991,7 @@ export default function InterestFormScreen() {
                     showDrawer={false}
                     showNotifications={false}
                     showUserName
-                    userName="Interest Form"
+                    customTitle="Interest Form"
                 />
 
                 <KeyboardAwareScrollView

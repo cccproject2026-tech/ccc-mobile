@@ -21,6 +21,7 @@ type Props = {
     color?: string;
     onProfilePress?: () => void;
     role?: string;
+    customTitle?: string;
 };
 
 const TopBar: React.FC<Props> = ({
@@ -34,7 +35,8 @@ const TopBar: React.FC<Props> = ({
     size = 36,
     color = "#fff",
     onProfilePress,
-    role
+    role,
+    customTitle
 }) => {
     const { top } = useSafeAreaInsets();
     const navigation = useNavigation();
@@ -102,7 +104,7 @@ const TopBar: React.FC<Props> = ({
                     >
                         <View style={styles.innerNameContainer}>
                             <Text style={styles.nameText} numberOfLines={1}>
-                                {user?.firstName && user?.lastName 
+                                {customTitle ? customTitle : user?.firstName && user?.lastName
                                     ? `${user.firstName} ${user.lastName}`
                                     : user?.firstName || user?.lastName || 'User'}
                             </Text>
