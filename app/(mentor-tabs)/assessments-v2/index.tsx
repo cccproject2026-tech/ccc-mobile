@@ -5,12 +5,12 @@ import DeleteConfirmationModal from "@/components/build-components/DeleteConfirm
 import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
+import { icons } from "@/constants/images";
 import { useDeleteAssessment } from "@/hooks/assessments";
 import { useMenteeAssessments } from "@/hooks/assessments/useMenteeAssessments";
 import { useMentees } from "@/hooks/mentees/useMentees";
-import { useAuthStore } from "@/stores/auth.store";
 import { Assessment } from "@/lib/assessments/types";
-import { icons } from "@/constants/images";
+import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -176,7 +176,6 @@ export default function MentorAssessmentsLibrary() {
     return (
         <LinearGradient colors={["#155C93", "#1B2B60"]} style={{ flex: 1 }}>
             <TopBar
-                userName={user?.firstName || "Mentor"}
                 showUserName
                 notifications={3}
                 role="mentor"
