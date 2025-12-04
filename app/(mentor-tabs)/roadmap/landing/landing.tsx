@@ -66,7 +66,7 @@ export default function Landing() {
 
     const filteredRoadMaps = useMemo(() => {
         if (tabs === "All") return formattedRoadmaps;
-        
+
         // Map tab names to status values
         const statusMap: Record<string, string> = {
             "Due": "due",
@@ -74,17 +74,17 @@ export default function Landing() {
             "In Progress": "in-progress",
             "Completed": "completed",
         };
-        
+
         const targetStatus = statusMap[tabs];
         if (!targetStatus) return formattedRoadmaps;
-        
+
         return formattedRoadmaps.filter((item) => item.cardData.status === targetStatus);
     }, [formattedRoadmaps, tabs]);
 
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
             <Stack.Screen options={{ headerShown: false }} />
-            
+
             <View style={styles.topBarWrapper}>
                 <TopBar role="mentor" showUserName />
             </View>
@@ -160,8 +160,8 @@ export default function Landing() {
 }
 
 const styles = StyleSheet.create({
-    topBarWrapper: { 
-        paddingBottom: 10 
+    topBarWrapper: {
+        paddingBottom: 10
     },
     headerContainer: {
         flexDirection: 'row',
@@ -173,10 +173,10 @@ const styles = StyleSheet.create({
         borderBottomColor: 'rgba(255,255,255,0.2)',
         marginBottom: 16,
     },
-    headerLeft: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        flex: 1 
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1
     },
     headerTitle: {
         color: '#fff',

@@ -3,74 +3,35 @@ import AssessmentMenuBottomSheet from "@/components/build-components/AssessmentM
 import AssessmentCard from "@/components/build-components/cards/assessment-card";
 import DeleteConfirmationModal from "@/components/build-components/DeleteConfirmationModal";
 import SearchBar from "@/components/director/SearchBar";
+import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
-import { useAssessments, useDeleteAssessment } from "@/hooks/assessments";
+import { useDeleteAssessment } from "@/hooks/assessments";
+import { useMenteeAssessments } from "@/hooks/assessments/useMenteeAssessments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { useAuthStore } from "@/stores/auth.store";
-import { ApiAssessment, Assessment } from "@/lib/assessments/types";
+import { Assessment } from "@/lib/assessments/types";
 import { icons } from "@/constants/images";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useMemo } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import React, { useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { RefreshControl } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// Helper function to map API assessment to component Assessment type
-const mapApiAssessmentToAssessment = (apiAssessment: ApiAssessment): Assessment => {
-    // Infer type from name or default to 'PMP'
-    const inferType = (name: string): 'CMA' | 'PMP' => {
-        const nameLower = name.toLowerCase();
-        if (nameLower.includes('cma') || nameLower.includes('church')) {
-            return 'CMA';
-        }
-        return 'PMP';
-    };
-
-    return {
-        id: apiAssessment._id,
-        type: inferType(apiAssessment.name),
-        title: apiAssessment.name,
-        description: apiAssessment.description,
-        status: 'Not Started' as const,
-        guidelines: apiAssessment.instructions,
-        sections: apiAssessment.sections.map((section) => ({
-            title: section.title,
-            subtitle: section.description,
-            questionGroups: section.layers.map((layer) => ({
-                id: layer._id,
-                questions: [
-                    {
-                        id: layer._id,
-                        text: layer.title, // Layer title is the question
-                        type: 'radio' as const,
-                        options: layer.choices.map((c) => ({
-                            label: c.text,
-                            value: c._id,
-                        })),
-                        required: false,
-                    },
-                ],
-            })),
-        })),
-    };
-};
 
 export default function MentorAssessmentsLibrary() {
     const { bottom } = useSafeAreaInsets();
     const router = useRouter();
 
-    const [search, setSearch] = React.useState("");
-    const [selectedMentee, setSelectedMentee] = React.useState<string | null>(
-        null
-    );
-    const [selectedAssessment, setSelectedAssessment] =
-        React.useState<Assessment | null>(null);
-    const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = React.useState(false);
-    const [showDeleteSuccessModal, setShowDeleteSuccessModal] = React.useState(false);
-    const [assessmentToDelete, setAssessmentToDelete] = React.useState<Assessment | null>(null);
-    const bottomSheetRef = React.useRef<BottomSheetModal>(null);
+    const [search, setSearch] = useState("");
+    const [selectedMentee, setSelectedMentee] = useState<string | null>(null);
+    const [tabs, setTabs] = useState("All");
+    const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
+    const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
+    const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);
+    const [assessmentToDelete, setAssessmentToDelete] = useState<Assessment | null>(null);
+    const bottomSheetRef = useRef<BottomSheetModal>(null);
 
     // Get current user for TopBar
     const { user } = useAuthStore();
@@ -79,7 +40,7 @@ export default function MentorAssessmentsLibrary() {
     const { data: menteesData } = useMentees();
     
     // Format mentees for display
-    const mentees = React.useMemo(() => {
+    const mentees = useMemo(() => {
         if (!menteesData?.mentees) return [];
         return menteesData.mentees.map((mentee) => ({
             id: mentee.id,
@@ -88,34 +49,60 @@ export default function MentorAssessmentsLibrary() {
         }));
     }, [menteesData]);
 
-    // Use TanStack Query hooks
-    const { data: apiAssessments, isLoading: loading, error: queryError, refetch } = useAssessments();
+    // Use mentee assessments hook (shows library when no mentee selected)
+    const {
+        data: assessments,
+        isLoading,
+        error,
+        refetch,
+        isRefetching,
+        assignedCount
+    } = useMenteeAssessments(selectedMentee);
+
     const deleteAssessmentMutation = useDeleteAssessment();
 
-    // Refetch when screen comes into focus
-    useFocusEffect(
-        useCallback(() => {
-            refetch();
-        }, [refetch])
-    );
+    // Handle pull to refresh
+    const handleRefresh = () => {
+        refetch();
+    };
 
-    // Map API assessments to component Assessment type
-    const assessments = useMemo(() => {
-        if (!apiAssessments) return [];
-        return apiAssessments.map(mapApiAssessmentToAssessment);
-    }, [apiAssessments]);
+    // Apply search filter
+    const searchedAssessments = useMemo(() => {
+        if (!search.trim()) return assessments;
 
-    const error = queryError ? 'Failed to load assessments. Please try again.' : null;
-
-    const filteredAssessments = React.useMemo(() => {
-        const q = search.trim().toLowerCase();
-        if (q.length === 0) return assessments;
+        const query = search.toLowerCase();
         return assessments.filter(
-            (a) =>
-                a.title.toLowerCase().includes(q) ||
-                a.description.toLowerCase().includes(q)
+            (item) =>
+                item.title.toLowerCase().includes(query) ||
+                item.description.toLowerCase().includes(query)
         );
-    }, [search, assessments]);
+    }, [assessments, search]);
+
+    // Status keys for tabs
+    const statusKeys = [
+        { key: "Not Started", label: "Not Started" },
+        { key: "Submitted", label: "Submitted" },
+        { key: "Completed", label: "Completed" },
+    ];
+
+    // Calculate available tabs with counts
+    const availableTabs = useMemo(() => {
+        return [
+            { key: "All", label: "All", badge: assignedCount },
+            ...statusKeys.map(tab => {
+                const count = searchedAssessments.filter(
+                    item => item.status === tab.label
+                ).length;
+                return count > 0 ? { ...tab, badge: count } : tab;
+            })
+        ];
+    }, [searchedAssessments, assignedCount]);
+
+    // Filter by selected tab
+    const filteredAssessments = useMemo(() => {
+        if (tabs === "All") return searchedAssessments;
+        return searchedAssessments.filter((item) => item.status === tabs);
+    }, [searchedAssessments, tabs]);
 
     const handleOpenAssessment = (assessment: Assessment) => {
         if (assessment.type === "CMA") {
@@ -313,38 +300,56 @@ export default function MentorAssessmentsLibrary() {
                 </ScrollView>
             </View>
 
+            {/* Status Tabs - Only show when a mentee is selected */}
+            {selectedMentee && (
+                <View style={{ marginTop: 10, paddingHorizontal: 16 }}>
+                    <TabSwitcher
+                        tabs={availableTabs}
+                        activeTab={tabs}
+                        onChange={setTabs}
+                    />
+                </View>
+            )}
+
             {/* Cards List */}
             <View style={{ flex: 1 }}>
-                {loading ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                {isLoading && !isRefetching ? (
+                    <View style={styles.centerContainer}>
                         <ActivityIndicator size="large" color="#E2E8F0" />
-                        <Text style={{ color: '#E2E8F0', marginTop: 12 }}>
+                        <Text style={styles.loadingText}>
                             Loading assessments...
                         </Text>
                     </View>
-                ) : error ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
-                        <Text style={{ color: '#FF6B6B', fontSize: 16, textAlign: 'center', marginBottom: 12 }}>
-                            {error}
-                        </Text>
-                        <Pressable
-                            onPress={() => refetch()}
-                            style={{
-                                backgroundColor: '#5EB3D1',
-                                paddingHorizontal: 24,
-                                paddingVertical: 12,
-                                borderRadius: 8,
-                            }}
-                        >
-                            <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
-                                Retry
-                            </Text>
-                        </Pressable>
+                ) : error && !assessments.length ? (
+                    <View style={styles.centerContainer}>
+                        <Ionicons name="alert-circle-outline" size={64} color="#E2E8F0" />
+                        <Text style={styles.errorText}>Failed to load assessments</Text>
+                        <Text style={styles.errorSubtext}>Pull down to retry</Text>
                     </View>
                 ) : filteredAssessments.length === 0 ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
-                        <Text style={{ color: '#E2E8F0', fontSize: 16, textAlign: 'center' }}>
-                            {search.trim() ? 'No assessments found matching your search.' : 'No assessments available.'}
+                    <View style={styles.emptyState}>
+                        <Ionicons
+                            name="document-text-outline"
+                            size={64}
+                            color="rgba(255,255,255,0.3)"
+                        />
+                        <Text style={styles.emptyText}>
+                            {selectedMentee
+                                ? assignedCount === 0
+                                    ? "No assessments assigned to this mentee"
+                                    : "No assessments found"
+                                : search.trim()
+                                    ? "No assessments found matching your search"
+                                    : "No assessments available"}
+                        </Text>
+                        <Text style={styles.emptySubtext}>
+                            {search
+                                ? "Try adjusting your search"
+                                : selectedMentee
+                                    ? assignedCount === 0
+                                        ? "Assign assessments to view them here"
+                                        : "Pull down to refresh"
+                                    : "Create a new assessment to get started"}
                         </Text>
                     </View>
                 ) : (
@@ -355,9 +360,20 @@ export default function MentorAssessmentsLibrary() {
                             paddingBottom: bottom + 20,
                         }}
                         showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={isRefetching}
+                                onRefresh={handleRefresh}
+                                tintColor="#fff"
+                                colors={["#fff"]}
+                                progressBackgroundColor="rgba(255,255,255,0.2)"
+                                title="Pull to refresh"
+                                titleColor="#fff"
+                            />
+                        }
                     >
-                        {filteredAssessments.map((item) => (
-                            <View key={item.id} style={{ marginBottom: 16 }}>
+                        {filteredAssessments.map((item, index) => (
+                            <React.Fragment key={item.id}>
                                 <AssessmentCard
                                     data={item}
                                     onPress={handleOpenAssessment}
@@ -366,7 +382,10 @@ export default function MentorAssessmentsLibrary() {
                                     onCustomizedPress={() => { }}
                                     onMenuPress={() => handleMenuPress(item)}
                                 />
-                            </View>
+                                {index < filteredAssessments.length - 1 && (
+                                    <View style={styles.dividerWithMargin} />
+                                )}
+                            </React.Fragment>
                         ))}
                     </ScrollView>
                 )}
@@ -395,3 +414,53 @@ export default function MentorAssessmentsLibrary() {
         </LinearGradient>
     );
 }
+
+const styles = StyleSheet.create({
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+    },
+    loadingText: {
+        color: '#E2E8F0',
+        fontSize: 16,
+        marginTop: 12,
+    },
+    errorText: {
+        color: '#E2E8F0',
+        fontSize: 18,
+        fontWeight: '600',
+        marginTop: 16,
+    },
+    errorSubtext: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 14,
+        marginTop: 8,
+    },
+    emptyState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 60,
+    },
+    emptyText: {
+        color: '#E2E8F0',
+        fontSize: 18,
+        fontWeight: '600',
+        marginTop: 16,
+        textAlign: 'center',
+    },
+    emptySubtext: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 14,
+        marginTop: 8,
+        textAlign: 'center',
+    },
+    dividerWithMargin: {
+        height: 0.5,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        marginVertical: 16,
+    },
+});
