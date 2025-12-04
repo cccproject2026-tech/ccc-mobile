@@ -369,7 +369,10 @@ export default function MentorDashboard() {
                         router.push('/(mentor-tabs)/progress-tracker');
                       } else if (item.title === 'Assessment') {
                         router.push('/(mentor-tabs)/assessments-v2');
-                      } else {
+                      } else if (item.title === 'Revitalization Roadmap') {
+                        router.push('/(mentor-tabs)/roadmap/landing/landing');
+                      } 
+                      else {
                         console.log(`Pressed ${item.title}`);
                       }
                     }}

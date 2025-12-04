@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { router, usePathname } from "expo-router";
 import { useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View, type DimensionValue } from "react-native";
 
 export default function RevitalizationCard({
   data,
@@ -10,8 +10,10 @@ export default function RevitalizationCard({
   data: any;
   navigation: any;
 }) {
-  const progressPercentage =
-    (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%";
+  const progressPercentage: DimensionValue =
+    data?.taskStatus?.toComplete > 0
+      ? `${(data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100}%`
+      : "0%";
   const [hasVisited, setHasVisited] = useState(false);
   const pathname = usePathname();
   console.log(pathname, "paht");
