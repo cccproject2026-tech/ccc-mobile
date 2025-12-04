@@ -542,6 +542,10 @@ export function useAddRoadmapComment() {
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.all
             });
+            // Invalidate comments query
+            queryClient.invalidateQueries({
+                queryKey: ["roadmap-comments", variables.roadmapId]
+            });
         },
     });
 }
