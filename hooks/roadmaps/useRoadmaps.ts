@@ -31,6 +31,7 @@ export const roadmapKeys = {
     assigned: (userId: string) => [...roadmapKeys.all, 'assigned', userId] as const,
     extras: (roadmapId: string, nestedId?: string, userId?: string) =>
         [...roadmapKeys.all, 'extras', roadmapId, nestedId, userId] as const,
+    comments: (roadmapId: string, userId: string) => [...roadmapKeys.all, 'comments', roadmapId, userId] as const,
 };
 
 // ============================================
@@ -544,7 +545,7 @@ export function useAddRoadmapComment() {
             });
             // Invalidate comments query
             queryClient.invalidateQueries({
-                queryKey: ["roadmap-comments", variables.roadmapId]
+                queryKey: roadmapKeys.comments(variables.roadmapId, variables.payload.userId)
             });
         },
     });
