@@ -1,5 +1,3 @@
-import { apiClient } from "@/services/api/client";
-import { ENDPOINTS } from "@/services/api/endpoints";
 import { progressService } from "@/services/progress.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { AddFinalCommentRequest, DeleteFinalCommentRequest, ProgressData, UpdateFinalCommentRequest } from "@/types/progress.types";
@@ -29,10 +27,10 @@ export const useProgress = () => {
 
             console.log("📤 Fetching progress for user:", user.id);
 
-            const response = await apiClient.get(ENDPOINTS.USERS.GET_PROGRESS(user.id));
+            const response = await progressService.getProgress(user.id);
 
             // Handle null data case (no progress record)
-            if (!response.data.success || !response.data.data) {
+            if (!response.success || !response.data) {
                 console.log("⚠️ No progress record found for user");
                 return {
                     overallProgress: 0,
@@ -52,7 +50,7 @@ export const useProgress = () => {
                 };
             }
 
-            const data = response.data.data;
+            const data = response.data;
 
             const progressData: ProgressData = {
                 overallProgress: data.overallRoadmapProgress ?? 0,
@@ -215,10 +213,10 @@ export const useProgressByUserId = (userId: string | undefined) => {
 
             console.log("📤 Fetching progress for user:", userId);
 
-            const response = await apiClient.get(ENDPOINTS.USERS.GET_PROGRESS(userId));
+            const response = await progressService.getProgress(userId);
 
             // Handle null data case (no progress record)
-            if (!response.data.success || !response.data.data) {
+            if (!response.success || !response.data) {
                 console.log("⚠️ No progress record found for user");
                 return {
                     overallProgress: 0,
@@ -238,7 +236,7 @@ export const useProgressByUserId = (userId: string | undefined) => {
                 };
             }
 
-            const data = response.data.data;
+            const data = response.data;
 
             const progressData: ProgressData = {
                 overallProgress: data.overallRoadmapProgress ?? 0,

@@ -156,3 +156,23 @@ export interface DeleteFinalCommentApiResponse {
     message: string;
     data: AddFinalCommentResponse;
 }
+
+export interface GetProgressResponse {
+    _id: string;
+    userId: string;
+    roadmaps: RoadmapProgress[];
+    totalRoadmaps: number;
+    completedRoadmaps: number;
+    overallRoadmapProgress: number;
+    assessments: AssessmentProgress[];
+    totalAssessments: number;
+    completedAssessments: number;
+    overallAssessmentProgress: number;
+    finalComments?: FinalComment[];
+}
+
+export interface GetProgressApiResponse {
+    success: boolean;
+    message: string;
+    data: GetProgressResponse;
+}

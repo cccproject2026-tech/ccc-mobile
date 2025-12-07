@@ -9,6 +9,7 @@ import {
     DeleteFinalCommentApiResponse,
     DeleteFinalCommentRequest,
     GetFinalCommentsApiResponse,
+    GetProgressApiResponse,
     UpdateFinalCommentApiResponse,
     UpdateFinalCommentRequest,
 } from '@/types/progress.types';
@@ -16,6 +17,27 @@ import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
 export const progressService = {
+    /**
+     * Get user progress by userId
+     */
+    async getProgress(userId: string): Promise<GetProgressApiResponse> {
+        try {
+            const response = await apiClient.get<GetProgressApiResponse>(
+                ENDPOINTS.PROGRESS.GET(userId)
+            );
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Failed to get progress');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Error getting progress:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Assign roadmaps to users
+     */
     /**
      * Assign roadmaps to users
      */

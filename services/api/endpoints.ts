@@ -109,6 +109,7 @@ export const ENDPOINTS = {
 
     // Progress
     PROGRESS: {
+        GET: (userId: string) => `/progress/${userId}`,
         ASSIGN_ASSESSMENT: '/progress/assign-assessment',
         ASSIGN_ROADMAP: '/progress/assign-roadmap',
         FINAL_COMMENTS: '/progress/final-comments',

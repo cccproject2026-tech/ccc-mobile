@@ -5,118 +5,144 @@ import { Tab } from "@/components/atom/tab";
 import { Header } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
+import { useAssessments } from "@/hooks/assessments/useAssessments";
+import { useProgress } from "@/hooks/progress/useProgress";
+import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { mapApiToFrontend } from "@/lib/assessments/mappers";
+import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
-import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useMemo } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProgressScreen() {
   const [roadmapTabs, setRoadmapTabs] = React.useState("All");
   const [assessmentTabs, setAssessmentTabs] = React.useState("All");
 
-  const dummyRoadMaps = [
-    {
-      title: "Self Revitalization Phase",
-      time: "Completion Time Months 1 - 2",
-      status: "Due",
-      image: require("@/assets/images/jumpstart.png"),
-      progress: "1",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Church Empowerment Phase",
-      time: "Completion Time Months 3 - 9",
-      status: "In Progress",
-      image: require("@/assets/images/roadmap.jpg"),
-      progress: "1",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: " Community Revitalization and Multiplication Phase",
-      time: "Completion Time Months 3 - 9",
-      type: "assignment",
-      read: true,
-      status: "Not Started Yet",
-      image: require("@/assets/images/roadmap.jpg"),
-      progress: "0",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-    },
-    {
-      title: "Jump-start",
-      description: "Interested in receiving mentoring in community engagement",
-      time: "Completion Time Months 3 - 9",
-      type: "assignment",
-      read: true,
-      status: "Completed",
-      image: require("@/assets/images/roadmap.jpg"),
-      progress: "0",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-      completedTime: "20 Oct 2024",
-    },
-  ];
+  // Fetch progress data for the current user
+  const { data: progressData, isLoading: isLoadingProgress } = useProgress();
 
-  const dummyAssessment = [
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description:
-        "Interested in receiving mentoring in community engagement   ",
-      image: require("@/assets/images/jumpstart.png"),
-      progress: "0",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-      dueDate: "20 Oct 2024",
-      status: "Completed",
-      type: "assessment",
-    },
-    {
-      title: "Church Assessment Evaluation(CMA)",
-      description:
-        "Interested in receiving mentoring in community engagement   ",
-      image: require("@/assets/images/jumpstart.png"),
-      progress: "0",
-      taskStatus: {
-        notStarted: true,
-        started: false,
-        inProgress: 0,
-        toComplete: 0,
-        completed: false,
-      },
-      submittedDate: "20 Oct 2024",
-      status: "due",
-      type: "assessment",
-      completed: "Customized Development Plans",
-    },
-  ];
+  // Fetch all roadmaps
+  const { data: allRoadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
+
+  // Fetch all assessments
+  const { data: allAssessments, isLoading: isLoadingAssessments } = useAssessments();
+
+  // Get assigned roadmap IDs from progress
+  const assignedRoadmapIds = useMemo(() => {
+    return progressData?.roadmaps.items.map((item) => item.roadMapId) || [];
+  }, [progressData]);
+
+  // Get assigned assessment IDs from progress
+  const assignedAssessmentIds = useMemo(() => {
+    return progressData?.assessments.items.map((item) => item.assessmentId) || [];
+  }, [progressData]);
+
+  // Format roadmaps for ProgressCard
+  const roadmapsData = useMemo(() => {
+    if (!allRoadmaps || !progressData) return [];
+
+    // Filter to only assigned roadmaps
+    const assignedRoadmaps = allRoadmaps.filter((roadmap) =>
+      assignedRoadmapIds.includes(roadmap._id)
+    );
+
+    // Create a map of progress data
+    const progressMap = new Map();
+    progressData.roadmaps.items.forEach((item) => {
+      progressMap.set(item.roadMapId, item);
+    });
+
+    return assignedRoadmaps.map((roadmap) => {
+      const progress = progressMap.get(roadmap._id);
+      const roadmapCard = getRoadmapCard(roadmap);
+
+      // Map status to ProgressCard format
+      let status: 'Due' | 'In Progress' | 'Not Started Yet' | 'Completed' = 'Not Started Yet';
+      if (roadmapCard.status === 'completed') {
+        status = 'Completed';
+      } else if (roadmapCard.status === 'due') {
+        status = 'Due';
+      } else if (roadmapCard.status === 'in-progress') {
+        status = 'In Progress';
+      }
+
+      // Calculate task status
+      const taskStatus = {
+        notStarted: roadmapCard.status === 'initial',
+        started: roadmapCard.status !== 'initial',
+        inProgress: roadmapCard.taskProgress?.completed || 0,
+        toComplete: roadmapCard.taskProgress?.total || 0,
+        completed: roadmapCard.status === 'completed',
+      };
+
+      return {
+        title: roadmapCard.title,
+        description: roadmapCard.description,
+        time: roadmapCard.completionTime,
+        status,
+        image: roadmapCard.image ? { uri: roadmapCard.image } : require("@/assets/images/jumpstart.png"),
+        progress: taskStatus.toComplete > 0 ? "1" : "0",
+        taskStatus,
+        completedTime: roadmapCard.completedDate,
+        type: "roadmap" as const,
+        dueDate: progress?.endDate,
+      };
+    });
+  }, [allRoadmaps, progressData, assignedRoadmapIds]);
+
+  // Format assessments for ProgressCard
+  const assessmentsData = useMemo(() => {
+    if (!allAssessments || !progressData) return [];
+
+    // Filter to only assigned assessments
+    const assignedAssessments = allAssessments.filter((assessment) =>
+      assignedAssessmentIds.includes(assessment._id)
+    );
+
+    // Create a map of progress data
+    const progressMap = new Map();
+    progressData.assessments.items.forEach((item) => {
+      progressMap.set(item.assessmentId, item);
+    });
+
+    return assignedAssessments.map((apiAssessment) => {
+      const assessment = mapApiToFrontend(apiAssessment);
+      const progress = progressMap.get(apiAssessment._id);
+
+      // Map status to ProgressCard format
+      let status: 'Due' | 'Completed' | 'due' = 'Due';
+      if (assessment.status === 'Completed') {
+        status = 'Completed';
+      } else if (assessment.status === 'Due') {
+        status = 'Due';
+      }
+
+      // Calculate task status (using progress data if available)
+      const taskStatus = {
+        notStarted: assessment.status === 'Not Started',
+        started: assessment.status !== 'Not Started',
+        inProgress: progress?.completedSections || 0,
+        toComplete: progress?.totalSections || 0,
+        completed: assessment.status === 'Completed',
+      };
+
+      return {
+        title: assessment.title,
+        description: assessment.description,
+        image: icons.Assessments,
+        progress: taskStatus.toComplete > 0 ? "1" : "0",
+        taskStatus,
+        dueDate: progress?.dueDate,
+        submittedDate: assessment.status === 'Completed' ? assessment.completedOn : undefined,
+        status,
+        type: "assessment" as const,
+        completed: assessment.completedOn,
+      };
+    });
+  }, [allAssessments, progressData, assignedAssessmentIds]);
 
   const availableTabs = [
     { tab: "All" },
@@ -124,7 +150,7 @@ export default function ProgressScreen() {
     { tab: "Remaining" },
   ];
 
-  const filteredRoadMaps = dummyRoadMaps.filter((item) => {
+  const filteredRoadMaps = roadmapsData.filter((item) => {
     if (roadmapTabs === "All") {
       return true;
     } else if (roadmapTabs === "Completed") {
@@ -134,7 +160,7 @@ export default function ProgressScreen() {
     }
   });
 
-  const filteredAssessments = dummyAssessment.filter((item) => {
+  const filteredAssessments = assessmentsData.filter((item) => {
     if (assessmentTabs === "All") {
       return true;
     } else if (assessmentTabs === "Completed") {
@@ -143,6 +169,23 @@ export default function ProgressScreen() {
       return item.status !== "Completed";
     }
   });
+
+  const isLoading = isLoadingProgress || isLoadingRoadmaps || isLoadingAssessments;
+
+  if (isLoading) {
+    return (
+      <LinearGradient
+        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        style={{ flex: 1 }}
+      >
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="white" />
+          <Text style={{ color: "white", fontSize: 18, marginTop: 16 }}>Loading progress...</Text>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
 
   return (
     <>
