@@ -4,10 +4,10 @@ import TopBar from '@/components/director/TopBar';
 
 import {
     useDeleteRoadmapDocument,
+    useRoadmap,
     useRoadmapDocuments
 } from '@/hooks/roadmaps/useRoadmaps';
-import { mockRevitalization } from '@/lib/roadmap/mock';
-import { getTask } from '@/lib/roadmap/selectors';
+import { getTasks } from '@/lib/roadmap/helpers';
 import { useAuthStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -55,6 +55,9 @@ export default function ShareMedia() {
 
     const deleteDocument = useDeleteRoadmapDocument();
 
+    // Fetch roadmap data to get task title
+    const { data: roadmap, isLoading: isLoadingRoadmap } = useRoadmap(roadMapId || undefined);
+
     // Fetch all documents for this roadmap item + extraName
     const { data: docs = [] } = useRoadmapDocuments(
         roadMapId,
@@ -87,15 +90,22 @@ export default function ShareMedia() {
     const currentMedia: RoadmapMedia[] = activeTab === 'photos' ? photos : videos;
 
     const taskTitle = useMemo(() => {
-        if (!taskId) return 'Shared Media';
+        // If no roadmap or taskId/nestedId, return default
+        if (!roadmap || (!taskId && !nestedId)) return 'Shared Media';
 
         try {
-            const task = getTask(mockRevitalization, taskId);
-            return task?.title || 'Shared Media';
+            // Get all tasks from the roadmap
+            const tasks = getTasks(roadmap);
+            
+            // Find the task by taskId or nestedId
+            const taskIdToFind = taskId || nestedId;
+            const task = tasks.find(t => t._id === taskIdToFind);
+            
+            return task?.name || 'Shared Media';
         } catch {
             return 'Shared Media';
         }
-    }, [taskId]);
+    }, [roadmap, taskId, nestedId]);
 
     // ---------------- OUTCOME MENU + DATA (restored) ----------------
     const outcomeMenuItems = useCallback((): MenuItem[] => [
