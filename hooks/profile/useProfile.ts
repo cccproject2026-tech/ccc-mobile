@@ -1,7 +1,7 @@
 // hooks/useProfile.ts
 import { profileService } from "@/services/profile.service";
 import { useAuthStore } from "@/stores/auth.store";
-import { CombinedProfile, UpdateProfileData } from "@/types";
+import { CombinedProfile, Notification, UpdateProfileData } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useProgress } from "../progress/useProgress";
 
@@ -336,9 +336,12 @@ export const useDeleteDocument = () => {
 
 
 export const useNotifications = (userId?: string) => {
-    return useQuery({
+    return useQuery<Notification[]>({
         queryKey: ["notifications", userId],
         queryFn: () => profileService.getNotifications(userId!),
         enabled: !!userId,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        gcTime: 1000 * 60 * 20, // 20 minutes
+        retry: 1,
     });
 };

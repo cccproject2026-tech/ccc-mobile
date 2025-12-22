@@ -4,20 +4,21 @@ import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { useNotifications } from "@/hooks/profile/useProfile";
 import { useAuthStore } from "@/stores";
+import { Notification } from "@/types";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
 import React from "react";
 import {
-  ScrollView,
-  StyleSheet,
-  View
+    ScrollView,
+    StyleSheet,
+    View
 } from "react-native";
 
 export default function NotificationScreen() {
   const { user } = useAuthStore();
   const { data, isLoading } = useNotifications(user?.id);
 
-  const notifications = data?.map((item: any) => ({
+  const notifications = data?.map((item: Notification) => ({
     title: item.name,
     description: item.details,
     type: item.module,
@@ -46,7 +47,7 @@ export default function NotificationScreen() {
               gap: 10,
             }}
           >
-            {notifications.map((item: any, i: number) => (
+            {notifications.map((item, i: number) => (
               <React.Fragment key={i}>
                 <NotificationCard data={item} />
                 {notifications.length - 1 !== i && (

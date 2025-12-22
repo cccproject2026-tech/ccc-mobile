@@ -1,20 +1,27 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
-import { Tab } from "@/components/atom/tab";
 import RoadmapCard from "@/components/director/ProgressRoadmapCard";
+import SearchBar from "@/components/director/SearchBar";
+import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { getCardStatus } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
-import { Roadmap } from "@/lib/roadmap/types";
+import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+type MainTabKey = 'PASTOR_ROADMAPS' | 'ROADMAP_LIBRARY';
+type StatusTabKey = 'ALL' | 'DUE' | 'IN_PROGRESS' | 'NOT_STARTED' | 'COMPLETED';
 
 export default function Landing() {
-    const [isRoadmapModalVisible, setIsRoadmapModalVisible] = React.useState(false);
-    const [tabs, setTabs] = React.useState("All");
+    const [isRoadmapModalVisible, setIsRoadmapModalVisible] = useState(false);
+    const [mainTab, setMainTab] = useState<MainTabKey>('PASTOR_ROADMAPS');
+    const [statusTab, setStatusTab] = useState<StatusTabKey>('ALL');
+    const [search, setSearch] = useState('');
 
     // Fetch roadmaps
     const { data: roadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
@@ -36,50 +43,65 @@ export default function Landing() {
         }
     }, []);
 
-    // Format roadmaps for RoadmapCard component
-    const formattedRoadmaps = useMemo(() => {
-        if (!roadmaps || roadmaps.length === 0) return [];
+    // Filter roadmaps by pastor division
+    //todo: this logic is wrong we need to fix this
+    const filterPastorRoadmaps = useCallback((roadmapList: Roadmap[]): Roadmap[] => {
+        return roadmapList.filter(roadmap =>
+            roadmap.roadmaps?.some(nested =>
+                nested.phase?.toLowerCase().includes('pastor')
+            )
+        );
+    }, []);
 
-        return roadmaps.map((roadmap) => {
-            const cardData = getRoadmapCard(roadmap);
-            // Ensure showArrow is set for navigation
-            return {
-                roadmap,
-                cardData: {
-                    ...cardData,
-                    showArrow: true,
-                },
-            };
+    // Calculate roadmaps with status
+    const roadmapsWithStatus = useMemo(() => {
+        if (!roadmaps) return [];
+
+        return roadmaps.map(roadmap => {
+            const status = getCardStatus(roadmap);
+            return { roadmap, status };
         });
     }, [roadmaps]);
 
-    const availableTabs = [
-        { tab: "All" },
-        { tab: "Due" },
-        { tab: "Not Started" },
-        { tab: "In Progress" },
-        { tab: "Completed" },
-        { tab: "Overdue" },
-        { tab: "Pending Review" },
-        { tab: "On Hold" },
-    ];
+    // Apply all filters
+    const filteredRoadmaps = useMemo(() => {
+        let filtered = roadmapsWithStatus;
 
-    const filteredRoadMaps = useMemo(() => {
-        if (tabs === "All") return formattedRoadmaps;
+        // Step 1: Apply main tab filter (Pastor's Roadmaps vs Roadmap Library)
+        if (mainTab === 'PASTOR_ROADMAPS') {
+            const pastorRoadmaps = filterPastorRoadmaps(filtered.map(r => r.roadmap));
+            filtered = filtered.filter(({ roadmap }) =>
+                pastorRoadmaps.some(pr => pr._id === roadmap._id)
+            );
 
-        // Map tab names to status values
-        const statusMap: Record<string, string> = {
-            "Due": "due",
-            "Not Started": "initial",
-            "In Progress": "in-progress",
-            "Completed": "completed",
-        };
+            // Step 2: Apply status filter (only for Pastor's Roadmaps)
+            if (statusTab !== 'ALL') {
+                const statusMap: Record<StatusTabKey, RoadmapCardStatus> = {
+                    ALL: 'initial', // Not used
+                    COMPLETED: 'completed',
+                    IN_PROGRESS: 'in-progress',
+                    NOT_STARTED: 'initial',
+                    DUE: 'due',
+                };
 
-        const targetStatus = statusMap[tabs];
-        if (!targetStatus) return formattedRoadmaps;
+                filtered = filtered.filter(
+                    ({ status }) => status === statusMap[statusTab]
+                );
+            }
+        }
 
-        return formattedRoadmaps.filter((item) => item.cardData.status === targetStatus);
-    }, [formattedRoadmaps, tabs]);
+        // Step 3: Apply search filter
+        if (search.trim()) {
+            const searchLower = search.toLowerCase();
+            filtered = filtered.filter(({ roadmap }) =>
+                roadmap.name?.toLowerCase().includes(searchLower) ||
+                roadmap.roadMapDetails?.toLowerCase().includes(searchLower) ||
+                roadmap.phase?.toLowerCase().includes(searchLower)
+            );
+        }
+
+        return filtered;
+    }, [roadmapsWithStatus, mainTab, statusTab, search, filterPastorRoadmaps]);
 
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
@@ -101,23 +123,65 @@ export default function Landing() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.tabScrollContent}
-            >
-                {availableTabs.map((e, i) => (
-                    <Tab
-                        key={i}
-                        data={e}
-                        tabs={tabs}
-                        setTabs={setTabs}
-                        onPress={() => {
-                            setTabs(e.tab);
-                        }}
-                    />
-                ))}
-            </ScrollView>
+            {/* Search Bar */}
+            <View style={styles.searchWrapper}>
+                <SearchBar
+                    value={search}
+                    onChangeValue={setSearch}
+                    placeholder="Search"
+                />
+            </View>
+
+            {/* Main Tabs: Pastor's Roadmaps / Roadmap Library */}
+            <View style={styles.mainTabsContainer}>
+                <Pressable
+                    style={[
+                        styles.mainTab,
+                        mainTab === 'PASTOR_ROADMAPS' && styles.mainTabActive
+                    ]}
+                    onPress={() => setMainTab('PASTOR_ROADMAPS')}
+                >
+                    <Text
+                        style={[
+                            styles.mainTabText,
+                            mainTab === 'PASTOR_ROADMAPS' && styles.mainTabTextActive
+                        ]}
+                    >
+                        Pastor's Roadmaps
+                    </Text>
+                </Pressable>
+                <Pressable
+                    style={[
+                        styles.mainTab,
+                        mainTab === 'ROADMAP_LIBRARY' && styles.mainTabActive
+                    ]}
+                    onPress={() => setMainTab('ROADMAP_LIBRARY')}
+                >
+                    <Text
+                        style={[
+                            styles.mainTabText,
+                            mainTab === 'ROADMAP_LIBRARY' && styles.mainTabTextActive
+                        ]}
+                    >
+                        Roadmap Library
+                    </Text>
+                </Pressable>
+            </View>
+
+            {/* Status Tabs (only show in Pastor's Roadmaps) */}
+            {mainTab === 'PASTOR_ROADMAPS' && (
+                <TabSwitcher
+                    tabs={[
+                        { key: 'ALL', label: 'All' },
+                        { key: 'DUE', label: 'Due' },
+                        { key: 'IN_PROGRESS', label: 'In Progress' },
+                        { key: 'NOT_STARTED', label: 'Not Started' },
+                        { key: 'COMPLETED', label: 'Completed' },
+                    ]}
+                    activeTab={statusTab}
+                    onChange={(key) => setStatusTab(key as StatusTabKey)}
+                />
+            )}
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -130,22 +194,25 @@ export default function Landing() {
                             Loading roadmaps...
                         </Text>
                     </View>
-                ) : filteredRoadMaps.length > 0 ? (
-                    filteredRoadMaps.map(({ roadmap, cardData }, i) => (
-                        <React.Fragment key={roadmap._id || i}>
-                            <RoadmapCard
-                                data={cardData}
+                ) : filteredRoadmaps.length > 0 ? (
+                    filteredRoadmaps.map(({ roadmap }) => {
+                        const cardData = getRoadmapCard(roadmap);
+                        return (
+                            <Pressable
+                                key={roadmap._id}
                                 onPress={() => handleRoadmapPress(roadmap)}
-                            />
-                            {i < filteredRoadMaps.length - 1 && (
-                                <View style={styles.separator} />
-                            )}
-                        </React.Fragment>
-                    ))
+                            >
+                                <RoadmapCard data={cardData} />
+                            </Pressable>
+                        );
+                    })
                 ) : (
                     <View style={styles.emptyContainer}>
+                        <Ionicons name="search-outline" size={48} color="#fff" opacity={0.5} />
                         <Text style={styles.emptyText}>
-                            No roadmaps available
+                            {search.trim()
+                                ? `No roadmaps found matching "${search}"`
+                                : 'No roadmaps available'}
                         </Text>
                     </View>
                 )}
@@ -184,11 +251,38 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginLeft: 8,
     },
-    tabScrollContent: {
-        gap: 8,
+    searchWrapper: {
         paddingHorizontal: 16,
-        paddingTop: 10,
-        paddingBottom: 16,
+        marginBottom: 16,
+    },
+    mainTabsContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        marginBottom: 16,
+        gap: 8,
+    },
+    mainTab: {
+        flex: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 14,
+        backgroundColor: '#14517D',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: 'rgba(255,255,255,0.3)',
+    },
+    mainTabActive: {
+        backgroundColor: '#fff',
+        borderColor: '#fff',
+    },
+    mainTabText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    mainTabTextActive: {
+        color: '#1a5b77',
     },
     scrollContent: {
         padding: 16,
@@ -212,10 +306,5 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         marginTop: 12,
-    },
-    separator: {
-        height: 0.5,
-        backgroundColor: "rgba(255,255,255,0.3)",
-        marginVertical: 16,
     },
 });

@@ -1,4 +1,4 @@
-import { Document, InterestFormData, User } from '@/types';
+import { Document, InterestFormData, Notification, NotificationsResponse, User } from '@/types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
@@ -147,15 +147,12 @@ export const profileService = {
         console.log('✅ Document deleted successfully');
     },
 
-    getNotifications: async (userId: string): Promise<any[]> => {
+    getNotifications: async (userId: string): Promise<Notification[]> => {
         console.log("📤 Fetching notifications for user:", userId);
 
-        const response = await apiClient.get<{
-            success: boolean;
-            data: {
-                notifications: any[];
-            };
-        }>(ENDPOINTS.USERS.GET_NOTIFICATIONS(userId));
+        const response = await apiClient.get<NotificationsResponse>(
+            ENDPOINTS.USERS.GET_NOTIFICATIONS(userId)
+        );
 
         const notifications = response.data.data?.notifications || [];
 
