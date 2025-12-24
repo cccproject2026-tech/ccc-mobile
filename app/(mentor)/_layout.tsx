@@ -15,7 +15,12 @@ export default function MentorDrawerLayout() {
     return (
         <Drawer
             drawerContent={(props) => (
-                <CustomDrawerContent userRole="mentor" menuItems={MentorMenuItems} {...props} />
+                <CustomDrawerContent
+                    expandAllByDefault={true}
+                    userRole="mentor"
+                    menuItems={MentorMenuItems}
+                    {...props}
+                />
             )}
             screenOptions={{
                 drawerType: 'front',
@@ -23,8 +28,8 @@ export default function MentorDrawerLayout() {
                     width: Platform.OS === 'android' ? 290 : 320,
                 },
                 headerShown: false,
+                freezeOnBlur: true,
             }}
-            initialRouteName="(tabs)"
         >
             <Drawer.Screen
                 name="(tabs)"
@@ -36,4 +41,3 @@ export default function MentorDrawerLayout() {
         </Drawer>
     );
 }
-

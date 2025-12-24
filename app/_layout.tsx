@@ -182,7 +182,7 @@ function RootLayoutNav() {
 
       {/* Mentor Routes */}
       <Stack.Protected guard={isMentor}>
-        <Stack.Screen name="(mentor-tabs)" />
+        <Stack.Screen name="(mentor)" />
       </Stack.Protected>
 
       {/* Director Routes */}

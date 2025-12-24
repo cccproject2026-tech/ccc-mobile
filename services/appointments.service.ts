@@ -6,6 +6,9 @@ import {
     GetMonthlyAvailabilityApiResponse,
     GetWeeklyAvailabilityApiResponse,
     MonthlyAvailabilityDay,
+    SetAvailabilityApiResponse,
+    SetAvailabilityPayload,
+    SetAvailabilityResponse,
     UpdateAppointmentPayload,
     WeeklyAvailability,
 } from '../types/appointment.types';
@@ -69,6 +72,24 @@ export const appointmentService = {
             ENDPOINTS.APPOINTMENTS.GET_MONTHLY_AVAILABILITY(mentorId, month, year)
         );
         return response.data.data;
+    },
+
+    /**
+     * Set/Update weekly availability for a mentor
+     */
+    setAvailability: async (
+        payload: SetAvailabilityPayload
+    ): Promise<SetAvailabilityResponse> => {
+        try {
+            const response = await apiClient.post<SetAvailabilityApiResponse>(
+                ENDPOINTS.APPOINTMENTS.SET_AVAILABILITY,
+                payload
+            );
+            return response.data.data;
+        } catch (error) {
+            console.error('Error setting availability:', error);
+            throw error;
+        }
     },
 
     /**

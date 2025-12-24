@@ -60,21 +60,21 @@ export default function RevitalizationCard({
       typeof data.assignment !== "undefined" && data.assignment
         ? navigation.push({
           pathname:
-            "/(mentor-tabs)/profile/my-assignment/detailed-assignment",
+            "/(mentor)/profile/my-assignment/detailed-assignment",
           params: { data: JSON.stringify(data) },
         })
         : typeof data.subPhase !== "undefined" && data.subPhase
           ? navigation.push({
-            pathname: "/(mentor-tabs)/roadmap/sub-phases",
+            pathname: "/(mentor)/roadmap/sub-phases",
             params: { data: JSON.stringify(data) },
           })
           : data.empowerment
             ? navigation.push({
-              pathname: "/(mentor-tabs)/roadmap/phase-2/detailed-empowerment",
+              pathname: "/(mentor)/roadmap/phase-2/detailed-empowerment",
               params: { data: JSON.stringify(data) },
             })
             : navigation.push({
-              pathname: "/(mentor-tabs)/roadmap/phase-2/detailed-roadmap",
+              pathname: "/(mentor)/roadmap/phase-2/detailed-roadmap",
               params: { data: JSON.stringify(data) },
             });
     } else {

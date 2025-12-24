@@ -70,7 +70,7 @@ export default function RoleSelectionScreen() {
 
     const handleMentorRoleSelect = (role: MentorRole) => {
         if (isAuthenticated && user?.role === 'mentor') {
-            router.push('/(mentor-tabs)/(tabs)');
+            router.push('/(mentor)/(tabs)');
         } else {
             router.push('/(unauthenticated)');
         }

@@ -74,7 +74,7 @@ export const useLogin = () => {
                 if (user.role === 'pastor') {
                     router.replace('/(pastor)/(tabs)');
                 } else if (user.role === 'mentor') {
-                    router.replace('/(mentor-tabs)/(tabs)');
+                    router.replace('/(mentor)/(tabs)');
                 } else if (user.role === 'director') {
                     router.replace('/(director)/(tabs)');
                 }

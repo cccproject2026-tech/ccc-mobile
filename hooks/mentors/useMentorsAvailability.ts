@@ -1,6 +1,6 @@
 import { appointmentService } from '@/services/appointments.service';
-import { TimeSlot } from '@/types/appointment.types';
-import { useQuery } from '@tanstack/react-query';
+import { SetAvailabilityPayload, SetAvailabilityResponse, TimeSlot } from '@/types/appointment.types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 
 interface UseWeeklyAvailabilityOptions {
@@ -154,5 +154,46 @@ export const useAvailabilityNavigator = (mentorId: string | null) => {
         goToToday,
         canGoToNextMonth,
         canGoToPreviousMonth,
+    };
+};
+
+interface UseSetAvailabilityOptions {
+    onSuccess?: (data: SetAvailabilityResponse) => void;
+    onError?: (error: Error) => void;
+}
+
+/**
+ * Hook for setting/updating mentor availability
+ */
+export const useSetAvailability = (options?: UseSetAvailabilityOptions) => {
+    const { onSuccess, onError } = options || {};
+    const queryClient = useQueryClient();
+
+    const mutation = useMutation({
+        mutationFn: (payload: SetAvailabilityPayload) =>
+            appointmentService.setAvailability(payload),
+        onSuccess: (data) => {
+            // Invalidate related queries to refetch updated data
+            queryClient.invalidateQueries({ queryKey: ['weekly-availability'] });
+            queryClient.invalidateQueries({ queryKey: ['monthly-availability'] });
+            queryClient.invalidateQueries({ queryKey: ['appointments'] });
+            
+            onSuccess?.(data);
+        },
+        onError: (error: Error) => {
+            console.error('Failed to set availability:', error);
+            onError?.(error);
+        },
+    });
+
+    return {
+        setAvailability: mutation.mutate,
+        setAvailabilityAsync: mutation.mutateAsync,
+        isSettingAvailability: mutation.isPending,
+        isSuccess: mutation.isSuccess,
+        isError: mutation.isError,
+        error: mutation.error,
+        data: mutation.data,
+        reset: mutation.reset,
     };
 };

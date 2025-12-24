@@ -137,7 +137,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "My Mentees",
       iconKey: "myMentors",
-      navigateLocation: "/(mentor-tabs)/my-mentors",
+      navigateLocation: "/(mentor)/my-mentors",
     },
     {
       name: "Courses",
@@ -147,42 +147,42 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Revitalization RoadMap",
       iconKey: "Revitalization",
-      navigateLocation: "/(mentor-tabs)/roadmap/landing/landing",
+      navigateLocation: "/(mentor)/roadmap/landing/landing",
     },
     {
       name: "Assessments",
       iconKey: "Assessments",
-      navigateLocation: "/(mentor-tabs)/assessments/survey",
+      navigateLocation: "/(mentor)/assessments/survey",
     },
     {
       name: "Track Progress",
       iconKey: "progress",
-      navigateLocation: "/(mentor-tabs)/progress/progress",
+      navigateLocation: "/(mentor)/progress/progress",
     },
     {
       name: "Schedule",
       iconKey: "Appointments",
-      navigateLocation: "/(mentor-tabs)/progress/progress",
+      navigateLocation: "/(mentor)/progress/progress",
     },
     {
       name: "Profile",
       iconKey: "profile",
-      navigateLocation: "/(mentor-tabs)/profile/my-profile",
+      navigateLocation: "/(mentor)/profile/my-profile",
       subTabs: [
         {
           name: "My Profile",
           iconKey: "myProfile",
-          navigateLocation: "/(mentor-tabs)/profile/my-profile",
+          navigateLocation: "/(mentor)/profile/my-profile",
         },
         {
           name: "Documents",
           iconKey: "document",
-          navigateLocation: "/(mentor-tabs)/profile/my-profile",
+          navigateLocation: "/(mentor)/profile/my-profile",
         },
         {
           name: "Certificate",
           iconKey: "certificate",
-          navigateLocation: "/(mentor-tabs)/profile/certificate",
+          navigateLocation: "/(mentor)/profile/certificate",
         },
         {
           name: "Notes",
@@ -192,7 +192,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Micro Grant",
           iconKey: "microGrant",
-          navigateLocation: "/(mentor-tabs)/profile/grant",
+          navigateLocation: "/(mentor)/profile/grant",
         },
       ],
     },
@@ -204,12 +204,12 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         {
           name: "Change Password",
           iconKey: "changePass",
-          navigateLocation: "/(mentor-tabs)/profile/my-profile",
+          navigateLocation: "/(mentor)/profile/my-profile",
         },
         {
           name: "Turn Off Notifications",
           iconKey: "turnOffNotification",
-          navigateLocation: "/(mentor-tabs)/notifications",
+          navigateLocation: "/(mentor)/notifications",
         },
       ],
     },

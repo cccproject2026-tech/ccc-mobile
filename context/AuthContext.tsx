@@ -46,7 +46,7 @@ function useProtectedRoute(user: User | null, isLoading: boolean, profileComplet
         const inRootIndex = pathname === '/';
         const inAuthGroup = segments[0] === '(login)';
         const inPastorGroup = segments[0] === '(pastor)';
-        const inMentorGroup = segments[0] === '(mentor-tabs)';
+        const inMentorGroup = segments[0] === '(mentor)';
         const inDirectorGroup = segments[0] === '(director)';
         const inProfileSetup = pathname === '/(login)/profile';
 

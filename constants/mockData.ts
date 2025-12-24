@@ -56,7 +56,7 @@ export const exploreItems = [
 ];
 
 export const mentorExploreItems = [
-    { id: '1', icon: icons.profile, title: 'Track Progress', route: '/(mentor-tabs)/progress-tracker' },
+    { id: '1', icon: icons.profile, title: 'Track Progress', route: '/(mentor)/mentees/progress-tracker' },
     { id: '2', icon: icons.Assessments, title: 'Schedule' },
     { id: '3', icon: icons.microGrant, title: 'Microgrant' },
     { id: '4', icon: icons.Revitalization, title: 'Revitalization Roadmap' },
@@ -624,42 +624,42 @@ export const MentorMenuItems: MenuItem[] = [
         label: 'My Mentees',
         icon: icons.myMentors,
         iconType: 'image',
-        route: '/(mentor-tabs)/my-mentees',
+        route: '/(mentor)/mentees',
     },
     {
         id: 'courses',
         label: 'Courses',
         icon: icons.Revitalization,
         iconType: 'image',
-        route: '/(mentor-tabs)/roadmap/landing/landing',
+        route: '/(mentor)/roadmap/landing/landing',
     },
     {
         id: 'revitalizationRoadmap',
         label: 'Revitalization RoadMap',
         icon: icons.Revitalization,
         iconType: 'image',
-        route: '/(mentor-tabs)/roadmap/landing/landing',
+        route: '/(mentor)/roadmap/landing/landing',
     },
     {
         id: 'assessments',
         label: 'Assessments',
         icon: icons.Assessments,
         iconType: 'image',
-        route: '/(mentor-tabs)/assessments/survey',
+        route: '/(mentor)/assessments/survey',
     },
     {
         id: 'progress',
         label: 'Track Progress',
         icon: icons.progress,
         iconType: 'image',
-        route: '/(mentor-tabs)/progress/progress',
+        route: '/(mentor)/progress/progress',
     },
     {
         id: 'schedule',
         label: 'Schedule',
         icon: icons.Appointments,
         iconType: 'image',
-        route: '/(mentor-tabs)/appointments',
+        route: '/(mentor)/appointments',
     },
     {
         id: 'profile',
@@ -668,10 +668,10 @@ export const MentorMenuItems: MenuItem[] = [
         iconType: 'image',
         showChevron: true,
         children: [
-            { id: 'myProfile', label: 'My Profile', icon: icons.myProfile, iconType: 'image', route: '/(mentor-tabs)/profile/my-profile' },
-            { id: 'documents', label: 'Documents', icon: icons.document, iconType: 'image', route: '/(mentor-tabs)/profile/my-profile' },
-            { id: 'certificate', label: 'Certificate', icon: icons.certificate, iconType: 'image', route: '/(mentor-tabs)/profile/certificate' },
-            { id: 'microGrant', label: 'Micro Grant', icon: icons.microGrant, iconType: 'image', route: '/(mentor-tabs)/profile/grant' },
+            { id: 'myProfile', label: 'My Profile', icon: icons.myProfile, iconType: 'image', route: '/(mentor)/profile/my-profile' },
+            { id: 'documents', label: 'Documents', icon: icons.document, iconType: 'image', route: '/(mentor)/profile/my-profile' },
+            { id: 'certificate', label: 'Certificate', icon: icons.certificate, iconType: 'image', route: '/(mentor)/profile/certificate' },
+            { id: 'microGrant', label: 'Micro Grant', icon: icons.microGrant, iconType: 'image', route: '/(mentor)/profile/grant' },
         ],
     },
     {
@@ -681,8 +681,8 @@ export const MentorMenuItems: MenuItem[] = [
         iconType: 'image',
         showChevron: true,
         children: [
-            { id: 'changePassword', label: 'Change Password', icon: icons.changePass, iconType: 'image', route: '/(mentor-tabs)/profile/my-profile' },
-            { id: 'turnOffNotifications', label: 'Turn Off Notifications', icon: icons.turnOffNotification, iconType: 'image', route: '/(mentor-tabs)/notifications' },
+            { id: 'changePassword', label: 'Change Password', icon: icons.changePass, iconType: 'image', route: '/(mentor)/profile/my-profile' },
+            { id: 'turnOffNotifications', label: 'Turn Off Notifications', icon: icons.turnOffNotification, iconType: 'image', route: '/(mentor)/notifications' },
         ],
     },
     { id: 'logout', label: 'Log out', icon: 'log-out-outline', route: '/' },

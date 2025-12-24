@@ -93,3 +93,49 @@ export interface GetMonthlyAvailabilityApiResponse {
     message: string;
     data: MonthlyAvailabilityDay[];
 }
+
+export interface WeeklySlotInput {
+    day: number; // Day of week: 0 (Sunday) - 6 (Saturday)
+    date: string; // Format: "2025-11-17"
+    slots: {
+        startTime: string;
+        startPeriod: 'AM' | 'PM';
+        endTime: string;
+        endPeriod: 'AM' | 'PM';
+    }[];
+}
+
+export interface SetAvailabilityPayload {
+    mentorId: string;
+    weeklySlots: WeeklySlotInput[];
+    meetingDuration: number; // in minutes
+    minSchedulingNoticeHours: number;
+    maxBookingsPerDay: number;
+}
+
+export interface WeeklySlotResponse {
+    day: number;
+    date: string; // ISO format: "2025-11-17T00:00:00.000Z"
+    rawSlots: TimeSlot[];
+    slots: TimeSlot[];
+    _id: string;
+}
+
+export interface SetAvailabilityResponse {
+    _id: string;
+    mentorId: string;
+    __v: number;
+    createdAt: string;
+    maxBookingsPerDay: number;
+    meetingDuration: number;
+    minSchedulingNoticeHours: number;
+    preferredPlatform?: string;
+    updatedAt: string;
+    weeklySlots: WeeklySlotResponse[];
+}
+
+export interface SetAvailabilityApiResponse {
+    success: boolean;
+    message: string;
+    data: SetAvailabilityResponse;
+}
