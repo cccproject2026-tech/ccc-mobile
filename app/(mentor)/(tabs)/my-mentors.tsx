@@ -224,14 +224,22 @@ export default function MyMentorsScreen() {
                       >
                         {listToggle ? (
                           <MentorDetailedCard
-                            data={mentor}
+                            data={{
+                              ...mentor,
+                              firstName: mentor.name.split(' ')[0],
+                              lastName: mentor.name.split(' ').slice(1).join(' ') || '',
+                            } as any}
                             key={mentor.id}
                             navigation={router}
                             onMenuPress={() => handleMenuPress(mentor)}
                           />
                         ) : (
                           <MentorShortCard
-                            data={mentor}
+                            data={{
+                              ...mentor,
+                              firstName: mentor.name.split(' ')[0],
+                              lastName: mentor.name.split(' ').slice(1).join(' ') || '',
+                            } as any}
                             dataKey={mentor.id}
                             navigation={router}
                             onMenuPress={() => handleMenuPress(mentor)}

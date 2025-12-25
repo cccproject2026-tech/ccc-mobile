@@ -43,12 +43,12 @@ export default function DetailedRoadMap() {
       setTabs(tabName)
     } else if (tabName === "Comments") {
       router.push({
-        pathname: "/(mentor)/roadmap/comments",
+        pathname: "/(mentor)/roadmap/comments" as any,
         params: { data: JSON.stringify(data) },
       })
     } else if (tabName === "Queries") {
       router.push({
-        pathname: "/(mentor)/roadmap/queries",
+        pathname: "/(mentor)/roadmap/queries" as any,
         params: { data: JSON.stringify(data) },
       })
     }

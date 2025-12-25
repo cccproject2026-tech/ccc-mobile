@@ -366,11 +366,11 @@ export default function MentorDashboard() {
                     title={item.title}
                     onPress={() => {
                       if (item.title === 'Track Progress') {
-                        router.push('/(mentor)/mentees/progress-tracker');
+                        router.push('/(mentor)/mentees/progress-tracker' as any);
                       } else if (item.title === 'Assessment') {
-                        router.push('/(mentor)/assessments-v2');
+                        router.push('/(mentor)/assessments-v2' as any);
                       } else if (item.title === 'Revitalization Roadmap') {
-                        router.push('/(mentor)/roadmap/landing/landing');
+                        router.push('/(mentor)/roadmap/landing/landing' as any);
                       } 
                       else {
                         console.log(`Pressed ${item.title}`);

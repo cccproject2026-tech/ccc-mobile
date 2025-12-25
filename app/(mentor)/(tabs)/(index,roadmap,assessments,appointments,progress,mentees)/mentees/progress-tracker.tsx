@@ -91,7 +91,7 @@ export default function ProgressTracker() {
         const id = selectedMentee ? mapMenteeToProfileId(selectedMentee) : "john-ross";
         handleCloseModal();
         setTimeout(() => {
-          router.push({ pathname: "/(mentor)/mentees/mentee-progress", params: { menteeId: id } });
+          router.push({ pathname: "/(mentor)/mentees/mentee-progress" as any, params: { menteeId: id } });
         }, 300);
       },
     },
@@ -182,7 +182,7 @@ export default function ProgressTracker() {
                     data={mentee}
                     layout={viewMode}
                     onPress={() => {
-                      router.push({ pathname: "/(mentor)/mentees/mentee-progress", params: { menteeId: mapMenteeToProfileId(mentee) } });
+                      router.push({ pathname: "/(mentor)/mentees/mentee-progress" as any, params: { menteeId: mapMenteeToProfileId(mentee) } });
                     }}
                     onCall={() => handleCall(mentee)}
                     onChat={() => handleChat(mentee)}

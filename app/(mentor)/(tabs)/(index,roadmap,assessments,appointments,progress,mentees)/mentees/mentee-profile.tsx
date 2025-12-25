@@ -301,7 +301,7 @@ export default function MenteeProfileScreen() {
                 style={styles.documentsButton}
                 onPress={() =>
                   router.push({
-                    pathname: "/(mentor)/mentees/mentee-documents",
+                    pathname: "/(mentor)/mentees/mentee-documents" as any,
                     params: { menteeId: mentee.id || menteeId },
                   })
                 }

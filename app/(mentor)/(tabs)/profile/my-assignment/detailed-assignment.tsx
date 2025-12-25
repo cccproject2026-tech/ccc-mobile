@@ -43,12 +43,12 @@ export default function DetailedAssignment() {
       setTabs(tabName);
     } else if (tabName === "Comments") {
       router.push({
-        pathname: "/(pastor-tabs)/(tabs)/roadmap/comments",
+        pathname: "/(mentor)/roadmap/comments" as any,
         params: { data: JSON.stringify(data) },
       });
     } else if (tabName === "Queries") {
       router.push({
-        pathname: "/(pastor-tabs)/(tabs)/roadmap/queries",
+        pathname: "/(mentor)/roadmap/queries" as any,
         params: { data: JSON.stringify(data) },
       });
     }

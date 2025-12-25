@@ -25,7 +25,7 @@ export default function NoteDetail() {
 
   const handleEdit = () => {
     router.push({
-      pathname: "/(mentor)/notes/new-note",
+      pathname: "/(mentor)/notes/new-note" as any,
       params: {
         menteeName: menteeName,
         noteId: noteId,

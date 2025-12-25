@@ -145,7 +145,7 @@ export default function MenteeDocumentsScreen() {
               style={styles.backButton}
               onPress={() =>
                 router.push({
-                  pathname: "/(mentor)/mentees/mentee-profile",
+                  pathname: "/(mentor)/mentees/mentee-profile" as any,
                   params: { menteeId: mentee.id },
                 })
               }

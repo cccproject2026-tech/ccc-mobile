@@ -1,4 +1,4 @@
-import { mockMentorNotes, MentorNote } from "@/constants/mockMentees"
+import { MentorNote, mockMentorNotes } from "@/constants/mockMentees"
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack, useLocalSearchParams } from "expo-router"
@@ -23,7 +23,7 @@ export default function MentorNotes() {
 
   const handleNotePress = (note: MentorNote) => {
     router.push({
-      pathname: "/(mentor)/notes/note-detail",
+      pathname: "/(mentor)/notes/note-detail" as any,
       params: {
         noteId: note.id,
         menteeId: menteeId,
@@ -34,7 +34,7 @@ export default function MentorNotes() {
 
   const handleNewNote = () => {
     router.push({
-      pathname: "/(mentor)/notes/new-note",
+      pathname: "/(mentor)/notes/new-note" as any,
       params: {
         menteeName: menteeName,
       },

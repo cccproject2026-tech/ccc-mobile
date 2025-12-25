@@ -17,6 +17,7 @@ interface ButtonProps {
     labelStyle?: TextStyle | undefined;
     wrapperClass?: string | undefined;
     onPress?: () => void;
+    disabled?: boolean;
 }
 
 const Button = ({
@@ -29,7 +30,8 @@ const Button = ({
     wrapperClass = ``,
     buttonStyle = {},
     labelStyle = {},
-    onPress
+    onPress,
+    disabled = false
 }: ButtonProps) => {
 
     const BORDER_COLOR = convertColor("#FFFFFF", 0.6)
@@ -60,12 +62,14 @@ const Button = ({
         <View className={`${wrapperClass}`}>
             <TouchableOpacity
                 onPress={onPress}
+                disabled={disabled}
                 className={`w-full h-10 shadow-button rounded-[10px] flex justify-center items-center ${buttonClass}`}
                 style={[{
                     backgroundColor: variantStyles.bgColor,
                     borderWidth: variantStyles.borderWidth,
                     borderColor: BORDER_COLOR,
-                    borderStyle: "solid"
+                    borderStyle: "solid",
+                    opacity: disabled ? 0.5 : 1
                 }, buttonStyle]}
                 activeOpacity={0.7}
             >
