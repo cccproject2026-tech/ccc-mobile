@@ -14,9 +14,10 @@ import { Feather, Ionicons } from "@expo/vector-icons"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { LinearGradient } from "expo-linear-gradient"
 import { Stack, router } from "expo-router"
-import React, { useMemo, useRef, useState } from "react"
+import React, { useCallback, useMemo, useRef, useState } from "react"
 import {
   ActivityIndicator,
+  FlatList,
   Image,
   ScrollView,
   StyleSheet,
@@ -50,11 +51,22 @@ export default function MyMentees() {
   const [selectedConference, setSelectedConference] = useState<string | null>(null)
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null)
 
-  const { data: mentees, isLoading, isError } = useMentees()
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError
+  } = useMentees(10)
+
+  const allMentees = useMemo(() => {
+    return data?.pages.flatMap(page => page.mentees) ?? []
+  }, [data])
 
   // Filter mentees based on search text and active tab
   const filteredMentees = useMemo(() => {
-    let filtered = mentees?.mentees ?? []
+    let filtered = allMentees
 
     if (searchText.trim()) {
       const searchLower = searchText.toLowerCase()
@@ -76,7 +88,7 @@ export default function MyMentees() {
     }
 
     return filtered
-  }, [mentees, searchText, activeTab])
+  }, [allMentees, searchText, activeTab])
 
   const menteeMenuRef = useRef<MenteeMenuBottomSheetRef>(null)
   const scheduleMeetingRef = useRef<ScheduleMeetingBottomSheetRef>(null)
@@ -145,7 +157,345 @@ export default function MyMentees() {
     // Here you would typically save the meeting to your backend
   }
 
-  if (isLoading) {
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  const renderHeader = () => (
+    <View>
+      {/* Header Section */}
+      <PastorNavigationHeader showNameTag />
+      <View style={styles.headerContainer}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Image source={icons.forward} style={styles.backIcon} />
+            <Text className="text-white font-semibold text-[17px]">
+              My Mentees
+            </Text>
+          </TouchableOpacity>
+
+          <View className="flex-row">
+            <TouchableOpacity
+              onPress={() => setListToggle(!listToggle)}
+              style={styles.toggleButton}
+            >
+              <Image
+                source={listToggle ? icons.list : icons.grid}
+                style={styles.toggleIcon}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowMap(prev => !prev)}
+              style={styles.toggleButton}
+            >
+              <Feather name="map-pin" size={20} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      {/* Separator */}
+      <View className="h-[0.5px] bg-white/30 mt-1" />
+
+      {/* Search Section */}
+      <View style={styles.searchContainer} className="mt-4">
+        <View style={styles.searchBox}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search"
+            placeholderTextColor="white"
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+          <Ionicons
+            name="search"
+            size={20}
+            color="rgba(255, 255, 255, 0.6)"
+            style={styles.searchIcon}
+          />
+        </View>
+      </View>
+
+      {/* Tabs */}
+      <View style={{ paddingHorizontal: 6, marginBottom: 12 }}>
+        <TabSwitcher
+          tabs={tabData}
+          activeTab={activeTab}
+          onChange={(key: string) => setActiveTab(key as any)}
+        />
+      </View>
+
+      {/* Quick Access Mentors (hidden when map is visible) */}
+      {!showMap && (
+        <View style={styles.quickAccessContainer}>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={allMentees.slice(0, 8)}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{
+              gap: 10,
+              paddingRight: 20
+            }}
+            renderItem={({ item: mentee }) => (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={{ alignItems: "center" }}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(mentor)/mentees/mentee-profile" as any,
+                    params: { menteeId: mentee.id, email: mentee.email },
+                  })
+                }
+              >
+                <LinearGradient
+                  colors={["#8B5CF6", "#3B82F6"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 48,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <View
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      padding: 3,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Image
+                      source={icons.myProfile}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: 44,
+                      }}
+                      resizeMode="cover"
+                    />
+                  </View>
+                </LinearGradient>
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "500",
+                    fontSize: 12,
+                    textAlign: "center",
+                    marginTop: 8,
+                  }}
+                >
+                  {mentee.firstName + " " + mentee.lastName}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      )}
+
+      {/* Separator */}
+      <View className="h-[0.5px] bg-white/20 mx-14 mb-4" />
+
+      {/* phase select dropdown */}
+      <View style={styles.filtersRow}>
+        <Text style={styles.filtersLabel}>Filters</Text>
+        <View style={{ position: "relative" }}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setShowPhaseDropdown((prev) => !prev)}
+            style={styles.phasePill}
+          >
+            <Text style={styles.phasePillText}>
+              Phase :{" "}
+              <Text style={{ fontWeight: "700" }}>
+                {selectedPhase}
+              </Text>
+            </Text>
+            <Ionicons
+              name={showPhaseDropdown ? "chevron-up" : "chevron-down"}
+              size={16}
+              color="#fff"
+            />
+          </TouchableOpacity>
+
+          {showPhaseDropdown && (
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.sectionHeader}
+                onPress={() => setExpandedSection("PHASE")}
+              >
+                <Text style={styles.sectionTitle}>Phase</Text>
+                <View style={styles.chevronPill}>
+                  <Ionicons name={expandedSection === "PHASE" ? "chevron-up" : "chevron-down"} size={14} color="#1A4882" />
+                </View>
+              </TouchableOpacity>
+
+              {expandedSection === "PHASE" && (
+                <View style={styles.sectionBody}>
+                  {[
+                    "Self Revitalization",
+                    "Church Empowerment",
+                    "Community Revitalization and Multiplication",
+                  ].map(option => (
+                    <TouchableOpacity
+                      key={option}
+                      style={styles.optionRow}
+                      onPress={() => setSelectedPhase(option)}
+                    >
+                      <View style={styles.radioOuter}>
+                        {selectedPhase === option && <View style={styles.radioInner} />}
+                      </View>
+                      <Text style={styles.optionText}>{option}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.sectionDivider} />
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.sectionHeader}
+                onPress={() => setExpandedSection("STATE")}
+              >
+                <Text style={styles.sectionTitle}>State</Text>
+                <View style={styles.chevronPill}>
+                  <Ionicons name={expandedSection === "STATE" ? "chevron-up" : "chevron-down"} size={14} color="#1A4882" />
+                </View>
+              </TouchableOpacity>
+
+              {expandedSection === "STATE" && (
+                <View style={styles.sectionBody}>
+                  {[
+                    "North American",
+                    "Canada",
+                    "Mexico",
+                    "Brazil",
+                  ].map(option => (
+                    <TouchableOpacity
+                      key={option}
+                      style={styles.optionRow}
+                      onPress={() => setSelectedState(option)}
+                    >
+                      <View style={styles.radioOuter}>
+                        {selectedState === option && <View style={styles.radioInner} />}
+                      </View>
+                      <Text style={styles.optionText}>{option}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.sectionDivider} />
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.sectionHeader}
+                onPress={() => setExpandedSection("CONFERENCE")}
+              >
+                <Text style={styles.sectionTitle}>Conference</Text>
+                <View style={styles.chevronPill}>
+                  <Ionicons name={expandedSection === "CONFERENCE" ? "chevron-up" : "chevron-down"} size={14} color="#1A4882" />
+                </View>
+              </TouchableOpacity>
+
+              {expandedSection === "CONFERENCE" && (
+                <View style={styles.sectionBody}>
+                  {[
+                    "East Zone",
+                    "West Zone",
+                    "North Zone",
+                  ].map(option => (
+                    <TouchableOpacity
+                      key={option}
+                      style={styles.optionRow}
+                      onPress={() => setSelectedConference(option)}
+                    >
+                      <View style={styles.radioOuter}>
+                        {selectedConference === option && <View style={styles.radioInner} />}
+                      </View>
+                      <Text style={styles.optionText}>{option}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.sectionDivider} />
+
+              <TouchableOpacity
+                style={[styles.optionRow, { paddingVertical: 12 }]}
+                onPress={() => {
+                  setSelectedPhase("Self Revitalization")
+                  setSelectedState(null)
+                  setSelectedConference(null)
+                }}
+              >
+                <View style={styles.radioOuter} />
+                <Text style={styles.optionText}>Clear Sort</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {showMap && (
+        <View style={{ marginHorizontal: 16, marginTop: 12, marginBottom: 24, borderRadius: 10, overflow: "hidden", height: 410 }}>
+          <MapView
+            style={{ width: "100%", height: "100%" }}
+            region={mapRegion}
+            showsUserLocation={false}
+            showsMyLocationButton={false}
+            showsCompass={true}
+            showsScale={true}
+            showsBuildings={true}
+            showsIndoors={true}
+            mapType="standard"
+          >
+            <Marker coordinate={{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }} />
+          </MapView>
+        </View>
+      )}
+
+      {!showMap && (
+        <View style={styles.mentorsHeader}>
+          <Text className="text-white font-medium text-[16px] px-4">
+            Current Mentees
+          </Text>
+        </View>
+      )}
+    </View>
+  )
+
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null
+    return (
+      <View style={{ paddingVertical: 20 }}>
+        <ActivityIndicator size="small" color="#fff" />
+      </View>
+    )
+  }
+
+  const renderEmpty = () => {
+    if (isLoading) return null
+    return (
+      <View style={{ padding: 20, alignItems: "center" }}>
+        <Text className="text-white text-base">No mentees found.</Text>
+      </View>
+    )
+  }
+
+  if (isLoading && !data) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <LinearGradient
@@ -186,380 +536,61 @@ export default function MyMentees() {
         >
           <Stack.Screen options={{ headerShown: false }} />
           <SafeAreaView style={{ flex: 1 }}>
-          <ScrollView style={{ flex: 1 }}>
-            <View
-              style={{
-                height: "100%",
-                width: "100%",
-                flex: 1,
-              }}
-            >
-              <View>
-                {/* Header Section */}
-                <PastorNavigationHeader showNameTag />
-                <View style={styles.headerContainer}>
-                  <View style={styles.headerContent}>
+            {!showMap ? (
+              <FlatList
+                data={filteredMentees}
+                keyExtractor={(item) => item.id}
+                key={listToggle ? "list" : "grid"}
+                numColumns={1}
+                ListHeaderComponent={renderHeader()}
+                ListFooterComponent={renderFooter}
+                ListEmptyComponent={renderEmpty}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.5}
+                renderItem={({ item: mentee }) => (
+                  <View
+                    style={{
+                      paddingHorizontal: 16,
+                      marginBottom: listToggle ? 12 : 8
+                    }}
+                  >
                     <TouchableOpacity
-                      onPress={() => router.back()}
-                      style={styles.backButton}
-                    >
-                      <Image source={icons.forward} style={styles.backIcon} />
-                      <Text className="text-white font-semibold text-[17px]">
-                        My Mentees
-                      </Text>
-                    </TouchableOpacity>
-
-                    <View className="flex-row">
-                      <TouchableOpacity
-                        onPress={() => setListToggle(!listToggle)}
-                        style={styles.toggleButton}
-                      >
-                        <Image
-                          source={listToggle ? icons.list : icons.grid}
-                          style={styles.toggleIcon}
-                        />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => setShowMap(prev => !prev)}
-                        style={styles.toggleButton}
-                      >
-                        <Feather name="map-pin" size={20} color="white" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Separator */}
-                <View className="h-[0.5px] bg-white/30 mt-1" />
-
-                {/* Search Section */}
-                <View style={styles.searchContainer} className="mt-4">
-                  <View style={styles.searchBox}>
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="Search"
-                      placeholderTextColor="white"
-                      value={searchText}
-                      onChangeText={setSearchText}
-                    />
-                    <Ionicons
-                      name="search"
-                      size={20}
-                      color="rgba(255, 255, 255, 0.6)"
-                      style={styles.searchIcon}
-                    />
-                  </View>
-                </View>
-
-                {/* Tabs */}
-                <View style={{ paddingHorizontal: 6, marginBottom: 12 }}>
-                  <TabSwitcher
-                    tabs={tabData}
-                    activeTab={activeTab}
-                    onChange={(key: string) => setActiveTab(key as any)}
-                  />
-                </View>
-
-                {/* Quick Access Mentors (hidden when map is visible) */}
-                {!showMap && (
-                  <View style={styles.quickAccessContainer}>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{
-                        ...styles.quickAccessScroll,
-                        gap: 10,
-                      }}
-                    >
-                      {filteredMentees?.slice(0, 8).map((mentee) => (
-                        <TouchableOpacity
-                          key={mentee.id}
-                          activeOpacity={0.85}
-                          style={{ alignItems: "center" }}
-                          onPress={() =>
-                            router.push({
-                              pathname: "/(mentor)/mentees/mentee-profile" as any,
-                              params: { menteeId: mentee.id, email: mentee.email },
-                            })
-                          }
-                        >
-                          <LinearGradient
-                            colors={["#8B5CF6", "#3B82F6"]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 0, y: 1 }}
-                            style={{
-                              width: 60,
-                              height: 60,
-                              borderRadius: 48,
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: 10,
-                            }}
-                          >
-                            <View
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                padding: 3,
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              <Image
-                                source={icons.myProfile}
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  borderRadius: 44,
-                                }}
-                                resizeMode="cover"
-                              />
-                            </View>
-                          </LinearGradient>
-                          <Text
-                            style={{
-                              color: "white",
-                              fontWeight: "500",
-                              fontSize: 12,
-                              textAlign: "center",
-                              marginTop: 8,
-                            }}
-                          >
-                            {mentee.firstName + " " + mentee.lastName}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-                {/* Separator */}
-                <View className="h-[0.5px] bg-white/20 mx-14" />
-
-                {/* phase select dropdown */}
-                <View style={styles.filtersRow}>
-                  <Text style={styles.filtersLabel}>Filters</Text>
-                  <View style={{ position: "relative" }}>
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => setShowPhaseDropdown((prev) => !prev)}
-                      style={styles.phasePill}
-                    >
-                      <Text style={styles.phasePillText}>
-                        Phase :{" "}
-                        <Text style={{ fontWeight: "700" }}>
-                          {selectedPhase}
-                        </Text>
-                      </Text>
-                      <Ionicons
-                        name={showPhaseDropdown ? "chevron-up" : "chevron-down"}
-                        size={16}
-                        color="#fff"
-                      />
-                    </TouchableOpacity>
-
-                    {showPhaseDropdown && (
-                      <View style={styles.dropdownMenu}
-                      >
-                        {/* Phase Section */}
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          style={styles.sectionHeader}
-                          onPress={() => setExpandedSection(prev => prev === "PHASE" ? ("PHASE") : "PHASE")}
-                        >
-                          <Text style={styles.sectionTitle}>Phase</Text>
-                          <View style={styles.chevronPill}>
-                            <Ionicons name={expandedSection === "PHASE" ? "chevron-up" : "chevron-down"} size={14} color="#1A4882" />
-                          </View>
-                        </TouchableOpacity>
-
-                        {expandedSection === "PHASE" && (
-                          <View style={styles.sectionBody}
-                          >
-                            {[
-                              "Self Revitalization",
-                              "Church Empowerment",
-                              "Community Revitalization and Multiplication",
-                            ].map(option => (
-                              <TouchableOpacity
-                                key={option}
-                                style={styles.optionRow}
-                                onPress={() => setSelectedPhase(option)}
-                              >
-                                <View style={styles.radioOuter}>
-                                  {selectedPhase === option && <View style={styles.radioInner} />}
-                                </View>
-                                <Text style={styles.optionText}>{option}</Text>
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                        )}
-
-                        <View style={styles.sectionDivider} />
-
-                        {/* State Section */}
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          style={styles.sectionHeader}
-                          onPress={() => setExpandedSection(prev => prev === "STATE" ? "STATE" : "STATE")}
-                        >
-                          <Text style={styles.sectionTitle}>State</Text>
-                          <View style={styles.chevronPill}>
-                            <Ionicons name={expandedSection === "STATE" ? "chevron-up" : "chevron-down"} size={14} color="#1A4882" />
-                          </View>
-                        </TouchableOpacity>
-
-                        {expandedSection === "STATE" && (
-                          <View style={styles.sectionBody}>
-                            {[
-                              "North American",
-                              "Canada",
-                              "Mexico",
-                              "Brazil",
-                            ].map(option => (
-                              <TouchableOpacity
-                                key={option}
-                                style={styles.optionRow}
-                                onPress={() => setSelectedState(option)}
-                              >
-                                <View style={styles.radioOuter}>
-                                  {selectedState === option && <View style={styles.radioInner} />}
-                                </View>
-                                <Text style={styles.optionText}>{option}</Text>
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                        )}
-
-                        <View style={styles.sectionDivider} />
-
-                        {/* Conference Section */}
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          style={styles.sectionHeader}
-                          onPress={() => setExpandedSection(prev => prev === "CONFERENCE" ? "CONFERENCE" : "CONFERENCE")}
-                        >
-                          <Text style={styles.sectionTitle}>Conference</Text>
-                          <View style={styles.chevronPill}>
-                            <Ionicons name={expandedSection === "CONFERENCE" ? "chevron-up" : "chevron-down"} size={14} color="#1A4882" />
-                          </View>
-                        </TouchableOpacity>
-
-                        {expandedSection === "CONFERENCE" && (
-                          <View style={styles.sectionBody}>
-                            {[
-                              "East Zone",
-                              "West Zone",
-                              "North Zone",
-                            ].map(option => (
-                              <TouchableOpacity
-                                key={option}
-                                style={styles.optionRow}
-                                onPress={() => setSelectedConference(option)}
-                              >
-                                <View style={styles.radioOuter}>
-                                  {selectedConference === option && <View style={styles.radioInner} />}
-                                </View>
-                                <Text style={styles.optionText}>{option}</Text>
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                        )}
-
-                        <View style={styles.sectionDivider} />
-
-                        {/* Clear Sort */}
-                        <TouchableOpacity
-                          style={[styles.optionRow, { paddingVertical: 12 }]}
-                          onPress={() => {
-                            setSelectedPhase("Self Revitalization")
-                            setSelectedState(null)
-                            setSelectedConference(null)
-                          }}
-                        >
-                          <View style={styles.radioOuter} />
-                          <Text style={styles.optionText}>Clear Sort</Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                {/* Map or Mentors List */}
-                {showMap ? (
-                  <View style={{ marginHorizontal: 16, marginTop: 12, marginBottom: 24, borderRadius: 10, overflow: "hidden", height: 410 }}>
-                    <MapView
-                      style={{ width: "100%", height: "100%" }}
-                      region={mapRegion}
-                      showsUserLocation={false}
-                      showsMyLocationButton={false}
-                      showsCompass={true}
-                      showsScale={true}
-                      showsBuildings={true}
-                      showsIndoors={true}
-                      mapType="standard"
-                    >
-                      <Marker coordinate={{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }} />
-                    </MapView>
-                  </View>
-                ) : (
-                  <View style={styles.mentorsListContainer} className="mt-4">
-                    <View style={styles.mentorsHeader}>
-                      <Text className="text-white  font-medium text-[16px]">
-                        Current Mentees
-                      </Text>
-                    </View>
-
-                    <View
-                      style={
-                        listToggle ? styles.mentorsListView : styles.mentorsGrid
+                      activeOpacity={0.88}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(mentor)/mentees/mentee-profile" as any,
+                          params: { menteeId: mentee.id },
+                        })
                       }
+                      style={{ flex: 1 }}
                     >
-                      {filteredMentees.map((mentee) => (
-                        <View
-                          key={mentee.id}
-                          style={
-                            listToggle
-                              ? styles.detailedMentorCard
-                              : styles.mentorCard
-                          }
-                        >
-                          <TouchableOpacity
-                            activeOpacity={0.88}
-                            onPress={() =>
-                              router.push({
-                                pathname: "/(mentor)/mentees/mentee-profile" as any,
-                                params: { menteeId: mentee.id },
-                              })
-                            }
-                            style={{ flex: 1 }}
-                          >
-                            {listToggle ? (
-                              <MentorDetailedCard
-                                data={mentee}
-                                key={mentee.id}
-                                navigation={router}
-                                onMenuPress={() => handleMenuPress(mentee)}
-                              />
-                            ) : (
-                              <MentorShortCard
-                                data={mentee}
-                                dataKey={mentee.id}
-                                navigation={router}
-                                onMenuPress={() => handleMenuPress(mentee)}
-                              />
-                            )}
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </View>
+                      {listToggle ? (
+                        <MentorDetailedCard
+                          data={mentee}
+                          dataKey={mentee.id}
+                          navigation={router}
+                          onMenuPress={() => handleMenuPress(mentee)}
+                        />
+                      ) : (
+                        <MentorShortCard
+                          data={mentee}
+                          dataKey={mentee.id}
+                          navigation={router}
+                          onMenuPress={() => handleMenuPress(mentee)}
+                        />
+                      )}
+                    </TouchableOpacity>
                   </View>
                 )}
-              </View>
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </LinearGradient>
+                contentContainerStyle={{ paddingBottom: 60 }}
+              />
+            ) : (
+              <ScrollView>
+                {renderHeader()}
+              </ScrollView>
+            )}
+          </SafeAreaView>
+        </LinearGradient>
 
         {/* Mentee Menu Bottom Sheet */}
         <MenteeMenuBottomSheet

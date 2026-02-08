@@ -18,24 +18,27 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function MenteeProfileScreen() {
   const { menteeId, email: emailParam } = useLocalSearchParams<{ menteeId?: string; email?: string }>()
-  
+
   // Get mentees list to look up email if needed
   const { data: menteesData } = useMentees()
-  
+  console.log(menteesData, "menteesData");
   // Get email from param or look it up from menteeId
   const email = useMemo(() => {
     if (emailParam) return emailParam
     if (menteeId) {
-      // Look up email from mentees list
-      const mentee = menteesData?.mentees?.find((m) => m.id === menteeId)
+      // Look up email from mentees list across all paginated pages
+      const mentee = menteesData?.pages
+        .flatMap((page: any) => page.mentees)
+        .find((m: any) => m.id === menteeId)
       return mentee?.email
     }
     return undefined
   }, [emailParam, menteeId, menteesData])
-
+  console.log(email, "email", menteeId, "menteeId");
   // Fetch mentee data by email
   const { data: menteeData, isLoading, isError } = useMenteeByEmail(email)
-
+  console.log(menteeData, "menteeData");
+  console.log(email, "email", menteeId, "menteeId");
   // Map API data to UI structure
   const mentee = useMemo(() => {
     if (!menteeData) {

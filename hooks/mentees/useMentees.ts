@@ -61,22 +61,22 @@ import { apiClient } from '@/services/api/client';
 import { ENDPOINTS } from '@/services/api/endpoints';
 import { menteesService } from '@/services/mentees.service';
 import { Mentee } from '@/types/mentee.types';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 // Query key
 const MENTEES_KEY = ['mentees'];
 
-export const useMentees = () => {
-    return useQuery({
-        queryKey: ['mentees'],
-        queryFn: async () => {
-            // fetch backend
-            const res = await menteesService.getMentees();
+export const useMentees = (limit: number = 10) => {
+    return useInfiniteQuery({
+        queryKey: MENTEES_KEY,
+        queryFn: async ({ pageParam = 1 }) => {
+            // fetch backend with pagination
+            const res = await menteesService.getMentees(pageParam, limit);
 
             // FIX: backend uses `users`, not `mentees`
             const backendMentees: Mentee[] = res.users ?? [];
 
-            // fetch progress in parallel
+            // fetch progress in parallel for the current page only
             const progressResponses = await Promise.all(
                 backendMentees.map(async (m) => {
                     try {
@@ -107,9 +107,12 @@ export const useMentees = () => {
 
             return {
                 mentees,
-                total: res.total ?? mentees.length
+                total: res.total ?? mentees.length,
+                nextPage: mentees.length === limit ? pageParam + 1 : undefined,
             };
         },
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => lastPage.nextPage,
         staleTime: 1000 * 60 * 5,
         retry: 1,
     });

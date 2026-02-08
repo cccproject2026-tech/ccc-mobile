@@ -129,7 +129,16 @@ export const useUpdateProfile = () => {
 
             // Everything else goes to interests
             if (updates.phoneNumber !== undefined) interestUpdates.phoneNumber = updates.phoneNumber;
-            if (updates.churches !== undefined) interestUpdates.churchDetails = updates.churches;
+            if (updates.churches !== undefined) {
+                interestUpdates.churchDetails = updates.churches.map(church => {
+                    const { id, ...rest } = church;
+                    // Strip temporary IDs (e.g., "temp-123456789") before sending to backend
+                    if (id && String(id).startsWith('temp-')) {
+                        return rest;
+                    }
+                    return { id, ...rest };
+                });
+            }
             if (updates.title !== undefined) interestUpdates.title = updates.title;
             if (updates.yearsInMinistry !== undefined) interestUpdates.yearsInMinistry = updates.yearsInMinistry;
             if (updates.conference !== undefined) interestUpdates.conference = updates.conference;

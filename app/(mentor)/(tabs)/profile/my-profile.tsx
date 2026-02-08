@@ -66,13 +66,14 @@ export default function ProfileScreen() {
   });
 
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   // Initialize form data when data is loaded or when entering edit mode
   useEffect(() => {
     console.log('apiProfileData', apiProfileData);
     if (apiProfileData?.user && !isFormInitialized) {
       const interests = apiProfileData.interest?.interests || [];
+      const interestArray = Array.isArray(interests) ? interests : [interests].filter(Boolean);
+      
       setFormData({
         firstName: apiProfileData.user.firstName || '',
         lastName: apiProfileData.user.lastName || '',
@@ -82,11 +83,10 @@ export default function ProfileScreen() {
         yearsInMinistry: apiProfileData.interest?.yearsInMinistry || '',
         conference: apiProfileData.interest?.conference || '',
         currentCommunityServiceProjects: apiProfileData.interest?.currentCommunityProjects || '',
-        interests: Array.isArray(interests) ? interests : [interests],
+        interests: interestArray,
         comments: apiProfileData.interest?.comments || '',
         bio: apiProfileData.interest?.profileInfo || '',
       });
-      setSelectedInterests(Array.isArray(interests) ? interests : [interests]);
       setProfileImage(apiProfileData.user.profilePicture || null);
       setIsFormInitialized(true);
     }
@@ -194,13 +194,47 @@ export default function ProfileScreen() {
   const handleConfirmSave = async () => {
     setShowConfirmModal(false);
     try {
+      const churches = formData.churches || [];
+      
+      // Validate all church fields are filled for each added church
+      for (let i = 0; i < churches.length; i++) {
+        const church = churches[i];
+        const missingFields = [];
+        
+        if (!church.churchName?.trim()) missingFields.push("Church Name");
+        if (!church.churchPhone?.trim()) missingFields.push("Church Phone");
+        if (!church.churchWebsite?.trim()) missingFields.push("Church Website");
+        if (!church.churchAddress?.trim()) missingFields.push("Church Address");
+        if (!church.city?.trim()) missingFields.push("City");
+        if (!church.state?.trim()) missingFields.push("State");
+        if (!church.zipCode?.trim()) missingFields.push("Zip Code");
+        if (!church.country?.trim()) missingFields.push("Country");
+
+        if (missingFields.length > 0) {
+          Alert.alert(
+            "Validation Error", 
+            `Please fill in all fields for Church ${i + 1}. Missing: ${missingFields.join(", ")}`
+          );
+          return;
+        }
+      }
+
+      const validChurches = churches.map(church => {
+        // Strip temporary IDs before sending to backend
+        const { id, ...churchData } = church;
+        if (id && String(id).startsWith('temp-')) {
+          return churchData;
+        }
+        return church;
+      });
+
       if (selectedImageFile) {
         await uploadProfilePicture.mutateAsync(selectedImageFile);
       }
 
       await updateProfile.mutateAsync({
         ...formData,
-        interests: selectedInterests,
+        churches: validChurches,
       });
 
       setIsEditMode(false);
@@ -370,78 +404,83 @@ export default function ProfileScreen() {
               <View style={styles.divider} />
 
               {/* Church Information */}
-              {(isEditMode ? formData.churches : interest?.churchDetails)?.map((church, idx) => (
-                <View key={church.id || idx} className="flex-1 gap-3">
-                  <View className="flex-row items-center justify-between gap-12">
-                    <Text className="font-[AlbertRegular] text-white text-[14px]">
-                      Church - {idx + 1} Information
-                    </Text>
-                    {isEditMode && (formData.churches?.length || 0) > 1 && (
-                      <TouchableOpacity onPress={() => removeChurch(idx)}>
-                        <Text className="text-red-400">Remove</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+              {(() => {
+                const churches = isEditMode ? formData.churches : interest?.churchDetails;
+                const churchArray = Array.isArray(churches) ? churches : [];
+                
+                return churchArray.map((church, idx) => (
+                  <View key={church?.id || `church-${idx}`} className="flex-1 gap-3">
+                    <View className="flex-row items-center justify-between gap-12">
+                      <Text className="font-[AlbertRegular] text-white text-[14px]">
+                        Church - {idx + 1} Information
+                      </Text>
+                      {isEditMode && (formData.churches?.length || 0) > 1 && (
+                        <TouchableOpacity onPress={() => removeChurch(idx)}>
+                          <Text className="text-red-400">Remove</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
 
-                  <View className="gap-6 mt-4">
+                    <View className="gap-6 mt-4">
                     <TextInputField
-                      label="Church Name"
-                      value={church.churchName}
+                      label={isEditMode ? "Church Name *" : "Church Name"}
+                      value={church?.churchName || ""}
                       editable={isEditMode}
                       onChangeText={(text) => handleInputChange("churches", text, idx, "churchName")}
                     />
                     <View style={styles.rowContainer}>
                       <TextInputField
-                        label="Church Phone"
-                        value={church.churchPhone || ""}
+                        label={isEditMode ? "Church Phone *" : "Church Phone"}
+                        value={church?.churchPhone || ""}
                         editable={isEditMode}
                         onChangeText={(text) => handleInputChange("churches", text, idx, "churchPhone")}
                       />
                       <TextInputField
-                        label="Church Website"
-                        value={church.churchWebsite || ""}
+                        label={isEditMode ? "Church Website *" : "Church Website"}
+                        value={church?.churchWebsite || ""}
                         editable={isEditMode}
                         onChangeText={(text) => handleInputChange("churches", text, idx, "churchWebsite")}
                       />
                     </View>
                     <TextInputField
-                      label="Church Address"
-                      value={church.churchAddress || ""}
+                      label={isEditMode ? "Church Address *" : "Church Address"}
+                      value={church?.churchAddress || ""}
                       editable={isEditMode}
                       onChangeText={(text) => handleInputChange("churches", text, idx, "churchAddress")}
                     />
                     <View style={styles.rowContainer}>
                       <TextInputField
-                        label="City"
-                        value={church.city || ""}
+                        label={isEditMode ? "City *" : "City"}
+                        value={church?.city || ""}
                         editable={isEditMode}
                         onChangeText={(text) => handleInputChange("churches", text, idx, "city")}
                       />
                       <TextInputField
-                        label="State"
-                        value={church.state || ""}
+                        label={isEditMode ? "State *" : "State"}
+                        value={church?.state || ""}
                         editable={isEditMode}
                         onChangeText={(text) => handleInputChange("churches", text, idx, "state")}
                       />
                     </View>
                     <View style={styles.rowContainer}>
                       <TextInputField
-                        label="Zip Code"
-                        value={church.zipCode || ""}
+                        label={isEditMode ? "Zip Code *" : "Zip Code"}
+                        value={church?.zipCode || ""}
                         editable={isEditMode}
                         onChangeText={(text) => handleInputChange("churches", text, idx, "zipCode")}
                       />
                       <TextInputField
-                        label="Country"
-                        value={church.country || ""}
+                        label={isEditMode ? "Country *" : "Country"}
+                        value={church?.country || ""}
                         editable={isEditMode}
                         onChangeText={(text) => handleInputChange("churches", text, idx, "country")}
                       />
                     </View>
+                    </View>
+                    <View style={styles.divider} className="my-4" />
                   </View>
-                  <View style={styles.divider} className="my-4" />
-                </View>
-              ))}
+                ));
+              })()}
 
               {isEditMode && (
                 <Button
@@ -490,7 +529,7 @@ export default function ProfileScreen() {
                 />
                 <TextArea
                   label="Interests"
-                  value={isEditMode ? formData.interests?.join(", ") : interest?.interests?.join(", ") || ""}
+                  value={isEditMode ? (Array.isArray(formData.interests) ? formData.interests.join(", ") : "") : (Array.isArray(interest?.interests) ? interest?.interests.join(", ") : "")}
                   onChangeText={(text) => handleInputChange("interests", text.split(", ").map(s => s.trim()))}
                   editable={isEditMode}
                 />

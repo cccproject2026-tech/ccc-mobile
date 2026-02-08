@@ -3,8 +3,10 @@ import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
 export const menteesService = {
-    getMentees: async (): Promise<GetMenteesApiResponse['data']> => {
-        const response = await apiClient.get<GetMenteesApiResponse>(ENDPOINTS.MENTEES.GET_ALL_MENTEES);
+    getMentees: async (page: number = 1, limit: number = 10): Promise<GetMenteesApiResponse['data']> => {
+        const response = await apiClient.get<GetMenteesApiResponse>(
+            `${ENDPOINTS.MENTEES.GET_ALL_MENTEES}${ENDPOINTS.MENTEES.GET_ALL_MENTEES.includes('?') ? '&' : '?'}page=${page}&limit=${limit}`
+        );
         return response.data.data;
     },
     getMenteeByEmail: async (email: string): Promise<MenteeDetail> => {
