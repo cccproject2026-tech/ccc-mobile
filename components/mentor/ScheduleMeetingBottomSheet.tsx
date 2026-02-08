@@ -216,6 +216,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
                 </View>
               )}
             </View>
+              {/* <View style={{ height: 100 ,width:"100%",backgroundColor:"red"}}></View> */}
 
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
@@ -237,7 +238,10 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
                 <Text style={styles.scheduleButtonText}>Schedule</Text>
               </TouchableOpacity>
             </View>
+            {/* <View style={{ height: 20 ,width:"100%"}}></View> */}
+            {/* <View style={{ height: 50 ,width:"100%",backgroundColor:"blue"}}></View> */}
           </BottomSheetScrollView>
+            {/* <View style={{ height: 250 ,width:"100%",backgroundColor:"blue"}}></View> */}
         </LinearGradient>
       </BottomSheetModal>
     )
@@ -253,9 +257,9 @@ const styles = StyleSheet.create({
     height: 4,
   },
   sheetGradient: {
-    flex: 1,
+  
     paddingTop: 20,
-  },
+      },
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 20,

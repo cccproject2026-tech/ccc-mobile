@@ -1,3 +1,5 @@
+import ConfirmModal from '@/components/atom/ConfirmModal';
+import SuccessModal from '@/components/atom/SuccessModal';
 import {
   Button,
   DropDrawer,
@@ -7,9 +9,13 @@ import {
   TextInput as TextInputField,
 } from "@/components/build-components";
 import { icons } from "@/constants/images";
-import { Stack } from "expo-router";
-import React, { useState } from "react";
+import { useProfile, useUpdateProfile, useUploadProfilePicture } from "@/hooks/profile/useProfile";
+import { ChurchInfo, UpdateProfileData } from "@/types/profile.types";
+import * as ImagePicker from 'expo-image-picker';
+import { Stack, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   StyleSheet,
@@ -17,99 +23,110 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-interface ProfileData {
-  firstName: string;
-  lastName: string;
-  phoneNumber: string;
-  email: string;
-  profileSummary: string;
-  church1: {
-    name: string;
-    phone: string;
-    website: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-  church2: {
-    name: string;
-    phone: string;
-    website: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  } | null;
-  title: string;
-  yearsInMinistry: string;
-  conference: string;
-  communityServiceProjects: string;
-  interests: string;
-  comments: string;
-}
+const CLEAN_CHURCH_TEMPLATE: ChurchInfo = {
+  churchName: '',
+  churchPhone: '',
+  churchAddress: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  country: '',
+  churchWebsite: '',
+};
 
 export default function ProfileScreen() {
-  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const router = useRouter();
+  const { bottom } = useSafeAreaInsets();
 
-  const [profileData, setProfileData] = useState<ProfileData>({
-    firstName: "John",
-    lastName: "Ross",
-    phoneNumber: "098461313976",
-    email: "johnross@gmail.com",
-    profileSummary:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing eip ex ea commodo consequat. Duis",
-    church1: {
-      name: "Loma linda University Church",
-      phone: "098461313976",
-      website: "johnross@gmail.com",
-      address: "Loma linda University Church,CA",
-      city: "Oakland",
-      state: "North American",
-      zipCode: "00000",
-      country: "USA",
-    },
-    church2: {
-      name: "Loma linda University Church",
-      phone: "098461313976",
-      website: "johnross@gmail.com",
-      address: "Loma linda University Church,CA",
-      city: "Oakland",
-      state: "North American",
-      zipCode: "00000",
-      country: "USA",
-    },
-    title: "Pastor",
-    yearsInMinistry: "11",
-    conference: "Oakland",
-    communityServiceProjects: "11",
-    interests:
-      "I would like to find out more about the Center for Community Change",
-    comments:
-      "I am a conference administrator and would like to find out more about partnering with the cent I conference administrator and would like to find out more about partnering with the center",
+  // Fetch profile data from React Query
+  const { data: apiProfileData, isLoading, isError } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const uploadProfilePicture = useUploadProfilePicture();
+
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<any>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const [formData, setFormData] = useState<UpdateProfileData>({
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    churches: [],
+    title: '',
+    yearsInMinistry: '',
+    conference: '',
+    currentCommunityServiceProjects: '',
+    interests: [],
+    comments: '',
+    bio: '',
   });
 
-  const [profileImage, setProfileImage] = useState(icons.myProfile);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+  // Initialize form data when data is loaded or when entering edit mode
+  useEffect(() => {
+    console.log('apiProfileData', apiProfileData);
+    if (apiProfileData?.user && !isFormInitialized) {
+      const interests = apiProfileData.interest?.interests || [];
+      setFormData({
+        firstName: apiProfileData.user.firstName || '',
+        lastName: apiProfileData.user.lastName || '',
+        phoneNumber: apiProfileData.interest?.phoneNumber || '',
+        churches: apiProfileData.interest?.churchDetails || [],
+        title: apiProfileData.interest?.title || '',
+        yearsInMinistry: apiProfileData.interest?.yearsInMinistry || '',
+        conference: apiProfileData.interest?.conference || '',
+        currentCommunityServiceProjects: apiProfileData.interest?.currentCommunityProjects || '',
+        interests: Array.isArray(interests) ? interests : [interests],
+        comments: apiProfileData.interest?.comments || '',
+        bio: apiProfileData.interest?.profileInfo || '',
+      });
+      setSelectedInterests(Array.isArray(interests) ? interests : [interests]);
+      setProfileImage(apiProfileData.user.profilePicture || null);
+      setIsFormInitialized(true);
+    }
+  }, [apiProfileData, isFormInitialized]);
+
+  // Handle image selection
+  const pickImage = useCallback(async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant photo library access.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets?.[0]) {
+        const asset = result.assets[0];
+        setProfileImage(asset.uri);
+        setSelectedImageFile({
+          uri: asset.uri,
+          type: asset.mimeType || 'image/jpeg',
+          fileName: asset.fileName || `profile-${Date.now()}.jpg`,
+        });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image.');
+    }
+  }, []);
 
   const handleImagePicker = () => {
     Alert.alert("Change Profile Picture", "Choose an option", [
       {
-        text: "Camera",
-        onPress: () => {
-          // Mock camera functionality
-          Alert.alert("Camera", "Camera functionality would open here");
-        },
-      },
-      {
         text: "Photo Library",
-        onPress: () => {
-          // Mock photo library functionality
-          Alert.alert("Photo Library", "Photo library would open here");
-        },
+        onPress: pickImage,
       },
       {
         text: "Cancel",
@@ -119,11 +136,11 @@ export default function ProfileScreen() {
   };
 
   const titleOptions = [
-    { label: "Pastor", value: "Pastor" },
-    { label: "Associate Pastor", value: "Associate Pastor" },
-    { label: "Youth Pastor", value: "Youth Pastor" },
-    { label: "Senior Pastor", value: "Senior Pastor" },
-    { label: "Elder", value: "Elder" },
+    { label: "Mentor", value: "mentor" },
+    { label: "Field Mentor", value: "fieldmentor" },
+    { label: "Pastor", value: "pastor" },
+    { label: "Lay Leader", value: "layleader" },
+    { label: "Seminarian", value: "seminarian" },
   ];
 
   const handleEditPress = () => {
@@ -131,34 +148,105 @@ export default function ProfileScreen() {
   };
 
   const handleInputChange = (
-    field: keyof ProfileData,
-    value: string,
-    church?: "church1" | "church2",
-    churchField?: keyof ProfileData["church1"]
+    field: keyof UpdateProfileData,
+    value: any,
+    index?: number,
+    churchField?: keyof ChurchInfo
   ) => {
-    if (church && churchField) {
-      setProfileData({
-        ...profileData,
-        [church]: {
-          ...profileData[church]!,
-          [churchField]: value,
-        },
-      });
+    if (field === 'churches' && index !== undefined && churchField) {
+      const updatedChurches = [...(formData.churches || [])];
+      updatedChurches[index] = { ...updatedChurches[index], [churchField]: value };
+      setFormData({ ...formData, churches: updatedChurches });
     } else {
-      setProfileData({
-        ...profileData,
-        [field]: value,
-      });
+      setFormData({ ...formData, [field]: value });
     }
   };
+
+  const addChurch = useCallback(() => {
+    setFormData((prev) => ({
+      ...prev,
+      churches: [
+        ...(prev.churches || []),
+        { ...CLEAN_CHURCH_TEMPLATE, id: `temp-${Date.now()}` },
+      ],
+    }));
+  }, []);
+
+  const removeChurch = useCallback((index: number) => {
+    if ((formData.churches?.length || 0) > 1) {
+      setFormData((prev) => ({
+        ...prev,
+        churches: prev.churches?.filter((_, i) => i !== index),
+      }));
+    }
+  }, [formData.churches]);
+
+  const handleCancel = () => {
+    setIsEditMode(false);
+    setIsFormInitialized(false); // Trigger re-init from api data
+    setSelectedImageFile(null);
+  };
+
+  const handleSavePress = () => {
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setShowConfirmModal(false);
+    try {
+      if (selectedImageFile) {
+        await uploadProfilePicture.mutateAsync(selectedImageFile);
+      }
+
+      await updateProfile.mutateAsync({
+        ...formData,
+        interests: selectedInterests,
+      });
+
+      setIsEditMode(false);
+      setShowSuccessModal(true);
+    } catch (error: any) {
+      Alert.alert("Update Failed", error.message || "Failed to update profile.");
+    }
+  };
+
+  const progressPercentage = useMemo(() => {
+    return apiProfileData?.progress?.overallProgress || 0;
+  }, [apiProfileData?.progress?.overallProgress]);
+
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good Morning';
+    if (h < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#176192' }}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
+
+  if (isError || !apiProfileData?.user) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#176192', padding: 20 }}>
+        <Text style={{ color: '#fff', textAlign: 'center', marginBottom: 20 }}>Failed to load profile.</Text>
+        <Button children="Retry" onPress={() => router.back()} />
+      </View>
+    );
+  }
+
+  const { user, interest } = apiProfileData;
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <ScreenLayout
         showNameTag
-        tagName="John Ros"
-        enableScrollView={false}
+        tagName={`${user.firstName} ${user.lastName}`}
+        enableScrollView={true}
         paddingX={0}
       >
         <View className="w-full">
@@ -166,7 +254,7 @@ export default function ProfileScreen() {
           <View className="relative items-center flex-1 py-5">
             <View className="w-[70px] h-[70px] rounded-full justify-center items-center bg-white/12 relative mb-4">
               <Image
-                source={profileImage}
+                source={profileImage ? { uri: profileImage } : icons.myProfile}
                 resizeMode="cover"
                 className="w-[75px] h-[75px] rounded-full"
               />
@@ -185,10 +273,10 @@ export default function ProfileScreen() {
             {!isEditMode && (
               <View className="flex items-center gap-2">
                 <Text className="font-[AlbertSans-SemiBold] text-[14px] text-white font-semibold">
-                  Good Morning John Ross
+                  {greeting} {user.firstName} {user.lastName}
                 </Text>
                 <Text className="font-[AlbertSans-Medium] text-[14px] text-white font-semibold">
-                  Pastor
+                  {interest?.title || "Mentor"}
                 </Text>
               </View>
             )}
@@ -208,19 +296,22 @@ export default function ProfileScreen() {
                   Progress
                 </Text>
                 <View className="flex-1 bg-[#182c5b] h-2 rounded-[4px] mt-1">
-                  <View className="bg-white h-2 rounded-[4px] w-[70%]" />
+                  <View className="bg-white h-2 rounded-[4px]" style={{ width: `${progressPercentage}%` }} />
                 </View>
-                <Text className="text-xs font-bold text-white ">70%</Text>
+                <Text className="text-xs font-bold text-white ">{progressPercentage}%</Text>
               </View>
             </>
           )}
 
           {!isEditMode && (
             <View className="flex flex-row items-center justify-center gap-2 px-5 py-4 mt-2">
-              <View className="flex flex-row w-1/2 justify-around items-center rounded-[10px] px-2.5 py-2.5 bg-[#004B87] border border-white/80">
-                <Text className="text-white">Upload documents</Text>
+              <TouchableOpacity
+                onPress={() => router.push("/mentee-documents" as any)}
+                className="flex flex-row w-1/2 justify-around items-center rounded-[10px] px-2.5 py-2.5 bg-[#004B87] border border-white/80"
+              >
+                <Text className="text-white">Documents</Text>
                 <Image source={icons.attachment} style={styles.icon} />
-              </View>
+              </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleEditPress}
                 className="flex flex-row justify-around w-1/2 items-center rounded-[10px] px-2.5 py-2.5 bg-[#004B87] border border-white/80"
@@ -239,24 +330,11 @@ export default function ProfileScreen() {
             </View>
             <View className="relative">
               <TextArea
-                label="profileSummary"
-                value={profileData.profileSummary}
-                onChangeText={(text) =>
-                  handleInputChange("profileSummary", text)
-                }
+                label="Profile Info"
+                value={isEditMode ? formData.bio : interest?.profileInfo || ""}
+                onChangeText={(text) => handleInputChange("bio", text)}
                 editable={isEditMode}
               />
-              {isEditMode && (
-                <TouchableOpacity
-                  style={styles.profileInformationIcon}
-                  onPress={handleImagePicker}
-                >
-                  <Image
-                    source={icons.edit}
-                    style={{ width: 17, height: 17 }}
-                  />
-                </TouchableOpacity>
-              )}
             </View>
 
             {/* Detailed Personal Info */}
@@ -268,15 +346,13 @@ export default function ProfileScreen() {
                 <View style={styles.rowContainer}>
                   <TextInputField
                     label="First Name"
-                    value={profileData.firstName}
+                    value={isEditMode ? formData.firstName : user.firstName}
                     editable={isEditMode}
-                    onChangeText={(text) =>
-                      handleInputChange("firstName", text)
-                    }
+                    onChangeText={(text) => handleInputChange("firstName", text)}
                   />
                   <TextInputField
                     label="Last Name"
-                    value={profileData.lastName}
+                    value={isEditMode ? formData.lastName : user.lastName}
                     editable={isEditMode}
                     onChangeText={(text) => handleInputChange("lastName", text)}
                   />
@@ -284,247 +360,95 @@ export default function ProfileScreen() {
                 <View style={styles.rowContainer}>
                   <TextInputField
                     label="Phone Number"
-                    value={profileData.phoneNumber}
+                    value={isEditMode ? formData.phoneNumber : interest?.phoneNumber || ""}
                     editable={isEditMode}
-                    onChangeText={(text) =>
-                      handleInputChange("phoneNumber", text)
-                    }
+                    onChangeText={(text) => handleInputChange("phoneNumber", text)}
                   />
-                  <TextInputField label="Email" value={profileData.email} />
+                  <TextInputField label="Email" value={user.email} editable={false} />
                 </View>
               </View>
               <View style={styles.divider} />
 
-              {/* Church-1 Personal Info */}
-              <View className="flex-1 gap-3">
-                <View className="flex-row items-center justify-between gap-12">
-                  <Text className="font-[AlbertRegular] text-white text-[14px]">
-                    Current Church -1 Information
-                  </Text>
-                  {isEditMode && (
-                    <Button
-                      children="Add Church"
-                      buttonClass="mx-0 px-0 rounded-full"
-                      wrapperClass="flex-1 rounded-full"
-                      labelStyle={{ fontSize: 14, lineHeight: 0 }}
-                      onPress={() => { }}
-                    />
-                  )}
-                </View>
-
-                <View className="gap-6 mt-4">
-                  <View>
-                    <TextInputField
-                      label="Church Name"
-                      value={profileData.church1.name}
-                      editable={isEditMode}
-                      onChangeText={(text) =>
-                        handleInputChange("church1", text, "church1", "name")
-                      }
-                    />
-                  </View>
-                  <View style={styles.rowContainer} className="">
-                    <TextInputField
-                      label="Church Phone"
-                      value={profileData.church1.phone}
-                      editable={isEditMode}
-                      onChangeText={(text) =>
-                        handleInputChange("church1", text, "church1", "phone")
-                      }
-                    />
-                    <TextInputField
-                      label="Church Website"
-                      value={profileData.church1.website}
-                      editable={isEditMode}
-                      onChangeText={(text) =>
-                        handleInputChange("church1", text, "church1", "website")
-                      }
-                    />
-                  </View>
-                  <View>
-                    <TextInputField
-                      label="Church Address"
-                      value={profileData.church1.address}
-                      editable={isEditMode}
-                      onChangeText={(text) =>
-                        handleInputChange("church1", text, "church1", "address")
-                      }
-                    />
-                  </View>
-                  <View style={styles.rowContainer}>
-                    <TextInputField
-                      label="City"
-                      value={profileData.church1.city}
-                      editable={isEditMode}
-                      onChangeText={(text) =>
-                        handleInputChange("church1", text, "church1", "city")
-                      }
-                    />
-                    <TextInputField
-                      label="State"
-                      value={profileData.church1.state}
-                      editable={isEditMode}
-                      onChangeText={(text) =>
-                        handleInputChange("church1", text, "church1", "state")
-                      }
-                    />
-                  </View>
-                  <View style={styles.rowContainer}>
-                    <TextInputField
-                      label="Zip Code"
-                      value={profileData.church1.zipCode}
-                      editable={isEditMode}
-                      onChangeText={(text) =>
-                        handleInputChange("church1", text, "church1", "zipCode")
-                      }
-                    />
-                    <TextInputField
-                      label="Country"
-                      value={profileData.church1.country}
-                      editable={isEditMode}
-                      onChangeText={(text) =>
-                        handleInputChange("church1", text, "church1", "country")
-                      }
-                    />
-                  </View>
-                </View>
-              </View>
-              {/* <View style={styles.divider} /> */}
-
-              {/* church 2 Information */}
-              {profileData.church2 && (
-                <View className="gap-3">
+              {/* Church Information */}
+              {(isEditMode ? formData.churches : interest?.churchDetails)?.map((church, idx) => (
+                <View key={church.id || idx} className="flex-1 gap-3">
                   <View className="flex-row items-center justify-between gap-12">
                     <Text className="font-[AlbertRegular] text-white text-[14px]">
-                      Current Church -2 Information
+                      Church - {idx + 1} Information
                     </Text>
-                    {isEditMode && (
-                      <Button
-                        children="Remove Church"
-                        buttonClass="mx-0 px-0 rounded-full"
-                        wrapperClass="flex-1 rounded-full"
-                        labelStyle={{ fontSize: 14, lineHeight: 0 }}
-                        onPress={() => { }}
-                      />
+                    {isEditMode && (formData.churches?.length || 0) > 1 && (
+                      <TouchableOpacity onPress={() => removeChurch(idx)}>
+                        <Text className="text-red-400">Remove</Text>
+                      </TouchableOpacity>
                     )}
                   </View>
+
                   <View className="gap-6 mt-4">
-                    <View>
-                      <TextInputField
-                        label="Church Name"
-                        value={profileData.church2.name}
-                        editable={isEditMode}
-                        onChangeText={(text) =>
-                          handleInputChange(
-                            "church1",
-                            text,
-                            "church1",
-                            "address"
-                          )
-                        }
-                      />
-                    </View>
+                    <TextInputField
+                      label="Church Name"
+                      value={church.churchName}
+                      editable={isEditMode}
+                      onChangeText={(text) => handleInputChange("churches", text, idx, "churchName")}
+                    />
                     <View style={styles.rowContainer}>
                       <TextInputField
                         label="Church Phone"
-                        value={profileData.church2.phone}
+                        value={church.churchPhone || ""}
                         editable={isEditMode}
-                        onChangeText={(text) =>
-                          handleInputChange(
-                            "church1",
-                            text,
-                            "church1",
-                            "address"
-                          )
-                        }
+                        onChangeText={(text) => handleInputChange("churches", text, idx, "churchPhone")}
                       />
                       <TextInputField
                         label="Church Website"
-                        value={profileData.church2.website}
+                        value={church.churchWebsite || ""}
                         editable={isEditMode}
-                        onChangeText={(text) =>
-                          handleInputChange(
-                            "church1",
-                            text,
-                            "church1",
-                            "address"
-                          )
-                        }
+                        onChangeText={(text) => handleInputChange("churches", text, idx, "churchWebsite")}
                       />
                     </View>
-                    <View>
-                      <TextInputField
-                        label="Church Address"
-                        value={profileData.church2.address}
-                        editable={isEditMode}
-                        onChangeText={(text) =>
-                          handleInputChange(
-                            "church1",
-                            text,
-                            "church1",
-                            "address"
-                          )
-                        }
-                      />
-                    </View>
+                    <TextInputField
+                      label="Church Address"
+                      value={church.churchAddress || ""}
+                      editable={isEditMode}
+                      onChangeText={(text) => handleInputChange("churches", text, idx, "churchAddress")}
+                    />
                     <View style={styles.rowContainer}>
                       <TextInputField
                         label="City"
-                        value={profileData.church2.city}
+                        value={church.city || ""}
                         editable={isEditMode}
-                        onChangeText={(text) =>
-                          handleInputChange(
-                            "church1",
-                            text,
-                            "church1",
-                            "address"
-                          )
-                        }
+                        onChangeText={(text) => handleInputChange("churches", text, idx, "city")}
                       />
                       <TextInputField
                         label="State"
-                        value={profileData.church2.state}
+                        value={church.state || ""}
                         editable={isEditMode}
-                        onChangeText={(text) =>
-                          handleInputChange(
-                            "church1",
-                            text,
-                            "church1",
-                            "address"
-                          )
-                        }
+                        onChangeText={(text) => handleInputChange("churches", text, idx, "state")}
                       />
                     </View>
                     <View style={styles.rowContainer}>
                       <TextInputField
                         label="Zip Code"
-                        value={profileData.church2.zipCode}
+                        value={church.zipCode || ""}
                         editable={isEditMode}
-                        onChangeText={(text) =>
-                          handleInputChange(
-                            "church1",
-                            text,
-                            "church1",
-                            "address"
-                          )
-                        }
+                        onChangeText={(text) => handleInputChange("churches", text, idx, "zipCode")}
                       />
                       <TextInputField
                         label="Country"
-                        value={profileData.church2.country}
+                        value={church.country || ""}
                         editable={isEditMode}
-                        onChangeText={(text) =>
-                          handleInputChange(
-                            "church1",
-                            text,
-                            "church1",
-                            "address"
-                          )
-                        }
+                        onChangeText={(text) => handleInputChange("churches", text, idx, "country")}
                       />
                     </View>
                   </View>
+                  <View style={styles.divider} className="my-4" />
                 </View>
+              ))}
+
+              {isEditMode && (
+                <Button
+                  children="Add Church"
+                  buttonClass="mx-auto px-10 rounded-full"
+                  onPress={addChurch}
+                />
               )}
 
               <View style={styles.divider} />
@@ -535,121 +459,83 @@ export default function ProfileScreen() {
                 </Text>
               </View>
 
-              {/* Title */}
               <View className="gap-6">
-                <View>
-                  <DropDrawer
-                    selectedValues={selectedInterests}
-                    setSelectedValues={setSelectedInterests}
-                    items={titleOptions}
-                    placeholder="Select Title"
-                    useCircleIndicator={true}
-                    editable={isEditMode}
-                  />
-                </View>
+                <DropDrawer
+                  selectedValues={isEditMode ? [formData.title || ""] : [interest?.title || ""]}
+                  setSelectedValues={(vals) => handleInputChange("title", vals[0])}
+                  items={titleOptions}
+                  placeholder="Select Title"
+                  useCircleIndicator={true}
+                  editable={isEditMode}
+                />
                 <View style={styles.rowContainer}>
                   <TextInputField
                     label="Years in Ministry"
-                    value={profileData.yearsInMinistry}
-                    onChangeText={(text) =>
-                      handleInputChange("yearsInMinistry", text)
-                    }
+                    value={isEditMode ? formData.yearsInMinistry : interest?.yearsInMinistry || ""}
+                    onChangeText={(text) => handleInputChange("yearsInMinistry", text)}
                     editable={isEditMode}
                   />
                   <TextInputField
                     label="Conference"
-                    value={profileData.conference}
-                    onChangeText={(text) =>
-                      handleInputChange("conference", text)
-                    }
+                    value={isEditMode ? formData.conference : interest?.conference || ""}
+                    onChangeText={(text) => handleInputChange("conference", text)}
                     editable={isEditMode}
                   />
                 </View>
-                <View>
-                  <TextInputField
-                    label="Current Community Service Projects "
-                    value={profileData.communityServiceProjects}
-                    onChangeText={(text) =>
-                      handleInputChange("communityServiceProjects", text)
-                    }
-                    editable={isEditMode}
-                  />
-                </View>
-                <View>
-                  {profileData.interests && (
-                    <Text className="text-white text-[13px] pl-8">
-                      interests
-                    </Text>
-                  )}
-                  <TextArea
-                    label="Interest"
-                    value={profileData.interests}
-                    onChangeText={(text) =>
-                      handleInputChange("interests", text)
-                    }
-                    editable={isEditMode}
-                  />
-                </View>
-                <View>
-                  {profileData.comments && (
-                    <Text className="text-white text-[13px] pl-8">
-                      Comments
-                    </Text>
-                  )}
-                  <TextArea
-                    label="Comments"
-                    value={profileData.comments}
-                    onChangeText={(text) => handleInputChange("comments", text)}
-                    editable={isEditMode}
-                  />
-                </View>
+                <TextInputField
+                  label="Community Projects"
+                  value={isEditMode ? formData.currentCommunityServiceProjects : interest?.currentCommunityProjects || ""}
+                  onChangeText={(text) => handleInputChange("currentCommunityServiceProjects", text)}
+                  editable={isEditMode}
+                />
+                <TextArea
+                  label="Interests"
+                  value={isEditMode ? formData.interests?.join(", ") : interest?.interests?.join(", ") || ""}
+                  onChangeText={(text) => handleInputChange("interests", text.split(", ").map(s => s.trim()))}
+                  editable={isEditMode}
+                />
+                <TextArea
+                  label="Comments"
+                  value={isEditMode ? formData.comments : interest?.comments || ""}
+                  onChangeText={(text) => handleInputChange("comments", text)}
+                  editable={isEditMode}
+                />
               </View>
             </View>
           </View>
+
           {isEditMode && (
             <View className="flex-row items-center justify-center gap-5 my-10">
               <Button
                 children="Cancel"
-                labelStyle={{
-                  fontSize: 12,
-                  color: "#001FC1",
-                  fontWeight: 500,
-                }}
-                buttonStyle={{
-                  borderRadius: 10,
-                  backgroundColor: "white",
-                  width: 87,
-                }}
-                onPress={() => { }}
+                labelStyle={{ fontSize: 12, color: "#001FC1", fontWeight: "500" }}
+                buttonStyle={{ borderRadius: 10, backgroundColor: "white", width: 87 }}
+                onPress={handleCancel}
               />
               <Button
-                children="Save"
-                labelStyle={{
-                  fontSize: 12,
-                  color: "white",
-                  fontWeight: 500,
-                }}
-                buttonStyle={{
-                  borderRadius: 10,
-                  width: 87,
-                }}
-                onPress={() => { }}
+                children={updateProfile.isPending || uploadProfilePicture.isPending ? "Saving..." : "Save"}
+                disabled={updateProfile.isPending || uploadProfilePicture.isPending}
+                labelStyle={{ fontSize: 12, color: "white", fontWeight: "500" }}
+                buttonStyle={{ borderRadius: 10, width: 87 }}
+                onPress={handleSavePress}
               />
             </View>
           )}
         </View>
       </ScreenLayout>
-      {/* Modals */}
-      {/* <ConfirmationModal
-          isVisible={showConfirmation}
-          onClose={() => setShowConfirmation(false)}
-          onConfirm={handleConfirmSave}
-        />
 
-        <SuccessToast
-          isVisible={showSuccessToast}
-          onClose={() => setShowSuccessToast(false)}
-        /> */}
+      <ConfirmModal
+        visible={showConfirmModal}
+        title="Save changes?"
+        onConfirm={handleConfirmSave}
+        onCancel={() => setShowConfirmModal(false)}
+      />
+
+      <SuccessModal
+        visible={showSuccessModal}
+        message="Profile updated successfully"
+        onClose={() => setShowSuccessModal(false)}
+      />
     </>
   );
 }

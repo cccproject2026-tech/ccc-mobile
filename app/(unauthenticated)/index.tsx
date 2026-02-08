@@ -5,7 +5,7 @@ import { useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
     ActivityIndicator,
     Image,
@@ -56,17 +56,36 @@ export default function LoginScreen() {
     const { bottom } = useSafeAreaInsets();
     const { interestStatus, userId } = useOnboardingStore();
 
+    // State to toggle status panel visibility
+    const [isStatusExpanded, setIsStatusExpanded] = useState(false);
+
     // Check if user is pending approval
     const isPending =
         interestStatus === 'pending' || interestStatus === 'new';
 
     // Check approval status periodically when pending
-    const { isLoading: isCheckingStatus } = useCheckApprovalStatus(isPending);
+    const { isLoading: isCheckingStatus, refetch, isFetching } = useCheckApprovalStatus(isPending);
 
     console.log('📊 Interest Status:', interestStatus);
     console.log('👤 User ID:', userId);
     console.log('⏳ Is Pending:', isPending);
     console.log('🔍 Checking Status:', isCheckingStatus);
+
+    // Handle status button click - toggle and refetch
+    const handleStatusPress = useCallback(async () => {
+        console.log('→ Handling status press');
+        if (!isStatusExpanded) {
+            // Opening the status panel - refetch the status
+            setIsStatusExpanded(true);
+            if (isPending) {
+                console.log('🔄 Manually checking approval status...');
+                await refetch();
+            }
+        } else {
+            // Closing the status panel
+            setIsStatusExpanded(false);
+        }
+    }, [isStatusExpanded, isPending, refetch]);
 
     // Navigate to login or password setup
     const handleLoginClick = useCallback(() => {
@@ -109,10 +128,32 @@ export default function LoginScreen() {
                 >
                     <TopBar showDrawer={false} showNotifications={false} />
 
-                    {/* Approval Badge or Contact Info */}
+                    {/* Contact Info with Status Button */}
                     <View style={styles.topSection}>
                         {isPending ? (
-                            <TouchableOpacity
+                            // Pending state: Show contact info OR approval badge based on toggle
+                            <View style={styles.topSectionRow}>
+                                {/* Contact Info - Hidden when status is expanded */}
+                                {!isStatusExpanded && (
+                                    <View style={[styles.contactCard, styles.contactCardWithStatus]}>
+                                        <Text style={styles.contactTitle}>Contact Information</Text>
+                                        <View style={styles.contactRow}>
+                                            <Ionicons name="call-outline" size={16} color="#fff" />
+                                            <Text style={styles.contactText}>: 269-471-6159</Text>
+                                        </View>
+                                        <View style={styles.contactRow}>
+                                            <Ionicons name="mail-outline" size={16} color="#fff" />
+                                            <Text style={styles.contactText}>
+                                                : communitychange@andrews.edu
+                                            </Text>
+                                        </View>
+                                    </View>
+                                )}
+
+                                {/* Approval Status Panel - Expanded */}
+                                {/* {isStatusExpanded && (
+                                    <View style={styles.approvalPanelExpanded}>
+                                        <TouchableOpacity
                                 style={styles.approvalBadgeWrapper}
                                 activeOpacity={0.8}
                             >
@@ -137,7 +178,72 @@ export default function LoginScreen() {
                                     </View>
                                 </LinearGradient>
                             </TouchableOpacity>
+                                    </View>
+                                )} */}
+
+                                {/* Status Button - Always visible when pending */}
+                                {/* 
+                                    To ensure the 'Status' button/approval badge 
+                                    is aligned to the right side, we wrap it in a container 
+                                    that uses 'alignItems: "flex-end"'.
+                                */}
+                                <View style={{ flex: !isStatusExpanded ? 0 : 1, alignItems: "flex-end" }}>
+                                    {isStatusExpanded ? (
+                                        <View style={styles.approvalBadgeWrapper}>
+                                            <TouchableOpacity
+                                                style={styles.approvalBadgeWrapper}
+                                                activeOpacity={0.8}
+                                                onPress={() => setIsStatusExpanded(false)}
+                                            >
+                                                <LinearGradient
+                                                    colors={['#B83AF3', '#21B6E9']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 0 }}
+                                                    style={styles.approvalBadgeGradient}
+                                                >
+                                                    <View style={styles.approvalBadgeContent}>
+                                                        <View style={styles.loaderIconContainer}>
+                                                            <ActivityIndicator size="small" color="#fff" />
+                                                        </View>
+                                                        <Text style={styles.approvalBadgeText}>
+                                                            Waiting for Approval
+                                                        </Text>
+                                                        <Ionicons
+                                                            name="chevron-forward"
+                                                            size={16}
+                                                            color="rgba(255,255,255,0.8)"
+                                                        />
+                                                    </View>
+                                                </LinearGradient>
+                                            </TouchableOpacity>
+                                        </View>
+                                    ) : (
+                                        <TouchableOpacity
+                                            style={styles.statusButtonWrapper}
+                                            activeOpacity={0.8}
+                                            onPress={handleStatusPress}
+                                        >
+                                            <LinearGradient
+                                                colors={['#B83AF3', '#21B6E9']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 0 }}
+                                                style={styles.statusButtonGradient}
+                                            >
+                                                <View style={styles.statusButtonContent}>
+                                                    <Ionicons
+                                                        name={isStatusExpanded ? "chevron-forward" : "chevron-back"}
+                                                        size={16}
+                                                        color="rgba(255,255,255,0.9)"
+                                                    />
+                                                    <Text style={styles.statusButtonText}>Status</Text>
+                                                </View>
+                                            </LinearGradient>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            </View>
                         ) : (
+                            // Not pending: Show only contact info
                             <View style={styles.contactCard}>
                                 <Text style={styles.contactTitle}>Contact Information</Text>
                                 <View style={styles.contactRow}>
@@ -343,6 +449,11 @@ const styles = StyleSheet.create({
         marginTop: 16,
         marginBottom: 16,
     },
+    topSectionRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+    },
     userIconButton: {
         position: "absolute",
         top: 0,
@@ -371,6 +482,10 @@ const styles = StyleSheet.create({
         borderColor: "rgba(255,255,255,0.3)",
         padding: 16,
     },
+    contactCardWithStatus: {
+        flex: 1,
+        marginRight: 12,
+    },
     contactTitle: {
         fontSize: 18,
         fontWeight: "600",
@@ -388,7 +503,62 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
 
-    // Waiting for Approval Badge
+    // Status Button (collapsed state)
+    statusButtonWrapper: {
+        alignSelf: "flex-start",
+        // borderRadius: 8,
+        marginTop: 12,
+        overflow: "hidden",
+    },
+    statusButtonGradient: {
+        // borderRadius: 8,
+        // padding: 2,
+    },
+    statusButtonContent: {
+        // backgroundColor: "#176192",
+        borderRadius: 6,
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 12,
+        
+        paddingHorizontal: 12,
+        gap: 6,
+    },
+    statusButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#fff",
+    },
+
+    // Approval Panel (expanded state)
+    approvalPanelExpanded: {
+        flex: 1,
+        backgroundColor: "rgba(255,255,255,0.1)",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.3)",
+        padding: 16,
+        marginRight: 12,
+    },
+    approvalPanelContent: {
+        alignItems: "center",
+    },
+    approvalPanelText: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#fff",
+        marginTop: 8,
+        textAlign: "center",
+    },
+    approvalPanelSubtext: {
+        fontSize: 13,
+        color: "rgba(255,255,255,0.8)",
+        marginTop: 6,
+        textAlign: "center",
+        lineHeight: 18,
+    },
+
+    // Legacy: Waiting for Approval Badge (keeping for backward compatibility)
     approvalBadgeWrapper: {
         alignSelf: "flex-end",
         marginRight: 0,
@@ -411,6 +581,8 @@ const styles = StyleSheet.create({
     loaderIconContainer: {
         width: 24,
         height: 24,
+        justifyContent: "center",
+        alignItems: "center",
     },
     approvalBadgeText: {
         fontSize: 16,
