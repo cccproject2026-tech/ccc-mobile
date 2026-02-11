@@ -27,7 +27,9 @@ export const onboardingService = {
     ): Promise<ApprovalStatusResponse> => {
         console.log('📤 Checking approval status for:', applicationId);
         const response = await apiClient.get<ApprovalStatusResponse>(
-            ENDPOINTS.USERS.CHECK_STATUS(applicationId)
+            ENDPOINTS.USERS.CHECK_STATUS(applicationId), {
+            params: { t: Date.now() } // Prevent caching
+        }
         );
         return response.data;
     },

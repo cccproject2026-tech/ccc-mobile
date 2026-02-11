@@ -645,7 +645,7 @@ export const MentorMenuItems: MenuItem[] = [
         label: 'Assessments',
         icon: icons.Assessments,
         iconType: 'image',
-        route: '/(mentor)/assessments/survey',
+        route: '/(mentor)/assessments-v2',
     },
     {
         id: 'progress',
