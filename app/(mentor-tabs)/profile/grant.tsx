@@ -63,7 +63,7 @@ export default function Grant() {
   ];
 
   const [tabs, setTabs] = React.useState("All");
-  const [inputValue, setInputValue] = React.useState<string>("");
+  const [formAnswers, setFormAnswers] = React.useState<Record<string, string>>({});
   const [step, setStep] = React.useState(1);
   const [data, setData] = React.useState<ProfileData>({
     firstName: "",
@@ -92,13 +92,19 @@ export default function Grant() {
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  const [selected, setSelected] = React.useState("");
+  const [selectedReportingOption, setSelectedReportingOption] = React.useState<string>("");
   const [responseModal, setResponseModal] = React.useState({
     visible: false,
     message: "",
     buttonText: "",
   });
   const [isVisible, setIsVisible] = React.useState(false);
+
+  const handleClearForm = () => {
+    setFormAnswers({});
+    setSelectedReportingOption("");
+    setStep(1);
+  };
 
 
   const dummyAppointments = [
@@ -211,8 +217,9 @@ export default function Grant() {
               contentContainerStyle={{
                 paddingBottom: 80,
                 paddingHorizontal: 10,
-                flex: 1,
+                flexGrow: 1,
               }}
+              keyboardShouldPersistTaps="handled"
             >
               <View
                 style={{
@@ -326,84 +333,84 @@ export default function Grant() {
                   <>
                     <InputCard
                       title={"Name of the church:"}
-                      setValue={setInputValue}
+                      setValue={(val) => setFormAnswers(prev => ({ ...prev, churchName: val }))}
                       description=""
-                      value={inputValue}
+                      value={formAnswers.churchName || ""}
                       required={true}
                     ></InputCard>
                     <InputCard
                       title={"Name of the project/program: * "}
-                      setValue={setInputValue}
+                      setValue={(val) => setFormAnswers(prev => ({ ...prev, projectName: val }))}
                       description="[provide a name for the project /program you are seeking for the grant for]"
-                      value={inputValue}
+                      value={formAnswers.projectName || ""}
                       required={true}
                     ></InputCard>
                     <InputCard
                       title={
                         "Who does the project/program serve and why is it important?"
                       }
-                      setValue={setInputValue}
+                      setValue={(val) => setFormAnswers(prev => ({ ...prev, targetAudience: val }))}
                       description="[Describe the target audience or beneficiaries of your project/program and explain why it is important for them]"
-                      value={inputValue}
+                      value={formAnswers.targetAudience || ""}
                       required={true}
                     ></InputCard>
                     <InputCard
                       title={"Amount Requested"}
-                      setValue={setInputValue}
+                      setValue={(val) => setFormAnswers(prev => ({ ...prev, amountRequested: val }))}
                       description="[Specify the amount of grant funds you are requesting]"
-                      value={inputValue}
+                      value={formAnswers.amountRequested || ""}
                       required={true}
                     ></InputCard>
                     <InputCard
                       title={
                         "Project amount of denominational support (Local Conference, Union, NAD, GC, etc.):"
                       }
-                      setValue={setInputValue}
+                      setValue={(val) => setFormAnswers(prev => ({ ...prev, denominationalSupport: val }))}
                       description="[Provide the projected (if any) cost-sharing contribution from the larger body of the SDA church]"
-                      value={inputValue}
+                      value={formAnswers.denominationalSupport || ""}
                       required={true}
                     ></InputCard>
                     <InputCard
                       title={
                         "What action steps will you take to achieve your goals?"
                       }
-                      setValue={setInputValue}
+                      setValue={(val) => setFormAnswers(prev => ({ ...prev, actionSteps: val }))}
                       description="[Outline the specific activities or steps you will undertake to achieve the stated goals]"
-                      value={inputValue}
+                      value={formAnswers.actionSteps || ""}
                       required={true}
                     ></InputCard>
                     <InputCard
                       title={"What resources do you already have"}
-                      setValue={setInputValue}
+                      setValue={(val) => setFormAnswers(prev => ({ ...prev, existingResources: val }))}
                       description="[Describe the existing resources or assets that your church or project team possesses]"
-                      value={inputValue}
+                      value={formAnswers.existingResources || ""}
                       required={true}
                     ></InputCard>
                     <InputCard
                       title={
                         "Who will be leading and overseeing the project/program, and what are their qualifications? "
                       }
-                      setValue={setInputValue}
+                      setValue={(val) => setFormAnswers(prev => ({ ...prev, projectLeadership: val }))}
                       description="[Provide information about the individuals who will be responsible for leading and managing the project/program, including their qualifications and relevant experience]"
-                      value={inputValue}
+                      value={formAnswers.projectLeadership || ""}
                       required={true}
                     ></InputCard>
                     <InputCard
                       title={
                         "What are the measurable markers of your success? "
                       }
-                      setValue={setInputValue}
+                      setValue={(val) => setFormAnswers(prev => ({ ...prev, successMarkers: val }))}
                       description="[Define specific indicators or metrics that will be used to measure the success or progress of your project/program]"
-                      value={inputValue}
+                      value={formAnswers.successMarkers || ""}
                       required={true}
                     ></InputCard>
                     <InputCard
                       title={
                         "Please upload here any supporting documents or media (photos, videos, publications, etc.)  "
                       }
-                      setValue={setInputValue}
+                      setValue={() => { }}
                       description="[Upload up to 10 supported files. Max 100 MB per file.]"
-                      value={inputValue}
+                      value={""}
                       required={true}
                       fileUpload={true}
                       answer={false}
@@ -516,10 +523,8 @@ export default function Grant() {
                         >
                           <CheckBox
                             type={"square"}
-                            value={false}
-                            setValue={function (value: boolean): void {
-                              throw new Error("Function not implemented.");
-                            }}
+                            value={selectedReportingOption === e.outcome}
+                            setValue={() => setSelectedReportingOption(e.outcome)}
                           ></CheckBox>
                           <Text
                             style={{
@@ -623,11 +628,11 @@ export default function Grant() {
                     <Button
                       title={"Clear Form"}
                       type={"cancel"}
-                      onPress={() => setStep(1)}
+                      onPress={handleClearForm}
                       style={{ width: "30%" }}
                     ></Button>
                     <Button
-                      onPress={() => setStep(step + 1)}
+                      onPress={() => step === 2 ? onsubmitPress() : setStep(step + 1)}
                       title={step == 2 ? "Submit" : "Next"}
                       type={"submit"}
                       style={{ width: "30%" }}

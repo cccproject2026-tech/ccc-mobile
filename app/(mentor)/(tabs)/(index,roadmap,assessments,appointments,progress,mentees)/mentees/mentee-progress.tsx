@@ -37,7 +37,7 @@ export default function MenteeProgressScreen() {
   // Fetch mentee data
   const { data: menteesData, isLoading: isLoadingMentees } = useMentees();
   const mentee = useMemo(() => {
-    return menteesData?.mentees?.find((m) => m.id === menteeId);
+    return menteesData?.pages.flatMap((page: any) => page.mentees)?.find((m: any) => m.id === menteeId);
   }, [menteesData, menteeId]);
 
   // Fetch progress data for the mentee

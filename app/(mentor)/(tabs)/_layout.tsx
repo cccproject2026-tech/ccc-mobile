@@ -100,10 +100,11 @@ export default function MentorTabLayout() {
                     <Tabs.Screen
                         name="discover"
                         options={{
+                            
                             title: 'Discover',
-                            tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+                            tabBarIcon: ({ color }) => <IconSymbol size={28} name="magnifyingglass.circle.fill" color={color} />,
                         }}
-                    />
+                    /> 
                     <Tabs.Screen
                         name="profile/index"
                         options={{
@@ -118,6 +119,10 @@ export default function MentorTabLayout() {
                     <Tabs.Screen name="profile/grant" options={{ href: null }} />
                     <Tabs.Screen name="profile/my-assignment/assignment" options={{ href: null }} />
                     <Tabs.Screen name="profile/my-assignment/detailed-assignment" options={{ href: null }} />
+                    <Tabs.Screen name="profile/documents" options={{ href: null }} />
+                    <Tabs.Screen name="profile/notes" options={{ href: null }} />
+                    <Tabs.Screen name="profile/new-note" options={{ href: null }} />
+                    <Tabs.Screen name="profile/note-detail" options={{ href: null }} />
 
                     {/* HIDDEN ROUTES - Parallel route group segments (auto-generated from folder name) */}
                     <Tabs.Screen name="(index)" options={{ href: null }} />

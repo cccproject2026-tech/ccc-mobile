@@ -10,7 +10,7 @@ import { icons } from "@/constants/images";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
 import { useUpdateAppointment } from "@/hooks/appointments/useUpadteAppointment";
-import { Mentor } from "@/hooks/mentors/useGetAssignedMentors";
+import { Mentor, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { useAuthStore } from "@/stores";
 import { Appointment, AppointmentPlatform } from "@/types/appointment.types";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -58,6 +58,8 @@ const Appointments = () => {
     getAppointmentsByDate,
   } = useAppointments({ userId: user.id });
 
+  // Fetch assigned mentors
+  const { mentors: assignedMentors, isLoading: isLoadingMentors } = useAssignedMentors(user.id);
 
   // Create/Reschedule appointment hook
   const {
@@ -87,20 +89,28 @@ const Appointments = () => {
     }
   }, [openSheet]);
 
-  const mentorsFromAppointments = useMemo(() => {
+  const mentorsForBottomSheet = useMemo(() => {
+    // Combine assigned mentors and mentors found in existing appointments
     const mentorMap = new Map<string, Mentor>();
+
+    // Add assigned mentors first
+    assignedMentors.forEach(mentor => {
+      mentorMap.set(mentor.id, mentor);
+    });
+
+    // Fallback for mentors in appointments that might not be in the assigned list (though unlikely)
     appointments.forEach(apt => {
       if (!mentorMap.has(apt.mentorId)) {
         mentorMap.set(apt.mentorId, {
           id: apt.mentorId,
-          name: 'Ananthu Mohan',
-          role: 'Field Mentor',
-          profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg',
+          name: 'Unknown Mentor',
+          role: 'Mentor',
+          profilePicture: undefined,
         });
       }
     });
     return Array.from(mentorMap.values());
-  }, [appointments]);
+  }, [assignedMentors, appointments]);
 
   const formatTimeIST = useCallback((isoString: string) => {
     const date = new Date(isoString);
@@ -276,13 +286,15 @@ const Appointments = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingMentors) {
     return (
       <LinearGradient
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
       >
-        <Text style={{ color: 'white', fontSize: 18 }}>Loading appointments...</Text>
+        <Text style={{ color: 'white', fontSize: 18 }}>
+          {isLoading ? 'Loading appointments...' : 'Loading mentors...'}
+        </Text>
       </LinearGradient>
     );
   }
@@ -381,7 +393,7 @@ const Appointments = () => {
                     </View>
                     <View style={{ gap: 10 }}>
                       {selectedDateAppointments.map((appointment) => {
-                        const mentor = mentorsFromAppointments.find(m => m.id === appointment.mentorId);
+                        const mentor = mentorsForBottomSheet.find(m => m.id === appointment.mentorId);
 
                         return (
                           <AppointmentCard
@@ -389,8 +401,8 @@ const Appointments = () => {
                             date={appointment.meetingDate.split('T')[0]}
                             time={`${formatTimeIST(appointment.meetingDate)} - ${formatTimeIST(appointment.endTime)}`}
                             tz="IST"
-                            person={mentor?.name || 'Ananthu Mohan'}
-                            role={mentor?.role || 'Field Mentor'}
+                            person={mentor?.name || 'Unknown Mentor'}
+                            role={mentor?.role || 'Mentor'}
                             mode={getModeLabel(appointment.platform)}
                             platformIcon={getPlatformIcon(appointment.platform)}
                             menuItems={[
@@ -446,7 +458,6 @@ const Appointments = () => {
 
       <ScheduleMeetingBottomSheet
         ref={scheduleMeetingBottomSheetRef}
-        mentors={mentorsFromAppointments}
         mode={rescheduleData ? 'reschedule' : 'schedule'}
         existingAppointment={rescheduleData}
         onClose={handleCloseScheduleBottomSheet}

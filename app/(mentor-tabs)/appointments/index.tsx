@@ -469,7 +469,6 @@ const Appointments: React.FC = () => {
       {/* Schedule Meeting Bottom Sheet */}
       <ScheduleMeetingBottomSheet
         ref={scheduleMeetingBottomSheetRef}
-        mentors={mentors as Mentor[]}
         onClose={handleCloseScheduleBottomSheet}
         onSchedule={handleScheduleMeeting}
         colorScheme={{

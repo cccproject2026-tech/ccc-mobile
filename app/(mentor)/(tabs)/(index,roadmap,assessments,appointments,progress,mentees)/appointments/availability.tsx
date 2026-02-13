@@ -298,10 +298,52 @@ const AvailabilityScreen = () => {
     return dayMap[dayName];
   };
 
+  const convertToMinutes = (timeString: string): number => {
+    const { time, period } = parseTime(timeString);
+    let hour = parseInt(time, 10);
+    if (period === "PM" && hour !== 12) hour += 12;
+    if (period === "AM" && hour === 12) hour = 0;
+    return hour * 60;
+  };
+
+  const validateSlots = (dayLabel: string, slots: TimeSlot[]): string | null => {
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i];
+      const start = convertToMinutes(slot.start);
+      const end = convertToMinutes(slot.end);
+
+      if (start >= end) {
+        return `${dayLabel}: Start time (${slot.start}) must be before end time (${slot.end}).`;
+      }
+
+      for (let j = i + 1; j < slots.length; j++) {
+        const other = slots[j];
+        const otherStart = convertToMinutes(other.start);
+        const otherEnd = convertToMinutes(other.end);
+
+        if (start < otherEnd && end > otherStart) {
+          return `${dayLabel}: Overlapping slots detected: ${slot.start}-${slot.end} and ${other.start}-${other.end}.`;
+        }
+      }
+    }
+    return null;
+  };
+
   const handleSubmit = async () => {
     if (!user?.id) {
       Alert.alert("Error", "User ID not found. Please log in again.");
       return;
+    }
+
+    // Validate slots for all enabled days
+    for (const { key, label } of dayNames) {
+      if (weeklyAvailability[key].enabled) {
+        const error = validateSlots(label, weeklyAvailability[key].slots);
+        if (error) {
+          Alert.alert("Invalid Availability", error);
+          return;
+        }
+      }
     }
 
     try {

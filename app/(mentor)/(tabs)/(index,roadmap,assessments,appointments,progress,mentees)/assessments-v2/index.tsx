@@ -41,8 +41,8 @@ export default function MentorAssessmentsLibrary() {
     
     // Format mentees for display
     const mentees = useMemo(() => {
-        if (!menteesData?.mentees) return [];
-        return menteesData.mentees.map((mentee) => ({
+        if (!menteesData?.pages.flatMap((page) => page.mentees)) return [];
+        return menteesData.pages.flatMap((page) => page.mentees).map((mentee) => ({
             id: mentee.id,
             name: `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee",
             avatar: mentee.profilePicture ? { uri: mentee.profilePicture } : icons.myProfile,
@@ -201,7 +201,7 @@ export default function MentorAssessmentsLibrary() {
                         </Text>
                     </View>
                     <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-                        <View className="w-[30px] h-[30px] rounded-md justify-center items-center border-2 border-white/40">
+                        <View style={styles.headerIconContainer}>
                             <Pressable
                                 hitSlop={8}
                                 onPress={() =>
@@ -214,12 +214,12 @@ export default function MentorAssessmentsLibrary() {
                             </Pressable>
                         </View>
                         <Pressable
-                            className="p-1"
+                            style={styles.headerIconButton}
                             onPress={() =>
                                 router.push("/(mentor)/assessments-v2/create-assessment" as any)
                             }
                         >
-                            <View className="w-[30px] h-[30px] rounded-md justify-center items-center border-2 border-white/40">
+                            <View style={styles.headerIconContainer}>
                                 <Ionicons name="add-outline" size={24} color="white" />
                             </View>
                         </Pressable>
@@ -461,5 +461,17 @@ const styles = StyleSheet.create({
         height: 0.5,
         backgroundColor: 'rgba(255, 255, 255, 0.3)',
         marginVertical: 16,
+    },
+    headerIconContainer: {
+        width: 30,
+        height: 30,
+        borderRadius: 6,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.4)',
+    },
+    headerIconButton: {
+        padding: 4,
     },
 });

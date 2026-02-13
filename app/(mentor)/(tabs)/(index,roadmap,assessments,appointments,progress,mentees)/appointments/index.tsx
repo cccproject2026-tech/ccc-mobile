@@ -67,18 +67,22 @@ const Appointments: React.FC = () => {
   });
 
   // Fetch mentees for the schedule meeting bottom sheet
-  const { data: menteesData } = useMentees();
+  const { data: menteesData, fetchNextPage, hasNextPage, isFetchingNextPage } = useMentees();
+
+  // Flatten paginated mentees data
+  const allMentees = useMemo(() => {
+    return menteesData?.pages.flatMap((page) => page.mentees) || [];
+  }, [menteesData]);
 
   // Format mentors from mentees data
   const mentors: Partial<Mentor>[] = useMemo(() => {
-    if (!menteesData?.mentees) return [];
-    return menteesData.mentees.slice(0, 6).map((mentee) => ({
+    return allMentees.map((mentee) => ({
       id: mentee.id,
       name: `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee",
       role: mentee.role || "Pastor",
       profileImage: mentee.profilePicture || "https://randomuser.me/api/portraits/men/1.jpg",
     }));
-  }, [menteesData]);
+  }, [allMentees]);
 
   React.useEffect(() => {
     if (openSheet === "true" && scheduleMeetingBottomSheetRef.current) {
@@ -112,14 +116,13 @@ const Appointments: React.FC = () => {
     return `${day} ${month} ${year}`;
   }, []);
 
-  // Helper function to format time for display (US EST format)
+  // Helper function to format time for display
   const formatTime = React.useCallback((dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-      timeZone: "America/New_York",
     });
   }, []);
 
@@ -162,12 +165,12 @@ const Appointments: React.FC = () => {
 
   // Get mentee name from userId
   const getMenteeName = React.useCallback((userId: string) => {
-    const mentee = menteesData?.mentees?.find((m) => m.id === userId);
+    const mentee = allMentees?.find((m) => m.id === userId);
     if (mentee) {
       return `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee";
     }
     return "Mentee";
-  }, [menteesData]);
+  }, [allMentees]);
 
   // Format appointments for display
   const formattedAppointments = useMemo(() => {
@@ -395,28 +398,9 @@ const Appointments: React.FC = () => {
                     <GradientCalendar
                       selected={selectedDate}
                       setSelected={setSelectedDate}
-                      recurringAvailability={{
-                        type: "weekly",
-                        daysOfWeek: [1, 2, 3, 4, 5, 6],
-                      }}
-                      unavailableDates={[
-                        "2025-10-30",
-                        "2025-10-22",
-                        "2025-10-25",
-                      ]}
-                      availableDates={[
-                        today,
-                        "2025-10-20",
-                        "2025-10-21",
-                        "2025-10-23",
-                        "2025-10-24",
-                        "2025-10-27",
-                        "2025-10-28",
-                        "2025-10-29",
-                      ]}
                       showHeader={false}
-                      disablePastDates={true}
-                      markToday={false}
+                      disablePastDates={false}
+                      markToday={true}
                     />
                   </View>
                 </View>
@@ -517,7 +501,6 @@ const Appointments: React.FC = () => {
       {/* Schedule Meeting Bottom Sheet */}
       <ScheduleMeetingBottomSheet
         ref={scheduleMeetingBottomSheetRef}
-        mentors={mentors as Mentor[]}
         onClose={handleCloseScheduleBottomSheet}
         onSchedule={handleScheduleMeeting}
         colorScheme={{

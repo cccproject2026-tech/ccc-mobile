@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   profileNameSection: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 8,
   },
   profileName: {

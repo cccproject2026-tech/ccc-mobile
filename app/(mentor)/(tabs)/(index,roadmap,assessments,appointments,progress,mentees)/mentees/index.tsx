@@ -1,3 +1,4 @@
+import ConfirmModal from "@/components/atom/ConfirmModal"
 import {
   MentorDetailedCard,
   MentorShortCard,
@@ -9,6 +10,7 @@ import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
 import { useMentees } from "@/hooks/mentees/useMentees"
+import { useAuthStore } from "@/stores"
 import { Mentee } from "@/types/mentee.types"
 import { Feather, Ionicons } from "@expo/vector-icons"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
@@ -50,7 +52,8 @@ export default function MyMentees() {
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [selectedConference, setSelectedConference] = useState<string | null>(null)
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null)
-
+  const [showMarkCompleteModal, setShowMarkCompleteModal] = useState(false)
+  const { user } = useAuthStore()
   const {
     data,
     fetchNextPage,
@@ -110,41 +113,52 @@ export default function MyMentees() {
   }
 
   const handleMenuAction = (action: string, mentee: any) => {
-    console.log(`Action: ${action} for mentee: ${mentee?.name}`)
-    // Handle different actions here
-    switch (action) {
-      case "revitalization-roadmap":
-        // Navigate to roadmap
-        break
-      case "mentor-notes":
-        // Navigate to notes
-        router.push({
-          pathname: "/(mentor)/notes/index" as any,
-          params: {
-            menteeId: mentee?.id,
-            menteeName: mentee?.name,
-          },
-        })
-        break
-      case "assessments":
-        // Navigate to assessments
-        break
-      case "assignments":
-        // Navigate to assignments
-        break
-      case "track-progress":
-        // Navigate to progress tracking
-        break
-      case "schedule-meeting":
-        // Open schedule meeting bottom sheet
-        scheduleMeetingRef.current?.present()
-        break
-      case "mark-complete":
-        // Mark mentee program as complete
-        break
-      default:
-        break
-    }
+    const menteeName = `${mentee?.firstName} ${mentee?.lastName}`;
+    console.log(`Action: ${action} for mentee: ${menteeName}`)
+
+    // Use a small timeout to allow bottom sheet to start dismissing
+    setTimeout(() => {
+      switch (action) {
+        case "revitalization-roadmap":
+          router.push("/(mentor)/roadmap/landing/landing" as any)
+          break
+        case "mentor-notes":
+          router.push({
+            pathname: "/(mentor)/(tabs)/profile/notes" as any,
+            params: {
+              menteeId: mentee?.id,
+              menteeName: menteeName,
+            },
+          })
+          break
+        case "assessments":
+          router.push("/(mentor)/assessments-v2" as any)
+          break
+        case "assignments":
+          router.push("/(mentor)/profile/my-assignment/assignment" as any)
+          break
+        case "track-progress":
+          router.push({
+            pathname: "/(mentor)/mentees/mentee-progress" as any,
+            params: { menteeId: mentee?.id },
+          })
+          break
+        case "schedule-meeting":
+          scheduleMeetingRef.current?.present()
+          break
+        case "mark-complete":
+          setShowMarkCompleteModal(true)
+          break
+        default:
+          break
+      }
+    }, 300)
+  }
+
+  const handleMarkComplete = () => {
+    console.log(`Marking mentee ${selectedMentee?.firstName} as complete`)
+    // TODO: Implement API call to mark as complete
+    setShowMarkCompleteModal(false)
   }
 
   const handleScheduleMeeting = (date: Date, time: string, option: string) => {
@@ -166,7 +180,7 @@ export default function MyMentees() {
   const renderHeader = () => (
     <View>
       {/* Header Section */}
-      <PastorNavigationHeader showNameTag />
+      <PastorNavigationHeader showNameTag tagName={user?.firstName + " " + user?.lastName || ""} />
       <View style={styles.headerContainer}>
         <View style={styles.headerContent}>
           <TouchableOpacity
@@ -605,6 +619,15 @@ export default function MyMentees() {
           ref={scheduleMeetingRef}
           mentee={selectedMentee}
           onSchedule={handleScheduleMeeting}
+        />
+
+        {/* Mark Complete Confirmation Modal */}
+        <ConfirmModal
+          visible={showMarkCompleteModal}
+          title={`Are you sure you want to mark the programme for ${selectedMentee?.firstName} ${selectedMentee?.lastName} as completed?`}
+          confirmText="Confirm"
+          onConfirm={handleMarkComplete}
+          onCancel={() => setShowMarkCompleteModal(false)}
         />
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

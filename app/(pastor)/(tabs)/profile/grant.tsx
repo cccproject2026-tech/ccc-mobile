@@ -174,14 +174,14 @@ export default function Grant() {
     return (
       <View key={field._id}>
         <InputCard
-          title={field.label + (field.required ? " *" : "")}
+          title={field.label + (field.required ? "" : "")}
           value={value}
           setValue={(v: string) => handleInputChange(field.label, v)}
           description={field.type === "file" ? "[Upload up to 10 files. Max 100MB.]" : ""}
           required={field.required}
           multiline={field.type === "textarea"}
           fileUpload={field.type === "file"}
-          answer={false}
+          answer={field.type !== "file"}
         />
         {hasError && (
           <Text
@@ -265,6 +265,7 @@ export default function Grant() {
                 flexGrow: 1,
               }}
               style={{ width: "100%" }}
+              keyboardShouldPersistTaps="handled"
             >
               <View style={{ width: "100%", flexDirection: "column" }}>
 
@@ -287,6 +288,7 @@ export default function Grant() {
                       fontSize: getFontSize(14),
                       lineHeight: getFontSize(20),
                       fontWeight: "500",
+                      textAlign: "center",
                     }}
                   >
                     {form?.data?.description ||

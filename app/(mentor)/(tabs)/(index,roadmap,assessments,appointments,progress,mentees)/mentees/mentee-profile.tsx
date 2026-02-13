@@ -1,3 +1,4 @@
+import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { icons } from "@/constants/images"
 import { useMenteeByEmail } from "@/hooks/mentees/useMenteeByEmail"
 import { useMentees } from "@/hooks/mentees/useMentees"
@@ -185,12 +186,12 @@ export default function MenteeProfileScreen() {
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.contentContainer}>
           {/* Top Navigation Bar */}
-          <View style={styles.topNav}>
+          {/* <View style={styles.topNav}>
             <TouchableOpacity activeOpacity={0.8}>
               <Ionicons name="menu" size={26} color="#FFFFFF" />
             </TouchableOpacity>
             <View style={styles.namePill}>
-              <Text style={styles.namePillText}>John Doe</Text>
+              <Text style={styles.namePillText}>{mentee.name}</Text>
             </View>
             <View style={styles.navActions}>
               <View style={styles.notificationBadge}>
@@ -208,7 +209,8 @@ export default function MenteeProfileScreen() {
                 <Image source={icons.profileTabIcon} style={{ width: 28, height: 28, tintColor: "#FFFFFF" }} />
               </TouchableOpacity>
             </View>
-          </View>
+          </View> */}
+        <PastorNavigationHeader showNameTag tagName={mentee.name || ""} />
 
           {/* Header with Back Button */}
           <View style={styles.headerRow}>

@@ -74,18 +74,16 @@ export default function LoginScreen() {
     // Handle status button click - toggle and refetch
     const handleStatusPress = useCallback(async () => {
         console.log('→ Handling status press');
-        if (!isStatusExpanded) {
-            // Opening the status panel - refetch the status
-            setIsStatusExpanded(true);
-            if (isPending) {
-                console.log('🔄 Manually checking approval status...');
-                await refetch();
-            }
-        } else {
-            // Closing the status panel
-            setIsStatusExpanded(false);
+        
+        // Always refetch if pending to get latest status
+        if (isPending) {
+            console.log('🔄 Manually checking approval status...');
+            await refetch();
         }
-    }, [isStatusExpanded, isPending, refetch]);
+        
+        // Toggle expansion
+        setIsStatusExpanded(prev => !prev);
+    }, [isPending, refetch]);
 
     // Navigate to login or password setup
     const handleLoginClick = useCallback(() => {
@@ -138,11 +136,11 @@ export default function LoginScreen() {
                                     <View style={[styles.contactCard, styles.contactCardWithStatus]}>
                                         <Text style={styles.contactTitle}>Contact Information</Text>
                                         <View style={styles.contactRow}>
-                                            <Ionicons name="call-outline" size={16} color="#fff" />
+                                            <Ionicons name="call-outline" size={16} color="#fff" style={{paddingTop: 2}} />
                                             <Text style={styles.contactText}>: 269-471-6159</Text>
                                         </View>
                                         <View style={styles.contactRow}>
-                                            <Ionicons name="mail-outline" size={16} color="#fff" />
+                                            <Ionicons name="mail-outline" size={16} color="#fff" style={{paddingTop: 4}} />
                                             <Text style={styles.contactText}>
                                                 : communitychange@andrews.edu
                                             </Text>
@@ -193,7 +191,7 @@ export default function LoginScreen() {
                                             <TouchableOpacity
                                                 style={styles.approvalBadgeWrapper}
                                                 activeOpacity={0.8}
-                                                onPress={() => setIsStatusExpanded(false)}
+                                                onPress={handleStatusPress}
                                             >
                                                 <LinearGradient
                                                     colors={['#B83AF3', '#21B6E9']}
@@ -493,8 +491,9 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     contactRow: {
+        paddingVertical: 2,
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-start",
         marginBottom: 8,
     },
     contactText: {

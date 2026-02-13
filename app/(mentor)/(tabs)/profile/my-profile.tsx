@@ -2,11 +2,10 @@ import ConfirmModal from '@/components/atom/ConfirmModal';
 import SuccessModal from '@/components/atom/SuccessModal';
 import {
   Button,
-  DropDrawer,
   Header,
   ScreenLayout,
   TextArea,
-  TextInput as TextInputField,
+  TextInput as TextInputField
 } from "@/components/build-components";
 import { icons } from "@/constants/images";
 import { useProfile, useUpdateProfile, useUploadProfilePicture } from "@/hooks/profile/useProfile";
@@ -267,7 +266,7 @@ export default function ProfileScreen() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#176192', padding: 20 }}>
         <Text style={{ color: '#fff', textAlign: 'center', marginBottom: 20 }}>Failed to load profile.</Text>
-        <Button children="Retry" onPress={() => router.back()} />
+        <Button children="Retry" onPress={() => router.back()} buttonClass="mx-auto px-10 rounded-full" />
       </View>
     );
   }
@@ -318,7 +317,7 @@ export default function ProfileScreen() {
           {!isEditMode && (
             <>
               <View style={styles.divider} />
-              <View
+              {/* <View
                 style={{
                   ...styles.progressContainer,
                   marginTop: 20,
@@ -333,15 +332,18 @@ export default function ProfileScreen() {
                   <View className="bg-white h-2 rounded-[4px]" style={{ width: `${progressPercentage}%` }} />
                 </View>
                 <Text className="text-xs font-bold text-white ">{progressPercentage}%</Text>
-              </View>
+              </View> */}
             </>
           )}
 
           {!isEditMode && (
             <View className="flex flex-row items-center justify-center gap-2 px-5 py-4 mt-2">
               <TouchableOpacity
-                onPress={() => router.push("/mentee-documents" as any)}
+                // onPress={() => router.push("/(mentor)/mentees/mentee-documents" as any, { params: { menteeId: user.id } })}
                 className="flex flex-row w-1/2 justify-around items-center rounded-[10px] px-2.5 py-2.5 bg-[#004B87] border border-white/80"
+                onPress={() => router.push({
+                  pathname: "/(mentor)/(tabs)/profile/documents" as any,
+                })}
               >
                 <Text className="text-white">Documents</Text>
                 <Image source={icons.attachment} style={styles.icon} />
@@ -499,14 +501,14 @@ export default function ProfileScreen() {
               </View>
 
               <View className="gap-6">
-                <DropDrawer
+                {/* <DropDrawer
                   selectedValues={isEditMode ? [formData.title || ""] : [interest?.title || ""]}
                   setSelectedValues={(vals) => handleInputChange("title", vals[0])}
                   items={titleOptions}
                   placeholder="Select Title"
                   useCircleIndicator={true}
                   editable={isEditMode}
-                />
+                /> */}
                 <View style={styles.rowContainer}>
                   <TextInputField
                     label="Years in Ministry"

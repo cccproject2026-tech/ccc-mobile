@@ -17,8 +17,8 @@ export default function InputField({
   boxClass?: string;
   labelTop?: number;
   editable?: boolean;
-  value?: string; 
-  onChangeText?: (text: string) => void; 
+  value?: string;
+  onChangeText?: (text: string) => void;
 }) {
   const [focused, setFocused] = useState(false);
   const labelPosition = useRef(new Animated.Value(0)).current;
@@ -68,6 +68,27 @@ export default function InputField({
           placeholderTextColor="rgba(255,255,255,0.5)"
         />
       </View>
+      {/* {editable ? (
+      <View style={[styles.editFieldContainer, styles.halfInput]}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        <TextInput
+          style={styles.editInput}
+          value={value}
+          editable={editable}
+          onChangeText={(text) => onChangeText?.(text)}
+          placeholder={label}
+          placeholderTextColor="rgba(255,255,255,0.5)"
+        />
+      </View>
+      ) : (
+        <View>
+          
+        <View style={[styles.editFieldContainer, styles.halfInput]}>
+          <Text style={styles.fieldLabel}>{label}</Text>
+          <Text style={styles.viewFieldText}>{value}</Text>
+        </View>
+      </View>
+      )} */}
     </View>
   );
 }
@@ -77,6 +98,31 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
+  viewFieldText: {
+    color: '#fff',
+    fontSize: 13,
+},
+  editFieldContainer: {
+    marginBottom: 12,
+  },
+  fieldLabel: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  halfInput: {
+    flex: 1,
+  },
+  editInput: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: '#fff',
+    fontSize: 13,
+  },
   box: {
     borderRadius: 10,
     borderWidth: 1,
@@ -84,7 +130,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     justifyContent: "center",
     maxHeight: 34,
-    width:"100%"
+    width: "100%"
   },
   boxFocused: {
     borderColor: "rgba(255,255,255,1)",
@@ -102,6 +148,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   input: {
+    marginTop: 10,
     fontSize: 14,
     color: "#fff",
     fontWeight: "500",

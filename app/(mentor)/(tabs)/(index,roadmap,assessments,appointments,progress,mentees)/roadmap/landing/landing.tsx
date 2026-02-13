@@ -12,7 +12,7 @@ import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type MainTabKey = 'PASTOR_ROADMAPS' | 'ROADMAP_LIBRARY';
 type StatusTabKey = 'ALL' | 'DUE' | 'IN_PROGRESS' | 'NOT_STARTED' | 'COMPLETED';
@@ -103,10 +103,8 @@ export default function Landing() {
         return filtered;
     }, [roadmapsWithStatus, mainTab, statusTab, search, filterPastorRoadmaps]);
 
-    return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
-            <Stack.Screen options={{ headerShown: false }} />
-
+    const renderHeader = useCallback(() => (
+        <>
             <View style={styles.topBarWrapper}>
                 <TopBar role="mentor" showUserName />
             </View>
@@ -123,7 +121,6 @@ export default function Landing() {
                 </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
             <View style={styles.searchWrapper}>
                 <SearchBar
                     value={search}
@@ -132,7 +129,6 @@ export default function Landing() {
                 />
             </View>
 
-            {/* Main Tabs: Pastor's Roadmaps / Roadmap Library */}
             <View style={styles.mainTabsContainer}>
                 <Pressable
                     style={[
@@ -168,7 +164,6 @@ export default function Landing() {
                 </Pressable>
             </View>
 
-            {/* Status Tabs (only show in Pastor's Roadmaps) */}
             {mainTab === 'PASTOR_ROADMAPS' && (
                 <TabSwitcher
                     tabs={[
@@ -182,41 +177,53 @@ export default function Landing() {
                     onChange={(key) => setStatusTab(key as StatusTabKey)}
                 />
             )}
+        </>
+    ), [mainTab, statusTab, search]);
 
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
+    const renderItem = useCallback(({ item }: { item: { roadmap: Roadmap; status: RoadmapCardStatus } }) => {
+        const cardData = getRoadmapCard(item.roadmap);
+        return (
+            <Pressable onPress={() => handleRoadmapPress(item.roadmap)}>
+                <RoadmapCard data={cardData} />
+            </Pressable>
+        );
+    }, [handleRoadmapPress]);
+
+    const listEmptyComponent = useCallback(() => {
+        if (isLoadingRoadmaps) {
+            return (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="white" />
+                    <Text style={styles.loadingText}>Loading roadmaps...</Text>
+                </View>
+            );
+        }
+        return (
+            <View style={styles.emptyContainer}>
+                <Ionicons name="search-outline" size={48} color="#fff" opacity={0.5} />
+                <Text style={styles.emptyText}>
+                    {search.trim()
+                        ? `No roadmaps found matching "${search}"`
+                        : 'No roadmaps available'}
+                </Text>
+            </View>
+        );
+    }, [isLoadingRoadmaps, search]);
+
+    return (
+        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <Stack.Screen options={{ headerShown: false }} />
+
+            <FlatList
+                data={filteredRoadmaps}
+                keyExtractor={(item) => item.roadmap._id}
+                renderItem={renderItem}
+                ListHeaderComponent={renderHeader}
+                ListEmptyComponent={listEmptyComponent}
+                contentContainerStyle={[styles.scrollContent, filteredRoadmaps.length === 0 && styles.scrollContentFlex]}
                 showsVerticalScrollIndicator={false}
-            >
-                {isLoadingRoadmaps ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="white" />
-                        <Text style={styles.loadingText}>
-                            Loading roadmaps...
-                        </Text>
-                    </View>
-                ) : filteredRoadmaps.length > 0 ? (
-                    filteredRoadmaps.map(({ roadmap }) => {
-                        const cardData = getRoadmapCard(roadmap);
-                        return (
-                            <Pressable
-                                key={roadmap._id}
-                                onPress={() => handleRoadmapPress(roadmap)}
-                            >
-                                <RoadmapCard data={cardData} />
-                            </Pressable>
-                        );
-                    })
-                ) : (
-                    <View style={styles.emptyContainer}>
-                        <Ionicons name="search-outline" size={48} color="#fff" opacity={0.5} />
-                        <Text style={styles.emptyText}>
-                            {search.trim()
-                                ? `No roadmaps found matching "${search}"`
-                                : 'No roadmaps available'}
-                        </Text>
-                    </View>
-                )}
-            </ScrollView>
+                style={styles.flatList}
+            />
 
             <RoadMapOutcomeModal
                 isMenuVisible={isRoadmapModalVisible}
@@ -284,8 +291,14 @@ const styles = StyleSheet.create({
     mainTabTextActive: {
         color: '#1a5b77',
     },
+    flatList: {
+        flex: 1,
+    },
     scrollContent: {
         padding: 16,
+    },
+    scrollContentFlex: {
+        flexGrow: 1,
     },
     loadingContainer: {
         paddingVertical: 40,

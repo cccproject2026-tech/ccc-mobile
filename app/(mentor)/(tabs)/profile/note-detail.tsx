@@ -1,0 +1,276 @@
+import { mockMentorNotes } from "@/constants/mockMentees";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import React from "react";
+import {
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function NoteDetail() {
+  const params = useLocalSearchParams();
+  const noteId = params.noteId as string;
+  const menteeId = (params.menteeId as string) || "john-ross";
+  const menteeName = (params.menteeName as string) || "John Doe";
+
+  // Get the specific note
+  const notes = mockMentorNotes[menteeId] || [];
+  const note = notes.find((n) => n.id === noteId) || notes[0];
+
+  const handleEdit = () => {
+    router.push({
+      pathname: "/(mentor)/profile/new-note",
+      params: {
+        menteeName: menteeName,
+        noteId: noteId,
+        isEdit: "true",
+      },
+    });
+  };
+
+  const handleDelete = () => {
+    Alert.alert("Delete Note", "Are you sure you want to delete this note?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          router.back();
+        },
+      },
+    ]);
+  };
+
+  return (
+    <LinearGradient
+      colors={["#1A3A6B", "#2B5A8E", "#1A3A6B"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <Stack.Screen options={{ headerShown: false }} />
+
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
+              <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <View style={styles.profileBadge}>
+                <Text style={styles.profileName}>{menteeName}</Text>
+              </View>
+            </View>
+
+            <View style={styles.headerRight}>
+              <TouchableOpacity activeOpacity={0.7} style={styles.iconButton}>
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationCount}>3</Text>
+                </View>
+                <Ionicons name="notifications" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity activeOpacity={0.7} style={styles.iconButton}>
+                <Ionicons name="share-social" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.titleSection}>
+            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Text style={styles.title}>Notes</Text>
+          </View>
+          <Text style={styles.subtitle}>{menteeName} ›</Text>
+        </View>
+
+        {/* Date/Time Badge */}
+        <View style={styles.dateContainer}>
+          <View style={styles.dateBadge}>
+            <Text style={styles.dateText}>
+              {note?.date} - {note?.time}
+            </Text>
+          </View>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.actionButton}
+              onPress={handleEdit}
+            >
+              <Ionicons name="create-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.actionButton}
+              onPress={handleDelete}
+            >
+              <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Note Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.contentContainer}>
+            <Text style={styles.contentText}>{note?.content}</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  profileBadge: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  },
+  profileName: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: "#FFD700",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
+  notificationCount: {
+    color: "#1A3A6B",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  titleSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  subtitle: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  dateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  dateBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  dateText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  actionButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  contentContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    padding: 24,
+  },
+  contentText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    lineHeight: 26,
+  },
+});
