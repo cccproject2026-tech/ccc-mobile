@@ -2,7 +2,8 @@ import AssessmentAssignedSuccessModal from "@/components/build-components/Assess
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
-import { useAssignAssessment } from "@/hooks/assessments";
+import { useAssessment, useAssignAssessment } from "@/hooks/assessments";
+import { useMentees } from "@/hooks/mentees/useMentees";
 import { menteesService } from "@/services/mentees.service";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -37,24 +38,23 @@ export default function AssignToPage() {
 
   const [search, setSearch] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [selectedMentees, setSelectedMentees] = useState<Set<string>>(
     new Set()
   );
 
-  // Use TanStack Query hooks
-  const { data: menteesResponse, isLoading: loading, error: menteesError, refetch } = useQuery({
-    queryKey: ['mentees'],
-    queryFn: () => menteesService.getMentees(),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2,
-  });
+  // Fetch assessment to get existing assignments
+  const { data: assessment, isLoading: assessmentLoading } = useAssessment(assessmentId);
 
+  // Use TanStack Query hooks
+  const { data: menteesResponse, isLoading: loading, error: menteesError, refetch } = useMentees();
+// console.log(mente,"--------")
   const assignAssessmentMutation = useAssignAssessment();
 
   // Map mentees to display format
   const mentees: MenteeDisplay[] = useMemo(() => {
-    if (!menteesResponse?.users) return [];
-    return menteesResponse.users.map((mentee) => ({
+    if (!menteesResponse?.pages.flatMap((page: any) => page.mentees)) return [];
+    return menteesResponse.pages.flatMap((page: any) => page.mentees).map((mentee: any) => ({
       id: mentee.id,
       name: `${mentee.firstName} ${mentee.lastName}`.trim(),
       email: mentee.email,
@@ -62,14 +62,14 @@ export default function AssignToPage() {
     }));
   }, [menteesResponse]);
 
-  // Initialize with first 3 mentees selected if available
+  // Initialize selected mentees from existing assignments
   useEffect(() => {
-    if (mentees.length > 0 && selectedMentees.size === 0) {
-      setSelectedMentees(
-        new Set(mentees.slice(0, 3).map((m) => m.id))
-      );
+    if (!isInitialized && assessment?.assignments && mentees.length > 0) {
+      const assignedIds = new Set(assessment.assignments.map(a => a.userId));
+      setSelectedMentees(assignedIds);
+      setIsInitialized(true);
     }
-  }, [mentees, selectedMentees.size]);
+  }, [isInitialized, assessment, mentees]);
 
   const error = menteesError ? 'Failed to load mentees. Please try again.' : null;
 
@@ -179,11 +179,11 @@ export default function AssignToPage() {
 
       {/* Mentees List */}
       <View style={{ flex: 1, marginTop: 16 }}>
-        {loading ? (
+        {loading || assessmentLoading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="large" color="#E2E8F0" />
             <Text style={{ color: '#E2E8F0', marginTop: 12 }}>
-              Loading mentees...
+              {loading ? 'Loading mentees...' : 'Loading assignments...'}
             </Text>
           </View>
         ) : error ? (

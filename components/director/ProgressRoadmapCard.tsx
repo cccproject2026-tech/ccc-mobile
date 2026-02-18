@@ -10,6 +10,9 @@ interface Props {
   onPress?: () => void;
   showMenu?: boolean;
   onMenuPress?: () => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: () => void;
 }
 
 export const RoadmapCard: React.FC<Props> = ({
@@ -17,13 +20,16 @@ export const RoadmapCard: React.FC<Props> = ({
     onPress,
     showMenu,
     onMenuPress,
+    selectionMode,
+    isSelected,
+    onToggleSelection,
 }) => {
     const isCompleted = data.status === 'completed';
     const hasProgress = data.taskProgress && !isCompleted;
-    const showArrow = data.showArrow && !isCompleted;
+    const showArrow = data.showArrow && !isCompleted && !selectionMode;
 
     // ✅ Check if actions (menu or arrow) are present
-    const hasActions = showMenu || showArrow;
+    const hasActions = (showMenu || showArrow || selectionMode);
 
     const progressPercentage = useMemo(() => {
         return data.taskProgress
@@ -75,7 +81,20 @@ export const RoadmapCard: React.FC<Props> = ({
 
         return (
             <View style={styles.actionsContainer}>
-                {showMenu && onMenuPress && (
+                {selectionMode && onToggleSelection && (
+                    <TouchableOpacity
+                        onPress={onToggleSelection}
+                        style={[
+                            styles.checkbox,
+                            isSelected && styles.checkboxSelected
+                        ]}
+                    >
+                        {isSelected && (
+                            <Ionicons name="checkmark" size={16} color="#1A4882" />
+                        )}
+                    </TouchableOpacity>
+                )}
+                {showMenu && onMenuPress && !selectionMode && (
                     <TouchableOpacity
                         onPress={onMenuPress}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -315,6 +334,20 @@ const styles = StyleSheet.create({
         gap: 12,
         flexShrink: 0,
         width: 32,
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'transparent',
+    },
+    checkboxSelected: {
+        backgroundColor: '#fff',
+        borderColor: '#fff',
     },
     description: {
         fontSize: getFontSize(isSmallDevice ? 12.5 : 13.5),

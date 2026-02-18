@@ -171,6 +171,39 @@ export const mockRevitalization: RevitalizationData = {
             comments: ["comment-1", "comment-2", "comment-3"],
             queries: ["query-1", "query-2"],
 
+            extras: [
+                {
+                    type: 'TEXT_AREA',
+                    name: 'Notes',
+                    placeHolder: 'Write your notes here...',
+                },
+                {
+                    type: 'DATE_PICKER',
+                    name: 'Session Date',
+                    date: '10 / 11 / 24',
+                    checkboxes: [
+                        {
+                            type: 'CHECKBOX',
+                            name: 'Allow pastor to select Date',
+                            haveButton: false,
+                            buttonName: null,
+                        },
+                        {
+                            type: 'CHECKBOX',
+                            name: 'Show date on info card',
+                            haveButton: false,
+                            buttonName: null,
+                        },
+                        {
+                            type: 'CHECKBOX',
+                            name: 'Session Completed',
+                            haveButton: true,
+                            buttonName: 'View Details',
+                        }
+                    ]
+                }
+            ],
+
             schema: {
                 fields: [
                     {

@@ -97,7 +97,14 @@ export interface CreateAssessmentSection {
 export interface CreateAssessmentRequest {
     name: string;
     description: string;
+    type?: 'PMP' | 'CMA';
     instructions: string[];
+    preSurvey?: {
+        text: string;
+        type: string;
+        placeholder: string;
+        required: boolean;
+    }[];
     sections: CreateAssessmentSection[];
 }
 

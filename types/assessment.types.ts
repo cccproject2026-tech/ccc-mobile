@@ -108,6 +108,10 @@ export interface CreateAssessmentRequest {
     preSurvey?: PreSurveyQuestion[];
 }
 
+export interface AssignAssessmentToUsersRequest {
+    userIds: string[];
+}
+
 // ==================== Assessment Response ====================
 export interface AssessmentResponse {
     assessmentId: string;

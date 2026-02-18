@@ -6,6 +6,14 @@ export const apiClient = axios.create({
     timeout: API_CONFIG.TIMEOUT,
     headers: {
         'Content-Type': 'application/json',
+        'cache-control': 'no-cache',
+        'pragma': 'no-cache',
+        'expires': '0',
+        'pragma-directive': 'no-cache',
+        'cache-directive': 'no-cache',
+        'no-cache': 'true',
+        'no-store': 'true',
+        'no-transform': 'true',
     },
 });
 

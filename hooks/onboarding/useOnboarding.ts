@@ -59,7 +59,7 @@ export const useCheckApprovalStatus = (enabled: boolean = false) => {
       enabled &&
       !!userId &&
       (interestStatus === "pending" || interestStatus === "new"),
-    staleTime: 1000, // 🔹 1 second (was 1 minute)
+    staleTime: 2000, // 2 seconds (was 1 second)
     refetchInterval: 1000 * 60 * 2, // Poll every 2 minutes
     refetchIntervalInBackground: false, // Don't poll in background
   });

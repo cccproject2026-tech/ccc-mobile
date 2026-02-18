@@ -94,7 +94,7 @@ export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
         image: roadmap.imageUrl,
         title: roadmap.name || 'Untitled Roadmap',
         description: roadmap.roadMapDetails,
-        completionTime: `Completion Time\nMonths ${min}${min !== max ? ` – ${max}` : ''}`,
+        completionTime: `Completion Time\nMonths ${min} - ${max}`,
         status,
         completedDate: roadmap.completedOn ? formatDate(roadmap.completedOn) : undefined,
         taskProgress: hasProgress ? { completed, total } : undefined,

@@ -394,12 +394,14 @@ export default function PhaseList() {
             hasNested: roadmap.haveNextedRoadMaps,
             taskCount: roadmap.roadmaps.length
         });
-
-        if (!roadmap.haveNextedRoadMaps || roadmap.roadmaps.length === 0) {
-            // No tasks - might be a placeholder or error
-            console.warn('Roadmap has no tasks');
-            return;
-        }
+        console.log("----------------------------------------------")
+        console.log('roadmap', roadmap);
+        console.log("----------------------------------------------")
+        // if (!roadmap.haveNextedRoadMaps || roadmap.roadmaps.length === 0) {
+        //     // No tasks - might be a placeholder or error
+        //     console.warn('Roadmap has no tasks');
+        //     return;
+        // }
 
         if (roadmap.roadmaps.length === 1 && !roadmap.haveNextedRoadMaps) {
             // Single task - go directly to task

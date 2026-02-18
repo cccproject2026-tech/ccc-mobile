@@ -1,5 +1,6 @@
 import {
     ApiAssessment,
+    AssignAssessmentToUsersRequest,
     CreateAssessmentRequest,
     SubmitAnswersPayload,
     SubmitPreSurveyPayload,
@@ -63,6 +64,20 @@ export const assessmentService = {
             { instructions }
         );
         console.log('📥 Assessment instructions updated:', response.data);
+        return response.data;
+    },
+
+    // Assign assessment to users
+    assignAssessment: async (
+        assessmentId: string,
+        payload: AssignAssessmentToUsersRequest
+    ): Promise<any> => {
+        console.log('📤 Assigning assessment:', assessmentId, 'to users:', payload.userIds);
+        const response = await apiClient.post(
+            ENDPOINTS.ASSESSMENTS.ASSIGN_ASSESSMENT(assessmentId),
+            payload
+        );
+        console.log('📥 Assessment assigned:', response.data);
         return response.data;
     },
 

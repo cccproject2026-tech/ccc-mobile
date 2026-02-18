@@ -69,8 +69,8 @@ export default function CreateAssessmentPage() {
             name: '',
             guidelines: '',
             layers: [
-                { id: '1', title: '', choices: [{ id: '1', text: '' }] },
-                { id: '2', title: '', choices: [{ id: '1', text: '' }] },
+                { id: '1', title: 'Assessment Layer', choices: [{ id: '1', text: '' }] },
+                { id: '2', title: 'Assessment Layer', choices: [{ id: '1', text: '' }] },
             ],
         },
     ]);
@@ -128,7 +128,7 @@ export default function CreateAssessmentPage() {
                 id: Date.now().toString(),
                 name: '',
                 guidelines: '',
-                layers: [{ id: '1', title: '', choices: [{ id: '1', text: '' }] }],
+                layers: [{ id: '1', title: 'Assessment Layer', choices: [{ id: '1', text: '' }] }],
             },
         ]);
     };
@@ -155,7 +155,7 @@ export default function CreateAssessmentPage() {
                     newLayers.push(
                         existingLayer || {
                             id: `${Date.now()}-${i}`,
-                            title: '',
+                            title: 'Assessment Layer',
                             choices: [{ id: `${Date.now()}-choice-${i}`, text: '' }],
                         }
                     );
@@ -536,15 +536,6 @@ export default function CreateAssessmentPage() {
                                     <Text style={styles.layerTitle}>
                                         Layer {layerIndex + 1}
                                     </Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder={`Question/Title for Layer ${layerIndex + 1}`}
-                                        placeholderTextColor="rgba(255,255,255,0.6)"
-                                        value={layer.title}
-                                        onChangeText={(text) =>
-                                            updateLayerTitle(section.id, layer.id, text)
-                                        }
-                                    />
                                     {layer.choices.map((choice, choiceIndex) => (
                                         <View key={choice.id} style={styles.choiceRow}>
                                             <TextInput

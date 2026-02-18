@@ -1123,16 +1123,14 @@ interface Props {
 export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
     const router = useRouter();
     const { user } = useAuthStore();
-
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, any[]>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-    const isValidObjectId = (id: string | undefined) =>
-        !!id && /^[0-9a-fA-F]{24}$/.test(id);
+    const isValidObjectId = (id: string | undefined) => !!id;
 
     /** Load existing extras from API */
-    const { data: existingExtras, isLoading: isLoadingExtras } = useRoadmapExtras(
+    const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } = useRoadmapExtras(
         isValidObjectId(roadmapId) ? roadmapId : undefined,
         isValidObjectId(itemId) ? itemId : undefined,
         isValidObjectId(user?.id) ? user?.id : undefined
@@ -1147,21 +1145,32 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
 
     /** Initialise formData from API or default dates */
     useEffect(() => {
+        // if (isFetchingExtras) return; // Removed to allow updates even if fetching in background
+
+        console.log("----------------------------------------------")
+        console.log("----------------------------------------------")
+        console.log('existingExtras', existingExtras);
+        console.log("----------------------------------------------")
+        console.log("----------------------------------------------")
+
+        const init: Record<string, any> = {};
+        
+        // 1. Load defaults from task definition
+        task.extras?.forEach(extra => {
+            if (extra.date) init[extra.name] = extra.date;
+            // Also load sub-checkboxes if they exist in definitions (though usually they come from extras)
+        });
+
+        // 2. Override with existing extras from API
         if (existingExtras?.extras && Array.isArray(existingExtras.extras)) {
-            const loaded: Record<string, any> = {};
             existingExtras.extras.forEach((item: any) => {
                 if (item.name && item.value !== undefined) {
-                    loaded[item.name] = item.value;
+                    init[item.name] = item.value;
                 }
             });
-            setFormData(loaded);
-        } else {
-            const init: Record<string, any> = {};
-            task.extras?.forEach(extra => {
-                if (extra.date) init[extra.name] = extra.date;
-            });
-            setFormData(init);
         }
+        
+        setFormData(init);
     }, [existingExtras, task]);
 
     const handleChange = (fieldName: string, value: any) => {
@@ -1184,6 +1193,11 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
 
     /** Save progress – text extras + pending file uploads */
     const handleSubmit = async () => {
+        console.log("----------------------------------------------")
+        console.log("----------------------------------------------")
+        console.log('formData', formData);
+        console.log("----------------------------------------------")
+        console.log("----------------------------------------------")
         if (!validateForm()) {
             Alert.alert("No Data", "Please fill in at least one field before saving progress");
             return;
@@ -1246,13 +1260,25 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
 
     /** ───────────────────── UPLOAD FIELD ───────────────────── */
 
-    const UploadField = ({ extraName }: { extraName: string }) => {
+    const UploadField = ({ extraName, isEditable = true, initialFiles = [] }: { extraName: string, isEditable?: boolean, initialFiles?: any[] }) => {
         const { data: docs = [], isLoading } = useRoadmapDocuments(
             roadmapId!,
             itemId!,
             user!.id,
             extraName
         );
+
+        // Combine initial files from extras with files from documents endpoint
+        // Use a Map to deduplicate based on file URL or ID
+        const allFiles = [...initialFiles, ...docs].reduce((acc, current) => {
+            const key = current._id || current.id || current.fileUrl;
+            if (!acc.has(key)) {
+                acc.set(key, current);
+            }
+            return acc;
+        }, new Map()).values();
+        
+        const uniqueDocs = Array.from(allFiles);
 
         // Heuristic: treat as media upload if name hints at image/video/media
         const isMediaUpload =
@@ -1262,6 +1288,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
             extraName.toLowerCase().includes("media");
 
         const confirmDelete = (doc: any) => {
+            if (!isEditable) return;
             Alert.alert(
                 "Delete Document",
                 `Are you sure you want to delete "${decodeURIComponent(doc.fileName)}"?`,
@@ -1278,6 +1305,12 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                 fileUrl: doc.fileUrl,
                                 uploadBatchId: doc.uploadBatchId,
                             });
+                            // If this was the last file, we should technically clear formData
+                            // but since it's on server, it might be safer to let the next refresh handle it
+                            // or check docs.length
+                            if (docs.length <= 1 && (!pendingFiles[extraName] || pendingFiles[extraName].length === 0)) {
+                                handleChange(extraName, false);
+                            }
                         },
                     },
                 ]
@@ -1285,6 +1318,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
         };
 
         const pickFile = async () => {
+            if (!isEditable) return;
             const res = await DocumentPicker.getDocumentAsync({
                 type: "*/*",
                 multiple: true, // ✅ support multiple like old version
@@ -1303,13 +1337,26 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 ...prev,
                 [extraName]: [...(prev[extraName] || []), ...newFiles],
             }));
+            
+            // ✅ Mark form as dirty/having data so save works
+            handleChange(extraName, true);
         };
 
         const deletePendingLocal = (fileId: string) => {
-            setPendingFiles(prev => ({
-                ...prev,
-                [extraName]: prev[extraName]?.filter(f => f.id !== fileId) || [],
-            }));
+            if (!isEditable) return;
+            setPendingFiles(prev => {
+                const updated = prev[extraName]?.filter(f => f.id !== fileId) || [];
+                
+                // If no pending files AND no server files, clear form data
+                if (updated.length === 0 && docs.length === 0) {
+                    handleChange(extraName, false);
+                }
+                
+                return {
+                    ...prev,
+                    [extraName]: updated,
+                };
+            });
         };
 
         const hasServerFiles = docs.length > 0;
@@ -1330,7 +1377,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 {isLoading ? (
                     <ActivityIndicator color="#fff" style={{ marginTop: 8 }} />
                 ) : (
-                    hasServerFiles && (
+                    uniqueDocs.length > 0 && (
                         <View style={[styles.uploadedFilesContainer]}>
 
                             {/* Only for NON-media uploads */}
@@ -1365,8 +1412,8 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                 </Pressable>
                             ) : (
                                 /* --- NORMAL FILES: Show each file --- */
-                                docs.map((doc: any) => (
-                                    <View key={doc._id} style={styles.fileRow}>
+                                uniqueDocs.map((doc: any) => (
+                                    <View key={doc._id || doc.id} style={styles.fileRow}>
                                         <Pressable
                                             onPress={() => Linking.openURL(doc.fileUrl)}
                                             style={{ flex: 1 }}
@@ -1381,8 +1428,9 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                             <Pressable
                                                 onPress={() => confirmDelete(doc)}
                                                 style={styles.removeIconWrapper}
+                                                disabled={!isEditable}
                                             >
-                                                <Ionicons name="trash" size={20} color="#ef4444" />
+                                                <Ionicons name="trash" size={20} color={isEditable ? "#ef4444" : "#999"} />
                                             </Pressable>
                                         )}
                                     </View>
@@ -1401,19 +1449,24 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         >
                             <Text style={{ color: "white", flex: 1 }}>• {f.name} (pending)</Text>
 
-                            <Pressable onPress={() => deletePendingLocal(f.id)}>
-                                <Ionicons name="close-circle" size={20} color="#ef4444" />
+                            <Pressable onPress={() => deletePendingLocal(f.id)} disabled={!isEditable}>
+                                <Ionicons name="close-circle" size={20} color={isEditable ? "#ef4444" : "#999"} />
                             </Pressable>
                         </View>
                     ))}
 
                 {/* Upload button */}
                 <Pressable
-                    style={[styles.uploadButton, styles.uploadButtonWhite]}
+                    style={[
+                        styles.uploadButton, 
+                        styles.uploadButtonWhite,
+                        !isEditable && { opacity: 0.6 }
+                    ]}
                     onPress={pickFile}
+                    disabled={!isEditable}
                 >
-                    <Ionicons name="attach" size={22} color="#2563eb" />
-                    <Text style={styles.uploadButtonText}>{buttonText}</Text>
+                    <Ionicons name="attach" size={22} color={isEditable ? "#2563eb" : "#999"} />
+                    <Text style={[styles.uploadButtonText, !isEditable && { color: "#999" }]}>{buttonText}</Text>
                 </Pressable>
             </View>
 
@@ -1427,9 +1480,24 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
 
         switch (extra.type) {
             case "UPLOAD":
+                // Prepare initial files from existingExtras
+                const initialDocs = existingExtras?.uploadedDocuments
+                    ?.filter((batch: any) => batch.name === extra.name)
+                    ?.flatMap((batch: any) => 
+                        batch.files.map((f: any) => ({
+                            ...f,
+                            extraName: batch.name,
+                            uploadBatchId: batch.uploadBatchId
+                        }))
+                    ) || [];
+
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <UploadField extraName={extra.name} />
+                        <UploadField 
+                            extraName={extra.name} 
+                            isEditable={(extra as any).editable !== false}
+                            initialFiles={initialDocs}
+                        />
                     </View>
                 );
 
@@ -1495,7 +1563,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginLeft: 36, marginTop: 8 }}>
                                 {extra.checkboxes.map((checkbox, cbIndex) => {
-                                    const cbId = `${extra.name}-${cbIndex}`;
+                                    const cbId = `${extra.name}-cb-${checkbox.name}`;
                                     const isChecked = !!formData[cbId];
 
                                     return (
@@ -1562,6 +1630,9 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 );
 
             case "DATE_PICKER":
+                // ✅ Check if pastor is allowed to edit the date
+                const isEditable = extra.checkboxes?.some(cb => cb.name === 'Allow pastor to select Date') ?? true;
+
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         <View style={styles.fieldRow}>
@@ -1570,22 +1641,41 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                             >
                                 {extra.name}
                             </Text>
-                            <View style={styles.dateInputContainer}>
+                            <View style={[
+                                styles.dateInputContainer,
+                                !isEditable && styles.dateInputDisabled
+                            ]}>
                                 <TextInput
                                     style={styles.dateInput}
                                     placeholder="DD / MM / YY"
                                     placeholderTextColor="#9cc2ff"
-                                    value={formData[extra.name] || extra.date || ""}
+                                    value={formData[extra.name] !== undefined ? formData[extra.name] : (extra.date || "")}
                                     keyboardType="number-pad"
-                                    maxLength={14}
+                                    maxLength={12}
+                                    editable={isEditable}
                                     onChangeText={v => {
+                                        if (!isEditable) return;
+                                        
+                                        // Remove all non-digits
                                         const raw = v.replace(/\D/g, "");
+                                        
+                                        // Formatting logic
                                         let formatted = "";
-                                        if (raw.length >= 1) formatted = raw.slice(0, 2);
-                                        if (raw.length >= 3)
-                                            formatted += " / " + raw.slice(2, 4);
-                                        if (raw.length >= 5)
-                                            formatted += " / " + raw.slice(4, 6);
+                                        if (raw.length > 0) {
+                                            formatted = raw.slice(0, 2);
+                                            if (raw.length > 2) {
+                                                formatted += " / " + raw.slice(2, 4);
+                                                if (raw.length > 4) {
+                                                    formatted += " / " + raw.slice(4, 6);
+                                                }
+                                            }
+                                        }
+                                        
+                                        // If the user is deleting and ends with a space or slash, 
+                                        // we should allow them to delete the separator easily.
+                                        // However, the above logic re-calculates based on raw digits.
+                                        // If they delete ' / ', raw length decreases, and formatted is correct.
+                                        
                                         handleChange(extra.name, formatted);
                                     }}
                                 />
@@ -1595,8 +1685,10 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         {/* Date-related checkboxes */}
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginTop: 12 }}>
-                                {extra.checkboxes.map((checkbox, cbIndex) => {
-                                    const cbId = `${extra.name}-checkbox-${cbIndex}`;
+                                {extra.checkboxes
+                                    .filter(cb => cb.name !== 'Allow pastor to select Date' && cb.name !== 'Show date on info card')
+                                    .map((checkbox, cbIndex) => {
+                                    const cbId = `${extra.name}-cb-${checkbox.name}`;
                                     const checked = !!formData[cbId];
 
                                     return (
@@ -1671,7 +1763,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginTop: 8 }}>
                                 {extra.checkboxes.map((checkbox, cbIndex) => {
-                                    const cbId = `${extra.name}-checkbox-${cbIndex}`;
+                                    const cbId = `${extra.name}-cb-${checkbox.name}`;
                                     const checked = !!formData[cbId];
 
                                     return (
@@ -1744,6 +1836,55 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                     </View>
                 );
 
+            case "ASSESSMENT":
+                return (
+                    <View key={id} style={styles.fieldContainer}>
+                        <View style={styles.assessmentButton}>
+                            <View style={styles.assessmentContent}>
+                                <Text style={styles.assessmentTitle}>
+                                    {extra.name}
+                                </Text>
+                            </View>
+                        </View>
+                        <Pressable
+                            style={styles.button}
+                            onPress={() => {
+                                console.log("----------------------------------------------")
+                                console.log("----------------------------------------------")
+                                console.log('extra', extra);
+                                console.log("----------------------------------------------")
+                                console.log("----------------------------------------------")
+                                if (extra.assessmentId) {
+                                    router.push({
+                                        pathname: "/assessments/answer-questions",
+                                        params: {
+                                            assessmentId: extra.assessmentId,
+                                            hasPreSurvey: "true"
+                                        }
+                                    });
+                                } else {
+                                    Alert.alert("Error", "No assessment ID found for this task.");
+                                }
+                            }}
+                        >
+                            <Text style={styles.buttonText}>
+                                {extra.buttonName || "Take Assessment"}
+                            </Text>
+                            <Ionicons name="open-outline" size={20} color="#2563eb" />
+                        </Pressable>
+
+                        {/* Schedule Meeting Checkbox - If present in extras */}
+                        {extra.checkboxes?.some(cb => cb.name === 'Schedule Meeting after the Assessment') && (
+                            <View style={[styles.checkboxRow, { marginTop: 12 }]}>
+                                <Ionicons name="information-circle-outline" size={20} color="#fff" />
+                                <Text style={styles.checkboxLabel}>
+                                    Please schedule a meeting with your mentor after completing this assessment.
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                );
+
             default:
                 return null;
         }
@@ -1751,19 +1892,19 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
 
     if (!task.extras || task.extras.length === 0) return null;
 
-    if (isLoadingExtras) {
+    const isSaving =
+        createExtras.isPending || updateExtras.isPending || uploadDocument.isPending;
+
+    if (isLoadingExtras || (isFetchingExtras && Object.keys(formData).length === 0)) {
         return (
             <View style={{ padding: 20 }}>
                 <ActivityIndicator size="large" color="#fff" />
-                <Text style={{ color: "#fff", marginTop: 10 }}>
+                <Text style={{ color: "#fff", marginTop: 10, textAlign: 'center' }}>
                     Loading form data…
                 </Text>
             </View>
         );
     }
-
-    const isSaving =
-        createExtras.isPending || updateExtras.isPending || uploadDocument.isPending;
 
     return (
         <>
@@ -1781,7 +1922,9 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                     {isSaving ? (
                         <ActivityIndicator color="#1e40af" />
                     ) : (
-                        <Text style={styles.signButtonText}>Save Progress</Text>
+                        <Text style={styles.signButtonText}>
+                            {isUpdateMode ? "Update Progress" : "Save Progress"}
+                        </Text>
                     )}
                 </Pressable>
             </ScrollView>

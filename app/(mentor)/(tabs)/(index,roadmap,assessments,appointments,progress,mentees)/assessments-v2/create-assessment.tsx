@@ -49,9 +49,21 @@ interface Plan {
   text: string;
 }
 
+type AssessmentType = 'PMP' | 'CMA';
+
+interface PreSurveyQuestion {
+  id: string;
+  text: string;
+  type: 'text' | 'number';
+  placeholder: string;
+}
+
 export default function CreateAssessmentPage() {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
+
+  // Pre-Survey Toggle (determines PMP vs CMA)
+  const [hasPreSurvey, setHasPreSurvey] = useState(false);
 
   // Assessment Details
   const [assessmentName, setAssessmentName] = useState("");
@@ -62,6 +74,11 @@ export default function CreateAssessmentPage() {
     { id: "1", text: "" },
   ]);
 
+  // Pre-Survey Questions (shown only if hasPreSurvey is true)
+  const [preSurveyQuestions, setPreSurveyQuestions] = useState<PreSurveyQuestion[]>([
+    { id: '1', text: '', type: 'number', placeholder: 'Enter number' },
+  ]);
+
   // Sections
   const [sections, setSections] = useState<Section[]>([
     {
@@ -69,8 +86,8 @@ export default function CreateAssessmentPage() {
       name: "",
       guidelines: "",
       layers: [
-        { id: "1", title: "", choices: [{ id: "1", text: "" }] },
-        { id: "2", title: "", choices: [{ id: "1", text: "" }] },
+        { id: "1", title: "Assessment Layer", choices: [{ id: "1", text: "" }] },
+        { id: "2", title: "Assessment Layer", choices: [{ id: "1", text: "" }] },
       ],
     },
   ]);
@@ -121,6 +138,19 @@ export default function CreateAssessmentPage() {
     );
   };
 
+  const addPreSurveyQuestion = () => {
+    setPreSurveyQuestions([
+      ...preSurveyQuestions,
+      { id: Date.now().toString(), text: '', type: 'number', placeholder: 'Enter number' },
+    ]);
+  };
+
+  const updatePreSurveyQuestion = (id: string, text: string) => {
+    setPreSurveyQuestions(
+      preSurveyQuestions.map((q) => (q.id === id ? { ...q, text } : q))
+    );
+  };
+
   const addSection = () => {
     setSections([
       ...sections,
@@ -128,7 +158,7 @@ export default function CreateAssessmentPage() {
         id: Date.now().toString(),
         name: "",
         guidelines: "",
-        layers: [{ id: "1", title: "", choices: [{ id: "1", text: "" }] }],
+        layers: [{ id: "1", title: "Assessment Layer", choices: [{ id: "1", text: "" }] }],
       },
     ]);
   };
@@ -153,7 +183,7 @@ export default function CreateAssessmentPage() {
         for (let i = 0; i < count; i++) {
           const existingLayer = s.layers[i];
           newLayers.push(
-            existingLayer || { id: `${Date.now()}-${i}`, title: "", choices: [{ id: `${Date.now()}-choice-${i}`, text: "" }] }
+            existingLayer || { id: `${Date.now()}-${i}`, title: "Assessment Layer", choices: [{ id: `${Date.now()}-choice-${i}`, text: "" }] }
           );
         }
         return { ...s, layers: newLayers };
@@ -286,6 +316,24 @@ export default function CreateAssessmentPage() {
       return;
     }
 
+    // Validate pre-survey questions if hasPreSurvey is true
+    let validPreSurvey: { text: string; type: string; placeholder: string; required: boolean }[] = [];
+    if (hasPreSurvey) {
+      validPreSurvey = preSurveyQuestions
+        .filter((q) => q.text.trim().length > 0)
+        .map((q) => ({
+          text: q.text.trim(),
+          type: q.type,
+          placeholder: q.placeholder,
+          required: true,
+        }));
+
+      if (validPreSurvey.length === 0) {
+        Alert.alert('Error', 'Please add at least one pre-survey question.');
+        return;
+      }
+    }
+
     // Validate sections
     const validSections = sections
       .map((section) => {
@@ -324,18 +372,28 @@ export default function CreateAssessmentPage() {
       return;
     }
 
-    const requestData = {
+    // Determine assessment type based on hasPreSurvey
+    const assessmentType: AssessmentType = hasPreSurvey ? 'CMA' : 'PMP';
+
+    const requestData: any = {
       name: assessmentName.trim(),
       description: briefDescription.trim(),
+      type: assessmentType,
       instructions: validInstructions,
       sections: validSections,
     };
+
+    // Add preSurvey only if hasPreSurvey is true
+    if (hasPreSurvey) {
+      requestData.preSurvey = validPreSurvey;
+    }
 
     createAssessmentMutation.mutate(requestData, {
       onSuccess: () => {
         setShowSuccessModal(true);
       },
       onError: (err) => {
+        console.log(err,"--------")
         console.error('Failed to create assessment:', err);
         Alert.alert(
           "Error",
@@ -393,6 +451,36 @@ export default function CreateAssessmentPage() {
           />
         </View>
 
+        {/* Pre-Survey Toggle */}
+        <View style={styles.typeSelectionContainer}>
+          <Text style={styles.typeLabel}>Include Pre-Survey Questions?</Text>
+          <View style={styles.radioGroup}>
+            <TouchableOpacity
+              style={styles.radioOption}
+              onPress={() => setHasPreSurvey(false)}
+            >
+              <View style={styles.radioCircle}>
+                {!hasPreSurvey && (
+                  <View style={styles.radioSelected} />
+                )}
+              </View>
+              <Text style={styles.radioText}>No</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.radioOption}
+              onPress={() => setHasPreSurvey(true)}
+            >
+              <View style={styles.radioCircle}>
+                {hasPreSurvey && (
+                  <View style={styles.radioSelected} />
+                )}
+              </View>
+              <Text style={styles.radioText}>Yes</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* General Instructions */}
         <View style={styles.section}>
           <View style={styles.sectionContainer}>
@@ -420,6 +508,35 @@ export default function CreateAssessmentPage() {
             )}
           </View>
         </View>
+
+        {/* Pre-Survey Questions (shown only if hasPreSurvey is true) */}
+        {hasPreSurvey && (
+          <View style={styles.boxContainer}>
+            <Text style={styles.boxTitle}>Pre-Survey Questions</Text>
+            <Text style={styles.boxSubtitle}>
+              These questions will be shown before the main assessment
+            </Text>
+            {preSurveyQuestions.map((q, index) => (
+              <TextInput
+                key={q.id}
+                style={styles.input}
+                placeholder={`${index + 1}. What is your current church membership?`}
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                value={q.text}
+                onChangeText={(text) =>
+                  updatePreSurveyQuestion(q.id, text)
+                }
+              />
+            ))}
+            <TouchableOpacity
+              style={styles.addBtn}
+              onPress={addPreSurveyQuestion}
+            >
+              <Ionicons name="add" size={16} color="#FFF" />
+              <Text style={styles.addBtnText}>Question</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Sections */}
         <View style={styles.section}>
@@ -508,15 +625,6 @@ export default function CreateAssessmentPage() {
               {section.layers.map((layer, layerIndex) => (
                 <View key={layer.id} style={styles.layerSection}>
                   <Text style={styles.layerTitle}>Layer {layerIndex + 1}</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder={`Question/Title for Layer ${layerIndex + 1}`}
-                    placeholderTextColor="rgba(255,255,255,0.6)"
-                    value={layer.title}
-                    onChangeText={(text) =>
-                      updateLayerTitle(section.id, layer.id, text)
-                    }
-                  />
                   {layer.choices.map((choice, choiceIndex) => (
                     <View key={choice.id} style={styles.choiceRow}>
                       <TextInput
@@ -895,6 +1003,76 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
+  },
+  // New styles for Pre-Survey
+  typeSelectionContainer: {
+    marginBottom: 24,
+  },
+  typeLabel: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  radioGroup: {
+    flexDirection: 'row',
+    gap: 32,
+  },
+  radioOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioSelected: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
+  },
+  radioText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  boxContainer: {
+    backgroundColor: 'rgba(21, 92, 147, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.45)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  boxTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  boxSubtitle: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    marginBottom: 12,
+  },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    gap: 4,
+    paddingVertical: 4,
+  },
+  addBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 

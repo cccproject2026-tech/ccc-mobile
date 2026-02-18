@@ -16,7 +16,7 @@ import { UserRole } from "@/types";
 import { RoadmapProgress } from "@/types/progress.types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useProgress } from "../progress/useProgress";
+import { progressKeys, useProgress } from "../progress/useProgress";
 
 // ============================================
 // ROADMAP QUERY KEYS
@@ -55,7 +55,7 @@ function mapProgressStatus(
 /**
  * Merges roadmap with its progress data
  */
-function mergeRoadmapWithProgress(
+export function mergeRoadmapWithProgress(
     roadmap: Roadmap,
     progressItem: RoadmapProgress | undefined
 ): Roadmap {
@@ -104,8 +104,8 @@ export const useAllRoadmaps = () => {
             }
             return response.data.data as Roadmap[];
         },
-        staleTime: 1000 * 60 * 5, // 5 minutes
-        gcTime: 1000 * 60 * 15, // 15 minutes
+        staleTime: 0,
+        // gcTime: 1000 , // 10 seconds
         retry: 1,
     });
 };
@@ -148,8 +148,8 @@ export const useAssignedRoadmaps = () => {
             return assignedRoadmaps;
         },
         enabled: !!progressData && assignedRoadmapIds.length > 0,
-        staleTime: 1000 * 60 * 5,
-        gcTime: 1000 * 60 * 15,
+        staleTime: 0,
+        // gcTime: 1000 ,
         retry: 1,
     });
 
@@ -159,7 +159,7 @@ export const useAssignedRoadmaps = () => {
             return roadmapsQuery.data || [];
         }
 
-        console.log("🔄 Merging roadmaps with progress data...");
+        console.log("🔄 Merging roadmaps with progress data...",roadmapsQuery.data, progressData);
 
         const merged = roadmapsQuery.data.map((roadmap) => {
             const progressItem = progressData.roadmaps.items.find(
@@ -168,7 +168,7 @@ export const useAssignedRoadmaps = () => {
             return mergeRoadmapWithProgress(roadmap, progressItem);
         });
 
-        console.log("✅ Roadmaps merged with progress status");
+        console.log("✅ Roadmaps merged with progress status",merged);
         return merged;
     }, [roadmapsQuery.data, progressData]);
 
@@ -225,8 +225,8 @@ export function useRoadmap(roadmapId: string | undefined, includeProgress: boole
             console.log("📥 Roadmap fetched:", roadmap);
             return roadmap;
         },
+        staleTime: 0,
         enabled: !!roadmapId,
-        staleTime: 5 * 60 * 1000,
         retry: 1,
     });
 
@@ -261,28 +261,21 @@ export function useRoadmapExtras(
     nestedRoadMapItemId?: string,
     userId?: string
 ) {
-    // Validate that roadmapId is a valid MongoDB ObjectId (24 hex characters)
-    const isValidRoadmapId = roadmapId &&
-        typeof roadmapId === 'string' &&
-        roadmapId.length === 24 &&
-        /^[0-9a-fA-F]{24}$/.test(roadmapId);
+    // Validate that roadmapId is a valid truthy string
+    const isValidRoadmapId = !!roadmapId && typeof roadmapId === 'string' && roadmapId.trim() !== '';
 
     // Only pass valid IDs (not undefined, not empty string, not "undefined")
     const validNestedId = nestedRoadMapItemId &&
         typeof nestedRoadMapItemId === 'string' &&
         nestedRoadMapItemId !== 'undefined' &&
-        nestedRoadMapItemId.trim() !== '' &&
-        nestedRoadMapItemId.length === 24 &&
-        /^[0-9a-fA-F]{24}$/.test(nestedRoadMapItemId)
+        nestedRoadMapItemId.trim() !== ''
         ? nestedRoadMapItemId
         : undefined;
 
     const validUserId = userId &&
         typeof userId === 'string' &&
         userId !== 'undefined' &&
-        userId.trim() !== '' &&
-        userId.length === 24 &&
-        /^[0-9a-fA-F]{24}$/.test(userId)
+        userId.trim() !== ''
         ? userId
         : undefined;
 
@@ -306,7 +299,8 @@ export function useRoadmapExtras(
             );
         },
         enabled: isValidRoadmapId === true,
-        staleTime: 2 * 60 * 1000,
+        staleTime: 0,
+        // gcTime: 1000 ,
     });
 }
 
@@ -331,6 +325,9 @@ export function useCreateRoadmapExtras() {
             });
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.all
+            });
+            queryClient.invalidateQueries({
+                queryKey: progressKeys.all
             });
         },
     });
@@ -392,8 +389,8 @@ export const useRoadmapDocuments = (
                 nestedId
             );
 
-            // Backend returns { success, message, data: [...] }
-            const allBatches = res.data ?? [];
+            // Backend returns { success, message, data: [...] } or { success, message, documents: [...] }
+            const allBatches = res.data ?? res.documents ?? [];
 
             // Flatten into single array of files and attach batch info
             const flatFiles = allBatches.flatMap((batch: any) =>
@@ -410,10 +407,13 @@ export const useRoadmapDocuments = (
             if (extraName) {
                 return flatFiles.filter((f: any) => f.extraName === extraName);
             }
+            console.log("Flattened roadmap documents:----->>>>>>>>>>>>>>", flatFiles);
 
             return flatFiles;
         },
         enabled: !!roadMapId && !!nestedId && !!userId,
+        staleTime: 0,
+        // gcTime: 1000 ,
     });
 };
 
@@ -489,6 +489,9 @@ export function useUpdateRoadmapExtras() {
             });
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.all
+            });
+            queryClient.invalidateQueries({
+                queryKey: progressKeys.all
             });
         },
     });

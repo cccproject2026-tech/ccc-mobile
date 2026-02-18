@@ -36,7 +36,7 @@
 //     const query = useQuery({
 //         queryKey: ['mentees'],
 //         queryFn: () => menteesService.getMentees(),
-//         staleTime: 1000 * 60 * 5,
+//         staleTime: 2000,
 //         retry: 2,
 //     });
 
@@ -94,6 +94,7 @@ export const useMentees = (limit: number = 10) => {
             const mentees = backendMentees.map((m, idx) => {
                 const progress = progressResponses[idx];
                 const firstRoadmap = progress?.roadmaps?.items?.[0] ?? null;
+                const assignedRoadmapIds = progress?.roadmaps?.items?.map((item: any) => item.roadMapId) ?? [];
 
                 return {
                     ...m,
@@ -102,6 +103,7 @@ export const useMentees = (limit: number = 10) => {
                     phase: firstRoadmap?.phase,
                     phaseNumber: firstRoadmap?.phaseNumber,
                     completedOn: m.hasCompleted ? m.updatedAt : undefined,
+                    assignedRoadmapIds,
                 };
             });
 
@@ -113,7 +115,7 @@ export const useMentees = (limit: number = 10) => {
         },
         initialPageParam: 1,
         getNextPageParam: (lastPage) => lastPage.nextPage,
-        staleTime: 1000 * 60 * 5,
+        staleTime: 2000,
         retry: 1,
     });
 };

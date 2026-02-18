@@ -15,7 +15,7 @@ export const useAppointments = (options?: UseAppointmentsOptions) => {
         queryKey: ['appointments', 'user', userId],
         queryFn: () => appointmentService.getUserAppointments(userId!),
         enabled: !!userId,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 2000, // 2 seconds (was 5 minutes)
     });
 
     // Fetch mentor appointments
@@ -23,7 +23,7 @@ export const useAppointments = (options?: UseAppointmentsOptions) => {
         queryKey: ['appointments', 'mentor', mentorId],
         queryFn: () => appointmentService.getMentorAppointments(mentorId!),
         enabled: !!mentorId,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 2000, // 2 seconds (was 5 minutes)
     });
 
     // Get the right data

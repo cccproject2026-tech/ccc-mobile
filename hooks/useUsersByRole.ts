@@ -21,7 +21,7 @@ export const useUsersByRole = (role: UserRole, limit: number = 10) => {
             return undefined;
         },
         initialPageParam: 1,
-        staleTime: 1000 * 60 * 5,
+        staleTime: 2000,
         retry: 1,
     });
 };

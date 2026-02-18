@@ -321,16 +321,12 @@ const ScheduleMeeting = () => {
     }
 
     return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.timeSlotContainer}
-      >
+      <View style={styles.timeSlotGrid}>
         {timeSlots.map((slot) => (
           <Pressable
             key={slot.id}
             style={[
-              styles.timeSlot,
+              styles.timeSlotGridItem,
               {
                 backgroundColor: selectedTime?.id === slot.id ? '#FFFFFF' : 'rgba(30, 54, 111, 1)',
                 borderColor: selectedTime?.id === slot.id ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)',
@@ -348,7 +344,7 @@ const ScheduleMeeting = () => {
             </Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
     );
   };
 
@@ -758,19 +754,26 @@ const styles = StyleSheet.create({
   calendarContainer: {
     marginBottom: 18,
   },
-  timeSlotContainer: {
+  timeSlotGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     marginBottom: 18,
   },
-  timeSlot: {
+  timeSlotGridItem: {
+    width: '48.5%',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    marginRight: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   timeSlotText: {
     fontSize: 12,
     fontWeight: '500',
+    textAlign: 'center',
   },
   noTimeSlotsContainer: {
     paddingVertical: 16,

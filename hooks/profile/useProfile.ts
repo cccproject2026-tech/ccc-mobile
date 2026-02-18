@@ -32,7 +32,7 @@ export const useUserProfile = () => {
       return profile;
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 2000, // 2 seconds (was 10 minutes)
     gcTime: 1000 * 60 * 30, // 30 minutes
     retry: 1,
   });
@@ -53,7 +53,7 @@ export const useInterests = () => {
       return interests;
     },
     enabled: !!user?.email,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 2000, // 2 seconds (was 5 minutes)
     gcTime: 1000 * 60 * 20, // 20 minutes
     retry: 1,
   });
@@ -215,7 +215,7 @@ export const useGetAllUsers = (role?: string) => {
   return useQuery({
     queryKey: ["users", "all", role || ""],
     queryFn: () => profileService.getAllUsers(role),
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 2000, // 2 seconds (was 10 minutes)
     gcTime: 1000 * 60 * 30, // 30 minutes
   });
 };
@@ -275,7 +275,7 @@ export const useDocuments = () => {
       return documents;
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 2000, // 2 seconds (was 5 minutes)
     gcTime: 1000 * 60 * 20, // 20 minutes
     retry: 1,
   });
@@ -295,7 +295,7 @@ export const useDocumentsByUserId = (userId: string | undefined) => {
       return documents;
     },
     enabled: !!userId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 2000, // 2 seconds (was 5 minutes)
     gcTime: 1000 * 60 * 20, // 20 minutes
     retry: 1,
   });
@@ -366,7 +366,7 @@ export const useNotifications = (userId?: string) => {
     queryKey: ["notifications", userId],
     queryFn: () => profileService.getNotifications(userId!),
     enabled: !!userId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 2000, // 2 seconds (was 5 minutes)
     gcTime: 1000 * 60 * 20, // 20 minutes
     retry: 1,
   });

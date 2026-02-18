@@ -1,5 +1,4 @@
-import { progressService } from '@/services/progress.service';
-import { AssignAssessmentRequest } from '@/types/progress.types';
+import { assessmentService } from '@/services/assessment.service';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { progressKeys } from '../progress/useProgress';
 
@@ -14,17 +13,8 @@ export const useAssignAssessment = () => {
             assessmentId: string;
             userIds: string[];
         }) => {
-            // Call the API for each user (new API accepts single user)
-            const results = await Promise.all(
-                userIds.map((userId) =>
-                    progressService.assignAssessment({
-                        userId,
-                        assessmentId,
-                    })
-                )
-            );
-            // Return the last result for compatibility
-            return results[results.length - 1];
+            // Call the new single API endpoint that accepts multiple users
+            return assessmentService.assignAssessment(assessmentId, { userIds });
         },
 
         onSuccess: (data, variables) => {
@@ -34,6 +24,9 @@ export const useAssignAssessment = () => {
                     queryKey: progressKeys.user(userId),
                 });
             });
+
+            // Invalidate base progress key
+            queryClient.invalidateQueries({ queryKey: ['progress'] });
 
             // Invalidate assessments list to refetch
             queryClient.invalidateQueries({ queryKey: ['assessments'] });

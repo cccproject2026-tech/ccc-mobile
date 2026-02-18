@@ -73,8 +73,8 @@ export const useProgress = () => {
             return progressData;
         },
         enabled: !!user?.id,
-        staleTime: 1000 * 60 * 2, // 2 minutes - progress changes frequently
-        gcTime: 1000 * 60 * 10, // 10 minutes cache retention
+        staleTime: 0,
+        // gcTime: 1000 * 60 * 10, // 10 minutes cache retention
         retry: 1,
         refetchOnWindowFocus: true, // Refetch when user comes back to the app
     });
@@ -259,8 +259,8 @@ export const useProgressByUserId = (userId: string | undefined) => {
             return progressData;
         },
         enabled: !!userId,
-        staleTime: 1000 * 60 * 2, // 2 minutes - progress changes frequently
-        gcTime: 1000 * 60 * 10, // 10 minutes cache retention
+        staleTime: 0,
+        // gcTime: 1000 * 60 * 10, // 10 minutes cache retention
         retry: 1,
         refetchOnWindowFocus: true, // Refetch when user comes back to the app
     });
@@ -278,8 +278,8 @@ export const useFinalComments = (userId: string | undefined) => {
             return response.data;
         },
         enabled: !!userId,
-        staleTime: 1000 * 60 * 2, // 2 minutes
-        gcTime: 1000 * 60 * 10, // 10 minutes cache retention
+        staleTime: 0,
+        // gcTime: 1000 * 60 * 10, // 10 minutes cache retention
     });
 };
 

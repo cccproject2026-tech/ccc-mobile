@@ -22,6 +22,8 @@ export interface Mentee extends User {
     dateOfApproval?: string;
     lastContacted?: string;
     totalMentors?: number;
+    assignedRoadmapIds?: string[];
+    assignedId?: string[];
 }
 
 

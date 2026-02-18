@@ -51,6 +51,9 @@ export interface ScheduleMeetingBottomSheetProps {
         // Optional fields for rescheduling (not required for initial schedule)
         startTime?: string;
         startPeriod?: 'AM' | 'PM' | string;
+        selectedMentor?: Mentor;
+        selectedDate?: string;
+        selectedTime?: TimeSlot;
     }) => void;
     mode?: 'schedule' | 'reschedule';
     existingAppointment?: Appointment | null;
@@ -204,10 +207,11 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
             mentorId: mentorIdForAvailability,
             month: currentMonth,
             year: currentYear,
+            role: selectedRole
         });
 
         // Fetch mentor settings from weekly availability
-        const { availability: settings } = useWeeklyAvailability(mentorIdForAvailability);
+        const { availability: settings } = useWeeklyAvailability(mentorIdForAvailability, { role: selectedRole });
 
         // Fetch mentor appointments to check max bookings
         const { appointments: mentorAppointments } = useAppointments({ mentorId: mentorIdForAvailability || undefined });
@@ -375,7 +379,8 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                     'In-Person Meeting': 'in_person',
                 };
                 const platform = platformMap[meetingOption] || 'zoom';
-
+                    console.log("Platform:", platform);
+                    console.log(selectedMentor,"--------")
                 onSchedule({
                     mentorId: selectedMentor.id,
                     meetingDate,
@@ -386,6 +391,9 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                         startTime: selectedTime.apiSlot.startTime,
                         startPeriod: selectedTime.apiSlot.startPeriod,
                     }),
+                    selectedMentor,
+                    selectedDate,
+                    selectedTime,
                 });
 
                 if (onScheduleComplete) {
@@ -620,16 +628,12 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                             </Text>
                                                         </View>
                                                     ) : timeSlots.length > 0 ? (
-                                                        <ScrollView
-                                                            horizontal
-                                                            showsHorizontalScrollIndicator={false}
-                                                            style={styles.timeSlotContainer}
-                                                        >
+                                                        <View style={styles.timeSlotGrid}>
                                                             {timeSlots.map((slot) => (
                                                                 <Pressable
                                                                     key={slot.id}
                                                                     style={[
-                                                                        styles.timeSlot,
+                                                                        styles.timeSlotGridItem,
                                                                         {
                                                                             backgroundColor: selectedTime?.id === slot.id
                                                                                 ? '#FFFFFF'
@@ -653,7 +657,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                                                     </Text>
                                                                 </Pressable>
                                                             ))}
-                                                        </ScrollView>
+                                                        </View>
                                                     ) : (
                                                         <View style={styles.noTimeSlotsContainer}>
                                                             <Text style={[styles.noTimeSlotsText, { color: `${colorScheme.text}80` }]}>
@@ -1091,19 +1095,27 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(14),
         fontStyle: 'italic',
     },
-    timeSlotContainer: {
-        marginBottom: getSpacing(isSmallDevice ? 16 : 18),
+    timeSlotGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        marginTop: getSpacing(8),
+        marginBottom: getSpacing(8),
     },
-    timeSlot: {
-        paddingHorizontal: getSpacing(isSmallDevice ? 14 : 16),
-        paddingVertical: getSpacing(isSmallDevice ? 8 : 10),
-        borderRadius: getSpacing(isSmallDevice ? 18 : 20),
+    timeSlotGridItem: {
+        width: '48.5%',
+        paddingVertical: getSpacing(12),
+        paddingHorizontal: getSpacing(8),
+        borderRadius: getSpacing(10),
         borderWidth: 1,
-        marginRight: getSpacing(isSmallDevice ? 8 : 10),
+        marginBottom: getSpacing(10),
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     timeSlotText: {
         fontSize: getFontSize(isSmallDevice ? 11 : 12),
-        fontWeight: '500',
+        fontWeight: '600',
+        textAlign: 'center',
     },
     dropdownButton: {
         flexDirection: 'row',
