@@ -56,18 +56,89 @@ export default function SearchScreen() {
       const run = async () => {
         setLoading(true);
         try {
+          // Include both common query param names to be compatible with different backends
           const resp = await apiClient.get("/search/global", {
-            params: { query: query.trim() },
+            params: { query: query.trim(), q: query.trim() },
           });
 
           const payload = resp?.data?.data ?? resp?.data ?? {};
 
-          const foundRoadmaps = payload.roadmaps ?? payload.roadmap ?? [];
-          const foundInterests = payload.interests ?? payload.interest ?? [];
+          // If backend returns grouped results object (common shape: data.results.{roadmaps,interests})
+          let roadmapsGroup: any[] = [];
+          let interestsGroup: any[] = [];
+
+          if (payload && typeof payload === "object" && payload.results && typeof payload.results === "object") {
+            roadmapsGroup = Array.isArray(payload.results.roadmaps) ? payload.results.roadmaps : [];
+            interestsGroup = Array.isArray(payload.results.interests) ? payload.results.interests : [];
+          } else {
+            // Normalize possible shapes into a flat array of items
+            let items: any[] = [];
+            if (Array.isArray(payload)) {
+              items = payload;
+            } else if (Array.isArray(payload.results)) {
+              items = payload.results;
+            } else if (Array.isArray(payload.items)) {
+              items = payload.items;
+            } else if (Array.isArray(payload.data)) {
+              items = payload.data;
+            } else {
+              // Fallback: look for explicit roadmaps/interests keys
+              const foundRoadmaps = payload.roadmaps ?? payload.roadmap ?? [];
+              const foundInterests = payload.interests ?? payload.interest ?? [];
+              if (Array.isArray(foundRoadmaps) || Array.isArray(foundInterests)) {
+                if (Array.isArray(foundRoadmaps)) items = items.concat(foundRoadmaps);
+                if (Array.isArray(foundInterests)) items = items.concat(foundInterests);
+              } else {
+                // If payload has top-level properties that look like a single item, include it
+                if (payload && typeof payload === "object") {
+                  items = [payload];
+                }
+              }
+            }
+
+            // Group items into roadmaps and interests using heuristics
+            const othersGroup: any[] = [];
+
+            for (const it of items) {
+              const lowerKeys = (Object.keys(it || {}).join(" ") || "").toLowerCase();
+              const typeHint =
+                String(it.type ?? it.module ?? it.resource ?? it.module ?? "").toLowerCase() ||
+                "";
+
+              const looksLikeRoadmap =
+                typeHint.includes("roadmap") ||
+                lowerKeys.includes("roadmap") ||
+                "roadMapDetails" in (it?.metadata ?? it) ||
+                "roadmaps" in (it || {}) ||
+                !!(it.roadmapId ?? it._id ?? it.id) && (it.title || it.name || it.phase);
+
+              const looksLikeInterest =
+                typeHint.includes("interest") ||
+                lowerKeys.includes("interest") ||
+                "firstName" in (it || {}) ||
+                "churchDetails" in (it || {}) ||
+                it.email ||
+                it.phoneNumber ||
+                (it.metadata && typeof it.metadata === "object" && ("title" in it.metadata || "conference" in it.metadata));
+
+              if (looksLikeRoadmap) {
+                roadmapsGroup.push(it);
+              } else if (looksLikeInterest) {
+                interestsGroup.push(it);
+              } else {
+                othersGroup.push(it);
+              }
+            }
+
+            // If we found others but no interests, append them to interests to avoid empty UI
+            if (interestsGroup.length === 0 && othersGroup.length > 0) {
+              interestsGroup.push(...othersGroup);
+            }
+          }
 
           if (requestId === activeRequestRef.current) {
-            setRoadmaps(Array.isArray(foundRoadmaps) ? foundRoadmaps : []);
-            setInterests(Array.isArray(foundInterests) ? foundInterests : []);
+            setRoadmaps(roadmapsGroup);
+            setInterests(interestsGroup);
           }
         } catch (err) {
           console.warn("Search error:", err);
@@ -157,8 +228,13 @@ export default function SearchScreen() {
                 <Text style={styles.sectionTitle}>{`Roadmaps (${roadmaps.length})`}</Text>
                 {roadmaps.map((r, idx) => {
                   const title = r.title ?? r.name ?? "Untitled Roadmap";
-                  const subtitle = r.roadMapDetails ?? r.description ?? r.phase ?? '';
-                  const status = r.status ?? r.state ?? null;
+                  const subtitle =
+                    r.description ??
+                    r.metadata?.roadMapDetails ??
+                    r.metadata?.roadMapDetails ??
+                    r.metadata?.roadmapDetails ??
+                    "";
+                  const status = r.metadata?.status ?? r.status ?? r.state ?? null;
                   return (
                     <Pressable
                       key={r.id ?? r._id ?? idx}
@@ -198,9 +274,14 @@ export default function SearchScreen() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>{`Interests (${interests.length})`}</Text>
                 {interests.map((it, idx) => {
-                  const title = it.name ?? it.title ?? "Interest";
-                  const subtitle = it.email ?? it.phoneNumber ?? it.role ?? '';
-                  const status = it.status ?? it.state ?? null;
+                  const title = it.title ?? it.name ?? "Interest";
+                  const subtitle =
+                    it.description ??
+                    it.metadata?.conference ??
+                    it.email ??
+                    it.metadata?.phoneNumber ??
+                    "";
+                  const status = it.metadata?.status ?? it.status ?? it.state ?? null;
                   return (
                     <Pressable
                       key={it.id ?? it._id ?? idx}
