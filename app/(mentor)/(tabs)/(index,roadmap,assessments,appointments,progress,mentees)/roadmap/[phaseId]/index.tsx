@@ -19,7 +19,7 @@ type StatusTabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
 type TabKey = StatusTabKey | string;
 
 export default function RoadmapDetail() {
-    const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
+    const { phaseId, menteeId, menteeName } = useLocalSearchParams<{ phaseId: string, menteeId?: string, menteeName?: string }>();
 
     // Fetch single roadmap
     const { data: roadmap, isLoading, error, refetch } = useRoadmap(phaseId);
@@ -346,7 +346,7 @@ export default function RoadmapDetail() {
                         return (
                             <Pressable
                                 key={task._id}
-                                onPress={() => router.push(`/(mentor)/roadmap/${phaseId}/${task._id}` as any)}
+                                onPress={() => router.push({pathname: `/(mentor)/roadmap/${phaseId}/${task._id}` as any, params: { menteeId: menteeId, menteeName: menteeName }})}
                             >
                                 <RoadmapCard data={cardData} />
                             </Pressable>

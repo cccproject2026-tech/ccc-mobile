@@ -2,7 +2,7 @@ import { Button, ScreenLayout } from "@/components/build-components";
 import TextAreaField from "@/components/build-components/text-area";
 import { primary_color } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { useReplyRoadmapQuery, useRoadmapQueries } from "@/hooks/roadmaps/useRoadmaps";
+import { useReplyRoadmapQuery, useRoadmapQueries, useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
 import { RoadmapQuery } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,10 +19,11 @@ import {
 } from "react-native";
 
 export default function QueriesScreen() {
-  const { data: dataParam, roadmapId, userId } = useLocalSearchParams<{
+  const { data: dataParam, roadmapId, userId,menteeName } = useLocalSearchParams<{
     data?: string;
     roadmapId?: string;
     userId?: string;
+    menteeName?: string;
   }>();
   const data = dataParam ? JSON.parse(dataParam as string) : null;
   
@@ -32,6 +33,7 @@ export default function QueriesScreen() {
   
   const { user } = useAuthStore();
   const replyQueryMutation = useReplyRoadmapQuery();
+  const { data: roadmap } = useRoadmap(finalRoadmapId);
   
   const { data: allQueries = [], isLoading } = useRoadmapQueries(
     finalRoadmapId,
@@ -233,15 +235,17 @@ export default function QueriesScreen() {
     );
   };
 
+  // const menteeName = data?.menteeName || "Mentee";
+
   return (
     <ScreenLayout
       enablePastorHeader={true}
       showNameTag={true}
-      tagName="John Doe"
+      tagName={menteeName}
       enableHeader={true}
       headerTitle="Queries"
-      headerSubTitle="John Doe > Jump-start"
-      showSettings={true}
+      headerSubTitle={`${menteeName}${roadmap?.name ? ` > ${roadmap.name}` : ""}`}
+      // showSettings={true}
       hideSearchBar={true}
       paddingX={0}
     >
@@ -288,7 +292,7 @@ const styles = StyleSheet.create({
   tabButton: {
     paddingHorizontal: 32,
     paddingVertical: 12,
-    borderRadius: 25,
+    borderRadius: 15,
     minWidth: 140,
     alignItems: "center",
     justifyContent: "center",
@@ -298,7 +302,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   inactiveTab: {
-    backgroundColor: "transparent",
+    backgroundColor: "#14517D",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.3)",
   },

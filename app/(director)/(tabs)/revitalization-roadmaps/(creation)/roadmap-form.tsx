@@ -225,6 +225,14 @@ export default function RoadmapFormScreen() {
                   date: sectionExtra.date ? new Date(sectionExtra.date) : new Date(),
                   parentSectionId: fieldId,
                 });
+              } else if (sectionExtra.type === "BUTTON") {
+                fields.push({
+                  id: nestedFieldId,
+                  type: "button",
+                  label: sectionExtra.name,
+                  linkUrl: sectionExtra.linkUrl || "" as string,
+                  parentSectionId: fieldId,
+                });
               }
             });
           }
@@ -236,6 +244,14 @@ export default function RoadmapFormScreen() {
             type: "textarea",
             label: extra.name,
             placeholder: "",
+          });
+          break;
+        case "BUTTON":
+          fields.push({
+            id: fieldId,
+            type: "button",
+            label: extra.name || "Action Button",
+            linkUrl: extra.linkUrl || "",
           });
           break;
       }
@@ -382,6 +398,12 @@ export default function RoadmapFormScreen() {
         buttonName: data.buttonName || "",
         scheduleMeeting: data.scheduleMeeting || false,
       };
+    } else if (type === "button") {
+      newField = {
+        ...newField,
+        label: data.name || "Action Button",
+        linkUrl: data.linkUrl || "",
+      };
     }
 
     setFormData((prev) => ({
@@ -441,6 +463,12 @@ export default function RoadmapFormScreen() {
       label: "Assessment",
       icon: "document-outline" as keyof typeof Ionicons.glyphMap,
       fieldType: "assessment" as FieldType,
+    },
+    {
+      id: "button",
+      label: "Action Button",
+      icon: "link-outline" as keyof typeof Ionicons.glyphMap,
+      fieldType: "button" as FieldType,
     },
   ];
 
@@ -604,6 +632,12 @@ export default function RoadmapFormScreen() {
                   ...(nestedField.placeholder && { placeHolder: nestedField.placeholder }),
                   ...(nestedField.buttonName && { buttonName: nestedField.buttonName }),
                 };
+              } else if (nestedField.type === "button") {
+                return {
+                  type: "BUTTON" as const,
+                  name: nestedField.label || nestedField.name || "Action Button",
+                  linkUrl: nestedField.linkUrl || "",
+                };
               }
               return null;
             }).filter(Boolean) as RoadmapExtra[];
@@ -614,6 +648,12 @@ export default function RoadmapFormScreen() {
               ...(field.buttonName && { buttonName: field.buttonName }),
               ...(sectionCheckboxes.length > 0 && { checkboxes: sectionCheckboxes }),
               ...(sectionFields.length > 0 && { sections: sectionFields }),
+            };
+          case "button":
+            return {
+              type: "BUTTON" as const,
+              name: field.label || field.name || "Action Button",
+              linkUrl: field.linkUrl || "",
             };
           default:
             return null;
@@ -815,7 +855,10 @@ export default function RoadmapFormScreen() {
         ...(editRoadmapData.extras && editRoadmapData.extras.length > 0 && { extras: editRoadmapData.extras as RoadmapExtra[] }),
         roadmaps: updatedRoadmaps,
       };
-
+console.log('-----------------------------------------------------------');
+console.log('updatedRoadmaps----->', updatedRoadmaps);
+console.log('updateData', updateData);
+console.log('-----------------------------------------------------------');
       updateRoadmapMutation.mutate(
         {
           roadmapId: parentRoadmapId,
@@ -953,6 +996,8 @@ export default function RoadmapFormScreen() {
           return "Assessment";
         case "section":
           return "Section";
+        case "button":
+          return "Action Button";
         default:
           return type;
       }
@@ -1143,6 +1188,21 @@ export default function RoadmapFormScreen() {
                   Add Field to Section
                 </Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        );
+      case "button":
+        return (
+          <View key={field.id} style={styles.customFieldItem}>
+            <FieldTypeLabel type="button" />
+            <View style={styles.fieldHeader}>
+              <Text style={styles.customFieldLabel}>{field.label}</Text>
+              <FieldActionButtons fieldId={field.id} />
+            </View>
+            <View style={styles.actionButtonPreview}>
+              <Text style={styles.actionButtonPreviewText}>
+                Link: {field.linkUrl || "No URL provided"}
+              </Text>
             </View>
           </View>
         );
@@ -1788,5 +1848,15 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.7)",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+  },
+  actionButtonPreview: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  actionButtonPreviewText: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 14,
   },
 });

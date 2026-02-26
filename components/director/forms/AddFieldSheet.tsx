@@ -29,7 +29,8 @@ export type FieldType =
   | "section"
   | "upload"
   | "datepicker"
-  | "assessment";
+  | "assessment"
+  | "button";
 
 export interface AddFieldSheetRef {
   present: () => void;
@@ -213,6 +214,25 @@ const AddFieldSheet = forwardRef<AddFieldSheetRef, AddFieldSheetProps>(
               },
             ],
           };
+        case "button":
+          return {
+            title: "Add Action Button",
+            snapPoint: "50%",
+            fields: [
+              {
+                key: "name",
+                label: "Button Label",
+                placeholder: "Enter Button Label",
+                type: "input",
+              },
+              {
+                key: "linkUrl",
+                label: "Link URL",
+                placeholder: "Enter URL (e.g. https://...)",
+                type: "input",
+              },
+            ],
+          };
         default:
           return null;
       }
@@ -278,6 +298,8 @@ const AddFieldSheet = forwardRef<AddFieldSheetRef, AddFieldSheetProps>(
         isValid = !!formData.label?.trim();
       } else if (fieldType === "assessment") {
         isValid = !!formData.selectedAssessment;
+      } else if (fieldType === "button") {
+        isValid = !!formData.name?.trim() && !!formData.linkUrl?.trim();
       }
 
       if (isValid) {

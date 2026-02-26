@@ -1567,26 +1567,49 @@ export const AssessmentCard = ({
 export const ProgressCard = ({
   data,
   navigation,
+  menteeId,
+  menteeName,
 }: {
   data: any;
   navigation: any;
+  menteeId?: string;
+  menteeName?: string;
 }) => {
-  const progressPercentage =
-    (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%";
+  const progressPercentage = data?.taskStatus?.toComplete 
+    ? (data?.taskStatus?.inProgress / data.taskStatus.toComplete) * 100 + "%"
+    : "0%";
+  const pathname = usePathname();
+  const isMentorView = pathname.includes('(mentor)');
+
+  const handlePress = () => {
+    if (isMentorView) {
+      // Navigate to Mentor Detail Screen
+      navigation.push({
+        pathname: "/(mentor)/roadmap/[phaseId]/[itemId]",
+        params: { 
+          phaseId: data.roadMapId || data._id, 
+          itemId: data.itemId || data._id,
+          menteeId: menteeId,
+          menteeName: menteeName
+        },
+      });
+    } else {
+      // Standard Pastor logic
+      data.subPhase
+        ? navigation.push({
+          pathname: "/(pastor-tabs)/roadmap/sub-phases",
+          params: { data: JSON.stringify(data) },
+        })
+        : navigation.push({
+          pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
+          params: { data: JSON.stringify(data) },
+        });
+    }
+  };
 
   return (
     <TouchableOpacity
-      onPress={() =>
-        data.subPhase
-          ? navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/sub-phases",
-            params: { data: JSON.stringify(data) },
-          })
-          : navigation.push({
-            pathname: "/(pastor-tabs)/roadmap/detailed-roadmap",
-            params: { data: JSON.stringify(data) },
-          })
-      }
+      onPress={handlePress}
       style={{
         width: "100%",
         backgroundColor: "#194F82",

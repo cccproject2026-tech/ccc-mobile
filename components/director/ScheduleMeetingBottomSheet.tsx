@@ -91,7 +91,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
         const snapPoints = useMemo(() => {
             if (deviceType === 'small') return ['88%'];
             else if (deviceType === 'medium') return ['82%'];
-            return ['78%'];
+            return ['88%'];
         }, [deviceType]);
 
         // Get current user and their role
@@ -439,7 +439,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
             <>
                 <BottomSheetModal
                     ref={ref}
-                    snapPoints={snapPoints}
+                    snapPoints={['88%','95%']}
                     enablePanDownToClose={!disableOutsideClose}
                     backgroundComponent={() => null}
                     backdropComponent={renderBackdrop}
@@ -495,7 +495,7 @@ const ScheduleMeetingBottomSheet = forwardRef<BottomSheetModal, ScheduleMeetingB
                                         <BottomSheetFlatList
                                             data={filteredMentors}
                                             keyExtractor={(item:any) => item.id}
-                                            // contentContainerStyle={{ backgroundColor: 'red'}}
+                                            // contentContainerStyle={{ backgroundColor: 'red',maxHeight: Dimensions.get('window').height * 0.5}}
                                             renderItem={({ item: mentor }: { item: Mentor }) => (
                                                 <Pressable
                                                     key={mentor.id}

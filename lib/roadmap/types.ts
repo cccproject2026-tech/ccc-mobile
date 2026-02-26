@@ -251,6 +251,7 @@ export interface Extra {
     checkboxes?: ExtraCheckbox[];
     sections?: Extra[];
     assessmentId?: string;
+    linkUrl?: string;
 }
 
 export interface ExtraCheckbox {

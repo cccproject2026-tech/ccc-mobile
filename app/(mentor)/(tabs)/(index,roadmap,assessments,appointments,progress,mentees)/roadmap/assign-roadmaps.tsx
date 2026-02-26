@@ -52,15 +52,6 @@ const AssignRoadmaps = () => {
         }
     };
 
-    const renderFooter = () => {
-        if (!isFetchingNextPage) return null;
-        return (
-            <View style={styles.footerLoading}>
-                <ActivityIndicator size="small" color="#fff" />
-            </View>
-        );
-    };
-
     // Assign mutation
     const assignMutation = useAssignRoadmaps();
 
@@ -76,18 +67,24 @@ const AssignRoadmaps = () => {
         );
     }, [mentees, search]);
 
-    const handleToggleSelection = (menteeId: string) => {
-        // Prevent toggling if mentee is already assigned any of the selected roadmaps
-        const mentee = mentees.find(m => m.id === menteeId);
-        console.log("mentee:----->>>>>>>>>>>>>>", mentee);
-        console.log("selectedRoadmapIds:----->>>>>>>>>>>>>>", selectedRoadmapIds);
-        const isAlreadyAssigned = selectedRoadmapIds.some((rid: string) => 
-            mentee?.assignedRoadmapIds?.includes(rid)
+    const selectableMentees = useMemo(() => {
+        return filteredMentees.filter((m) =>
+            !selectedRoadmapIds.every((id: string) => m.assignedRoadmapIds?.includes(id))
         );
-        console.log("isAlreadyAssigned:----->>>>>>>>>>>>>>", isAlreadyAssigned);
-        
-        if (isAlreadyAssigned) return;
+    }, [filteredMentees, selectedRoadmapIds]);
 
+    const alreadyAssignedMentees = useMemo(() => {
+        return filteredMentees.filter((m) =>
+            selectedRoadmapIds.length > 0 &&
+            selectedRoadmapIds.every((id: string) => m.assignedRoadmapIds?.includes(id))
+        );
+    }, [filteredMentees, selectedRoadmapIds]);
+
+    const areAllSelectableSelected = useMemo(() => {
+        return selectableMentees.length > 0 && selectableMentees.every(m => selectedMentees.has(m.id));
+    }, [selectableMentees, selectedMentees]);
+
+    const handleToggleSelection = (menteeId: string) => {
         setSelectedMentees((prev) => {
             const newSet = new Set(prev);
             if (newSet.has(menteeId)) {
@@ -100,19 +97,17 @@ const AssignRoadmaps = () => {
     };
 
     const handleSelectAll = () => {
-        const assignableMentees = filteredMentees.filter(mentee => {
-            const isAlreadyAssigned = selectedRoadmapIds.some((rid: string) => 
-                mentee.assignedRoadmapIds?.includes(rid)
-            );
-            return !isAlreadyAssigned;
+        setSelectedMentees((prev) => {
+            const newSet = new Set(prev);
+            if (areAllSelectableSelected) {
+                // Deselect all visible selectable
+                selectableMentees.forEach((m) => newSet.delete(m.id));
+            } else {
+                // Select all visible selectable
+                selectableMentees.forEach((m) => newSet.add(m.id));
+            }
+            return newSet;
         });
-
-        if (selectedMentees.size === assignableMentees.length && assignableMentees.length > 0) {
-            setSelectedMentees(new Set());
-        } else {
-            const allIds = new Set(assignableMentees.map((m) => m.id));
-            setSelectedMentees(allIds);
-        }
     };
 
     const handleAssign = async () => {
@@ -164,6 +159,39 @@ const AssignRoadmaps = () => {
         return names.join(', ');
     }, [selectedMentees, mentees]);
 
+    const renderFooter = () => {
+        return (
+            <View>
+                 {isFetchingNextPage && (
+                    <View style={styles.footerLoading}>
+                        <ActivityIndicator size="small" color="#fff" />
+                    </View>
+                 )}
+                 {alreadyAssignedMentees.length > 0 && (
+                    <View style={styles.assignedSection}>
+                        <View style={styles.assignedSectionHeader}>
+                            <Ionicons name="checkmark-circle" size={16} color="rgba(255,255,255,0.5)" />
+                            <Text style={styles.assignedSectionTitle}>
+                                Already Assigned ({alreadyAssignedMentees.length})
+                            </Text>
+                        </View>
+                        {alreadyAssignedMentees.map((item) => (
+                            <View key={item.id} style={styles.assignedCard} pointerEvents="none">
+                                <MenteeCard
+                                    data={item}
+                                    layout="card"
+                                    isSelected={false}
+                                    disabled={true}
+                                    onToggleSelect={() => {}}
+                                />
+                            </View>
+                        ))}
+                    </View>
+                )}
+            </View>
+        );
+      };
+
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
             <View style={{ paddingBottom: 10 }}>
@@ -187,18 +215,9 @@ const AssignRoadmaps = () => {
             <View style={styles.selectAllContainer}>
                 <TouchableOpacity onPress={handleSelectAll}>
                     <Text style={styles.selectAllText}>
-                        {(() => {
-                            const assignableMentees = filteredMentees.filter(mentee => {
-                                const isAlreadyAssigned = selectedRoadmapIds.some((rid: string) => 
-                                    mentee.assignedRoadmapIds?.includes(rid)
-                                );
-                                return !isAlreadyAssigned;
-                            });
-                            
-                            return (selectedMentees.size === assignableMentees.length && assignableMentees.length > 0)
-                                ? 'Deselect All'
-                                : 'Select All';
-                        })()}
+                        {areAllSelectableSelected
+                            ? 'Deselect All'
+                            : 'Select All'}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -224,29 +243,29 @@ const AssignRoadmaps = () => {
                     </View>
                 ) : (
                     <FlatList
-                        data={filteredMentees}
-                        renderItem={({ item }) => {
-                            const isAlreadyAssigned = selectedRoadmapIds.some((rid: string) => 
-                                item.assignedId?.includes(rid)
-                            );
-                            return (
-                                <View style={styles.cardWrapper}>
-                                    <MenteeCard
-                                        data={item}
-                                        layout="card"
-                                        isSelected={selectedMentees.has(item.id) || isAlreadyAssigned}
-                                        disabled={isAlreadyAssigned}
-                                        onToggleSelect={() => handleToggleSelection(item.id)}
-                                    />
-                                </View>
-                            );
-                        }}
+                        data={selectableMentees}
+                        renderItem={({ item }) => (
+                            <View style={styles.cardWrapper}>
+                                <MenteeCard
+                                    data={item}
+                                    layout="card"
+                                    isSelected={selectedMentees.has(item.id)}
+                                    onToggleSelect={() => handleToggleSelection(item.id)}
+                                />
+                            </View>
+                        )}
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 120 }]}
                         showsVerticalScrollIndicator={false}
                         onEndReached={handleLoadMore}
                         onEndReachedThreshold={0.5}
                         ListFooterComponent={renderFooter}
+                        ListEmptyComponent={
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="checkmark-done-circle-outline" size={56} color="#fff" style={{ opacity: 0.5 }} />
+                                <Text style={styles.emptyText}>All mentees already have this roadmap assigned</Text>
+                            </View>
+                        }
                     />
                 )}
             </View>
@@ -407,5 +426,28 @@ const styles = StyleSheet.create({
     footerLoading: {
         paddingVertical: 20,
         alignItems: 'center',
+    },
+    assignedSection: {
+        marginTop: 8,
+    },
+    assignedSectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 4,
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.15)',
+        marginBottom: 4,
+    },
+    assignedSectionTitle: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: 'rgba(255,255,255,0.5)',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+    },
+    assignedCard: {
+        opacity: 0.45,
     },
 });
