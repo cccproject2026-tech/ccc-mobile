@@ -22,6 +22,7 @@ type Props = {
     onProfilePress?: () => void;
     role?: string;
     customTitle?: string;
+    showSearch?: boolean;
 };
 
 const TopBar: React.FC<Props> = ({
@@ -41,7 +42,9 @@ const TopBar: React.FC<Props> = ({
     const { top } = useSafeAreaInsets();
     const navigation = useNavigation();
     const router = useRouter();
-    const { user } = useAuthStore();
+    const { user, isAuthenticated } = useAuthStore();
+    // Always show search icon for authenticated users. Avoid referencing an undefined `showSearch`.
+    const showSearchIcon = !!isAuthenticated;
     const onMenuPress = () => navigation.dispatch(DrawerActions.openDrawer());
     const handleNotificationsPress = () => {
         if (role === 'director') {
@@ -114,6 +117,11 @@ const TopBar: React.FC<Props> = ({
             </View>
             {/* Right */}
             <View style={styles.rightIconBox}>
+                {showSearchIcon && (
+                    <Pressable onPress={() => router.push('/search')} hitSlop={10} style={{ marginRight: 8 }}>
+                        <Ionicons name="search" size={size - 6} color={color} />
+                    </Pressable>
+                )}
                 {showNotifications && (
                     <Pressable onPress={handleNotificationsPress} hitSlop={10} style={{ position: 'relative', marginRight: 7 }}>
                         <Ionicons name="notifications-outline" size={size - 10} color={color} />
