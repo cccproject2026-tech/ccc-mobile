@@ -17,17 +17,18 @@ export const progressKeys = {
 // ============================================
 // MAIN PROGRESS HOOK
 // ============================================
-export const useProgress = () => {
+export const useProgress = (userId?: string) => {
     const { user } = useAuthStore();
+    const targetUserId = userId || user?.id;
 
     return useQuery({
-        queryKey: progressKeys.user(user?.id || ''),
+        queryKey: progressKeys.user(targetUserId || ''),
         queryFn: async () => {
-            if (!user?.id) throw new Error("User ID is missing");
+            if (!targetUserId) throw new Error("User ID is missing");
 
-            console.log("📤 Fetching progress for user:", user.id);
+            console.log("📤 Fetching progress for user:", targetUserId);
 
-            const response = await progressService.getProgress(user.id);
+            const response = await progressService.getProgress(targetUserId);
 
             // Handle null data case (no progress record)
             if (!response.success || !response.data) {
@@ -72,7 +73,7 @@ export const useProgress = () => {
             console.log("📥 Progress data fetched:", progressData);
             return progressData;
         },
-        enabled: !!user?.id,
+        enabled: !!targetUserId,
         staleTime: 0,
         // gcTime: 1000 * 60 * 10, // 10 minutes cache retention
         retry: 1,
@@ -87,28 +88,29 @@ export const useProgress = () => {
 /**
  * Hook to get assigned roadmap IDs for the current user
  */
-export const useAssignedRoadmapIds = () => {
-    const { data, isLoading, isError, error } = useProgress();
+export const useAssignedRoadmapIds = (userId?: string) => {
+    const { data, isLoading, isError, error } = useProgress(userId);
 
-    const roadmapIds = data?.roadmaps.items.map(item => item.roadMapId) || [];
+    const roadmapIds = data?.roadmaps?.items?.map(item => item.roadMapId) || [];
 
     return {
         roadmapIds,
         isLoading,
         isError,
         error,
+        data,
     };
 };
 
 /**
  * Hook to get only roadmap progress
  */
-export const useRoadmapProgress = () => {
-    const { data, isLoading, isError, error } = useProgress();
+export const useRoadmapProgress = (userId?: string) => {
+    const { data, isLoading, isError, error } = useProgress(userId);
 
     return {
         data: data?.roadmaps,
-        overallProgress: data?.roadmaps.percentage ?? 0,
+        overallProgress: data?.roadmaps?.percentage ?? 0,
         isLoading,
         isError,
         error,
@@ -118,12 +120,12 @@ export const useRoadmapProgress = () => {
 /**
  * Hook to get only assessment progress
  */
-export const useAssessmentProgress = () => {
-    const { data, isLoading, isError, error } = useProgress();
-
+export const useAssessmentProgress = (userId?: string) => {
+    const { data, isLoading, isError, error } = useProgress(userId);
+    
     return {
         data: data?.assessments,
-        overallProgress: data?.assessments.percentage ?? 0,
+        overallProgress: data?.assessments?.percentage ?? 0,
         isLoading,
         isError,
         error,
@@ -133,8 +135,8 @@ export const useAssessmentProgress = () => {
 /**
  * Hook to get overall progress percentage
  */
-export const useOverallProgress = () => {
-    const { data, isLoading, isError, error } = useProgress();
+export const useOverallProgress = (userId?: string) => {
+    const { data, isLoading, isError, error } = useProgress(userId);
 
     return {
         progress: data?.overallProgress ?? 0,
@@ -147,10 +149,10 @@ export const useOverallProgress = () => {
 /**
  * Hook to get individual roadmap progress by ID
  */
-export const useRoadmapProgressById = (roadmapId: string) => {
-    const { data, isLoading, isError, error } = useProgress();
+export const useRoadmapProgressById = (roadmapId: string, userId?: string) => {
+    const { data, isLoading, isError, error } = useProgress(userId);
 
-    const roadmapProgress = data?.roadmaps.items.find(
+    const roadmapProgress = data?.roadmaps?.items?.find(
         (item) => item.roadMapId === roadmapId
     );
 
@@ -165,10 +167,10 @@ export const useRoadmapProgressById = (roadmapId: string) => {
 /**
  * Hook to get individual assessment progress by ID
  */
-export const useAssessmentProgressById = (assessmentId: string) => {
-    const { data, isLoading, isError, error } = useProgress();
+export const useAssessmentProgressById = (assessmentId: string, userId?: string) => {
+    const { data, isLoading, isError, error } = useProgress(userId);
 
-    const assessmentProgress = data?.assessments.items.find(
+    const assessmentProgress = data?.assessments?.items?.find(
         (item) => item.assessmentId === assessmentId
     );
 
@@ -183,8 +185,8 @@ export const useAssessmentProgressById = (assessmentId: string) => {
 /**
  * Hook to get nested roadmap progress by ID
  */
-export const useNestedRoadmapProgressById = (roadmapId: string, nestedRoadmapId: string) => {
-    const { data, isLoading, isError, error } = useProgress();
+export const useNestedRoadmapProgressById = (roadmapId: string, nestedRoadmapId: string, userId?: string) => {
+    const { data, isLoading, isError, error } = useProgress(userId);
 
     const roadmapProgress = data?.roadmaps.items.find(
         (item) => item.roadMapId === roadmapId

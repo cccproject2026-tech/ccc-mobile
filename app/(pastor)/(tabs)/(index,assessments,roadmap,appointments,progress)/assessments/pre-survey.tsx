@@ -74,6 +74,7 @@ export default function PreSurveyPage() {
                 assessmentId,
                 viewMode: 'false',
                 hasPreSurvey: 'false', // Pre-survey completed
+                scheduleMeeting: 'true'
             },
         });
     };

@@ -1,7 +1,7 @@
 import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import TopBar from '@/components/director/TopBar';
-import { DynamicFormTask } from '@/components/roadmaps/DynamicFormTask';
+import { MentorTaskView } from '@/components/roadmaps/MentorTaskView';
 import { useRoadmap, useRoadmapComments, useRoadmapQueries } from '@/hooks/roadmaps/useRoadmaps';
 import { getTasks } from '@/lib/roadmap/helpers';
 import { NestedRoadmap } from '@/lib/roadmap/types';
@@ -14,15 +14,23 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ItemDetail() {
-    const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string }>();
+    const { phaseId, itemId, menteeId, menteeName } = useLocalSearchParams<{ 
+        phaseId: string; 
+        itemId: string;
+        menteeId?: string;
+        menteeName?: string;
+    }>();
     const router = useRouter();
-    
-    // Fetch parent roadmap
-    const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
     const { user } = useAuthStore();
+    console.log('menteeId----->>>>>>>>>>>>>>', menteeId, menteeName);
+    // Use menteeId if available (mentor viewing mentee), otherwise fallback to current user
+    const targetUserId = menteeId || user?.id;
+console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
+    // Fetch parent roadmap
+    const { data: roadmap, isLoading, error } = useRoadmap(phaseId, targetUserId);
 
-    const { data: comments } = useRoadmapComments(phaseId, user?.id);
-    const { data: queries } = useRoadmapQueries(phaseId, user?.id);
+    const { data: comments } = useRoadmapComments(phaseId, targetUserId);
+    const { data: queries } = useRoadmapQueries(phaseId, targetUserId);
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -91,12 +99,22 @@ export default function ItemDetail() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    };
+
     // Loading state
     if (isLoading) {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="mentor" showUserName />
+                    <TopBar role="mentor" showUserName customTitle={menteeName} />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -111,7 +129,7 @@ export default function ItemDetail() {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="mentor" showUserName />
+                    <TopBar role="mentor" showUserName customTitle={menteeName} />
                 </View>
                 <View style={styles.notFoundContainer}>
                     <Ionicons name="alert-circle" size={48} color="#fff" />
@@ -132,7 +150,7 @@ export default function ItemDetail() {
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
             <View style={styles.topBarWrapper}>
-                <TopBar role="mentor" showUserName />
+                <TopBar role="mentor" showUserName customTitle={menteeName} />
             </View>
 
             {/* Header */}
@@ -156,42 +174,23 @@ export default function ItemDetail() {
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
-                            {roadmap.name}
+                            {task?.name}
                         </Text>
-                        {roadmap.roadMapDetails && (
-                            <Text
-                                style={{
-                                    marginTop: getSpacing(4),
-                                    fontSize: getFontSize(12),
-                                    color: 'rgba(255, 255, 255, 0.8)',
-                                }}
-                                numberOfLines={1}
-                                ellipsizeMode="tail"
-                            >
-                                {roadmap.roadMapDetails}
-                            </Text>
-                        )}
+                        <Text
+                            style={{
+                                marginTop: getSpacing(4),
+                                fontSize: getFontSize(12),
+                                color: 'rgba(255, 255, 255, 0.8)',
+                            }}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                        >
+                            My Mentee &gt; {menteeName} &gt; {roadmap?.name}
+                        </Text>
                     </View>
                 </View>
 
                 <View style={styles.headerRight}>
-                    {phaseNumber && (
-                        <View style={{
-                            backgroundColor: '#F7E35F',
-                            borderRadius: 10,
-                            paddingHorizontal: getSpacing(10),
-                            paddingVertical: getSpacing(2),
-                            marginRight: getSpacing(8),
-                        }}>
-                            <Text style={{
-                                color: '#1D1D1D',
-                                fontWeight: '700',
-                                fontSize: getFontSize(13),
-                            }}>
-                                Phase {phaseNumber}
-                            </Text>
-                        </View>
-                    )}
                     <TouchableOpacity
                         onPress={() => setShowOutcomeMenu(true)}
                         style={{ padding: getSpacing(4) }}
@@ -225,7 +224,7 @@ export default function ItemDetail() {
                     onPress={() =>
                         router.push({
                             pathname: '/(mentor)/roadmap/comments',
-                            params: { roadmapId: phaseId },
+                            params: { roadmapId: phaseId, userId: targetUserId },
                         } as any)
                     }
                     style={[
@@ -242,7 +241,7 @@ export default function ItemDetail() {
                     >
                         Comments
                     </Text>
-                    {comments && comments.comments.length > 0 && (
+                    {comments && comments.comments && comments.comments.length > 0 && (
                         <View
                             style={[
                                 styles.badge,
@@ -255,7 +254,7 @@ export default function ItemDetail() {
                                     activeTab === 'comments' ? styles.badgeTextActive : styles.badgeTextInactive,
                                 ]}
                             >
-                                {comments && comments.comments.length}
+                                {comments.comments.length}
                             </Text>
                         </View>
                     )}
@@ -265,7 +264,7 @@ export default function ItemDetail() {
                     onPress={() =>
                         router.push({
                             pathname: '/(mentor)/roadmap/queries',
-                            params: { taskId: task._id, roadmapId: phaseId },
+                            params: { taskId: task._id, roadmapId: phaseId, userId: targetUserId, menteeName: menteeName },
                         } as any)
                     }
                     style={[
@@ -295,7 +294,7 @@ export default function ItemDetail() {
                                     activeTab === 'queries' ? styles.badgeTextActive : styles.badgeTextInactive,
                                 ]}
                             >
-                                {queries && queries.length}
+                                {queries.length}
                             </Text>
                         </View>
                     )}
@@ -325,11 +324,25 @@ export default function ItemDetail() {
                     </View>
                 </View>
 
-                {/* Completion Time */}
+                {/* Completion Time / Status */}
                 <View style={styles.completionBox}>
-                    <Text style={styles.completionText}>
-                        Duration: {task.duration}
-                    </Text>
+                    {task.status === 'completed' ? (
+                        <View style={styles.completionContainer}>
+                            <Text style={styles.completionStatusText}>Completed</Text>
+                            <View style={styles.completionInfoColumn}>
+                                <Text style={styles.completionInfoText}>
+                                    Completed on : {formatDate(task.completedOn)}
+                                </Text>
+                                <Text style={styles.completionInfoText}>
+                                    Last Updated : {formatDate(roadmap.updatedAt)}
+                                </Text>
+                            </View>
+                        </View>
+                    ) : (
+                        <Text style={styles.completionText}>
+                            Completion Time Months: {task.duration}
+                        </Text>
+                    )}
                 </View>
 
                 {/* Roadmap Section */}
@@ -350,7 +363,7 @@ export default function ItemDetail() {
 
                 {/* Dynamic Form - Render extras */}
                 {task.extras && task.extras.length > 0 && (
-                    <DynamicFormTask task={task} phaseId={phaseId} itemId={itemId} />
+                    <MentorTaskView task={task} phaseId={phaseId} itemId={itemId} userId={menteeId} />
                 )}
             </ScrollView>
 
@@ -456,7 +469,7 @@ const styles = StyleSheet.create({
     },
     coverTitleOverlay: { position: 'absolute', bottom: 24, left: 0, paddingHorizontal: 24 },
     coverTitleBox: {
-        backgroundColor: 'rgba(50,50,80,0.7)',
+        backgroundColor: '#233C7896',
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 8,
@@ -471,13 +484,34 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: 50,
         borderBottomRightRadius: 50,
     },
+    completionContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    completionStatusText: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    completionInfoColumn: {
+        alignItems: 'flex-end',
+    },
+    completionInfoText: {
+        fontSize: 12,
+        fontWeight: '400',
+        color: '#FFFFFF',
+        marginTop: 2,
+    },
     completionText: { fontSize: 16, fontWeight: '400', color: '#FFFFFF', textAlign: 'right' },
     sectionTitle: { paddingHorizontal: 4, marginTop: 24, marginBottom: 12, fontSize: 20, fontWeight: '600', color: '#FFFFFF' },
     sectionBox: {
         padding: 20,
         marginBottom: 24,
         borderRadius: 16,
-        backgroundColor: 'rgba(64,156,186,0.5)',
+        borderWidth: .5,
+        borderColor: '#FFFFFF',
+        // backgroundColor: 'rgba(64,156,186,0.5)',
     },
     sectionText: { fontSize: 16, lineHeight: 22, color: '#FFFFFF' },
 });

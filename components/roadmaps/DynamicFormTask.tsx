@@ -1095,6 +1095,7 @@ import {
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
+import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
 import { Extra, NestedRoadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
@@ -1102,6 +1103,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
 import { JSX, useEffect, useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import {
     ActivityIndicator,
     Alert,
@@ -1111,6 +1113,7 @@ import {
     StyleSheet,
     Text,
     TextInput,
+    TouchableOpacity,
     View,
 } from "react-native";
 
@@ -1118,22 +1121,35 @@ interface Props {
     task: NestedRoadmap;
     phaseId?: string;
     itemId?: string;
+    userId?: string; // Add optional userId for mentor view
 }
 
-export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
+export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Props) {
     const router = useRouter();
-    const { user } = useAuthStore();
+    const { user: currentUser } = useAuthStore();
+    
+    // Determine target user and if we are in read-only (mentor) mode
+    const targetUserId = userId || currentUser?.id;
+    const isMentorView = !!userId && userId !== currentUser?.id;
+    
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, any[]>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const isValidObjectId = (id: string | undefined) => !!id;
 
+    const ensureUrlScheme = (url: string) => {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return `https://${url}`;
+        }
+        return url;
+    };
+
     /** Load existing extras from API */
     const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } = useRoadmapExtras(
         isValidObjectId(roadmapId) ? roadmapId : undefined,
         isValidObjectId(itemId) ? itemId : undefined,
-        isValidObjectId(user?.id) ? user?.id : undefined
+        isValidObjectId(targetUserId) ? targetUserId : undefined
     );
 
     const createExtras = useCreateRoadmapExtras();
@@ -1141,17 +1157,13 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
     const uploadDocument = useUploadRoadmapDocument();
     const deleteDocument = useDeleteRoadmapDocument();
 
+    const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
+    console.log('assessmentProgress', assessmentProgress);
     const isUpdateMode = !!existingExtras;
 
     /** Initialise formData from API or default dates */
     useEffect(() => {
-        // if (isFetchingExtras) return; // Removed to allow updates even if fetching in background
-
-        console.log("----------------------------------------------")
-        console.log("----------------------------------------------")
-        console.log('existingExtras', existingExtras);
-        console.log("----------------------------------------------")
-        console.log("----------------------------------------------")
+        // if (isFetchingExtras) return;
 
         const init: Record<string, any> = {};
         
@@ -1202,7 +1214,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
             Alert.alert("No Data", "Please fill in at least one field before saving progress");
             return;
         }
-        if (!user?.id) {
+        if (!currentUser?.id) {
             Alert.alert("Error", "User not authenticated");
             return;
         }
@@ -1222,12 +1234,12 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 await updateExtras.mutateAsync({
                     roadMapId: roadmapId!,
                     payload: { extras: extrasArray },
-                    userId: user.id,
+                    userId: currentUser.id,
                     nestedRoadMapItemId: itemId,
                 });
             } else {
                 await createExtras.mutateAsync({
-                    userId: user.id,
+                    userId: currentUser.id,
                     roadMapId: roadmapId!,
                     nestedRoadMapItemId: itemId,
                     extras: extrasArray,
@@ -1239,7 +1251,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 for (const file of files) {
                     await uploadDocument.mutateAsync({
                         roadMapId: roadmapId!,
-                        userId: user.id,
+                        userId: currentUser.id,
                         nestedRoadMapItemId: itemId!,
                         extraName,
                         file,
@@ -1260,25 +1272,13 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
 
     /** ───────────────────── UPLOAD FIELD ───────────────────── */
 
-    const UploadField = ({ extraName, isEditable = true, initialFiles = [] }: { extraName: string, isEditable?: boolean, initialFiles?: any[] }) => {
+    const UploadField = ({ extraName, isEditable = true }: { extraName: string, isEditable?: boolean }) => {
         const { data: docs = [], isLoading } = useRoadmapDocuments(
             roadmapId!,
             itemId!,
-            user!.id,
+            targetUserId!,
             extraName
         );
-
-        // Combine initial files from extras with files from documents endpoint
-        // Use a Map to deduplicate based on file URL or ID
-        const allFiles = [...initialFiles, ...docs].reduce((acc, current) => {
-            const key = current._id || current.id || current.fileUrl;
-            if (!acc.has(key)) {
-                acc.set(key, current);
-            }
-            return acc;
-        }, new Map()).values();
-        
-        const uniqueDocs = Array.from(allFiles);
 
         // Heuristic: treat as media upload if name hints at image/video/media
         const isMediaUpload =
@@ -1287,8 +1287,10 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
             extraName.toLowerCase().includes("photo") ||
             extraName.toLowerCase().includes("media");
 
+        const fieldEditable = isEditable && !isMentorView;
+
         const confirmDelete = (doc: any) => {
-            if (!isEditable) return;
+            if (!fieldEditable) return;
             Alert.alert(
                 "Delete Document",
                 `Are you sure you want to delete "${decodeURIComponent(doc.fileName)}"?`,
@@ -1300,7 +1302,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         onPress: () => {
                             deleteDocument.mutate({
                                 roadMapId: roadmapId!,
-                                userId: user!.id,
+                                userId: targetUserId!,
                                 nestedId: itemId!,
                                 fileUrl: doc.fileUrl,
                                 uploadBatchId: doc.uploadBatchId,
@@ -1318,7 +1320,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
         };
 
         const pickFile = async () => {
-            if (!isEditable) return;
+            if (!fieldEditable) return;
             const res = await DocumentPicker.getDocumentAsync({
                 type: "*/*",
                 multiple: true, // ✅ support multiple like old version
@@ -1343,7 +1345,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
         };
 
         const deletePendingLocal = (fileId: string) => {
-            if (!isEditable) return;
+            if (!fieldEditable) return;
             setPendingFiles(prev => {
                 const updated = prev[extraName]?.filter(f => f.id !== fileId) || [];
                 
@@ -1377,12 +1379,12 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 {isLoading ? (
                     <ActivityIndicator color="#fff" style={{ marginTop: 8 }} />
                 ) : (
-                    uniqueDocs.length > 0 && (
+                    hasServerFiles && (
                         <View style={[styles.uploadedFilesContainer]}>
 
                             {/* Only for NON-media uploads */}
                             {!isMediaUpload && (
-                                <Text style={styles.uploadedFilesLabel}>You Uploaded :</Text>
+                                <Text style={styles.uploadedFilesLabel}>Uploaded :</Text>
                             )}
 
                             {/* --- MEDIA UPLOAD FIELD: Show ONE "View Shared Media" --- */}
@@ -1396,6 +1398,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                                 extraName: extraName,
                                                 roadMapId: roadmapId!,
                                                 nestedId: itemId,
+                                                userId: targetUserId, // Pass targetUserId
                                             },
                                         })
                                     }
@@ -1412,8 +1415,8 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                 </Pressable>
                             ) : (
                                 /* --- NORMAL FILES: Show each file --- */
-                                uniqueDocs.map((doc: any) => (
-                                    <View key={doc._id || doc.id} style={styles.fileRow}>
+                                docs.map((doc: any) => (
+                                    <View key={doc._id} style={styles.fileRow}>
                                         <Pressable
                                             onPress={() => Linking.openURL(doc.fileUrl)}
                                             style={{ flex: 1 }}
@@ -1428,9 +1431,9 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                             <Pressable
                                                 onPress={() => confirmDelete(doc)}
                                                 style={styles.removeIconWrapper}
-                                                disabled={!isEditable}
+                                                disabled={!fieldEditable}
                                             >
-                                                <Ionicons name="trash" size={20} color={isEditable ? "#ef4444" : "#999"} />
+                                                <Ionicons name="trash" size={20} color={fieldEditable ? "#ef4444" : "#999"} />
                                             </Pressable>
                                         )}
                                     </View>
@@ -1449,25 +1452,45 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         >
                             <Text style={{ color: "white", flex: 1 }}>• {f.name} (pending)</Text>
 
-                            <Pressable onPress={() => deletePendingLocal(f.id)} disabled={!isEditable}>
-                                <Ionicons name="close-circle" size={20} color={isEditable ? "#ef4444" : "#999"} />
+                            <Pressable onPress={() => deletePendingLocal(f.id)} disabled={!fieldEditable}>
+                                <Ionicons name="close-circle" size={20} color={fieldEditable ? "#ef4444" : "#999"} />
                             </Pressable>
                         </View>
                     ))}
 
-                {/* Upload button */}
-                <Pressable
-                    style={[
-                        styles.uploadButton, 
-                        styles.uploadButtonWhite,
-                        !isEditable && { opacity: 0.6 }
-                    ]}
-                    onPress={pickFile}
-                    disabled={!isEditable}
-                >
-                    <Ionicons name="attach" size={22} color={isEditable ? "#2563eb" : "#999"} />
-                    <Text style={[styles.uploadButtonText, !isEditable && { color: "#999" }]}>{buttonText}</Text>
-                </Pressable>
+                {/* Upload / Download button */}
+                {(!isMentorView || hasServerFiles) && (
+                    <Pressable
+                        style={[
+                            styles.uploadButton, 
+                            styles.uploadButtonWhite,
+                            (!isMentorView && !fieldEditable) && { opacity: 0.6 }
+                        ]}
+                        onPress={() => {
+                            if (isMentorView) {
+                                if (docs.length > 0) {
+                                    Linking.openURL(docs[0].fileUrl).catch(err => 
+                                        Alert.alert("Error", "Could not open document: " + err.message)
+                                    );
+                                } else {
+                                    Alert.alert("No Files", "There are no files uploaded yet.");
+                                }
+                            } else {
+                                pickFile();
+                            }
+                        }}
+                        disabled={!isMentorView && !fieldEditable}
+                    >
+                        <Ionicons 
+                            name={isMentorView ? "download-outline" : "attach"} 
+                            size={22} 
+                            color={(!isMentorView && !fieldEditable) ? "#999" : "#2563eb"} 
+                        />
+                        <Text style={[styles.uploadButtonText, (!isMentorView && !fieldEditable) && { color: "#999" }]}>
+                            {isMentorView ? `Download ${extraName}` : buttonText}
+                        </Text>
+                    </Pressable>
+                )}
             </View>
 
         );
@@ -1480,24 +1503,9 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
 
         switch (extra.type) {
             case "UPLOAD":
-                // Prepare initial files from existingExtras
-                const initialDocs = existingExtras?.uploadedDocuments
-                    ?.filter((batch: any) => batch.name === extra.name)
-                    ?.flatMap((batch: any) => 
-                        batch.files.map((f: any) => ({
-                            ...f,
-                            extraName: batch.name,
-                            uploadBatchId: batch.uploadBatchId
-                        }))
-                    ) || [];
-
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <UploadField 
-                            extraName={extra.name} 
-                            isEditable={(extra as any).editable !== false}
-                            initialFiles={initialDocs}
-                        />
+                        <UploadField extraName={extra.name} isEditable={(extra as any).editable !== false} />
                     </View>
                 );
 
@@ -1506,11 +1514,12 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                     <View key={id} style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>{extra.name}</Text>
                         <TextInput
-                            style={styles.textInput}
+                            style={[styles.textInput, isMentorView && styles.textInputDisabled]}
                             placeholder={extra.placeHolder}
                             placeholderTextColor="#9cc2ff"
                             value={formData[extra.name] || ""}
                             onChangeText={v => handleChange(extra.name, v)}
+                            editable={!isMentorView}
                         />
                     </View>
                 );
@@ -1520,13 +1529,14 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                     <View key={id} style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>{extra.name}</Text>
                         <TextInput
-                            style={[styles.textInput, styles.textArea]}
+                            style={[styles.textInput, styles.textArea, isMentorView && styles.textInputDisabled]}
                             placeholder={extra.placeHolder}
                             placeholderTextColor="#9cc2ff"
                             multiline
                             numberOfLines={4}
                             value={formData[extra.name] || ""}
                             onChangeText={v => handleChange(extra.name, v)}
+                            editable={!isMentorView}
                         />
                     </View>
                 );
@@ -1539,17 +1549,20 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                 );
 
             case "CHECKBOX":
+                const checkboxEditable = !isMentorView;
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         {/* Parent checkbox */}
                         <Pressable
-                            onPress={() => handleChange(extra.name, !formData[extra.name])}
+                            onPress={() => checkboxEditable && handleChange(extra.name, !formData[extra.name])}
                             style={styles.checkboxRow}
+                            disabled={!checkboxEditable}
                         >
                             <View
                                 style={[
                                     styles.checkbox,
                                     formData[extra.name] && styles.checkboxChecked,
+                                    !checkboxEditable && styles.checkboxDisabled,
                                 ]}
                             >
                                 {formData[extra.name] && (
@@ -1570,14 +1583,16 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                         <View key={cbId} style={{ marginBottom: 6 }}>
                                             <Pressable
                                                 onPress={() =>
-                                                    handleChange(cbId, !isChecked)
+                                                    checkboxEditable && handleChange(cbId, !isChecked)
                                                 }
                                                 style={styles.checkboxRow}
+                                                disabled={!checkboxEditable}
                                             >
                                                 <View
                                                     style={[
                                                         styles.checkbox,
                                                         isChecked && styles.checkboxChecked,
+                                                        !checkboxEditable && styles.checkboxDisabled,
                                                     ]}
                                                 >
                                                     {isChecked && (
@@ -1592,7 +1607,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                             </Pressable>
 
                                             {checkbox.haveButton &&
-                                                checkbox.buttonName && (
+                                                checkbox.buttonName && !isMentorView && (
                                                     <Pressable
                                                         style={styles.button}
                                                         onPress={() =>
@@ -1614,7 +1629,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         )}
 
                         {/* Optional button on main checkbox */}
-                        {extra.haveButton && extra.buttonName && (
+                        {extra.haveButton && extra.buttonName && !isMentorView && (
                             <Pressable
                                 style={[styles.button, { marginTop: 8 }]}
                                 onPress={() =>
@@ -1631,7 +1646,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
 
             case "DATE_PICKER":
                 // ✅ Check if pastor is allowed to edit the date
-                const isEditable = extra.checkboxes?.some(cb => cb.name === 'Allow pastor to select Date') ?? true;
+                const isDateEditable = (extra.checkboxes?.some(cb => cb.name === 'Allow pastor to select Date') ?? true) && !isMentorView;
 
                 return (
                     <View key={id} style={styles.fieldContainer}>
@@ -1643,7 +1658,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                             </Text>
                             <View style={[
                                 styles.dateInputContainer,
-                                !isEditable && styles.dateInputDisabled
+                                !isDateEditable && styles.dateInputDisabled
                             ]}>
                                 <TextInput
                                     style={styles.dateInput}
@@ -1652,9 +1667,9 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                     value={formData[extra.name] !== undefined ? formData[extra.name] : (extra.date || "")}
                                     keyboardType="number-pad"
                                     maxLength={12}
-                                    editable={isEditable}
+                                    editable={isDateEditable}
                                     onChangeText={v => {
-                                        if (!isEditable) return;
+                                        if (!isDateEditable) return;
                                         
                                         // Remove all non-digits
                                         const raw = v.replace(/\D/g, "");
@@ -1690,19 +1705,22 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                     .map((checkbox, cbIndex) => {
                                     const cbId = `${extra.name}-cb-${checkbox.name}`;
                                     const checked = !!formData[cbId];
+                                    const checkboxEnabled = !isMentorView;
 
                                     return (
                                         <View key={cbId} style={{ marginBottom: 6 }}>
                                             <Pressable
                                                 onPress={() =>
-                                                    handleChange(cbId, !checked)
+                                                    checkboxEnabled && handleChange(cbId, !checked)
                                                 }
                                                 style={styles.checkboxRow}
+                                                disabled={!checkboxEnabled}
                                             >
                                                 <View
                                                     style={[
                                                         styles.checkbox,
                                                         checked && styles.checkboxChecked,
+                                                        !checkboxEnabled && styles.checkboxDisabled,
                                                     ]}
                                                 >
                                                     {checked && (
@@ -1717,7 +1735,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                             </Pressable>
 
                                             {checkbox.haveButton &&
-                                                checkbox.buttonName && (
+                                                checkbox.buttonName && !isMentorView && (
                                                     <Pressable
                                                         style={styles.button}
                                                         onPress={() =>
@@ -1739,7 +1757,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                         )}
 
                         {/* Optional button under date picker */}
-                        {extra.buttonName && (
+                        {extra.buttonName && !isMentorView && (
                             <Pressable
                                 style={[styles.button, { marginTop: 8 }]}
                                 onPress={() =>
@@ -1829,14 +1847,122 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                     <View key={id} style={styles.fieldContainer}>
                         <Pressable
                             style={styles.button}
-                            onPress={() => console.log("Button pressed:", extra.name)}
+                            onPress={() => {
+                                if (extra.linkUrl) {
+                                    const fullUrl = ensureUrlScheme(extra.linkUrl);
+                                    Linking.openURL(fullUrl).catch(err =>
+                                        Alert.alert("Error", "Could not open link: " + fullUrl)
+                                    );
+                                } else {
+                                    console.log("Button pressed, but no linkUrl:", extra.name);
+                                }
+                            }}
                         >
-                            <Text style={styles.buttonText}>{extra.name}</Text>
+                            <Text style={styles.buttonText}>{extra.name || "Action Button"}</Text>
                         </Pressable>
                     </View>
                 );
 
             case "ASSESSMENT":
+                const isSpecificAssessmentCompleted = assessmentProgress?.items?.some(
+                    (item: any) => item.assessmentId === extra.assessmentId && item.status === 'completed'
+                );
+                console.log('isSpecificAssessmentCompleted',extra.assessmentId, isSpecificAssessmentCompleted);
+                console.log('assessmentProgress', assessmentProgress?.items);
+
+                if (isSpecificAssessmentCompleted) {
+                    return (
+                        <View key={id} style={styles.fieldContainer}>
+                            {/* {scheduledMeeting ? (
+                                <LinearGradient
+                                    colors={['#B83AF3', '#21B6E9']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.meetingBanner}
+                                >
+                                    <View style={styles.bannerContent}>
+                                        <View style={styles.bannerIconContainer}>
+                                            <Ionicons name="calendar-outline" size={20} color="#fff" />
+                                        </View>
+                                        <Text style={styles.bannerText}>
+                                            Meeting Scheduled on {formatDate(scheduledMeeting.meetingDate)}
+                                        </Text>
+                                        <TouchableOpacity onPress={() => {
+                                            // Handle meeting options if needed
+                                        }}>
+                                            <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </LinearGradient>
+                            ) : (
+                                <TouchableOpacity 
+                                    style={[styles.button, { backgroundColor: '#223A74', marginBottom: 16 }]}
+                                    onPress={() => {
+                                        const hasScheduleMeeting = extra.checkboxes?.some(
+                                            cb => cb.name === 'Schedule Meeting after the Assessment'
+                                        );
+                                        router.push({
+                                            pathname: "/assessments/answer-questions",
+                                            params: {
+                                                assessmentId: extra.assessmentId,
+                                                hasPreSurvey: "false",
+                                                scheduleMeeting: hasScheduleMeeting ? "true" : "false"
+                                            }
+                                        });
+                                    }}
+                                >
+                                    <Text style={[styles.buttonText, { color: '#fff' }]}>Schedule Meeting</Text>
+                                </TouchableOpacity>
+                            )} */}
+
+                            <TouchableOpacity
+                                style={styles.centeredLinkButton}
+                                onPress={() => {
+                                    router.push({
+                                        pathname: "/assessments/answer-questions",
+                                        params: {
+                                            assessmentId: extra.assessmentId,
+                                            viewMode: "true",
+                                            hasPreSurvey: "false"
+                                        }
+                                    });
+                                }}
+                            >
+                                <Text style={styles.centeredLinkText}>View your Survey Results</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.button, { marginTop: 8 }]}
+                                onPress={() => {
+                                    Alert.alert(
+                                        "Repeat Survey",
+                                        `Are you sure you want to repeat this ${extra.name} survey? Your previous answers will be kept as a record.`,
+                                        [
+                                            { text: "Cancel", style: "cancel" },
+                                            {
+                                                text: "Repeat",
+                                                onPress: () => {
+                                                    router.push({
+                                                        pathname: "/assessments/answer-questions",
+                                                        params: {
+                                                            assessmentId: extra.assessmentId,
+                                                            hasPreSurvey: "true"
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        ]
+                                    );
+                                }}
+                            >
+                                <Text style={styles.buttonText}>
+                                    Repeat {extra.name} Survey
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    );
+                }
+
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         <View style={styles.assessmentButton}>
@@ -1855,11 +1981,15 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
                                 console.log("----------------------------------------------")
                                 console.log("----------------------------------------------")
                                 if (extra.assessmentId) {
+                                    const hasScheduleMeeting = extra.checkboxes?.some(
+                                        cb => cb.name === 'Schedule Meeting after the Assessment'
+                                    );
                                     router.push({
                                         pathname: "/assessments/answer-questions",
                                         params: {
                                             assessmentId: extra.assessmentId,
-                                            hasPreSurvey: "true"
+                                            hasPreSurvey: "true",
+                                            scheduleMeeting: hasScheduleMeeting ? "true" : "false"
                                         }
                                     });
                                 } else {
@@ -1892,8 +2022,22 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
 
     if (!task.extras || task.extras.length === 0) return null;
 
+    const hasOnlyAssessments = task.extras.every((extra: any) => extra.type === 'ASSESSMENT');
+
     const isSaving =
         createExtras.isPending || updateExtras.isPending || uploadDocument.isPending;
+
+    const scheduledMeeting = task.meetings?.find(m => m.status !== 'cancelled');
+    const isTaskCompleted = task.status === 'completed';
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear().toString().slice(-2);
+        return `${day} ${month} ${year}`;
+    };
 
     if (isLoadingExtras || (isFetchingExtras && Object.keys(formData).length === 0)) {
         return (
@@ -1909,24 +2053,33 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId }: Props) {
     return (
         <>
             <ScrollView style={styles.container}>
+                {isTaskCompleted && (
+                    <View style={styles.completedBanner}>
+                        <Text style={styles.completedLabel}>Task Completed</Text>
+                        <Ionicons name="checkmark-circle" size={24} color="#34d399" />
+                    </View>
+                )}
+
                 {task.extras.map((extra, index) => renderExtra(extra, index))}
 
-                <Pressable
-                    style={[
-                        styles.signButton,
-                        isSaving && styles.signButtonDisabled,
-                    ]}
-                    onPress={handleSubmit}
-                    disabled={isSaving}
-                >
-                    {isSaving ? (
-                        <ActivityIndicator color="#1e40af" />
-                    ) : (
-                        <Text style={styles.signButtonText}>
-                            {isUpdateMode ? "Update Progress" : "Save Progress"}
-                        </Text>
-                    )}
-                </Pressable>
+                {!isMentorView && !hasOnlyAssessments && (
+                    <Pressable
+                        style={[
+                            styles.signButton,
+                            isSaving && styles.signButtonDisabled,
+                        ]}
+                        onPress={handleSubmit}
+                        disabled={isSaving}
+                    >
+                        {isSaving ? (
+                            <ActivityIndicator color="#1e40af" />
+                        ) : (
+                            <Text style={styles.signButtonText}>
+                                {isUpdateMode ? "Update Progress" : "Save Progress"}
+                            </Text>
+                        )}
+                    </Pressable>
+                )}
             </ScrollView>
 
             <SimpleSuccessModal
@@ -2124,6 +2277,16 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         textDecorationLine: 'underline',
     },
+    centeredLinkButton: {
+        paddingVertical: 16,
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    centeredLinkText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        textDecorationLine: 'underline',
+    },
     textDisplay: {
         paddingVertical: 16,
         paddingHorizontal: 20,
@@ -2203,5 +2366,63 @@ const styles = StyleSheet.create({
     },
     buttonDisabled: {
         opacity: 0.5,
+    },
+    meetingBanner: {
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
+    },
+    bannerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    bannerIconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    bannerIconText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    bannerText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '600',
+        flex: 1,
+    },
+    checkboxDisabled: {
+        opacity: 0.6,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    textInputDisabled: {
+        opacity: 0.8,
+        color: '#ccc',
+    },
+    completedBanner: {
+        backgroundColor: 'rgba(52, 211, 153, 0.2)',
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        marginBottom: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderWidth: 1,
+        borderColor: '#34d399',
+    },
+    completedLabel: {
+        color: '#34d399',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    completedDate: {
+        color: 'white',
+        fontSize: 14,
     },
 });

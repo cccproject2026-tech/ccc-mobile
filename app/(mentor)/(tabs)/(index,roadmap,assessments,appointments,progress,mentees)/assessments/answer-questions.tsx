@@ -27,38 +27,42 @@ import {
 } from 'react-native';
 
 export default function AnswerQuestionPage() {
-    const { assessmentId, viewMode, hasPreSurvey, scheduleMeeting } = useLocalSearchParams();
-    console.log('assessmentId', assessmentId, viewMode, hasPreSurvey, scheduleMeeting);
+    const { assessmentId, viewMode, hasPreSurvey, scheduleMeeting, targetUserId } = useLocalSearchParams();
+    console.log('assessmentId', assessmentId, viewMode, hasPreSurvey, scheduleMeeting, targetUserId);
     const router = useRouter();
-    // hasPreSurvey = false;
     const { user } = useAuthStore();
-    // console.log('assessmentId',typeof hasPreSurvey, hasPreSurvey);
+    
+    // Determine the user ID to fetch answers for: passed targetUserId (mentee) or current user (if fallback)
+    // For mentor view, targetUserId should be provided.
+    const userIdToFetch = (targetUserId as string) || user?.id;
+
     // Fetch assessment data from API
     const { data, isLoading, error } = useAssessment(assessmentId as string);
     const assessment = useMemo(() => {
         if (!data) return null;
         return mapApiToFrontend(data as ApiAssessment);
-    }, [data]);
+    }, [data,isLoading]);
 
     const isViewMode = viewMode === 'true';
     const shouldScheduleMeeting = scheduleMeeting === 'true';
-console.log('isViewMode', isViewMode, shouldScheduleMeeting);
+    console.log('isViewMode', isViewMode, shouldScheduleMeeting);
+    
     // ONLY fetch submitted answers in VIEW MODE (not for regular editing)
     const {
         data: submittedAnswers,
         isLoading: isLoadingSubmitted
     } = useFetchAnswers(
         assessmentId as string,
-        user?.id,
+        userIdToFetch,
         isViewMode
     );
-    // console.log('submittedAnswers', data);
+
     // Get draft from store
     const getDraft = useAssessmentStore((state) => state.getDraft);
     const setDraft = useAssessmentStore((state) => state.saveDraft);
     const previousResponse = getDraft(assessmentId as string);
 
-    // Submission hooks
+    // Submission hooks - not used in view mode mostly
     const submitPreSurvey = useSubmitPreSurvey();
     const submitAssessmentAnswers = useSubmitAssessmentAnswers();
 
@@ -68,7 +72,7 @@ console.log('isViewMode', isViewMode, shouldScheduleMeeting);
 
     // Load submitted answers into store (ONLY for view mode)
     useEffect(() => {
-        if (isViewMode && submittedAnswers && assessment && data && user?.id) {
+        if (isViewMode && submittedAnswers && assessment && data && userIdToFetch) {
             const transformed = transformSubmittedAnswersToStore(
                 submittedAnswers,
                 assessment,
@@ -85,9 +89,9 @@ console.log('isViewMode', isViewMode, shouldScheduleMeeting);
                 currentSectionIndex: 0,
             });
         }
-    }, [isViewMode, submittedAnswers, assessment, data, assessmentId, user?.id, setDraft,isLoadingSubmitted]);
+    }, [isViewMode, submittedAnswers, assessment, data, assessmentId, userIdToFetch, setDraft, isLoadingSubmitted]);
 
-    // Track if pre-survey is completed - SIMPLE logic like before
+    // Track if pre-survey is completed
     const [preSurveyCompleted, setPreSurveyCompleted] = useState(
         hasPreSurvey !== 'true' || !!previousResponse?.preSurveyAnswers
     );
@@ -101,15 +105,6 @@ console.log('isViewMode', isViewMode, shouldScheduleMeeting);
         ? !!submittedAnswers?.preSurveyAnswers
         : !!previousResponse?.preSurveyAnswers &&
         Object.keys(previousResponse.preSurveyAnswers).length > 0;
-
-    // const mockMentors: Mentor[] = [
-    //     { id: '1', name: 'John Ross', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/1.jpg' },
-    //     { id: '2', name: 'Sarah Johnson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/women/2.jpg' },
-    //     { id: '3', name: 'Michael Chen', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/3.jpg' },
-    //     { id: '4', name: 'Emily Davis', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/women/4.jpg' },
-    //     { id: '5', name: 'Robert Wilson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/men/5.jpg' },
-    //     { id: '6', name: 'Lisa Anderson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/women/6.jpg' },
-    // ];
 
     const handlePreSurveyComplete = async (preSurveyAnswers: Record<string, string>) => {
         if (!assessment || !assessment.preSurvey) {
@@ -144,6 +139,7 @@ console.log('isViewMode', isViewMode, shouldScheduleMeeting);
     };
 
     const handleAssessmentSubmit = async (sectionAnswers: Record<number, Record<string, any>>) => {
+        // Mentor should generally NOT submit assessments, but keeping logic just in case
         if (!assessment || !data) {
             Alert.alert('Error', 'Assessment data not found');
             return;
@@ -200,13 +196,6 @@ console.log('isViewMode', isViewMode, shouldScheduleMeeting);
         }, 300);
     };
 
-    const handleSkipScheduling = () => {
-        setShowModal(false);
-        setTimeout(() => {
-            router.back();
-        }, 300);
-    };
-
     const handleScheduleComplete = (data: any) => {
         const formatDate = (dateString: string) => {
             const date = new Date(dateString);
@@ -228,15 +217,12 @@ console.log('isViewMode', isViewMode, shouldScheduleMeeting);
     };
 
     // Loading state
-    if (isLoading || (isViewMode && isLoadingSubmitted) || submitPreSurvey.isPending || submitAssessmentAnswers.isPending) {
+    if (isLoading || (isViewMode && isLoadingSubmitted)) {
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                 <ActivityIndicator size="large" color="#fff" />
                 <Text style={{ color: '#fff', marginTop: 16 }}>
-                    {submitPreSurvey.isPending ? 'Submitting pre-survey...' :
-                        submitAssessmentAnswers.isPending ? 'Submitting assessment...' :
-                            isLoadingSubmitted ? 'Loading submitted answers...' :
-                                'Loading assessment...'}
+                    {isLoadingSubmitted ? 'Loading submitted answers...' : 'Loading assessment...'}
                 </Text>
             </LinearGradient>
         );
@@ -257,11 +243,8 @@ console.log('isViewMode', isViewMode, shouldScheduleMeeting);
 
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
-            {showPreSurvey ? (
-                <TopBar showUserName={true} showNotifications={true} />
-            ) : (
-                <TopBar showDrawer={false} showNotifications={false} />
-            )}
+            {/* TopBar tailored for mentor view */}
+            <TopBar role="mentor" showUserName={true} showNotifications={false} />
 
             {showPreSurvey ? (
                 <PreSurveySection
@@ -290,9 +273,6 @@ console.log('isViewMode', isViewMode, shouldScheduleMeeting);
                             On completion of the PMP and CMA assessment tools please schedule a meeting with your mentor.
                         </Text>
                         <View style={styles.modalButtons}>
-                            {/* <TouchableOpacity style={[styles.modalButton, styles.skipButton]} onPress={handleSkipScheduling}>
-                                <Text style={styles.modalButtonText}>Skip for Now</Text>
-                            </TouchableOpacity> */}
                             <TouchableOpacity style={[styles.modalButton, styles.scheduleButton]} onPress={handleScheduleMeeting}>
                                 <Text style={styles.modalButtonText}>Schedule Meeting</Text>
                             </TouchableOpacity>

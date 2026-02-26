@@ -30,6 +30,8 @@ export const useAssignAssessment = () => {
 
             // Invalidate assessments list to refetch
             queryClient.invalidateQueries({ queryKey: ['assessments'] });
+            // Invalidate mentees list to update assignment status
+            queryClient.invalidateQueries({ queryKey: ['mentees'] });
             // Invalidate the specific assessment
             queryClient.invalidateQueries({
                 queryKey: ['assessment', variables.assessmentId],

@@ -106,6 +106,11 @@ export const roadmapService = {
 
 
     async updateRoadmap(roadmapId: string, payload: UpdateRoadmapRequest) {
+        console.log('-----------------------------------------------------------');
+        console.log('-----------------------------------------------------------');
+        console.log('payload', payload);
+        console.log('-----------------------------------------------------------');
+        console.log('-----------------------------------------------------------');
         console.log('📤 Updating roadmap:', { roadmapId, payload });
         const response = await apiClient.patch<UpdateRoadmapResponse>(
             ENDPOINTS.ROADMAPS.UPDATE(roadmapId),

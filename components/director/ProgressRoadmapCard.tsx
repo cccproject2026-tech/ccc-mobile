@@ -36,13 +36,14 @@ export const RoadmapCard: React.FC<Props> = ({
             ? Math.min(100, (data.taskProgress.completed / data.taskProgress.total) * 100)
             : 0;
     }, [data.taskProgress]);
+    console.log("data.taskProgressr:----->>>>>>>>>>>>>>", data.status);
 
     const statusConfig = useMemo(() => {
         const configs = {
             'completed': { text: 'Completed', color: '#fff' },
             'due': { text: 'Due', color: '#FFD700' },
             'in-progress': { text: 'In Progress', color: '#fff' },
-            'initial': { text: 'Not Started Yet', color: 'rgba(255,255,255,0.8)' },
+            'initial': { text: 'Not Started', color: 'rgba(255,255,255,0.8)' },
         };
         return data.status ? configs[data.status as keyof typeof configs] : null;
     }, [data.status]);
@@ -118,6 +119,7 @@ export const RoadmapCard: React.FC<Props> = ({
     };
 
     const renderProgressSection = () => {
+        console.log("hasProgress:----->>>>>>>>>>>>>>", hasProgress, data.taskProgress, data);
         if (!hasProgress || !data.taskProgress) return null;
 
         return (
@@ -225,7 +227,7 @@ export const RoadmapCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        backgroundColor: '#194F82',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.12)',

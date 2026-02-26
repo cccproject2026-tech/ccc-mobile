@@ -497,6 +497,16 @@ export default function ItemDetail() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    };
+
     // Loading state
     if (isLoading) {
         return (
@@ -731,11 +741,25 @@ export default function ItemDetail() {
                     </View>
                 </View>
 
-                {/* Completion Time */}
+                {/* Completion Time / Status */}
                 <View style={styles.completionBox}>
-                    <Text style={styles.completionText}>
-                        Duration: {task.duration}
-                    </Text>
+                    {task.status === 'completed' ? (
+                        <View style={styles.completionContainer}>
+                            <Text style={styles.completionStatusText}>Completed</Text>
+                            <View style={styles.completionInfoColumn}>
+                                <Text style={styles.completionInfoText}>
+                                    Completed on : {formatDate(task.completedOn)}
+                                </Text>
+                                <Text style={styles.completionInfoText}>
+                                    Last Updated : {formatDate(roadmap.updatedAt)}
+                                </Text>
+                            </View>
+                        </View>
+                    ) : (
+                        <Text style={styles.completionText}>
+                            Duration: {task.duration}
+                        </Text>
+                    )}
                 </View>
 
                 {/* Roadmap Section */}
@@ -879,6 +903,25 @@ const styles = StyleSheet.create({
         borderBottomColor: 'rgba(255,255,255,0.2)',
         borderBottomLeftRadius: 50,
         borderBottomRightRadius: 50,
+    },
+    completionContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    completionStatusText: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    completionInfoColumn: {
+        alignItems: 'flex-end',
+    },
+    completionInfoText: {
+        fontSize: 12,
+        fontWeight: '400',
+        color: '#FFFFFF',
+        marginTop: 2,
     },
     completionText: { fontSize: 16, fontWeight: '400', color: '#FFFFFF', textAlign: 'right' },
     sectionTitle: { paddingHorizontal: 4, marginTop: 24, marginBottom: 12, fontSize: 20, fontWeight: '600', color: '#FFFFFF' },
