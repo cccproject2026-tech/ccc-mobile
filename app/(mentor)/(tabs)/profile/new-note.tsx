@@ -93,6 +93,9 @@ export default function NewNote() {
           ]);
         } else {
           await NotesService.createNote(menteeId, noteContent);
+          // Clear editor for a fresh new note next time
+          setNoteContent("");
+          setInitializedFromParams(false);
           Alert.alert("Success", "Note saved successfully!", [
             { text: "OK", onPress: () => router.back() },
           ]);
