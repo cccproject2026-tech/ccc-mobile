@@ -128,7 +128,24 @@ export default function PastorTabLayout() {
                             href: null,
                         }}
                     />
-
+                    <Tabs.Screen
+                        name="profile/notes"
+                        options={{
+                            href: null,
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="profile/new-note"
+                        options={{
+                            href: null,
+                        }}
+                    />
+                    <Tabs.Screen
+                        name="profile/note-detail"
+                        options={{
+                            href: null,
+                        }}
+                    />
 
                     <Tabs.Screen
                         name="profile/certificates"
