@@ -1,8 +1,8 @@
-import { mockMentorNotes, MentorNote } from "@/constants/mockMentees"
+import { ApiNote, NotesService } from "@/services/notes.service"
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack, useLocalSearchParams } from "expo-router"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import {
   ScrollView,
   StyleSheet,
@@ -11,17 +11,64 @@ import {
   View,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { useFocusEffect } from "expo-router"
+import { useAuthStore } from "@/stores/auth.store"
 
 export default function MentorNotes() {
-  const params = useLocalSearchParams()
-  const menteeId = (params.menteeId as string) || "john-ross"
-  const menteeName = (params.menteeName as string) || "John Doe"
+  const { user } = useAuthStore()
+  const menteeId = user?.id
+  const menteeName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || undefined
   const [activeTab, setActiveTab] = useState<"new" | "previous">("previous")
+  interface UINote {
+    id: string
+    content: string
+    date: string
+    time: string
+    preview: string
+  }
+  const [notes, setNotes] = useState<UINote[]>([])
+  const [loading, setLoading] = useState(false)
 
-  // Get notes for the specific mentee
-  const notes = mockMentorNotes[menteeId] || []
+  const fetchNotes = async () => {
+    setLoading(true)
+    try {
+      if (!menteeId) return
+      const apiNotes = await NotesService.getNotes(menteeId)
+      const mapped = apiNotes.map((n) => {
+        const created = n.createdAt ? new Date(n.createdAt) : new Date()
+        const date = created.toLocaleDateString("en-US", {
+          month: "2-digit",
+          day: "2-digit",
+          year: "2-digit",
+        })
+        const time = created.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        const preview = (n.content || "").replace(/<(.|\n)*?>/g, "").substring(0, 200)
+        return {
+          id: n._id,
+          content: n.content,
+          date,
+          time,
+          preview,
+        } as UINote
+      })
+      setNotes(mapped)
+    } catch (err) {
+      console.warn("Failed to fetch notes", err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const handleNotePress = (note: MentorNote) => {
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchNotes()
+    }, [menteeId])
+  )
+
+  const handleNotePress = (note: any) => {
     router.push({
       pathname: "/(mentor-tabs)/note-detail",
       params: {
@@ -37,6 +84,7 @@ export default function MentorNotes() {
       pathname: "/(mentor-tabs)/new-note",
       params: {
         menteeName: menteeName,
+        menteeId: menteeId,
       },
     })
   }

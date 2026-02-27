@@ -1,4 +1,4 @@
-import { mockMentorNotes } from "@/constants/mockMentees"
+import { NotesService } from "@/services/notes.service"
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack, useLocalSearchParams } from "expo-router"
@@ -16,20 +16,51 @@ import { SafeAreaView } from "react-native-safe-area-context"
 export default function NoteDetail() {
   const params = useLocalSearchParams()
   const noteId = params.noteId as string
-  const menteeId = (params.menteeId as string) || "john-ross"
-  const menteeName = (params.menteeName as string) || "John Doe"
+  const menteeId = (params.menteeId as string) || undefined
+  const menteeName = (params.menteeName as string) || undefined
 
   // Get the specific note
-  const notes = mockMentorNotes[menteeId] || []
-  const note = notes.find((n) => n.id === noteId) || notes[0]
+  const [note, setNote] = React.useState<any>(null)
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    let mounted = true
+    const fetch = async () => {
+      setLoading(true)
+      try {
+        if (!menteeId) return
+        const api = await NotesService.getNotes(menteeId)
+        if (!mounted) return
+        const found = api.find((n: any) => n._id === noteId) || api[0]
+        if (found) {
+          setNote({
+            id: found._id,
+            content: found.content,
+            date: found.createdAt ? new Date(found.createdAt).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }) : '',
+            time: found.createdAt ? new Date(found.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : '',
+          })
+        }
+      } catch (err) {
+        console.warn("Failed to load note", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetch()
+    return () => {
+      mounted = false
+    }
+  }, [menteeId, noteId])
 
   const handleEdit = () => {
     router.push({
       pathname: "/(mentor)/notes/new-note" as any,
       params: {
         menteeName: menteeName,
+        menteeId: menteeId,
         noteId: noteId,
         isEdit: "true",
+        content: note?.content || "",
       },
     })
   }
@@ -40,8 +71,18 @@ export default function NoteDetail() {
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          router.back()
+        onPress: async () => {
+          if (!menteeId) {
+            Alert.alert("Error", "Missing mentee id.")
+            return
+          }
+          try {
+            await NotesService.deleteNote(menteeId, noteId)
+            router.back()
+          } catch (err) {
+            console.warn("Failed to delete note", err)
+            Alert.alert("Error", "Failed to delete note.")
+          }
         },
       },
     ])
