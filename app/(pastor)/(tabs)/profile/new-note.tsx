@@ -48,6 +48,14 @@ export default function NewPastorNote() {
     }
   }, [isEdit, params.content, initializedFromParams]);
 
+  // Ensure fresh empty editor whenever we are NOT in edit mode
+  useEffect(() => {
+    if (!isEdit) {
+      setNoteContent("");
+      setInitializedFromParams(false);
+    }
+  }, [isEdit]);
+
   const toggleFormat = (format: FormatOption) => {
     if (activeFormats.includes(format)) {
       setActiveFormats(activeFormats.filter((f) => f !== format));

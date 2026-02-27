@@ -710,13 +710,6 @@ export const PastorMenuItems: MenuItem[] = [
         route: "/(pastor)/(tabs)/profile/documents",
       },
       {
-        id: "notes",
-        label: "Notes",
-        icon: icons.notesIcon,
-        iconType: "image",
-        route: "/(pastor)/(tabs)/profile/notes",
-      },
-      {
         id: "assignments",
         label: "Assignments",
         icon: icons.assignment,
@@ -736,6 +729,13 @@ export const PastorMenuItems: MenuItem[] = [
         icon: icons.microGrant,
         iconType: "image",
         route: "/(pastor)/(tabs)/profile/grant",
+      },
+      {
+        id: "notes",
+        label: "Notes",
+        icon: icons.notesIcon,
+        iconType: "image",
+        route: "/(pastor)/(tabs)/profile/notes",
       },
     ],
   },
