@@ -35,13 +35,16 @@ export default function NewNote() {
   const [noteContent, setNoteContent] = useState("")
   const [activeFormats, setActiveFormats] = useState<FormatOption[]>([])
   const [saving, setSaving] = useState(false)
+  const [initializedFromParams, setInitializedFromParams] = useState(false)
+
   useEffect(() => {
+    if (!isEdit || initializedFromParams) return
     const contentFromParams = (params.content as string) || ""
-    if (contentFromParams) setNoteContent(contentFromParams)
-  }, [params])
-  useEffect(() => {
-    // noop
-  }, [])
+    if (contentFromParams) {
+      setNoteContent(contentFromParams)
+      setInitializedFromParams(true)
+    }
+  }, [isEdit, params.content, initializedFromParams])
 
   const toggleFormat = (format: FormatOption) => {
     if (activeFormats.includes(format)) {

@@ -1,7 +1,7 @@
 import { NotesService } from "@/services/notes.service"
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
-import { router, Stack, useLocalSearchParams } from "expo-router"
+import { router, Stack, useLocalSearchParams, useFocusEffect } from "expo-router"
 import React from "react"
 import { useAuthStore } from "@/stores/auth.store"
 import {
@@ -24,34 +24,36 @@ export default function NoteDetail() {
   const [note, setNote] = React.useState<any>(null)
   const [loading, setLoading] = React.useState(true)
 
-  React.useEffect(() => {
-    let mounted = true
-    const fetch = async () => {
-      setLoading(true)
-      try {
-        if (!menteeId) return
-        const api = await NotesService.getNotes(menteeId)
-        if (!mounted) return
-        const found = api.find((n: any) => n._id === noteId) || api[0]
-        if (found) {
-          setNote({
-            id: found._id,
-            content: found.content,
-            date: found.createdAt ? new Date(found.createdAt).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }) : '',
-            time: found.createdAt ? new Date(found.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : '',
-          })
+  useFocusEffect(
+    React.useCallback(() => {
+      let mounted = true
+      const fetch = async () => {
+        setLoading(true)
+        try {
+          if (!menteeId) return
+          const api = await NotesService.getNotes(menteeId)
+          if (!mounted) return
+          const found = api.find((n: any) => n._id === noteId) || api[0]
+          if (found) {
+            setNote({
+              id: found._id,
+              content: found.content,
+              date: found.createdAt ? new Date(found.createdAt).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }) : '',
+              time: found.createdAt ? new Date(found.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : '',
+            })
+          }
+        } catch (err) {
+          console.warn("Failed to load note", err)
+        } finally {
+          setLoading(false)
         }
-      } catch (err) {
-        console.warn("Failed to load note", err)
-      } finally {
-        setLoading(false)
       }
-    }
-    fetch()
-    return () => {
-      mounted = false
-    }
-  }, [menteeId, noteId])
+      fetch()
+      return () => {
+        mounted = false
+      }
+    }, [menteeId, noteId])
+  )
 
   const handleEdit = () => {
     router.push({
