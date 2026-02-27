@@ -732,7 +732,7 @@ export const PastorMenuItems: MenuItem[] = [
       },
       {
         id: "notes",
-        label: "Notes",
+        label: "Personal Notes",
         icon: icons.notesIcon,
         iconType: "image",
         route: "/(pastor)/(tabs)/profile/notes",
@@ -852,7 +852,7 @@ export const MentorMenuItems: MenuItem[] = [
       //   },
       {
         id: "notes",
-        label: "Notes ",
+        label: "Personal Notes",
         icon: icons.notesIcon,
         iconType: "image",
         route: "/(mentor)/profile/notes",
