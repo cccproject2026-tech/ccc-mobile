@@ -1,7 +1,7 @@
-import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
-import { router, Stack, useLocalSearchParams } from "expo-router"
-import React, { useState, useEffect } from "react"
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -10,9 +10,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { useAuthStore } from "@/stores/auth.store"
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { NotesService } from "@/services/notes.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 type FormatOption =
   | "font-size"
@@ -23,42 +24,42 @@ type FormatOption =
   | "align-left"
   | "align-center"
   | "align-right"
-  | "justify"
+  | "justify";
 
-export default function NewNote() {
-  const params = useLocalSearchParams()
-  const { user } = useAuthStore()
-  const menteeId = user?.id
-  const menteeName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || undefined
-  const noteId = (params.noteId as string) || undefined
-  const isEdit = (params.isEdit as string) === "true"
-  const [noteContent, setNoteContent] = useState("")
-  const [activeFormats, setActiveFormats] = useState<FormatOption[]>([])
-  const [saving, setSaving] = useState(false)
-  const [initializedFromParams, setInitializedFromParams] = useState(false)
+export default function NewPastorNote() {
+  const params = useLocalSearchParams();
+  const { user } = useAuthStore();
+  const menteeId = user?.id;
+  const menteeName =
+    `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || undefined;
+  const noteId = (params.noteId as string) || undefined;
+  const isEdit = (params.isEdit as string) === "true";
+  const [noteContent, setNoteContent] = useState("");
+  const [activeFormats, setActiveFormats] = useState<FormatOption[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [initializedFromParams, setInitializedFromParams] = useState(false);
 
   useEffect(() => {
-    if (!isEdit || initializedFromParams) return
-    const contentFromParams = (params.content as string) || ""
+    if (!isEdit || initializedFromParams) return;
+    const contentFromParams = (params.content as string) || "";
     if (contentFromParams) {
-      setNoteContent(contentFromParams)
-      setInitializedFromParams(true)
+      setNoteContent(contentFromParams);
+      setInitializedFromParams(true);
     }
-  }, [isEdit, params.content, initializedFromParams])
+  }, [isEdit, params.content, initializedFromParams]);
 
   // Ensure fresh empty editor whenever we are NOT in edit mode
   useEffect(() => {
     if (!isEdit) {
-      setNoteContent("")
-      setInitializedFromParams(false)
+      setNoteContent("");
+      setInitializedFromParams(false);
     }
-  }, [isEdit])
+  }, [isEdit]);
 
   const toggleFormat = (format: FormatOption) => {
     if (activeFormats.includes(format)) {
-      setActiveFormats(activeFormats.filter((f) => f !== format))
+      setActiveFormats(activeFormats.filter((f) => f !== format));
     } else {
-      // For alignment options, only one can be active at a time
       if (
         ["align-left", "align-center", "align-right", "justify"].includes(
           format
@@ -72,52 +73,59 @@ export default function NewNote() {
               )
           ),
           format,
-        ])
+        ]);
       } else {
-        setActiveFormats([...activeFormats, format])
+        setActiveFormats([...activeFormats, format]);
       }
     }
-  }
+  };
 
   const handleSave = () => {
     if (!menteeId) {
-      Alert.alert("Error", "Missing mentee id.")
-      return
+      Alert.alert("Error", "Missing mentee id.");
+      return;
     }
+
     if (!noteContent.trim()) {
-      Alert.alert("Error", "Please enter some content before saving.")
-      return
+      Alert.alert("Error", "Please enter some content before saving.");
+      return;
     }
-    ;(async () => {
+
+    (async () => {
       try {
-        setSaving(true)
-        const { NotesService } = await import('@/services/notes.service')
+        setSaving(true);
         if (isEdit && noteId) {
-          await NotesService.updateNote(menteeId, noteId, noteContent)
-          Alert.alert("Success", "Note updated successfully!", [{ text: "OK", onPress: () => router.back() }])
+          await NotesService.updateNote(menteeId, noteId, noteContent);
+          Alert.alert("Success", "Note updated successfully!", [
+            { text: "OK", onPress: () => router.back() },
+          ]);
         } else {
-          await NotesService.createNote(menteeId, noteContent)
-          Alert.alert("Success", "Note saved successfully!", [{ text: "OK", onPress: () => router.back() }])
+          await NotesService.createNote(menteeId, noteContent);
+          setNoteContent("");
+          setInitializedFromParams(false);
+          Alert.alert("Success", "Note saved successfully!", [
+            { text: "OK", onPress: () => router.back() },
+          ]);
         }
       } catch (err) {
-        console.warn("Save note failed", err)
-        Alert.alert("Error", "Failed to save note.")
+        console.warn("Save pastor note failed", err);
+        Alert.alert("Error", "Failed to save note.");
       } finally {
-        setSaving(false)
+        setSaving(false);
       }
-    })()
-  }
+    })();
+  };
 
   const FormatButton = ({
     icon,
     format,
     onPress,
   }: {
-    icon: string
-    format?: FormatOption
-    onPress?: () => void
+    icon: string;
+    format?: FormatOption;
+    onPress?: () => void;
   }) => {
-    const isActive = format ? activeFormats.includes(format) : false
+    const isActive = format ? activeFormats.includes(format) : false;
     return (
       <TouchableOpacity
         activeOpacity={0.7}
@@ -130,8 +138,8 @@ export default function NewNote() {
           color={isActive ? "#1A3A6B" : "#FFFFFF"}
         />
       </TouchableOpacity>
-    )
-  }
+    );
+  };
 
   return (
     <LinearGradient
@@ -207,13 +215,13 @@ export default function NewNote() {
             contentContainerStyle={styles.toolbar}
           >
             <FormatButton icon="text" format="font-size" />
-            <FormatButton icon="document-text" format="bold" />
+            <FormatButton icon="card" format="bold" />
             <FormatButton icon="underline" format="underline" />
             <FormatButton icon="list" format="bullet-list" />
             <FormatButton icon="list-outline" format="numbered-list" />
-            <FormatButton icon="align-horizontal-left" format="align-left" />
-            <FormatButton icon="align-horizontal-center" format="align-center" />
-            <FormatButton icon="align-horizontal-right" format="align-right" />
+            <FormatButton icon="reorder-four" format="align-left" />
+            <FormatButton icon="reorder-four" format="align-center" />
+            <FormatButton icon="reorder-four" format="align-right" />
             <FormatButton icon="reorder-four" format="justify" />
           </ScrollView>
         </View>
@@ -243,7 +251,7 @@ export default function NewNote() {
         </View>
       </SafeAreaView>
     </LinearGradient>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -412,9 +420,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveButtonText: {
-    color: "#1A3A6B",
+    color: "#1A4882",
     fontSize: 18,
     fontWeight: "700",
   },
-})
+});
 

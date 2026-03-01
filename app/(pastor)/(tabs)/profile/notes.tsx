@@ -1,93 +1,98 @@
-import { ApiNote, NotesService } from "@/services/notes.service"
-import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
-import { router, Stack, useLocalSearchParams } from "expo-router"
-import React, { useState, useEffect } from "react"
+import { ApiNote, NotesService } from "@/services/notes.service";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, Stack } from "expo-router";
+import React, { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { useFocusEffect } from "expo-router"
-import { useAuthStore } from "@/stores/auth.store"
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
+import { useAuthStore } from "@/stores/auth.store";
 
-export default function MentorNotes() {
-  const { user } = useAuthStore()
-  const menteeId = user?.id
-  const menteeName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || undefined
-  const [activeTab, setActiveTab] = useState<"new" | "previous">("previous")
+export default function PastorNotes() {
+  const { user } = useAuthStore();
+  const menteeId = user?.id;
+  const menteeName =
+    `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || undefined;
+  const [activeTab, setActiveTab] = useState<"new" | "previous">("previous");
+
   interface UINote {
-    id: string
-    content: string
-    date: string
-    time: string
-    preview: string
+    id: string;
+    content: string;
+    date: string;
+    time: string;
+    preview: string;
   }
-  const [notes, setNotes] = useState<UINote[]>([])
-  const [loading, setLoading] = useState(false)
+
+  const [notes, setNotes] = useState<UINote[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const fetchNotes = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      if (!menteeId) return
-      const apiNotes = await NotesService.getNotes(menteeId)
+      if (!menteeId) return;
+      const apiNotes: ApiNote[] = await NotesService.getNotes(menteeId);
       const mapped = apiNotes.map((n) => {
-        const created = n.createdAt ? new Date(n.createdAt) : new Date()
+        const created = n.createdAt ? new Date(n.createdAt) : new Date();
         const date = created.toLocaleDateString("en-US", {
           month: "2-digit",
           day: "2-digit",
           year: "2-digit",
-        })
+        });
         const time = created.toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",
-        })
-        const preview = (n.content || "").replace(/<(.|\n)*?>/g, "").substring(0, 200)
+        });
+        const preview = (n.content || "")
+          .replace(/<(.|\n)*?>/g, "")
+          .substring(0, 200);
         return {
           id: n._id,
           content: n.content,
           date,
           time,
           preview,
-        } as UINote
-      })
-      setNotes(mapped)
+        } as UINote;
+      });
+      setNotes(mapped);
     } catch (err) {
-      console.warn("Failed to fetch notes", err)
+      console.warn("Failed to fetch pastor notes", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchNotes()
+      fetchNotes();
     }, [menteeId])
-  )
+  );
 
-  const handleNotePress = (note: any) => {
+  const handleNotePress = (note: UINote) => {
     router.push({
-      pathname: "/(mentor-tabs)/note-detail",
+      pathname: "/(pastor)/(tabs)/profile/note-detail",
       params: {
         noteId: note.id,
         menteeId: menteeId,
         menteeName: menteeName,
       },
-    })
-  }
+    });
+  };
 
   const handleNewNote = () => {
     router.push({
-      pathname: "/(mentor-tabs)/new-note",
+      pathname: "/(pastor)/(tabs)/profile/new-note",
       params: {
         menteeName: menteeName,
         menteeId: menteeId,
       },
-    })
-  }
+    });
+  };
 
   return (
     <LinearGradient
@@ -109,7 +114,7 @@ export default function MentorNotes() {
             >
               <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
             </TouchableOpacity>
-            
+
             <View style={styles.headerCenter}>
               <View style={styles.profileBadge}>
                 <Text style={styles.profileName}>{menteeName}</Text>
@@ -134,12 +139,6 @@ export default function MentorNotes() {
               </TouchableOpacity>
             </View>
           </View>
-
-          <View style={styles.titleSection}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-            <Text style={styles.title}>Notes</Text>
-          </View>
-          <Text style={styles.subtitle}>{menteeName}</Text>
         </View>
 
         {/* Tab Buttons */}
@@ -221,7 +220,7 @@ export default function MentorNotes() {
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -293,22 +292,6 @@ const styles = StyleSheet.create({
     color: "#1A3A6B",
     fontSize: 12,
     fontWeight: "700",
-  },
-  titleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  subtitle: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 16,
-    fontWeight: "500",
   },
   tabContainer: {
     flexDirection: "row",
@@ -384,5 +367,5 @@ const styles = StyleSheet.create({
   chevron: {
     marginLeft: 8,
   },
-})
+});
 

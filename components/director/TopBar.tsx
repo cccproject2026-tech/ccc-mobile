@@ -184,6 +184,8 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
+        paddingHorizontal: 12,
+        marginRight: 8,
     },
     gradientBorder: {
         padding: 2,
@@ -211,6 +213,7 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end",
         flex: 0.2,
         gap: 8,
+        marginLeft: 8,
     },
     notificationBadge: {
         position: "absolute",

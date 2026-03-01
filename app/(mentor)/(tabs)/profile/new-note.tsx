@@ -1,17 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NotesService } from "@/services/notes.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 type FormatOption =
   | "font-size"
@@ -26,9 +28,32 @@ type FormatOption =
 
 export default function NewNote() {
   const params = useLocalSearchParams();
-  const menteeName = (params.menteeName as string) || "John Doe";
+  const { user } = useAuthStore();
+  const menteeId = user?.id;
+  const menteeName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || undefined;
+  const noteId = (params.noteId as string) || undefined;
+  const isEdit = (params.isEdit as string) === "true";
   const [noteContent, setNoteContent] = useState("");
   const [activeFormats, setActiveFormats] = useState<FormatOption[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [initializedFromParams, setInitializedFromParams] = useState(false);
+
+  useEffect(() => {
+    if (!isEdit || initializedFromParams) return;
+    const contentFromParams = (params.content as string) || "";
+    if (contentFromParams) {
+      setNoteContent(contentFromParams);
+      setInitializedFromParams(true);
+    }
+  }, [isEdit, params.content, initializedFromParams]);
+
+  // Ensure fresh empty editor whenever we are NOT in edit mode
+  useEffect(() => {
+    if (!isEdit) {
+      setNoteContent("");
+      setInitializedFromParams(false);
+    }
+  }, [isEdit]);
 
   const toggleFormat = (format: FormatOption) => {
     if (activeFormats.includes(format)) {
@@ -56,16 +81,40 @@ export default function NewNote() {
   };
 
   const handleSave = () => {
-    if (noteContent.trim()) {
-      Alert.alert("Success", "Note saved successfully!", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
-    } else {
-      Alert.alert("Error", "Please enter some content before saving.");
+    if (!menteeId) {
+      Alert.alert("Error", "Missing mentee id.");
+      return;
     }
+
+    if (!noteContent.trim()) {
+      Alert.alert("Error", "Please enter some content before saving.");
+      return;
+    }
+
+    (async () => {
+      try {
+        setSaving(true);
+        if (isEdit && noteId) {
+          await NotesService.updateNote(menteeId, noteId, noteContent);
+          Alert.alert("Success", "Note updated successfully!", [
+            { text: "OK", onPress: () => router.back() },
+          ]);
+        } else {
+          await NotesService.createNote(menteeId, noteContent);
+          // Clear editor for a fresh new note next time
+          setNoteContent("");
+          setInitializedFromParams(false);
+          Alert.alert("Success", "Note saved successfully!", [
+            { text: "OK", onPress: () => router.back() },
+          ]);
+        }
+      } catch (err) {
+        console.warn("Save note failed", err);
+        Alert.alert("Error", "Failed to save note.");
+      } finally {
+        setSaving(false);
+      }
+    })();
   };
 
   const FormatButton = ({

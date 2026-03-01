@@ -1,8 +1,13 @@
-import { NotesService } from "@/services/notes.service"
-import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
-import { router, Stack, useLocalSearchParams, useFocusEffect } from "expo-router"
-import React from "react"
+import { NotesService } from "@/services/notes.service";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  router,
+  Stack,
+  useLocalSearchParams,
+  useFocusEffect,
+} from "expo-router";
+import React from "react";
 import {
   Alert,
   ScrollView,
@@ -10,53 +15,63 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function NoteDetail() {
-  const params = useLocalSearchParams()
-  const noteId = params.noteId as string
-  const menteeId = (params.menteeId as string) || undefined
-  const menteeName = (params.menteeName as string) || undefined
+export default function PastorNoteDetail() {
+  const params = useLocalSearchParams();
+  const noteId = params.noteId as string;
+  const menteeId = (params.menteeId as string) || undefined;
+  const menteeName = (params.menteeName as string) || undefined;
 
-  // Get the specific note
-  const [note, setNote] = React.useState<any>(null)
-  const [loading, setLoading] = React.useState(true)
+  const [note, setNote] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
 
   useFocusEffect(
     React.useCallback(() => {
-      let mounted = true
+      let mounted = true;
       const fetch = async () => {
-        setLoading(true)
+        setLoading(true);
         try {
-          if (!menteeId) return
-          const api = await NotesService.getNotes(menteeId)
-          if (!mounted) return
-          const found = api.find((n: any) => n._id === noteId) || api[0]
+          if (!menteeId) return;
+          const api = await NotesService.getNotes(menteeId);
+          if (!mounted) return;
+          const found = api.find((n: any) => n._id === noteId) || api[0];
           if (found) {
             setNote({
               id: found._id,
               content: found.content,
-              date: found.createdAt ? new Date(found.createdAt).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "2-digit" }) : '',
-              time: found.createdAt ? new Date(found.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : '',
-            })
+              date: found.createdAt
+                ? new Date(found.createdAt).toLocaleDateString("en-US", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    year: "2-digit",
+                  })
+                : "",
+              time: found.createdAt
+                ? new Date(found.createdAt).toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "",
+            });
           }
         } catch (err) {
-          console.warn("Failed to load note", err)
+          console.warn("Failed to load pastor note", err);
         } finally {
-          setLoading(false)
+          setLoading(false);
         }
-      }
-      fetch()
+      };
+      fetch();
       return () => {
-        mounted = false
-      }
+        mounted = false;
+      };
     }, [menteeId, noteId])
-  )
+  );
 
   const handleEdit = () => {
     router.push({
-      pathname: "/(mentor)/notes/new-note" as any,
+      pathname: "/(pastor)/(tabs)/profile/new-note",
       params: {
         menteeName: menteeName,
         menteeId: menteeId,
@@ -64,8 +79,8 @@ export default function NoteDetail() {
         isEdit: "true",
         content: note?.content || "",
       },
-    })
-  }
+    });
+  };
 
   const handleDelete = () => {
     Alert.alert("Delete Note", "Are you sure you want to delete this note?", [
@@ -74,21 +89,18 @@ export default function NoteDetail() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
-          if (!menteeId) {
-            Alert.alert("Error", "Missing mentee id.")
-            return
-          }
           try {
-            await NotesService.deleteNote(menteeId, noteId)
-            router.back()
+            const { NotesService } = await import("@/services/notes.service");
+            await NotesService.deleteNote(menteeId as string, noteId);
+            router.back();
           } catch (err) {
-            console.warn("Failed to delete note", err)
-            Alert.alert("Error", "Failed to delete note.")
+            console.warn("Failed to delete pastor note", err);
+            Alert.alert("Error", "Failed to delete note.");
           }
         },
       },
-    ])
-  }
+    ]);
+  };
 
   return (
     <LinearGradient
@@ -174,7 +186,7 @@ export default function NoteDetail() {
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -316,5 +328,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 26,
   },
-})
+});
 
