@@ -2,7 +2,7 @@ import TopBar from "@/components/director/TopBar";
 import { Button } from "@/components/build-components";
 import TextAreaField from "@/components/build-components/text-area";
 import { primary_color } from "@/constants/Colors";
-import { useAddRoadmapComment, useRoadmapComments } from "@/hooks/roadmaps/useRoadmaps";
+import { useAddRoadmapComment, useRoadmapComments, useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
 import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,6 +29,7 @@ export default function CommentsScreen() {
 
     const { roadmapId: phaseId } = useLocalSearchParams<{ roadmapId: string }>();
 
+    const { data: roadmap } = useRoadmap(phaseId);
     const { data, isLoading } = useRoadmapComments(phaseId, user?.id!);
     const comments = data?.comments ?? [];
 
@@ -122,6 +123,9 @@ export default function CommentsScreen() {
                             <TouchableOpacity style={styles.iconButton}>
                                 <Ionicons name="mail-outline" size={18} color="#FFFFFF" />
                             </TouchableOpacity>
+                            <TouchableOpacity style={styles.iconButton}>
+                                <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" />
+                            </TouchableOpacity>
                         </View>
 
                         <Text style={styles.timestamp}>
@@ -147,7 +151,9 @@ export default function CommentsScreen() {
 
                     <View style={styles.headerTextWrapper}>
                         <Text style={styles.headerTitle}>Comments</Text>
-                        <Text style={styles.headerSubtitle}>Revitalization Roadmap</Text>
+                        <Text style={styles.headerSubtitle}>
+                            Revitalization Roadmap {roadmap?.name ? ` > ${roadmap.name}` : ""}
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -164,7 +170,7 @@ export default function CommentsScreen() {
                             label="Add a comment..."
                             value={commentText}
                             onChangeText={setCommentText}
-                            inputClass={{ backgroundColor: primary_color }}
+                            inputClass={{ backgroundColor: "#1A4B81" }}
                             numberOfLines={4}
                         />
                         <View style={styles.submitButtonContainer}>
@@ -262,7 +268,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     commentCard: {
-        backgroundColor: "rgba(26, 72, 130, 1)",
+        backgroundColor: "#233C78",
         borderRadius: 16,
         borderWidth: 1.5,
         borderColor: "rgba(255, 255, 255, 0.35)",

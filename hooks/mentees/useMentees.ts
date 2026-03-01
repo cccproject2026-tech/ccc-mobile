@@ -93,8 +93,23 @@ export const useMentees = (limit: number = 10) => {
             // merge
             const mentees = backendMentees.map((m, idx) => {
                 const progress = progressResponses[idx];
-                const firstRoadmap = progress?.roadmaps?.items?.[0] ?? null;
-                const assignedRoadmapIds = progress?.roadmaps?.items?.map((item: any) => item.roadMapId) ?? [];
+                // Handle different roadmap structures (array or paginated object)
+                const roadmaps = Array.isArray(progress?.roadmaps)
+                    ? progress.roadmaps
+                    : (progress?.roadmaps?.items ?? []);
+
+                const firstRoadmap = roadmaps[0] ?? null;
+
+                // Extract assigned roadmap IDs
+                const assignedRoadmapIds = roadmaps.map((item: any) => item.roadMapId || item._id);
+
+                // Handle different assessment structures
+                const assessments = Array.isArray(progress?.assessments)
+                    ? progress.assessments
+                    : (progress?.assessments?.items ?? []);
+
+                // Extract assigned assessment IDs
+                const assignedAssessmentIds = assessments.map((item: any) => item.assessmentId || item._id);
 
                 return {
                     ...m,
@@ -104,6 +119,7 @@ export const useMentees = (limit: number = 10) => {
                     phaseNumber: firstRoadmap?.phaseNumber,
                     completedOn: m.hasCompleted ? m.updatedAt : undefined,
                     assignedRoadmapIds,
+                    assignedAssessmentIds,
                 };
             });
 

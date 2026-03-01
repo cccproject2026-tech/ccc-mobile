@@ -626,7 +626,12 @@ export default function MenteeProgressScreen() {
               >
                 {filteredRoadMaps.map((e, i) => (
                   <React.Fragment key={i}>
-                    <ProgressCard data={e} navigation={router} />
+                    <ProgressCard 
+                      data={e} 
+                      navigation={router} 
+                      menteeId={menteeId} 
+                      menteeName={mentee ? `Pr. ${mentee.firstName} ${mentee.lastName}` : ''} 
+                    />
                     {i < filteredRoadMaps.length - 1 && (
                       <View className="h-[0.5px] bg-white/30 my-4" />
                     )}
@@ -680,7 +685,12 @@ export default function MenteeProgressScreen() {
               >
                 {filteredAssessments.map((e, i) => (
                   <React.Fragment key={i}>
-                    <ProgressCard data={e} navigation={router} />
+                    <ProgressCard 
+                      data={e} 
+                      navigation={router} 
+                      menteeId={menteeId} 
+                      menteeName={mentee ? `Pr. ${mentee.firstName} ${mentee.lastName}` : ''} 
+                    />
                     {i < filteredAssessments.length - 1 && (
                       <View className="h-[0.5px] bg-white/30 my-4" />
                     )}

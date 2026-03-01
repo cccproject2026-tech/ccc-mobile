@@ -20,6 +20,7 @@ interface ScreenLayoutProps {
   headerTitle?: string;
   headerSubTitle?: string;
   hideSearchBar?: boolean;
+  route?: string;
 }
 
 const ScreenLayout = ({
@@ -36,7 +37,7 @@ const ScreenLayout = ({
   headerTitle = ``,
   headerSubTitle = ``,
   hideSearchBar = false,
-
+  route = '(mentor)/(tabs)/notifications',
 }: ScreenLayoutProps) => {
   return (
     <LinearGradient
@@ -62,6 +63,7 @@ const ScreenLayout = ({
               showNotificationIcon={showNotificationIcon}
               tagName={tagName}
               wrapperClass="mt-4"
+              route={route}
             />
           )}
           {enableHeader && (

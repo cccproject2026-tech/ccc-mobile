@@ -47,7 +47,8 @@ export const assessmentService = {
     deleteAssessment: async (assessmentId: string): Promise<{ message: string }> => {
         console.log('📤 Deleting assessment:', assessmentId);
         const response = await apiClient.delete<{ message: string }>(
-            ENDPOINTS.ASSESSMENTS.DELETE_ASSESSMENT(assessmentId)
+            ENDPOINTS.ASSESSMENTS.DELETE_ASSESSMENT,
+            { data: { ids: [assessmentId] } }
         );
         console.log('📥 Assessment deleted:', response.data);
         return response.data;

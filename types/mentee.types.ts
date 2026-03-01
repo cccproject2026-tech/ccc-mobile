@@ -23,6 +23,7 @@ export interface Mentee extends User {
     lastContacted?: string;
     totalMentors?: number;
     assignedRoadmapIds?: string[];
+    assignedAssessmentIds?: string[];
     assignedId?: string[];
 }
 

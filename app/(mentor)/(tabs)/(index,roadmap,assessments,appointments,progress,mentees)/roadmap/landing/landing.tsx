@@ -53,7 +53,7 @@ export default function Landing() {
             fetchNextPage();
         }
     }, [hasNextPage, isFetchingNextPage, mainTab, selectedPastor, fetchNextPage]);
-
+console.log('selectedPastor----->>>>>>>>>>>>>>', selectedPastor);
     // Fetch selected pastor's progress
     const { data: pastorProgress, isLoading: isLoadingProgress } = useProgressByUserId(selectedPastor?.id);
 
@@ -95,12 +95,12 @@ export default function Landing() {
         // Navigate to roadmap detail - using dynamic routes
         if (roadmap.roadmaps.length === 1 && !roadmap.haveNextedRoadMaps) {
             // Single task - go directly to task
-            router.push(`/(mentor)/roadmap/${roadmap._id}/${roadmap.roadmaps[0]._id}` as any);
+            router.push({pathname: `/(mentor)/roadmap/${roadmap._id}/${roadmap.roadmaps[0]._id}` as any, params: { menteeId: selectedPastor?.id, menteeName: selectedPastor?.firstName + ' ' + selectedPastor?.lastName }});
         } else {
             // Multiple tasks - show task list
-            router.push(`/(mentor)/roadmap/${roadmap._id}` as any);
+            router.push({pathname: `/(mentor)/roadmap/${roadmap._id}` as any, params: { menteeId: selectedPastor?.id, menteeName: selectedPastor?.firstName + ' ' + selectedPastor?.lastName }});
         }
-    }, []);
+    }, [selectedPastor]);
 
     // Apply all filters and return data for the list
     const displayData = useMemo(() => {
@@ -184,7 +184,7 @@ export default function Landing() {
         return merged;
     }, [roadmaps, mainTab, selectedPastor, mentees, pastorProgress, pastorSearch, librarySearch, selectedPastorRoadmapSearch, statusTab]);
 
-    const renderItem = useCallback(({ item }: { item: any }) => {
+    const renderItem = useCallback(({ item,index }: { item: any,index: number }) => {
         if (item.type === 'MENTEE') {
             return (
                 <MenteeCard
@@ -193,17 +193,16 @@ export default function Landing() {
                 />
             );
         }
-
         const cardData = getRoadmapCard(item.data);
         const isLibrary = mainTab === 'ROADMAP_LIBRARY';
-
-        return (
-            <Pressable onPress={() => handleRoadmapPress(item.data)}>
+                return (
+            <Pressable onPress={() => {handleRoadmapPress(item.data)}}>
                 <RoadmapCard
                     data={cardData}
                     showMenu={isLibrary}
                     onMenuPress={isLibrary ? () => handleRoadmapMenuPress(item.data) : undefined}
                 />
+                {index !== displayData.length - 1 && <View style={{ height: .5,marginHorizontal: 8,opacity: 0.5, backgroundColor: '#ffffff', marginTop: 4,marginBottom: 16 }} />}
             </Pressable>
         );
     }, [handleRoadmapPress, mainTab, handleRoadmapMenuPress]);
@@ -250,25 +249,33 @@ export default function Landing() {
             <View style={styles.topBarWrapper}>
                 <TopBar role="mentor" showUserName />
             </View>
-
-            <View style={styles.headerContainer}>
-                <View style={styles.headerLeft}>
-                    <TouchableOpacity onPress={() => {
-                        if (selectedPastor) {
-                            setSelectedPastor(null);
-                        } else {
-                            router.back();
-                        }
-                    }}>
-                        <Ionicons name="chevron-back" size={28} color="#fff" />
+            <View style={{ paddingVertical: 8 }}>
+                <View style={styles.headerContainer}>
+                    <View style={styles.headerLeft}>
+                        <TouchableOpacity onPress={() => {
+                            if (selectedPastor) {
+                                setSelectedPastor(null);
+                            } else {
+                                router.back();
+                            }
+                        }}>
+                            <Ionicons name="chevron-back" size={28} color="#fff" />
+                        </TouchableOpacity>
+                        <View style={{ marginLeft: 8 }}>
+                            <Text style={styles.headerTitle}>
+                                {selectedPastor ? `${selectedPastor.firstName}'s Roadmaps` : 'Revitalization Roadmap'}
+                            </Text>
+                            {selectedPastor && (
+                                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '500', marginTop: 2,marginLeft: 8 }}>
+                                    My Mentee &gt; {selectedPastor.firstName} {selectedPastor.lastName}
+                                </Text>
+                            )}
+                        </View>
+                    </View>
+                    <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
+                        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>
-                        {selectedPastor ? `${selectedPastor.firstName}'s Roadmaps` : 'Revitalization Roadmap'}
-                    </Text>
                 </View>
-                <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
-                    <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-                </TouchableOpacity>
             </View>
 
             <View style={styles.searchWrapper}>

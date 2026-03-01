@@ -114,7 +114,8 @@ export default function SurveyGuidelinesPage() {
             pathname: '/assessments/answer-questions',
             params: {
                 assessmentId,
-                hasPreSurvey: hasPreSurvey ? 'true' : 'false'
+                hasPreSurvey: hasPreSurvey ? 'true' : 'false',
+                scheduleMeeting: 'true'
             },
         });
     };
@@ -130,7 +131,8 @@ export default function SurveyGuidelinesPage() {
             pathname: '/assessments/answer-questions',
             params: {
                 assessmentId,
-                hasPreSurvey: hasPreSurvey ? 'true' : 'false'
+                hasPreSurvey: hasPreSurvey ? 'true' : 'false',
+                scheduleMeeting: 'true'
             },
         });
     };
@@ -240,7 +242,6 @@ export default function SurveyGuidelinesPage() {
             style={styles.container}
         >
             <TopBar
-                userName="John Ross"
                 showUserName={true}
                 showNotifications={true}
             />
