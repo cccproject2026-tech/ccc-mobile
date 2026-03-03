@@ -14,6 +14,7 @@ export default function Header({
   showSettings = true,
   showNewMeeting = false,
   onNewMeetingPress,
+  onMenuPress,
 }: {
   title?: string | undefined;
   subTitle?: string | undefined;
@@ -21,11 +22,13 @@ export default function Header({
   showSettings?: boolean | undefined;
   showNewMeeting?: boolean | undefined;
   onNewMeetingPress?: () => void;
+  onMenuPress?: () => void;
 }) {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
   const [searchText, setSearchText] = React.useState("");
   const [tabs, setTabs] = React.useState("All");
+ 
   return (
     <>
       <View
@@ -68,7 +71,7 @@ export default function Header({
         </TouchableOpacity>
 
         {showSettings && (
-          <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
+          <TouchableOpacity onPress={() => {onMenuPress && onMenuPress(); setIsRoadmapModalVisible(true)}}>
             <Ionicons name="ellipsis-vertical" size={20} color="white" />
           </TouchableOpacity>
         )}

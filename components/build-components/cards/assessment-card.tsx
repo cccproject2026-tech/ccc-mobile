@@ -1,4 +1,5 @@
 import { Assessment } from "@/lib/assessments/types";
+import { useAuthStore } from "@/stores";
 import { getFontSize, getIconSize, getSpacing, isIOS, moderateScale, verticalScale } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,6 +26,9 @@ export default function AssessmentCard({
   const spacingCompress = isIOS ? 0.85 : 1;
   const imageCompress = isIOS ? 0.92 : 1;
   const cardCompress = isIOS ? 0.96 : 1;
+  const { user } = useAuthStore();
+  console.log('data', JSON.stringify(data, null, 2));
+
 
   return (
     <View
@@ -149,7 +153,7 @@ export default function AssessmentCard({
             >
               {data?.description}
             </Text>
-            <TouchableOpacity
+           {user?.role === 'pastor' && (<TouchableOpacity
               style={{
                 borderWidth: 1,
                 borderColor: '#FFFFFF33',
@@ -174,7 +178,7 @@ export default function AssessmentCard({
                   {data?.status}
                 </Text>
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity>)}
             {data?.completionDate && (
               <View>
                 <Text style={{ fontSize: getFontSize(13 * fontCompress), fontWeight: '500', color: 'white' }}>
@@ -183,7 +187,7 @@ export default function AssessmentCard({
               </View>
             )}
 
-            {((data?.status === 'Not Started') || (data?.status === 'Due')) && (
+            {user?.role === 'pastor' && ((data?.status === 'Not Started') || (data?.status === 'Due')) && (
               <TouchableOpacity
                 style={{
                   backgroundColor: 'white',

@@ -168,8 +168,8 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         position: "absolute",
-        top: getSpacing(20),
-        right: getSpacing(20),
+        top: getSpacing(10),
+        right: getSpacing(10),
         zIndex: 10,
         width: getSpacing(40),
         height: getSpacing(40),
@@ -179,13 +179,14 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: getSpacing(16),
+        marginTop: getSpacing(10),
+        paddingVertical: getSpacing(8),
         paddingHorizontal: getSpacing(16),
-        marginBottom: getSpacing(20),
+        marginBottom: getSpacing(16),
         borderWidth: 1,
         borderColor: "rgba(255, 255, 255, 0.3)",
         borderRadius: getSpacing(16),
-        backgroundColor: "rgba(255, 255, 255, 0.05)",
+        // backgroundColor: "rgba(255, 255, 255, 0.05)",
     },
     headerInfo: {
         flex: 1,

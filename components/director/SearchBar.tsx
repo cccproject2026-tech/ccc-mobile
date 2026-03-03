@@ -15,7 +15,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     onChangeValue,
     placeholder = "Search",
     style,
-    backgroundColor = '#14517D',
+    backgroundColor = '#1A4882',
     ...inputProps
 }) => (
     <View style={[styles.wrapper, { backgroundColor }]}>

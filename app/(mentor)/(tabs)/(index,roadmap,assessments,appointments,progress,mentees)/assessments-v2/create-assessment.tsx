@@ -102,6 +102,8 @@ export default function CreateAssessmentPage() {
   // Customized Development Plans
   const [level1Plans, setLevel1Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
   const [level2Plans, setLevel2Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
+  const [level3Plans, setLevel3Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
+  const [level4Plans, setLevel4Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
 
   // Image Upload
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -268,30 +270,21 @@ export default function CreateAssessmentPage() {
     );
   };
 
-  const addPlan = (level: 1 | 2) => {
-    if (level === 1) {
-      setLevel1Plans([
-        ...level1Plans,
-        { id: Date.now().toString(), text: "" },
-      ]);
-    } else {
-      setLevel2Plans([
-        ...level2Plans,
-        { id: Date.now().toString(), text: "" },
-      ]);
-    }
+  const addPlan = (level: 1 | 2 | 3 | 4) => {
+    const newPlan = { id: Date.now().toString(), text: "" };
+    if (level === 1) setLevel1Plans([...level1Plans, newPlan]);
+    else if (level === 2) setLevel2Plans([...level2Plans, newPlan]);
+    else if (level === 3) setLevel3Plans([...level3Plans, newPlan]);
+    else setLevel4Plans([...level4Plans, newPlan]);
   };
 
-  const updatePlan = (level: 1 | 2, planId: string, text: string) => {
-    if (level === 1) {
-      setLevel1Plans(
-        level1Plans.map((p) => (p.id === planId ? { ...p, text } : p))
-      );
-    } else {
-      setLevel2Plans(
-        level2Plans.map((p) => (p.id === planId ? { ...p, text } : p))
-      );
-    }
+  const updatePlan = (level: 1 | 2 | 3 | 4, planId: string, text: string) => {
+    const updater = (plans: Plan[]) =>
+      plans.map((p) => (p.id === planId ? { ...p, text } : p));
+    if (level === 1) setLevel1Plans(updater(level1Plans));
+    else if (level === 2) setLevel2Plans(updater(level2Plans));
+    else if (level === 3) setLevel3Plans(updater(level3Plans));
+    else setLevel4Plans(updater(level4Plans));
   };
 
   const handleCreate = async () => {
@@ -443,10 +436,12 @@ export default function CreateAssessmentPage() {
             onChangeText={setAssessmentName}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input,styles.textArea]}
             placeholder="Brief Description for Thumbnail"
             placeholderTextColor="rgba(255,255,255,0.6)"
             value={briefDescription}
+            numberOfLines={3}
+            multiline
             onChangeText={setBriefDescription}
           />
         </View>
@@ -638,7 +633,7 @@ export default function CreateAssessmentPage() {
                       />
                     </View>
                   ))}
-                  {layer.choices.length === 1 && (
+                  { (
                     <TouchableOpacity
                       style={styles.addButton}
                       onPress={() => addChoice(section.id, layer.id)}
@@ -668,10 +663,9 @@ export default function CreateAssessmentPage() {
                   value={plan.text}
                   onChangeText={(text) => updatePlan(1, plan.id, text)}
                 />
-                
               </View>
             ))}
-            {level1Plans.length === 1 && (
+            {level1Plans.length < 8 && (
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => addPlan(1)}
@@ -696,10 +690,60 @@ export default function CreateAssessmentPage() {
                 />
               </View>
             ))}
-            {level2Plans.length === 1 && (
+            {level2Plans.length < 8 && (
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => addPlan(2)}
+              >
+                <Text style={styles.addButtonText}>+ Plan</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {/* Level 3 Plans */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>
+              Level 3 - Customized Development Plans
+            </Text>
+            {level3Plans.map((plan, index) => (
+              <View key={plan.id} style={styles.planRow}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder={`Plan ${index + 1}`}
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  value={plan.text}
+                  onChangeText={(text) => updatePlan(3, plan.id, text)}
+                />
+              </View>
+            ))}
+            {level3Plans.length < 8 && (
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => addPlan(3)}
+              >
+                <Text style={styles.addButtonText}>+ Plan</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {/* Level 4 Plans */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>
+              Level 4 - Customized Development Plans
+            </Text>
+            {level4Plans.map((plan, index) => (
+              <View key={plan.id} style={styles.planRow}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder={`Plan ${index + 1}`}
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  value={plan.text}
+                  onChangeText={(text) => updatePlan(4, plan.id, text)}
+                />
+              </View>
+            ))}
+            {level4Plans.length < 8 && (
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => addPlan(4)}
               >
                 <Text style={styles.addButtonText}>+ Plan</Text>
               </TouchableOpacity>
@@ -725,6 +769,7 @@ export default function CreateAssessmentPage() {
         </View>
 
         {/* Action Buttons */}
+      </ScrollView>
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.cancelButton}
@@ -744,7 +789,6 @@ export default function CreateAssessmentPage() {
             )}
           </TouchableOpacity>
         </View>
-      </ScrollView>
 
       {/* Success Modal */}
       <AssessmentCreatedSuccessModal
@@ -975,8 +1019,9 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: "row",
     gap: 12,
-    marginTop: 24,
+    marginTop: 12,
     marginBottom: 24,
+    paddingHorizontal: 16,
   },
   cancelButton: {
     flex: 1,
