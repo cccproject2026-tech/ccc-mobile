@@ -1985,16 +1985,19 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                             disabled={isMentorReadOnly && !signatureValue}
                         >
                             {signatureValue ? (
-                                <>
-                                    <Image
-                                        source={{ uri: signatureValue }}
-                                        style={styles.signaturePreview}
-                                        resizeMode="contain"
-                                    />
-                                    {!isMentorReadOnly && (
-                                        <Text style={styles.reSignText}>Re-Sign</Text>
-                                    )}
-                                </>
+                                isMentorReadOnly ? (
+                                    <>
+                                        <Image
+                                            source={{ uri: signatureValue }}
+                                            style={styles.signaturePreview}
+                                            resizeMode="contain"
+                                        />
+                                    </>
+                                ) : (
+                                    <Text style={styles.tapToSignText}>
+                                        Tap to Re‑Sign
+                                    </Text>
+                                )
                             ) : (
                                 <Text style={styles.tapToSignText}>
                                     {extra.placeHolder || (isMentorReadOnly ? "No signature provided yet" : "Tap to Sign")}
@@ -2252,8 +2255,8 @@ const styles = StyleSheet.create({
         minHeight: 140,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.4)',
-        backgroundColor: 'rgba(15,23,42,0.9)',
+        borderColor: '#e5e7eb',
+        backgroundColor: '#ffffff',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 16,
@@ -2262,6 +2265,8 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 100,
         marginBottom: 8,
+        backgroundColor: '#ffffff',
+        borderRadius: 6,
     },
     tapToSignText: { color: '#9cc2ff', fontSize: 16 },
     reSignText: { color: '#93c5fd', fontSize: 14, textDecorationLine: 'underline', marginTop: 8 },

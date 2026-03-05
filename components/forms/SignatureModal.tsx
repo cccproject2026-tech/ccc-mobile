@@ -63,7 +63,7 @@ export function SignatureModal({ visible, onSave, onClose }: Props) {
                         onOK={handleOK}
                         webStyle={webStyle}
                         autoClear={false}
-                        backgroundColor="rgba(255,255,255,0.01)"
+                        backgroundColor="#ffffff"
                         imageType="image/jpeg"
                         trimWhitespace
                         style={[styles.canvas, { width: width - 32, height: height * 0.3 }]}
@@ -89,7 +89,7 @@ export function SignatureModal({ visible, onSave, onClose }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#1e293b",
+        backgroundColor: "#f9fafb",
         paddingHorizontal: 16,
         paddingTop: 60,
         paddingBottom: 40,
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 22,
         fontWeight: "600",
-        color: "#fff",
+        color: "#111827",
         textAlign: "center",
         marginBottom: 24,
     },
@@ -107,8 +107,8 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: "hidden",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.3)",
-        backgroundColor: "rgba(255,255,255,0.05)",
+        borderColor: "#e5e7eb",
+        backgroundColor: "#ffffff",
         marginBottom: 24,
     },
     canvas: {
@@ -136,17 +136,17 @@ const styles = StyleSheet.create({
         borderColor: "#2563eb",
     },
     buttonText: {
-        color: "#fff",
+        color: "#111827",
         fontSize: 16,
         fontWeight: "600",
     },
     buttonTextSecondary: {
-        color: "#e2e8f0",
+        color: "#4b5563",
         fontSize: 16,
         fontWeight: "600",
     },
     buttonTextPrimary: {
-        color: "#fff",
+        color: "#ffffff",
         fontSize: 16,
         fontWeight: "600",
     },
