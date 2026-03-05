@@ -1167,8 +1167,21 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                 return;
             }
 
-            const base64Data = signatureValue.replace("data:image/png;base64,", "");
-            const filePath = `${RNFS.CachesDirectoryPath}/pastor_signature_${Date.now()}.png`;
+            let prefix = "";
+            let ext = "png";
+            if (signatureValue.startsWith("data:image/png")) {
+                prefix = "data:image/png;base64,";
+                ext = "png";
+            } else if (signatureValue.startsWith("data:image/jpeg")) {
+                prefix = "data:image/jpeg;base64,";
+                ext = "jpg";
+            } else if (signatureValue.startsWith("data:image/jpg")) {
+                prefix = "data:image/jpg;base64,";
+                ext = "jpg";
+            }
+
+            const base64Data = prefix ? signatureValue.substring(prefix.length) : signatureValue;
+            const filePath = `${RNFS.CachesDirectoryPath}/pastor_signature_${Date.now()}.${ext}`;
 
             await RNFS.writeFile(filePath, base64Data, "base64");
 
@@ -1986,13 +1999,9 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                         >
                             {signatureValue ? (
                                 isMentorReadOnly ? (
-                                    <>
-                                        <Image
-                                            source={{ uri: signatureValue }}
-                                            style={styles.signaturePreview}
-                                            resizeMode="contain"
-                                        />
-                                    </>
+                                    <Text style={styles.tapToSignText}>
+                                        Download Signature
+                                    </Text>
                                 ) : (
                                     <Text style={styles.tapToSignText}>
                                         Tap to Re‑Sign

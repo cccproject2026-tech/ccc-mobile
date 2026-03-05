@@ -13,12 +13,15 @@ import { Extra, NestedRoadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import RNFS from "react-native-fs";
+import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
 import { JSX, useEffect, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import {
     ActivityIndicator,
     Alert,
+    Image,
     Linking,
     Pressable,
     ScrollView,
@@ -77,10 +80,13 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
             if (extra.date) init[extra.name] = extra.date;
         });
 
-        // 2. Override with existing extras from API
+        // 2. Override with existing extras from API (SIGNATURE uses signatureData)
         if (existingExtras?.extras && Array.isArray(existingExtras.extras)) {
             existingExtras.extras.forEach((item: any) => {
-                if (item.name && item.value !== undefined) {
+                if (!item.name) return;
+                if (item.type === "SIGNATURE" && item.signatureData != null) {
+                    init[item.name] = item.signatureData;
+                } else if (item.value !== undefined) {
                     init[item.name] = item.value;
                 }
             });
@@ -94,6 +100,51 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
     };
 
     const validateForm = () => Object.keys(formData).length > 0;
+
+    const downloadSignature = async (signatureValue: string) => {
+        try {
+            if (!signatureValue?.startsWith("data:image")) {
+                Alert.alert("Error", "Signature data is not a valid image.");
+                return;
+            }
+
+            const perm = await MediaLibrary.requestPermissionsAsync();
+            if (!perm.granted) {
+                Alert.alert(
+                    "Permission Required",
+                    "Please allow access to your media library to save the signature."
+                );
+                return;
+            }
+
+            let prefix = "";
+            let ext = "png";
+            if (signatureValue.startsWith("data:image/png")) {
+                prefix = "data:image/png;base64,";
+                ext = "png";
+            } else if (signatureValue.startsWith("data:image/jpeg")) {
+                prefix = "data:image/jpeg;base64,";
+                ext = "jpg";
+            } else if (signatureValue.startsWith("data:image/jpg")) {
+                prefix = "data:image/jpg;base64,";
+                ext = "jpg";
+            }
+
+            const base64Data = prefix ? signatureValue.substring(prefix.length) : signatureValue;
+            const filePath = `${RNFS.CachesDirectoryPath}/pastor_signature_${Date.now()}.${ext}`;
+
+            await RNFS.writeFile(filePath, base64Data, "base64");
+
+            const fileUri = `file://${filePath}`;
+            const asset = await MediaLibrary.createAssetAsync(fileUri);
+            await MediaLibrary.createAlbumAsync("CCC Signatures", asset, false);
+
+            Alert.alert("Success", "Signature saved to your device.");
+        } catch (err: any) {
+            console.error("Failed to save signature", err);
+            Alert.alert("Error", "Could not save the signature. Please try again.");
+        }
+    };
 
     /** Infer extra type – used when building payload */
     const getExtraType = (fieldName: string, value: any): string => {
@@ -504,6 +555,47 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                     </View>
                 );
 
+            case "SIGNATURE": {
+                const signatureValue = formData[extra.name] || null;
+                return (
+                    <View key={id} style={styles.fieldContainer}>
+                        <Text style={styles.fieldLabel}>{extra.name}</Text>
+                        <Pressable
+                            style={styles.signaturePlaceholder}
+                            onPress={() => {
+                                if (!signatureValue) return;
+
+                                Alert.alert(
+                                    "Signature Options",
+                                    "What would you like to do?",
+                                    [
+                                        {
+                                            text: "View",
+                                            onPress: () =>
+                                                Linking.openURL(signatureValue).catch(() =>
+                                                    Alert.alert(
+                                                        "Error",
+                                                        "Could not open signature image."
+                                                    )
+                                                ),
+                                        },
+                                        {
+                                            text: "Download",
+                                            onPress: () => downloadSignature(signatureValue),
+                                        },
+                                        { text: "Cancel", style: "cancel" },
+                                    ]
+                                );
+                            }}
+                        >
+                            <Text style={styles.tapToSignText}>
+                                {signatureValue ? "Download Signature" : "No signature provided yet"}
+                            </Text>
+                        </Pressable>
+                    </View>
+                );
+            }
+
             default:
                 return null;
         }
@@ -719,6 +811,24 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         textAlign: 'center',
     },
+    signaturePlaceholder: {
+        minHeight: 140,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        backgroundColor: '#ffffff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
+    },
+    signaturePreview: {
+        width: '100%',
+        height: 100,
+        marginBottom: 8,
+        backgroundColor: '#ffffff',
+        borderRadius: 6,
+    },
+    tapToSignText: { color: '#9cc2ff', fontSize: 16 },
     centeredLinkButton: {
         backgroundColor: 'white',
         color: '#001FC1',
