@@ -14,6 +14,8 @@ import { Stack, router, useLocalSearchParams } from "expo-router"
 import React from "react"
 import {
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -65,12 +67,17 @@ export default function DetailedRoadMap() {
       >
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
-          <ScrollView
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: 40,
-            }}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
           >
+            <ScrollView
+              contentContainerStyle={{
+                flexGrow: 1,
+                paddingBottom: 40,
+              }}
+              keyboardShouldPersistTaps="handled"
+            >
             <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
 
             {/* Header Section */}
@@ -476,7 +483,8 @@ export default function DetailedRoadMap() {
                 </View>
               )}
             </View>
-          </ScrollView>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
 
         {/* Modals */}

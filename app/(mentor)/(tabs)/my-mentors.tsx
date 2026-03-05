@@ -11,6 +11,8 @@ import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -81,7 +83,15 @@ export default function MyMentorsScreen() {
       >
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={{ flex: 1 }}>
-          <ScrollView style={{ flex: 1 }}>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+          >
             <View
               style={{
                 height: "100%",
@@ -295,6 +305,7 @@ export default function MyMentorsScreen() {
               </View>
             </View>
           </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </LinearGradient>
     </>

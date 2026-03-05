@@ -16,6 +16,7 @@ import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -257,8 +258,12 @@ export default function Grant() {
         />
 
         <View style={{ flex: 1 }}>
-          <View style={{ width: "100%", alignItems: "center", marginTop: 16, flex: 1 }}>
-            <ScrollView
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <View style={{ width: "100%", alignItems: "center", marginTop: 16, flex: 1 }}>
+              <ScrollView
               contentContainerStyle={{
                 paddingBottom: Platform.OS === "android" ? bottom : bottom * 1.5,
                 paddingHorizontal: getSpacing(16),
@@ -505,19 +510,20 @@ export default function Grant() {
                   </>
                 )}
               </View>
-            </ScrollView>
+              </ScrollView>
 
-            {/* Response modal */}
-            <ResponseModal
-              buttonText={responseModal.buttonText}
-              buttonPress={() => setResponseModal((prev) => ({ ...prev, visible: false }))}
-              isModalVisible={responseModal.visible}
-              responseText={responseModal.message}
-              closeMenu={() =>
-                setResponseModal((prev) => ({ ...prev, visible: false, message: "" }))
-              }
-            />
-          </View>
+              {/* Response modal */}
+              <ResponseModal
+                buttonText={responseModal.buttonText}
+                buttonPress={() => setResponseModal((prev) => ({ ...prev, visible: false }))}
+                isModalVisible={responseModal.visible}
+                responseText={responseModal.message}
+                closeMenu={() =>
+                  setResponseModal((prev) => ({ ...prev, visible: false, message: "" }))
+                }
+              />
+            </View>
+          </KeyboardAvoidingView>
         </View>
 
         <SimpleSuccessModal

@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -409,23 +411,28 @@ export default function CreateAssessmentPage() {
         role="mentor"
       />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="arrow-back" size={24} color="#E2E8F0" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Create - Assessment</Text>
-      </View>
-
-      {/* Form Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingBottom: bottom + 100,
-        }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={10}>
+            <Ionicons name="arrow-back" size={24} color="#E2E8F0" />
+          </Pressable>
+          <Text style={styles.headerTitle}>Create - Assessment</Text>
+        </View>
+
+        {/* Form Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingBottom: bottom + 100,
+          }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Assessment Details */}
         <View style={styles.section}>
           <TextInput
@@ -769,7 +776,6 @@ export default function CreateAssessmentPage() {
         </View>
 
         {/* Action Buttons */}
-      </ScrollView>
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.cancelButton}
@@ -789,6 +795,8 @@ export default function CreateAssessmentPage() {
             )}
           </TouchableOpacity>
         </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Success Modal */}
       <AssessmentCreatedSuccessModal

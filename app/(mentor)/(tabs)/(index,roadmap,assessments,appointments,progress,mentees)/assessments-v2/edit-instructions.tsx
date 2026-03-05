@@ -10,6 +10,8 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -193,13 +195,18 @@ export default function EditInstructionsPage() {
             role="mentor"
           />
 
-          <ScrollView
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: bottom + 100,
-            }}
-            showsVerticalScrollIndicator={false}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
           >
+            <ScrollView
+              contentContainerStyle={{
+                flexGrow: 1,
+                paddingBottom: bottom + 100,
+              }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
             {/* Header Section */}
             <View style={styles.header}>
               <Pressable onPress={() => router.back()} hitSlop={10}>
@@ -328,7 +335,8 @@ export default function EditInstructionsPage() {
                 Edit Sections {">>"}
               </Text>
             </TouchableOpacity>
-          </ScrollView>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
 
         {/* Success Modal */}

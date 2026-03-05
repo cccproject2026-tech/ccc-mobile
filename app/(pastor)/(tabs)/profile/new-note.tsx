@@ -4,6 +4,8 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -151,8 +153,12 @@ export default function NewPastorNote() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
-        <View style={styles.header}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          {/* Header */}
+          <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity
               activeOpacity={0.7}
@@ -226,29 +232,36 @@ export default function NewPastorNote() {
           </ScrollView>
         </View>
 
-        {/* Note Content Area */}
-        <View style={styles.contentContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Write the Notes here..."
-            placeholderTextColor="rgba(255, 255, 255, 0.4)"
-            multiline
-            textAlignVertical="top"
-            value={noteContent}
-            onChangeText={setNoteContent}
-          />
-        </View>
-
-        {/* Save Button */}
-        <View style={styles.bottomContainer}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={styles.saveButton}
-            onPress={handleSave}
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
-        </View>
+            {/* Note Content Area */}
+            <View style={styles.contentContainer}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Write the Notes here..."
+                placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                multiline
+                textAlignVertical="top"
+                value={noteContent}
+                onChangeText={setNoteContent}
+              />
+            </View>
+
+            {/* Save Button */}
+            <View style={styles.bottomContainer}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.saveButton}
+                onPress={handleSave}
+              >
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
   );

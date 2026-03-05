@@ -4,6 +4,8 @@ import { router, Stack, useLocalSearchParams } from "expo-router"
 import React, { useState, useEffect } from "react"
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -141,8 +143,12 @@ export default function NewNote() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
-        <View style={styles.header}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          {/* Header */}
+          <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity
               activeOpacity={0.7}
@@ -197,48 +203,55 @@ export default function NewNote() {
           </TouchableOpacity>
         </View>
 
-        {/* Formatting Toolbar */}
-        <View style={styles.toolbarContainer}>
+          {/* Formatting Toolbar */}
+          <View style={styles.toolbarContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.toolbar}
+            >
+              <FormatButton icon="text" format="font-size" />
+              <FormatButton icon="document-text" format="bold" />
+              <FormatButton icon="remove-outline" format="underline" />
+              <FormatButton icon="list" format="bullet-list" />
+              <FormatButton icon="list-outline" format="numbered-list" />
+              <FormatButton icon="align-horizontal-left" format="align-left" />
+              <FormatButton icon="align-horizontal-center" format="align-center" />
+              <FormatButton icon="align-horizontal-right" format="align-right" />
+              <FormatButton icon="reorder-four" format="justify" />
+            </ScrollView>
+          </View>
+
           <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.toolbar}
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <FormatButton icon="text" format="font-size" />
-            <FormatButton icon="document-text" format="bold" />
-            <FormatButton icon="remove-outline" format="underline" />
-            <FormatButton icon="list" format="bullet-list" />
-            <FormatButton icon="list-outline" format="numbered-list" />
-            <FormatButton icon="align-horizontal-left" format="align-left" />
-            <FormatButton icon="align-horizontal-center" format="align-center" />
-            <FormatButton icon="align-horizontal-right" format="align-right" />
-            <FormatButton icon="reorder-four" format="justify" />
+            {/* Note Content Area */}
+            <View style={styles.contentContainer}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Write the Notes here..."
+                placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                multiline
+                textAlignVertical="top"
+                value={noteContent}
+                onChangeText={setNoteContent}
+              />
+            </View>
+
+            {/* Save Button */}
+            <View style={styles.bottomContainer}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.saveButton}
+                onPress={handleSave}
+              >
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
-        </View>
-
-        {/* Note Content Area */}
-        <View style={styles.contentContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Write the Notes here..."
-            placeholderTextColor="rgba(255, 255, 255, 0.4)"
-            multiline
-            textAlignVertical="top"
-            value={noteContent}
-            onChangeText={setNoteContent}
-          />
-        </View>
-
-        {/* Save Button */}
-        <View style={styles.bottomContainer}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={styles.saveButton}
-            onPress={handleSave}
-          >
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
-        </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
   )

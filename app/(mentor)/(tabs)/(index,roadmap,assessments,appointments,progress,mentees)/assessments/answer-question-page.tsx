@@ -75,6 +75,7 @@ export default function AnswerQuestionPage() {
               paddingBottom: 150,
             }}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             <ScrollView
               contentContainerStyle={{

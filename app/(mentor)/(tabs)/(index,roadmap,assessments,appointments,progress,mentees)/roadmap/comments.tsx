@@ -201,6 +201,7 @@ export default function CommentsScreen() {
                         keyExtractor={(item) => item._id}
                         contentContainerStyle={styles.listContainer}
                         showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
                                 <Text style={styles.emptyText}>
