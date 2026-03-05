@@ -6,8 +6,8 @@ import TopBar from "@/components/director/TopBar";
 import { useAssessment } from "@/hooks/assessments";
 import { useFetchAnswers } from "@/hooks/assessments/useFetchAnswers";
 import {
-    useSubmitAssessmentAnswers,
-    useSubmitPreSurvey,
+  useSubmitAssessmentAnswers,
+  useSubmitPreSurvey,
 } from "@/hooks/assessments/useSubmitAnswers";
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
@@ -20,13 +20,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function AnswerQuestionPage() {

@@ -519,8 +519,8 @@ const ScheduleMeetingBottomSheet = forwardRef<
       <>
         <BottomSheetModal
           ref={ref}
-          //snapPoints={["88%", "95%"]}
-          snapPoints={snapPoints}
+          snapPoints={["88%", "95%"]}
+          //snapPoints={snapPoints}
           enablePanDownToClose={!disableOutsideClose}
           backgroundComponent={() => null}
           backdropComponent={renderBackdrop}
@@ -818,42 +818,82 @@ const ScheduleMeetingBottomSheet = forwardRef<
                               </Text>
                             </View>
                           ) : timeSlots.length > 0 ? (
-                            <View style={styles.timeSlotGrid}>
-                              {timeSlots.map((slot) => (
+                            <BottomSheetFlatList
+                              horizontal
+                              data={timeSlots}
+                              keyExtractor={(item: any) => item.id}
+                              showsHorizontalScrollIndicator={false}
+                              contentContainerStyle={styles.timeSlotGrid}
+                              decelerationRate="fast"
+                              renderItem={({ item }: any) => (
                                 <Pressable
-                                  key={slot.id}
                                   style={[
                                     styles.timeSlotGridItem,
                                     {
                                       backgroundColor:
-                                        selectedTime?.id === slot.id
+                                        selectedTime?.id === item.id
                                           ? "#FFFFFF"
-                                          : "transparent",
-                                      borderColor:
-                                        selectedTime?.id === slot.id
-                                          ? "#FFFFFF"
-                                          : `${colorScheme.text}50`,
+                                          : Colors.blueShade,
                                     },
                                   ]}
-                                  onPress={() => setSelectedTime(slot)}
+                                  onPress={() => setSelectedTime(item)}
                                 >
                                   <Text
                                     style={[
                                       styles.timeSlotText,
                                       {
                                         color:
-                                          selectedTime?.id === slot.id
+                                          selectedTime?.id === item.id
                                             ? colorScheme.background
                                             : colorScheme.text,
                                       },
                                     ]}
                                   >
-                                    {slot.label}
+                                    {item.label}
                                   </Text>
                                 </Pressable>
-                              ))}
-                            </View>
+                              )}
+                            />
                           ) : (
+                            // <ScrollView
+                            //   horizontal
+                            //   showsHorizontalScrollIndicator={false}
+                            //   contentContainerStyle={styles.timeSlotGrid}
+                            // >
+                            //   {timeSlots.map((slot) => (
+                            //     <Pressable
+                            //       key={slot.id}
+                            //       style={[
+                            //         styles.timeSlotGridItem,
+                            //         {
+                            //           backgroundColor:
+                            //             selectedTime?.id === slot.id
+                            //               ? "#FFFFFF"
+                            //               : "transparent",
+                            //           borderColor:
+                            //             selectedTime?.id === slot.id
+                            //               ? "#FFFFFF"
+                            //               : `${colorScheme.text}50`,
+                            //         },
+                            //       ]}
+                            //       onPress={() => setSelectedTime(slot)}
+                            //     >
+                            //       <Text
+                            //         style={[
+                            //           styles.timeSlotText,
+                            //           {
+                            //             color:
+                            //               selectedTime?.id === slot.id
+                            //                 ? colorScheme.background
+                            //                 : colorScheme.text,
+                            //           },
+                            //         ]}
+                            //       >
+                            //         {slot.label}
+                            //       </Text>
+                            //     </Pressable>
+                            //   ))}
+                            // </ScrollView>
                             <View style={styles.noTimeSlotsContainer}>
                               <Text
                                 style={[
@@ -1383,6 +1423,8 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   timeSlotGrid: {
+    flexDirection: "row",
+    alignItems: "center",
     minHeight: getSpacing(40),
     marginBottom: getSpacing(8),
   },
