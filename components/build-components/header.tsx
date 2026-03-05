@@ -14,6 +14,7 @@ export default function Header({
   showSettings = true,
   showNewMeeting = false,
   onNewMeetingPress,
+  onMenuPress,
 }: {
   title?: string | undefined;
   subTitle?: string | undefined;
@@ -21,11 +22,13 @@ export default function Header({
   showSettings?: boolean | undefined;
   showNewMeeting?: boolean | undefined;
   onNewMeetingPress?: () => void;
+  onMenuPress?: () => void;
 }) {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
     React.useState(false);
   const [searchText, setSearchText] = React.useState("");
   const [tabs, setTabs] = React.useState("All");
+ 
   return (
     <>
       <View
@@ -55,7 +58,10 @@ export default function Header({
               }}
             />
             <View>
-              <Text style={{ color: "white" }} className="text-white font-semibold text-[17px]">
+              <Text
+                style={{ color: "white" }}
+                className="text-white font-semibold text-[17px]"
+              >
                 {title}
               </Text>
               {subTitle && (
@@ -68,7 +74,7 @@ export default function Header({
         </TouchableOpacity>
 
         {showSettings && (
-          <TouchableOpacity onPress={() => setIsRoadmapModalVisible(true)}>
+          <TouchableOpacity onPress={() => {onMenuPress && onMenuPress(); setIsRoadmapModalVisible(true)}}>
             <Ionicons name="ellipsis-vertical" size={20} color="white" />
           </TouchableOpacity>
         )}
@@ -78,9 +84,9 @@ export default function Header({
             {/* <Ionicons name="add" size={20} color="white" /> */}
             <Button
               type="custom"
-              title="New Meeting"
+              title="New Meetings"
               icon={icons.plusIcon}
-              onPress={onNewMeetingPress || (() => { })}
+              onPress={onNewMeetingPress || (() => {})}
               style={{
                 width: 160,
                 backgroundColor: "rgba(255, 255, 255, 0.16)",

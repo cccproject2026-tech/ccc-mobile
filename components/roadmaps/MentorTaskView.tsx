@@ -158,6 +158,11 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
         return "TEXT_FIELD";
     };
 
+    const getExtraName = (name: string) => {
+        if (name == "Pastoral Ministry Profile") return "PMP";
+        if (name == "Church Ministry Survey") return "CMA";
+        return name;
+    };
     /** Save progress */
     const handleSubmit = async () => {
         if (!validateForm()) return;
@@ -520,7 +525,7 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                     });
                                 }}
                             >
-                                <Text style={styles.centeredLinkText}>View {extra.name} Survey Results</Text>
+                                <Text style={styles.centeredLinkText}>View {getExtraName(extra.name)} Survey Results</Text>
                             </TouchableOpacity>
                         </View>
                     );
@@ -533,6 +538,8 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                 <Text style={styles.assessmentTitle}>{extra.name}</Text>
                             </View>
                         </View>
+                        <View style={{ padding: 10,paddingHorizontal: 20}} >
+
                         <Pressable
                             style={styles.button}
                             onPress={() => {
@@ -548,10 +555,11 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                     });
                                 }
                             }}
-                        >
-                            <Text style={styles.buttonText}>View PMP Survey</Text>
-                            <Ionicons name="open-outline" size={20} color="#2563eb" />
+                            >
+                            <Text style={styles.centeredLinkText}>View {getExtraName(extra.name)} Survey</Text>
+                            {/* <Ionicons name="open-outline" size={20} color="#2563eb" /> */}
                         </Pressable>
+                            </View>
                     </View>
                 );
 
@@ -747,11 +755,12 @@ const styles = StyleSheet.create({
         minWidth: 120,
     },
     button: {
+        
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 14,
-        paddingHorizontal: 24,
+        paddingHorizontal: 4,
         borderRadius: 8,
         gap: 10,
         backgroundColor: '#ffffff',

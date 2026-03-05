@@ -168,6 +168,7 @@ export default function AssignToPage() {
 
   const renderMenteeItem = ({ item: mentee }: { item: MenteeDisplay }) => {
     const isSelected = selectedMentees.has(mentee.id);
+    console.log('mentee', JSON.stringify(mentee, null, 2));
     return (
       <View style={styles.menteeCard}>
         {/* Avatar */}
@@ -193,13 +194,13 @@ export default function AssignToPage() {
             style={[
               styles.checkbox,
               isSelected && {
-                borderColor: "#5EB3D1",
-                backgroundColor: "#5EB3D1",
+                // borderColor: "#5EB3D1",
+                backgroundColor: "#fff",
               },
             ]}
           >
             {isSelected && (
-              <Ionicons name="checkmark" size={16} color="#0E2C3A" />
+              <Ionicons name="checkmark" size={16}  color="#0E2C3A" />
             )}
           </View>
         </Pressable>
@@ -263,7 +264,7 @@ export default function AssignToPage() {
             value={search}
             onChangeValue={setSearch}
             placeholder="Search"
-          />
+                 />
         </View>
 
         {/* Select All */}

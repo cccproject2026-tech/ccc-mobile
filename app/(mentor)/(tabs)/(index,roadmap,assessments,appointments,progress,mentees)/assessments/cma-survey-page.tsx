@@ -1,5 +1,8 @@
 import { Button } from "@/components/atom/buttons";
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
+import AssessmentDeletedSuccessModal from "@/components/build-components/AssessmentDeletedSuccessModal";
+import AssessmentMenuBottomSheet from "@/components/build-components/AssessmentMenuBottomSheet";
+import DeleteConfirmationModal from "@/components/build-components/DeleteConfirmationModal";
 import {
   AssessmentMainCard,
   GuidelinesPoints,
@@ -7,10 +10,13 @@ import {
 } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
-import { useAssessment } from "@/hooks/assessments";
+import { useDeleteAssessment, useAssessment } from "@/hooks/assessments";
+import { Assessment } from "@/lib/assessments/types";
+import { useAuthStore } from "@/stores";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React from "react";
+import React, { useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -33,6 +39,15 @@ export default function CmaSurvey() {
     React.useState(false);
   const params = useLocalSearchParams();
   const assessmentId = params.assessmentId as string;
+
+  const { user } = useAuthStore();
+  const isMentor = user?.role === 'mentor';
+
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
+  const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);
+  const [assessmentToDelete, setAssessmentToDelete] = useState<Assessment | null>(null);
+  const deleteAssessmentMutation = useDeleteAssessment();
 
   // Use TanStack Query hook
   const { data: assessment, isLoading: loading, error: queryError } = useAssessment(assessmentId);
@@ -86,6 +101,42 @@ export default function CmaSurvey() {
 
   const assessmentType = inferType(assessment.name);
 
+  const assessmentForSheet: Assessment | null = assessment
+    ? {
+      id: assessment._id,
+      type: assessmentType as 'CMA' | 'PMP',
+      title: assessment.name,
+      description: assessment.description ?? '',
+      status: 'Not Started',
+      guidelines: assessment.instructions ?? [],
+      sections: [],
+    }
+    : null;
+
+  const handleAssignTo = (a: Assessment) => {
+    bottomSheetRef.current?.dismiss();
+    router.push({ pathname: "/(mentor)/assessments-v2/assign-to" as any, params: { assessmentId: a.id } });
+  };
+  const handleEditSurvey = (a: Assessment) => {
+    bottomSheetRef.current?.dismiss();
+    router.push({ pathname: "/(mentor)/assessments-v2/edit-instructions" as any, params: { assessmentId: a.id } });
+  };
+  const handleDeleteSurvey = (a: Assessment) => {
+    setAssessmentToDelete(a);
+    setShowDeleteConfirmationModal(true);
+  };
+  const handleConfirmDelete = () => {
+    if (!assessmentToDelete) return;
+    setShowDeleteConfirmationModal(false);
+    bottomSheetRef.current?.dismiss();
+    deleteAssessmentMutation.mutate(assessmentToDelete.id, {
+      onSuccess: () => { setShowDeleteSuccessModal(true); setAssessmentToDelete(null); },
+      onError: () => { setAssessmentToDelete(null); },
+    });
+  };
+  const handleCancelDelete = () => { setShowDeleteConfirmationModal(false); setAssessmentToDelete(null); };
+  const handleDeleteSuccessModalClose = () => { setShowDeleteSuccessModal(false); router.back(); };
+
   return (
     <>
       <LinearGradient
@@ -107,6 +158,13 @@ export default function CmaSurvey() {
               title={assessment.name}
               subTitle="Assessment"
               hideSearchBar={true}
+              onMenuPress={() => {
+                if (isMentor) {
+                  bottomSheetRef.current?.present();
+                } else {
+                  setIsRoadmapModalVisible(true);
+                }
+              }}
             />
 
             {/* Tabs Section */}
@@ -163,6 +221,24 @@ export default function CmaSurvey() {
         <RoadMapOutcomeModal
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}
+        />
+
+        <AssessmentMenuBottomSheet
+          ref={bottomSheetRef}
+          assessment={assessmentForSheet}
+          onClose={() => { }}
+          onAssignTo={handleAssignTo}
+          onEditSurvey={handleEditSurvey}
+          onDeleteSurvey={handleDeleteSurvey}
+        />
+        <DeleteConfirmationModal
+          visible={showDeleteConfirmationModal}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+        />
+        <AssessmentDeletedSuccessModal
+          visible={showDeleteSuccessModal}
+          onClose={handleDeleteSuccessModalClose}
         />
       </LinearGradient>
     </>

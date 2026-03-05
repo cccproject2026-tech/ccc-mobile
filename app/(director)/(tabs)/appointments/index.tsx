@@ -57,7 +57,7 @@ const Appointments: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       setActiveTab("appointments");
-    }, [])
+    }, []),
   );
 
   // Bottom sheet ref
@@ -190,7 +190,7 @@ const Appointments: React.FC = () => {
             });
           },
         },
-      ]
+      ],
     );
   };
 
@@ -214,7 +214,9 @@ const Appointments: React.FC = () => {
     if (openSheet === "true") {
       router.push({
         pathname: "/assessments/survey-guidelines",
-        params: { assessmentId },
+        params: {
+          assessmentId,
+        },
       });
     }
   };
@@ -394,7 +396,7 @@ const Appointments: React.FC = () => {
                           : `You have ${
                               selectedDateAppointments.length
                             } Appointments on ${formatDisplayDate(
-                              selectedDate
+                              selectedDate,
                             )}`}
                       </Text>
                     </View>
@@ -450,7 +452,7 @@ const Appointments: React.FC = () => {
                         {isToday(selectedDate)
                           ? "No Appointments Today"
                           : `No Appointments on ${formatDisplayDate(
-                              selectedDate
+                              selectedDate,
                             )}`}
                       </Text>
                     </View>

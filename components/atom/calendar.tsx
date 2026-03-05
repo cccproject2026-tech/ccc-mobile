@@ -1,16 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo, useState } from "react";
-import { ColorValue, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ColorValue,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle,
+} from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 
 export interface RecurringAvailability {
-  type: 'weekly' | 'monthly' | 'custom';
-  // For weekly: [0-6] where 0 = Sunday, 1 = Monday, etc.
+  type: "weekly" | "monthly" | "custom";
   daysOfWeek?: number[];
-  // For monthly: [1-31] days of month
   daysOfMonth?: number[];
-  // For custom: function to determine if date is available
   customCheck?: (date: string) => boolean;
 }
 
@@ -18,22 +23,44 @@ interface GradientCalendarProps {
   selected: string;
   setSelected: (date: string) => void;
   containerStyle?: ViewStyle;
+  headerTextStyle?: TextStyle;
   gradientColors?: string[];
 
-  // Availability Options
-  availableDates?: string[]; // Specific available dates
-  unavailableDates?: string[]; // Specific unavailable dates (booked slots)
-  recurringAvailability?: RecurringAvailability; // Recurring patterns
+  availableDates?: string[];
+  unavailableDates?: string[];
+  recurringAvailability?: RecurringAvailability;
 
-  // Behavior Options
-  disablePastDates?: boolean; // Default: true for scheduling
+  disablePastDates?: boolean;
   showHeader?: boolean;
   minDate?: string;
   maxDate?: string;
 
-  // Styling Options
-  markToday?: boolean; // Show red dot on today
+  markToday?: boolean;
+  headerText?: string;
 }
+
+/* ============================= */
+/* ✅ SAFE DATE HELPERS (ADDED)  */
+/* ============================= */
+
+const isValidDate = (date: Date) =>
+  date instanceof Date && !isNaN(date.getTime());
+
+const safeParseDate = (value?: string | Date) => {
+  if (!value) return new Date();
+  const date = value instanceof Date ? value : new Date(value);
+  return isValidDate(date) ? date : new Date();
+};
+
+const formatDate = (date: Date) => {
+  if (!isValidDate(date)) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/* ============================= */
 
 const GradientCalendar: React.FC<GradientCalendarProps> = ({
   selected,
@@ -48,47 +75,65 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
   minDate,
   maxDate,
   markToday = true,
+  headerText = "Select Available Date",
+  headerTextStyle,
 }) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const today = new Date().toISOString().split('T')[0];
+  /* ✅ FIXED INITIAL STATE */
+  const [currentMonth, setCurrentMonth] = useState<Date>(() =>
+    safeParseDate(selected),
+  );
 
-  // Check if a date is available based on all rules
+  /* ✅ FIXED TODAY (no timezone bug) */
+  const today = formatDate(new Date());
+
+  console.log(currentMonth, typeof currentMonth);
+
+  /* ============================= */
+  /* Sync month when selected changes */
+  /* ============================= */
+
+  useEffect(() => {
+    setCurrentMonth(safeParseDate(selected));
+  }, [selected]);
+
+  /* ============================= */
+  /* Availability Logic (UNCHANGED) */
+  /* ============================= */
+
   const isDateAvailable = (dateStr: string): boolean => {
-    // Check if date is in unavailable list (booked)
-    if (unavailableDates.includes(dateStr)) {
-      return false;
-    }
+    if (unavailableDates.includes(dateStr)) return false;
 
-    // Check if past date and disablePastDates is true
-    if (disablePastDates && dateStr < today) {
-      return false;
-    }
+    if (disablePastDates && dateStr < today) return false;
 
-    // If specific available dates provided, use that list
     if (availableDates && availableDates.length > 0) {
       return availableDates.includes(dateStr);
     }
 
-    // If recurring availability provided, check pattern
     if (recurringAvailability) {
-      const date = new Date(dateStr);
+      const date = safeParseDate(dateStr);
 
-      if (recurringAvailability.type === 'weekly' && recurringAvailability.daysOfWeek) {
-        const dayOfWeek = date.getDay();
-        return recurringAvailability.daysOfWeek.includes(dayOfWeek);
+      if (
+        recurringAvailability.type === "weekly" &&
+        recurringAvailability.daysOfWeek
+      ) {
+        return recurringAvailability.daysOfWeek.includes(date.getDay());
       }
 
-      if (recurringAvailability.type === 'monthly' && recurringAvailability.daysOfMonth) {
-        const dayOfMonth = date.getDate();
-        return recurringAvailability.daysOfMonth.includes(dayOfMonth);
+      if (
+        recurringAvailability.type === "monthly" &&
+        recurringAvailability.daysOfMonth
+      ) {
+        return recurringAvailability.daysOfMonth.includes(date.getDate());
       }
 
-      if (recurringAvailability.type === 'custom' && recurringAvailability.customCheck) {
+      if (
+        recurringAvailability.type === "custom" &&
+        recurringAvailability.customCheck
+      ) {
         return recurringAvailability.customCheck(dateStr);
       }
     }
 
-    // Default: all dates available (if no restrictions)
     return true;
   };
 
@@ -98,37 +143,52 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     }
   };
 
+  /* ============================= */
+  /* ✅ SAFE MONTH NAVIGATION */
+  /* ============================= */
+
   const handlePrevMonth = () => {
-    const newDate = new Date(currentMonth);
-    newDate.setMonth(newDate.getMonth() - 1);
-    setCurrentMonth(newDate);
+    setCurrentMonth((prev) => {
+      const safePrev = safeParseDate(prev);
+      const newDate = new Date(safePrev);
+      newDate.setMonth(newDate.getMonth() - 1);
+      return newDate;
+    });
   };
 
   const handleNextMonth = () => {
-    const newDate = new Date(currentMonth);
-    newDate.setMonth(newDate.getMonth() + 1);
-    setCurrentMonth(newDate);
+    setCurrentMonth((prev) => {
+      const safePrev = safeParseDate(prev);
+      const newDate = new Date(safePrev);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
+    });
   };
 
-  const monthYearString = currentMonth.toLocaleString("en-US", {
+  let monthYearString = currentMonth.toLocaleString("en-US", {
     month: "long",
     year: "numeric",
   });
 
-  // Build marked dates object
+  /* ============================= */
+  /* ✅ FIXED MARKED DATES */
+  /* ============================= */
+
   const markedDates = useMemo(() => {
     const marked: any = {};
 
-    // Get date range for current month (and a bit extra for safety)
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
+    const safeMonth = safeParseDate(currentMonth);
+    const year = safeMonth.getFullYear();
+    const month = safeMonth.getMonth();
+
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month + 2, 0);
 
-    // Mark all dates in range
     const currentDate = new Date(startDate);
+
     while (currentDate <= endDate) {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      /* ✅ REPLACED toISOString() */
+      const dateStr = formatDate(currentDate);
       const isAvailable = isDateAvailable(dateStr);
 
       marked[dateStr] = {
@@ -137,8 +197,8 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
         customStyles: {
           container: {},
           text: {
-            color: isAvailable ? '#fff' : 'rgba(255,255,255,0.3)',
-            fontWeight: isAvailable ? '500' : '400',
+            color: isAvailable ? "#fff" : "rgba(255,255,255,0.3)",
+            fontWeight: isAvailable ? "500" : "400",
           },
         },
       };
@@ -146,12 +206,11 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Mark today with red dot
     if (markToday && marked[today]) {
       marked[today] = {
         ...marked[today],
         marked: true,
-        dotColor: '#FF4444',
+        dotColor: "#FF4444",
         customStyles: {
           ...marked[today].customStyles,
           container: {
@@ -159,26 +218,25 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
           },
           text: {
             ...marked[today].customStyles?.text,
-            fontWeight: '600',
+            fontWeight: "600",
           },
         },
       };
     }
 
-    // Mark selected date with border
     if (selected && marked[selected]) {
       marked[selected] = {
         ...marked[selected],
         customStyles: {
           container: {
             borderWidth: 2,
-            borderColor: '#fff',
+            borderColor: "#fff",
             borderRadius: 50,
-            backgroundColor: 'transparent',
+            backgroundColor: "transparent",
           },
           text: {
-            color: '#fff',
-            fontWeight: '700',
+            color: "#fff",
+            fontWeight: "700",
           },
         },
       };
@@ -193,14 +251,14 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     unavailableDates,
     recurringAvailability,
     disablePastDates,
-    markToday
+    markToday,
   ]);
 
   return (
     <View style={containerStyle}>
       {showHeader && (
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Select Available Date</Text>
+          <Text style={[styles.headerTitle,headerTextStyle?headerTextStyle:{}]}>{headerText}</Text>
         </View>
       )}
 
@@ -208,15 +266,22 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
         colors={gradientColors as [ColorValue, ColorValue, ...ColorValue[]]}
         style={styles.container}
       >
-        {/* Month/Year Navigation Header */}
         <View style={styles.monthHeader}>
-          <Pressable onPress={handlePrevMonth} hitSlop={12} style={styles.navButton}>
+          <Pressable
+            onPress={handlePrevMonth}
+            hitSlop={12}
+            style={styles.navButton}
+          >
             <Ionicons name="chevron-back" size={24} color="#fff" />
           </Pressable>
 
           <Text style={styles.monthText}>{monthYearString}</Text>
 
-          <Pressable onPress={handleNextMonth} hitSlop={12} style={styles.navButton}>
+          <Pressable
+            onPress={handleNextMonth}
+            hitSlop={12}
+            style={styles.navButton}
+          >
             <Ionicons name="chevron-forward" size={24} color="#fff" />
           </Pressable>
         </View>
@@ -224,7 +289,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
         <View style={styles.calendarWrapper}>
           <Calendar
             key={currentMonth.toISOString()}
-            current={currentMonth.toISOString().split('T')[0]}
+            current={currentMonth.toISOString().split("T")[0]}
             onDayPress={handleDayPress}
             markingType="custom"
             markedDates={markedDates}
@@ -245,9 +310,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
               monthTextColor: "transparent",
               // textMonthFontSize: 0,
             }}
-            style={{
-              backgroundColor: "transparent",
-            }}
+            style={{ backgroundColor: "transparent" }}
             hideArrows={true}
             hideDayNames={false}
             hideExtraDays={true}
