@@ -64,7 +64,9 @@ export function SignatureModal({ visible, onSave, onClose }: Props) {
                         webStyle={webStyle}
                         autoClear={false}
                         backgroundColor="rgba(255,255,255,0.01)"
-                        style={[styles.canvas, { width: width - 32, height: height * 0.35 }]}
+                        imageType="image/jpeg"
+                        trimWhitespace
+                        style={[styles.canvas, { width: width - 32, height: height * 0.3 }]}
                     />
                 </View>
 

@@ -1102,6 +1102,8 @@ import { Extra, NestedRoadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import RNFS from "react-native-fs";
+import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
 import { JSX, useEffect, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
@@ -1147,6 +1149,38 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
             return `https://${url}`;
         }
         return url;
+    };
+
+    const downloadSignature = async (signatureValue: string) => {
+        try {
+            if (!signatureValue?.startsWith("data:image")) {
+                Alert.alert("Error", "Signature data is not a valid image.");
+                return;
+            }
+
+            const perm = await MediaLibrary.requestPermissionsAsync();
+            if (!perm.granted) {
+                Alert.alert(
+                    "Permission Required",
+                    "Please allow access to your media library to save the signature."
+                );
+                return;
+            }
+
+            const base64Data = signatureValue.replace("data:image/png;base64,", "");
+            const filePath = `${RNFS.CachesDirectoryPath}/pastor_signature_${Date.now()}.png`;
+
+            await RNFS.writeFile(filePath, base64Data, "base64");
+
+            const fileUri = `file://${filePath}`;
+            const asset = await MediaLibrary.createAssetAsync(fileUri);
+            await MediaLibrary.createAlbumAsync("CCC Signatures", asset, false);
+
+            Alert.alert("Success", "Signature saved to your device.");
+        } catch (err: any) {
+            console.error("Failed to save signature", err);
+            Alert.alert("Error", "Could not save the signature. Please try again.");
+        }
     };
 
     /** Load existing extras from API */
@@ -1919,8 +1953,36 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                         </Text>
                         <Pressable
                             style={styles.signaturePlaceholder}
-                            onPress={() => !isMentorReadOnly && setOpenSignatureField(extra.name)}
-                            disabled={isMentorReadOnly}
+                            onPress={() => {
+                                if (isMentorReadOnly) {
+                                    if (!signatureValue) return;
+
+                                    Alert.alert(
+                                        "Signature Options",
+                                        "What would you like to do?",
+                                        [
+                                            {
+                                                text: "View",
+                                                onPress: () =>
+                                                    Linking.openURL(signatureValue).catch(() =>
+                                                        Alert.alert(
+                                                            "Error",
+                                                            "Could not open signature image."
+                                                        )
+                                                    ),
+                                            },
+                                            {
+                                                text: "Download",
+                                                onPress: () => downloadSignature(signatureValue),
+                                            },
+                                            { text: "Cancel", style: "cancel" },
+                                        ]
+                                    );
+                                } else {
+                                    setOpenSignatureField(extra.name);
+                                }
+                            }}
+                            disabled={isMentorReadOnly && !signatureValue}
                         >
                             {signatureValue ? (
                                 <>
@@ -1935,7 +1997,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                                 </>
                             ) : (
                                 <Text style={styles.tapToSignText}>
-                                    {extra.placeHolder || "Tap to Sign"}
+                                    {extra.placeHolder || (isMentorReadOnly ? "No signature provided yet" : "Tap to Sign")}
                                 </Text>
                             )}
                         </Pressable>
