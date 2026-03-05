@@ -1087,6 +1087,7 @@
 
 // components/roadmaps/DynamicFormTask.tsx
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
+import { DigitalSignatureInput } from "@/components/forms/inputs/DigitalSignatureInput";
 import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
@@ -1133,6 +1134,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
     const isMentorView = !!userId && userId !== currentUser?.id;
     
     const [formData, setFormData] = useState<Record<string, any>>({});
+    const [errors, setErrors] = useState<Record<string, string | undefined>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, any[]>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -1173,20 +1175,25 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
             // Also load sub-checkboxes if they exist in definitions (though usually they come from extras)
         });
 
-        // 2. Override with existing extras from API
+        // 2. Override with existing extras from API (SIGNATURE uses signatureData)
         if (existingExtras?.extras && Array.isArray(existingExtras.extras)) {
             existingExtras.extras.forEach((item: any) => {
-                if (item.name && item.value !== undefined) {
+                if (!item.name) return;
+                if (item.type === "SIGNATURE" && item.signatureData != null) {
+                    init[item.name] = item.signatureData;
+                } else if (item.value !== undefined) {
                     init[item.name] = item.value;
                 }
             });
         }
         
         setFormData(init);
+        setErrors({});
     }, [existingExtras, task]);
 
     const handleChange = (fieldName: string, value: any) => {
         setFormData(prev => ({ ...prev, [fieldName]: value }));
+        setErrors(prev => ({ ...prev, [fieldName]: undefined }));
     };
 
     const validateForm = () => Object.keys(formData).length > 0;
@@ -1203,6 +1210,27 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
         return "TEXT_FIELD";
     };
 
+    const collectSignatureErrors = (extras?: Extra[]): Record<string, string> => {
+        const fieldErrors: Record<string, string> = {};
+
+        if (!extras) return fieldErrors;
+
+        for (const extra of extras) {
+            if (extra.type === "SIGNATURE" && extra.required) {
+                const value = formData[extra.name];
+                if (!value) {
+                    fieldErrors[extra.name] = "Signature is required.";
+                }
+            }
+
+            if (extra.sections && extra.sections.length > 0) {
+                Object.assign(fieldErrors, collectSignatureErrors(extra.sections));
+            }
+        }
+
+        return fieldErrors;
+    };
+
     /** Save progress – text extras + pending file uploads */
     const handleSubmit = async () => {
         console.log("----------------------------------------------")
@@ -1210,6 +1238,13 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
         console.log('formData', formData);
         console.log("----------------------------------------------")
         console.log("----------------------------------------------")
+        const signatureErrors = collectSignatureErrors(task.extras);
+        if (Object.keys(signatureErrors).length > 0) {
+            setErrors(prev => ({ ...prev, ...signatureErrors }));
+            Alert.alert("Missing Signature", "Signature is required.");
+            return;
+        }
+
         if (!validateForm()) {
             Alert.alert("No Data", "Please fill in at least one field before saving progress");
             return;
@@ -1220,9 +1255,12 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
         }
 
         try {
-            // 1️⃣ Build extras payload (including upload fields as boolean flags)
+            // 1️⃣ Build extras payload (including upload fields as boolean flags, signature as signatureData)
             const extrasArray = Object.entries(formData).map(([name, value]) => {
                 const type = getExtraType(name, value);
+                if (type === "SIGNATURE") {
+                    return { type: "SIGNATURE", name, signatureData: value };
+                }
                 return {
                     type,
                     name,
@@ -1866,6 +1904,21 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
             case "ASSESSMENT":
                 const isSpecificAssessmentCompleted = assessmentProgress?.items?.some(
                     (item: any) => item.assessmentId === extra.assessmentId && item.status === 'completed'
+                );
+
+            case "SIGNATURE":
+                return (
+                    <View key={id} style={styles.fieldContainer}>
+                        <DigitalSignatureInput
+                            fieldName={extra.name}
+                            placeholderText={extra.placeHolder}
+                            required={extra.required}
+                            clearButtonLabel={extra.buttonName || "Clear"}
+                            value={formData[extra.name] || null}
+                            onChange={(value) => handleChange(extra.name, value)}
+                            error={errors[extra.name]}
+                        />
+                    </View>
                 );
                 console.log('isSpecificAssessmentCompleted',extra.assessmentId, isSpecificAssessmentCompleted);
                 console.log('assessmentProgress', assessmentProgress?.items);

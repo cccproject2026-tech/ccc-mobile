@@ -241,7 +241,17 @@ export interface NestedRoadmap {
 }
 
 export interface Extra {
-    type: 'TEXT_AREA' | 'TEXT_DISPLAY' | 'CHECKBOX' | 'TEXT_FIELD' | 'DATE_PICKER' | 'SECTION' | 'UPLOAD' | 'BUTTON' | 'ASSESSMENT';
+    type:
+        | 'TEXT_AREA'
+        | 'TEXT_DISPLAY'
+        | 'CHECKBOX'
+        | 'TEXT_FIELD'
+        | 'DATE_PICKER'
+        | 'SECTION'
+        | 'UPLOAD'
+        | 'BUTTON'
+        | 'ASSESSMENT'
+        | 'SIGNATURE';
     name: string;
     placeHolder?: string;
     buttonName?: string | null;
@@ -252,6 +262,8 @@ export interface Extra {
     sections?: Extra[];
     assessmentId?: string;
     linkUrl?: string;
+    required?: boolean;
+    showOnCard?: boolean;
 }
 
 export interface ExtraCheckbox {
