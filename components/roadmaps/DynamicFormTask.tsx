@@ -1087,7 +1087,7 @@
 
 // components/roadmaps/DynamicFormTask.tsx
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
-import { DigitalSignatureInput } from "@/components/forms/inputs/DigitalSignatureInput";
+import { SignatureModal } from "@/components/forms/SignatureModal";
 import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
@@ -1108,6 +1108,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
     ActivityIndicator,
     Alert,
+    Image,
     Linking,
     Pressable,
     ScrollView,
@@ -1137,6 +1138,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
     const [errors, setErrors] = useState<Record<string, string | undefined>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, any[]>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [openSignatureField, setOpenSignatureField] = useState<string | null>(null);
 
     const isValidObjectId = (id: string | undefined) => !!id;
 
@@ -1906,20 +1908,43 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                     (item: any) => item.assessmentId === extra.assessmentId && item.status === 'completed'
                 );
 
-            case "SIGNATURE":
+            case "SIGNATURE": {
+                const signatureValue = formData[extra.name] || null;
+                const isMentorReadOnly = isMentorView;
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <DigitalSignatureInput
-                            fieldName={extra.name}
-                            placeholderText={extra.placeHolder}
-                            required={extra.required}
-                            clearButtonLabel={extra.buttonName || "Clear"}
-                            value={formData[extra.name] || null}
-                            onChange={(value) => handleChange(extra.name, value)}
-                            error={errors[extra.name]}
-                        />
+                        <Text style={styles.fieldLabel}>
+                            {extra.name}
+                            {extra.required && <Text style={styles.required}> *</Text>}
+                        </Text>
+                        <Pressable
+                            style={styles.signaturePlaceholder}
+                            onPress={() => !isMentorReadOnly && setOpenSignatureField(extra.name)}
+                            disabled={isMentorReadOnly}
+                        >
+                            {signatureValue ? (
+                                <>
+                                    <Image
+                                        source={{ uri: signatureValue }}
+                                        style={styles.signaturePreview}
+                                        resizeMode="contain"
+                                    />
+                                    {!isMentorReadOnly && (
+                                        <Text style={styles.reSignText}>Re-Sign</Text>
+                                    )}
+                                </>
+                            ) : (
+                                <Text style={styles.tapToSignText}>
+                                    {extra.placeHolder || "Tap to Sign"}
+                                </Text>
+                            )}
+                        </Pressable>
+                        {errors[extra.name] && (
+                            <Text style={styles.fieldError}>{errors[extra.name]}</Text>
+                        )}
                     </View>
                 );
+            }
                 console.log('isSpecificAssessmentCompleted',extra.assessmentId, isSpecificAssessmentCompleted);
                 console.log('assessmentProgress', assessmentProgress?.items);
 
@@ -2135,6 +2160,15 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                 )}
             </ScrollView>
 
+            <SignatureModal
+                visible={openSignatureField !== null}
+                onSave={(signature) => {
+                    if (openSignatureField) handleChange(openSignatureField, signature);
+                    setOpenSignatureField(null);
+                }}
+                onClose={() => setOpenSignatureField(null)}
+            />
+
             <SimpleSuccessModal
                 visible={showSuccessModal}
                 onClose={() => setShowSuccessModal(false)}
@@ -2150,6 +2184,25 @@ const styles = StyleSheet.create({
     fieldContainer: { marginBottom: 24 },
     fieldDisabled: { opacity: 0.5 },
     fieldLabel: { color: 'white', fontSize: 16, marginBottom: 8, fontWeight: '500' },
+    required: { color: '#f97373' },
+    fieldError: { color: '#fecaca', fontSize: 13, marginTop: 6 },
+    signaturePlaceholder: {
+        minHeight: 140,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.4)',
+        backgroundColor: 'rgba(15,23,42,0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
+    },
+    signaturePreview: {
+        width: '100%',
+        height: 100,
+        marginBottom: 8,
+    },
+    tapToSignText: { color: '#9cc2ff', fontSize: 16 },
+    reSignText: { color: '#93c5fd', fontSize: 14, textDecorationLine: 'underline', marginTop: 8 },
     textInput: {
         backgroundColor: 'rgba(64, 156, 186, 0.5)',
         padding: 14,

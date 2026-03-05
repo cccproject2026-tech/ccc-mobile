@@ -10,6 +10,8 @@ interface Props {
     value: string | null;
     onChange: (value: string | null) => void;
     error?: string;
+    onBegin?: () => void;
+    onEnd?: () => void;
 }
 
 export function DigitalSignatureInput({
@@ -20,6 +22,8 @@ export function DigitalSignatureInput({
     value,
     onChange,
     error,
+    onBegin,
+    onEnd,
 }: Props) {
     const signatureRef = useRef<SignatureCanvas | null>(null);
     const [hasSigned, setHasSigned] = useState<boolean>(!!value);
@@ -48,7 +52,10 @@ export function DigitalSignatureInput({
                 {required && <Text style={styles.required}>*</Text>}
             </View>
 
-            <View style={styles.canvasContainer}>
+            <View
+                style={styles.canvasContainer}
+                onStartShouldSetResponder={() => true}
+            >
                 {!hasSigned && !!placeholderText && (
                     <Text style={styles.placeholder}>{placeholderText}</Text>
                 )}
@@ -58,6 +65,8 @@ export function DigitalSignatureInput({
                         signatureRef.current = ref;
                     }}
                     onOK={handleOK}
+                    onBegin={onBegin}
+                    onEnd={onEnd}
                     webStyle={webStyle}
                     autoClear={false}
                     backgroundColor="transparent"
