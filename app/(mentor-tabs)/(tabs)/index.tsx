@@ -1,46 +1,48 @@
 import {
   AppointmentCard,
   MentorCard,
-  RoadMapCard
-} from "@/components/atom/cards"
-import { Search } from "@/components/atom/Search"
-import { Button } from "@/components/build-components"
-import ExploreCard from "@/components/director/ExploreCard"
-import HeaderHero from "@/components/director/HeroHeader"
-import WelcomeCard from "@/components/director/WelcomeCard"
-import { Colors } from "@/constants/Colors"
-import { icons } from "@/constants/images"
-import { mentorExploreItems } from "@/constants/mockData"
-import { useAppointments } from "@/hooks/appointments/useAppointments"
-import { useMentors } from "@/hooks/mentors/useMentors"
-import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps"
-import { useAuthStore } from "@/stores/auth.store"
-import { Appointment } from "@/types/appointment.types"
-import { LinearGradient } from "expo-linear-gradient"
-import { useRouter } from "expo-router"
-import { StatusBar } from "expo-status-bar"
-import React, { useCallback, useMemo, useState } from "react"
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native"
-import MapView, { Marker } from "react-native-maps"
+  RoadMapCard,
+} from "@/components/atom/cards";
+import { Search } from "@/components/atom/Search";
+import { Button } from "@/components/build-components";
+import ExploreCard from "@/components/director/ExploreCard";
+import HeaderHero from "@/components/director/HeroHeader";
+import WelcomeCard from "@/components/director/WelcomeCard";
+import { Colors } from "@/constants/Colors";
+import { icons } from "@/constants/images";
+import { mentorExploreItems } from "@/constants/mockData";
+import { useAppointments } from "@/hooks/appointments/useAppointments";
+import { useMentors } from "@/hooks/mentors/useMentors";
+import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { useAuthStore } from "@/stores/auth.store";
+import { Appointment } from "@/types/appointment.types";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useCallback, useMemo, useState } from "react";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import MapView, { Marker } from "react-native-maps";
 import Animated, {
   useAnimatedRef,
   useScrollViewOffset,
-} from "react-native-reanimated"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function MentorDashboard() {
-  const [searchText, setSearchText] = useState("")
-  const [greetingPeriod, setGreetingPeriod] = useState<'morning' | 'afternoon' | 'evening'>('morning')
+  const [searchText, setSearchText] = useState("");
+  const [greetingPeriod, setGreetingPeriod] = useState<
+    "morning" | "afternoon" | "evening"
+  >("morning");
   const router = useRouter();
   const [mapRegion] = useState({
     latitude: 37.78825,
     longitude: -122.4324,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
-  })
-  const insets = useSafeAreaInsets()
-  const scrollRef = useAnimatedRef<Animated.ScrollView>()
-  const scrollOffset = useScrollViewOffset(scrollRef)
+  });
+  const insets = useSafeAreaInsets();
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
+  const scrollOffset = useScrollViewOffset(scrollRef);
 
   const users = [
     // India
@@ -79,25 +81,32 @@ export default function MentorDashboard() {
       location: "Beijing, China",
     },
     // Add more users as needed
-  ]
+  ];
 
   // Handle greeting period change from HeaderHero
-  const handleGreetingPeriodChange = useCallback((period: 'morning' | 'afternoon' | 'evening') => {
-    setGreetingPeriod(period);
-  }, []);
+  const handleGreetingPeriodChange = useCallback(
+    (period: "morning" | "afternoon" | "evening") => {
+      setGreetingPeriod(period);
+    },
+    [],
+  );
 
   const greeting = useMemo(() => {
-    if (greetingPeriod === 'morning') return "Good Morning"
-    if (greetingPeriod === 'afternoon') return "Good Afternoon"
-    return "Good Evening"
-  }, [greetingPeriod])
+    if (greetingPeriod === "morning") return "Good Morning";
+    if (greetingPeriod === "afternoon") return "Good Afternoon";
+    return "Good Evening";
+  }, [greetingPeriod]);
 
   // Get current user
   const { user } = useAuthStore();
 
   // Fetch appointments for mentor
-  const { appointments, isLoading: isLoadingAppointments, getAppointmentsByDate } = useAppointments({
-    mentorId: user?.id
+  const {
+    appointments,
+    isLoading: isLoadingAppointments,
+    getAppointmentsByDate,
+  } = useAppointments({
+    mentorId: user?.id,
   });
 
   // Fetch roadmaps
@@ -107,38 +116,52 @@ export default function MentorDashboard() {
   const formatDate = useCallback((dateString: string): string => {
     const date = new Date(dateString);
     const day = date.getDate();
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const month = monthNames[date.getMonth()];
     const year = date.getFullYear().toString().slice(-2);
-    return `${day.toString().padStart(2, '0')} ${month} ${year}`;
+    return `${day.toString().padStart(2, "0")} ${month} ${year}`;
   }, []);
 
   // Format time for display (US format: "HH:MM hrs EST")
   const formatTime = useCallback((dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'America/New_York'
-    }) + ' hrs EST';
+    return (
+      date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "America/New_York",
+      }) + " hrs EST"
+    );
   }, []);
 
   // Get today's date in YYYY-MM-DD format
   const today = useMemo(() => {
-    return new Date().toISOString().split('T')[0];
+    return new Date().toISOString().split("T")[0];
   }, []);
 
   // Get today's appointments and format them
   const todayAppointments = useMemo(() => {
     if (!appointments || !getAppointmentsByDate) return [];
-    
+
     const todayApts = getAppointmentsByDate(today);
     return todayApts.map((apt: Appointment) => {
       // Map platform to mode for AppointmentCard
-      const mode = apt.platform === 'zoom' ? 'duo' : 'meet';
-      
+      const mode = apt.platform === "zoom" ? "duo" : "meet";
+
       return {
         date: formatDate(apt.meetingDate),
         time: formatTime(apt.meetingDate),
@@ -152,23 +175,23 @@ export default function MentorDashboard() {
   // Format roadmaps for RoadMapCard
   const formattedRoadmaps = useMemo(() => {
     if (!roadmaps || roadmaps.length === 0) return [];
-    
+
     return roadmaps.slice(0, 3).map((roadmap) => {
       // Map status to display format
       let status = "Remaining";
-      if (roadmap.status === 'in-progress') {
+      if (roadmap.status === "in-progress") {
         status = "In progress";
-      } else if (roadmap.status === 'completed') {
+      } else if (roadmap.status === "completed") {
         status = "Completed";
-      } else if (roadmap.status === 'blocked') {
+      } else if (roadmap.status === "blocked") {
         status = "Blocked";
-      } else if (roadmap.status === 'not started') {
+      } else if (roadmap.status === "not started") {
         status = "Remaining";
       }
 
       // Extract phase from roadmap name or use default
       const phase = roadmap.phase || "Phase 1";
-      
+
       return {
         phase: phase,
         title: roadmap.name || "Roadmap",
@@ -176,7 +199,7 @@ export default function MentorDashboard() {
       };
     });
   }, [roadmaps]);
-  
+
   const { mentors } = useMentors();
   const displayMentors = mentors.slice(0, 2); // Show only first 2 for reminders
 
@@ -212,9 +235,9 @@ export default function MentorDashboard() {
                 {greeting}
               </Text>
               <WelcomeCard
-                onClick={() => { }}
+                onClick={() => {}}
                 avatar={icons.myProfile}
-                message={user?.firstName  + ", Welcome !"}
+                message={user?.firstName + ", Welcome !"}
               />
             </View>
             <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
@@ -286,7 +309,14 @@ export default function MentorDashboard() {
                 }}
               >
                 {isLoadingAppointments ? (
-                  <Text style={{ color: "#e7f6fc", fontSize: 14, textAlign: "center", paddingVertical: 20 }}>
+                  <Text
+                    style={{
+                      color: "#e7f6fc",
+                      fontSize: 14,
+                      textAlign: "center",
+                      paddingVertical: 20,
+                    }}
+                  >
                     Loading appointments...
                   </Text>
                 ) : todayAppointments.length > 0 ? (
@@ -299,7 +329,14 @@ export default function MentorDashboard() {
                     />
                   ))
                 ) : (
-                  <Text style={{ color: "#e7f6fc", fontSize: 14, textAlign: "center", paddingVertical: 20 }}>
+                  <Text
+                    style={{
+                      color: "#e7f6fc",
+                      fontSize: 14,
+                      textAlign: "center",
+                      paddingVertical: 20,
+                    }}
+                  >
                     No appointments today
                   </Text>
                 )}
@@ -317,7 +354,14 @@ export default function MentorDashboard() {
               </View>
               <View className="gap-2">
                 {isLoadingRoadmaps ? (
-                  <Text style={{ color: "#e7f6fc", fontSize: 14, textAlign: "center", paddingVertical: 20 }}>
+                  <Text
+                    style={{
+                      color: "#e7f6fc",
+                      fontSize: 14,
+                      textAlign: "center",
+                      paddingVertical: 20,
+                    }}
+                  >
                     Loading roadmaps...
                   </Text>
                 ) : formattedRoadmaps.length > 0 ? (
@@ -325,7 +369,14 @@ export default function MentorDashboard() {
                     <RoadMapCard data={e} dataKey={i.toString()} key={i} />
                   ))
                 ) : (
-                  <Text style={{ color: "#e7f6fc", fontSize: 14, textAlign: "center", paddingVertical: 20 }}>
+                  <Text
+                    style={{
+                      color: "#e7f6fc",
+                      fontSize: 14,
+                      textAlign: "center",
+                      paddingVertical: 20,
+                    }}
+                  >
                     No roadmaps available
                   </Text>
                 )}
@@ -342,20 +393,30 @@ export default function MentorDashboard() {
             </View>
             <View style={styles.separator} />
 
-            <View style={{ paddingHorizontal: 16, marginTop: 18, marginBottom: 18, gap: 8 }}>
-              <Text style={{
-                fontSize: 15,
-                color: "#e7f6fc", fontWeight: "700"
-              }}>
+            <View
+              style={{
+                paddingHorizontal: 16,
+                marginTop: 18,
+                marginBottom: 18,
+                gap: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 15,
+                  color: "#e7f6fc",
+                  fontWeight: "700",
+                }}
+              >
                 Explore CCC
               </Text>
 
               {/* Grid */}
               <View
                 style={{
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between',
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  justifyContent: "space-between",
                   rowGap: 12,
                 }}
               >
@@ -365,21 +426,19 @@ export default function MentorDashboard() {
                     icon={item.icon}
                     title={item.title}
                     onPress={() => {
-                      if (item.title === 'Track Progress') {
-                        router.push('/(mentor-tabs)/progress-tracker');
-                      } else if (item.title === 'Assessment') {
-                        router.push('/(mentor-tabs)/assessments-v2');
-                      } else if (item.title === 'Revitalization Roadmap') {
-                        router.push('/(mentor-tabs)/roadmap/landing/landing');
-                      } 
-                      else {
+                      if (item.title === "Track Progress") {
+                        router.push("/(mentor-tabs)/progress-tracker");
+                      } else if (item.title === "Assessment") {
+                        router.push("/(mentor-tabs)/assessments-v2");
+                      } else if (item.title === "Revitalization Roadmap") {
+                        router.push("/(mentor-tabs)/roadmap/landing/landing");
+                      } else {
                         console.log(`Pressed ${item.title}`);
                       }
                     }}
                   />
                 ))}
               </View>
-
             </View>
             <View
               style={{
@@ -404,20 +463,21 @@ export default function MentorDashboard() {
                   key={mentor.id}
                   data={mentor}
                   dataKey={mentor.id}
-                  onMenuPress={() => { }}
+                  onMenuPress={() => {}}
                 />
               ))}
             </View>
 
             <View className="flex-row justify-between px-5">
-              <Text className="text-white font-bold text-[17px]">
-                Mentees
-              </Text>
+              <Text className="text-white font-bold text-[17px]">Mentees</Text>
             </View>
             <View style={styles.searchContainer}>
               <Search searchText={searchText} setSearchText={setSearchText} />
             </View>
-            <View className="my-2.5 mx-5 mb-32 rounded-[10px] overflow-hidden" style={{ height: 410 }}>
+            <View
+              className="my-2.5 mx-5 mb-32 rounded-[10px] overflow-hidden"
+              style={{ height: 410 }}
+            >
               <MapView
                 style={{ width: "100%", height: "100%" }}
                 region={mapRegion}
@@ -429,14 +489,19 @@ export default function MentorDashboard() {
                 showsIndoors={true}
                 mapType="standard"
               >
-                <Marker coordinate={{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }} />
+                <Marker
+                  coordinate={{
+                    latitude: mapRegion.latitude,
+                    longitude: mapRegion.longitude,
+                  }}
+                />
               </MapView>
             </View>
           </LinearGradient>
-        </Animated.ScrollView >
-      </LinearGradient >
+        </Animated.ScrollView>
+      </LinearGradient>
     </>
-  )
+  );
 }
 const styles = StyleSheet.create({
   searchContainer: {
@@ -627,6 +692,4 @@ const styles = StyleSheet.create({
     fontFamily: "AlbertBold", // font-albertBold
     textAlign: "center",
   },
-})
-
-
+});
