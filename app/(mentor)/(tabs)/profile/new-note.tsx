@@ -217,7 +217,7 @@ export default function NewNote() {
           >
             <FormatButton icon="text" format="font-size" />
             <FormatButton icon="card" format="bold" />
-            <FormatButton icon="underline" format="underline" />
+            <FormatButton icon="remove-outline" format="underline" />
             <FormatButton icon="list" format="bullet-list" />
             <FormatButton icon="list-outline" format="numbered-list" />
             <FormatButton icon="reorder-four" format="align-left" />

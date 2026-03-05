@@ -29,6 +29,9 @@ export const ENDPOINTS = {
     DELETE_DOCUMENT: (userId: string) => `/users/${userId}/documents`,
     GET_NOTIFICATIONS: (userId: string) =>
       `/home/notifications?userId=${userId}`,
+    NOTES: (userId: string) => `/users/${userId}/notes`,
+    NOTE_BY_ID: (userId: string, noteId: string) =>
+      `/users/${userId}/notes/${noteId}`,
   },
 
   // Pastor Onboarding (if separate from auth)
