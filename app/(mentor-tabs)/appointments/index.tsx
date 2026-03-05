@@ -254,7 +254,7 @@ const Appointments: React.FC = () => {
 
   // Handle schedule meeting
   const handleScheduleMeeting = (data: any) => {
-    console.log("Scheduling meeting:", data);
+    console.log("Scheduling meetings:", data);
     setResponseModal({
       visible: true,
       message: `Meeting scheduled with ${

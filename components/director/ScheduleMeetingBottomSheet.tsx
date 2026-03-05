@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
 import {
@@ -121,8 +122,18 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const snapPoints = useMemo(() => {
       if (deviceType === "small") return ["88%"];
       else if (deviceType === "medium") return ["82%"];
-      return ["88%"];
+      return ["78%"];
     }, [deviceType]);
+    const { createAppointmentAsync, isCreating, isRescheduling } =
+      useCreateAppointment({
+        onSuccess: () => {
+          //scheduleMeetingBottomSheetRef.current?.dismiss();
+          console.log("Appointment scheduled successfully");
+        },
+        onError: (error) => {
+          Alert.alert("Error", error.message || "Failed to schedule meeting");
+        },
+      });
 
     // Get current user and their role
     const { user: currentUser } = useAuthStore();
@@ -152,17 +163,6 @@ const ScheduleMeetingBottomSheet = forwardRef<
 
     const [selectedRole, setSelectedRole] =
       useState<UserRole>(initialSelectedRole);
-
-    const { createAppointmentAsync, isCreating, isRescheduling } =
-      useCreateAppointment({
-        onSuccess: () => {
-          //scheduleMeetingBottomSheetRef.current?.dismiss();
-          console.log("Appointment scheduled successfully");
-        },
-        onError: (error) => {
-          Alert.alert("Error", error.message || "Failed to schedule meeting");
-        },
-      });
 
     // Fetch users based on selectedRole
     const {
@@ -207,13 +207,13 @@ const ScheduleMeetingBottomSheet = forwardRef<
         ];
       } else if (currentUserRole === "mentor") {
         return [
-          { label: "Mentees", value: "pastor" as UserRole },
+          { label: "Pastor", value: "pastor" as UserRole },
           { label: "Directors", value: "director" as UserRole },
         ];
       } else if (currentUserRole === "director") {
         return [
           { label: "Mentors", value: "mentor" as UserRole },
-          { label: "Mentees", value: "pastor" as UserRole },
+          { label: "Pastor", value: "pastor" as UserRole },
         ];
       }
       return [{ label: "Mentors", value: "mentor" as UserRole }];
@@ -530,7 +530,8 @@ const ScheduleMeetingBottomSheet = forwardRef<
       <>
         <BottomSheetModal
           ref={ref}
-          snapPoints={["88%", "95%"]}
+          //snapPoints={["88%", "95%"]}
+          snapPoints={snapPoints}
           enablePanDownToClose={!disableOutsideClose}
           backgroundComponent={() => null}
           backdropComponent={renderBackdrop}
@@ -553,7 +554,8 @@ const ScheduleMeetingBottomSheet = forwardRef<
               // Step 1: Select Mentor
               <View style={{ flex: 1 }}>
                 <View style={styles.stepContentNoScroll}>
-                  <View
+                  {/* <View */}
+                  {/* <View
                     style={[
                       styles.titleContainer,
                       { borderColor: "rgba(255, 255, 255, 0.3)" },
@@ -568,6 +570,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
                       Select for the Meeting
                     </Text>
                   </View>
+                  </View> */}
 
                   <View style={styles.roleSelectorContainer}>
                     {availableRoleTabs.map((tab) => (
@@ -576,6 +579,9 @@ const ScheduleMeetingBottomSheet = forwardRef<
                         style={[
                           styles.roleTab,
                           selectedRole === tab.value && styles.activeRoleTab,
+                          selectedRole === tab.value
+                            ? styles.activeRoleTab
+                            : styles.inactiveRoleTab,
                         ]}
                         onPress={() => setSelectedRole(tab.value)}
                       >
@@ -594,10 +600,13 @@ const ScheduleMeetingBottomSheet = forwardRef<
 
                   <View style={styles.searchBarContainer}>
                     <SearchBar
-                      backgroundColor="transparent"
                       placeholder="Search"
                       value={searchQuery}
                       onChangeValue={setSearchQuery}
+                      backgroundColor={"#FBF3F3BF"}
+                      style={{ color: Colors.blueShade }}
+                      placeholderTextColor={Colors.blueShade}
+                      imageColor={Colors.blueShade}
                     />
                   </View>
                 </View>
@@ -1032,6 +1041,9 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingHorizontal: getSpacing(16),
+    borderWidth: 1,
+    borderColor: "#FFFFFF73",
+    borderRadius: getSpacing(12),
   },
   closeButton: {
     position: "absolute",
@@ -1105,10 +1117,13 @@ const styles = StyleSheet.create({
   },
   roleSelectorContainer: {
     flexDirection: "row",
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    // backgroundColor: "rgba(255, 255, 255, 0.12)",
     borderRadius: 12,
     padding: 4,
+    paddingVertical: 4,
     marginBottom: getSpacing(12),
+    marginHorizontal: getSpacing(30),
+    marginTop: getSpacing(12),
   },
   roleTab: {
     flex: 1,
@@ -1118,6 +1133,15 @@ const styles = StyleSheet.create({
   },
   activeRoleTab: {
     backgroundColor: "#FFFFFF",
+    marginRight: 2,
+    marginLeft: 2,
+  },
+  inactiveRoleTab: {
+    backgroundColor: "transparent",
+    marginRight: 2,
+    marginLeft: 2,
+    borderColor: "rgba(255, 255, 255, 0.7)",
+    borderWidth: 1,
   },
   roleTabText: {
     fontSize: 12,
@@ -1136,6 +1160,7 @@ const styles = StyleSheet.create({
     padding: getSpacing(isSmallDevice ? 14 : 16),
     marginBottom: getSpacing(isSmallDevice ? 8 : 12),
     overflow: "hidden",
+    marginTop: getSpacing(10),
   },
   stepTitle: {
     fontSize: getFontSize(isSmallDevice ? 15 : 16),
@@ -1161,6 +1186,8 @@ const styles = StyleSheet.create({
 
   searchBarContainer: {
     marginBottom: getSpacing(isSmallDevice ? 10 : 12),
+    marginTop: getSpacing(isSmallDevice ? 12 : 14),
+    marginHorizontal: getSpacing(34),
   },
 
   mentorListStep1: {
@@ -1168,6 +1195,7 @@ const styles = StyleSheet.create({
     borderRadius: getSpacing(12),
     padding: getSpacing(isSmallDevice ? 14 : 16),
     marginBottom: getSpacing(isSmallDevice ? 16 : 18),
+    marginTop: getSpacing(10),
   },
   mentorItemStep1: {
     flexDirection: "row",
@@ -1221,7 +1249,7 @@ const styles = StyleSheet.create({
   cancelButton: {
     minWidth: 110,
     flexGrow: 1,
-    paddingVertical: 14,
+    paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#fff",
@@ -1241,12 +1269,20 @@ const styles = StyleSheet.create({
   scheduleButton: {
     minWidth: 110,
     flexGrow: 1,
-    paddingVertical: 14,
+    paddingVertical: 10,
     backgroundColor: "rgba(30, 54, 111, 1)",
     borderWidth: 2,
     borderColor: "#fff",
     borderRadius: 10,
     alignItems: "center",
+
+    // 🔹 SHADOW (iOS)
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    // 🔹 SHADOW (Android)
+    elevation: 6,
   },
 
   cancelButtonText: {
@@ -1263,9 +1299,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    alignSelf: "center",
     gap: getSpacing(isSmallDevice ? 8 : 12),
     marginTop: getSpacing(isSmallDevice ? 18 : 20),
-    width: "100%",
+    width: "70%",
     paddingHorizontal: getSpacing(isSmallDevice ? 6 : 12),
   },
   backButton: {
@@ -1357,21 +1394,18 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   timeSlotGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginTop: getSpacing(8),
+    minHeight: getSpacing(40),
     marginBottom: getSpacing(8),
   },
   timeSlotGridItem: {
-    width: "48.5%",
     paddingVertical: getSpacing(12),
-    paddingHorizontal: getSpacing(8),
+    paddingHorizontal: getSpacing(16),
     borderRadius: getSpacing(10),
     borderWidth: 1,
-    marginBottom: getSpacing(10),
+    marginRight: getSpacing(12),
     alignItems: "center",
     justifyContent: "center",
+    borderColor: "#FFFFFF",
   },
   timeSlotText: {
     fontSize: getFontSize(isSmallDevice ? 11 : 12),
@@ -1386,7 +1420,6 @@ const styles = StyleSheet.create({
     paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
     borderRadius: getSpacing(isSmallDevice ? 8 : 10),
     borderWidth: 1,
-    // marginBottom: getSpacing(isSmallDevice ? 14 : 16),
   },
   dropdownText: {
     fontSize: getFontSize(isSmallDevice ? 13 : 14),

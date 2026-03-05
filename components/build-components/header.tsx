@@ -58,7 +58,10 @@ export default function Header({
               }}
             />
             <View>
-              <Text style={{ color: "white" }} className="text-white font-semibold text-[17px]">
+              <Text
+                style={{ color: "white" }}
+                className="text-white font-semibold text-[17px]"
+              >
                 {title}
               </Text>
               {subTitle && (
@@ -81,9 +84,9 @@ export default function Header({
             {/* <Ionicons name="add" size={20} color="white" /> */}
             <Button
               type="custom"
-              title="New Meeting"
+              title="New Meetings"
               icon={icons.plusIcon}
-              onPress={onNewMeetingPress || (() => { })}
+              onPress={onNewMeetingPress || (() => {})}
               style={{
                 width: 160,
                 backgroundColor: "rgba(255, 255, 255, 0.16)",
