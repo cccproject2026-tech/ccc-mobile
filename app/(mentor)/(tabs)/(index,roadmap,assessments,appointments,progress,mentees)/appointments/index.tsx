@@ -13,11 +13,7 @@ import { Mentor } from "@/hooks/mentors/useMentors";
 import { useAuthStore } from "@/stores/auth.store";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  Stack,
-  useLocalSearchParams,
-  useRouter
-} from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
   ActivityIndicator,
@@ -62,12 +58,21 @@ const Appointments: React.FC = () => {
   const { user } = useAuthStore();
 
   // Fetch appointments for mentor
-  const { appointments, isLoading: isLoadingAppointments, getAppointmentsByDate } = useAppointments({
-    mentorId: user?.id
+  const {
+    appointments,
+    isLoading: isLoadingAppointments,
+    getAppointmentsByDate,
+  } = useAppointments({
+    mentorId: user?.id,
   });
 
   // Fetch mentees for the schedule meeting bottom sheet
-  const { data: menteesData, fetchNextPage, hasNextPage, isFetchingNextPage } = useMentees();
+  const {
+    data: menteesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMentees();
 
   // Flatten paginated mentees data
   const allMentees = useMemo(() => {
@@ -78,9 +83,12 @@ const Appointments: React.FC = () => {
   const mentors: Partial<Mentor>[] = useMemo(() => {
     return allMentees.map((mentee) => ({
       id: mentee.id,
-      name: `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee",
+      name:
+        `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee",
       role: mentee.role || "Pastor",
-      profileImage: mentee.profilePicture || "https://randomuser.me/api/portraits/men/1.jpg",
+      profileImage:
+        mentee.profilePicture ||
+        "https://randomuser.me/api/portraits/men/1.jpg",
     }));
   }, [allMentees]);
 
@@ -159,30 +167,39 @@ const Appointments: React.FC = () => {
   }, []);
 
   // Helper function to check if date is today
-  const isToday = React.useCallback((dateString: string) => {
-    return dateString === today;
-  }, [today]);
+  const isToday = React.useCallback(
+    (dateString: string) => {
+      return dateString === today;
+    },
+    [today],
+  );
 
   // Get mentee name from userId
-  const getMenteeName = React.useCallback((userId: string) => {
-    const mentee = allMentees?.find((m) => m.id === userId);
-    if (mentee) {
-      return `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee";
-    }
-    return "Mentee";
-  }, [allMentees]);
+  const getMenteeName = React.useCallback(
+    (userId: string) => {
+      const mentee = allMentees?.find((m) => m.id === userId);
+      if (mentee) {
+        return (
+          `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() ||
+          "Mentee"
+        );
+      }
+      return "Mentee";
+    },
+    [allMentees],
+  );
 
   // Format appointments for display
   const formattedAppointments = useMemo(() => {
     if (!appointments || !getAppointmentsByDate) return [];
 
     const dateAppointments = getAppointmentsByDate(selectedDate);
-    
+
     return dateAppointments.map((apt) => {
       const menteeName = getMenteeName(apt.userId);
       const startTime = formatTime(apt.meetingDate);
       const endTime = formatTime(apt.endTime);
-      
+
       return {
         id: apt.id,
         date: formatDisplayDate(apt.meetingDate),
@@ -195,7 +212,16 @@ const Appointments: React.FC = () => {
         appointment: apt, // Keep original appointment data for handlers
       };
     });
-  }, [appointments, getAppointmentsByDate, selectedDate, formatDisplayDate, formatTime, getModeLabel, getPlatformIcon, getMenteeName]);
+  }, [
+    appointments,
+    getAppointmentsByDate,
+    selectedDate,
+    formatDisplayDate,
+    formatTime,
+    getModeLabel,
+    getPlatformIcon,
+    getMenteeName,
+  ]);
 
   const selectedDateAppointments = formattedAppointments;
 
@@ -228,7 +254,7 @@ const Appointments: React.FC = () => {
             });
           },
         },
-      ]
+      ],
     );
   };
 
@@ -415,15 +441,23 @@ const Appointments: React.FC = () => {
                           : `You have ${
                               selectedDateAppointments.length
                             } Appointments on ${formatDisplayDate(
-                              selectedDate
+                              selectedDate,
                             )}`}
                       </Text>
                     </View>
                     <View style={{ gap: 10 }}>
                       {isLoadingAppointments ? (
-                        <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                        <View
+                          style={{ paddingVertical: 20, alignItems: "center" }}
+                        >
                           <ActivityIndicator size="small" color="white" />
-                          <Text style={{ color: "rgba(255,255,255,0.7)", marginTop: 8, fontSize: 14 }}>
+                          <Text
+                            style={{
+                              color: "rgba(255,255,255,0.7)",
+                              marginTop: 8,
+                              fontSize: 14,
+                            }}
+                          >
                             Loading appointments...
                           </Text>
                         </View>
@@ -446,7 +480,8 @@ const Appointments: React.FC = () => {
                                   ios: "calendar.badge.clock",
                                   android: "ic_event_available",
                                 },
-                                onSelect: () => handleReschedule(appointment.appointment),
+                                onSelect: () =>
+                                  handleReschedule(appointment.appointment),
                               },
                               {
                                 key: "change_mode",
@@ -455,14 +490,19 @@ const Appointments: React.FC = () => {
                                   ios: "arrow.2.circlepath",
                                   android: "ic_sync",
                                 },
-                                onSelect: () => handleChangeMode(appointment.appointment),
+                                onSelect: () =>
+                                  handleChangeMode(appointment.appointment),
                               },
                               {
                                 key: "cancel",
                                 title: "Cancel Meeting",
                                 destructive: true,
-                                icon: { ios: "trash", android: "ic_menu_delete" },
-                                onSelect: () => handleCancel(appointment.appointment),
+                                icon: {
+                                  ios: "trash",
+                                  android: "ic_menu_delete",
+                                },
+                                onSelect: () =>
+                                  handleCancel(appointment.appointment),
                               },
                             ]}
                           />
@@ -480,7 +520,7 @@ const Appointments: React.FC = () => {
                         {isToday(selectedDate)
                           ? "No Appointments Today"
                           : `No Appointments on ${formatDisplayDate(
-                              selectedDate
+                              selectedDate,
                             )}`}
                       </Text>
                     </View>
@@ -750,4 +790,3 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
-
