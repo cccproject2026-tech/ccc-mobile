@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
 import {
-    View,
-    Text,
-    StyleSheet,
     Modal,
     Pressable,
+    StyleSheet,
+    Text,
     useWindowDimensions,
+    View,
 } from "react-native";
 import SignatureCanvas from "react-native-signature-canvas";
 
@@ -18,7 +18,14 @@ interface Props {
 const webStyle = `
   .m-signature-pad--footer { display: none; margin: 0px; }
   .m-signature-pad { box-shadow: none; border: none; }
-  body, html { background-color: transparent; }
+
+  html, body {
+    background-color: #ffffff !important;
+  }
+
+  canvas {
+    background-color: #ffffff !important;
+  }
 `;
 
 type SignatureRef = { readSignature: () => void; clearSignature: () => void } | null;
@@ -65,7 +72,7 @@ export function SignatureModal({ visible, onSave, onClose }: Props) {
                         autoClear={false}
                         backgroundColor="#ffffff"
                         penColor="#000000"
-                        imageType="image/png"
+                        imageType="image/jpeg"
                         style={[styles.canvas, { width: width - 32, height: height * 0.3 }]}
                     />
                 </View>
