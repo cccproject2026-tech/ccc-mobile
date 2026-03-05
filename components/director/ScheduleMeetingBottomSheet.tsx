@@ -1,6 +1,5 @@
 import { Colors } from "@/constants/Colors";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
-import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
 import {
   formatTimeSlot,
   useMonthlyAvailability,
@@ -124,16 +123,6 @@ const ScheduleMeetingBottomSheet = forwardRef<
       else if (deviceType === "medium") return ["82%"];
       return ["78%"];
     }, [deviceType]);
-    const { createAppointmentAsync, isCreating, isRescheduling } =
-      useCreateAppointment({
-        onSuccess: () => {
-          //scheduleMeetingBottomSheetRef.current?.dismiss();
-          console.log("Appointment scheduled successfully");
-        },
-        onError: (error) => {
-          Alert.alert("Error", error.message || "Failed to schedule meeting");
-        },
-      });
 
     // Get current user and their role
     const { user: currentUser } = useAuthStore();
