@@ -1950,10 +1950,109 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                     </View>
                 );
 
-            case "ASSESSMENT":
+            case "ASSESSMENT": {
                 const isSpecificAssessmentCompleted = assessmentProgress?.items?.some(
                     (item: any) => item.assessmentId === extra.assessmentId && item.status === 'completed'
                 );
+
+                if (isSpecificAssessmentCompleted) {
+                    return (
+                        <View key={id} style={styles.fieldContainer}>
+                            <TouchableOpacity
+                                style={styles.centeredLinkButton}
+                                onPress={() => {
+                                    router.push({
+                                        pathname: "/assessments/answer-questions",
+                                        params: {
+                                            assessmentId: extra.assessmentId,
+                                            viewMode: "true",
+                                            hasPreSurvey: "false"
+                                        }
+                                    });
+                                }}
+                            >
+                                <Text style={styles.centeredLinkText}>View your Survey Results</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.button, { marginTop: 8 }]}
+                                onPress={() => {
+                                    Alert.alert(
+                                        "Repeat Survey",
+                                        `Are you sure you want to repeat this ${extra.name} survey? Your previous answers will be kept as a record.`,
+                                        [
+                                            { text: "Cancel", style: "cancel" },
+                                            {
+                                                text: "Repeat",
+                                                onPress: () => {
+                                                    router.push({
+                                                        pathname: "/assessments/answer-questions",
+                                                        params: {
+                                                            assessmentId: extra.assessmentId,
+                                                            hasPreSurvey: "true"
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        ]
+                                    );
+                                }}
+                            >
+                                <Text style={styles.buttonText}>
+                                    Repeat {extra.name} Survey
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    );
+                }
+
+                return (
+                    <View key={id} style={styles.fieldContainer}>
+                        <View style={styles.assessmentButton}>
+                            <View style={styles.assessmentContent}>
+                                <Text style={styles.assessmentTitle}>
+                                    {extra.name}
+                                </Text>
+                            </View>
+                        </View>
+                        <Pressable
+                            style={styles.button}
+                            onPress={() => {
+                                if (extra.assessmentId) {
+                                    const hasScheduleMeeting = extra.checkboxes?.some(
+                                        cb => cb.name === 'Schedule Meeting after the Assessment'
+                                    );
+                                    router.push({
+                                        pathname: "/assessments/answer-questions",
+                                        params: {
+                                            assessmentId: extra.assessmentId,
+                                            hasPreSurvey: "true",
+                                            scheduleMeeting: hasScheduleMeeting ? "true" : "false"
+                                        }
+                                    });
+                                } else {
+                                    Alert.alert("Error", "No assessment ID found for this task.");
+                                }
+                            }}
+                        >
+                            <Text style={styles.buttonText}>
+                                {extra.buttonName || "Take Assessment"}
+                            </Text>
+                            <Ionicons name="open-outline" size={20} color="#2563eb" />
+                        </Pressable>
+
+                        {/* Schedule Meeting Checkbox - If present in extras */}
+                        {extra.checkboxes?.some(cb => cb.name === 'Schedule Meeting after the Assessment') && (
+                            <View style={[styles.checkboxRow, { marginTop: 12 }]}>
+                                <Ionicons name="information-circle-outline" size={20} color="#fff" />
+                                <Text style={styles.checkboxLabel}>
+                                    Please schedule a meeting with your mentor after completing this assessment.
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                );
+            }
 
             case "SIGNATURE": {
                 const signatureValue = formData[extra.name] || null;
@@ -2019,153 +2118,6 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                     </View>
                 );
             }
-                console.log('isSpecificAssessmentCompleted',extra.assessmentId, isSpecificAssessmentCompleted);
-                console.log('assessmentProgress', assessmentProgress?.items);
-
-                if (isSpecificAssessmentCompleted) {
-                    return (
-                        <View key={id} style={styles.fieldContainer}>
-                            {/* {scheduledMeeting ? (
-                                <LinearGradient
-                                    colors={['#B83AF3', '#21B6E9']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={styles.meetingBanner}
-                                >
-                                    <View style={styles.bannerContent}>
-                                        <View style={styles.bannerIconContainer}>
-                                            <Ionicons name="calendar-outline" size={20} color="#fff" />
-                                        </View>
-                                        <Text style={styles.bannerText}>
-                                            Meeting Scheduled on {formatDate(scheduledMeeting.meetingDate)}
-                                        </Text>
-                                        <TouchableOpacity onPress={() => {
-                                            // Handle meeting options if needed
-                                        }}>
-                                            <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
-                                        </TouchableOpacity>
-                                    </View>
-                                </LinearGradient>
-                            ) : (
-                                <TouchableOpacity 
-                                    style={[styles.button, { backgroundColor: '#223A74', marginBottom: 16 }]}
-                                    onPress={() => {
-                                        const hasScheduleMeeting = extra.checkboxes?.some(
-                                            cb => cb.name === 'Schedule Meeting after the Assessment'
-                                        );
-                                        router.push({
-                                            pathname: "/assessments/answer-questions",
-                                            params: {
-                                                assessmentId: extra.assessmentId,
-                                                hasPreSurvey: "false",
-                                                scheduleMeeting: hasScheduleMeeting ? "true" : "false"
-                                            }
-                                        });
-                                    }}
-                                >
-                                    <Text style={[styles.buttonText, { color: '#fff' }]}>Schedule Meeting</Text>
-                                </TouchableOpacity>
-                            )} */}
-
-                            <TouchableOpacity
-                                style={styles.centeredLinkButton}
-                                onPress={() => {
-                                    router.push({
-                                        pathname: "/assessments/answer-questions",
-                                        params: {
-                                            assessmentId: extra.assessmentId,
-                                            viewMode: "true",
-                                            hasPreSurvey: "false"
-                                        }
-                                    });
-                                }}
-                            >
-                                <Text style={styles.centeredLinkText}>View your Survey Results</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.button, { marginTop: 8 }]}
-                                onPress={() => {
-                                    Alert.alert(
-                                        "Repeat Survey",
-                                        `Are you sure you want to repeat this ${extra.name} survey? Your previous answers will be kept as a record.`,
-                                        [
-                                            { text: "Cancel", style: "cancel" },
-                                            {
-                                                text: "Repeat",
-                                                onPress: () => {
-                                                    router.push({
-                                                        pathname: "/assessments/answer-questions",
-                                                        params: {
-                                                            assessmentId: extra.assessmentId,
-                                                            hasPreSurvey: "true"
-                                                        }
-                                                    });
-                                                }
-                                            }
-                                        ]
-                                    );
-                                }}
-                            >
-                                <Text style={styles.buttonText}>
-                                    Repeat {extra.name} Survey
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    );
-                }
-
-                return (
-                    <View key={id} style={styles.fieldContainer}>
-                        <View style={styles.assessmentButton}>
-                            <View style={styles.assessmentContent}>
-                                <Text style={styles.assessmentTitle}>
-                                    {extra.name}
-                                </Text>
-                            </View>
-                        </View>
-                        <Pressable
-                            style={styles.button}
-                            onPress={() => {
-                                console.log("----------------------------------------------")
-                                console.log("----------------------------------------------")
-                                console.log('extra', extra);
-                                console.log("----------------------------------------------")
-                                console.log("----------------------------------------------")
-                                if (extra.assessmentId) {
-                                    const hasScheduleMeeting = extra.checkboxes?.some(
-                                        cb => cb.name === 'Schedule Meeting after the Assessment'
-                                    );
-                                    router.push({
-                                        pathname: "/assessments/answer-questions",
-                                        params: {
-                                            assessmentId: extra.assessmentId,
-                                            hasPreSurvey: "true",
-                                            scheduleMeeting: hasScheduleMeeting ? "true" : "false"
-                                        }
-                                    });
-                                } else {
-                                    Alert.alert("Error", "No assessment ID found for this task.");
-                                }
-                            }}
-                        >
-                            <Text style={styles.buttonText}>
-                                {extra.buttonName || "Take Assessment"}
-                            </Text>
-                            <Ionicons name="open-outline" size={20} color="#2563eb" />
-                        </Pressable>
-
-                        {/* Schedule Meeting Checkbox - If present in extras */}
-                        {extra.checkboxes?.some(cb => cb.name === 'Schedule Meeting after the Assessment') && (
-                            <View style={[styles.checkboxRow, { marginTop: 12 }]}>
-                                <Ionicons name="information-circle-outline" size={20} color="#fff" />
-                                <Text style={styles.checkboxLabel}>
-                                    Please schedule a meeting with your mentor after completing this assessment.
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                );
 
             default:
                 return null;
