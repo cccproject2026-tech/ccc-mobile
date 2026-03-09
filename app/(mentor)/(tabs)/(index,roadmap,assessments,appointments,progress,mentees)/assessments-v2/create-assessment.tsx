@@ -39,11 +39,17 @@ interface Layer {
   choices: Choice[];
 }
 
+interface SectionRecommendationLevel {
+  level: 1 | 2 | 3 | 4;
+  plans: Plan[];
+}
+
 interface Section {
   id: string;
   name: string;
   guidelines: string;
   layers: Layer[];
+  recommendations: SectionRecommendationLevel[];
 }
 
 interface Plan {
@@ -59,6 +65,23 @@ interface PreSurveyQuestion {
   type: 'text' | 'number';
   placeholder: string;
 }
+
+const emptySectionRecommendations = (): SectionRecommendationLevel[] => [
+  { level: 1, plans: [{ id: "1", text: "" }] },
+  { level: 2, plans: [{ id: "1", text: "" }] },
+  { level: 3, plans: [{ id: "1", text: "" }] },
+  { level: 4, plans: [{ id: "1", text: "" }] },
+];
+
+const newSectionRecommendations = (): SectionRecommendationLevel[] => {
+  const ts = Date.now();
+  return [
+    { level: 1, plans: [{ id: `${ts}-1-1`, text: "" }] },
+    { level: 2, plans: [{ id: `${ts}-2-1`, text: "" }] },
+    { level: 3, plans: [{ id: `${ts}-3-1`, text: "" }] },
+    { level: 4, plans: [{ id: `${ts}-4-1`, text: "" }] },
+  ];
+};
 
 export default function CreateAssessmentPage() {
   const { bottom } = useSafeAreaInsets();
@@ -81,7 +104,7 @@ export default function CreateAssessmentPage() {
     { id: '1', text: '', type: 'number', placeholder: 'Enter number' },
   ]);
 
-  // Sections
+  // Sections (each section has its own recommendations for Level 1–4 CDP)
   const [sections, setSections] = useState<Section[]>([
     {
       id: "1",
@@ -91,6 +114,7 @@ export default function CreateAssessmentPage() {
         { id: "1", title: "Assessment Layer", choices: [{ id: "1", text: "" }] },
         { id: "2", title: "Assessment Layer", choices: [{ id: "1", text: "" }] },
       ],
+      recommendations: emptySectionRecommendations(),
     },
   ]);
 
@@ -100,12 +124,6 @@ export default function CreateAssessmentPage() {
   // Loading and success states
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const createAssessmentMutation = useCreateAssessment();
-
-  // Customized Development Plans
-  const [level1Plans, setLevel1Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
-  const [level2Plans, setLevel2Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
-  const [level3Plans, setLevel3Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
-  const [level4Plans, setLevel4Plans] = useState<Plan[]>([{ id: "1", text: "" }]);
 
   // Image Upload
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -163,6 +181,7 @@ export default function CreateAssessmentPage() {
         name: "",
         guidelines: "",
         layers: [{ id: "1", title: "Assessment Layer", choices: [{ id: "1", text: "" }] }],
+        recommendations: newSectionRecommendations(),
       },
     ]);
   };
@@ -272,21 +291,47 @@ export default function CreateAssessmentPage() {
     );
   };
 
-  const addPlan = (level: 1 | 2 | 3 | 4) => {
+  const addSectionPlan = (sectionId: string, level: 1 | 2 | 3 | 4) => {
     const newPlan = { id: Date.now().toString(), text: "" };
-    if (level === 1) setLevel1Plans([...level1Plans, newPlan]);
-    else if (level === 2) setLevel2Plans([...level2Plans, newPlan]);
-    else if (level === 3) setLevel3Plans([...level3Plans, newPlan]);
-    else setLevel4Plans([...level4Plans, newPlan]);
+    setSections(
+      sections.map((s) => {
+        if (s.id !== sectionId) return s;
+        return {
+          ...s,
+          recommendations: s.recommendations.map((rec) =>
+            rec.level === level
+              ? { ...rec, plans: [...rec.plans, newPlan] }
+              : rec
+          ),
+        };
+      })
+    );
   };
 
-  const updatePlan = (level: 1 | 2 | 3 | 4, planId: string, text: string) => {
-    const updater = (plans: Plan[]) =>
-      plans.map((p) => (p.id === planId ? { ...p, text } : p));
-    if (level === 1) setLevel1Plans(updater(level1Plans));
-    else if (level === 2) setLevel2Plans(updater(level2Plans));
-    else if (level === 3) setLevel3Plans(updater(level3Plans));
-    else setLevel4Plans(updater(level4Plans));
+  const updateSectionPlan = (
+    sectionId: string,
+    level: 1 | 2 | 3 | 4,
+    planId: string,
+    text: string
+  ) => {
+    setSections(
+      sections.map((s) => {
+        if (s.id !== sectionId) return s;
+        return {
+          ...s,
+          recommendations: s.recommendations.map((rec) =>
+            rec.level === level
+              ? {
+                  ...rec,
+                  plans: rec.plans.map((p) =>
+                    p.id === planId ? { ...p, text } : p
+                  ),
+                }
+              : rec
+          ),
+        };
+      })
+    );
   };
 
   const handleCreate = async () => {
@@ -329,7 +374,7 @@ export default function CreateAssessmentPage() {
       }
     }
 
-    // Validate sections
+    // Validate sections (each section includes its own recommendations for Level 1–4 CDP)
     const validSections = sections
       .map((section) => {
         // Filter out empty layers and choices
@@ -354,13 +399,32 @@ export default function CreateAssessmentPage() {
           return null;
         }
 
+        const recommendations = (section.recommendations ?? []).map(
+          (rec) => ({
+            level: rec.level,
+            items: rec.plans
+              .map((p) => p.text.trim())
+              .filter((text) => text.length > 0),
+          })
+        );
+
         return {
           title: section.name.trim(),
-          description: section.guidelines.trim(),
+          description: (section.guidelines.trim() || "No guidelines provided"),
           layers: validLayers,
+          recommendations,
         };
       })
-      .filter((section): section is { title: string; description: string; layers: { title: string; choices: { text: string }[] }[] } => section !== null);
+      .filter(
+        (
+          section
+        ): section is {
+          title: string;
+          description: string;
+          layers: { title: string; choices: { text: string }[] }[];
+          recommendations: { level: 1 | 2 | 3 | 4; items: string[] }[];
+        } => section !== null
+      );
 
     if (validSections.length === 0) {
       Alert.alert("Error", "Please add at least one section with layers and choices.");
@@ -372,7 +436,7 @@ export default function CreateAssessmentPage() {
 
     const requestData: any = {
       name: assessmentName.trim(),
-      description: briefDescription.trim(),
+      description: (briefDescription.trim() || "No description provided"),
       type: assessmentType,
       instructions: validInstructions,
       sections: validSections,
@@ -640,122 +704,56 @@ export default function CreateAssessmentPage() {
                       />
                     </View>
                   ))}
-                  { (
-                    <TouchableOpacity
-                      style={styles.addButton}
-                      onPress={() => addChoice(section.id, layer.id)}
-                    >
-                      <Text style={styles.addButtonText}>+ Choice</Text>
-                    </TouchableOpacity>
-                  )}
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => addChoice(section.id, layer.id)}
+                  >
+                    <Text style={styles.addButtonText}>+ Choice</Text>
+                  </TouchableOpacity>
                 </View>
               ))}
+
+              {/* Per-section CDP: Level 1–4 Customized Development Plans */}
+              <View style={styles.cdpSection}>
+                <Text style={styles.cdpSectionTitle}>
+                  Customized Development Plans (this section)
+                </Text>
+                {(section.recommendations ?? []).map((rec) => (
+                  <View key={rec.level} style={styles.sectionContainer}>
+                    <Text style={styles.sectionTitle}>
+                      Level {rec.level} - Customized Development Plans
+                    </Text>
+                    {rec.plans.map((plan, index) => (
+                      <View key={plan.id} style={styles.planRow}>
+                        <TextInput
+                          style={[styles.input, { flex: 1 }]}
+                          placeholder={`Plan ${index + 1}`}
+                          placeholderTextColor="rgba(255,255,255,0.6)"
+                          value={plan.text}
+                          onChangeText={(text) =>
+                            updateSectionPlan(
+                              section.id,
+                              rec.level,
+                              plan.id,
+                              text
+                            )
+                          }
+                        />
+                      </View>
+                    ))}
+                    {rec.plans.length < 8 && (
+                      <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={() => addSectionPlan(section.id, rec.level)}
+                      >
+                        <Text style={styles.addButtonText}>+ Plan</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </View>
             </View>
           ))}
-        </View>
-
-        {/* Customized Development Plans */}
-        <View style={styles.section}>
-          {/* Level 1 Plans */}
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>
-              Level 1 - Customized Development Plans
-            </Text>
-            {level1Plans.map((plan, index) => (
-              <View key={plan.id} style={styles.planRow}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder={`Plan ${index + 1}`}
-                  placeholderTextColor="rgba(255,255,255,0.6)"
-                  value={plan.text}
-                  onChangeText={(text) => updatePlan(1, plan.id, text)}
-                />
-              </View>
-            ))}
-            {level1Plans.length < 8 && (
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => addPlan(1)}
-              >
-                <Text style={styles.addButtonText}>+ Plan</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          {/* Level 2 Plans */}
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>
-              Level 2 - Customized Development Plans
-            </Text>
-            {level2Plans.map((plan, index) => (
-              <View key={plan.id} style={styles.planRow}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder={`Plan ${index + 1}`}
-                  placeholderTextColor="rgba(255,255,255,0.6)"
-                  value={plan.text}
-                  onChangeText={(text) => updatePlan(2, plan.id, text)}
-                />
-              </View>
-            ))}
-            {level2Plans.length < 8 && (
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => addPlan(2)}
-              >
-                <Text style={styles.addButtonText}>+ Plan</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          {/* Level 3 Plans */}
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>
-              Level 3 - Customized Development Plans
-            </Text>
-            {level3Plans.map((plan, index) => (
-              <View key={plan.id} style={styles.planRow}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder={`Plan ${index + 1}`}
-                  placeholderTextColor="rgba(255,255,255,0.6)"
-                  value={plan.text}
-                  onChangeText={(text) => updatePlan(3, plan.id, text)}
-                />
-              </View>
-            ))}
-            {level3Plans.length < 8 && (
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => addPlan(3)}
-              >
-                <Text style={styles.addButtonText}>+ Plan</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          {/* Level 4 Plans */}
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>
-              Level 4 - Customized Development Plans
-            </Text>
-            {level4Plans.map((plan, index) => (
-              <View key={plan.id} style={styles.planRow}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder={`Plan ${index + 1}`}
-                  placeholderTextColor="rgba(255,255,255,0.6)"
-                  value={plan.text}
-                  onChangeText={(text) => updatePlan(4, plan.id, text)}
-                />
-              </View>
-            ))}
-            {level4Plans.length < 8 && (
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => addPlan(4)}
-              >
-                <Text style={styles.addButtonText}>+ Plan</Text>
-              </TouchableOpacity>
-            )}
-          </View>
         </View>
 
         {/* Image Upload */}
@@ -890,6 +888,18 @@ const styles = StyleSheet.create({
   subSectionTitle: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  cdpSection: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.2)",
+  },
+  cdpSectionTitle: {
+    color: "#E2E8F0",
+    fontSize: 15,
     fontWeight: "600",
     marginBottom: 12,
   },

@@ -89,10 +89,17 @@ export interface CreateAssessmentLayer {
   choices: CreateAssessmentChoice[];
 }
 
+/** Per-section CDP: level 1–4 recommendations */
+export interface CreateAssessmentSectionRecommendation {
+  level: 1 | 2 | 3 | 4;
+  items: string[];
+}
+
 export interface CreateAssessmentSection {
   title: string;
   description: string;
   layers: CreateAssessmentLayer[];
+  recommendations: CreateAssessmentSectionRecommendation[];
 }
 
 export interface CreateAssessmentRequest {
