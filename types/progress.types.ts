@@ -71,6 +71,12 @@ export interface AssignAssessmentRequest {
     assessmentId: string;
 }
 
+/** Bulk assign assessments to users (used by mentor/director; same as Director-Mobile progress API) */
+export interface AssignAssessmentsBulkRequest {
+    userIds: string[];
+    assessmentIds: string[];
+}
+
 export interface AssignAssessmentResponse {
     _id: string;
     userId: string;
@@ -88,6 +94,13 @@ export interface AssignAssessmentApiResponse {
     success: boolean;
     message: string;
     data: AssignAssessmentResponse;
+}
+
+/** Response for bulk assign (progress/assign-assessment with userIds + assessmentIds) */
+export interface AssignAssessmentsBulkApiResponse {
+    success: boolean;
+    message?: string;
+    data?: unknown;
 }
 
 export interface FinalComment {

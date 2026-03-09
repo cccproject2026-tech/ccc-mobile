@@ -4,6 +4,8 @@ import {
     AddFinalCommentRequest,
     AssignAssessmentApiResponse,
     AssignAssessmentRequest,
+    AssignAssessmentsBulkApiResponse,
+    AssignAssessmentsBulkRequest,
     AssignRoadmapApiResponse,
     AssignRoadmapRequest,
     DeleteFinalCommentApiResponse,
@@ -58,7 +60,7 @@ export const progressService = {
     },
 
     /**
-     * Assign assessment to a user
+     * Assign assessment to a user (single user)
      */
     async assignAssessment(payload: AssignAssessmentRequest): Promise<AssignAssessmentApiResponse> {
         try {
@@ -72,6 +74,26 @@ export const progressService = {
             return response.data;
         } catch (error) {
             console.error('Error assigning assessment:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Assign assessments to multiple users via progress API (same as Director-Mobile).
+     * Use this so that assigned assessments show on pastor/mentee progress and assessments list.
+     */
+    async assignAssessmentsBulk(payload: AssignAssessmentsBulkRequest): Promise<AssignAssessmentsBulkApiResponse> {
+        try {
+            const response = await apiClient.post<AssignAssessmentsBulkApiResponse>(
+                ENDPOINTS.PROGRESS.ASSIGN_ASSESSMENT,
+                payload
+            );
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Failed to assign assessments');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Error assigning assessments (bulk):', error);
             throw error;
         }
     },

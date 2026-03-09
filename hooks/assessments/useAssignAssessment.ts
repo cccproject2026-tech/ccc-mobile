@@ -1,7 +1,12 @@
-import { assessmentService } from '@/services/assessment.service';
+import { progressService } from '@/services/progress.service';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { progressKeys } from '../progress/useProgress';
 
+/**
+ * Assigns assessment(s) to users via the progress API (same as Director-Mobile).
+ * Using POST /progress/assign-assessment ensures the assignment is stored in progress,
+ * so the pastor/mentee sees it in their assessments list and progress.
+ */
 export const useAssignAssessment = () => {
     const queryClient = useQueryClient();
 
@@ -13,8 +18,10 @@ export const useAssignAssessment = () => {
             assessmentId: string;
             userIds: string[];
         }) => {
-            // Call the new single API endpoint that accepts multiple users
-            return assessmentService.assignAssessment(assessmentId, { userIds });
+            return progressService.assignAssessmentsBulk({
+                userIds,
+                assessmentIds: [assessmentId],
+            });
         },
 
         onSuccess: (data, variables) => {
