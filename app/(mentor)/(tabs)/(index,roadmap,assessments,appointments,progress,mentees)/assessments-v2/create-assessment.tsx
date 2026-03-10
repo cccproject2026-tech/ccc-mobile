@@ -111,8 +111,8 @@ export default function CreateAssessmentPage() {
       name: "",
       guidelines: "",
       layers: [
-        { id: "1", title: "Assessment Layer", choices: [{ id: "1", text: "" }] },
-        { id: "2", title: "Assessment Layer", choices: [{ id: "1", text: "" }] },
+        { id: "1", title: "", choices: [{ id: "1", text: "" }] },
+        { id: "2", title: "", choices: [{ id: "1", text: "" }] },
       ],
       recommendations: emptySectionRecommendations(),
     },
@@ -180,7 +180,7 @@ export default function CreateAssessmentPage() {
         id: Date.now().toString(),
         name: "",
         guidelines: "",
-        layers: [{ id: "1", title: "Assessment Layer", choices: [{ id: "1", text: "" }] }],
+        layers: [{ id: "1", title: "", choices: [{ id: "1", text: "" }] }],
         recommendations: newSectionRecommendations(),
       },
     ]);
@@ -206,7 +206,7 @@ export default function CreateAssessmentPage() {
         for (let i = 0; i < count; i++) {
           const existingLayer = s.layers[i];
           newLayers.push(
-            existingLayer || { id: `${Date.now()}-${i}`, title: "Assessment Layer", choices: [{ id: `${Date.now()}-choice-${i}`, text: "" }] }
+            existingLayer || { id: `${Date.now()}-${i}`, title: "", choices: [{ id: `${Date.now()}-choice-${i}`, text: "" }] }
           );
         }
         return { ...s, layers: newLayers };
@@ -691,6 +691,21 @@ export default function CreateAssessmentPage() {
               {section.layers.map((layer, layerIndex) => (
                 <View key={layer.id} style={styles.layerSection}>
                   <Text style={styles.layerTitle}>Layer {layerIndex + 1}</Text>
+
+                  {/* Question (layer title) */}
+                  <Text style={styles.layerFieldLabel}>Question</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter the question for this layer"
+                    placeholderTextColor="rgba(255,255,255,0.6)"
+                    value={layer.title}
+                    onChangeText={(text) =>
+                      updateLayerTitle(section.id, layer.id, text)
+                    }
+                  />
+
+                  {/* Choices */}
+                  <Text style={styles.layerFieldLabel}>Choices</Text>
                   {layer.choices.map((choice, choiceIndex) => (
                     <View key={choice.id} style={styles.choiceRow}>
                       <TextInput
@@ -708,7 +723,7 @@ export default function CreateAssessmentPage() {
                     style={styles.addButton}
                     onPress={() => addChoice(section.id, layer.id)}
                   >
-                    <Text style={styles.addButtonText}>+ Choice</Text>
+                    <Text style={styles.addButtonText}>+ Add Choice</Text>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -989,6 +1004,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     marginBottom: 12,
+  },
+  layerFieldLabel: {
+    color: "#E2E8F0",
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 8,
   },
   choiceRow: {
     flexDirection: "row",
