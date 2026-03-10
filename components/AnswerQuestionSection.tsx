@@ -288,6 +288,22 @@ export default function AssessmentQuestionsSection({
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+                {/* View mode: Responses | Customized Development Plans at top of section */}
+                {isViewMode && mentorReviewSections && mentorReviewSections.length > 0 && (
+                    <View style={styles.tabBarContainer}>
+                        <View style={[styles.tabSegment, styles.tabSegmentActive]}>
+                            <Text style={styles.tabSegmentActiveText}>Responses</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.tabSegmentOutline}
+                            onPress={() => setShowCdpModal(true)}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.tabSegmentOutlineText}>Customized Development Plans</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 {/* Progress Indicator */}
                 <View style={styles.progressContainer}>
                     {assessment.sections.map((_, index) => (
@@ -316,22 +332,6 @@ export default function AssessmentQuestionsSection({
                         <Text style={styles.sectionSubtitle}>{currentSection.subtitle}</Text>
                     ) : null}
                 </View>
-
-                {/* View mode: My Responses | Customized Development Plans tab bar */}
-                {isViewMode && mentorReviewSections && mentorReviewSections.length > 0 && (
-                    <View style={styles.tabBarContainer}>
-                        <View style={[styles.tabSegment, styles.tabSegmentActive]}>
-                            <Text style={styles.tabSegmentActiveText}>My Responses</Text>
-                        </View>
-                        <TouchableOpacity
-                            style={styles.tabSegmentOutline}
-                            onPress={() => setShowCdpModal(true)}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={styles.tabSegmentOutlineText}>Customized Development Plans</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
 
                 {/* Instructions (skip in view mode; subtitle is shown in section card) */}
                 {!isViewMode && currentSection.subtitle && (
@@ -482,8 +482,10 @@ const styles = StyleSheet.create({
     },
     tabBarContainer: {
         flexDirection: 'row',
+        justifyContent: 'center',
         marginHorizontal: getSpacing(20),
         marginBottom: getSpacing(16),
+        marginTop: getSpacing(8),
         gap: getSpacing(12),
         alignItems: 'center',
     },

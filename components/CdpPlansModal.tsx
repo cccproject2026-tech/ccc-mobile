@@ -59,7 +59,7 @@ export default function CdpPlansModal({
             <View style={styles.overlay}>
                 <View style={styles.container}>
                     <LinearGradient
-                        colors={['#1D548D', '#264387', '#2E1A47']}
+                        colors={['#1D548D', '#264387', '#264387']}
                         style={styles.gradient}
                     >
                         <View style={styles.headerRow}>
@@ -123,25 +123,27 @@ export default function CdpPlansModal({
 
                                         <Text style={styles.listTitle}>Customized Development Plans</Text>
                                         <View style={styles.listTitleUnderline} />
-                                        {(section.recommendations ?? []).map((item, idx) => {
-                                            const isSelected = mode === 'mentor' && (selectedRecommendations[section.sectionId] ?? []).includes(item);
-                                            return (
-                                                <View key={`${section.sectionId}-${idx}`} style={styles.itemRow}>
-                                                    <Text style={styles.star}>{isSelected ? '✅' : '⭐'}</Text>
-                                                    {mode === 'mentor' && onToggleRecommendation ? (
-                                                        <TouchableOpacity
-                                                            style={styles.itemTouch}
-                                                            onPress={() => onToggleRecommendation(section.sectionId, item)}
-                                                            activeOpacity={0.7}
-                                                        >
-                                                            <Text style={[styles.itemText, isSelected && styles.itemTextSelected]}>{item}</Text>
-                                                        </TouchableOpacity>
-                                                    ) : (
-                                                        <Text style={styles.itemText}>{item}</Text>
-                                                    )}
-                                                </View>
-                                            );
-                                        })}
+                                        <View style={styles.listBox}>
+                                            {(section.recommendations ?? []).map((item, idx) => {
+                                                const isSelected = mode === 'mentor' && (selectedRecommendations[section.sectionId] ?? []).includes(item);
+                                                return (
+                                                    <View key={`${section.sectionId}-${idx}`} style={styles.itemRow}>
+                                                        <Text style={styles.star}>⭐</Text>
+                                                        {mode === 'mentor' && onToggleRecommendation ? (
+                                                            <TouchableOpacity
+                                                                style={styles.itemTouch}
+                                                                onPress={() => onToggleRecommendation(section.sectionId, item)}
+                                                                activeOpacity={0.7}
+                                                            >
+                                                                <Text style={[styles.itemText, isSelected && styles.itemTextSelected]}>{item}</Text>
+                                                            </TouchableOpacity>
+                                                        ) : (
+                                                            <Text style={styles.itemText}>{item}</Text>
+                                                        )}
+                                                    </View>
+                                                );
+                                            })}
+                                        </View>
                                     </View>
                                 );
                             })}
@@ -241,6 +243,7 @@ const styles = StyleSheet.create({
     },
     controlsRow: {
         flexDirection: 'row',
+        justifyContent: 'flex-end',
         gap: getSpacing(12),
         marginBottom: getSpacing(16),
     },
@@ -248,12 +251,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: getSpacing(6),
-        paddingVertical: getSpacing(8),
-        paddingHorizontal: getSpacing(16),
+        paddingVertical: getSpacing(6),
+        paddingHorizontal: getSpacing(14),
         borderRadius: 8,
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+        backgroundColor: 'transparent',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.4)',
+        borderColor: 'rgba(148,163,184,0.9)',
     },
     controlButtonText: {
         fontSize: getFontSize(14),
@@ -270,6 +273,14 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: 'rgba(255,255,255,0.5)',
         marginBottom: getSpacing(12),
+    },
+    listBox: {
+        borderWidth: 1,
+        borderColor: 'rgba(148, 163, 184, 0.7)',
+        borderRadius: 14,
+        paddingVertical: getSpacing(10),
+        paddingHorizontal: getSpacing(14),
+        backgroundColor: 'rgba(15,23,42,0.45)',
     },
     itemRow: {
         flexDirection: 'row',
@@ -300,10 +311,13 @@ const styles = StyleSheet.create({
         borderTopColor: 'rgba(255,255,255,0.2)',
     },
     sendButton: {
-        backgroundColor: '#2563EB',
-        paddingVertical: getSpacing(14),
-        borderRadius: 12,
-        alignItems: 'center',
+        alignSelf: 'center',
+        paddingVertical: getSpacing(10),
+        paddingHorizontal: getSpacing(32),
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(148,163,184,0.9)',
+        backgroundColor: 'rgba(15,23,42,0.9)',
     },
     sendButtonText: {
         fontSize: getFontSize(16),
