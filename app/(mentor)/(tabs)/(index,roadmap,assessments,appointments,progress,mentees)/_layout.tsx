@@ -57,6 +57,7 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
       <Stack.Screen name="assessments/survey" />
       <Stack.Screen name="assessments/cma-survey-page" />
       <Stack.Screen name="assessments/answer-question-page" />
+      <Stack.Screen name="assessments/answer-questions" />
       <Stack.Screen name="assessments/survey-form" />
       <Stack.Screen name="assessments/(pmp)/pmp-survey-page" />
       <Stack.Screen name="assessments/(pmp)/survey-form" />

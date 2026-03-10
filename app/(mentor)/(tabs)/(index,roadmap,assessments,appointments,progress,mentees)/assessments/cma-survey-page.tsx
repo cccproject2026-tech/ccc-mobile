@@ -39,9 +39,15 @@ export default function CmaSurvey() {
     React.useState(false);
   const params = useLocalSearchParams();
   const assessmentId = params.assessmentId as string;
+  const menteeId = params.menteeId as string | undefined;
+  const assessmentStatus = params.assessmentStatus as string | undefined;
 
   const { user } = useAuthStore();
   const isMentor = user?.role === 'mentor';
+  const canViewResponses =
+    isMentor &&
+    !!menteeId &&
+    (assessmentStatus === "Submitted" || assessmentStatus === "Completed");
 
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
@@ -192,28 +198,59 @@ export default function CmaSurvey() {
             {/* Guidelines points Section */}
             <GuidelinesPoints guidelines={assessment.instructions} />
 
-            <Button
-              type="start"
-              title="Start Now"
-              textStyle={{
-                color: "#001FC1",
-                fontSize: 16,
-                fontWeight: 600,
-              }}
-              style={{
-                backgroundColor: "white",
-                maxWidth: "50%",
-                width: "100%",
-                marginHorizontal: "auto",
-                marginTop: 42
-              }}
-              onPress={() => {
-                router.push({
-                  pathname: "/(mentor)/assessments/answer-question-page" as any,
-                  params: { assessmentId: assessment._id },
-                });
-              }}
-            />
+            {!isMentor && (
+              <Button
+                type="start"
+                title="Start Now"
+                textStyle={{
+                  color: "#001FC1",
+                  fontSize: 16,
+                  fontWeight: 600,
+                }}
+                style={{
+                  backgroundColor: "white",
+                  maxWidth: "50%",
+                  width: "100%",
+                  marginHorizontal: "auto",
+                  marginTop: 42
+                }}
+                onPress={() => {
+                  router.push({
+                    pathname: "/(mentor)/assessments/answer-question-page" as any,
+                    params: { assessmentId: assessment._id },
+                  });
+                }}
+              />
+            )}
+
+            {canViewResponses && (
+              <Button
+                type="start"
+                title="View Survey"
+                textStyle={{
+                  color: "#001FC1",
+                  fontSize: 16,
+                  fontWeight: 600,
+                }}
+                style={{
+                  backgroundColor: "white",
+                  maxWidth: "50%",
+                  width: "100%",
+                  marginHorizontal: "auto",
+                  marginTop: 12
+                }}
+                onPress={() => {
+                  router.push({
+                    pathname: "/(mentor)/assessments/answer-questions" as any,
+                    params: {
+                      assessmentId: assessment._id,
+                      viewMode: "true",
+                      targetUserId: menteeId,
+                    },
+                  });
+                }}
+              />
+            )}
           </ScrollView>
         </SafeAreaView>
 

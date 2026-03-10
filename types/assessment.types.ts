@@ -27,6 +27,8 @@ export interface AssessmentSection {
     title: string;
     subtitle?: string;
     questionGroups: QuestionGroup[];
+    // Optional per-section CDP recommendations (levels 1–4)
+    recommendations?: CreateAssessmentSectionRecommendation[];
 }
 
 export interface QuestionGroup {
@@ -60,6 +62,8 @@ export interface ApiAssessmentSection {
     description: string;
     layers: ApiAssessmentLayer[];
     _id: string;
+    // Optional per-section CDP recommendations from backend
+    recommendations?: CreateAssessmentSectionRecommendation[];
 }
 
 export interface ApiAssessmentAssignment {

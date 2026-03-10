@@ -163,10 +163,28 @@ export default function AnswerQuestionPage() {
     router.back();
   };
 
+  const handleSendCdp = (payload: {
+    recommendations: Array<{
+      sectionId: string;
+      selectedItems: Array<{ level: number; text: string }>;
+    }>;
+  }) => {
+    if (!targetUserId || !assessmentId) return;
+    const cdpPayload = {
+      pastorId: targetUserId,
+      assessmentId: assessmentId as string,
+      recommendations: payload.recommendations,
+    };
+    console.log("Send CDP payload:", cdpPayload);
+    setSuccessMessage("Customized Development Plans sent successfully.");
+    setShowSuccessModal(true);
+    setTimeout(() => router.back(), 2000);
+  };
+
   const handleAssessmentSubmit = async (
     sectionAnswers: Record<number, Record<string, any>>,
   ) => {
-    // Mentor should generally NOT submit assessments, but keeping logic just in case
+    if (isViewMode || targetUserId) return;
     if (!assessment || !data) {
       Alert.alert("Error", "Assessment data not found");
       return;
@@ -325,10 +343,12 @@ export default function AnswerQuestionPage() {
           assessment={assessment}
           assessmentId={assessmentId as string}
           isViewMode={isViewMode}
+          reviewMode={isViewMode && !!targetUserId}
           onSubmit={handleAssessmentSubmit}
           onClose={() => {
             router.back();
           }}
+          onSendCdp={handleSendCdp}
         />
       )}
 
@@ -372,11 +392,15 @@ export default function AnswerQuestionPage() {
         visible={showSuccessModal}
         onClose={() => {
           setShowSuccessModal(false);
-          router.push({
-            pathname: "/assessments/survey-guidelines",
-            params: { assessmentId: assessment.id },
-          });
-          router.back();
+          if (isViewMode || targetUserId) {
+            router.back();
+          } else {
+            router.push({
+              pathname: "/assessments/survey-guidelines",
+              params: { assessmentId: assessment.id },
+            });
+            router.back();
+          }
         }}
         title={successMessage}
       />

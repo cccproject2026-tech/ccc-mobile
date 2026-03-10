@@ -47,6 +47,8 @@ function mapApiSection(apiSection: ApiAssessmentSection): AssessmentSection {
                 required: false,
             })),
         })),
+        // Pass through optional per-section CDP recommendations if provided
+        recommendations: apiSection.recommendations,
     };
 }
 

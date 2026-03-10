@@ -47,10 +47,10 @@ export default function MentorAssessmentsLibrary() {
   // Get current user for TopBar
   const { user } = useAuthStore();
 
-  // Fetch mentees for avatars
-  const { data: menteesData } = useMentees();
+  // Fetch mentees for avatars (request more so all show in the row)
+  const { data: menteesData } = useMentees(100);
 
-  // Format mentees for display
+  // Format mentees for display (ensure avatar always has valid source)
   const mentees = useMemo(() => {
     if (!menteesData?.pages.flatMap((page) => page.mentees)) return [];
     return menteesData.pages
@@ -60,9 +60,10 @@ export default function MentorAssessmentsLibrary() {
         name:
           `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() ||
           "Mentee",
-        avatar: mentee.profilePicture
-          ? { uri: mentee.profilePicture }
-          : icons.myProfile,
+        avatar:
+          mentee.profilePicture?.trim?.()
+            ? { uri: mentee.profilePicture.trim() }
+            : icons.myProfile,
       }));
   }, [menteesData]);
 
@@ -122,15 +123,22 @@ export default function MentorAssessmentsLibrary() {
   }, [searchedAssessments, tabs]);
 
   const handleOpenAssessment = (assessment: Assessment) => {
+    const params: { assessmentId: string; menteeId?: string; assessmentStatus?: string } = {
+      assessmentId: assessment.id,
+    };
+    if (selectedMentee) {
+      params.menteeId = selectedMentee;
+      params.assessmentStatus = assessment.status;
+    }
     if (assessment.type === "CMA") {
       router.push({
         pathname: "/(mentor)/assessments/cma-survey-page" as any,
-        params: { assessmentId: assessment.id },
+        params,
       });
     } else {
       router.push({
         pathname: "/(mentor)/assessments/(pmp)/pmp-survey-page" as any,
-        params: { assessmentId: assessment.id },
+        params,
       });
     }
   };
@@ -247,63 +255,56 @@ export default function MentorAssessmentsLibrary() {
           />
         </View>
 
-        {/* Avatars Row */}
+        {/* Avatars Row - fixed width per item so long names don't break layout */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingVertical: 14, gap: 14 }}
+          contentContainerStyle={{
+            paddingVertical: 14,
+            paddingHorizontal: 4,
+            gap: 14,
+          }}
         >
           {/* Library pill */}
           <Pressable
             onPress={() => setSelectedMentee(null)}
-            style={{ alignItems: "center", gap: 8 }}
+            style={styles.menteeAvatarItem}
           >
-            <View
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 32,
-                borderWidth: 3,
-                borderColor: "#8BD6FF",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#0D4C78",
-              }}
-            >
+            <View style={[styles.menteeAvatarCircle, styles.menteeAvatarCircleLibrary]}>
               <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>
                 Library
               </Text>
             </View>
-            <Text style={{ color: "#E2E8F0", fontSize: 12 }}>Library</Text>
+            <Text
+              style={styles.menteeAvatarLabel}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              Library
+            </Text>
           </Pressable>
 
           {mentees.map((m) => (
             <Pressable
               key={m.id}
               onPress={() => setSelectedMentee(m.id)}
-              style={{ alignItems: "center", gap: 8 }}
+              style={styles.menteeAvatarItem}
             >
               <View
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 32,
-                  borderWidth: selectedMentee === m.id ? 3 : 0,
-                  borderColor: "#8BD6FF",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  backgroundColor: "#0D4C78",
-                }}
+                style={[
+                  styles.menteeAvatarCircle,
+                  selectedMentee === m.id && styles.menteeAvatarCircleSelected,
+                ]}
               >
                 <Image
                   source={m.avatar}
-                  style={{ width: 64, height: 64, resizeMode: "cover" }}
+                  style={styles.menteeAvatarImage}
                 />
               </View>
               <Text
-                style={{ color: "#E2E8F0", fontSize: 12 }}
+                style={styles.menteeAvatarLabel}
                 numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {m.name}
               </Text>
@@ -484,5 +485,39 @@ const styles = StyleSheet.create({
   },
   headerIconButton: {
     padding: 4,
+  },
+  menteeAvatarItem: {
+    width: 72,
+    alignItems: "center",
+    gap: 8,
+  },
+  menteeAvatarCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 0,
+    borderColor: "#8BD6FF",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    backgroundColor: "#0D4C78",
+  },
+  menteeAvatarCircleLibrary: {
+    borderWidth: 3,
+  },
+  menteeAvatarCircleSelected: {
+    borderWidth: 3,
+    borderColor: "#8BD6FF",
+  },
+  menteeAvatarImage: {
+    width: 64,
+    height: 64,
+    resizeMode: "cover",
+  },
+  menteeAvatarLabel: {
+    width: 72,
+    color: "#E2E8F0",
+    fontSize: 12,
+    textAlign: "center",
   },
 });

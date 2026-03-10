@@ -18,6 +18,15 @@ interface AssessmentQuestionsSectionProps {
     isViewMode: boolean;
     onSubmit: (sectionAnswers: Record<number, Record<string, any>>) => void;
     onClose?: () => void;
+    // When true, show mentor review UI (Responses & Recommendations) after final section
+    reviewMode?: boolean;
+    // Called when mentor sends Customized Development Plans (CDP)
+    onSendCdp?: (payload: {
+        recommendations: Array<{
+            sectionId: string;
+            selectedItems: Array<{ level: number; text: string }>;
+        }>;
+    }) => void;
 }
 
 export default function AssessmentQuestionsSection({
@@ -26,6 +35,8 @@ export default function AssessmentQuestionsSection({
     isViewMode,
     onSubmit,
     onClose,
+    reviewMode = false,
+    onSendCdp,
 }: AssessmentQuestionsSectionProps) {
     const getDraft = useAssessmentStore((state) => state.getDraft);
     const saveDraft = useAssessmentStore((state) => state.saveDraft);
@@ -99,8 +110,8 @@ export default function AssessmentQuestionsSection({
                 setCurrentSectionIndex(prev => prev + 1);
             }
             else {
-                // Last section - Close
-                if (onClose) {
+                // In mentor review mode, stay on last section so user can see recommendations
+                if (!reviewMode && onClose) {
                     onClose();
                 }
             }
@@ -322,6 +333,69 @@ export default function AssessmentQuestionsSection({
                         </>
                     )}
                 </View>
+
+                {/* Mentor Review: Responses & Recommendations */}
+                {reviewMode && isViewMode && (
+                    <View style={styles.recommendationsContainer}>
+                        <Text style={styles.recommendationsHeader}>
+                            Responses &amp; Recommendations
+                        </Text>
+                        {assessment.sections.map((section, sectionIndex) => {
+                            if (!section.recommendations || section.recommendations.length === 0) {
+                                return null;
+                            }
+                            return (
+                                <View key={sectionIndex} style={styles.recommendationSectionCard}>
+                                    <Text style={styles.recommendationSectionTitle}>
+                                        {section.title}
+                                    </Text>
+                                    {section.recommendations.map((rec, recIndex) => (
+                                        <View key={recIndex} style={styles.recommendationLevelBlock}>
+                                            <Text style={styles.recommendationLevelLabel}>
+                                                Level {rec.level}
+                                            </Text>
+                                            {rec.items.map((item, itemIndex) => {
+                                                const key = `${sectionIndex}-${rec.level}-${itemIndex}`;
+                                                // For now, recommendations are display-only; selection/editing
+                                                // state can be wired through onSendCdp when backend is ready.
+                                                return (
+                                                    <View key={key} style={styles.recommendationRow}>
+                                                        <View style={styles.recommendationCheckbox} />
+                                                        <Text style={styles.recommendationText}>{item}</Text>
+                                                        <Ionicons
+                                                            name="pencil-outline"
+                                                            size={16}
+                                                            color="#E2E8F0"
+                                                            style={styles.recommendationEditIcon}
+                                                        />
+                                                    </View>
+                                                );
+                                            })}
+                                        </View>
+                                    ))}
+                                </View>
+                            );
+                        })}
+                        {onSendCdp && (
+                            <TouchableOpacity
+                                style={styles.sendCdpButton}
+                                onPress={() => {
+                                    // Placeholder payload; wire to real selection/editing state as needed
+                                    const payload = {
+                                        recommendations: [] as Array<{
+                                            sectionId: string;
+                                            selectedItems: Array<{ level: number; text: string }>;
+                                        }>,
+                                    };
+                                    onSendCdp(payload);
+                                }}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={styles.sendCdpButtonText}>Send CDP</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
             </KeyboardAwareScrollView>
         </>
     );
@@ -486,5 +560,73 @@ const styles = StyleSheet.create({
     },
     buttonDisabled: {
         opacity: 0.5,
+    },
+    recommendationsContainer: {
+        marginTop: getSpacing(32),
+        paddingHorizontal: getSpacing(20),
+        paddingBottom: getSpacing(40),
+    },
+    recommendationsHeader: {
+        fontSize: getFontSize(18),
+        fontWeight: '700',
+        color: '#fff',
+        marginBottom: getSpacing(16),
+    },
+    recommendationSectionCard: {
+        marginBottom: getSpacing(16),
+        padding: getSpacing(16),
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(15,35,70,0.9)',
+    },
+    recommendationSectionTitle: {
+        fontSize: getFontSize(16),
+        fontWeight: '600',
+        color: '#E2E8F0',
+        marginBottom: getSpacing(8),
+    },
+    recommendationLevelBlock: {
+        marginTop: getSpacing(8),
+    },
+    recommendationLevelLabel: {
+        fontSize: getFontSize(13),
+        fontWeight: '600',
+        color: '#A5B4FC',
+        marginBottom: getSpacing(4),
+    },
+    recommendationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: getSpacing(6),
+    },
+    recommendationCheckbox: {
+        width: 18,
+        height: 18,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(226,232,240,0.7)',
+        marginRight: getSpacing(10),
+    },
+    recommendationText: {
+        flex: 1,
+        fontSize: getFontSize(14),
+        color: '#E2E8F0',
+    },
+    recommendationEditIcon: {
+        marginLeft: getSpacing(8),
+    },
+    sendCdpButton: {
+        marginTop: getSpacing(24),
+        alignSelf: 'center',
+        paddingVertical: getSpacing(12),
+        paddingHorizontal: getSpacing(32),
+        borderRadius: 24,
+        backgroundColor: '#FACC15',
+    },
+    sendCdpButtonText: {
+        fontSize: getFontSize(15),
+        fontWeight: '700',
+        color: '#1F2933',
     },
 });
