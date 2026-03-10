@@ -49,6 +49,9 @@ export default function AssessmentQuestionsSection({
         isViewMode ? 0 : (previousResponse?.currentSectionIndex || 0)
     );
 
+    /** CDP recommendations selected by mentor per section. Key = sectionId (section index as string), value = selected recommendation texts. */
+    const [selectedRecommendations, setSelectedRecommendations] = useState<Record<string, string[]>>({});
+
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
 
@@ -151,6 +154,18 @@ export default function AssessmentQuestionsSection({
         if (currentSectionIndex > 0) {
             setCurrentSectionIndex(prev => prev - 1);
         }
+    };
+
+    /** Toggle a CDP recommendation: add if not selected, remove if selected. */
+    const toggleRecommendation = (sectionId: string, recommendationText: string) => {
+        setSelectedRecommendations(prev => {
+            const list = prev[sectionId] ?? [];
+            const isSelected = list.includes(recommendationText);
+            const nextList = isSelected
+                ? list.filter(t => t !== recommendationText)
+                : [...list, recommendationText];
+            return { ...prev, [sectionId]: nextList };
+        });
     };
 
     const handleSubmitAssessment = () => {
@@ -365,11 +380,23 @@ export default function AssessmentQuestionsSection({
                                             </Text>
                                             {rec.items.map((item, itemIndex) => {
                                                 const key = `${sectionIndex}-${rec.level}-${itemIndex}`;
-                                                // For now, recommendations are display-only; selection/editing
-                                                // state can be wired through onSendCdp when backend is ready.
+                                                const sectionId = String(sectionIndex);
+                                                const isSelected = (selectedRecommendations[sectionId] ?? []).includes(item);
                                                 return (
-                                                    <View key={key} style={styles.recommendationRow}>
-                                                        <View style={styles.recommendationCheckbox} />
+                                                    <TouchableOpacity
+                                                        key={key}
+                                                        style={styles.recommendationRow}
+                                                        onPress={() => toggleRecommendation(sectionId, item)}
+                                                        activeOpacity={0.7}
+                                                    >
+                                                        <View style={[
+                                                            styles.recommendationCheckbox,
+                                                            isSelected && styles.recommendationCheckboxChecked
+                                                        ]}>
+                                                            {isSelected && (
+                                                                <Ionicons name="checkmark" size={14} color="#fff" />
+                                                            )}
+                                                        </View>
                                                         <Text style={styles.recommendationText}>{item}</Text>
                                                         <Ionicons
                                                             name="pencil-outline"
@@ -377,7 +404,7 @@ export default function AssessmentQuestionsSection({
                                                             color="#E2E8F0"
                                                             style={styles.recommendationEditIcon}
                                                         />
-                                                    </View>
+                                                    </TouchableOpacity>
                                                 );
                                             })}
                                         </View>
@@ -660,6 +687,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(226,232,240,0.7)',
         marginRight: getSpacing(10),
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    recommendationCheckboxChecked: {
+        backgroundColor: '#5B7BB4',
+        borderColor: '#5B7BB4',
     },
     recommendationText: {
         flex: 1,
