@@ -29,9 +29,8 @@ export function mapApiToFrontend(apiAssessment: ApiAssessment): Assessment {
 }
 
 /**
- * Map API section to frontend section
- * Each layer becomes a question group
- * Each choice becomes a separate checkbox question
+ * Map API section to frontend section.
+ * Each layer = one question (radio) with choices as options; backend expects one selectedChoice per layer.
  */
 function mapApiSection(apiSection: ApiAssessmentSection): AssessmentSection {
     return {
@@ -39,15 +38,20 @@ function mapApiSection(apiSection: ApiAssessmentSection): AssessmentSection {
         subtitle: apiSection.description,
         questionGroups: apiSection.layers.map(layer => ({
             id: layer._id,
-            groupTitle: layer.title, // "Group 1", "Group 2", etc.
-            questions: layer.choices.map(choice => ({
-                id: choice._id,
-                text: choice.text,
-                type: 'checkbox' as const,
-                required: false,
-            })),
+            groupTitle: layer.title,
+            questions: [
+                {
+                    id: layer._id,
+                    text: layer.title,
+                    type: 'radio' as const,
+                    options: layer.choices.map(choice => ({
+                        label: choice.text,
+                        value: choice._id,
+                    })),
+                    required: false,
+                },
+            ],
         })),
-        // Pass through optional per-section CDP recommendations if provided
         recommendations: apiSection.recommendations,
     };
 }

@@ -72,13 +72,14 @@ export default function AssessmentQuestionsSection({
         });
     };
 
-    const handleAnswer = (questionId: string, value: boolean) => {
+    /** One selected choice per question (layer). Backend expects selectedChoice: choiceId per layer. */
+    const handleAnswer = (questionId: string, choiceId: string) => {
         if (isViewMode) return;
         setAnswers(prev => ({
             ...prev,
             [currentSectionIndex]: {
                 ...prev[currentSectionIndex],
-                [questionId]: value,
+                [questionId]: choiceId,
             }
         }));
     };
@@ -170,28 +171,36 @@ export default function AssessmentQuestionsSection({
     };
 
     const renderQuestion = (question: AssessmentQuestion) => {
-        if (question.type === 'checkbox') {
-            const isChecked = answers[currentSectionIndex]?.[question.id] || false;
+        if (question.type === 'radio' && question.options?.length) {
+            const selectedChoiceId = answers[currentSectionIndex]?.[question.id] as string | undefined;
             return (
-                <TouchableOpacity
-                    key={question.id}
-                    style={styles.questionItem}
-                    onPress={() => handleAnswer(question.id, !isChecked)}
-                    activeOpacity={isViewMode ? 1 : 0.7}
-                    disabled={isViewMode}
-                >
-                    <View style={[
-                        styles.checkbox,
-                        isChecked && styles.checkboxChecked,
-                        isViewMode && styles.checkboxViewMode
-                    ]}>
-                        {isChecked && <Ionicons name="checkmark" size={16} color="#fff" />}
-                    </View>
-                    <Text style={styles.questionText}>
+                <View key={question.id} style={styles.radioQuestionBlock}>
+                    <Text style={styles.radioQuestionLabel}>
                         {question.text}
                         {question.required && <Text style={styles.required}> *</Text>}
                     </Text>
-                </TouchableOpacity>
+                    {question.options.map((option) => {
+                        const isSelected = selectedChoiceId === option.value;
+                        return (
+                            <TouchableOpacity
+                                key={option.value}
+                                style={styles.radioRow}
+                                onPress={() => handleAnswer(question.id, option.value)}
+                                activeOpacity={isViewMode ? 1 : 0.7}
+                                disabled={isViewMode}
+                            >
+                                <View style={[
+                                    styles.radioOuter,
+                                    isSelected && styles.radioOuterSelected,
+                                    isViewMode && styles.radioViewMode
+                                ]}>
+                                    {isSelected && <View style={styles.radioInner} />}
+                                </View>
+                                <Text style={styles.radioOptionLabel}>{option.label}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
             );
         }
         return null;
@@ -210,11 +219,11 @@ export default function AssessmentQuestionsSection({
                 <View style={{ alignItems: 'flex-end', margin: 12 }}>
                     <TouchableOpacity
                         onPress={() => {
-                            const filledAnswers: Record<string, boolean> = {};
+                            const filledAnswers: Record<string, string> = {};
                             currentSection.questionGroups.forEach(group => {
                                 group.questions.forEach(q => {
-                                    if (q.type === 'checkbox') {
-                                        filledAnswers[q.id] = true;
+                                    if (q.type === 'radio' && q.options?.length) {
+                                        filledAnswers[q.id] = q.options[0].value;
                                     }
                                 });
                             });
@@ -512,6 +521,50 @@ const styles = StyleSheet.create({
     },
     checkboxViewMode: {
         opacity: 0.7,
+    },
+    radioQuestionBlock: {
+        marginBottom: getSpacing(20),
+    },
+    radioQuestionLabel: {
+        fontSize: getFontSize(15),
+        color: '#fff',
+        lineHeight: getFontSize(23),
+        fontWeight: '600',
+        marginBottom: getSpacing(12),
+    },
+    radioRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: getSpacing(12),
+    },
+    radioOuter: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.6)',
+        marginRight: getSpacing(14),
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    radioOuterSelected: {
+        borderColor: '#5B7BB4',
+        backgroundColor: 'rgba(91, 123, 180, 0.3)',
+    },
+    radioInner: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#5B7BB4',
+    },
+    radioViewMode: {
+        opacity: 0.7,
+    },
+    radioOptionLabel: {
+        flex: 1,
+        fontSize: getFontSize(15),
+        color: '#fff',
+        lineHeight: getFontSize(22),
     },
     questionText: {
         flex: 1,

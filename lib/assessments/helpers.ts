@@ -45,13 +45,11 @@ export function transformAnswersToPayload(
 
         const layers: Array<{ layerId: string; selectedChoice: string }> = [];
 
-        Object.entries(layerAnswers).forEach(([layerId, selectedChoices]) => {
-            // If multiple choices are selected (checkboxes), we need to handle it
-            // For now, assuming single choice per layer
-            if (selectedChoices) {
+        Object.entries(layerAnswers).forEach(([layerId, choiceId]) => {
+            if (choiceId) {
                 layers.push({
                     layerId,
-                    selectedChoice: selectedChoices as string
+                    selectedChoice: String(choiceId)
                 });
             }
         });
@@ -88,7 +86,7 @@ export function transformSubmittedAnswersToStore(
     apiAssessment: ApiAssessment
 ): {
     preSurveyAnswers: Record<string, string>;
-    sectionAnswers: Record<number, Record<string, boolean>>;
+    sectionAnswers: Record<number, Record<string, string>>;
 } {
     // Transform pre-survey answers
     const preSurveyAnswers: Record<string, string> = {};
@@ -101,8 +99,8 @@ export function transformSubmittedAnswersToStore(
         });
     }
 
-    // Transform section answers
-    const sectionAnswers: Record<number, Record<string, boolean>> = {};
+    // Transform section answers: one selectedChoice (choiceId) per layer
+    const sectionAnswers: Record<number, Record<string, string>> = {};
 
     submittedAnswers.sections.forEach((submittedSection) => {
         const sectionIndex = apiAssessment.sections.findIndex(
@@ -111,14 +109,8 @@ export function transformSubmittedAnswersToStore(
 
         if (sectionIndex !== -1) {
             sectionAnswers[sectionIndex] = {};
-
             submittedSection.layers.forEach((layer) => {
-                // Convert string "true" to boolean true
-                // Backend sends "true" as string, frontend needs boolean
-                sectionAnswers[sectionIndex][layer.layerId] =
-                    layer.selectedChoice === 'true' ||
-                    layer.selectedChoice === 'TRUE' ||
-                    Boolean(layer.selectedChoice); // Convert any truthy string to boolean
+                sectionAnswers[sectionIndex][layer.layerId] = layer.selectedChoice;
             });
         }
     });

@@ -176,12 +176,10 @@ export default function AnswerQuestionPage() {
           const section = data.sections[parseInt(sectionIndex)];
 
           const layers = Object.entries(layerAnswers)
-            .filter(([_, value]) => value)
-            .map(([layerId, selectedChoices]) => ({
+            .filter(([_, choiceId]) => choiceId)
+            .map(([layerId, choiceId]) => ({
               layerId,
-              selectedChoice: Array.isArray(selectedChoices)
-                ? selectedChoices[0]
-                : String(selectedChoices),
+              selectedChoice: String(choiceId),
             }));
 
           return {
