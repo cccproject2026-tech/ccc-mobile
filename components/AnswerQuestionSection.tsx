@@ -1,3 +1,4 @@
+import CdpPlansModal from '@/components/CdpPlansModal';
 import { useAssessmentStore } from '@/stores/assessment.store';
 import { Assessment, AssessmentQuestion, QuestionGroup } from '@/types/assessment.types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
@@ -59,8 +60,9 @@ export default function AssessmentQuestionsSection({
         isViewMode ? 0 : (previousResponse?.currentSectionIndex || 0)
     );
 
-    /** CDP recommendations selected by mentor per section. Key = sectionId (section index as string), value = selected recommendation texts. */
+    /** CDP recommendations selected by mentor per section. Key = sectionId, value = selected recommendation texts. */
     const [selectedRecommendations, setSelectedRecommendations] = useState<Record<string, string[]>>({});
+    const [showCdpModal, setShowCdpModal] = useState(false);
 
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
@@ -310,10 +312,29 @@ export default function AssessmentQuestionsSection({
                         <Text style={styles.sectionBadgeText}>Section {currentSectionIndex + 1}</Text>
                     </View>
                     <Text style={styles.sectionTitle}>{currentSection.title}</Text>
+                    {currentSection.subtitle ? (
+                        <Text style={styles.sectionSubtitle}>{currentSection.subtitle}</Text>
+                    ) : null}
                 </View>
 
-                {/* Instructions */}
-                {currentSection.subtitle && (
+                {/* View mode: My Responses | Customized Development Plans tab bar */}
+                {isViewMode && mentorReviewSections && mentorReviewSections.length > 0 && (
+                    <View style={styles.tabBarContainer}>
+                        <View style={[styles.tabSegment, styles.tabSegmentActive]}>
+                            <Text style={styles.tabSegmentActiveText}>My Responses</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.tabSegmentOutline}
+                            onPress={() => setShowCdpModal(true)}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.tabSegmentOutlineText}>Customized Development Plans</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Instructions (skip in view mode; subtitle is shown in section card) */}
+                {!isViewMode && currentSection.subtitle && (
                     <Text style={styles.instructionText}>
                         {currentSection.subtitle}
                     </Text>
@@ -368,89 +389,37 @@ export default function AssessmentQuestionsSection({
                     )}
                 </View>
 
-                {/* Mentor Review: Responses & Recommendations — use sectionScore + recommendations from answers API */}
-                {reviewMode && isViewMode && (
-                    <View style={styles.recommendationsContainer}>
-                        <Text style={styles.recommendationsHeader}>
-                            Responses &amp; Recommendations
-                        </Text>
-                        {mentorReviewSections?.map((section) => {
-                            if (!section.recommendations || section.recommendations.length === 0) {
-                                return null;
-                            }
-                            return (
-                                <View key={section.sectionId} style={styles.recommendationSectionCard}>
-                                    <Text style={styles.recommendationSectionTitle}>
-                                        {section.title}
-                                    </Text>
-                                    <Text style={styles.recommendationScoreLabel}>
-                                        Score: {section.score ?? "-"}
-                                    </Text>
-                                    <View style={styles.recommendationLevelBlock}>
-                                        <Text style={styles.recommendationLevelLabel}>
-                                            Recommended CDP
-                                        </Text>
-                                        {section.recommendations.map((item, itemIndex) => {
-                                            const key = `${section.sectionId}-${itemIndex}`;
-                                            const sectionId = section.sectionId;
-                                            const isSelected = (selectedRecommendations[sectionId] ?? []).includes(item);
-                                            return (
-                                                <TouchableOpacity
-                                                    key={key}
-                                                    style={styles.recommendationRow}
-                                                    onPress={() => toggleRecommendation(sectionId, item)}
-                                                    activeOpacity={0.7}
-                                                >
-                                                    <View style={[
-                                                        styles.recommendationCheckbox,
-                                                        isSelected && styles.recommendationCheckboxChecked
-                                                    ]}>
-                                                        {isSelected && (
-                                                            <Ionicons name="checkmark" size={14} color="#fff" />
-                                                        )}
-                                                    </View>
-                                                    <Text style={styles.recommendationText}>{item}</Text>
-                                                    <Ionicons
-                                                        name="pencil-outline"
-                                                        size={16}
-                                                        color="#E2E8F0"
-                                                        style={styles.recommendationEditIcon}
-                                                    />
-                                                </TouchableOpacity>
-                                            );
-                                        })}
-                                    </View>
-                                </View>
-                            );
-                        })}
-                        {onSendCdp && mentorReviewSections && (
-                            <TouchableOpacity
-                                style={styles.sendCdpButton}
-                                onPress={() => {
-                                    // Build payload from selected recommendations per section
-                                    const payload = {
-                                        recommendations: mentorReviewSections
-                                            .map((section) => {
-                                                const selected = selectedRecommendations[section.sectionId] ?? [];
-                                                return {
-                                                    sectionId: section.sectionId,
-                                                    selectedItems: selected.map((text) => ({
-                                                        level: section.score ?? 0,
-                                                        text,
-                                                    })),
-                                                };
-                                            })
-                                            .filter((s) => s.selectedItems.length > 0),
-                                    };
-                                    onSendCdp(payload);
-                                }}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={styles.sendCdpButtonText}>Send CDP</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                )}
+                <CdpPlansModal
+                    visible={showCdpModal}
+                    onClose={() => setShowCdpModal(false)}
+                    assessmentTitle={assessment.title}
+                    mode={reviewMode ? 'mentor' : 'pastor'}
+                    sections={mentorReviewSections ?? []}
+                    selectedRecommendations={reviewMode ? selectedRecommendations : undefined}
+                    onToggleRecommendation={reviewMode ? toggleRecommendation : undefined}
+                    onSendCdp={
+                        reviewMode && onSendCdp && mentorReviewSections
+                            ? () => {
+                                  const payload = {
+                                      recommendations: mentorReviewSections
+                                          .map((section) => {
+                                              const selected = selectedRecommendations[section.sectionId] ?? [];
+                                              return {
+                                                  sectionId: section.sectionId,
+                                                  selectedItems: selected.map((text) => ({
+                                                      level: section.score ?? 0,
+                                                      text,
+                                                  })),
+                                              };
+                                          })
+                                          .filter((s) => s.selectedItems.length > 0),
+                                  };
+                                  onSendCdp(payload);
+                                  setShowCdpModal(false);
+                              }
+                            : undefined
+                    }
+                />
             </KeyboardAwareScrollView>
         </>
     );
@@ -504,6 +473,45 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: getSpacing(24),
         alignItems: 'center',
+    },
+    sectionSubtitle: {
+        fontSize: getFontSize(13),
+        color: 'rgba(255,255,255,0.85)',
+        marginTop: getSpacing(6),
+        textAlign: 'center',
+    },
+    tabBarContainer: {
+        flexDirection: 'row',
+        marginHorizontal: getSpacing(20),
+        marginBottom: getSpacing(16),
+        gap: getSpacing(12),
+        alignItems: 'center',
+    },
+    tabSegment: {
+        paddingVertical: getSpacing(10),
+        paddingHorizontal: getSpacing(16),
+        borderRadius: 20,
+    },
+    tabSegmentActive: {
+        backgroundColor: 'rgba(255,255,255,0.25)',
+    },
+    tabSegmentActiveText: {
+        fontSize: getFontSize(15),
+        fontWeight: '600',
+        color: '#fff',
+    },
+    tabSegmentOutline: {
+        paddingVertical: getSpacing(10),
+        paddingHorizontal: getSpacing(16),
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.6)',
+        backgroundColor: 'transparent',
+    },
+    tabSegmentOutlineText: {
+        fontSize: getFontSize(14),
+        fontWeight: '600',
+        color: '#fff',
     },
     sectionBadge: {
         backgroundColor: 'transparent',
@@ -659,6 +667,27 @@ const styles = StyleSheet.create({
     },
     buttonDisabled: {
         opacity: 0.5,
+    },
+    cdpButtonContainer: {
+        marginTop: getSpacing(24),
+        paddingHorizontal: getSpacing(20),
+        paddingBottom: getSpacing(40),
+    },
+    cdpOpenButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        paddingVertical: getSpacing(16),
+        paddingHorizontal: getSpacing(20),
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    cdpOpenButtonText: {
+        fontSize: getFontSize(16),
+        fontWeight: '600',
+        color: '#fff',
     },
     recommendationsContainer: {
         marginTop: getSpacing(32),

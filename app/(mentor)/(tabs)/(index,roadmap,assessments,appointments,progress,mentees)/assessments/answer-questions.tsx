@@ -290,7 +290,7 @@ export default function AnswerQuestionPage() {
         recommendations: submitted?.recommendations ?? [],
       };
     });
-  }, [assessment, data?.sections, submittedAnswers?.sections]);
+  }, [assessment, data?.sections, submittedAnswers?.data?.sections]);
 
   // Loading state
   if (isLoading || (isViewMode && isLoadingSubmitted)) {

@@ -228,6 +228,22 @@ export default function AnswerQuestionPage() {
     }, 300);
   };
 
+  // CDP sections for pastor view mode (Level + recommendations from answers API)
+  const cdpSectionsForView = useMemo(() => {
+    if (!assessment || !data?.sections || !submittedAnswers?.data?.sections) return undefined;
+    return data.sections.map((apiSection, index) => {
+      const submitted = submittedAnswers.data.sections.find(
+        (s) => s.sectionId === apiSection._id,
+      );
+      return {
+        sectionId: apiSection._id,
+        title: assessment.sections[index]?.title ?? apiSection.title,
+        score: submitted?.sectionScore,
+        recommendations: submitted?.recommendations ?? [],
+      };
+    });
+  }, [assessment, data?.sections, submittedAnswers?.data?.sections]);
+
   const handleScheduleComplete = (data: any) => {
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
@@ -347,6 +363,7 @@ export default function AnswerQuestionPage() {
           assessment={assessment}
           assessmentId={assessmentId as string}
           isViewMode={isViewMode}
+          mentorReviewSections={cdpSectionsForView}
           onSubmit={handleAssessmentSubmit}
           onClose={() => {
             router.back();
