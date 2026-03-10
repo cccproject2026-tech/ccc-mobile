@@ -4,6 +4,7 @@ import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
 import { useAssessment, useAssignAssessment } from "@/hooks/assessments";
 import { useMentees } from "@/hooks/mentees/useMentees";
+import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -39,6 +40,7 @@ export default function AssignToPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const assessmentId = params.assessmentId as string;
+  const { user } = useAuthStore();
 
   const [search, setSearch] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -49,7 +51,7 @@ export default function AssignToPage() {
   // Fetch assessment to get existing assignments (optional, now we rely on mentee progress)
   const { isLoading: assessmentLoading } = useAssessment(assessmentId);
 
-  // Use TanStack Query hooks
+  // Only mentees assigned to this mentor
   const {
     data: menteesResponse,
     isLoading: loading,
@@ -58,7 +60,7 @@ export default function AssignToPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = useMentees();
+  } = useMentees(10, user?.id);
 
   const assignAssessmentMutation = useAssignAssessment();
 

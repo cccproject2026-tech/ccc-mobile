@@ -37,6 +37,13 @@ export interface GetMenteesApiResponse {
     };
 }
 
+/** Response from GET /users/:mentorId/assigned - mentees assigned to this mentor */
+export interface GetAssignedMenteesApiResponse {
+    success: boolean;
+    message: string;
+    data: Mentee[] | { users: Mentee[]; total?: number };
+}
+
 export interface MenteeDetail {
     id: string;
     firstName: string;

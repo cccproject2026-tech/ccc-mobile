@@ -54,6 +54,7 @@ export default function MyMentees() {
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null)
   const [showMarkCompleteModal, setShowMarkCompleteModal] = useState(false)
   const { user } = useAuthStore()
+  // Only show mentees assigned to this mentor (not all pastors)
   const {
     data,
     fetchNextPage,
@@ -61,7 +62,7 @@ export default function MyMentees() {
     isFetchingNextPage,
     isLoading,
     isError
-  } = useMentees(10)
+  } = useMentees(10, user?.id)
 
   const allMentees = useMemo(() => {
     return data?.pages.flatMap(page => page.mentees) ?? []

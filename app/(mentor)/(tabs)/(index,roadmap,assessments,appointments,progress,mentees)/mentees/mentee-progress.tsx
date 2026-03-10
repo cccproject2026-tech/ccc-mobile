@@ -34,8 +34,8 @@ export default function MenteeProgressScreen() {
   const deleteFinalCommentMutation = useDeleteFinalComment();
 
 
-  // Fetch mentee data
-  const { data: menteesData, isLoading: isLoadingMentees } = useMentees();
+  // Fetch assigned mentees for this mentor
+  const { data: menteesData, isLoading: isLoadingMentees } = useMentees(10, user?.id);
   const mentee = useMemo(() => {
     return menteesData?.pages.flatMap((page: any) => page.mentees)?.find((m: any) => m.id === menteeId);
   }, [menteesData, menteeId]);

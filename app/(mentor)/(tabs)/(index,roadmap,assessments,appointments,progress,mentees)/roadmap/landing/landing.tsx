@@ -7,6 +7,7 @@ import RoadmapCard from "@/components/director/ProgressRoadmapCard";
 import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
+import { useAuthStore } from "@/stores/auth.store";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { useProgressByUserId } from "@/hooks/progress/useProgress";
 import { mergeRoadmapWithProgress, useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
@@ -34,17 +35,19 @@ export default function Landing() {
     const [selectedPastorRoadmapSearch, setSelectedPastorRoadmapSearch] = useState('');
     const [selectedPastor, setSelectedPastor] = useState<Mentee | null>(null);
 
+    const { user } = useAuthStore();
+
     // Fetch roadmaps
     const { data: roadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
 
-    // Fetch mentees (pastors)
+    // Fetch only mentees assigned to this mentor
     const {
         data: menteesData,
         isLoading: isLoadingMentees,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage
-    } = useMentees();
+    } = useMentees(10, user?.id);
     const mentees = useMemo(() => menteesData?.pages.flatMap(page => page.mentees) || [], [menteesData]);
 
     // Handle pagination for mentees

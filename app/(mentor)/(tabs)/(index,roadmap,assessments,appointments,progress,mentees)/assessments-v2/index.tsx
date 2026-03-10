@@ -47,8 +47,8 @@ export default function MentorAssessmentsLibrary() {
   // Get current user for TopBar
   const { user } = useAuthStore();
 
-  // Fetch mentees for avatars (request more so all show in the row)
-  const { data: menteesData } = useMentees(100);
+  // Fetch only mentees assigned to this mentor
+  const { data: menteesData } = useMentees(100, user?.id);
 
   // Format mentees for display (ensure avatar always has valid source)
   const mentees = useMemo(() => {

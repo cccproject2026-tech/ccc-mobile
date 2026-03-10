@@ -67,13 +67,13 @@ const Appointments: React.FC = () => {
     mentorId: user?.id,
   });
 
-  // Fetch mentees for the schedule meeting bottom sheet
+  // Fetch only mentees assigned to this mentor
   const {
     data: menteesData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useMentees();
+  } = useMentees(10, user?.id);
 
   // Flatten paginated mentees data
   const allMentees = useMemo(() => {

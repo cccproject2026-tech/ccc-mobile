@@ -6,6 +6,7 @@ import TopBar from '@/components/director/TopBar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import SearchBar from '@/components/director/SearchBar';
+import { useAuthStore } from '@/stores/auth.store';
 import { useMentees } from '@/hooks/mentees/useMentees';
 import { useAssignRoadmaps } from '@/hooks/roadmaps/useAssignRoadmaps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ const AssignRoadmaps = () => {
     const router = useRouter();
     const { bottom } = useSafeAreaInsets();
     const params = useLocalSearchParams();
+    const { user } = useAuthStore();
 
     // Get selected roadmap IDs from params
     const selectedRoadmapIds = useMemo(() => {
@@ -34,7 +36,7 @@ const AssignRoadmaps = () => {
     const [search, setSearch] = useState('');
     const [selectedMentees, setSelectedMentees] = useState<Set<string>>(new Set());
 
-    // Fetch mentees
+    // Fetch only mentees assigned to this mentor
     const { 
         data, 
         isLoading, 
@@ -42,7 +44,7 @@ const AssignRoadmaps = () => {
         hasNextPage, 
         fetchNextPage, 
         isFetchingNextPage 
-    } = useMentees();
+    } = useMentees(10, user?.id);
     
     const mentees = useMemo(() => data?.pages.flatMap((page) => page.mentees) ?? [], [data]);
 

@@ -2,6 +2,7 @@ import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { icons } from "@/constants/images"
 import { useMenteeByEmail } from "@/hooks/mentees/useMenteeByEmail"
 import { useMentees } from "@/hooks/mentees/useMentees"
+import { useAuthStore } from "@/stores/auth.store"
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack, useLocalSearchParams } from "expo-router"
@@ -19,9 +20,10 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function MenteeProfileScreen() {
   const { menteeId, email: emailParam } = useLocalSearchParams<{ menteeId?: string; email?: string }>()
+  const { user } = useAuthStore()
 
-  // Get mentees list to look up email if needed
-  const { data: menteesData } = useMentees()
+  // Get assigned mentees list to look up email if needed
+  const { data: menteesData } = useMentees(10, user?.id)
   console.log(menteesData, "menteesData");
   // Get email from param or look it up from menteeId
   const email = useMemo(() => {
