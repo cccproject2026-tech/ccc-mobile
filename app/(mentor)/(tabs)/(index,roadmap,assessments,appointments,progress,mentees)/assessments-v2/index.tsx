@@ -98,6 +98,7 @@ export default function MentorAssessmentsLibrary() {
 
   // Status keys for tabs
   const statusKeys = [
+    { key: "Due", label: "Due" },
     { key: "Not Started", label: "Not Started" },
     { key: "Submitted", label: "Submitted" },
     { key: "Completed", label: "Completed" },
