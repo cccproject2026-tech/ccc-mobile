@@ -84,7 +84,7 @@ export default function AnswerQuestionPage() {
   useEffect(() => {
     if (isViewMode && submittedAnswers && assessment && data && userIdToFetch) {
       const transformed = transformSubmittedAnswersToStore(
-        submittedAnswers,
+        submittedAnswers.data,
         assessment,
         data,
       );
@@ -125,7 +125,7 @@ export default function AnswerQuestionPage() {
 
   // Check if pre-survey has been submitted
   const hasPreSurveyAnswers = isViewMode
-    ? !!submittedAnswers?.preSurveyAnswers
+    ? !!submittedAnswers?.data?.preSurveyAnswers
     : !!previousResponse?.preSurveyAnswers &&
       Object.keys(previousResponse.preSurveyAnswers).length > 0;
 
@@ -274,6 +274,24 @@ export default function AnswerQuestionPage() {
     }, 2000);
   };
 
+  // Build mentor review sections from answers API (score + recommendations per section)
+  const mentorReviewSections = useMemo(() => {
+    if (!assessment || !data?.sections || !submittedAnswers?.data?.sections)
+      return undefined;
+    console.log("Answer Sections:", submittedAnswers?.data?.sections);
+    return data.sections.map((apiSection, index) => {
+      const submitted = submittedAnswers.data.sections.find(
+        (s) => s.sectionId === apiSection._id,
+      );
+      return {
+        sectionId: apiSection._id,
+        title: assessment.sections[index]?.title ?? apiSection.title,
+        score: submitted?.sectionScore,
+        recommendations: submitted?.recommendations ?? [],
+      };
+    });
+  }, [assessment, data?.sections, submittedAnswers?.sections]);
+
   // Loading state
   if (isLoading || (isViewMode && isLoadingSubmitted)) {
     return (
@@ -342,6 +360,7 @@ export default function AnswerQuestionPage() {
           assessmentId={assessmentId as string}
           isViewMode={isViewMode}
           reviewMode={isViewMode && !!targetUserId}
+          mentorReviewSections={mentorReviewSections}
           onSubmit={handleAssessmentSubmit}
           onClose={() => {
             router.back();

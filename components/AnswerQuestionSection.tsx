@@ -12,6 +12,13 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
+interface MentorReviewSection {
+    sectionId: string;
+    title: string;
+    score?: number;
+    recommendations: string[];
+}
+
 interface AssessmentQuestionsSectionProps {
     assessment: Assessment;
     assessmentId: string;
@@ -20,6 +27,8 @@ interface AssessmentQuestionsSectionProps {
     onClose?: () => void;
     // When true, show mentor review UI (Responses & Recommendations) after final section
     reviewMode?: boolean;
+    /** Mentor review data per section (score + recommendations) from GET answers. */
+    mentorReviewSections?: MentorReviewSection[];
     // Called when mentor sends Customized Development Plans (CDP)
     onSendCdp?: (payload: {
         recommendations: Array<{
@@ -36,6 +45,7 @@ export default function AssessmentQuestionsSection({
     onSubmit,
     onClose,
     reviewMode = false,
+    mentorReviewSections,
     onSendCdp,
 }: AssessmentQuestionsSectionProps) {
     const getDraft = useAssessmentStore((state) => state.getDraft);
@@ -75,7 +85,7 @@ export default function AssessmentQuestionsSection({
         });
     };
 
-    /** One selected choice per question (layer). Backend expects selectedChoice: choiceId per layer. */
+    /** One selected choice per question (layer). Value is numeric level "1"|"2"|"3"|"4" for backend. */
     const handleAnswer = (questionId: string, choiceId: string) => {
         if (isViewMode) return;
         setAnswers(prev => ({
@@ -358,70 +368,79 @@ export default function AssessmentQuestionsSection({
                     )}
                 </View>
 
-                {/* Mentor Review: Responses & Recommendations */}
+                {/* Mentor Review: Responses & Recommendations — use sectionScore + recommendations from answers API */}
                 {reviewMode && isViewMode && (
                     <View style={styles.recommendationsContainer}>
                         <Text style={styles.recommendationsHeader}>
                             Responses &amp; Recommendations
                         </Text>
-                        {assessment.sections.map((section, sectionIndex) => {
+                        {mentorReviewSections?.map((section) => {
                             if (!section.recommendations || section.recommendations.length === 0) {
                                 return null;
                             }
                             return (
-                                <View key={sectionIndex} style={styles.recommendationSectionCard}>
+                                <View key={section.sectionId} style={styles.recommendationSectionCard}>
                                     <Text style={styles.recommendationSectionTitle}>
                                         {section.title}
                                     </Text>
-                                    {section.recommendations.map((rec, recIndex) => (
-                                        <View key={recIndex} style={styles.recommendationLevelBlock}>
-                                            <Text style={styles.recommendationLevelLabel}>
-                                                Level {rec.level}
-                                            </Text>
-                                            {rec.items.map((item, itemIndex) => {
-                                                const key = `${sectionIndex}-${rec.level}-${itemIndex}`;
-                                                const sectionId = String(sectionIndex);
-                                                const isSelected = (selectedRecommendations[sectionId] ?? []).includes(item);
-                                                return (
-                                                    <TouchableOpacity
-                                                        key={key}
-                                                        style={styles.recommendationRow}
-                                                        onPress={() => toggleRecommendation(sectionId, item)}
-                                                        activeOpacity={0.7}
-                                                    >
-                                                        <View style={[
-                                                            styles.recommendationCheckbox,
-                                                            isSelected && styles.recommendationCheckboxChecked
-                                                        ]}>
-                                                            {isSelected && (
-                                                                <Ionicons name="checkmark" size={14} color="#fff" />
-                                                            )}
-                                                        </View>
-                                                        <Text style={styles.recommendationText}>{item}</Text>
-                                                        <Ionicons
-                                                            name="pencil-outline"
-                                                            size={16}
-                                                            color="#E2E8F0"
-                                                            style={styles.recommendationEditIcon}
-                                                        />
-                                                    </TouchableOpacity>
-                                                );
-                                            })}
-                                        </View>
-                                    ))}
+                                    <Text style={styles.recommendationScoreLabel}>
+                                        Score: {section.score ?? "-"}
+                                    </Text>
+                                    <View style={styles.recommendationLevelBlock}>
+                                        <Text style={styles.recommendationLevelLabel}>
+                                            Recommended CDP
+                                        </Text>
+                                        {section.recommendations.map((item, itemIndex) => {
+                                            const key = `${section.sectionId}-${itemIndex}`;
+                                            const sectionId = section.sectionId;
+                                            const isSelected = (selectedRecommendations[sectionId] ?? []).includes(item);
+                                            return (
+                                                <TouchableOpacity
+                                                    key={key}
+                                                    style={styles.recommendationRow}
+                                                    onPress={() => toggleRecommendation(sectionId, item)}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <View style={[
+                                                        styles.recommendationCheckbox,
+                                                        isSelected && styles.recommendationCheckboxChecked
+                                                    ]}>
+                                                        {isSelected && (
+                                                            <Ionicons name="checkmark" size={14} color="#fff" />
+                                                        )}
+                                                    </View>
+                                                    <Text style={styles.recommendationText}>{item}</Text>
+                                                    <Ionicons
+                                                        name="pencil-outline"
+                                                        size={16}
+                                                        color="#E2E8F0"
+                                                        style={styles.recommendationEditIcon}
+                                                    />
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
                                 </View>
                             );
                         })}
-                        {onSendCdp && (
+                        {onSendCdp && mentorReviewSections && (
                             <TouchableOpacity
                                 style={styles.sendCdpButton}
                                 onPress={() => {
-                                    // Placeholder payload; wire to real selection/editing state as needed
+                                    // Build payload from selected recommendations per section
                                     const payload = {
-                                        recommendations: [] as Array<{
-                                            sectionId: string;
-                                            selectedItems: Array<{ level: number; text: string }>;
-                                        }>,
+                                        recommendations: mentorReviewSections
+                                            .map((section) => {
+                                                const selected = selectedRecommendations[section.sectionId] ?? [];
+                                                return {
+                                                    sectionId: section.sectionId,
+                                                    selectedItems: selected.map((text) => ({
+                                                        level: section.score ?? 0,
+                                                        text,
+                                                    })),
+                                                };
+                                            })
+                                            .filter((s) => s.selectedItems.length > 0),
                                     };
                                     onSendCdp(payload);
                                 }}
@@ -668,6 +687,13 @@ const styles = StyleSheet.create({
     },
     recommendationLevelBlock: {
         marginTop: getSpacing(8),
+    },
+    recommendationScoreLabel: {
+        fontSize: getFontSize(13),
+        fontWeight: '500',
+        color: '#E2E8F0',
+        marginTop: getSpacing(4),
+        marginBottom: getSpacing(4),
     },
     recommendationLevelLabel: {
         fontSize: getFontSize(13),

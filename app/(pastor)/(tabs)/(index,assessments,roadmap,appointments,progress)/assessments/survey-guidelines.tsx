@@ -41,7 +41,7 @@ export default function SurveyGuidelinesPage() {
   }, [data]);
   console.log("Fetched assessment for guidelines:", assessment);
 
-  // Fetch submitted answers - returns SubmittedAnswersResponse directly
+  // Fetch submitted answers - wrapper with { success, data }
   const { data: submittedAnswers, isLoading: isLoadingAnswers } =
     useFetchAnswers(assessmentId as string, user?.id);
 
@@ -55,7 +55,7 @@ export default function SurveyGuidelinesPage() {
   useEffect(() => {
     if (submittedAnswers && assessment && data && user?.id) {
       const transformed = transformSubmittedAnswersToStore(
-        submittedAnswers,
+        submittedAnswers.data,
         assessment,
         data,
       );
@@ -83,9 +83,10 @@ export default function SurveyGuidelinesPage() {
       };
     }
 
-    const preSurveySubmitted = !!submittedAnswers.preSurveySubmittedAt;
+    const preSurveySubmitted = !!submittedAnswers.data.preSurveySubmittedAt;
     const answersSubmitted =
-      submittedAnswers.sections && submittedAnswers.sections.length > 0;
+      submittedAnswers.data.sections &&
+      submittedAnswers.data.sections.length > 0;
     const isFullyCompleted = preSurveySubmitted && answersSubmitted;
 
     return {

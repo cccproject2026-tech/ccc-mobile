@@ -118,11 +118,15 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Fetch submitted answers - UPDATED
+  // Fetch submitted answers
   fetchAnswers: async (
     assessmentId: string,
     userId: string,
-  ): Promise<SubmittedAnswersResponse> => {
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: SubmittedAnswersResponse;
+  }> => {
     console.log(
       "📤 Fetching answers for assessment:",
       assessmentId,
@@ -137,8 +141,6 @@ export const assessmentService = {
     }>(ENDPOINTS.ASSESSMENTS.FETCH_ANSWERS(assessmentId, userId));
 
     console.log("📥 Answers fetched:", response.data);
-
-    // Return the data object from the response
-    return response.data.data;
+    return response.data;
   },
 };

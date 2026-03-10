@@ -150,7 +150,7 @@ export interface SubmitAnswersPayload {
         sectionId: string;
         layers: Array<{
             layerId: string;
-            selectedChoice: string; // This will be the choice ID
+            selectedChoice: string; // Numeric level "1"|"2"|"3"|"4"
         }>;
     }>;
 }
@@ -201,6 +201,10 @@ export interface SubmittedAnswersResponse {
     preSurveySubmittedAt?: string;
     sections: Array<{
         sectionId: string;
+        /** Score 1–4 for this section; used to show only the matching CDP recommendation level. */
+        sectionScore?: number;
+        /** Recommended CDP items for this section, as plain text lines. */
+        recommendations?: string[];
         layers: Array<{
             layerId: string;
             selectedChoice: string;

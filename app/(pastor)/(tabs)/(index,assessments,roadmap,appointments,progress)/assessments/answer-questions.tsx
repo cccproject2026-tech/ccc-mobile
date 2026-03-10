@@ -74,7 +74,7 @@ export default function AnswerQuestionPage() {
   useEffect(() => {
     if (isViewMode && submittedAnswers && assessment && data && user?.id) {
       const transformed = transformSubmittedAnswersToStore(
-        submittedAnswers,
+        submittedAnswers.data,
         assessment,
         data,
       );
@@ -115,7 +115,7 @@ export default function AnswerQuestionPage() {
 
   // Check if pre-survey has been submitted
   const hasPreSurveyAnswers = isViewMode
-    ? !!submittedAnswers?.preSurveyAnswers
+    ? !!submittedAnswers?.data?.preSurveyAnswers
     : !!previousResponse?.preSurveyAnswers &&
       Object.keys(previousResponse.preSurveyAnswers).length > 0;
 

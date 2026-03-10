@@ -30,7 +30,8 @@ export function mapApiToFrontend(apiAssessment: ApiAssessment): Assessment {
 
 /**
  * Map API section to frontend section.
- * Each layer = one question (radio) with choices as options; backend expects one selectedChoice per layer.
+ * Each layer = one question (radio) with choices as options.
+ * Backend expects selectedChoice as numeric level ("1"|"2"|"3"|"4"); we use choice index + 1.
  */
 function mapApiSection(apiSection: ApiAssessmentSection): AssessmentSection {
     return {
@@ -44,9 +45,9 @@ function mapApiSection(apiSection: ApiAssessmentSection): AssessmentSection {
                     id: layer._id,
                     text: layer.title,
                     type: 'radio' as const,
-                    options: layer.choices.map(choice => ({
+                    options: layer.choices.map((choice, index) => ({
                         label: choice.text,
-                        value: choice._id,
+                        value: String(index + 1),
                     })),
                     required: false,
                 },
