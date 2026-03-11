@@ -384,6 +384,8 @@ export default function CreateAssessmentPage() {
     const requestData = {
       name: assessmentName.trim(),
       description: (briefDescription.trim() || "No description provided"),
+      // Backend requires an assessment type; defaulting to PMP for this flow.
+      type: "PMP" as const,
       instructions: validInstructions,
       sections: validSections,
     };
@@ -409,12 +411,7 @@ export default function CreateAssessmentPage() {
 
   return (
     <LinearGradient colors={["#155C93", "#1B2B60"]} style={{ flex: 1 }}>
-      <TopBar
-        userName="John Doe"
-        showUserName
-        notifications={3}
-        role="mentor"
-      />
+      <TopBar role="mentor" showUserName notifications={3} />
 
       {/* Header */}
       <View style={styles.header}>

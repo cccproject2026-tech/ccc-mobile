@@ -70,6 +70,9 @@ export default function AnswerQuestionPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [message, setMessage] = useState("");
+  const [viewSectionAnswers, setViewSectionAnswers] = useState<
+    Record<number, Record<string, any>> | undefined
+  >(undefined);
   // Load submitted answers into store (ONLY for view mode)
   useEffect(() => {
     if (isViewMode && submittedAnswers && assessment && data && user?.id) {
@@ -79,15 +82,8 @@ export default function AnswerQuestionPage() {
         data,
       );
 
-      setDraft(assessmentId as string, {
-        assessmentId: assessmentId as string,
-        assessmentType: assessment.type,
-        assessmentTitle: assessment.title,
-        preSurveyAnswers: transformed.preSurveyAnswers,
-        sectionAnswers: transformed.sectionAnswers,
-        status: "Submitted",
-        currentSectionIndex: 0,
-      });
+      // For view mode, keep transformed answers in local state and avoid touching the draft
+      setViewSectionAnswers(transformed.sectionAnswers);
     }
   }, [
     isViewMode,
@@ -363,6 +359,7 @@ export default function AnswerQuestionPage() {
           assessment={assessment}
           assessmentId={assessmentId as string}
           isViewMode={isViewMode}
+          initialSectionAnswers={isViewMode ? viewSectionAnswers : undefined}
           mentorReviewSections={cdpSectionsForView}
           onSubmit={handleAssessmentSubmit}
           onClose={() => {

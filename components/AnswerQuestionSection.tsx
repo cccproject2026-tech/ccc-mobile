@@ -24,6 +24,8 @@ interface AssessmentQuestionsSectionProps {
     assessment: Assessment;
     assessmentId: string;
     isViewMode: boolean;
+    /** Optional initial answers for view mode (e.g. from submitted answers). */
+    initialSectionAnswers?: Record<number, Record<string, any>>;
     onSubmit: (sectionAnswers: Record<number, Record<string, any>>) => void;
     onClose?: () => void;
     // When true, show mentor review UI (Responses & Recommendations) after final section
@@ -43,19 +45,21 @@ export default function AssessmentQuestionsSection({
     assessment,
     assessmentId,
     isViewMode,
+    initialSectionAnswers,
     onSubmit,
     onClose,
     reviewMode = false,
     mentorReviewSections,
     onSendCdp,
 }: AssessmentQuestionsSectionProps) {
-    // Subscribe directly to the draft for this assessmentId so view-mode can react
     const previousResponse = useAssessmentStore(
         (state) => state.getDraft(assessmentId)
     );
     const saveDraft = useAssessmentStore((state) => state.saveDraft);
     const [answers, setAnswers] = useState<Record<number, Record<string, any>>>(
-        previousResponse?.sectionAnswers || {}
+        isViewMode
+            ? (initialSectionAnswers || previousResponse?.sectionAnswers || {})
+            : (previousResponse?.sectionAnswers || {})
     );
     const [currentSectionIndex, setCurrentSectionIndex] = useState(
         isViewMode ? 0 : (previousResponse?.currentSectionIndex || 0)
@@ -68,13 +72,13 @@ export default function AssessmentQuestionsSection({
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
 
-    // In view mode, when the draft is hydrated with submitted answers, sync them into local state
+    // In view mode, sync any incoming initial answers into local state
     useEffect(() => {
-        if (isViewMode && previousResponse?.sectionAnswers) {
-            setAnswers(previousResponse.sectionAnswers);
+        if (isViewMode && initialSectionAnswers) {
+            setAnswers(initialSectionAnswers);
             setCurrentSectionIndex(0);
         }
-    }, [isViewMode, previousResponse?.sectionAnswers]);
+    }, [isViewMode, initialSectionAnswers]);
 
     // Auto-save progress
     useEffect(() => {

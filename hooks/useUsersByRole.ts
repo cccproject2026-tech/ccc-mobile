@@ -1,27 +1,31 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { usersService } from "@/services/users.service";
 import { UserRole } from "@/types/auth.types";
 
 export const useUsersByRole = (role: UserRole, limit: number = 10) => {
-    return useInfiniteQuery({
-        queryKey: ["users", role],
-        queryFn: async ({ pageParam = 1 }) => {
-            const res = await usersService.getUsersByRole(role, pageParam, limit);
-            return {
-                users: res.users,
-                page: res.page,
-                totalPages: res.totalPages,
-                total: res.total
-            };
-        },
-        getNextPageParam: (lastPage) => {
-            if (lastPage.page < lastPage.totalPages) {
-                return lastPage.page + 1;
-            }
-            return undefined;
-        },
-        initialPageParam: 1,
-        staleTime: 2000,
-        retry: 1,
-    });
+  return useQuery({
+    queryKey: ["users", role, limit],
+    queryFn: async () => {
+      const res = await usersService.getUsersByRole(role, 1, limit);
+
+      // Normalize response to avoid undefined fields causing runtime errors
+      const users = res.users ?? [];
+      const page = typeof res.page === "number" ? res.page : 1;
+      const totalPages =
+        typeof res.totalPages === "number" && res.totalPages > 0
+          ? res.totalPages
+          : 1;
+      const total =
+        typeof res.total === "number" ? res.total : users.length;
+
+      return {
+        users,
+        page,
+        totalPages,
+        total,
+      };
+    },
+    staleTime: 2000,
+    retry: 1,
+  });
 };

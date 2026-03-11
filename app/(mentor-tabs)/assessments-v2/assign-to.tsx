@@ -3,10 +3,9 @@ import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { useAssignAssessment } from "@/hooks/assessments";
 import { icons } from "@/constants/images";
-import { menteesService } from "@/services/mentees.service";
+import { useMentees } from "@/hooks/mentees/useMentees";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -41,35 +40,24 @@ export default function AssignToPage() {
     new Set()
   );
 
-  // Use TanStack Query hooks
-  const { data: menteesResponse, isLoading: loading, error: menteesError, refetch } = useQuery({
-    queryKey: ['mentees'],
-    queryFn: () => menteesService.getMentees(),
-    staleTime: 2000, // 2 seconds (was 5 minutes)
-    retry: 2,
-  });
+  // Use infinite query hook
+  const { data: menteesData, isLoading: loading, error: menteesError, refetch } = useMentees();
 
   const assignAssessmentMutation = useAssignAssessment();
 
   // Map mentees to display format
   const mentees: MenteeDisplay[] = useMemo(() => {
-    if (!menteesResponse?.mentees) return [];
-    return menteesResponse.mentees.map((mentee) => ({
+    if (!menteesData?.pages) return [];
+    const allMentees = menteesData.pages.flatMap(page => page.mentees);
+    return allMentees.map((mentee) => ({
       id: mentee.id,
       name: `${mentee.firstName} ${mentee.lastName}`.trim(),
       email: mentee.email,
       avatar: icons.myProfile,
     }));
-  }, [menteesResponse]);
+  }, [menteesData]);
 
-  // Initialize with first 3 mentees selected if available
-  useEffect(() => {
-    if (mentees.length > 0 && selectedMentees.size === 0) {
-      setSelectedMentees(
-        new Set(mentees.slice(0, 3).map((m) => m.id))
-      );
-    }
-  }, [mentees, selectedMentees.size]);
+
 
   const error = menteesError ? 'Failed to load mentees. Please try again.' : null;
 

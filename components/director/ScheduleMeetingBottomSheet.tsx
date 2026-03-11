@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
+import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
 import {
   formatTimeSlot,
   useMonthlyAvailability,
@@ -153,17 +154,17 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const [selectedRole, setSelectedRole] =
       useState<UserRole>(initialSelectedRole);
 
-    // Fetch users based on selectedRole
+    // Fetch users based on selectedRole (single page; no infinite scroll to avoid pagination issues)
     const {
       data: usersData,
-      fetchNextPage,
-      hasNextPage,
-      isFetchingNextPage,
       isLoading: isLoadingUsers,
     } = useUsersByRole(selectedRole, 20);
 
     const allUsers = useMemo(() => {
-      return usersData?.pages.flatMap((page) => page.users) || [];
+      if (!usersData) {
+        return [];
+      }
+      return usersData.users ?? [];
     }, [usersData]);
 
     // Format users for the list
@@ -266,6 +267,8 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const { appointments: userAppointments } = useAppointments({
       userId: user?.id || undefined,
     });
+
+    const { createAppointmentAsync } = useCreateAppointment();
 
     // ✅ Debug log to see what's happening
     useEffect(() => {
@@ -464,7 +467,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
           selectedTime,
         });
         await createAppointmentAsync({
-          userId: currentUser?.id,
+          userId: currentUser?.id ?? "",
           mentorId: selectedMentor.id,
           meetingDate: meetingDate,
           platform: platform as AppointmentPlatform,
@@ -671,20 +674,10 @@ const ScheduleMeetingBottomSheet = forwardRef<
                           </Text>
                         </Pressable>
                       )}
-                      onEndReached={() => {
-                        if (hasNextPage && !isFetchingNextPage) {
-                          fetchNextPage();
-                        }
-                      }}
+                      // Single-page user list; no infinite scroll pagination
+                      onEndReached={undefined}
                       onEndReachedThreshold={0.5}
-                      ListFooterComponent={
-                        isFetchingNextPage ? (
-                          <ActivityIndicator
-                            color={colorScheme.text}
-                            style={{ marginVertical: 10 }}
-                          />
-                        ) : null
-                      }
+                      ListFooterComponent={null}
                     />
                   ) : (
                     <View style={styles.emptyStateContainer}>
