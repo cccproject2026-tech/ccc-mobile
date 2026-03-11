@@ -49,10 +49,11 @@ export default function AssessmentQuestionsSection({
     mentorReviewSections,
     onSendCdp,
 }: AssessmentQuestionsSectionProps) {
-    const getDraft = useAssessmentStore((state) => state.getDraft);
+    // Subscribe directly to the draft for this assessmentId so view-mode can react
+    const previousResponse = useAssessmentStore(
+        (state) => state.getDraft(assessmentId)
+    );
     const saveDraft = useAssessmentStore((state) => state.saveDraft);
-
-    const previousResponse = getDraft(assessmentId);
     const [answers, setAnswers] = useState<Record<number, Record<string, any>>>(
         previousResponse?.sectionAnswers || {}
     );
@@ -66,6 +67,14 @@ export default function AssessmentQuestionsSection({
 
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
+
+    // In view mode, when the draft is hydrated with submitted answers, sync them into local state
+    useEffect(() => {
+        if (isViewMode && previousResponse?.sectionAnswers) {
+            setAnswers(previousResponse.sectionAnswers);
+            setCurrentSectionIndex(0);
+        }
+    }, [isViewMode, previousResponse?.sectionAnswers]);
 
     // Auto-save progress
     useEffect(() => {
