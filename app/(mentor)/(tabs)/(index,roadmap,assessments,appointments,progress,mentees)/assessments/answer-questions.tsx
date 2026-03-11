@@ -79,8 +79,11 @@ export default function AnswerQuestionPage() {
   const [showModal, setShowModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [viewSectionAnswers, setViewSectionAnswers] = useState<
+    Record<number, Record<string, any>> | undefined
+  >(undefined);
 
-  // Load submitted answers into store (ONLY for view mode)
+  // Load submitted answers (ONLY for view mode)
   useEffect(() => {
     if (isViewMode && submittedAnswers && assessment && data && userIdToFetch) {
       const transformed = transformSubmittedAnswersToStore(
@@ -89,6 +92,10 @@ export default function AnswerQuestionPage() {
         data,
       );
 
+      // Keep a local copy for view mode so mentor can see pastor's choices
+      setViewSectionAnswers(transformed.sectionAnswers);
+
+      // Optionally persist into draft store (so other flows can reuse)
       setDraft(assessmentId as string, {
         assessmentId: assessmentId as string,
         assessmentType: assessment.type,
@@ -359,6 +366,7 @@ export default function AnswerQuestionPage() {
           assessment={assessment}
           assessmentId={assessmentId as string}
           isViewMode={isViewMode}
+          initialSectionAnswers={isViewMode ? viewSectionAnswers : undefined}
           reviewMode={isViewMode && !!targetUserId}
           mentorReviewSections={mentorReviewSections}
           onSubmit={handleAssessmentSubmit}
