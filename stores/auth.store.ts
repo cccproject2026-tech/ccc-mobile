@@ -39,12 +39,14 @@ export const useAuthStore = create<AuthStore>()(
 
             logout: async () => {
                 try {
-
                     console.log('🔓 Logging out');
-                    // Clear secure storage (tokens)
+                    // Set state FIRST so root layout and Stack.Protected see logged-out state immediately and redirect
+                    set({ user: null, isAuthenticated: false });
+                    console.log('✅ Logout complete');
+
+                    // Then clear all storage (async)
                     await storage.clearAll();
 
-                    // Reset onboarding flow state (in-memory + persisted)
                     try {
                         useOnboardingStore.getState().reset();
                         console.log('🔄 Onboarding store reset');
@@ -52,17 +54,12 @@ export const useAuthStore = create<AuthStore>()(
                         console.warn('⚠️ Failed to reset onboarding store:', err);
                     }
 
-                    // Clear AsyncStorage entirely to remove any persisted data
                     try {
                         await AsyncStorage.clear();
                         console.log('🧹 AsyncStorage cleared');
                     } catch (err) {
                         console.warn('⚠️ Failed to clear AsyncStorage:', err);
                     }
-
-                    // Reset store
-                    set({ user: null, isAuthenticated: false });
-                    console.log('✅ Logout complete');
                 } catch (error) {
                     console.error('❌ Logout failed:', error);
                     throw error;

@@ -103,7 +103,7 @@ export const mentorExploreItems = [
     id: "5",
     icon: icons.Assessments,
     title: "Assessment",
-    route: "/(mentor-tabs)/assessments-v2",
+    route: "/(mentor)/assessments-v2",
   },
   {
     id: "6",
@@ -799,7 +799,7 @@ export const MentorMenuItems: MenuItem[] = [
     label: "Assessments",
     icon: icons.Assessments,
     iconType: "image",
-    route: "/(mentor-tabs)/assessments-v2",
+    route: "/(mentor)/assessments-v2",
   },
   {
     id: "progress",

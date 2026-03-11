@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
+    ActivityIndicator,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -71,6 +72,16 @@ export default function AssessmentQuestionsSection({
 
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
+
+    const hasCdpRecommendations =
+        !!mentorReviewSections &&
+        mentorReviewSections.some(
+            (section) => Array.isArray(section.recommendations) && section.recommendations.length > 0,
+        );
+
+    // Pastor view: CDP API not integrated yet → always show "Waiting for response". Mentor: show CDP when available.
+    const isPastorViewMode = isViewMode && !reviewMode;
+    const showCdpAsReady = !isPastorViewMode && hasCdpRecommendations;
 
     // In view mode, sync any incoming initial answers into local state
     useEffect(() => {
@@ -302,17 +313,36 @@ export default function AssessmentQuestionsSection({
                 showsVerticalScrollIndicator={false}
             >
                 {/* View mode: Responses | Customized Development Plans at top of section */}
-                {isViewMode && mentorReviewSections && mentorReviewSections.length > 0 && (
+                {isViewMode && (
                     <View style={styles.tabBarContainer}>
                         <View style={[styles.tabSegment, styles.tabSegmentActive]}>
                             <Text style={styles.tabSegmentActiveText}>Responses</Text>
                         </View>
                         <TouchableOpacity
-                            style={styles.tabSegmentOutline}
-                            onPress={() => setShowCdpModal(true)}
-                            activeOpacity={0.8}
+                            style={[
+                                styles.tabSegmentOutline,
+                                !showCdpAsReady && styles.tabSegmentDisabled,
+                            ]}
+                            onPress={showCdpAsReady ? () => setShowCdpModal(true) : undefined}
+                            activeOpacity={showCdpAsReady ? 0.8 : 1}
+                            disabled={!showCdpAsReady}
                         >
-                            <Text style={styles.tabSegmentOutlineText}>Customized Development Plans</Text>
+                            {showCdpAsReady ? (
+                                <Text style={styles.tabSegmentOutlineText}>
+                                    Customized Development Plans
+                                </Text>
+                            ) : (
+                                <View style={styles.waitingForResponseContainer}>
+                                    <ActivityIndicator
+                                        size="small"
+                                        color="#fff"
+                                        style={styles.waitingSpinner}
+                                    />
+                                    <Text style={styles.tabSegmentOutlineText}>
+                                        Waiting for response
+                                    </Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
                     </View>
                 )}
@@ -527,6 +557,18 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(14),
         fontWeight: '600',
         color: '#fff',
+    },
+    tabSegmentDisabled: {
+        opacity: 0.7,
+    },
+    waitingForResponseContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: getSpacing(8),
+    },
+    waitingSpinner: {
+        marginRight: getSpacing(4),
     },
     sectionBadge: {
         backgroundColor: 'transparent',

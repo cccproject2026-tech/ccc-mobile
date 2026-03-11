@@ -156,6 +156,7 @@ function RootLayoutNav() {
   // Guard conditions
   const isPastor = isAuthenticated && (user?.role === 'pastor');
   const isMentor = isAuthenticated && user?.role === 'mentor';
+  const isDirector = isAuthenticated && user?.role === 'director';
   const showIndex = !isAuthenticated && !user;
   const isUnauthenticated = !isAuthenticated;
 
@@ -185,10 +186,10 @@ function RootLayoutNav() {
         <Stack.Screen name="(mentor)" />
       </Stack.Protected>
 
-      {/* Director Routes */}
-      {/* <Stack.Protected guard={isDirector}> */}
-      <Stack.Screen name="(director)" />
-      {/* </Stack.Protected> */}
+      {/* Director Routes - protected so logout from mentor doesn't land here as "Guest User" */}
+      <Stack.Protected guard={isDirector}>
+        <Stack.Screen name="(director)" />
+      </Stack.Protected>
 
       <Stack.Screen name="+not-found" />
     </Stack>

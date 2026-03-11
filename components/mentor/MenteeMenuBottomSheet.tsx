@@ -140,8 +140,13 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
             <View style={styles.menuHeader}>
               <View style={styles.menuHeaderContent}>
                 <Image
-                  source={mentee?.profilePicture as ImageSourcePropType || icons.myProfile}
+                  source={
+                    mentee?.profilePicture
+                      ? { uri: mentee.profilePicture }
+                      : icons.myProfile
+                  }
                   style={styles.menuAvatar}
+                  resizeMode="cover"
                 />
                 <Text style={styles.menuHeaderName}>
                   {mentee?.firstName + " " + mentee?.lastName || ""}

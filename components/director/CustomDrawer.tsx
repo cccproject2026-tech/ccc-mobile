@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, InteractionManager, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CustomDrawerProps extends DrawerContentComponentProps {
@@ -81,14 +81,15 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
                             // Close drawer first
                             props.navigation.closeDrawer();
 
-                            // Logout (clears all auth state)
+                            // Logout sets state first so root Stack.Protected redirects; then we navigate to ensure we land on index
                             await logout();
 
                             console.log('✅ Logged out successfully');
 
-                            // ✅ SIMPLIFIED: Just navigate to root
-                            // The router will handle the rest based on auth state
-                            router.replace('/');
+                            // Run after root layout has re-rendered with new auth state so navigation applies correctly
+                            InteractionManager.runAfterInteractions(() => {
+                                router.replace('/');
+                            });
 
                         } catch (error) {
                             console.error('❌ Logout failed:', error);
