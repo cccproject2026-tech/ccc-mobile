@@ -1,7 +1,6 @@
 import TopBar from "@/components/director/TopBar";
 import { useAssessment } from "@/hooks/assessments";
 import { useFetchAnswers } from "@/hooks/assessments/useFetchAnswers";
-import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
 import { useAuthStore } from "@/stores";
 import { useAssessmentStore } from "@/stores/assessment.store";
@@ -41,67 +40,65 @@ export default function SurveyGuidelinesPage() {
   }, [data]);
   console.log("Fetched assessment for guidelines:", assessment);
 
-  // Fetch submitted answers - wrapper with { success, data }
-  const { data: submittedAnswers, isLoading: isLoadingAnswers } =
-    useFetchAnswers(assessmentId as string, user?.id);
+  // Fetch submitted answers - source of truth for completed state (refetch on focus so reopen shows correct state)
+  const {
+    data: submittedAnswers,
+    isLoading: isLoadingAnswers,
+    refetch: refetchAnswers,
+  } = useFetchAnswers(assessmentId as string, user?.id);
 
-  // Get draft from store
+  // Get draft from store (only for in-progress; completed state comes from API)
   const getDraft = useAssessmentStore((state) => state.getDraft);
-  const setDraft = useAssessmentStore((state) => state.saveDraft);
   const clearDraft = useAssessmentStore((state) => state.clearDraft);
   const draftResponse = getDraft(assessmentId as string);
 
-  // Load submitted answers into store
-  useEffect(() => {
-    if (submittedAnswers && assessment && data && user?.id) {
-      const transformed = transformSubmittedAnswersToStore(
-        submittedAnswers.data,
-        assessment,
-        data,
-      );
+  // Do NOT write submitted answers into the draft here. The store always persists status as "Not Started",
+  // which would make the app show "Continue Assessment" when the user reopens. Rely on API for completed state.
 
-      setDraft(assessmentId as string, {
-        assessmentId: assessmentId as string,
-        assessmentType: assessment.type,
-        assessmentTitle: assessment.title,
-        preSurveyAnswers: transformed.preSurveyAnswers,
-        sectionAnswers: transformed.sectionAnswers,
-        status: "Submitted",
-        currentSectionIndex: 0,
-      });
-    }
-  }, [submittedAnswers, assessment, data, assessmentId, user?.id, setDraft]);
-
-  // Determine submission state
+  // Determine submission state: API answers always take priority over drafts
   const submissionState = useMemo(() => {
+    // If answers exist in API → assessment is completed
+    if (submittedAnswers?.data?.sections && submittedAnswers.data.sections.length > 0) {
+      return {
+        preSurveySubmitted: true,
+        answersSubmitted: true,
+        isFullyCompleted: true,
+        hasLocalDraft: false,
+      };
+    }
+
+    // While API is loading, do NOT rely on draft
     if (!submittedAnswers) {
       return {
         preSurveySubmitted: false,
         answersSubmitted: false,
         isFullyCompleted: false,
-        hasLocalDraft: !!draftResponse,
+        hasLocalDraft: false,
       };
     }
 
-    const preSurveySubmitted = !!submittedAnswers.data.preSurveySubmittedAt;
-    const answersSubmitted =
-      submittedAnswers.data.sections &&
-      submittedAnswers.data.sections.length > 0;
-    const isFullyCompleted = preSurveySubmitted && answersSubmitted;
-
+    // Only treat draft as in-progress when answers truly do not exist
     return {
-      preSurveySubmitted,
-      answersSubmitted,
-      isFullyCompleted,
+      preSurveySubmitted: false,
+      answersSubmitted: false,
+      isFullyCompleted: false,
       hasLocalDraft: !!draftResponse,
     };
   }, [submittedAnswers, draftResponse]);
 
-  // Refresh on focus
+  // Clear any stale drafts once API confirms answers exist
+  useEffect(() => {
+    if (submittedAnswers?.data?.sections && submittedAnswers.data.sections.length > 0) {
+      clearDraft(assessmentId as string);
+    }
+  }, [submittedAnswers, clearDraft, assessmentId]);
+
+  // Refetch both assessment and answers when screen gains focus so reopening shows correct state (Repeat + View response)
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch]),
+      refetchAnswers();
+    }, [refetch, refetchAnswers]),
   );
 
   // NEW: Separate handler for fresh start (Start Now / Repeat)
@@ -303,10 +300,10 @@ export default function SurveyGuidelinesPage() {
               <Text style={styles.dueDate}>Due: {assessment.dueDate}</Text>
             )}
             {submissionState.isFullyCompleted &&
-              submittedAnswers?.createdAt && (
+              submittedAnswers?.data?.createdAt && (
                 <Text style={styles.completedDate}>
                   Completed on:{" "}
-                  {new Date(submittedAnswers.createdAt).toLocaleDateString(
+                  {new Date(submittedAnswers.data.createdAt).toLocaleDateString(
                     "en-GB",
                   )}
                 </Text>
