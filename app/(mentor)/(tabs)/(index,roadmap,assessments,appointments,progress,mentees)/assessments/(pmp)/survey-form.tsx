@@ -166,12 +166,6 @@ export default function SurveyForm() {
 
           return (
             <View key={layer._id} className="flex gap-3">
-              {/* Layer title as question header */}
-              {layer.title && (
-                <Text className="font-semibold text-base leading-[22px] text-white">
-                  {layer.title}
-                </Text>
-              )}
               <ChecklistCard
                 items={choiceTexts}
                 selectable

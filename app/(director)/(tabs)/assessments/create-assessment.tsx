@@ -92,8 +92,8 @@ export default function CreateAssessmentPage() {
             name: '',
             guidelines: '',
             layers: [
-                { id: '1', title: 'Assessment Layer', choices: [{ id: '1', text: '' }] },
-                { id: '2', title: 'Assessment Layer', choices: [{ id: '1', text: '' }] },
+                { id: '1', title: '', choices: [{ id: '1', text: '' }] },
+                { id: '2', title: '', choices: [{ id: '1', text: '' }] },
             ],
             recommendations: emptySectionRecommendations(),
         },
@@ -148,7 +148,7 @@ export default function CreateAssessmentPage() {
                 id: Date.now().toString(),
                 name: '',
                 guidelines: '',
-                layers: [{ id: '1', title: 'Assessment Layer', choices: [{ id: '1', text: '' }] }],
+                layers: [{ id: '1', title: '', choices: [{ id: '1', text: '' }] }],
                 recommendations: newSectionRecommendations(),
             },
         ]);
@@ -176,7 +176,7 @@ export default function CreateAssessmentPage() {
                     newLayers.push(
                         existingLayer || {
                             id: `${Date.now()}-${i}`,
-                            title: 'Assessment Layer',
+                            title: '',
                             choices: [{ id: `${Date.now()}-choice-${i}`, text: '' }],
                         }
                     );
@@ -333,17 +333,20 @@ export default function CreateAssessmentPage() {
             .map((section) => {
                 // Filter out empty layers and choices
                 const validLayers = section.layers
-                    .map((layer) => {
+                    .map((layer, index) => {
                         const validChoices = layer.choices
                             .map((choice) => choice.text.trim())
                             .filter((text) => text.length > 0);
 
-                        if (validChoices.length === 0 || !layer.title.trim()) {
+                        if (validChoices.length === 0) {
                             return null;
                         }
 
+                        const normalizedTitle =
+                            layer.title.trim() || `Layer ${index + 1}`;
+
                         return {
-                            title: layer.title.trim(),
+                            title: normalizedTitle,
                             choices: validChoices.map((text) => ({ text })),
                         };
                     })

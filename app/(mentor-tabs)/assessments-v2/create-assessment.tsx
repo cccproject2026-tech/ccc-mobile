@@ -92,8 +92,8 @@ export default function CreateAssessmentPage() {
       name: "",
       guidelines: "",
       layers: [
-        { id: "1", title: "Assessment Layer", choices: [{ id: "1", text: "" }] },
-        { id: "2", title: "Assessment Layer", choices: [{ id: "1", text: "" }] },
+        { id: "1", title: "", choices: [{ id: "1", text: "" }] },
+        { id: "2", title: "", choices: [{ id: "1", text: "" }] },
       ],
       recommendations: emptySectionRecommendations(),
     },
@@ -148,7 +148,7 @@ export default function CreateAssessmentPage() {
         id: Date.now().toString(),
         name: "",
         guidelines: "",
-        layers: [{ id: "1", title: "Assessment Layer", choices: [{ id: "1", text: "" }] }],
+        layers: [{ id: "1", title: "", choices: [{ id: "1", text: "" }] }],
         recommendations: newSectionRecommendations(),
       },
     ]);
@@ -170,13 +170,17 @@ export default function CreateAssessmentPage() {
     setSections(
       sections.map((s) => {
         if (s.id !== sectionId) return s;
-        const newLayers: Layer[] = [];
-        for (let i = 0; i < count; i++) {
-          const existingLayer = s.layers[i];
-          newLayers.push(
-            existingLayer || { id: `${Date.now()}-${i}`, title: "Assessment Layer", choices: [{ id: `${Date.now()}-choice-${i}`, text: "" }] }
-          );
+    const newLayers: Layer[] = [];
+    for (let i = 0; i < count; i++) {
+      const existingLayer = s.layers[i];
+      newLayers.push(
+        existingLayer || {
+          id: `${Date.now()}-${i}`,
+          title: "",
+          choices: [{ id: `${Date.now()}-choice-${i}`, text: "" }],
         }
+      );
+    }
         return { ...s, layers: newLayers };
       })
     );
@@ -328,22 +332,28 @@ export default function CreateAssessmentPage() {
         const validSections = sections
             .map((section) => {
                 // Filter out empty layers and choices
-                const validLayers = section.layers
-                    .map((layer) => {
-                        const validChoices = layer.choices
-                            .map((choice) => choice.text.trim())
-                            .filter((text) => text.length > 0);
+        const validLayers = section.layers
+          .map((layer, index) => {
+            const validChoices = layer.choices
+              .map((choice) => choice.text.trim())
+              .filter((text) => text.length > 0);
 
-                        if (validChoices.length === 0 || !layer.title.trim()) {
-                            return null;
-                        }
+            if (validChoices.length === 0) {
+              return null;
+            }
 
-                        return {
-                            title: layer.title.trim(),
-                            choices: validChoices.map((text) => ({ text })),
-                        };
-                    })
-                    .filter((layer): layer is { title: string; choices: { text: string }[] } => layer !== null);
+            const normalizedTitle =
+              layer.title.trim() || `Layer ${index + 1}`;
+
+            return {
+              title: normalizedTitle,
+              choices: validChoices.map((text) => ({ text })),
+            };
+          })
+          .filter(
+            (layer): layer is { title: string; choices: { text: string }[] } =>
+              layer !== null
+          );
 
                 if (validLayers.length === 0 || !section.name.trim()) {
                     return null;

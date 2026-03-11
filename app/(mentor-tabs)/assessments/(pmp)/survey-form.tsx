@@ -5,7 +5,8 @@ import { SurveyModal } from "@/components/atom/surveyModal";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { useAssessment, useSubmitAssessment } from "@/hooks/assessments";
+import { useAssessment, useSubmitAssessmentAnswers } from "@/hooks/assessments";
+import { useAuthStore } from "@/stores/auth.store";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
@@ -14,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SurveyForm() {
   const { assessmentId } = useLocalSearchParams<{ assessmentId: string }>();
+  const { user } = useAuthStore();
   const [selections, setSelections] = React.useState<{
     [key: string]: number[];
   }>({});
@@ -23,7 +25,7 @@ export default function SurveyForm() {
 
   // Use TanStack Query hooks
   const { data: assessment, isLoading: loading, error: queryError } = useAssessment(assessmentId);
-  const submitAssessmentMutation = useSubmitAssessment();
+  const submitAssessmentMutation = useSubmitAssessmentAnswers();
   const error = queryError ? "Failed to load assessment. Please try again." : null;
   const totalPages = assessment?.sections.length || 0;
 
@@ -57,38 +59,49 @@ export default function SurveyForm() {
   };
 
   const transformSelectionsToApiFormat = () => {
-    if (!assessment) return {};
+    if (!assessment || !user) return null;
 
-    const answers: Record<string, string[]> = {};
+    const sectionsMap = new Map<string, { layerId: string; selectedChoice: string }[]>();
 
-    // Transform selections to API format
-    // Key format: section_${sectionId}_layer_${layerId}
-    // Value: array of selected choice indices
     Object.entries(selections).forEach(([key, selectedIndices]) => {
       const parts = key.split('_');
+      // Format: section_${sectionId}_layer_${layerId}
       if (parts.length >= 4 && parts[0] === 'section' && parts[2] === 'layer') {
         const sectionId = parts[1];
-        const layerId = parts.slice(3).join('_'); // Handle case where layerId might have underscores
-        
-        // Find the section and layer to get choice IDs
+        const layerId = parts.slice(3).join('_');
+
         const section = assessment.sections.find((s) => s._id === sectionId);
         if (section) {
           const layer = section.layers.find((l) => l._id === layerId);
           if (layer) {
-            // Map selected indices to choice IDs
-            const selectedChoiceIds = selectedIndices
-              .map((index) => layer.choices[index]?._id)
-              .filter(Boolean) as string[];
-            
-            if (selectedChoiceIds.length > 0) {
-              answers[key] = selectedChoiceIds;
-            }
+            selectedIndices.forEach((index) => {
+              const choiceId = layer.choices[index]?._id;
+              if (choiceId) {
+                let sectionLayers = sectionsMap.get(sectionId);
+                if (!sectionLayers) {
+                  sectionLayers = [];
+                  sectionsMap.set(sectionId, sectionLayers);
+                }
+                sectionLayers.push({
+                  layerId,
+                  selectedChoice: choiceId,
+                });
+              }
+            });
           }
         }
       }
     });
 
-    return { answers };
+    const answers = Array.from(sectionsMap.entries()).map(([sectionId, layers]) => ({
+      sectionId,
+      layers,
+    }));
+
+    return {
+      userId: user.id,
+      answers,
+    };
   };
 
   const handleSubmitSurvey = () => {
@@ -97,17 +110,25 @@ export default function SurveyForm() {
     // Transform selections to API format
     const submissionData = transformSelectionsToApiFormat();
 
+    if (!submissionData) {
+      Alert.alert(
+        "Error",
+        "Unable to submit assessment. Please check your connection and try again."
+      );
+      return;
+    }
+
     // Submit the assessment
     submitAssessmentMutation.mutate(
       {
         assessmentId,
-        data: submissionData,
+        payload: submissionData,
       },
       {
         onSuccess: () => {
           setIsVisible(true);
         },
-        onError: (error) => {
+        onError: (error: unknown) => {
           console.error("Failed to submit assessment:", error);
           Alert.alert(
             "Submission Failed",
@@ -150,12 +171,6 @@ export default function SurveyForm() {
 
           return (
             <View key={layer._id} className="flex gap-3">
-              {/* Layer title as question header */}
-              {layer.title && (
-                <Text className="font-semibold text-base leading-[22px] text-white">
-                  {layer.title}
-                </Text>
-              )}
               <ChecklistCard
                 items={choiceTexts}
                 selectable
