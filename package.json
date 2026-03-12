@@ -8,7 +8,8 @@
     "android": "DARK_MODE=media expo start --android",
     "ios": "DARK_MODE=media expo start --ios",
     "web": "DARK_MODE=media expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@expo-google-fonts/albert-sans": "^0.4.1",
@@ -71,6 +72,7 @@
     "react-native-picker-select": "^9.3.1",
     "react-native-pie-chart": "^4.0.1",
     "react-native-reanimated": "~4.1.1",
+    "react-native-worklets": "0.6.1",
     "react-native-remix-icon": "^4.6.3",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
@@ -90,8 +92,11 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "jscodeshift": "^0.15.2",
-    "react-native-worklets": "0.5.1",
+    "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "react-native-worklets": "0.6.1"
   },
   "private": true
 }

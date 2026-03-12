@@ -1,0 +1,31 @@
+diff --git a/node_modules/react-native-signature-canvas/h5/js/app.js b/node_modules/react-native-signature-canvas/h5/js/app.js
+index e523ce6..4953dc0 100644
+--- a/node_modules/react-native-signature-canvas/h5/js/app.js
++++ b/node_modules/react-native-signature-canvas/h5/js/app.js
+@@ -197,7 +197,25 @@ export default `
+             window.ReactNativeWebView && window.ReactNativeWebView.postMessage("EMPTY");
+         } else {
+             var imageType = '<%imageType%>' || 'image/png';
+-            var url = signaturePad.toDataURL(imageType);
++
++            var url;
++            var canvas = signaturePad.canvas;
++            if (canvas && canvas.getContext) {
++                var ctx = canvas.getContext("2d");
++                if (ctx) {
++                    ctx.save();
++                    ctx.globalCompositeOperation = "destination-over";
++                    ctx.fillStyle = "#ffffff";
++                    ctx.fillRect(0, 0, canvas.width, canvas.height);
++                    url = canvas.toDataURL(imageType);
++                    ctx.restore();
++                }
++            }
++            if (typeof url === "undefined") {
++                url = (canvas && canvas.toDataURL)
++                    ? canvas.toDataURL(imageType)
++                    : signaturePad.toDataURL(imageType);
++            }
+ 
+             if (trimWhitespace === true) {
+                 cropWhitespace(url);
