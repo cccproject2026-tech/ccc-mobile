@@ -371,9 +371,6 @@ export default function AssessmentQuestionsSection({
                         <Text style={styles.sectionBadgeText}>Section {currentSectionIndex + 1}</Text>
                     </View>
                     <Text style={styles.sectionTitle}>{currentSection.title}</Text>
-                    {currentSection.subtitle ? (
-                        <Text style={styles.sectionSubtitle}>{currentSection.subtitle}</Text>
-                    ) : null}
                 </View>
 
                 {/* Instructions (skip in view mode; subtitle is shown in section card) */}

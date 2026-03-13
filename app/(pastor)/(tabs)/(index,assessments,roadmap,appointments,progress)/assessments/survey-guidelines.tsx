@@ -343,11 +343,7 @@ export default function SurveyGuidelinesPage() {
                   <View style={styles.bulletContainer}>
                     <View style={styles.bullet} />
                   </View>
-                  {
-                    <Text style={styles.guidelineText}>
-                      {message ? message : guideline}
-                    </Text>
-                  }
+                  <Text style={styles.guidelineText}>{guideline}</Text>
                 </View>
               ))}
             </View>
