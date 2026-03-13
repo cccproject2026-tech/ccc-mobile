@@ -246,20 +246,6 @@ export default function CreateAssessmentPage() {
     });
   };
 
-  const updateLayerTitle = (sectionId: string, layerId: string, title: string) => {
-    setSections(
-      sections.map((s) => {
-        if (s.id !== sectionId) return s;
-        return {
-          ...s,
-          layers: s.layers.map((l) =>
-            l.id === layerId ? { ...l, title } : l
-          ),
-        };
-      })
-    );
-  };
-
   const addChoice = (sectionId: string, layerId: string) => {
     setSections(
       sections.map((s) => {
@@ -432,17 +418,17 @@ export default function CreateAssessmentPage() {
       .map((section) => {
         // Filter out empty layers and choices
         const validLayers = section.layers
-          .map((layer) => {
+          .map((layer, layerIndex) => {
             const validChoices = layer.choices
               .map((choice) => choice.text.trim())
               .filter((text) => text.length > 0);
 
-            if (validChoices.length === 0 || !layer.title.trim()) {
+            if (validChoices.length === 0) {
               return null;
             }
 
             return {
-              title: layer.title.trim(),
+              title: layer.title.trim() || `Layer ${layerIndex + 1}`,
               choices: validChoices.map((text) => ({ text })),
             };
           })
@@ -755,18 +741,6 @@ export default function CreateAssessmentPage() {
               {section.layers.map((layer, layerIndex) => (
                 <View key={layer.id} style={styles.layerSection}>
                   <Text style={styles.layerTitle}>Layer {layerIndex + 1}</Text>
-
-                  {/* Question (layer title) */}
-                  <Text style={styles.layerFieldLabel}>Question</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter the question for this layer"
-                    placeholderTextColor="rgba(255,255,255,0.6)"
-                    value={layer.title}
-                    onChangeText={(text) =>
-                      updateLayerTitle(section.id, layer.id, text)
-                    }
-                  />
 
                   {/* Choices */}
                   <Text style={styles.layerFieldLabel}>Choices</Text>
