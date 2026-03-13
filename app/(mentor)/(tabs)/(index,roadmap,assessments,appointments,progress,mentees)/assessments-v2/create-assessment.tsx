@@ -564,14 +564,12 @@ export default function CreateAssessmentPage() {
                 />
               </View>
             ))}
-            {instructions.length === 1 && (
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={addInstruction}
-              >
-                <Text style={styles.addButtonText}>+ Instruction</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={addInstruction}
+            >
+              <Text style={styles.addButtonText}>+ Instruction</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
