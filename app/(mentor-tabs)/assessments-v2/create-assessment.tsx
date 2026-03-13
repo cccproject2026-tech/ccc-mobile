@@ -517,53 +517,39 @@ export default function CreateAssessmentPage() {
                 numberOfLines={3}
               />
 
-              {/* Number of Layers Dropdown */}
-              <View style={styles.dropdownContainer}>
-                <Text style={styles.dropdownLabel}>Number of Layers:</Text>
-                <View style={{ position: 'relative' }}>
-                  <Pressable
-                    style={styles.dropdown}
-                    onPress={() => toggleDropdown(section.id)}
+              {/* Number of Layers */}
+              <View style={styles.layerCountContainer}>
+                <Text style={styles.layerCountLabel}>Number of Layers:</Text>
+                <View style={styles.layerCountControls}>
+                  <TouchableOpacity
+                    style={[
+                      styles.layerCountButton,
+                      section.layers.length <= 1 && styles.layerCountButtonDisabled
+                    ]}
+                    onPress={() => {
+                      if (section.layers.length > 1) {
+                        updateLayerCount(section.id, section.layers.length - 1);
+                      }
+                    }}
+                    disabled={section.layers.length <= 1}
                   >
-                    <Text style={styles.dropdownText}>
-                      {section.layers.length}
-                    </Text>
                     <Ionicons 
-                      name={openDropdowns.has(section.id) ? "chevron-up" : "chevron-down"} 
+                      name="remove" 
                       size={20} 
-                      color="#E2E8F0" 
+                      color={section.layers.length <= 1 ? "rgba(255,255,255,0.3)" : "#FFFFFF"} 
                     />
-                  </Pressable>
-                  {openDropdowns.has(section.id) && (
-                    <View style={styles.dropdownMenu}>
-                      <ScrollView 
-                        style={styles.dropdownScrollView}
-                        nestedScrollEnabled
-                        showsVerticalScrollIndicator={false}
-                      >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num, index) => (
-                          <Pressable
-                            key={num}
-                            style={[
-                              styles.dropdownOption,
-                              section.layers.length === num && styles.dropdownOptionSelected,
-                              index === 9 && styles.dropdownOptionLast
-                            ]}
-                            onPress={() => updateLayerCount(section.id, num)}
-                          >
-                            <Text
-                              style={[
-                                styles.dropdownOptionText,
-                                section.layers.length === num && styles.dropdownOptionTextSelected
-                              ]}
-                            >
-                              {num}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
+                  </TouchableOpacity>
+                  
+                  <View style={styles.layerCountDisplay}>
+                    <Text style={styles.layerCountText}>{section.layers.length}</Text>
+                  </View>
+                  
+                  <TouchableOpacity
+                    style={styles.layerCountButton}
+                    onPress={() => updateLayerCount(section.id, section.layers.length + 1)}
+                  >
+                    <Ionicons name="add" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
                 </View>
               </View>
 

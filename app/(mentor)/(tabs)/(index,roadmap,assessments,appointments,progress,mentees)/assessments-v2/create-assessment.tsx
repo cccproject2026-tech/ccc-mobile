@@ -635,53 +635,39 @@ export default function CreateAssessmentPage() {
                 numberOfLines={3}
               />
 
-              {/* Number of Layers Dropdown */}
-              <View style={styles.dropdownContainer}>
-                <Text style={styles.dropdownLabel}>Number of Layers:</Text>
-                <View style={{ position: 'relative' }}>
-                  <Pressable
-                    style={styles.dropdown}
-                    onPress={() => toggleDropdown(section.id)}
+              {/* Number of Layers */}
+              <View style={styles.layerCountContainer}>
+                <Text style={styles.layerCountLabel}>Number of Layers:</Text>
+                <View style={styles.layerCountControls}>
+                  <TouchableOpacity
+                    style={[
+                      styles.layerCountButton,
+                      section.layers.length <= 1 && styles.layerCountButtonDisabled
+                    ]}
+                    onPress={() => {
+                      if (section.layers.length > 1) {
+                        updateLayerCount(section.id, section.layers.length - 1);
+                      }
+                    }}
+                    disabled={section.layers.length <= 1}
                   >
-                    <Text style={styles.dropdownText}>
-                      {section.layers.length}
-                    </Text>
                     <Ionicons 
-                      name={openDropdowns.has(section.id) ? "chevron-up" : "chevron-down"} 
+                      name="remove" 
                       size={20} 
-                      color="#E2E8F0" 
+                      color={section.layers.length <= 1 ? "rgba(255,255,255,0.3)" : "#FFFFFF"} 
                     />
-                  </Pressable>
-                  {openDropdowns.has(section.id) && (
-                    <View style={styles.dropdownMenu}>
-                      <ScrollView 
-                        style={styles.dropdownScrollView}
-                        nestedScrollEnabled
-                        showsVerticalScrollIndicator={false}
-                      >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num, index) => (
-                          <Pressable
-                            key={num}
-                            style={[
-                              styles.dropdownOption,
-                              section.layers.length === num && styles.dropdownOptionSelected,
-                              index === 9 && styles.dropdownOptionLast
-                            ]}
-                            onPress={() => updateLayerCount(section.id, num)}
-                          >
-                            <Text
-                              style={[
-                                styles.dropdownOptionText,
-                                section.layers.length === num && styles.dropdownOptionTextSelected
-                              ]}
-                            >
-                              {num}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
+                  </TouchableOpacity>
+                  
+                  <View style={styles.layerCountDisplay}>
+                    <Text style={styles.layerCountText}>{section.layers.length}</Text>
+                  </View>
+                  
+                  <TouchableOpacity
+                    style={styles.layerCountButton}
+                    onPress={() => updateLayerCount(section.id, section.layers.length + 1)}
+                  >
+                    <Ionicons name="add" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -916,80 +902,52 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 12,
   },
-  dropdownContainer: {
+  layerCountContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "space-between",
     marginBottom: 16,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.5)",
     borderRadius: 12,
     paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  dropdownLabel: {
+  layerCountLabel: {
     color: "#E2E8F0",
     fontSize: 15,
     fontWeight: "500",
   },
-  dropdown: {
+  layerCountControls: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "transparent",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minWidth: 100,
-    gap: 8,
-    width: "57%",
+    gap: 12,
   },
-  dropdownText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    flex: 1,
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: '#1B2B60',
+  layerCountButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 12,
-    marginTop: 4,
-    maxHeight: 300,
-    zIndex: 1000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    overflow: 'hidden',
+    borderColor: "rgba(255,255,255,0.3)",
   },
-  dropdownScrollView: {
-    maxHeight: 300,
+  layerCountButtonDisabled: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderColor: "rgba(255,255,255,0.1)",
   },
-  dropdownOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-    minHeight: 44,
-    justifyContent: 'center',
+  layerCountDisplay: {
+    minWidth: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  dropdownOptionLast: {
-    borderBottomWidth: 0,
+  layerCountText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
-  dropdownOptionSelected: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  dropdownOptionText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-  },
-  dropdownOptionTextSelected: {
-    color: '#5EB3D1',
-    fontWeight: '600',
-  },
+
   layerSection: {
     marginTop: 16,
     padding: 16,
