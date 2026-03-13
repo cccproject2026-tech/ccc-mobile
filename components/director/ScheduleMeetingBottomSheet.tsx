@@ -117,13 +117,18 @@ const ScheduleMeetingBottomSheet = forwardRef<
     },
     ref,
   ) => {
-    const { bottom } = useSafeAreaInsets();
+    const { bottom, top } = useSafeAreaInsets();
     const deviceType = getDeviceType();
+    const { height: screenHeight } = Dimensions.get("window");
+    
     const snapPoints = useMemo(() => {
-      if (deviceType === "small") return ["88%"];
-      else if (deviceType === "medium") return ["82%"];
-      return ["78%"];
-    }, [deviceType]);
+      const safeHeight = screenHeight - top - 20;
+      const percentage = Math.min(95, Math.max(80, (safeHeight / screenHeight) * 100));
+      if (isSmallDevice) return ["92%", "98%"];
+      if (deviceType === "small") return ["90%", "96%"];
+      else if (deviceType === "medium") return ["85%", "92%"];
+      return ["80%", "88%"];
+    }, [deviceType, screenHeight, top]);
 
     // Get current user and their role
     const { user: currentUser } = useAuthStore();
@@ -527,8 +532,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       <>
         <BottomSheetModal
           ref={ref}
-          snapPoints={["88%", "95%"]}
-          //snapPoints={snapPoints}
+          snapPoints={snapPoints}
           enablePanDownToClose={!disableOutsideClose}
           backgroundComponent={() => null}
           backdropComponent={renderBackdrop}
@@ -543,18 +547,24 @@ const ScheduleMeetingBottomSheet = forwardRef<
               flex: 1,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
-              paddingVertical: 20,
-              paddingHorizontal: 16,
+              paddingTop: getSpacing(16),
+              paddingBottom: bottom + getSpacing(16),
+              paddingHorizontal: getSpacing(16),
             }}
           >
-            {/* Close Button */}
-            <Pressable
-              style={styles.closeButton}
-              onPress={handleManualClose}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="close" size={24} color="#FFFFFF" />
-            </Pressable>
+            {/* Header with Close Button */}
+            <View style={styles.headerRow}>
+              <View style={styles.headerSpacer} />
+              <Pressable
+                style={styles.closeButtonContainer}
+                onPress={handleManualClose}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View style={styles.closeButtonCircle}>
+                  <Ionicons name="close" size={getIconSize(20)} color="#FFFFFF" />
+                </View>
+              </Pressable>
+            </View>
 
             {showMentorSelection ? (
               // Step 1: Select Mentor
@@ -752,9 +762,10 @@ const ScheduleMeetingBottomSheet = forwardRef<
               <BottomSheetScrollView
                 style={[styles.contentContainer]}
                 contentContainerStyle={{
-                  paddingBottom: bottom + getSpacing(12),
-                  paddingTop: getSpacing(12),
+                  paddingBottom: getSpacing(isSmallDevice ? 40 : 50),
+                  paddingTop: getSpacing(isSmallDevice ? 8 : 12),
                 }}
+                showsVerticalScrollIndicator={false}
               >
                 <View>
                   {showDateTimeSelection ? (
@@ -1076,10 +1087,33 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: getSpacing(16),
+    paddingHorizontal: getSpacing(isSmallDevice ? 12 : 16),
     borderWidth: 1,
     borderColor: "#FFFFFF73",
     borderRadius: getSpacing(12),
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    marginBottom: getSpacing(8),
+    paddingHorizontal: getSpacing(4),
+  },
+  headerSpacer: {
+    flex: 1,
+  },
+  closeButtonContainer: {
+    padding: getSpacing(4),
+  },
+  closeButtonCircle: {
+    width: getSpacing(32),
+    height: getSpacing(32),
+    borderRadius: getSpacing(16),
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   closeButton: {
     position: "absolute",
@@ -1153,13 +1187,12 @@ const styles = StyleSheet.create({
   },
   roleSelectorContainer: {
     flexDirection: "row",
-    // backgroundColor: "rgba(255, 255, 255, 0.12)",
     borderRadius: 12,
     padding: 4,
     paddingVertical: 4,
-    marginBottom: getSpacing(12),
-    marginHorizontal: getSpacing(30),
-    marginTop: getSpacing(12),
+    marginBottom: getSpacing(isSmallDevice ? 8 : 12),
+    marginHorizontal: getSpacing(isSmallDevice ? 16 : 30),
+    marginTop: getSpacing(isSmallDevice ? 4 : 8),
   },
   roleTab: {
     flex: 1,
@@ -1188,20 +1221,17 @@ const styles = StyleSheet.create({
     color: "#1E3A6F",
   },
   mentorListContainer: {
-    // flex: 1,
-    maxHeight: Dimensions.get("window").height * 0.6,
-    minHeight: Dimensions.get("window").height * 0.3,
+    height: Dimensions.get("window").height * (isSmallDevice ? 0.38 : 0.42),
     borderWidth: 1.5,
     borderRadius: getSpacing(12),
-    padding: getSpacing(isSmallDevice ? 14 : 16),
+    padding: getSpacing(isSmallDevice ? 12 : 16),
     marginBottom: getSpacing(isSmallDevice ? 8 : 12),
-    overflow: "hidden",
-    marginTop: getSpacing(10),
+    marginTop: getSpacing(8),
   },
   stepTitle: {
-    fontSize: getFontSize(isSmallDevice ? 15 : 16),
+    fontSize: getFontSize(isSmallDevice ? 14 : 16),
     fontWeight: "600",
-    marginBottom: getSpacing(isSmallDevice ? 16 : 18),
+    marginBottom: getSpacing(isSmallDevice ? 10 : 16),
     textAlign: "center",
   },
   // Step 1 specific styles
@@ -1221,9 +1251,9 @@ const styles = StyleSheet.create({
   },
 
   searchBarContainer: {
-    marginBottom: getSpacing(isSmallDevice ? 10 : 12),
-    marginTop: getSpacing(isSmallDevice ? 12 : 14),
-    marginHorizontal: getSpacing(34),
+    marginBottom: getSpacing(isSmallDevice ? 6 : 10),
+    marginTop: getSpacing(isSmallDevice ? 8 : 12),
+    marginHorizontal: getSpacing(isSmallDevice ? 16 : 34),
   },
 
   mentorListStep1: {
@@ -1277,15 +1307,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     gap: getSpacing(isSmallDevice ? 8 : 12),
-    marginTop: getSpacing(isSmallDevice ? 16 : 18),
-    marginBottom: getSpacing(6),
+    marginTop: getSpacing(isSmallDevice ? 12 : 16),
+    paddingTop: getSpacing(8),
     width: "100%",
-    paddingHorizontal: getSpacing(isSmallDevice ? 6 : 12),
+    paddingHorizontal: getSpacing(isSmallDevice ? 4 : 8),
   },
   cancelButton: {
-    minWidth: 110,
+    minWidth: isSmallDevice ? 90 : 110,
     flexGrow: 1,
-    paddingVertical: 10,
+    paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#fff",
@@ -1293,9 +1323,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   nextButton: {
-    minWidth: 110,
+    minWidth: isSmallDevice ? 90 : 110,
     flexGrow: 1,
-    paddingVertical: 14,
+    paddingVertical: getSpacing(isSmallDevice ? 12 : 14),
     backgroundColor: "rgba(30, 54, 111, 1)",
     borderWidth: 2,
     borderColor: "#fff",
@@ -1303,21 +1333,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   scheduleButton: {
-    minWidth: 110,
+    minWidth: isSmallDevice ? 90 : 110,
     flexGrow: 1,
-    paddingVertical: 10,
+    paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
     backgroundColor: "rgba(30, 54, 111, 1)",
     borderWidth: 2,
     borderColor: "#fff",
     borderRadius: 10,
     alignItems: "center",
-
-    // 🔹 SHADOW (iOS)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
-    // 🔹 SHADOW (Android)
     elevation: 6,
   },
 
@@ -1336,10 +1363,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     alignSelf: "center",
-    gap: getSpacing(isSmallDevice ? 8 : 12),
-    marginTop: getSpacing(isSmallDevice ? 18 : 20),
-    width: "70%",
-    paddingHorizontal: getSpacing(isSmallDevice ? 6 : 12),
+    gap: getSpacing(isSmallDevice ? 10 : 12),
+    marginTop: getSpacing(isSmallDevice ? 20 : 24),
+    marginBottom: getSpacing(isSmallDevice ? 16 : 20),
+    paddingTop: getSpacing(8),
+    width: isSmallDevice ? "85%" : "75%",
+    paddingHorizontal: getSpacing(isSmallDevice ? 4 : 8),
   },
   backButton: {
     minWidth: 110,
@@ -1412,12 +1441,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   calendarContainer: {
-    marginBottom: getSpacing(isSmallDevice ? 16 : 18),
+    marginBottom: getSpacing(isSmallDevice ? 8 : 16),
+    marginTop: getSpacing(isSmallDevice ? 2 : 6),
   },
   sectionTitle: {
     fontSize: getFontSize(isSmallDevice ? 13 : 14),
     fontWeight: "600",
-    marginBottom: getSpacing(isSmallDevice ? 10 : 12),
+    marginBottom: getSpacing(isSmallDevice ? 8 : 12),
+    marginTop: getSpacing(isSmallDevice ? 8 : 12),
   },
   emptyStateContainer: {
     flex: 1,
@@ -1432,15 +1463,16 @@ const styles = StyleSheet.create({
   timeSlotGrid: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: getSpacing(40),
-    marginBottom: getSpacing(8),
+    minHeight: getSpacing(isSmallDevice ? 36 : 40),
+    marginBottom: getSpacing(isSmallDevice ? 6 : 8),
+    paddingVertical: getSpacing(4),
   },
   timeSlotGridItem: {
-    paddingVertical: getSpacing(12),
-    paddingHorizontal: getSpacing(16),
-    borderRadius: getSpacing(10),
+    paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
+    paddingHorizontal: getSpacing(isSmallDevice ? 12 : 16),
+    borderRadius: getSpacing(isSmallDevice ? 8 : 10),
     borderWidth: 1,
-    marginRight: getSpacing(12),
+    marginRight: getSpacing(isSmallDevice ? 8 : 12),
     alignItems: "center",
     justifyContent: "center",
     borderColor: "#FFFFFF",
@@ -1458,6 +1490,7 @@ const styles = StyleSheet.create({
     paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
     borderRadius: getSpacing(isSmallDevice ? 8 : 10),
     borderWidth: 1,
+    marginBottom: getSpacing(isSmallDevice ? 4 : 8),
   },
   dropdownText: {
     fontSize: getFontSize(isSmallDevice ? 13 : 14),
