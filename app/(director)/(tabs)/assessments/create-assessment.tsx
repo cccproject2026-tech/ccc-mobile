@@ -135,6 +135,11 @@ export default function CreateAssessmentPage() {
         ]);
     };
 
+    const removeInstruction = (id: string) => {
+        if (instructions.length <= 1) return;
+        setInstructions(instructions.filter((inst) => inst.id !== id));
+    };
+
     const updateInstruction = (id: string, text: string) => {
         setInstructions(
             instructions.map((inst) => (inst.id === id ? { ...inst, text } : inst))
@@ -152,6 +157,11 @@ export default function CreateAssessmentPage() {
                 recommendations: newSectionRecommendations(),
             },
         ]);
+    };
+
+    const removeSection = (sectionId: string) => {
+        if (sections.length <= 1) return;
+        setSections(sections.filter((s) => s.id !== sectionId));
     };
 
     const updateSectionName = (sectionId: string, name: string) => {
@@ -238,6 +248,25 @@ export default function CreateAssessmentPage() {
         );
     };
 
+    const removeChoice = (sectionId: string, layerId: string, choiceId: string) => {
+        setSections(
+            sections.map((s) => {
+                if (s.id !== sectionId) return s;
+                return {
+                    ...s,
+                    layers: s.layers.map((l) => {
+                        if (l.id !== layerId) return l;
+                        if (l.choices.length <= 1) return l;
+                        return {
+                            ...l,
+                            choices: l.choices.filter((c) => c.id !== choiceId),
+                        };
+                    }),
+                };
+            })
+        );
+    };
+
     const updateChoice = (
         sectionId: string,
         layerId: string,
@@ -275,6 +304,25 @@ export default function CreateAssessmentPage() {
                             ? { ...rec, plans: [...rec.plans, newPlan] }
                             : rec
                     ),
+                };
+            })
+        );
+    };
+
+    const removeSectionPlan = (sectionId: string, level: 1 | 2 | 3 | 4, planId: string) => {
+        setSections(
+            sections.map((s) => {
+                if (s.id !== sectionId) return s;
+                return {
+                    ...s,
+                    recommendations: s.recommendations.map((rec) => {
+                        if (rec.level !== level) return rec;
+                        if (rec.plans.length <= 1) return rec;
+                        return {
+                            ...rec,
+                            plans: rec.plans.filter((p) => p.id !== planId),
+                        };
+                    }),
                 };
             })
         );
@@ -471,12 +519,20 @@ export default function CreateAssessmentPage() {
                         {instructions.map((inst, index) => (
                             <View key={inst.id} style={styles.instructionRow}>
                                 <TextInput
-                                    style={[styles.input, { flex: 1 }]}
+                                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
                                     placeholder={`Instruction ${index + 1}`}
                                     placeholderTextColor="rgba(255,255,255,0.6)"
                                     value={inst.text}
                                     onChangeText={(text) => updateInstruction(inst.id, text)}
                                 />
+                                {instructions.length > 1 && (
+                                    <TouchableOpacity
+                                        style={styles.removeButton}
+                                        onPress={() => removeInstruction(inst.id)}
+                                    >
+                                        <Ionicons name="close-circle" size={24} color="#FF6B6B" />
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         ))}
                         {instructions.length === 1 && (
@@ -501,9 +557,19 @@ export default function CreateAssessmentPage() {
 
                     {sections.map((section, sectionIndex) => (
                         <View key={section.id} style={styles.subSection}>
-                            <Text style={styles.subSectionTitle}>
-                                Section {sectionIndex + 1}
-                            </Text>
+                            <View style={styles.sectionTitleRow}>
+                                <Text style={styles.subSectionTitle}>
+                                    Section {sectionIndex + 1}
+                                </Text>
+                                {sections.length > 1 && (
+                                    <TouchableOpacity
+                                        style={styles.removeSectionButton}
+                                        onPress={() => removeSection(section.id)}
+                                    >
+                                        <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                             <TextInput
                                 style={styles.input}
                                 placeholder={`Name of Section ${sectionIndex + 1}`}
@@ -594,7 +660,7 @@ export default function CreateAssessmentPage() {
                                     {layer.choices.map((choice, choiceIndex) => (
                                         <View key={choice.id} style={styles.choiceRow}>
                                             <TextInput
-                                                style={[styles.input, { flex: 1 }]}
+                                                style={[styles.input, { flex: 1, marginBottom: 0 }]}
                                                 placeholder={`Choice ${choiceIndex + 1}`}
                                                 placeholderTextColor="rgba(255,255,255,0.6)"
                                                 value={choice.text}
@@ -607,6 +673,14 @@ export default function CreateAssessmentPage() {
                                                     )
                                                 }
                                             />
+                                            {layer.choices.length > 1 && (
+                                                <TouchableOpacity
+                                                    style={styles.removeButton}
+                                                    onPress={() => removeChoice(section.id, layer.id, choice.id)}
+                                                >
+                                                    <Ionicons name="close-circle" size={24} color="#FF6B6B" />
+                                                </TouchableOpacity>
+                                            )}
                                         </View>
                                     ))}
                                     <TouchableOpacity
@@ -631,7 +705,7 @@ export default function CreateAssessmentPage() {
                                         {rec.plans.map((plan, index) => (
                                             <View key={plan.id} style={styles.planRow}>
                                                 <TextInput
-                                                    style={[styles.input, { flex: 1 }]}
+                                                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
                                                     placeholder={`Plan ${index + 1}`}
                                                     placeholderTextColor="rgba(255,255,255,0.6)"
                                                     value={plan.text}
@@ -644,6 +718,14 @@ export default function CreateAssessmentPage() {
                                                         )
                                                     }
                                                 />
+                                                {rec.plans.length > 1 && (
+                                                    <TouchableOpacity
+                                                        style={styles.removeButton}
+                                                        onPress={() => removeSectionPlan(section.id, rec.level, plan.id)}
+                                                    >
+                                                        <Ionicons name="close-circle" size={24} color="#FF6B6B" />
+                                                    </TouchableOpacity>
+                                                )}
                                             </View>
                                         ))}
                                         {rec.plans.length < 8 && (
@@ -770,6 +852,20 @@ const styles = StyleSheet.create({
         gap: 12,
         marginBottom: 12,
     },
+    removeButton: {
+        padding: 4,
+    },
+    sectionTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    removeSectionButton: {
+        padding: 8,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255, 107, 107, 0.15)',
+    },
     addButton: {
         paddingHorizontal: 16,
         paddingVertical: 8,
@@ -793,7 +889,6 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '600',
-        marginBottom: 12,
     },
     cdpSection: {
         marginTop: 20,
