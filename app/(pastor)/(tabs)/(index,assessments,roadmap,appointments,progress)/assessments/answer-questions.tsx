@@ -406,6 +406,7 @@ export default function AnswerQuestionPage() {
           cardBackground: "rgba(255, 255, 255, 0.1)",
         }}
         mode={undefined}
+        disableOutsideClose={true}
       />
 
       <SimpleSuccessModal

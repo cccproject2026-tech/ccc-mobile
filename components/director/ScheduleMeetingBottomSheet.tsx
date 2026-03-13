@@ -503,14 +503,19 @@ const ScheduleMeetingBottomSheet = forwardRef<
       setShowSuccessModal(false);
     };
 
-    const handleClose = () => {
-      if (!disableOutsideClose) {
-        onClose();
-        setTimeout(() => {
-          resetForm();
-        }, 300);
-      }
-    };
+  const handleClose = () => {
+    onClose();
+    setTimeout(() => {
+      resetForm();
+    }, 300);
+  };
+
+  const handleManualClose = () => {
+    onClose();
+    setTimeout(() => {
+      resetForm();
+    }, 300);
+  };
 
     const isStep1Valid = selectedMentor !== null;
     const isStep2Valid = selectedDate && selectedTime;
@@ -542,6 +547,15 @@ const ScheduleMeetingBottomSheet = forwardRef<
               paddingHorizontal: 16,
             }}
           >
+            {/* Close Button */}
+            <Pressable
+              style={styles.closeButton}
+              onPress={handleManualClose}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={24} color="#FFFFFF" />
+            </Pressable>
+
             {showMentorSelection ? (
               // Step 1: Select Mentor
               <View style={{ flex: 1 }}>
