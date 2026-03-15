@@ -79,9 +79,8 @@ export default function AssessmentQuestionsSection({
             (section) => Array.isArray(section.recommendations) && section.recommendations.length > 0,
         );
 
-    // Pastor view: CDP API not integrated yet → always show "Waiting for response". Mentor: show CDP when available.
-    const isPastorViewMode = isViewMode && !reviewMode;
-    const showCdpAsReady = !isPastorViewMode && hasCdpRecommendations;
+    // Show CDP as ready when we have recommendations (from GET answers). Works for both pastor (view) and mentor (review).
+    const showCdpAsReady = hasCdpRecommendations;
 
     // In view mode, sync any incoming initial answers into local state
     useEffect(() => {

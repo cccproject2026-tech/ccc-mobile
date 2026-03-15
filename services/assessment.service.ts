@@ -143,4 +143,27 @@ export const assessmentService = {
     console.log("📥 Answers fetched:", response.data);
     return response.data;
   },
+
+  // Send CDP recommendations (mentor → pastor)
+  sendRecommendation: async (
+    assessmentId: string,
+    payload: {
+      userId: string;
+      sectionId: string;
+      recommendations: string[];
+    },
+  ): Promise<any> => {
+    console.log(
+      "📤 Sending recommendation for assessment:",
+      assessmentId,
+      "section:",
+      payload.sectionId,
+    );
+    const response = await apiClient.post(
+      ENDPOINTS.ASSESSMENTS.SEND_RECOMMENDATION(assessmentId),
+      payload,
+    );
+    console.log("📥 Recommendation sent:", response.data);
+    return response.data;
+  },
 };

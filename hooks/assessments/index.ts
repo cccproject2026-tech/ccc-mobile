@@ -5,4 +5,5 @@ export { useCreateAssessment } from './useCreateAssessment';
 export { useDeleteAssessment } from './useDeleteAssessment';
 export { useUpdateAssessmentInstructions } from './useUpdateAssessmentInstructions';
 export { useSubmitAssessmentAnswers } from './useSubmitAnswers';
+export { useSendRecommendation } from './useSendRecommendation';
 

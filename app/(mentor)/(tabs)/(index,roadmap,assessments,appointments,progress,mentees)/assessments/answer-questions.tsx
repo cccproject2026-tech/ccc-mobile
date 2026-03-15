@@ -5,6 +5,7 @@ import ScheduleMeetingBottomSheet from "@/components/director/ScheduleMeetingBot
 import TopBar from "@/components/director/TopBar";
 import { useAssessment } from "@/hooks/assessments";
 import { useFetchAnswers } from "@/hooks/assessments/useFetchAnswers";
+import { useSendRecommendation } from "@/hooks/assessments/useSendRecommendation";
 import {
   useSubmitAssessmentAnswers,
   useSubmitPreSurvey,
@@ -75,6 +76,7 @@ export default function AnswerQuestionPage() {
   // Submission hooks - not used in view mode mostly
   const submitPreSurvey = useSubmitPreSurvey();
   const submitAssessmentAnswers = useSubmitAssessmentAnswers();
+  const { mutateAsync: sendRecommendation } = useSendRecommendation();
 
   const [showModal, setShowModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -170,22 +172,38 @@ export default function AnswerQuestionPage() {
     router.back();
   };
 
-  const handleSendCdp = (payload: {
+  const handleSendCdp = async (payload: {
     recommendations: Array<{
       sectionId: string;
       selectedItems: Array<{ level: number; text: string }>;
     }>;
   }) => {
     if (!targetUserId || !assessmentId) return;
-    const cdpPayload = {
-      pastorId: targetUserId,
-      assessmentId: assessmentId as string,
-      recommendations: payload.recommendations,
-    };
-    console.log("Send CDP payload:", cdpPayload);
-    setSuccessMessage("Customized Development Plans sent successfully.");
-    setShowSuccessModal(true);
-    setTimeout(() => router.back(), 2000);
+    const id = assessmentId as string;
+    const userId = targetUserId as string;
+    try {
+      await Promise.all(
+        payload.recommendations.map((section) =>
+          sendRecommendation({
+            assessmentId: id,
+            payload: {
+              userId,
+              sectionId: section.sectionId,
+              recommendations: section.selectedItems.map((item) => item.text),
+            },
+          }),
+        ),
+      );
+      setSuccessMessage("Customized Development Plans sent successfully.");
+      setShowSuccessModal(true);
+      setTimeout(() => router.back(), 2000);
+    } catch (error) {
+      console.error("Failed to send CDP recommendations:", error);
+      Alert.alert(
+        "Error",
+        "Failed to send recommendations. Please try again.",
+      );
+    }
   };
 
   const handleAssessmentSubmit = async (

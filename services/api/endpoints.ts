@@ -74,6 +74,8 @@ export const ENDPOINTS = {
     SUBMIT_ASSESSMENT_PRESURVEY: (id: string) => `/assessment/${id}/pre-survey`,
     FETCH_ANSWERS: (assessmentId: string, userId: string) =>
       `/assessment/${assessmentId}/answers/${userId}`,
+    SEND_RECOMMENDATION: (assessmentId: string) =>
+      `/assessment/${assessmentId}/send-recommendation`,
     DELETE_ASSESSMENT: "/assessment",
     UPDATE_INSTRUCTIONS: (assessmentId: string) =>
       `/assessment/${assessmentId}/instructions`,
