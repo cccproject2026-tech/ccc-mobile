@@ -144,6 +144,10 @@ export const getDayName = (dayNumber: number): string => {
   return days[dayNumber];
 };
 
+/**
+ * Fetches availability via GET /appointments/availability/{mentorId} only.
+ * Does NOT call the monthly API (/appointments/availability/{mentorId}/month).
+ */
 export const useWeeklyAvailability = (
   mentorId: string | null,
   options?: UseWeeklyAvailabilityOptions,
@@ -170,9 +174,13 @@ export const useWeeklyAvailability = (
     enabled: Boolean(mentorId) && options?.enabled !== false,
   });
 
+  const availability = query.data;
+  const weeklySlots = availability?.weeklySlots ?? [];
+
   return {
     ...query,
-    availability: query.data,
+    availability,
+    weeklySlots,
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,

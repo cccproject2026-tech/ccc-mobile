@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
-import { formatTimeSlot, useMonthlyAvailability, useWeeklyAvailability } from "@/hooks/mentors/useMentorsAvailability";
+import { formatTimeSlot, useWeeklyAvailability } from "@/hooks/mentors/useMentorsAvailability";
 import { appointmentService } from "@/services/appointments.service";
 import { useAuthStore } from "@/stores";
 import { TimeSlot as APITimeSlot } from "@/types/appointment.types";
@@ -54,39 +54,35 @@ const ScheduleMeeting = () => {
   const { bottom } = useSafeAreaInsets();
   const mentorData = params.mentorData ? JSON.parse(params.mentorData as string) : null;
   const { user } = useAuthStore();
-  const { createAppointmentAsync: createAppointment, isCreating } = useCreateAppointment({
-    onSuccess: (appointment) => {
-      console.log('✅ Appointment created successfully!', appointment);
-      setShowSuccessModal(true);
-    },
-    onError: (error) => {
-      console.error('❌ Appointment creation failed:', error);
-      Alert.alert(
-        'Booking Failed',
-        error.message || 'Failed to schedule appointment. Please try again.',
-        [{ text: 'OK' }]
-      );
-    },
-  });
+  const { createAppointmentAsync: createAppointment, isCreating } =
+    useCreateAppointment({
+      onSuccess: (appointment) => {
+        console.log("✅ Appointment created successfully!", appointment);
+        setShowSuccessModal(true);
+      },
+      onError: (error) => {
+        console.error("❌ Appointment creation failed:", error);
+        Alert.alert(
+          "Booking Failed",
+          error.message || "Failed to schedule appointment. Please try again.",
+          [{ text: "OK" }],
+        );
+      },
+    });
 
+  // Track the currently visible calendar month/year (for calendar nav only)
+  const initialDate = new Date();
+  const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth() + 1);
+  const [currentYear, setCurrentYear] = useState(initialDate.getFullYear());
 
-  const currentDate = new Date();
-  const [currentMonth] = useState(currentDate.getMonth() + 1);
-  const [currentYear] = useState(currentDate.getFullYear());
-
-  // Fetch monthly availability from API
+  // Weekly availability only — calendar dates and slots come from weeklySlots
   const {
-    availability: monthlyAvailability,
+    availability: weeklyAvailability,
     isLoading,
-    isError
-  } = useMonthlyAvailability({
-    mentorId: mentorData?.id || null,
-    month: currentMonth,
-    year: currentYear,
-  });
-
-  // Fetch mentor settings from weekly availability
-  const { availability: settings } = useWeeklyAvailability(mentorData?.id || null);
+    isError,
+  } = useWeeklyAvailability(mentorData?.id || null);
+  const settings = weeklyAvailability;
+  const weeklySlots = weeklyAvailability?.weeklySlots ?? [];
 
   // Fetch mentor appointments to check max bookings
   const { appointments: mentorAppointments } = useAppointments({ mentorId: mentorData?.id || undefined });
@@ -100,68 +96,63 @@ const ScheduleMeeting = () => {
   const [showMeetingOptions, setShowMeetingOptions] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Transform API availability to available dates array
-  const availableDates = useMemo(() => {
-    if (!monthlyAvailability) return [];
-    return monthlyAvailability
-      .filter((day: any) => {
-        const raw = Array.isArray(day.rawSlots) ? day.rawSlots : [];
-        const slots = Array.isArray(day.slots) ? day.slots : [];
-        return raw.length > 0 || slots.length > 0;
-      })
-      .map((day: any) => {
-        const dateValue = day.date;
-        // Normalize ISO datetime to YYYY-MM-DD for calendar
-        if (typeof dateValue === "string" && dateValue.includes("T")) {
-          return dateValue.split("T")[0];
-        }
-        return dateValue;
-      });
-  }, [monthlyAvailability]);
+  // Normalize API date to YYYY-MM-DD
+  const toDateString = (value: string) =>
+    new Date(value).toISOString().slice(0, 10);
 
-  // Get days of week that have availability for recurring pattern
+  // Build availableDates ONLY from weeklySlots.rawSlots (no monthly API)
+  const availableDates = useMemo(() => {
+    if (!weeklySlots) return [];
+    return weeklySlots
+      .filter((day: any) => Array.isArray(day?.rawSlots) && day.rawSlots.length > 0)
+      .map((day: any) => toDateString(day.date));
+  }, [weeklySlots]);
+
+  useEffect(() => {
+    if (__DEV__) {
+      console.log("weeklySlots:", weeklySlots);
+      console.log("availableDates:", availableDates);
+    }
+  }, [weeklySlots, availableDates]);
+
+  // Days of week that have availability (for calendar recurring pattern)
   const availableDaysOfWeek = useMemo(() => {
-    if (!monthlyAvailability) return [];
+    if (!weeklySlots) return [];
     const daysSet = new Set(
-      monthlyAvailability
-        .filter((day: any) => {
-          const raw = Array.isArray(day.rawSlots) ? day.rawSlots : [];
-          const slots = Array.isArray(day.slots) ? day.slots : [];
-          return raw.length > 0 || slots.length > 0;
-        })
-        .map((day: any) => day.day),
+      weeklySlots
+        .filter(
+          (day: any) =>
+            Array.isArray(day?.rawSlots) && day.rawSlots.length > 0,
+        )
+        .map((day: any) => new Date(day.date).getDay()),
     );
     return Array.from(daysSet);
-  }, [monthlyAvailability]);
+  }, [weeklySlots]);
 
-  // Transform API slots for selected date
-  const getTimeSlotsForDate = useCallback((dateString: string): TimeSlot[] => {
-    if (!dateString || !monthlyAvailability) return [];
+  // Get time slots for selected date from weeklySlots/rawSlots
+  const getTimeSlotsForDate = useCallback(
+    (dateString: string): TimeSlot[] => {
+      if (!weeklySlots) return [];
 
-    const dayData = monthlyAvailability.find((day: any) => {
-      const dateValue = day.date;
-      if (typeof dateValue === "string" && dateValue.includes("T")) {
-        return dateValue.split("T")[0] === dateString;
-      }
-      return dateValue === dateString;
-    }) as any;
+      const dayData = weeklySlots.find(
+        (day: any) => toDateString(day.date) === dateString,
+      ) as any;
+      const slots: APITimeSlot[] = Array.isArray(dayData?.rawSlots)
+        ? dayData.rawSlots
+        : [];
 
-    if (!dayData) return [];
+      if (slots.length === 0) return [];
 
-    const rawSlots = Array.isArray(dayData.rawSlots) ? dayData.rawSlots as APITimeSlot[] : [];
-    const slotsFromApi = Array.isArray(dayData.slots) ? dayData.slots as APITimeSlot[] : [];
-    const slots = rawSlots.length > 0 ? rawSlots : slotsFromApi;
-
-    if (!slots || slots.length === 0) return [];
-
-    return slots.map((slot, index) => ({
-      id: slot._id || `${dateString}-${index}`,
-      startTime: `${slot.startTime} ${slot.startPeriod}`,
-      endTime: `${slot.endTime} ${slot.endPeriod}`,
-      label: formatTimeSlot(slot),
-      apiSlot: slot,
-    }));
-  }, [monthlyAvailability]);
+      return slots.map((slot: APITimeSlot, index: number) => ({
+        id: slot._id || `${dateString}-${index}`,
+        startTime: `${slot.startTime} ${slot.startPeriod}`,
+        endTime: `${slot.endTime} ${slot.endPeriod}`,
+        label: formatTimeSlot(slot),
+        apiSlot: slot,
+      }));
+    },
+    [weeklySlots],
+  );
 
   const timeSlots = useMemo(() =>
     getTimeSlotsForDate(selectedDate),
@@ -174,6 +165,13 @@ const ScheduleMeeting = () => {
   useEffect(() => {
     setSelectedTime(null);
   }, [selectedDate]);
+
+  // When availability arrives, default the selected date to the first available one
+  useEffect(() => {
+    if (!selectedDate && availableDates.length > 0) {
+      setSelectedDate(availableDates[0]);
+    }
+  }, [availableDates, selectedDate]);
 
   const handleSchedule = useCallback(async () => {
     if (!isScheduleValid || !selectedTime || !user?.id || !mentorData?.id) {
@@ -439,8 +437,11 @@ const ScheduleMeeting = () => {
     </View>
   );
 
+  // Wait for mentor and weekly availability (no monthly dependency)
+  const isAvailabilityLoading = !mentorData?.id || isLoading;
+
   // Loading state
-  if (isLoading) {
+  if (isAvailabilityLoading) {
     return (
       <LinearGradient
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
@@ -511,7 +512,7 @@ const ScheduleMeeting = () => {
                     <View style={styles.noAvailabilityContainer}>
                       <Ionicons name="calendar-outline" size={48} color="rgba(255, 255, 255, 0.3)" />
                       <Text style={styles.noAvailabilityText}>
-                        No availability for this month
+                        No availability
                       </Text>
                       <Text style={styles.noAvailabilitySubText}>
                         Please check back later or contact the mentor
@@ -523,6 +524,10 @@ const ScheduleMeeting = () => {
                         <GradientCalendar
                           selected={selectedDate}
                           setSelected={setSelectedDate}
+                          onMonthChange={(month, year) => {
+                            setCurrentMonth(month);
+                            setCurrentYear(year);
+                          }}
                           recurringAvailability={{
                             type: 'weekly',
                             daysOfWeek: availableDaysOfWeek,

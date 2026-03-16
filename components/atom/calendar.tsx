@@ -22,6 +22,7 @@ export interface RecurringAvailability {
 interface GradientCalendarProps {
   selected: string;
   setSelected: (date: string) => void;
+  onMonthChange?: (month: number, year: number) => void;
   containerStyle?: ViewStyle;
   headerTextStyle?: TextStyle;
   gradientColors?: string[];
@@ -65,6 +66,7 @@ const formatDate = (date: Date) => {
 const GradientCalendar: React.FC<GradientCalendarProps> = ({
   selected,
   setSelected,
+  onMonthChange,
   containerStyle,
   gradientColors = ["#176192", "#1D548D", "#0d2847"],
   availableDates,
@@ -86,8 +88,6 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
   /* ✅ FIXED TODAY (no timezone bug) */
   const today = formatDate(new Date());
 
-  console.log(currentMonth, typeof currentMonth);
-
   /* ============================= */
   /* Sync month when selected changes */
   /* ============================= */
@@ -97,7 +97,8 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
   }, [selected]);
 
   /* ============================= */
-  /* Availability Logic (UNCHANGED) */
+  /* Date enabling: when availableDates is provided, use ONLY availableDates.includes(dateStr).
+   * No filtering by current month/year — any date in availableDates is enabled. */
   /* ============================= */
 
   const isDateAvailable = (dateStr: string): boolean => {
@@ -106,7 +107,12 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     if (disablePastDates && dateStr < today) return false;
 
     if (availableDates && availableDates.length > 0) {
-      return availableDates.includes(dateStr);
+      const enabled = availableDates.includes(dateStr);
+      if (__DEV__) {
+        console.log("calendar date:", dateStr);
+        console.log("enabled:", enabled);
+      }
+      return enabled;
     }
 
     if (recurringAvailability) {
@@ -152,6 +158,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
       const safePrev = safeParseDate(prev);
       const newDate = new Date(safePrev);
       newDate.setMonth(newDate.getMonth() - 1);
+      onMonthChange?.(newDate.getMonth() + 1, newDate.getFullYear());
       return newDate;
     });
   };
@@ -161,6 +168,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
       const safePrev = safeParseDate(prev);
       const newDate = new Date(safePrev);
       newDate.setMonth(newDate.getMonth() + 1);
+      onMonthChange?.(newDate.getMonth() + 1, newDate.getFullYear());
       return newDate;
     });
   };
