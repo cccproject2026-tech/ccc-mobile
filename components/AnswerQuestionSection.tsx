@@ -14,13 +14,6 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
-interface MentorReviewSection {
-    sectionId: string;
-    title: string;
-    score?: number;
-    recommendations: string[];
-}
-
 interface AssessmentQuestionsSectionProps {
     assessment: Assessment;
     assessmentId: string;
@@ -32,7 +25,19 @@ interface AssessmentQuestionsSectionProps {
     // When true, show mentor review UI (Responses & Recommendations) after final section
     reviewMode?: boolean;
     /** Mentor review data per section (score + recommendations) from GET answers. */
-    mentorReviewSections?: MentorReviewSection[];
+    mentorReviewSections?: Array<{
+        sectionId: string;
+        title: string;
+        score?: number;
+        recommendations: string[];
+    }>;
+    /**
+     * Raw sections array from the answers API (GET /assessment/{id}/answers/{userId}).
+     * Used only to decide if CDP is ready, so pastor doesn't see CDP based on template-level recommendations.
+     */
+    submittedSections?: Array<{
+        recommendations?: string[];
+    }>;
     // Called when mentor sends Customized Development Plans (CDP)
     onSendCdp?: (payload: {
         recommendations: Array<{
@@ -51,6 +56,7 @@ export default function AssessmentQuestionsSection({
     onClose,
     reviewMode = false,
     mentorReviewSections,
+    submittedSections,
     onSendCdp,
 }: AssessmentQuestionsSectionProps) {
     const previousResponse = useAssessmentStore(
@@ -73,13 +79,12 @@ export default function AssessmentQuestionsSection({
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
 
+    // CDP is ready only when the ANSWERS API contains recommendations (not the assessment template).
     const hasCdpRecommendations =
-        !!mentorReviewSections &&
-        mentorReviewSections.some(
-            (section) => Array.isArray(section.recommendations) && section.recommendations.length > 0,
-        );
+        submittedSections?.some(
+            (section) => section.recommendations?.length > 0,
+        ) ?? false;
 
-    // Show CDP as ready when we have recommendations (from GET answers). Works for both pastor (view) and mentor (review).
     const showCdpAsReady = hasCdpRecommendations;
 
     // In view mode, sync any incoming initial answers into local state

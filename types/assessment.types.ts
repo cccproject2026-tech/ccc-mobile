@@ -193,6 +193,8 @@ export interface SubmittedAnswersResponse {
     _id: string;
     assessmentId: string;
     userId: string;
+    /** True only after mentor has sent CDP via POST send-recommendation; pastor sees CDP only when this is true. */
+    recommendationsSentByMentor?: boolean;
     preSurveyAnswers?: Array<{
         questionText: string;
         answer: string;

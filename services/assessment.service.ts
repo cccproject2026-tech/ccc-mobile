@@ -153,17 +153,17 @@ export const assessmentService = {
       recommendations: string[];
     },
   ): Promise<any> => {
-    console.log(
-      "📤 Sending recommendation for assessment:",
+    const url = ENDPOINTS.ASSESSMENTS.SEND_RECOMMENDATION(assessmentId);
+    console.log("[assessment.service] sendRecommendation", {
+      url,
       assessmentId,
-      "section:",
-      payload.sectionId,
-    );
-    const response = await apiClient.post(
-      ENDPOINTS.ASSESSMENTS.SEND_RECOMMENDATION(assessmentId),
       payload,
-    );
-    console.log("📥 Recommendation sent:", response.data);
+    });
+    const response = await apiClient.post(url, payload);
+    console.log("[assessment.service] sendRecommendation response", {
+      status: response.status,
+      data: response.data,
+    });
     return response.data;
   },
 };

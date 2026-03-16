@@ -224,18 +224,26 @@ export default function AnswerQuestionPage() {
     }, 300);
   };
 
-  // CDP sections for pastor view mode (Level + recommendations from answers API)
+  // CDP sections for pastor view mode (score + recommendations from ANSWERS API only)
   const cdpSectionsForView = useMemo(() => {
-    if (!assessment || !data?.sections || !submittedAnswers?.data?.sections) return undefined;
-    return data.sections.map((apiSection, index) => {
-      const submitted = submittedAnswers.data.sections.find(
-        (s) => s.sectionId === apiSection._id,
+    if (!assessment || !data?.sections || !submittedAnswers?.data?.sections) {
+      return undefined;
+    }
+
+    // Drive CDP content purely from the ANSWERS API; use assessment only for titles.
+    return submittedAnswers.data.sections.map((submittedSection) => {
+      const apiSectionIndex = data.sections.findIndex(
+        (s) => s._id === submittedSection.sectionId,
       );
+      const apiSection = apiSectionIndex >= 0 ? data.sections[apiSectionIndex] : undefined;
       return {
-        sectionId: apiSection._id,
-        title: assessment.sections[index]?.title ?? apiSection.title,
-        score: submitted?.sectionScore,
-        recommendations: submitted?.recommendations ?? [],
+        sectionId: submittedSection.sectionId,
+        title:
+          assessment.sections[apiSectionIndex]?.title ??
+          apiSection?.title ??
+          "Section",
+        score: submittedSection.sectionScore,
+        recommendations: submittedSection.recommendations ?? [],
       };
     });
   }, [assessment, data?.sections, submittedAnswers?.data?.sections]);
@@ -361,6 +369,7 @@ export default function AnswerQuestionPage() {
           isViewMode={isViewMode}
           initialSectionAnswers={isViewMode ? viewSectionAnswers : undefined}
           mentorReviewSections={cdpSectionsForView}
+          submittedSections={submittedAnswers?.data?.sections}
           onSubmit={handleAssessmentSubmit}
           onClose={() => {
             router.back();

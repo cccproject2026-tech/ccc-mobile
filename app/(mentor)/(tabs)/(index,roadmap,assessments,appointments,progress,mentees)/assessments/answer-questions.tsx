@@ -178,27 +178,49 @@ export default function AnswerQuestionPage() {
       selectedItems: Array<{ level: number; text: string }>;
     }>;
   }) => {
-    if (!targetUserId || !assessmentId) return;
+    console.log("[Send CDP] handleSendCdp called", {
+      targetUserId,
+      assessmentId,
+      sectionsCount: payload.recommendations?.length ?? 0,
+      payload,
+    });
+    // If no recommendations were selected, do not call the API or show success.
+    if (!payload.recommendations || payload.recommendations.length === 0) {
+      console.warn("[Send CDP] No sections with selected recommendations. Aborting send.");
+      Alert.alert(
+        "No recommendations selected",
+        "Please select at least one recommendation before sending the CDP.",
+      );
+      return;
+    }
+    if (!targetUserId || !assessmentId) {
+      console.warn("[Send CDP] Aborted: missing targetUserId or assessmentId", {
+        targetUserId,
+        assessmentId,
+      });
+      return;
+    }
     const id = assessmentId as string;
     const userId = targetUserId as string;
     try {
+      const apiPayloads = payload.recommendations.map((section) => ({
+        assessmentId: id,
+        payload: {
+          userId,
+          sectionId: section.sectionId,
+          recommendations: section.selectedItems.map((item) => item.text),
+        },
+      }));
+      console.log("[Send CDP] Calling API for", apiPayloads.length, "section(s)", apiPayloads);
       await Promise.all(
-        payload.recommendations.map((section) =>
-          sendRecommendation({
-            assessmentId: id,
-            payload: {
-              userId,
-              sectionId: section.sectionId,
-              recommendations: section.selectedItems.map((item) => item.text),
-            },
-          }),
-        ),
+        apiPayloads.map((p) => sendRecommendation(p)),
       );
+      console.log("[Send CDP] All recommendations sent successfully");
       setSuccessMessage("Customized Development Plans sent successfully.");
       setShowSuccessModal(true);
       setTimeout(() => router.back(), 2000);
     } catch (error) {
-      console.error("Failed to send CDP recommendations:", error);
+      console.error("[Send CDP] Failed to send recommendations:", error);
       Alert.alert(
         "Error",
         "Failed to send recommendations. Please try again.",
@@ -299,20 +321,28 @@ export default function AnswerQuestionPage() {
     }, 2000);
   };
 
-  // Build mentor review sections from answers API (score + recommendations per section)
+  // Build mentor review sections from ANSWERS API (score + recommendations per section)
   const mentorReviewSections = useMemo(() => {
-    if (!assessment || !data?.sections || !submittedAnswers?.data?.sections)
+    if (!assessment || !data?.sections || !submittedAnswers?.data?.sections) {
       return undefined;
+    }
     console.log("Answer Sections:", submittedAnswers?.data?.sections);
-    return data.sections.map((apiSection, index) => {
-      const submitted = submittedAnswers.data.sections.find(
-        (s) => s.sectionId === apiSection._id,
+
+    // Drive mentor review sections purely from ANSWERS API; use assessment only for titles.
+    return submittedAnswers.data.sections.map((submittedSection) => {
+      const apiSectionIndex = data.sections.findIndex(
+        (s) => s._id === submittedSection.sectionId,
       );
+      const apiSection = apiSectionIndex >= 0 ? data.sections[apiSectionIndex] : undefined;
+
       return {
-        sectionId: apiSection._id,
-        title: assessment.sections[index]?.title ?? apiSection.title,
-        score: submitted?.sectionScore,
-        recommendations: submitted?.recommendations ?? [],
+        sectionId: submittedSection.sectionId,
+        title:
+          assessment.sections[apiSectionIndex]?.title ??
+          apiSection?.title ??
+          "Section",
+        score: submittedSection.sectionScore,
+        recommendations: submittedSection.recommendations ?? [],
       };
     });
   }, [assessment, data?.sections, submittedAnswers?.data?.sections]);
@@ -387,6 +417,7 @@ export default function AnswerQuestionPage() {
           initialSectionAnswers={isViewMode ? viewSectionAnswers : undefined}
           reviewMode={isViewMode && !!targetUserId}
           mentorReviewSections={mentorReviewSections}
+          submittedSections={submittedAnswers?.data?.sections}
           onSubmit={handleAssessmentSubmit}
           onClose={() => {
             router.back();

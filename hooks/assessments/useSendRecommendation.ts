@@ -15,14 +15,33 @@ export const useSendRecommendation = () => {
         sectionId: string;
         recommendations: string[];
       };
-    }) => assessmentService.sendRecommendation(assessmentId, payload),
+    }) => {
+      console.log("[useSendRecommendation] mutationFn called", {
+        assessmentId,
+        payload,
+      });
+      return assessmentService.sendRecommendation(assessmentId, payload);
+    },
 
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
+      console.log("[useSendRecommendation] onSuccess", {
+        assessmentId: variables.assessmentId,
+        sectionId: variables.payload.sectionId,
+        response: data,
+      });
       queryClient.invalidateQueries({
         queryKey: ["assessment", variables.assessmentId],
       });
       queryClient.invalidateQueries({
         queryKey: ["answers", variables.assessmentId],
+      });
+    },
+
+    onError: (error, variables) => {
+      console.error("[useSendRecommendation] onError", {
+        assessmentId: variables.assessmentId,
+        sectionId: variables.payload.sectionId,
+        error,
       });
     },
   });
