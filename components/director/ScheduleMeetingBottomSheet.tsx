@@ -163,7 +163,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const {
       data: usersData,
       isLoading: isLoadingUsers,
-    } = useUsersByRole(selectedRole, 20);
+    } = useUsersByRole(selectedRole, 200);
 
     const allUsers = useMemo(() => {
       if (!usersData) {
@@ -292,8 +292,18 @@ const ScheduleMeetingBottomSheet = forwardRef<
         return [];
       }
       const dates = monthlyAvailability
-        .filter((day) => day.slots.length > 0)
-        .map((day) => day.date);
+        .filter((day: any) => {
+          const raw = Array.isArray(day.rawSlots) ? day.rawSlots : [];
+          const slots = Array.isArray(day.slots) ? day.slots : [];
+          return raw.length > 0 || slots.length > 0;
+        })
+        .map((day: any) => {
+          const dateValue = day.date;
+          if (typeof dateValue === "string" && dateValue.includes("T")) {
+            return dateValue.split("T")[0];
+          }
+          return dateValue;
+        });
       console.log("📅 Available dates:", dates);
       return dates;
     }, [monthlyAvailability]);
@@ -303,8 +313,12 @@ const ScheduleMeetingBottomSheet = forwardRef<
       if (!monthlyAvailability) return [];
       const daysSet = new Set(
         monthlyAvailability
-          .filter((day) => day.slots.length > 0)
-          .map((day) => day.day),
+          .filter((day: any) => {
+            const raw = Array.isArray(day.rawSlots) ? day.rawSlots : [];
+            const slots = Array.isArray(day.slots) ? day.slots : [];
+            return raw.length > 0 || slots.length > 0;
+          })
+          .map((day: any) => day.day),
       );
       return Array.from(daysSet);
     }, [monthlyAvailability]);
@@ -314,12 +328,27 @@ const ScheduleMeetingBottomSheet = forwardRef<
       (dateString: string): TimeSlot[] => {
         if (!dateString || !monthlyAvailability) return [];
 
-        const dayData = monthlyAvailability.find(
-          (day) => day.date === dateString,
-        );
-        if (!dayData || dayData.slots.length === 0) return [];
+        const dayData = monthlyAvailability.find((day: any) => {
+          const dateValue = day.date;
+          if (typeof dateValue === "string" && dateValue.includes("T")) {
+            return dateValue.split("T")[0] === dateString;
+          }
+          return dateValue === dateString;
+        }) as any;
 
-        return dayData.slots.map((slot, index) => ({
+        if (!dayData) return [];
+
+        const rawSlots = Array.isArray(dayData.rawSlots)
+          ? (dayData.rawSlots as APITimeSlot[])
+          : [];
+        const slotsFromApi = Array.isArray(dayData.slots)
+          ? (dayData.slots as APITimeSlot[])
+          : [];
+        const slots = rawSlots.length > 0 ? rawSlots : slotsFromApi;
+
+        if (!slots || slots.length === 0) return [];
+
+        return slots.map((slot, index) => ({
           id: slot._id || `${dateString}-${index}`,
           startTime: `${slot.startTime} ${slot.startPeriod}`,
           endTime: `${slot.endTime} ${slot.endPeriod}`,

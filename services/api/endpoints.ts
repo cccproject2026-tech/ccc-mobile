@@ -106,6 +106,8 @@ export const ENDPOINTS = {
     SET_AVAILABILITY: "/appointments/availability",
     RESCHEDULE: (appointmentId: string) =>
       `/appointments/${appointmentId}/reschedule`,
+    CANCEL: (appointmentId: string) =>
+      `/appointments/${appointmentId}/cancel`,
   },
 
   ROADMAPS: {

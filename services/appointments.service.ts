@@ -85,8 +85,24 @@ export const appointmentService = {
     const response = await apiClient.get<GetMonthlyAvailabilityApiResponse>(
       ENDPOINTS.APPOINTMENTS.GET_MONTHLY_AVAILABILITY(mentorId, month, year),
     );
-    console.log("Monthly availability params:", mentorId, month, year);
-    return response.data.data;
+    console.log(
+      "Monthly availability params:",
+      mentorId,
+      month,
+      year,
+      " raw response:",
+      response.data,
+    );
+
+    const body: any = response.data;
+    // Support both { success, data: [...] } and plain [...] shapes
+    if (Array.isArray(body)) {
+      return body as MonthlyAvailabilityDay[];
+    }
+    if (Array.isArray(body?.data)) {
+      return body.data as MonthlyAvailabilityDay[];
+    }
+    return [];
   },
 
   /**
@@ -175,6 +191,24 @@ export const appointmentService = {
         : response.data.data;
     } catch (error) {
       console.error("Error rescheduling appointment:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Cancel an existing appointment
+   */
+  cancelAppointment: async (appointmentId: string): Promise<Appointment> => {
+    try {
+      const response = await apiClient.patch<AppointmentResponse>(
+        ENDPOINTS.APPOINTMENTS.CANCEL(appointmentId),
+        {},
+      );
+      return Array.isArray(response.data.data)
+        ? response.data.data[0]
+        : response.data.data;
+    } catch (error) {
+      console.error("Error canceling appointment:", error);
       throw error;
     }
   },

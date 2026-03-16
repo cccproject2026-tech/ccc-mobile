@@ -7,7 +7,10 @@ import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { useAppointments } from "@/hooks/appointments/useAppointments";
+import {
+  useAppointments,
+  useCancelAppointment,
+} from "@/hooks/appointments/useAppointments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { Mentor } from "@/hooks/mentors/useMentors";
 import { useAuthStore } from "@/stores/auth.store";
@@ -66,6 +69,11 @@ const Appointments: React.FC = () => {
   } = useAppointments({
     mentorId: user?.id,
   });
+
+  const {
+    mutate: cancelAppointment,
+    isPending: isCancelling,
+  } = useCancelAppointment();
 
   // Fetch only mentees assigned to this mentor
   const {
@@ -294,6 +302,16 @@ const Appointments: React.FC = () => {
   };
 
   const handleCancel = (appointment: any) => {
+    console.log("Appointment before cancel:", appointment);
+
+    if (appointment?.status !== "scheduled") {
+      Alert.alert(
+        "Cannot Cancel",
+        "Only scheduled meetings can be cancelled.",
+      );
+      return;
+    }
+
     Alert.alert(
       "Cancel Meeting",
       "Are you sure you want to cancel this meeting?",
@@ -303,12 +321,25 @@ const Appointments: React.FC = () => {
           text: "Yes",
           style: "destructive",
           onPress: () => {
-            // TODO: Implement cancel appointment API call
-            console.log("Meeting cancelled:", appointment);
-            setResponseModal({
-              visible: true,
-              message: "Meeting has been Canceled",
-              buttonText: "OK",
+            if (!appointment?.id) {
+              console.warn("Missing appointment id for cancel");
+              return;
+            }
+
+            cancelAppointment(appointment.id, {
+              onSuccess: () => {
+                setResponseModal({
+                  visible: true,
+                  message: "Meeting has been Canceled",
+                  buttonText: "OK",
+                });
+              },
+              onError: () => {
+                Alert.alert(
+                  "Error",
+                  "Failed to cancel the meeting. Please try again.",
+                );
+              },
             });
           },
         },
@@ -520,51 +551,61 @@ const Appointments: React.FC = () => {
                           </Text>
                         </View>
                       ) : (
-                        selectedDateAppointments.map((appointment, i) => (
-                          <AppointmentCard
-                            key={appointment.id || i}
-                            date={appointment.date}
-                            time={appointment.time}
-                            tz={appointment.tz}
-                            person={appointment.person}
-                            role={appointment.role}
-                            mode={appointment.mode}
-                            platformIcon={appointment.icon}
-                            menuItems={[
-                              {
-                                key: "reschedule",
-                                title: "Reschedule Meeting",
-                                icon: {
-                                  ios: "calendar.badge.clock",
-                                  android: "ic_event_available",
-                                },
-                                onSelect: () =>
-                                  handleReschedule(appointment.appointment),
+                        selectedDateAppointments.map((appointment, i) => {
+                          const isScheduled =
+                            appointment.appointment?.status === "scheduled";
+
+                          const menuItems = [
+                            {
+                              key: "reschedule",
+                              title: "Reschedule Meeting",
+                              icon: {
+                                ios: "calendar.badge.clock",
+                                android: "ic_event_available",
                               },
-                              {
-                                key: "change_mode",
-                                title: "Change Mode",
-                                icon: {
-                                  ios: "arrow.2.circlepath",
-                                  android: "ic_sync",
-                                },
-                                onSelect: () =>
-                                  handleChangeMode(appointment.appointment),
+                              onSelect: () =>
+                                handleReschedule(appointment.appointment),
+                            },
+                            {
+                              key: "change_mode",
+                              title: "Change Mode",
+                              icon: {
+                                ios: "arrow.2.circlepath",
+                                android: "ic_sync",
                               },
-                              {
-                                key: "cancel",
-                                title: "Cancel Meeting",
-                                destructive: true,
-                                icon: {
-                                  ios: "trash",
-                                  android: "ic_menu_delete",
-                                },
-                                onSelect: () =>
-                                  handleCancel(appointment.appointment),
+                              onSelect: () =>
+                                handleChangeMode(appointment.appointment),
+                            },
+                          ];
+
+                          if (isScheduled) {
+                            menuItems.push({
+                              key: "cancel",
+                              title: "Cancel Meeting",
+                              destructive: true,
+                              icon: {
+                                ios: "trash",
+                                android: "ic_menu_delete",
                               },
-                            ]}
-                          />
-                        ))
+                              onSelect: () =>
+                                handleCancel(appointment.appointment),
+                            });
+                          }
+
+                          return (
+                            <AppointmentCard
+                              key={appointment.id || i}
+                              date={appointment.date}
+                              time={appointment.time}
+                              tz={appointment.tz}
+                              person={appointment.person}
+                              role={appointment.role}
+                              mode={appointment.mode}
+                              platformIcon={appointment.icon}
+                              menuItems={menuItems}
+                            />
+                          );
+                        })
                       )}
                     </View>
                   </View>
@@ -620,48 +661,58 @@ const Appointments: React.FC = () => {
                             </Text>
                           </View>
                         ) : (
-                          allUpcomingAppointments?.map((appointment, i) => (
-                            <AppointmentCard
-                              key={appointment?.id || i}
-                              date={appointment?.date}
-                              time={appointment?.time}
-                              tz={appointment?.tz}
-                              person={appointment?.person}
-                              role={appointment?.role}
-                              mode={appointment?.mode}
-                              platformIcon={appointment?.icon}
-                              menuItems={[
-                                {
-                                  key: "reschedule",
-                                  title: "Reschedule Meeting",
-                                  icon: {
-                                    ios: "calendar.badge.clock",
-                                    android: "ic_event_available",
-                                  },
-                                  onSelect: () => handleReschedule(appointment),
+                          allUpcomingAppointments?.map((appointment, i) => {
+                            const isScheduled =
+                              appointment?.appointment?.status === "scheduled";
+
+                            const menuItems = [
+                              {
+                                key: "reschedule",
+                                title: "Reschedule Meeting",
+                                icon: {
+                                  ios: "calendar.badge.clock",
+                                  android: "ic_event_available",
                                 },
-                                {
-                                  key: "change_mode",
-                                  title: "Change Mode",
-                                  icon: {
-                                    ios: "arrow.2.circlepath",
-                                    android: "ic_sync",
-                                  },
-                                  onSelect: () => handleChangeMode(appointment),
+                                onSelect: () => handleReschedule(appointment),
+                              },
+                              {
+                                key: "change_mode",
+                                title: "Change Mode",
+                                icon: {
+                                  ios: "arrow.2.circlepath",
+                                  android: "ic_sync",
                                 },
-                                {
-                                  key: "cancel",
-                                  title: "Cancel Meeting",
-                                  destructive: true,
-                                  icon: {
-                                    ios: "trash",
-                                    android: "ic_menu_delete",
-                                  },
-                                  onSelect: () => handleCancel(appointment),
+                                onSelect: () => handleChangeMode(appointment),
+                              },
+                            ];
+
+                            if (isScheduled) {
+                              menuItems.push({
+                                key: "cancel",
+                                title: "Cancel Meeting",
+                                destructive: true,
+                                icon: {
+                                  ios: "trash",
+                                  android: "ic_menu_delete",
                                 },
-                              ]}
-                            />
-                          ))
+                                onSelect: () => handleCancel(appointment),
+                              });
+                            }
+
+                            return (
+                              <AppointmentCard
+                                key={appointment?.id || i}
+                                date={appointment?.date}
+                                time={appointment?.time}
+                                tz={appointment?.tz}
+                                person={appointment?.person}
+                                role={appointment?.role}
+                                mode={appointment?.mode}
+                                platformIcon={appointment?.icon}
+                                menuItems={menuItems}
+                              />
+                            );
+                          })
                         )}
                       </View>
                     </View>

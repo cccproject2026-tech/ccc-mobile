@@ -104,8 +104,19 @@ const ScheduleMeeting = () => {
   const availableDates = useMemo(() => {
     if (!monthlyAvailability) return [];
     return monthlyAvailability
-      .filter(day => day.slots.length > 0)
-      .map(day => day.date);
+      .filter((day: any) => {
+        const raw = Array.isArray(day.rawSlots) ? day.rawSlots : [];
+        const slots = Array.isArray(day.slots) ? day.slots : [];
+        return raw.length > 0 || slots.length > 0;
+      })
+      .map((day: any) => {
+        const dateValue = day.date;
+        // Normalize ISO datetime to YYYY-MM-DD for calendar
+        if (typeof dateValue === "string" && dateValue.includes("T")) {
+          return dateValue.split("T")[0];
+        }
+        return dateValue;
+      });
   }, [monthlyAvailability]);
 
   // Get days of week that have availability for recurring pattern
@@ -113,8 +124,12 @@ const ScheduleMeeting = () => {
     if (!monthlyAvailability) return [];
     const daysSet = new Set(
       monthlyAvailability
-        .filter(day => day.slots.length > 0)
-        .map(day => day.day)
+        .filter((day: any) => {
+          const raw = Array.isArray(day.rawSlots) ? day.rawSlots : [];
+          const slots = Array.isArray(day.slots) ? day.slots : [];
+          return raw.length > 0 || slots.length > 0;
+        })
+        .map((day: any) => day.day),
     );
     return Array.from(daysSet);
   }, [monthlyAvailability]);
@@ -123,16 +138,28 @@ const ScheduleMeeting = () => {
   const getTimeSlotsForDate = useCallback((dateString: string): TimeSlot[] => {
     if (!dateString || !monthlyAvailability) return [];
 
-    const dayData = monthlyAvailability.find(day => day.date === dateString);
-    if (!dayData || dayData.slots.length === 0) return [];
+    const dayData = monthlyAvailability.find((day: any) => {
+      const dateValue = day.date;
+      if (typeof dateValue === "string" && dateValue.includes("T")) {
+        return dateValue.split("T")[0] === dateString;
+      }
+      return dateValue === dateString;
+    }) as any;
 
-    // ✅ This is correct - you're using the API slots directly
-    return dayData.slots.map((slot, index) => ({
+    if (!dayData) return [];
+
+    const rawSlots = Array.isArray(dayData.rawSlots) ? dayData.rawSlots as APITimeSlot[] : [];
+    const slotsFromApi = Array.isArray(dayData.slots) ? dayData.slots as APITimeSlot[] : [];
+    const slots = rawSlots.length > 0 ? rawSlots : slotsFromApi;
+
+    if (!slots || slots.length === 0) return [];
+
+    return slots.map((slot, index) => ({
       id: slot._id || `${dateString}-${index}`,
       startTime: `${slot.startTime} ${slot.startPeriod}`,
       endTime: `${slot.endTime} ${slot.endPeriod}`,
       label: formatTimeSlot(slot),
-      apiSlot: slot,  // ✅ Keep the original slot
+      apiSlot: slot,
     }));
   }, [monthlyAvailability]);
 

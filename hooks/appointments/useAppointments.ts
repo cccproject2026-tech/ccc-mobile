@@ -1,18 +1,25 @@
 import { appointmentService } from "@/services/appointments.service";
 import { AppointmentStatus } from "@/types/appointment.types";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface UseAppointmentsOptions {
   userId?: string;
   mentorId?: string;
 }
 
+export const appointmentKeys = {
+  all: ["appointments"] as const,
+  user: (userId: string) => [...appointmentKeys.all, "user", userId] as const,
+  mentor: (mentorId: string) =>
+    [...appointmentKeys.all, "mentor", mentorId] as const,
+};
+
 export const useAppointments = (options?: UseAppointmentsOptions) => {
   const { userId, mentorId } = options || {};
 
   // Fetch user appointments
   const userQuery = useQuery({
-    queryKey: ["appointments", "user", userId],
+    queryKey: appointmentKeys.user(userId || ""),
     queryFn: () => appointmentService.getUserAppointments(userId!),
     enabled: !!userId,
     staleTime: 20000, // 2 seconds (was 5 minutes)
@@ -20,7 +27,7 @@ export const useAppointments = (options?: UseAppointmentsOptions) => {
 
   // Fetch mentor appointments
   const mentorQuery = useQuery({
-    queryKey: ["appointments", "mentor", mentorId],
+    queryKey: appointmentKeys.mentor(mentorId || ""),
     queryFn: () => appointmentService.getMentorAppointments(mentorId!),
     enabled: !!mentorId,
     staleTime: 20000, // 2 seconds (was 5 minutes)
@@ -69,4 +76,16 @@ export const useAppointments = (options?: UseAppointmentsOptions) => {
     // Refetch
     refetch: userId ? userQuery.refetch : mentorQuery.refetch,
   };
+};
+
+export const useCancelAppointment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (appointmentId: string) =>
+      appointmentService.cancelAppointment(appointmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+    },
+  });
 };
