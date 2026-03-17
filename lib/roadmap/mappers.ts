@@ -89,12 +89,11 @@ export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
 
     const allCompleted = completed === total && total > 0;
     const hasProgress = (status === 'in-progress' || status === 'due') && total > 0;
-
     return {
         image: roadmap.imageUrl,
         title: roadmap.name || 'Untitled Roadmap',
         description: roadmap.roadMapDetails,
-        completionTime: `Completion Time\nMonths ${min}${min !== max ? ` – ${max}` : ''}`,
+        completionTime: `Completion Time\nMonths ${min} - ${max}`,
         status,
         completedDate: roadmap.completedOn ? formatDate(roadmap.completedOn) : undefined,
         taskProgress: hasProgress ? { completed, total } : undefined,

@@ -10,6 +10,9 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -125,6 +128,10 @@ export default function QueriesScreen() {
                 <TopBar role="pastor" showUserName />
             </View>
 
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
             {/* HEADER */}
             <View
                 style={{
@@ -191,6 +198,11 @@ export default function QueriesScreen() {
 
             {/* CONTENT */}
             {selectedTab === 'NEW' ? (
+                <ScrollView
+                    contentContainerStyle={{ flexGrow: 1 }}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
                 <View style={styles.inputSection}>
                     <Text style={styles.inputLabel}>Submit your question here.</Text>
 
@@ -224,8 +236,10 @@ export default function QueriesScreen() {
                         )}
                     </TouchableOpacity>
                 </View>
+                </ScrollView>
             ) : (
                 <FlatList
+                    keyboardShouldPersistTaps="handled"
                     data={displayQueries}
                     renderItem={renderQuery}
                     keyExtractor={item => item._id}
@@ -241,6 +255,7 @@ export default function QueriesScreen() {
                     }
                 />
             )}
+            </KeyboardAvoidingView>
         </LinearGradient>
     );
 }

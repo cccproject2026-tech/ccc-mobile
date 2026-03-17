@@ -17,6 +17,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -396,10 +398,17 @@ export default function ProfileScreen() {
     <View style={styles.actionButtons}>
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={() => router.push('/profile/documents' as any)}
+        onPress={() => router.push('/(pastor)/(tabs)/profile/documents' as any)}
       >
         <Text style={styles.actionButtonText}>Documents</Text>
         <Image source={icons.attachment} style={styles.smallIcon} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={() => router.push('/(pastor)/(tabs)/profile/notes' as any)}
+      >
+        <Text style={styles.actionButtonText}>Notes</Text>
+        <Image source={icons.edit} style={styles.smallIcon} />
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.actionButton}
@@ -488,11 +497,16 @@ export default function ProfileScreen() {
       <TopBar role="pastor" />
       {renderHeader()}
 
-      <KeyboardAwareScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom }]}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
+        <KeyboardAwareScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* VIEW MODE */}
         {!isEditing && (
           <>
@@ -644,7 +658,8 @@ export default function ProfileScreen() {
             {renderEditActions()}
           </>
         )}
-      </KeyboardAwareScrollView>
+        </KeyboardAwareScrollView>
+      </KeyboardAvoidingView>
 
       {/* MODALS */}
       <ConfirmModal

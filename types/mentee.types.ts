@@ -22,6 +22,9 @@ export interface Mentee extends User {
     dateOfApproval?: string;
     lastContacted?: string;
     totalMentors?: number;
+    assignedRoadmapIds?: string[];
+    assignedAssessmentIds?: string[];
+    assignedId?: string[];
 }
 
 
@@ -32,6 +35,13 @@ export interface GetMenteesApiResponse {
         users: Mentee[];
         total: number;
     };
+}
+
+/** Response from GET /users/:mentorId/assigned - mentees assigned to this mentor */
+export interface GetAssignedMenteesApiResponse {
+    success: boolean;
+    message: string;
+    data: Mentee[] | { users: Mentee[]; total?: number };
 }
 
 export interface MenteeDetail {

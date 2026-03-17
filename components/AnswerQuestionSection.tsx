@@ -1,3 +1,4 @@
+import CdpPlansModal from '@/components/CdpPlansModal';
 import { useAssessmentStore } from '@/stores/assessment.store';
 import { Assessment, AssessmentQuestion, QuestionGroup } from '@/types/assessment.types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
@@ -12,12 +13,30 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
+interface MentorReviewSection {
+    sectionId: string;
+    title: string;
+    score?: number;
+    recommendations: string[];
+}
+
 interface AssessmentQuestionsSectionProps {
     assessment: Assessment;
     assessmentId: string;
     isViewMode: boolean;
     onSubmit: (sectionAnswers: Record<number, Record<string, any>>) => void;
     onClose?: () => void;
+    // When true, show mentor review UI (Responses & Recommendations) after final section
+    reviewMode?: boolean;
+    /** Mentor review data per section (score + recommendations) from GET answers. */
+    mentorReviewSections?: MentorReviewSection[];
+    // Called when mentor sends Customized Development Plans (CDP)
+    onSendCdp?: (payload: {
+        recommendations: Array<{
+            sectionId: string;
+            selectedItems: Array<{ level: number; text: string }>;
+        }>;
+    }) => void;
 }
 
 export default function AssessmentQuestionsSection({
@@ -26,6 +45,9 @@ export default function AssessmentQuestionsSection({
     isViewMode,
     onSubmit,
     onClose,
+    reviewMode = false,
+    mentorReviewSections,
+    onSendCdp,
 }: AssessmentQuestionsSectionProps) {
     const getDraft = useAssessmentStore((state) => state.getDraft);
     const saveDraft = useAssessmentStore((state) => state.saveDraft);
@@ -37,6 +59,10 @@ export default function AssessmentQuestionsSection({
     const [currentSectionIndex, setCurrentSectionIndex] = useState(
         isViewMode ? 0 : (previousResponse?.currentSectionIndex || 0)
     );
+
+    /** CDP recommendations selected by mentor per section. Key = sectionId, value = selected recommendation texts. */
+    const [selectedRecommendations, setSelectedRecommendations] = useState<Record<string, string[]>>({});
+    const [showCdpModal, setShowCdpModal] = useState(false);
 
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
@@ -61,13 +87,14 @@ export default function AssessmentQuestionsSection({
         });
     };
 
-    const handleAnswer = (questionId: string, value: boolean) => {
+    /** One selected choice per question (layer). Value is numeric level "1"|"2"|"3"|"4" for backend. */
+    const handleAnswer = (questionId: string, choiceId: string) => {
         if (isViewMode) return;
         setAnswers(prev => ({
             ...prev,
             [currentSectionIndex]: {
                 ...prev[currentSectionIndex],
-                [questionId]: value,
+                [questionId]: choiceId,
             }
         }));
     };
@@ -99,8 +126,8 @@ export default function AssessmentQuestionsSection({
                 setCurrentSectionIndex(prev => prev + 1);
             }
             else {
-                // Last section - Close
-                if (onClose) {
+                // In mentor review mode, stay on last section so user can see recommendations
+                if (!reviewMode && onClose) {
                     onClose();
                 }
             }
@@ -141,6 +168,18 @@ export default function AssessmentQuestionsSection({
         }
     };
 
+    /** Toggle a CDP recommendation: add if not selected, remove if selected. */
+    const toggleRecommendation = (sectionId: string, recommendationText: string) => {
+        setSelectedRecommendations(prev => {
+            const list = prev[sectionId] ?? [];
+            const isSelected = list.includes(recommendationText);
+            const nextList = isSelected
+                ? list.filter(t => t !== recommendationText)
+                : [...list, recommendationText];
+            return { ...prev, [sectionId]: nextList };
+        });
+    };
+
     const handleSubmitAssessment = () => {
         Alert.alert(
             "Submit Assessment",
@@ -159,28 +198,36 @@ export default function AssessmentQuestionsSection({
     };
 
     const renderQuestion = (question: AssessmentQuestion) => {
-        if (question.type === 'checkbox') {
-            const isChecked = answers[currentSectionIndex]?.[question.id] || false;
+        if (question.type === 'radio' && question.options?.length) {
+            const selectedChoiceId = answers[currentSectionIndex]?.[question.id] as string | undefined;
             return (
-                <TouchableOpacity
-                    key={question.id}
-                    style={styles.questionItem}
-                    onPress={() => handleAnswer(question.id, !isChecked)}
-                    activeOpacity={isViewMode ? 1 : 0.7}
-                    disabled={isViewMode}
-                >
-                    <View style={[
-                        styles.checkbox,
-                        isChecked && styles.checkboxChecked,
-                        isViewMode && styles.checkboxViewMode
-                    ]}>
-                        {isChecked && <Ionicons name="checkmark" size={16} color="#fff" />}
-                    </View>
-                    <Text style={styles.questionText}>
+                <View key={question.id} style={styles.radioQuestionBlock}>
+                    <Text style={styles.radioQuestionLabel}>
                         {question.text}
                         {question.required && <Text style={styles.required}> *</Text>}
                     </Text>
-                </TouchableOpacity>
+                    {question.options.map((option) => {
+                        const isSelected = selectedChoiceId === option.value;
+                        return (
+                            <TouchableOpacity
+                                key={option.value}
+                                style={styles.radioRow}
+                                onPress={() => handleAnswer(question.id, option.value)}
+                                activeOpacity={isViewMode ? 1 : 0.7}
+                                disabled={isViewMode}
+                            >
+                                <View style={[
+                                    styles.radioOuter,
+                                    isSelected && styles.radioOuterSelected,
+                                    isViewMode && styles.radioViewMode
+                                ]}>
+                                    {isSelected && <View style={styles.radioInner} />}
+                                </View>
+                                <Text style={styles.radioOptionLabel}>{option.label}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
             );
         }
         return null;
@@ -199,11 +246,11 @@ export default function AssessmentQuestionsSection({
                 <View style={{ alignItems: 'flex-end', margin: 12 }}>
                     <TouchableOpacity
                         onPress={() => {
-                            const filledAnswers: Record<string, boolean> = {};
+                            const filledAnswers: Record<string, string> = {};
                             currentSection.questionGroups.forEach(group => {
                                 group.questions.forEach(q => {
-                                    if (q.type === 'checkbox') {
-                                        filledAnswers[q.id] = true;
+                                    if (q.type === 'radio' && q.options?.length) {
+                                        filledAnswers[q.id] = q.options[0].value;
                                     }
                                 });
                             });
@@ -241,6 +288,22 @@ export default function AssessmentQuestionsSection({
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+                {/* View mode: Responses | Customized Development Plans at top of section */}
+                {isViewMode && mentorReviewSections && mentorReviewSections.length > 0 && (
+                    <View style={styles.tabBarContainer}>
+                        <View style={[styles.tabSegment, styles.tabSegmentActive]}>
+                            <Text style={styles.tabSegmentActiveText}>Responses</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.tabSegmentOutline}
+                            onPress={() => setShowCdpModal(true)}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.tabSegmentOutlineText}>Customized Development Plans</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 {/* Progress Indicator */}
                 <View style={styles.progressContainer}>
                     {assessment.sections.map((_, index) => (
@@ -265,10 +328,13 @@ export default function AssessmentQuestionsSection({
                         <Text style={styles.sectionBadgeText}>Section {currentSectionIndex + 1}</Text>
                     </View>
                     <Text style={styles.sectionTitle}>{currentSection.title}</Text>
+                    {currentSection.subtitle ? (
+                        <Text style={styles.sectionSubtitle}>{currentSection.subtitle}</Text>
+                    ) : null}
                 </View>
 
-                {/* Instructions */}
-                {currentSection.subtitle && (
+                {/* Instructions (skip in view mode; subtitle is shown in section card) */}
+                {!isViewMode && currentSection.subtitle && (
                     <Text style={styles.instructionText}>
                         {currentSection.subtitle}
                     </Text>
@@ -322,6 +388,38 @@ export default function AssessmentQuestionsSection({
                         </>
                     )}
                 </View>
+
+                <CdpPlansModal
+                    visible={showCdpModal}
+                    onClose={() => setShowCdpModal(false)}
+                    assessmentTitle={assessment.title}
+                    mode={reviewMode ? 'mentor' : 'pastor'}
+                    sections={mentorReviewSections ?? []}
+                    selectedRecommendations={reviewMode ? selectedRecommendations : undefined}
+                    onToggleRecommendation={reviewMode ? toggleRecommendation : undefined}
+                    onSendCdp={
+                        reviewMode && onSendCdp && mentorReviewSections
+                            ? () => {
+                                  const payload = {
+                                      recommendations: mentorReviewSections
+                                          .map((section) => {
+                                              const selected = selectedRecommendations[section.sectionId] ?? [];
+                                              return {
+                                                  sectionId: section.sectionId,
+                                                  selectedItems: selected.map((text) => ({
+                                                      level: section.score ?? 0,
+                                                      text,
+                                                  })),
+                                              };
+                                          })
+                                          .filter((s) => s.selectedItems.length > 0),
+                                  };
+                                  onSendCdp(payload);
+                                  setShowCdpModal(false);
+                              }
+                            : undefined
+                    }
+                />
             </KeyboardAwareScrollView>
         </>
     );
@@ -375,6 +473,47 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: getSpacing(24),
         alignItems: 'center',
+    },
+    sectionSubtitle: {
+        fontSize: getFontSize(13),
+        color: 'rgba(255,255,255,0.85)',
+        marginTop: getSpacing(6),
+        textAlign: 'center',
+    },
+    tabBarContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginHorizontal: getSpacing(20),
+        marginBottom: getSpacing(16),
+        marginTop: getSpacing(8),
+        gap: getSpacing(12),
+        alignItems: 'center',
+    },
+    tabSegment: {
+        paddingVertical: getSpacing(10),
+        paddingHorizontal: getSpacing(16),
+        borderRadius: 20,
+    },
+    tabSegmentActive: {
+        backgroundColor: 'rgba(255,255,255,0.25)',
+    },
+    tabSegmentActiveText: {
+        fontSize: getFontSize(15),
+        fontWeight: '600',
+        color: '#fff',
+    },
+    tabSegmentOutline: {
+        paddingVertical: getSpacing(10),
+        paddingHorizontal: getSpacing(16),
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.6)',
+        backgroundColor: 'transparent',
+    },
+    tabSegmentOutlineText: {
+        fontSize: getFontSize(14),
+        fontWeight: '600',
+        color: '#fff',
     },
     sectionBadge: {
         backgroundColor: 'transparent',
@@ -439,6 +578,50 @@ const styles = StyleSheet.create({
     checkboxViewMode: {
         opacity: 0.7,
     },
+    radioQuestionBlock: {
+        marginBottom: getSpacing(20),
+    },
+    radioQuestionLabel: {
+        fontSize: getFontSize(15),
+        color: '#fff',
+        lineHeight: getFontSize(23),
+        fontWeight: '600',
+        marginBottom: getSpacing(12),
+    },
+    radioRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: getSpacing(12),
+    },
+    radioOuter: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.6)',
+        marginRight: getSpacing(14),
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    radioOuterSelected: {
+        borderColor: '#5B7BB4',
+        backgroundColor: 'rgba(91, 123, 180, 0.3)',
+    },
+    radioInner: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#5B7BB4',
+    },
+    radioViewMode: {
+        opacity: 0.7,
+    },
+    radioOptionLabel: {
+        flex: 1,
+        fontSize: getFontSize(15),
+        color: '#fff',
+        lineHeight: getFontSize(22),
+    },
     questionText: {
         flex: 1,
         fontSize: getFontSize(15),
@@ -486,5 +669,107 @@ const styles = StyleSheet.create({
     },
     buttonDisabled: {
         opacity: 0.5,
+    },
+    cdpButtonContainer: {
+        marginTop: getSpacing(24),
+        paddingHorizontal: getSpacing(20),
+        paddingBottom: getSpacing(40),
+    },
+    cdpOpenButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        paddingVertical: getSpacing(16),
+        paddingHorizontal: getSpacing(20),
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    cdpOpenButtonText: {
+        fontSize: getFontSize(16),
+        fontWeight: '600',
+        color: '#fff',
+    },
+    recommendationsContainer: {
+        marginTop: getSpacing(32),
+        paddingHorizontal: getSpacing(20),
+        paddingBottom: getSpacing(40),
+    },
+    recommendationsHeader: {
+        fontSize: getFontSize(18),
+        fontWeight: '700',
+        color: '#fff',
+        marginBottom: getSpacing(16),
+    },
+    recommendationSectionCard: {
+        marginBottom: getSpacing(16),
+        padding: getSpacing(16),
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(15,35,70,0.9)',
+    },
+    recommendationSectionTitle: {
+        fontSize: getFontSize(16),
+        fontWeight: '600',
+        color: '#E2E8F0',
+        marginBottom: getSpacing(8),
+    },
+    recommendationLevelBlock: {
+        marginTop: getSpacing(8),
+    },
+    recommendationScoreLabel: {
+        fontSize: getFontSize(13),
+        fontWeight: '500',
+        color: '#E2E8F0',
+        marginTop: getSpacing(4),
+        marginBottom: getSpacing(4),
+    },
+    recommendationLevelLabel: {
+        fontSize: getFontSize(13),
+        fontWeight: '600',
+        color: '#A5B4FC',
+        marginBottom: getSpacing(4),
+    },
+    recommendationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: getSpacing(6),
+    },
+    recommendationCheckbox: {
+        width: 18,
+        height: 18,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(226,232,240,0.7)',
+        marginRight: getSpacing(10),
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    recommendationCheckboxChecked: {
+        backgroundColor: '#5B7BB4',
+        borderColor: '#5B7BB4',
+    },
+    recommendationText: {
+        flex: 1,
+        fontSize: getFontSize(14),
+        color: '#E2E8F0',
+    },
+    recommendationEditIcon: {
+        marginLeft: getSpacing(8),
+    },
+    sendCdpButton: {
+        marginTop: getSpacing(24),
+        alignSelf: 'center',
+        paddingVertical: getSpacing(12),
+        paddingHorizontal: getSpacing(32),
+        borderRadius: 24,
+        backgroundColor: '#FACC15',
+    },
+    sendCdpButtonText: {
+        fontSize: getFontSize(15),
+        fontWeight: '700',
+        color: '#1F2933',
     },
 });

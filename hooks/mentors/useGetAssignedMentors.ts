@@ -42,7 +42,7 @@ export const useAssignedMentors = (
     const query = useQuery({
         queryKey: ['assigned-mentors', menteeId],
         queryFn: () => mentorsService.getAssignedMentors(menteeId!),
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 2000, // 2 seconds (was 5 minutes)
         retry: 2,
         enabled: Boolean(menteeId), // Only run query if menteeId exists
     });

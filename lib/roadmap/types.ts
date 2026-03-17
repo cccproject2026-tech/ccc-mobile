@@ -167,6 +167,7 @@ export interface Task {
     comments?: string[];
     divisionId?: string;
     queries?: string[];
+    extras?: Extra[]; // ✅ Added for compatibility with new DynamicFormTask
     meta?: {
         coverImage?: string;
         completionTimeMonths?: string;
@@ -240,14 +241,29 @@ export interface NestedRoadmap {
 }
 
 export interface Extra {
-    type: 'TEXT_AREA' | 'TEXT_DISPLAY' | 'CHECKBOX' | 'TEXT_FIELD' | 'DATE_PICKER' | 'SECTION' | 'UPLOAD' | 'BUTTON';
+    type:
+        | 'TEXT_AREA'
+        | 'TEXT_DISPLAY'
+        | 'CHECKBOX'
+        | 'TEXT_FIELD'
+        | 'DATE_PICKER'
+        | 'SECTION'
+        | 'UPLOAD'
+        | 'BUTTON'
+        | 'ASSESSMENT'
+        | 'SIGNATURE';
     name: string;
     placeHolder?: string;
     buttonName?: string | null;
     haveButton?: boolean;
     date?: string;
+    editable?: boolean;
     checkboxes?: ExtraCheckbox[];
     sections?: Extra[];
+    assessmentId?: string;
+    linkUrl?: string;
+    required?: boolean;
+    showOnCard?: boolean;
 }
 
 export interface ExtraCheckbox {
@@ -296,6 +312,7 @@ export interface ExtrasResponseDto {
     roadMapId: string;
     nestedRoadMapItemId?: string;
     extras: any[];
+    uploadedDocuments?: any[];
     createdAt: Date;
     updatedAt: Date;
 }

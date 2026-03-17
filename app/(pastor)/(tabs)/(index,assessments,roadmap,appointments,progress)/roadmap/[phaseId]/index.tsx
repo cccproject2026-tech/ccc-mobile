@@ -401,26 +401,19 @@ export default function RoadmapDetail() {
         return roadmap.divisions;
     }, [roadmap, hasDivisions]);
 
-    // Initialize activeTab - first division if exists, otherwise 'ALL'
-    const [activeTab, setActiveTab] = useState<TabKey>(() => {
-        if (hasDivisions && divisions.length > 0) {
-            return divisions[0];
-        }
-        return 'ALL';
-    });
+    // Initialize activeTab to 'ALL' by default
+    const [activeTab, setActiveTab] = useState<TabKey>('ALL');
 
     // Update active tab when divisions change
-    // FIX: Update active tab logic
+    // FIX: Update active tab logic to handle division removal
     useMemo(() => {
-        // defined valid keys for status tabs
         const statusKeys = ['ALL', 'DUE', 'NOT_STARTED', 'COMPLETED'];
 
-        // Only reset if it's NOT a division AND NOT a status key
-        if (hasDivisions &&
-            divisions.length > 0 &&
-            !divisions.includes(activeTab as string) &&
-            !statusKeys.includes(activeTab as string)) {
-            setActiveTab(divisions[0]);
+        if (activeTab !== 'ALL' && 
+            !statusKeys.includes(activeTab as string) && 
+            hasDivisions && 
+            !divisions.includes(activeTab as string)) {
+            setActiveTab('ALL');
         }
     }, [hasDivisions, divisions, activeTab]);
 
@@ -474,28 +467,29 @@ export default function RoadmapDetail() {
 
     // Generate tabs based on whether divisions exist
     const tabs = useMemo(() => {
+        const allTaskTab = { key: 'ALL', label: 'All' };
+        
+        const statusTabs = [
+            { key: 'DUE', label: 'Due' },
+            { key: 'NOT_STARTED', label: 'Not Started' },
+            { key: 'COMPLETED', label: 'Completed' },
+        ];
+
         if (hasDivisions && divisions.length > 0) {
-            // Division tabs + status filter tabs (without "All")
-            const divisionTabs = divisions.map(division => ({
+            // Filter out any division that might conflict with 'All Task' or 'All'
+            const filteredDivisions = divisions.filter(d => 
+                d.toLowerCase() !== 'all task' && 
+                d.toLowerCase() !== 'all'
+            );
+
+            const divisionTabs = filteredDivisions.map(division => ({
                 key: division,
                 label: division.charAt(0).toUpperCase() + division.slice(1),
             }));
 
-            const statusTabs = [
-                { key: 'DUE', label: 'Due' },
-                { key: 'NOT_STARTED', label: 'Not Started' },
-                { key: 'COMPLETED', label: 'Completed' },
-            ];
-
-            return [...divisionTabs, ...statusTabs];
+            return [allTaskTab, ...divisionTabs, ...statusTabs];
         } else {
-            // Standard status tabs with "All"
-            return [
-                { key: 'ALL', label: 'All' },
-                { key: 'DUE', label: 'Due' },
-                { key: 'NOT_STARTED', label: 'Not Started' },
-                { key: 'COMPLETED', label: 'Completed' },
-            ];
+            return [allTaskTab, ...statusTabs];
         }
     }, [hasDivisions, divisions]);
 

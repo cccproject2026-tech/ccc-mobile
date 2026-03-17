@@ -1,7 +1,17 @@
 // Roadmap API Types
 
 export interface RoadmapExtra {
-  type: 'TEXT_AREA' | 'TEXT_DISPLAY' | 'CHECKBOX' | 'DATE_PICKER' | 'TEXT_FIELD' | 'SECTION' | 'UPLOAD' | 'ASSESSMENT';
+  type:
+    | 'TEXT_AREA'
+    | 'TEXT_DISPLAY'
+    | 'CHECKBOX'
+    | 'DATE_PICKER'
+    | 'TEXT_FIELD'
+    | 'SECTION'
+    | 'UPLOAD'
+    | 'ASSESSMENT'
+    | 'BUTTON'
+    | 'SIGNATURE';
   name: string;
   placeHolder?: string;
   date?: string;
@@ -9,7 +19,10 @@ export interface RoadmapExtra {
   buttonName?: string;
   checkboxes?: RoadmapExtra[];
   sections?: RoadmapExtra[];
-}
+  linkUrl?: string;
+  required?: boolean;
+  showOnCard?: boolean;
+} 
 
 export interface RoadmapItem {
   name: string;

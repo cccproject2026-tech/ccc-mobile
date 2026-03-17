@@ -27,6 +27,8 @@ export interface AssessmentSection {
     title: string;
     subtitle?: string;
     questionGroups: QuestionGroup[];
+    // Optional per-section CDP recommendations (levels 1–4)
+    recommendations?: CreateAssessmentSectionRecommendation[];
 }
 
 export interface QuestionGroup {
@@ -60,6 +62,8 @@ export interface ApiAssessmentSection {
     description: string;
     layers: ApiAssessmentLayer[];
     _id: string;
+    // Optional per-section CDP recommendations from backend
+    recommendations?: CreateAssessmentSectionRecommendation[];
 }
 
 export interface ApiAssessmentAssignment {
@@ -93,10 +97,17 @@ export interface CreateAssessmentLayer {
     choices: CreateAssessmentChoice[];
 }
 
+/** Per-section CDP: level 1–4 recommendations */
+export interface CreateAssessmentSectionRecommendation {
+    level: 1 | 2 | 3 | 4;
+    items: string[];
+}
+
 export interface CreateAssessmentSection {
     title: string;
     description: string;
     layers: CreateAssessmentLayer[];
+    recommendations: CreateAssessmentSectionRecommendation[];
 }
 
 export interface CreateAssessmentRequest {
@@ -106,6 +117,10 @@ export interface CreateAssessmentRequest {
     instructions: string[];
     sections: CreateAssessmentSection[];
     preSurvey?: PreSurveyQuestion[];
+}
+
+export interface AssignAssessmentToUsersRequest {
+    userIds: string[];
 }
 
 // ==================== Assessment Response ====================
@@ -135,7 +150,7 @@ export interface SubmitAnswersPayload {
         sectionId: string;
         layers: Array<{
             layerId: string;
-            selectedChoice: string; // This will be the choice ID
+            selectedChoice: string; // Numeric level "1"|"2"|"3"|"4"
         }>;
     }>;
 }
@@ -186,6 +201,10 @@ export interface SubmittedAnswersResponse {
     preSurveySubmittedAt?: string;
     sections: Array<{
         sectionId: string;
+        /** Score 1–4 for this section; used to show only the matching CDP recommendation level. */
+        sectionScore?: number;
+        /** Recommended CDP items for this section, as plain text lines. */
+        recommendations?: string[];
         layers: Array<{
             layerId: string;
             selectedChoice: string;

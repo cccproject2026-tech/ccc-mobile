@@ -14,6 +14,7 @@ interface MenteeCardProps {
     data: Mentee;
     layout?: 'card' | 'list' | 'full';
     isSelected?: boolean;
+    disabled?: boolean;
     onToggleSelect?: () => void;
     onPress?: () => void;
     onCall?: () => void;
@@ -30,6 +31,7 @@ export default function MenteeCard({
     data,
     layout = 'full',
     isSelected = false,
+    disabled = false,
     onToggleSelect,
     onPress,
     onCall,
@@ -45,8 +47,8 @@ export default function MenteeCard({
     // LIST VIEW (Compact)
     if (layout === 'list') {
         return (
-            <Pressable style={[styles.listContainer, isSelected && styles.selectedCard]}
-                onPress={isSelectionMode ? onToggleSelect : onPress}>
+            <Pressable style={[styles.listContainer, isSelected && styles.selectedCard, disabled && styles.disabledCard]}
+                onPress={disabled ? undefined : (isSelectionMode ? onToggleSelect : onPress)}>
                 <View style={styles.listImageContainer}>
                     {data.profilePicture ? (
                         <Image source={{ uri: data.profilePicture }} style={styles.image} resizeMode="cover" />
@@ -121,12 +123,12 @@ export default function MenteeCard({
     if (layout === 'card' && isSelectionMode) {
         return (
             <TouchableOpacity
-                style={[styles.selectionCard, isSelected && styles.selectedCard]}
-                onPress={onToggleSelect}
-                activeOpacity={0.8}
+                style={[styles.selectionCard, isSelected && styles.selectedCard, disabled && styles.disabledCard]}
+                onPress={disabled ? undefined : onToggleSelect}
+                activeOpacity={disabled ? 1 : 0.8}
             >
                 <View style={styles.checkboxContainer}>
-                    <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                    <View style={[styles.checkbox, isSelected && styles.checkboxSelected, disabled && styles.disabledCheckbox]}>
                         {isSelected && <Ionicons name="checkmark" size={getIconSize(18)} color="#1A4882" />}
                     </View>
                 </View>
@@ -134,18 +136,25 @@ export default function MenteeCard({
                 <View style={styles.topSection}>
                     <View style={styles.imageContainer}>
                         {data.profilePicture ? (
-                            <Image source={{ uri: data.profilePicture }} style={styles.image} resizeMode="cover" />
+                            <Image source={{ uri: data.profilePicture }} style={[styles.image, disabled && styles.disabledImage]} resizeMode="cover" />
                         ) : (
-                            <View style={styles.placeholderImage}>
+                            <View style={[styles.placeholderImage, disabled && styles.disabledPlaceholder]}>
                                 <Ionicons name="person-outline" size={getIconSize(40)} color="#fff" />
                             </View>
                         )}
                     </View>
 
                     <View style={styles.contentSection}>
-                        <Text style={styles.name} numberOfLines={1}>
-                            {data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '')}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={[styles.name, disabled && styles.disabledText]} numberOfLines={1}>
+                                {data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '')}
+                            </Text>
+                            {disabled && (
+                                <View style={styles.alreadyAssignedBadge}>
+                                    <Text style={styles.alreadyAssignedText}>Already Assigned</Text>
+                                </View>
+                            )}
+                        </View>
 
                         <Text style={styles.description} numberOfLines={3}>
                             {data.description}
@@ -676,5 +685,33 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(10),
         color: '#fff',
         fontWeight: '500',
+    },
+    disabledCard: {
+        opacity: 0.6,
+        backgroundColor: 'rgba(26, 72, 130, 0.5)',
+    },
+    disabledText: {
+        color: 'rgba(255, 255, 255, 0.5)',
+    },
+    disabledCheckbox: {
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    disabledImage: {
+        opacity: 0.5,
+    },
+    disabledPlaceholder: {
+        backgroundColor: '#1a3a5a',
+    },
+    alreadyAssignedBadge: {
+        backgroundColor: '#FFC107',
+        paddingHorizontal: getSpacing(6),
+        paddingVertical: getSpacing(2),
+        borderRadius: getSpacing(4),
+        marginLeft: getSpacing(8),
+    },
+    alreadyAssignedText: {
+        fontSize: getFontSize(10),
+        color: '#1A4882',
+        fontWeight: '700',
     },
 });

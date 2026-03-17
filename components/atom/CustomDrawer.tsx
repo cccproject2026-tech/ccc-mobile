@@ -185,9 +185,9 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           navigateLocation: "/(mentor)/profile/certificate",
         },
         {
-          name: "Notes",
+          name: "Personal Notes",
           iconKey: "microGrant",
-          navigateLocation: "MicroGrant",
+          navigateLocation: "/(mentor)/profile/notes",
         },
         {
           name: "Micro Grant",

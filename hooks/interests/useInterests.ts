@@ -11,7 +11,7 @@ export function useInterests() {
     return useQuery<InterestItem[]>({
         queryKey: interestsKeys.all,
         queryFn: () => interestsService.getAll(),
-        staleTime: 1000 * 60 * 5,
+        staleTime: 2000,
         gcTime: 1000 * 60 * 30,
         retry: 1,
     });
@@ -21,7 +21,7 @@ export function useInterestMetadata() {
     return useQuery<InterestMetadata>({
         queryKey: interestsKeys.metadata,
         queryFn: () => interestsService.getMetadata(),
-        staleTime: 1000 * 60 * 60, // 1 hour - metadata doesn't change often
+        staleTime: 2000, // 2 seconds (was 1 hour)
         gcTime: 1000 * 60 * 60 * 24, // 24 hours
         retry: 1,
     });

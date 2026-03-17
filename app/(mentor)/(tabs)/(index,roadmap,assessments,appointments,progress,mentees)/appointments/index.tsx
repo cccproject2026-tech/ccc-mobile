@@ -13,12 +13,8 @@ import { Mentor } from "@/hooks/mentors/useMentors";
 import { useAuthStore } from "@/stores/auth.store";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  Stack,
-  useLocalSearchParams,
-  useRouter
-} from "expo-router";
-import React, { useMemo } from "react";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -62,23 +58,40 @@ const Appointments: React.FC = () => {
   const { user } = useAuthStore();
 
   // Fetch appointments for mentor
-  const { appointments, isLoading: isLoadingAppointments, getAppointmentsByDate } = useAppointments({
-    mentorId: user?.id
+  const {
+    appointments,
+    isLoading: isLoadingAppointments,
+    getAppointmentsByDate,
+    getUpcomingAppointments,
+  } = useAppointments({
+    mentorId: user?.id,
   });
 
-  // Fetch mentees for the schedule meeting bottom sheet
-  const { data: menteesData } = useMentees();
+  // Fetch only mentees assigned to this mentor
+  const {
+    data: menteesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMentees(10, user?.id);
+
+  // Flatten paginated mentees data
+  const allMentees = useMemo(() => {
+    return menteesData?.pages.flatMap((page) => page.mentees) || [];
+  }, [menteesData]);
 
   // Format mentors from mentees data
   const mentors: Partial<Mentor>[] = useMemo(() => {
-    if (!menteesData?.mentees) return [];
-    return menteesData.mentees.slice(0, 6).map((mentee) => ({
+    return allMentees.map((mentee) => ({
       id: mentee.id,
-      name: `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee",
+      name:
+        `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee",
       role: mentee.role || "Pastor",
-      profileImage: mentee.profilePicture || "https://randomuser.me/api/portraits/men/1.jpg",
+      profileImage:
+        mentee.profilePicture ||
+        "https://randomuser.me/api/portraits/men/1.jpg",
     }));
-  }, [menteesData]);
+  }, [allMentees]);
 
   React.useEffect(() => {
     if (openSheet === "true" && scheduleMeetingBottomSheetRef.current) {
@@ -112,14 +125,13 @@ const Appointments: React.FC = () => {
     return `${day} ${month} ${year}`;
   }, []);
 
-  // Helper function to format time for display (US EST format)
+  // Helper function to format time for display
   const formatTime = React.useCallback((dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-      timeZone: "America/New_York",
     });
   }, []);
 
@@ -156,30 +168,57 @@ const Appointments: React.FC = () => {
   }, []);
 
   // Helper function to check if date is today
-  const isToday = React.useCallback((dateString: string) => {
-    return dateString === today;
-  }, [today]);
+  const isToday = React.useCallback(
+    (dateString: string) => {
+      return dateString === today;
+    },
+    [today],
+  );
 
   // Get mentee name from userId
-  const getMenteeName = React.useCallback((userId: string) => {
-    const mentee = menteesData?.mentees?.find((m) => m.id === userId);
-    if (mentee) {
-      return `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee";
-    }
-    return "Mentee";
-  }, [menteesData]);
+  const getMenteeName = React.useCallback(
+    (userId: string) => {
+      const mentee = allMentees?.find((m) => m.id === userId);
+      if (mentee) {
+        return (
+          `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() ||
+          "Mentee"
+        );
+      }
+      return "Mentee";
+    },
+    [allMentees],
+  );
 
+  const isValidISODate = (value: string) => {
+    const d = new Date(value);
+    return !Number.isNaN(d.getTime());
+  };
+
+  useEffect(() => {
+    if (searchQuery.length !== 10) return;
+
+    const match = searchQuery.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (!match) return;
+
+    const [, dd, mm, yyyy] = match;
+    const iso = `${yyyy}-${mm}-${dd}`;
+
+    const d = new Date(iso);
+    if (!Number.isNaN(d.getTime())) {
+      setSelectedDate(iso); // ✅ YYYY-MM-DD ONLY
+    }
+  }, [searchQuery]);
   // Format appointments for display
   const formattedAppointments = useMemo(() => {
     if (!appointments || !getAppointmentsByDate) return [];
-
     const dateAppointments = getAppointmentsByDate(selectedDate);
-    
+
     return dateAppointments.map((apt) => {
       const menteeName = getMenteeName(apt.userId);
       const startTime = formatTime(apt.meetingDate);
       const endTime = formatTime(apt.endTime);
-      
+
       return {
         id: apt.id,
         date: formatDisplayDate(apt.meetingDate),
@@ -192,9 +231,57 @@ const Appointments: React.FC = () => {
         appointment: apt, // Keep original appointment data for handlers
       };
     });
-  }, [appointments, getAppointmentsByDate, selectedDate, formatDisplayDate, formatTime, getModeLabel, getPlatformIcon, getMenteeName]);
+  }, [
+    appointments,
+    getAppointmentsByDate,
+    selectedDate,
+    formatDisplayDate,
+    formatTime,
+    getModeLabel,
+    getPlatformIcon,
+    getMenteeName,
+    searchQuery,
+  ]);
 
   const selectedDateAppointments = formattedAppointments;
+
+  // Format getUpcomingAppointments appointments for display
+  const upcomingAppointments = useMemo(() => {
+    if (!appointments || !getUpcomingAppointments) return [];
+
+    const dateAppointments = getUpcomingAppointments();
+    return dateAppointments.map((apt) => {
+      const menteeName = getMenteeName(apt.userId);
+      const startTime = formatTime(apt.meetingDate);
+      const endTime = formatTime(apt.endTime);
+      if (
+        formatDisplayDate(apt.meetingDate) !== formatDisplayDate(selectedDate)
+      ) {
+        return {
+          id: apt.id,
+          date: formatDisplayDate(apt.meetingDate),
+          time: `${startTime} - ${endTime}`,
+          tz: "EST",
+          person: menteeName,
+          role: "Mentee",
+          mode: getModeLabel(apt.platform),
+          icon: getPlatformIcon(apt.platform),
+          appointment: apt, // Keep original appointment data for handlers
+        };
+      }
+    });
+  }, [
+    appointments,
+    getAppointmentsByDate,
+    selectedDate,
+    formatDisplayDate,
+    formatTime,
+    getModeLabel,
+    getPlatformIcon,
+    getMenteeName,
+  ]);
+
+  const allUpcomingAppointments = upcomingAppointments;
 
   const handleViewDetails = (appointment: any) => {
     console.log("View details", appointment);
@@ -225,7 +312,7 @@ const Appointments: React.FC = () => {
             });
           },
         },
-      ]
+      ],
     );
   };
 
@@ -236,7 +323,7 @@ const Appointments: React.FC = () => {
 
   // Handle schedule meeting
   const handleScheduleMeeting = (data: any) => {
-    console.log("Scheduling meeting:", data);
+    console.log("Scheduling meetingm:", data);
     setResponseModal({
       visible: true,
       message: `Meeting scheduled with ${
@@ -300,7 +387,7 @@ const Appointments: React.FC = () => {
       >
         <>
           <View style={{ paddingBottom: 10 }}>
-            <TopBar role="mentor" />
+            <TopBar role="mentor" showUserName />
           </View>
           <View style={{ flex: 1 }}>
             {/* Header */}
@@ -395,27 +482,8 @@ const Appointments: React.FC = () => {
                     <GradientCalendar
                       selected={selectedDate}
                       setSelected={setSelectedDate}
-                      recurringAvailability={{
-                        type: "weekly",
-                        daysOfWeek: [1, 2, 3, 4, 5, 6],
-                      }}
-                      unavailableDates={[
-                        "2025-10-30",
-                        "2025-10-22",
-                        "2025-10-25",
-                      ]}
-                      availableDates={[
-                        today,
-                        "2025-10-20",
-                        "2025-10-21",
-                        "2025-10-23",
-                        "2025-10-24",
-                        "2025-10-27",
-                        "2025-10-28",
-                        "2025-10-29",
-                      ]}
                       showHeader={false}
-                      disablePastDates={true}
+                      disablePastDates={false}
                       markToday={false}
                     />
                   </View>
@@ -431,15 +499,23 @@ const Appointments: React.FC = () => {
                           : `You have ${
                               selectedDateAppointments.length
                             } Appointments on ${formatDisplayDate(
-                              selectedDate
+                              selectedDate,
                             )}`}
                       </Text>
                     </View>
                     <View style={{ gap: 10 }}>
                       {isLoadingAppointments ? (
-                        <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                        <View
+                          style={{ paddingVertical: 20, alignItems: "center" }}
+                        >
                           <ActivityIndicator size="small" color="white" />
-                          <Text style={{ color: "rgba(255,255,255,0.7)", marginTop: 8, fontSize: 14 }}>
+                          <Text
+                            style={{
+                              color: "rgba(255,255,255,0.7)",
+                              marginTop: 8,
+                              fontSize: 14,
+                            }}
+                          >
                             Loading appointments...
                           </Text>
                         </View>
@@ -462,7 +538,8 @@ const Appointments: React.FC = () => {
                                   ios: "calendar.badge.clock",
                                   android: "ic_event_available",
                                 },
-                                onSelect: () => handleReschedule(appointment.appointment),
+                                onSelect: () =>
+                                  handleReschedule(appointment.appointment),
                               },
                               {
                                 key: "change_mode",
@@ -471,14 +548,19 @@ const Appointments: React.FC = () => {
                                   ios: "arrow.2.circlepath",
                                   android: "ic_sync",
                                 },
-                                onSelect: () => handleChangeMode(appointment.appointment),
+                                onSelect: () =>
+                                  handleChangeMode(appointment.appointment),
                               },
                               {
                                 key: "cancel",
                                 title: "Cancel Meeting",
                                 destructive: true,
-                                icon: { ios: "trash", android: "ic_menu_delete" },
-                                onSelect: () => handleCancel(appointment.appointment),
+                                icon: {
+                                  ios: "trash",
+                                  android: "ic_menu_delete",
+                                },
+                                onSelect: () =>
+                                  handleCancel(appointment.appointment),
                               },
                             ]}
                           />
@@ -496,7 +578,7 @@ const Appointments: React.FC = () => {
                         {isToday(selectedDate)
                           ? "No Appointments Today"
                           : `No Appointments on ${formatDisplayDate(
-                              selectedDate
+                              selectedDate,
                             )}`}
                       </Text>
                     </View>
@@ -508,6 +590,82 @@ const Appointments: React.FC = () => {
                     </View>
                   </View>
                 )}
+
+                {/* Selected Date Appointments */}
+                {allUpcomingAppointments?.length > 0 &&
+                  allUpcomingAppointments[0] && (
+                    <View style={styles.appointmentsContainer}>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.upcomingText}>
+                          Next Appointment
+                        </Text>
+                      </View>
+                      <View style={{ gap: 10 }}>
+                        {isLoadingAppointments ? (
+                          <View
+                            style={{
+                              paddingVertical: 20,
+                              alignItems: "center",
+                            }}
+                          >
+                            <ActivityIndicator size="small" color="white" />
+                            <Text
+                              style={{
+                                color: "rgba(255,255,255,0.7)",
+                                marginTop: 8,
+                                fontSize: 14,
+                              }}
+                            >
+                              Loading appointments...
+                            </Text>
+                          </View>
+                        ) : (
+                          allUpcomingAppointments?.map((appointment, i) => (
+                            <AppointmentCard
+                              key={appointment?.id || i}
+                              date={appointment?.date}
+                              time={appointment?.time}
+                              tz={appointment?.tz}
+                              person={appointment?.person}
+                              role={appointment?.role}
+                              mode={appointment?.mode}
+                              platformIcon={appointment?.icon}
+                              menuItems={[
+                                {
+                                  key: "reschedule",
+                                  title: "Reschedule Meeting",
+                                  icon: {
+                                    ios: "calendar.badge.clock",
+                                    android: "ic_event_available",
+                                  },
+                                  onSelect: () => handleReschedule(appointment),
+                                },
+                                {
+                                  key: "change_mode",
+                                  title: "Change Mode",
+                                  icon: {
+                                    ios: "arrow.2.circlepath",
+                                    android: "ic_sync",
+                                  },
+                                  onSelect: () => handleChangeMode(appointment),
+                                },
+                                {
+                                  key: "cancel",
+                                  title: "Cancel Meeting",
+                                  destructive: true,
+                                  icon: {
+                                    ios: "trash",
+                                    android: "ic_menu_delete",
+                                  },
+                                  onSelect: () => handleCancel(appointment),
+                                },
+                              ]}
+                            />
+                          ))
+                        )}
+                      </View>
+                    </View>
+                  )}
               </View>
             </ScrollView>
           </View>
@@ -517,7 +675,6 @@ const Appointments: React.FC = () => {
       {/* Schedule Meeting Bottom Sheet */}
       <ScheduleMeetingBottomSheet
         ref={scheduleMeetingBottomSheetRef}
-        mentors={mentors as Mentor[]}
         onClose={handleCloseScheduleBottomSheet}
         onSchedule={handleScheduleMeeting}
         colorScheme={{
@@ -767,4 +924,3 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
-

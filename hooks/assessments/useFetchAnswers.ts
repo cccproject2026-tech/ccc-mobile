@@ -10,7 +10,7 @@ export const useFetchAnswers = (
         queryKey: ['answers', assessmentId, userId],
         queryFn: () => assessmentService.fetchAnswers(assessmentId!, userId!),
         enabled: enabled && !!assessmentId && !!userId, // USE IT HERE
-        staleTime: 1000 * 60 * 2,
+        staleTime: 2000,
         retry: 2,
     });
 };

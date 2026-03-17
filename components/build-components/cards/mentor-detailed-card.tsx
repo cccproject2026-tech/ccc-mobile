@@ -5,12 +5,12 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 
 export default function MentorDetailedCard({
   data,
-  key,
+  dataKey,
   navigation,
   onMenuPress,
 }: {
   data: Mentee;
-  key: string;
+  dataKey: string;
   navigation: Router;
   onMenuPress: () => void;
 }) {

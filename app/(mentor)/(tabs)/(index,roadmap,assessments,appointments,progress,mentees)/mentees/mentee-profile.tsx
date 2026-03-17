@@ -1,6 +1,8 @@
+import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { icons } from "@/constants/images"
 import { useMenteeByEmail } from "@/hooks/mentees/useMenteeByEmail"
 import { useMentees } from "@/hooks/mentees/useMentees"
+import { useAuthStore } from "@/stores/auth.store"
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack, useLocalSearchParams } from "expo-router"
@@ -18,24 +20,28 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function MenteeProfileScreen() {
   const { menteeId, email: emailParam } = useLocalSearchParams<{ menteeId?: string; email?: string }>()
-  
-  // Get mentees list to look up email if needed
-  const { data: menteesData } = useMentees()
-  
+  const { user } = useAuthStore()
+
+  // Get assigned mentees list to look up email if needed
+  const { data: menteesData } = useMentees(10, user?.id)
+  console.log(menteesData, "menteesData");
   // Get email from param or look it up from menteeId
   const email = useMemo(() => {
     if (emailParam) return emailParam
     if (menteeId) {
-      // Look up email from mentees list
-      const mentee = menteesData?.mentees?.find((m) => m.id === menteeId)
+      // Look up email from mentees list across all paginated pages
+      const mentee = menteesData?.pages
+        .flatMap((page: any) => page.mentees)
+        .find((m: any) => m.id === menteeId)
       return mentee?.email
     }
     return undefined
   }, [emailParam, menteeId, menteesData])
-
+  console.log(email, "email", menteeId, "menteeId");
   // Fetch mentee data by email
   const { data: menteeData, isLoading, isError } = useMenteeByEmail(email)
-
+  console.log(menteeData, "menteeData");
+  console.log(email, "email", menteeId, "menteeId");
   // Map API data to UI structure
   const mentee = useMemo(() => {
     if (!menteeData) {
@@ -182,12 +188,12 @@ export default function MenteeProfileScreen() {
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.contentContainer}>
           {/* Top Navigation Bar */}
-          <View style={styles.topNav}>
+          {/* <View style={styles.topNav}>
             <TouchableOpacity activeOpacity={0.8}>
               <Ionicons name="menu" size={26} color="#FFFFFF" />
             </TouchableOpacity>
             <View style={styles.namePill}>
-              <Text style={styles.namePillText}>John Doe</Text>
+              <Text style={styles.namePillText}>{mentee.name}</Text>
             </View>
             <View style={styles.navActions}>
               <View style={styles.notificationBadge}>
@@ -205,7 +211,8 @@ export default function MenteeProfileScreen() {
                 <Image source={icons.profileTabIcon} style={{ width: 28, height: 28, tintColor: "#FFFFFF" }} />
               </TouchableOpacity>
             </View>
-          </View>
+          </View> */}
+        <PastorNavigationHeader showNameTag tagName={mentee.name || ""} />
 
           {/* Header with Back Button */}
           <View style={styles.headerRow}>

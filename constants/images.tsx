@@ -1,6 +1,7 @@
 import { ImageSourcePropType } from "react-native";
 
 interface Icons {
+  notesIcon: ImageSourcePropType;
   myMentors: ImageSourcePropType;
   Revitalization: ImageSourcePropType;
   Assessments: ImageSourcePropType;
@@ -121,6 +122,7 @@ export const icons: Icons = {
   edit2: require("@/assets/icons/edit2.png"),
   profile2: require("@/assets/icons/Profile2.png"),
   list: require("@/assets/icons/List.png"),
+  notesIcon: require("@/assets/icons/cil_notes.png"),
   grid: require("@/assets/icons/Grid.png"),
   dummyUser: require("@/assets/icons/user.png"),
   dummyUser2: require("@/assets/icons/user1.png"),

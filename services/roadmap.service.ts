@@ -52,8 +52,10 @@ export const roadmapService = {
     async getRoadmaps() {
         const response = await apiClient.get<RoadmapResponse>('/roadmaps');
         if (!response.data.success) {
+            // console.log('Failed to fetch roadmaps:', response.data);
             throw new Error(response.data.message || 'Failed to fetch roadmaps');
         }
+        console.log('Fetched roadmaps:----->>>>>>>>>>>>>>', response.data.data);
         return response.data.data;
     },
 
@@ -104,6 +106,11 @@ export const roadmapService = {
 
 
     async updateRoadmap(roadmapId: string, payload: UpdateRoadmapRequest) {
+        console.log('-----------------------------------------------------------');
+        console.log('-----------------------------------------------------------');
+        console.log('payload', payload);
+        console.log('-----------------------------------------------------------');
+        console.log('-----------------------------------------------------------');
         console.log('📤 Updating roadmap:', { roadmapId, payload });
         const response = await apiClient.patch<UpdateRoadmapResponse>(
             ENDPOINTS.ROADMAPS.UPDATE(roadmapId),
@@ -125,6 +132,7 @@ export const roadmapService = {
         if (!response.data.success) {
             throw new Error(response.data.message || 'Failed to fetch roadmap');
         }
+        console.log('Fetched roadmap by id:----->>>>>>>>>>>>>>', response.data.data);
         return response.data.data;
     },
 
@@ -225,7 +233,7 @@ export const roadmapService = {
 
 
         const response = await apiClient.get(url);
-        console.log("Fetched roadmap documents:", response.data);
+        console.log("Fetched roadmap documents:----->>>>>>>>>>>>>>", response.data);
         return response.data; // { success: true, documents: [...] }
     },
 
@@ -348,15 +356,23 @@ export const roadmapService = {
     },
 
     async getRoadmapQueries(roadmapId: string, userId: string) {
-        const response = await apiClient.get<GetQueriesResponse>(
-            ENDPOINTS.ROADMAPS.GET_QUERIES(roadmapId, userId)
-        );
+        try {
+            const response = await apiClient.get<GetQueriesResponse>(
+                ENDPOINTS.ROADMAPS.GET_QUERIES(roadmapId, userId)
+            );
 
-        if (!response.data.success) {
-            throw new Error(response.data.message || "Failed to fetch queries");
+            if (!response.data.success) {
+                throw new Error(response.data.message || "Failed to fetch queries");
+            }
+
+            return response.data.data;
+        } catch (error: any) {
+            // Handle 404 as empty queries list
+            if (error?.response?.status === 404) {
+                return [];
+            }
+            throw error;
         }
-
-        return response.data.data;
     },
 
     async replyRoadmapQuery(roadmapId: string, queryId: string, payload: ReplyQueryRequest) {
@@ -386,17 +402,30 @@ export const roadmapService = {
     },
 
     async getRoadmapComments(roadMapId: string, userId: string) {
-        const response = await apiClient.get<{
-            success: boolean;
-            message: string;
-            data: RoadmapCommentsThread;
-        }>(ENDPOINTS.ROADMAPS.GET_COMMENTS(roadMapId, userId));
-        
-        if (!response.data.success) {
-            throw new Error(response.data.message || 'Failed to fetch roadmap comments');
+        try {
+            const response = await apiClient.get<{
+                success: boolean;
+                message: string;
+                data: RoadmapCommentsThread;
+            }>(ENDPOINTS.ROADMAPS.GET_COMMENTS(roadMapId, userId));
+
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Failed to fetch roadmap comments');
+            }
+
+            return response.data.data;
+        } catch (error: any) {
+            // Handle 404 as empty comments thread
+            if (error?.response?.status === 404) {
+                return {
+                    _id: '',
+                    userId,
+                    roadMapId,
+                    comments: []
+                };
+            }
+            throw error;
         }
-        
-        return response.data.data;
     }
 
 };

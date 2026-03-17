@@ -32,6 +32,9 @@ export const useSubmitPreSurvey = () => {
             queryClient.invalidateQueries({
                 queryKey: ['assessment', variables.assessmentId]
             });
+            queryClient.invalidateQueries({
+                queryKey: ['progress']
+            });
         },
 
         onError: (error) => {
@@ -68,6 +71,9 @@ export const useSubmitAssessmentAnswers = () => {
             });
             queryClient.invalidateQueries({
                 queryKey: ['answers', variables.assessmentId]
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['progress']
             });
         },
 

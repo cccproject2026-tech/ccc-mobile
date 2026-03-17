@@ -1,29 +1,32 @@
-import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { useSetAvailability } from "@/hooks/mentors/useMentorsAvailability";
+import {
+  useSetAvailability,
+  useWeeklyAvailability,
+} from "@/hooks/mentors/useMentorsAvailability";
 import { useAuthStore } from "@/stores/auth.store";
 import { SetAvailabilityPayload } from "@/types/appointment.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import WeeklyCalendar from "./WeeklyCalendar";
 
 interface TimeSlot {
   id: string;
@@ -52,63 +55,145 @@ const AvailabilityScreen = () => {
   const { user } = useAuthStore();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
-  const [activeTab, setActiveTab] = useState<
-    "appointments" | "availability"
-  >("availability");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
+  const [activeTab, setActiveTab] = useState<"appointments" | "availability">(
+    "availability",
+  );
 
   // Reset active tab when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       setActiveTab("availability");
-    }, [])
+    }, []),
   );
 
+  const selectedDateObj = new Date(selectedDate);
+  const month = selectedDateObj.getMonth() + 1;
+  const year = selectedDateObj.getFullYear();
   // Weekly availability state
+  // const {
+  //   availability: apiAvailability,
+  //   isLoading: isLoadingAvailability,
+  //   isError,
+  // } = useMonthlyAvailability({
+  //   mentorId: user?.id || null,
+  //   month: month,
+  //   year: year,
+  // });
+
+  const { availability: apiAvailability, isLoading: isLoadingAvailability } =
+    useWeeklyAvailability(user?.id || null);
   const [weeklyAvailability, setWeeklyAvailability] =
-    useState<WeeklyAvailability>({
-      monday: {
-        enabled: true,
-        slots: [
-          { id: "1", start: "10:00 AM", end: "03:00 PM" },
-          { id: "2", start: "05:00 PM", end: "07:00 PM" },
-        ],
-      },
-      tuesday: {
-        enabled: true,
-        slots: [{ id: "1", start: "10:00 AM", end: "07:00 PM" }],
-      },
-      wednesday: {
-        enabled: true,
-        slots: [{ id: "1", start: "10:00 AM", end: "07:00 PM" }],
-      },
-      thursday: {
-        enabled: true,
-        slots: [{ id: "1", start: "10:00 AM", end: "07:00 PM" }],
-      },
-      friday: {
-        enabled: true,
-        slots: [{ id: "1", start: "10:00 AM", end: "07:00 PM" }],
-      },
+    React.useState<WeeklyAvailability>({
+      monday: { enabled: false, slots: [] },
+      tuesday: { enabled: false, slots: [] },
+      wednesday: { enabled: false, slots: [] },
+      thursday: { enabled: false, slots: [] },
+      friday: { enabled: false, slots: [] },
       saturday: { enabled: false, slots: [] },
       sunday: { enabled: false, slots: [] },
     });
 
+  useEffect(() => {
+    if (apiAvailability) {
+      const newAvailability: WeeklyAvailability = {
+        monday: { enabled: false, slots: [] },
+        tuesday: { enabled: false, slots: [] },
+        wednesday: { enabled: false, slots: [] },
+        thursday: { enabled: false, slots: [] },
+        friday: { enabled: false, slots: [] },
+        saturday: { enabled: false, slots: [] },
+        sunday: { enabled: false, slots: [] },
+      };
+
+      const dayNamesArr = [
+        "sunday",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+      ];
+
+      apiAvailability?.weeklySlots.forEach((slot) => {
+        const dayName = dayNamesArr[slot.day] as keyof WeeklyAvailability;
+        if (dayName && newAvailability[dayName]) {
+          newAvailability[dayName] = {
+            enabled: slot.rawSlots.length > 0,
+            slots: slot.rawSlots.map((s) => ({
+              id: s._id,
+              start: `${s.startTime} ${s.startPeriod}`,
+              end: `${s.endTime} ${s.endPeriod}`,
+            })),
+          };
+        }
+      });
+
+      console.log("API availability data:", JSON.stringify(apiAvailability));
+      setWeeklyAvailability(newAvailability);
+    }
+  }, [apiAvailability, searchQuery, selectedDate]);
+  useEffect(() => {
+    if (searchQuery.length !== 10) return;
+
+    const match = searchQuery.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (!match) return;
+
+    const [, dd, mm, yyyy] = match;
+
+    // ✅ Proper ISO format
+    const iso = `${yyyy}-${mm}-${dd}`;
+
+    const d = new Date(iso);
+
+    if (!Number.isNaN(d.getTime())) {
+      setSelectedDate(iso); // MUST BE YYYY-MM-DD
+    }
+
+    console.log("Parsed date:", iso, "Date object:", d);
+  }, [searchQuery]);
+  // const [weeklyAvailability, setWeeklyAvailability] =
+  //   useState<WeeklyAvailability>({
+  //     monday: {
+  //       enabled: true,
+  //       slots: [
+  //         { id: "1", start: "10:00 AM", end: "03:00 PM" },
+  //         { id: "2", start: "05:00 PM", end: "07:00 PM" },
+  //       ],
+  //     },
+  //     tuesday: {
+  //       enabled: true,
+  //       slots: [{ id: "1", start: "10:00 AM", end: "07:00 PM" }],
+  //     },
+  //     wednesday: {
+  //       enabled: true,
+  //       slots: [{ id: "1", start: "10:00 AM", end: "07:00 PM" }],
+  //     },
+  //     thursday: {
+  //       enabled: true,
+  //       slots: [{ id: "1", start: "10:00 AM", end: "07:00 PM" }],
+  //     },
+  //     friday: {
+  //       enabled: true,
+  //       slots: [{ id: "1", start: "10:00 AM", end: "07:00 PM" }],
+  //     },
+  //     saturday: { enabled: false, slots: [] },
+  //     sunday: { enabled: false, slots: [] },
+  //   });
+
   // Meeting preferences state
   const [meetingDuration, setMeetingDuration] = useState("60 Minutes");
   const [maxBookingPerDay, setMaxBookingPerDay] = useState("5");
-  const [minSchedulingNotice, setMinSchedulingNotice] =
-    useState("2 Days");
-  const [preferredMeetingOption, setPreferredMeetingOption] =
-    useState("Zoom");
+  const [minSchedulingNotice, setMinSchedulingNotice] = useState("2 Days");
+  const [preferredMeetingOption, setPreferredMeetingOption] = useState("Zoom");
 
   // Dropdown states
   const [showDurationDropdown, setShowDurationDropdown] = useState(false);
-  const [showMaxBookingDropdown, setShowMaxBookingDropdown] =
-    useState(false);
-  const [showMinNoticeDropdown, setShowMinNoticeDropdown] =
-    useState(false);
+  const [showMaxBookingDropdown, setShowMaxBookingDropdown] = useState(false);
+  const [showMinNoticeDropdown, setShowMinNoticeDropdown] = useState(false);
   const [showMeetingOptionDropdown, setShowMeetingOptionDropdown] =
     useState(false);
 
@@ -155,7 +240,7 @@ const AvailabilityScreen = () => {
     onError: (error) => {
       Alert.alert(
         "Error",
-        error.message || "Failed to set availability. Please try again."
+        error.message || "Failed to set availability. Please try again.",
       );
     },
   });
@@ -203,7 +288,7 @@ const AvailabilityScreen = () => {
   const openTimePicker = (
     day: keyof WeeklyAvailability,
     slotId: string,
-    field: "start" | "end"
+    field: "start" | "end",
   ) => {
     setSelectedTimeSlot({ day, slotId, field });
     setShowTimePicker(true);
@@ -215,7 +300,7 @@ const AvailabilityScreen = () => {
         selectedTimeSlot.day,
         selectedTimeSlot.slotId,
         selectedTimeSlot.field,
-        time
+        time,
       );
     }
     setShowTimePicker(false);
@@ -226,21 +311,23 @@ const AvailabilityScreen = () => {
     day: keyof WeeklyAvailability,
     slotId: string,
     field: "start" | "end",
-    value: string
+    value: string,
   ) => {
     setWeeklyAvailability((prev) => ({
       ...prev,
       [day]: {
         ...prev[day],
         slots: prev[day].slots.map((slot) =>
-          slot.id === slotId ? { ...slot, [field]: value } : slot
+          slot.id === slotId ? { ...slot, [field]: value } : slot,
         ),
       },
     }));
   };
 
   // Helper function to parse time from "10:00 AM" to { time: "10", period: "AM" }
-  const parseTime = (timeString: string): { time: string; period: "AM" | "PM" } => {
+  const parseTime = (
+    timeString: string,
+  ): { time: string; period: "AM" | "PM" } => {
     const [timePart, period] = timeString.split(" ");
     const [hour] = timePart.split(":");
     return {
@@ -269,18 +356,18 @@ const AvailabilityScreen = () => {
   const getWeekDates = (startDate: string): string[] => {
     const date = new Date(startDate);
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
+
     // Get Monday of the week
     const monday = new Date(date);
     monday.setDate(date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
-    
+
     const weekDates: string[] = [];
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(monday);
       currentDate.setDate(monday.getDate() + i);
       weekDates.push(currentDate.toISOString().split("T")[0]);
     }
-    
+
     return weekDates;
   };
 
@@ -298,10 +385,55 @@ const AvailabilityScreen = () => {
     return dayMap[dayName];
   };
 
+  const convertToMinutes = (timeString: string): number => {
+    const { time, period } = parseTime(timeString);
+    let hour = parseInt(time, 10);
+    if (period === "PM" && hour !== 12) hour += 12;
+    if (period === "AM" && hour === 12) hour = 0;
+    return hour * 60;
+  };
+
+  const validateSlots = (
+    dayLabel: string,
+    slots: TimeSlot[],
+  ): string | null => {
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i];
+      const start = convertToMinutes(slot.start);
+      const end = convertToMinutes(slot.end);
+
+      if (start >= end) {
+        return `${dayLabel}: Start time (${slot.start}) must be before end time (${slot.end}).`;
+      }
+
+      for (let j = i + 1; j < slots.length; j++) {
+        const other = slots[j];
+        const otherStart = convertToMinutes(other.start);
+        const otherEnd = convertToMinutes(other.end);
+
+        if (start < otherEnd && end > otherStart) {
+          return `${dayLabel}: Overlapping slots detected: ${slot.start}-${slot.end} and ${other.start}-${other.end}.`;
+        }
+      }
+    }
+    return null;
+  };
+
   const handleSubmit = async () => {
     if (!user?.id) {
       Alert.alert("Error", "User ID not found. Please log in again.");
       return;
+    }
+
+    // Validate slots for all enabled days
+    for (const { key, label } of dayNames) {
+      if (weeklyAvailability[key].enabled) {
+        const error = validateSlots(label, weeklyAvailability[key].slots);
+        if (error) {
+          Alert.alert("Invalid Availability", error);
+          return;
+        }
+      }
     }
 
     try {
@@ -358,10 +490,7 @@ const AvailabilityScreen = () => {
       await setAvailabilityAsync(payload);
     } catch (error) {
       console.error("Error submitting availability:", error);
-      Alert.alert(
-        "Error",
-        "Failed to submit availability. Please try again."
-      );
+      Alert.alert("Error", "Failed to submit availability. Please try again.");
     }
   };
 
@@ -370,7 +499,7 @@ const AvailabilityScreen = () => {
     options: string[],
     selectedValue: string,
     onSelect: (value: string) => void,
-    onClose: () => void
+    onClose: () => void,
   ) => {
     if (!visible) return null;
 
@@ -414,7 +543,7 @@ const AvailabilityScreen = () => {
       >
         <>
           <View style={{ paddingBottom: 10 }}>
-            <TopBar role="mentor" />
+            <TopBar role="mentor" showUserName />
           </View>
           <View style={{ flex: 1 }}>
             {/* Header */}
@@ -475,8 +604,8 @@ const AvailabilityScreen = () => {
                   <View style={styles.searchContainer}>
                     <SearchBar
                       backgroundColor="transparent"
-                      value={selectedDate}
-                      onChangeValue={setSelectedDate}
+                      value={searchQuery}
+                      onChangeValue={setSearchQuery}
                       placeholder="Select a date"
                     />
                   </View>
@@ -493,22 +622,27 @@ const AvailabilityScreen = () => {
                       My Weekly Availability
                     </Text>
                   </View>
-
                   <View style={styles.calendarContainer}>
+                    <WeeklyCalendar
+                      selectedDate={selectedDate}
+                      onDateSelect={setSelectedDate}
+                    />
+                  </View>
+                  {/* <View style={styles.calendarContainer}>
                     <GradientCalendar
                       selected={selectedDate}
                       setSelected={setSelectedDate}
                       showHeader={true}
                       disablePastDates={false}
-                      markToday={true}
+                      markToday={false}
                     />
-                  </View>
+                  </View> */}
                 </View>
 
                 {/* Available Hours */}
                 <View style={styles.sectionContainer}>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Available Hours</Text>
+                    <Text style={styles.sectionTitle}>Available Hourssss</Text>
                   </View>
 
                   <View style={styles.hoursContainer}>
@@ -611,7 +745,7 @@ const AvailabilityScreen = () => {
                     durationOptions,
                     meetingDuration,
                     setMeetingDuration,
-                    () => setShowDurationDropdown(false)
+                    () => setShowDurationDropdown(false),
                   )}
                 </View>
 
@@ -631,7 +765,7 @@ const AvailabilityScreen = () => {
                     maxBookingOptions,
                     maxBookingPerDay,
                     setMaxBookingPerDay,
-                    () => setShowMaxBookingDropdown(false)
+                    () => setShowMaxBookingDropdown(false),
                   )}
                 </View>
 
@@ -655,7 +789,7 @@ const AvailabilityScreen = () => {
                     minNoticeOptions,
                     minSchedulingNotice,
                     setMinSchedulingNotice,
-                    () => setShowMinNoticeDropdown(false)
+                    () => setShowMinNoticeDropdown(false),
                   )}
                 </View>
 
@@ -679,7 +813,7 @@ const AvailabilityScreen = () => {
                     meetingOptions,
                     preferredMeetingOption,
                     setPreferredMeetingOption,
-                    () => setShowMeetingOptionDropdown(false)
+                    () => setShowMeetingOptionDropdown(false),
                   )}
                 </View>
 
@@ -717,7 +851,7 @@ const AvailabilityScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Time</Text>
+              <Text style={styles.modalTitle}>Select Times</Text>
               <Pressable
                 onPress={() => {
                   setShowTimePicker(false);
@@ -825,7 +959,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: 4,
     borderWidth: 2,
     borderColor: "#FFFFFF",
     backgroundColor: "#FFFFFF",

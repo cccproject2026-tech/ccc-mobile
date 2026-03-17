@@ -34,10 +34,10 @@ export default function MenteeProgressScreen() {
   const deleteFinalCommentMutation = useDeleteFinalComment();
 
 
-  // Fetch mentee data
-  const { data: menteesData, isLoading: isLoadingMentees } = useMentees();
+  // Fetch assigned mentees for this mentor
+  const { data: menteesData, isLoading: isLoadingMentees } = useMentees(10, user?.id);
   const mentee = useMemo(() => {
-    return menteesData?.mentees?.find((m) => m.id === menteeId);
+    return menteesData?.pages.flatMap((page: any) => page.mentees)?.find((m: any) => m.id === menteeId);
   }, [menteesData, menteeId]);
 
   // Fetch progress data for the mentee
@@ -626,7 +626,12 @@ export default function MenteeProgressScreen() {
               >
                 {filteredRoadMaps.map((e, i) => (
                   <React.Fragment key={i}>
-                    <ProgressCard data={e} navigation={router} />
+                    <ProgressCard 
+                      data={e} 
+                      navigation={router} 
+                      menteeId={menteeId} 
+                      menteeName={mentee ? `Pr. ${mentee.firstName} ${mentee.lastName}` : ''} 
+                    />
                     {i < filteredRoadMaps.length - 1 && (
                       <View className="h-[0.5px] bg-white/30 my-4" />
                     )}
@@ -680,7 +685,12 @@ export default function MenteeProgressScreen() {
               >
                 {filteredAssessments.map((e, i) => (
                   <React.Fragment key={i}>
-                    <ProgressCard data={e} navigation={router} />
+                    <ProgressCard 
+                      data={e} 
+                      navigation={router} 
+                      menteeId={menteeId} 
+                      menteeName={mentee ? `Pr. ${mentee.firstName} ${mentee.lastName}` : ''} 
+                    />
                     {i < filteredAssessments.length - 1 && (
                       <View className="h-[0.5px] bg-white/30 my-4" />
                     )}

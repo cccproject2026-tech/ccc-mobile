@@ -51,7 +51,7 @@ export const ItemCard = ({ item }: Props) => {
 
                 {/* Completion time */}
                 <Text style={styles.completionTime}>
-                    Completion Time{'\n'}Months 1 - 4
+                    Completion Time{'\n'}Months {item}
                 </Text>
 
                 {/* Status badge */}

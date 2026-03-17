@@ -90,13 +90,14 @@ export default function RevitalizationCard({
   return (
     <TouchableOpacity
       onPress={handleNavigation}
-      className="w-full bg-[#194F82] rounded-[10px] p-4 my-2.5 border border-white/45"
+      className="w-full  bg-[#46660] rounded-[10px] p-4 my-2.5  border border-white/45"
     >
       {/* Main Content Row */}
       <View className="flex-row w-full">
         {/* Image Section - Fixed Width */}
-        <View className="w-[110px] h-[100px] mr-3">
-          <View className="relative">
+        <View className="w-[110px]  mr-3 flex-shrink-0">
+        <View className="w-[110px] h-[100px] mr-3 flex-shrink-0">
+          <View className="relative w-full">
             <Image
               source={data?.image}
               className="w-full h-full rounded-xl"
@@ -109,6 +110,7 @@ export default function RevitalizationCard({
                 </Text>
               </View>
             )}
+          </View>
           </View>
           {/* Completion Time */}
           {data?.time && (
@@ -227,7 +229,8 @@ export default function RevitalizationCard({
           colors={["#B83AF3", "#21B6E9"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          className="mt-3 rounded-lg p-[2px]"
+          style={{ marginTop: 10 }}
+          className="rounded-lg p-[2px]"
         >
           <View className="bg-[#233A6F] rounded-lg px-3 py-2 flex-row items-center justify-between">
             <Text

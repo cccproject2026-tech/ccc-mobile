@@ -16,6 +16,7 @@ import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -174,14 +175,14 @@ export default function Grant() {
     return (
       <View key={field._id}>
         <InputCard
-          title={field.label + (field.required ? " *" : "")}
+          title={field.label + (field.required ? "" : "")}
           value={value}
           setValue={(v: string) => handleInputChange(field.label, v)}
           description={field.type === "file" ? "[Upload up to 10 files. Max 100MB.]" : ""}
           required={field.required}
           multiline={field.type === "textarea"}
           fileUpload={field.type === "file"}
-          answer={false}
+          answer={field.type !== "file"}
         />
         {hasError && (
           <Text
@@ -257,14 +258,19 @@ export default function Grant() {
         />
 
         <View style={{ flex: 1 }}>
-          <View style={{ width: "100%", alignItems: "center", marginTop: 16, flex: 1 }}>
-            <ScrollView
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <View style={{ width: "100%", alignItems: "center", marginTop: 16, flex: 1 }}>
+              <ScrollView
               contentContainerStyle={{
                 paddingBottom: Platform.OS === "android" ? bottom : bottom * 1.5,
                 paddingHorizontal: getSpacing(16),
                 flexGrow: 1,
               }}
               style={{ width: "100%" }}
+              keyboardShouldPersistTaps="handled"
             >
               <View style={{ width: "100%", flexDirection: "column" }}>
 
@@ -287,6 +293,7 @@ export default function Grant() {
                       fontSize: getFontSize(14),
                       lineHeight: getFontSize(20),
                       fontWeight: "500",
+                      textAlign: "center",
                     }}
                   >
                     {form?.data?.description ||
@@ -503,19 +510,20 @@ export default function Grant() {
                   </>
                 )}
               </View>
-            </ScrollView>
+              </ScrollView>
 
-            {/* Response modal */}
-            <ResponseModal
-              buttonText={responseModal.buttonText}
-              buttonPress={() => setResponseModal((prev) => ({ ...prev, visible: false }))}
-              isModalVisible={responseModal.visible}
-              responseText={responseModal.message}
-              closeMenu={() =>
-                setResponseModal((prev) => ({ ...prev, visible: false, message: "" }))
-              }
-            />
-          </View>
+              {/* Response modal */}
+              <ResponseModal
+                buttonText={responseModal.buttonText}
+                buttonPress={() => setResponseModal((prev) => ({ ...prev, visible: false }))}
+                isModalVisible={responseModal.visible}
+                responseText={responseModal.message}
+                closeMenu={() =>
+                  setResponseModal((prev) => ({ ...prev, visible: false, message: "" }))
+                }
+              />
+            </View>
+          </KeyboardAvoidingView>
         </View>
 
         <SimpleSuccessModal

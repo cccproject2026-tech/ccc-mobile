@@ -7,7 +7,7 @@ export const useAssessment = (assessmentId: string | undefined) => {
         queryKey: ['assessment', assessmentId],
         queryFn: () => assessmentService.getAssessmentById(assessmentId!),
         enabled: !!assessmentId,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 2000, // 2 seconds (was 5 minutes)
         retry: 2,
     });
 };

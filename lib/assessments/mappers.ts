@@ -29,9 +29,9 @@ export function mapApiToFrontend(apiAssessment: ApiAssessment): Assessment {
 }
 
 /**
- * Map API section to frontend section
- * Each layer becomes a question group
- * Each choice becomes a separate checkbox question
+ * Map API section to frontend section.
+ * Each layer = one question (radio) with choices as options.
+ * Backend expects selectedChoice as numeric level ("1"|"2"|"3"|"4"); we use choice index + 1.
  */
 function mapApiSection(apiSection: ApiAssessmentSection): AssessmentSection {
     return {
@@ -39,14 +39,21 @@ function mapApiSection(apiSection: ApiAssessmentSection): AssessmentSection {
         subtitle: apiSection.description,
         questionGroups: apiSection.layers.map(layer => ({
             id: layer._id,
-            groupTitle: layer.title, // "Group 1", "Group 2", etc.
-            questions: layer.choices.map(choice => ({
-                id: choice._id,
-                text: choice.text,
-                type: 'checkbox' as const,
-                required: false,
-            })),
+            groupTitle: layer.title,
+            questions: [
+                {
+                    id: layer._id,
+                    text: layer.title,
+                    type: 'radio' as const,
+                    options: layer.choices.map((choice, index) => ({
+                        label: choice.text,
+                        value: String(index + 1),
+                    })),
+                    required: false,
+                },
+            ],
         })),
+        recommendations: apiSection.recommendations,
     };
 }
 

@@ -18,12 +18,13 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function MenteeDocumentsScreen() {
   const { menteeId } = useLocalSearchParams()
+  console.log(menteeId, "menteeId");
   const id = typeof menteeId === "string" ? menteeId : undefined
 
   // Fetch mentee data
   const { data: menteesData, isLoading: isLoadingMentees } = useMentees()
   const mentee = useMemo(() => {
-    return menteesData?.mentees?.find((m) => m.id === id)
+    return menteesData?.pages.flatMap((page: any) => page.mentees)?.find((m: any) => m.id === id)
   }, [menteesData, id])
 
   // Fetch documents for the mentee

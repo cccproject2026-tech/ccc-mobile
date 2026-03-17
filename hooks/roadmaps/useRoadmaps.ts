@@ -14,9 +14,10 @@ import { ENDPOINTS } from "@/services/api/endpoints";
 import { roadmapService } from '@/services/roadmap.service';
 import { UserRole } from "@/types";
 import { RoadmapProgress } from "@/types/progress.types";
+import { useAuthStore } from "@/stores";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useProgress } from "../progress/useProgress";
+import { progressKeys, useProgress } from "../progress/useProgress";
 
 // ============================================
 // ROADMAP QUERY KEYS
@@ -55,18 +56,20 @@ function mapProgressStatus(
 /**
  * Merges roadmap with its progress data
  */
-function mergeRoadmapWithProgress(
+export function mergeRoadmapWithProgress(
     roadmap: Roadmap,
     progressItem: RoadmapProgress | undefined
 ): Roadmap {
-    if (!progressItem) {
+    if (!progressItem || !roadmap.roadmaps) {
         return roadmap;
     }
 
     // Map nested roadmaps with their progress
     const updatedNestedRoadmaps = roadmap.roadmaps.map((nestedRoadmap) => {
+        if (!nestedRoadmap) return nestedRoadmap;
+        
         const nestedProgress = progressItem.nestedRoadmaps?.find(
-            (np) => np.nestedRoadmapId === nestedRoadmap._id
+            (np) => np && np.nestedRoadmapId === nestedRoadmap._id
         );
 
         if (!nestedProgress) {
@@ -104,8 +107,8 @@ export const useAllRoadmaps = () => {
             }
             return response.data.data as Roadmap[];
         },
-        staleTime: 1000 * 60 * 5, // 5 minutes
-        gcTime: 1000 * 60 * 15, // 15 minutes
+        staleTime: 0,
+        // gcTime: 1000 , // 10 seconds
         retry: 1,
     });
 };
@@ -113,14 +116,17 @@ export const useAllRoadmaps = () => {
 // ============================================
 // FETCH ASSIGNED ROADMAPS WITH PROGRESS (PASTOR USE)
 // ============================================
-export const useAssignedRoadmaps = () => {
+export const useAssignedRoadmaps = (userId?: string) => {
+    const { user } = useAuthStore();
+    const targetUserId = userId || user?.id;
+
     // First, get the progress data to know which roadmaps are assigned
     const {
         data: progressData,
         isLoading: isProgressLoading,
         isError: isProgressError,
         error: progressError
-    } = useProgress();
+    } = useProgress(targetUserId);
 
     // Extract assigned roadmap IDs
     const assignedRoadmapIds = progressData?.roadmaps.items.map(item => item.roadMapId) || [];
@@ -148,8 +154,8 @@ export const useAssignedRoadmaps = () => {
             return assignedRoadmaps;
         },
         enabled: !!progressData && assignedRoadmapIds.length > 0,
-        staleTime: 1000 * 60 * 5,
-        gcTime: 1000 * 60 * 15,
+        staleTime: 0,
+        // gcTime: 1000 ,
         retry: 1,
     });
 
@@ -159,16 +165,16 @@ export const useAssignedRoadmaps = () => {
             return roadmapsQuery.data || [];
         }
 
-        console.log("🔄 Merging roadmaps with progress data...");
+        console.log("🔄 Merging roadmaps with progress data...",roadmapsQuery.data, progressData);
 
         const merged = roadmapsQuery.data.map((roadmap) => {
-            const progressItem = progressData.roadmaps.items.find(
-                (p) => p.roadMapId === roadmap._id
+            const progressItem = progressData?.roadmaps?.items?.find(
+                (p) => p && p.roadMapId === roadmap._id
             );
             return mergeRoadmapWithProgress(roadmap, progressItem);
         });
 
-        console.log("✅ Roadmaps merged with progress status");
+        console.log("✅ Roadmaps merged with progress status",merged);
         return merged;
     }, [roadmapsQuery.data, progressData]);
 
@@ -189,13 +195,13 @@ export const useAssignedRoadmaps = () => {
 // ============================================
 // SMART HOOK - AUTO-DETECTS USER ROLE
 // ============================================
-export function useRoadmaps(userRole?: UserRole) {
+export function useRoadmaps(userRole?: UserRole, userId?: string) {
     // If role is not provided, default to 'pastor' for safety
     const role = userRole || 'pastor';
 
     // Use different hooks based on role
     const allRoadmapsQuery = useAllRoadmaps();
-    const assignedRoadmapsQuery = useAssignedRoadmaps();
+    const assignedRoadmapsQuery = useAssignedRoadmaps(userId);
 
     if (role === 'pastor') {
         return assignedRoadmapsQuery;
@@ -214,8 +220,8 @@ export function useRoadmaps(userRole?: UserRole) {
 // ============================================
 // FETCH SINGLE ROADMAP BY ID WITH PROGRESS
 // ============================================
-export function useRoadmap(roadmapId: string | undefined, includeProgress: boolean = true) {
-    const { data: progressData } = useProgress();
+export function useRoadmap(roadmapId: string | undefined, userId?: string, includeProgress: boolean = true) {
+    const { data: progressData } = useProgress(userId);
 
     const roadmapQuery = useQuery<Roadmap>({
         queryKey: roadmapKeys.detail(roadmapId || ''),
@@ -225,8 +231,8 @@ export function useRoadmap(roadmapId: string | undefined, includeProgress: boole
             console.log("📥 Roadmap fetched:", roadmap);
             return roadmap;
         },
+        staleTime: 0,
         enabled: !!roadmapId,
-        staleTime: 5 * 60 * 1000,
         retry: 1,
     });
 
@@ -236,8 +242,8 @@ export function useRoadmap(roadmapId: string | undefined, includeProgress: boole
             return roadmapQuery.data;
         }
 
-        const progressItem = progressData.roadmaps.items.find(
-            (p) => p.roadMapId === roadmapQuery.data._id
+        const progressItem = progressData?.roadmaps?.items?.find(
+            (p) => p && p.roadMapId === roadmapQuery.data._id
         );
 
         return mergeRoadmapWithProgress(roadmapQuery.data, progressItem);
@@ -261,28 +267,22 @@ export function useRoadmapExtras(
     nestedRoadMapItemId?: string,
     userId?: string
 ) {
-    // Validate that roadmapId is a valid MongoDB ObjectId (24 hex characters)
-    const isValidRoadmapId = roadmapId &&
-        typeof roadmapId === 'string' &&
-        roadmapId.length === 24 &&
-        /^[0-9a-fA-F]{24}$/.test(roadmapId);
+    console.log('useRoadmapExtras----->>>>>>>>>>>>>>', { roadmapId, nestedRoadMapItemId, userId });
+    // Validate that roadmapId is a valid truthy string
+    const isValidRoadmapId = !!roadmapId && typeof roadmapId === 'string' && roadmapId.trim() !== '';
 
     // Only pass valid IDs (not undefined, not empty string, not "undefined")
     const validNestedId = nestedRoadMapItemId &&
         typeof nestedRoadMapItemId === 'string' &&
         nestedRoadMapItemId !== 'undefined' &&
-        nestedRoadMapItemId.trim() !== '' &&
-        nestedRoadMapItemId.length === 24 &&
-        /^[0-9a-fA-F]{24}$/.test(nestedRoadMapItemId)
+        nestedRoadMapItemId.trim() !== ''
         ? nestedRoadMapItemId
         : undefined;
 
     const validUserId = userId &&
         typeof userId === 'string' &&
         userId !== 'undefined' &&
-        userId.trim() !== '' &&
-        userId.length === 24 &&
-        /^[0-9a-fA-F]{24}$/.test(userId)
+        userId.trim() !== ''
         ? userId
         : undefined;
 
@@ -306,7 +306,8 @@ export function useRoadmapExtras(
             );
         },
         enabled: isValidRoadmapId === true,
-        staleTime: 2 * 60 * 1000,
+        staleTime: 0,
+        // gcTime: 1000 ,
     });
 }
 
@@ -331,6 +332,9 @@ export function useCreateRoadmapExtras() {
             });
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.all
+            });
+            queryClient.invalidateQueries({
+                queryKey: progressKeys.all
             });
         },
     });
@@ -392,8 +396,8 @@ export const useRoadmapDocuments = (
                 nestedId
             );
 
-            // Backend returns { success, message, data: [...] }
-            const allBatches = res.data ?? [];
+            // Backend returns { success, message, data: [...] } or { success, message, documents: [...] }
+            const allBatches = res.data ?? res.documents ?? [];
 
             // Flatten into single array of files and attach batch info
             const flatFiles = allBatches.flatMap((batch: any) =>
@@ -410,10 +414,13 @@ export const useRoadmapDocuments = (
             if (extraName) {
                 return flatFiles.filter((f: any) => f.extraName === extraName);
             }
+            console.log("Flattened roadmap documents:----->>>>>>>>>>>>>>", flatFiles);
 
             return flatFiles;
         },
         enabled: !!roadMapId && !!nestedId && !!userId,
+        staleTime: 0,
+        // gcTime: 1000 ,
     });
 };
 
@@ -489,6 +496,9 @@ export function useUpdateRoadmapExtras() {
             });
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.all
+            });
+            queryClient.invalidateQueries({
+                queryKey: progressKeys.all
             });
         },
     });

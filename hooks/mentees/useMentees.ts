@@ -36,7 +36,7 @@
 //     const query = useQuery({
 //         queryKey: ['mentees'],
 //         queryFn: () => menteesService.getMentees(),
-//         staleTime: 1000 * 60 * 5,
+//         staleTime: 2000,
 //         retry: 2,
 //     });
 
@@ -61,22 +61,28 @@ import { apiClient } from '@/services/api/client';
 import { ENDPOINTS } from '@/services/api/endpoints';
 import { menteesService } from '@/services/mentees.service';
 import { Mentee } from '@/types/mentee.types';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
-// Query key
-const MENTEES_KEY = ['mentees'];
+// Query key - include mentorId when filtering by assigned mentor
+const getMenteesKey = (mentorId?: string | null) => (mentorId ? ['mentees', 'assigned', mentorId] as const : ['mentees'] as const);
 
-export const useMentees = () => {
-    return useQuery({
-        queryKey: ['mentees'],
-        queryFn: async () => {
-            // fetch backend
-            const res = await menteesService.getMentees();
+/** Normalize backend user (may have _id) to have id for progress API */
+const toMenteeWithId = (m: any): Mentee => ({ ...m, id: m.id ?? m._id });
 
-            // FIX: backend uses `users`, not `mentees`
-            const backendMentees: Mentee[] = res.users ?? [];
+export const useMentees = (limit: number = 10, mentorId?: string | null) => {
+    const isAssignedOnly = Boolean(mentorId);
 
-            // fetch progress in parallel
+    return useInfiniteQuery({
+        queryKey: getMenteesKey(mentorId),
+        queryFn: async ({ pageParam = 1 }) => {
+            // Mentor context: only assigned mentees. Otherwise: all pastors (e.g. director).
+            const res = isAssignedOnly
+                ? await menteesService.getAssignedMentees(mentorId!)
+                : await menteesService.getMentees(pageParam, limit);
+
+            const backendMentees: Mentee[] = (res.users ?? []).map(toMenteeWithId);
+
+            // fetch progress in parallel for the current page only
             const progressResponses = await Promise.all(
                 backendMentees.map(async (m) => {
                     try {
@@ -93,7 +99,23 @@ export const useMentees = () => {
             // merge
             const mentees = backendMentees.map((m, idx) => {
                 const progress = progressResponses[idx];
-                const firstRoadmap = progress?.roadmaps?.items?.[0] ?? null;
+                // Handle different roadmap structures (array or paginated object)
+                const roadmaps = Array.isArray(progress?.roadmaps)
+                    ? progress.roadmaps
+                    : (progress?.roadmaps?.items ?? []);
+
+                const firstRoadmap = roadmaps[0] ?? null;
+
+                // Extract assigned roadmap IDs
+                const assignedRoadmapIds = roadmaps.map((item: any) => item.roadMapId || item._id);
+
+                // Handle different assessment structures
+                const assessments = Array.isArray(progress?.assessments)
+                    ? progress.assessments
+                    : (progress?.assessments?.items ?? []);
+
+                // Extract assigned assessment IDs
+                const assignedAssessmentIds = assessments.map((item: any) => item.assessmentId || item._id);
 
                 return {
                     ...m,
@@ -102,15 +124,21 @@ export const useMentees = () => {
                     phase: firstRoadmap?.phase,
                     phaseNumber: firstRoadmap?.phaseNumber,
                     completedOn: m.hasCompleted ? m.updatedAt : undefined,
+                    assignedRoadmapIds,
+                    assignedAssessmentIds,
                 };
             });
 
             return {
                 mentees,
-                total: res.total ?? mentees.length
+                total: res.total ?? mentees.length,
+                nextPage: isAssignedOnly ? undefined : (mentees.length === limit ? pageParam + 1 : undefined),
             };
         },
-        staleTime: 1000 * 60 * 5,
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => lastPage.nextPage,
+        staleTime: 2000,
         retry: 1,
+        enabled: !isAssignedOnly || Boolean(mentorId),
     });
 };
