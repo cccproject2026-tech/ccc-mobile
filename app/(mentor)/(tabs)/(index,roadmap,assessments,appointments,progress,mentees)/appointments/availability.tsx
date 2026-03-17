@@ -62,18 +62,25 @@ const AvailabilityScreen = () => {
   const selectedDateObj = new Date(selectedDate);
   const month = selectedDateObj.getMonth() + 1;
   const year = selectedDateObj.getFullYear();
+  const mentorId = user?.id;
+  const shouldFetchAvailability = Boolean(mentorId);
   const { availability: apiAvailability, isLoading: isLoadingAvailability } =
-    useMonthlyAvailability({
-      mentorId: user?.id || null,
-      month,
-      year,
-    });
+    useMonthlyAvailability(
+      {
+        mentorId: shouldFetchAvailability ? (mentorId as string) : undefined,
+        month,
+        year,
+      },
+      {
+        enabled: shouldFetchAvailability,
+      },
+    );
 
   const [dateAvailabilities, setDateAvailabilities] =
     React.useState<DateAvailability[]>([]);
 
   useEffect(() => {
-    if (!apiAvailability) return;
+    if (!apiAvailability || apiAvailability.length === 0) return;
 
     const mapped: DateAvailability[] = apiAvailability.map((day) => ({
       date: day.date,

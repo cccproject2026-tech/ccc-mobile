@@ -155,6 +155,10 @@ export const useWeeklyAvailability = (
   const query = useQuery({
     queryKey: ["weekly-availability", mentorId],
     queryFn: async () => {
+      if (!mentorId) {
+        throw new Error("mentorId is required for weekly availability");
+      }
+
       const data = await appointmentService.getWeeklyAvailability(mentorId!);
 
       // If it's a pastor/mentee and they have no availability set, return defaults
@@ -207,6 +211,10 @@ export const useMonthlyAvailability = (
   const query = useQuery({
     queryKey: ["monthly-availability", mentorId, month, year],
     queryFn: async () => {
+      if (!mentorId) {
+        throw new Error("mentorId is required for monthly availability");
+      }
+
       const data = await appointmentService.getMonthlyAvailability(
         mentorId!,
         month,

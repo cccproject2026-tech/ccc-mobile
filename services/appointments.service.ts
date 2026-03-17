@@ -62,16 +62,33 @@ export const appointmentService = {
   getWeeklyAvailability: async (
     mentorId: string,
   ): Promise<WeeklyAvailability> => {
-    const response = await apiClient.get<GetWeeklyAvailabilityApiResponse>(
-      ENDPOINTS.APPOINTMENTS.GET_WEEKLY_AVAILABILITY(mentorId),
-    );
-    console.log(
-      "Weekly availability params:",
+    if (!mentorId) {
+      throw new Error("mentorId is required for getWeeklyAvailability");
+    }
+
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+
+    const monthly = await appointmentService.getMonthlyAvailability(
       mentorId,
-      " response:",
-      response.data,
+      month,
+      year,
     );
-    return response.data.data;
+
+    const weeklySlots = monthly.map((day) => ({
+      day: day.day,
+      date: day.date,
+      rawSlots: day.slots,
+    }));
+
+    return {
+      mentorId,
+      weeklySlots,
+      maxBookingsPerDay: undefined,
+      meetingDuration: undefined,
+      minSchedulingNoticeHours: undefined,
+    };
   },
 
   /**
@@ -82,6 +99,10 @@ export const appointmentService = {
     month: number,
     year: number,
   ): Promise<MonthlyAvailabilityDay[]> => {
+    if (!mentorId) {
+      throw new Error("mentorId is required for getMonthlyAvailability");
+    }
+
     const response = await apiClient.get<GetMonthlyAvailabilityApiResponse>(
       ENDPOINTS.APPOINTMENTS.GET_MONTHLY_AVAILABILITY(mentorId, month, year),
     );
@@ -94,15 +115,7 @@ export const appointmentService = {
       response.data,
     );
 
-    const body: any = response.data;
-    // Support both { success, data: [...] } and plain [...] shapes
-    if (Array.isArray(body)) {
-      return body as MonthlyAvailabilityDay[];
-    }
-    if (Array.isArray(body?.data)) {
-      return body.data as MonthlyAvailabilityDay[];
-    }
-    return [];
+    return response.data.data ?? [];
   },
 
   /**

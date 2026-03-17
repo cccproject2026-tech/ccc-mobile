@@ -245,27 +245,40 @@ const ScheduleMeetingBottomSheet = forwardRef<
       return null;
     }, [selectedMentor, mode, existingAppointment]);
 
-    // Fetch availability for selected mentor
+    const shouldFetchAvailability = Boolean(mentorIdForAvailability);
+
+    // Fetch availability for selected mentor (only when mentorId is defined)
     const {
       availability: monthlyAvailability,
       isLoading: isLoadingAvailability,
-    } = useMonthlyAvailability({
-      mentorId: mentorIdForAvailability,
-      month: currentMonth,
-      year: currentYear,
-      role: selectedRole,
-    });
+    } = useMonthlyAvailability(
+      {
+        mentorId: shouldFetchAvailability
+          ? (mentorIdForAvailability as string)
+          : null,
+        month: currentMonth,
+        year: currentYear,
+        role: selectedRole,
+      },
+      {
+        enabled: shouldFetchAvailability,
+      },
+    );
 
-    // Fetch mentor settings from weekly availability
+    // Fetch mentor settings from weekly availability (only when mentorId is defined)
     const { availability: settings } = useWeeklyAvailability(
       mentorIdForAvailability,
-      { role: selectedRole },
+      { role: selectedRole, enabled: shouldFetchAvailability },
     );
 
     // Fetch mentor appointments to check max bookings
-    const { appointments: mentorAppointments } = useAppointments({
-      mentorId: mentorIdForAvailability || undefined,
-    });
+    const { appointments: mentorAppointments } = useAppointments(
+      mentorIdForAvailability
+        ? {
+            mentorId: mentorIdForAvailability,
+          }
+        : {},
+    );
 
     // Fetch user appointments to check for overlaps
     const { user } = useAuthStore();
@@ -275,8 +288,9 @@ const ScheduleMeetingBottomSheet = forwardRef<
 
     const { createAppointmentAsync } = useCreateAppointment();
 
-    // ✅ Debug log to see what's happening
+    // Debug log only after mentorId is available
     useEffect(() => {
+      if (!mentorIdForAvailability) return;
       console.log("🔍 Reschedule Debug:", {
         mode,
         mentorId: mentorIdForAvailability,
@@ -287,8 +301,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
 
     // Transform API availability to available dates
     const availableDates = useMemo(() => {
-      if (!monthlyAvailability) {
-        console.log("⚠️ No monthly availability data");
+      if (!shouldFetchAvailability || !monthlyAvailability) {
         return [];
       }
       const dates = monthlyAvailability
@@ -304,13 +317,12 @@ const ScheduleMeetingBottomSheet = forwardRef<
           }
           return dateValue;
         });
-      console.log("📅 Available dates:", dates);
       return dates;
-    }, [monthlyAvailability]);
+    }, [shouldFetchAvailability, monthlyAvailability]);
 
     // Get days of week that have availability
     const availableDaysOfWeek = useMemo(() => {
-      if (!monthlyAvailability) return [];
+      if (!shouldFetchAvailability || !monthlyAvailability) return [];
       const daysSet = new Set(
         monthlyAvailability
           .filter((day: any) => {
@@ -321,12 +333,13 @@ const ScheduleMeetingBottomSheet = forwardRef<
           .map((day: any) => day.day),
       );
       return Array.from(daysSet);
-    }, [monthlyAvailability]);
+    }, [shouldFetchAvailability, monthlyAvailability]);
 
     // Transform API slots for selected date
     const getTimeSlotsForDate = useCallback(
       (dateString: string): TimeSlot[] => {
-        if (!dateString || !monthlyAvailability) return [];
+        if (!shouldFetchAvailability || !dateString || !monthlyAvailability)
+          return [];
 
         const dayData = monthlyAvailability.find((day: any) => {
           const dateValue = day.date;
