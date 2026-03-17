@@ -230,8 +230,10 @@ const ScheduleMeetingBottomSheet = forwardRef<
 
     // Get current month and year for availability
     const currentDate = new Date();
-    const [currentMonth] = useState(currentDate.getMonth() + 1);
-    const [currentYear] = useState(currentDate.getFullYear());
+    const [currentMonth, setCurrentMonth] = useState(
+      currentDate.getMonth() + 1,
+    );
+    const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
 
     // ✅ Fix: Make sure selectedMentor is set before fetching availability
     const mentorIdForAvailability = useMemo(() => {
@@ -844,6 +846,10 @@ const ScheduleMeetingBottomSheet = forwardRef<
                         <GradientCalendar
                           selected={selectedDate}
                           setSelected={setSelectedDate}
+                          onMonthChange={(month, year) => {
+                            setCurrentMonth(month);
+                            setCurrentYear(year);
+                          }}
                           recurringAvailability={{
                             type: "weekly",
                             daysOfWeek: availableDaysOfWeek,
