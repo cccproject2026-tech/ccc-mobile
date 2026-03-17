@@ -338,15 +338,6 @@ const Appointments = () => {
               onNewMeetingPress={handleNewMeeting}
             />
 
-            <View style={{ paddingHorizontal: 16, marginVertical: 10 }}>
-              <SearchBar
-                backgroundColor="transparent"
-                value={searchQuery}
-                onChangeValue={setSearchQuery}
-                placeholder="Enter a date (dd-mm-yyyy)"
-              />
-            </View>
-
             <ScrollView
               style={{ flex: 1 }}
               contentContainerStyle={{ paddingBottom: bottom }}

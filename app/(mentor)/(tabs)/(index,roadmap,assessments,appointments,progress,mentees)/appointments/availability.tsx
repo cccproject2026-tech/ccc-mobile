@@ -1,12 +1,11 @@
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
-import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import {
-  useSetAvailability,
   useMonthlyAvailability,
+  useSetAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
 import { useAuthStore } from "@/stores/auth.store";
 import { SetAvailabilityPayload } from "@/types/appointment.types";
@@ -67,7 +66,7 @@ const AvailabilityScreen = () => {
   const { availability: apiAvailability, isLoading: isLoadingAvailability } =
     useMonthlyAvailability(
       {
-        mentorId: shouldFetchAvailability ? (mentorId as string) : undefined,
+        mentorId: shouldFetchAvailability ? (mentorId as string) : null,
         month,
         year,
       },
@@ -484,22 +483,7 @@ const AvailabilityScreen = () => {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.contentContainer}>
-                {/* Date Input */}
-                <View style={styles.sectionContainer}>
-                  <Text style={styles.sectionTitle}>
-                    Select Week Start Date
-                  </Text>
-                  <View style={styles.searchContainer}>
-                    <SearchBar
-                      backgroundColor="transparent"
-                      value={searchQuery}
-                      onChangeValue={setSearchQuery}
-                      placeholder="Select a date"
-                    />
-                  </View>
-                </View>
-
-                {/* My Weekly Availability */}
+                {/* My Availability */}
                 <View style={styles.sectionContainer}>
                   <View style={styles.sectionHeader}>
                     <Image
@@ -507,7 +491,7 @@ const AvailabilityScreen = () => {
                       style={{ width: 24, height: 24 }}
                     />
                     <Text style={styles.sectionTitle}>
-                      My Weekly Availability
+                      My Availability
                     </Text>
                   </View>
                   <View style={styles.calendarContainer}>
@@ -530,7 +514,7 @@ const AvailabilityScreen = () => {
                 {/* Available Hours */}
                 <View style={styles.sectionContainer}>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Available Hourssss</Text>
+                    <Text style={styles.sectionTitle}>Available Hours</Text>
                   </View>
 
                   <View style={styles.hoursContainer}>

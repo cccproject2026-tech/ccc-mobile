@@ -50,7 +50,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GradientCalendar from "../atom/calendar";
 import SimpleSuccessModal from "../atom/SimpleSuccessModal";
-import SearchBar from "./SearchBar";
 
 interface TimeSlot {
   id: string;
@@ -658,17 +657,6 @@ const ScheduleMeetingBottomSheet = forwardRef<
                     ))}
                   </View>
 
-                  <View style={styles.searchBarContainer}>
-                    <SearchBar
-                      placeholder="Search"
-                      value={searchQuery}
-                      onChangeValue={setSearchQuery}
-                      backgroundColor={"#FBF3F3BF"}
-                      style={{ color: Colors.blueShade }}
-                      placeholderTextColor={Colors.blueShade}
-                      imageColor={Colors.blueShade}
-                    />
-                  </View>
                 </View>
 
                 <View

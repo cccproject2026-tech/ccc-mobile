@@ -344,7 +344,7 @@ const AvailabilityScreen = () => {
                       style={{ width: 24, height: 24 }}
                     />
                     <Text style={styles.sectionTitle}>
-                      My Weekly Availability
+                      My Availability
                     </Text>
                   </View>
 
