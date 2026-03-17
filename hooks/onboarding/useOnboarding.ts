@@ -5,6 +5,7 @@ import { InterestFormData } from '@/types';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
+import Toast from 'react-native-toast-message';
 
 export const onboardingKeys = {
     all: ['onboarding'] as const,
@@ -39,6 +40,16 @@ export const useSubmitInterest = () => {
             setInterestStatus('pending');
             setInterestData(variables);
 
+            Toast.show({
+                type: "floating",
+                text1: "Interest Submitted",
+                text2: "Your application is under review. We'll notify you once it's approved.",
+                position: "top",
+                // props: {
+                //     actionLabel: "View",
+                //     onPress: () => router.push('/(unauthenticated)')
+                // },
+            })
             router.replace('/(unauthenticated)');
         },
 

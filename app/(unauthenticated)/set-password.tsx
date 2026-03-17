@@ -20,6 +20,7 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { OtpInput } from "react-native-otp-entry";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 export default function VerifyEmailScreen() {
     const { bottom } = useSafeAreaInsets();
@@ -59,14 +60,21 @@ export default function VerifyEmailScreen() {
             { email: userEmail, purpose: 'email_verification' },
             {
                 onSuccess: () => {
-                    Alert.alert(
-                        'OTP Sent',
-                        `A 6-digit OTP has been sent to ${userEmail}.`,
-                        [{ text: 'OK', onPress: () => setStep(2) }]
-                    );
+                    Toast.show({
+                        type: 'floating',
+                        text1: 'OTP Sent',
+                        position: 'top',
+                        text2: `A 6-digit OTP has been sent to ${userEmail}. Please check your email and enter the OTP to verify your account.`,
+                    });
+                    setStep(2);
                 },
                 onError: (error: any) => {
-                    Alert.alert('Error', error.message || 'Failed to send OTP');
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: error.message || 'Failed to send OTP',
+                        position: 'top',
+                    });
                 },
             }
         );
@@ -89,7 +97,12 @@ export default function VerifyEmailScreen() {
                         setIsOtpVerified(true);
                         setStep(3);
 
-                        Alert.alert('Success', 'OTP verified successfully. Please set your password.');
+                        Toast.show({
+                            type: 'success',
+                            text1: 'OTP Verified',
+                            text2: 'Your email has been verified successfully. Please set your account password.',
+                            position: 'top',
+                        });
                     } else {
                         Alert.alert('Error', 'Invalid OTP. Please try again.');
                     }

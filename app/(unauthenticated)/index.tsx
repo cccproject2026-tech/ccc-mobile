@@ -59,6 +59,7 @@ export default function LoginScreen() {
     // Check if user is pending approval
     const isPending =
         interestStatus === 'pending' || interestStatus === 'new';
+    const isApproved = interestStatus === 'accepted';
 
     // Check approval status periodically when pending
     const { isLoading: isCheckingStatus } = useCheckApprovalStatus(isPending);
@@ -112,32 +113,87 @@ export default function LoginScreen() {
                     {/* Approval Badge or Contact Info */}
                     <View style={styles.topSection}>
                         {isPending ? (
-                            <TouchableOpacity
-                                style={styles.approvalBadgeWrapper}
-                                activeOpacity={0.8}
-                            >
-                                <LinearGradient
-                                    colors={['#B83AF3', '#21B6E9']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={styles.approvalBadgeGradient}
-                                >
-                                    <View style={styles.approvalBadgeContent}>
-                                        <View style={styles.loaderIconContainer}>
-                                            <ActivityIndicator size="small" color="#fff" />
+                            // <TouchableOpacity
+                            //     style={styles.approvalBadgeWrapper}
+                            //     activeOpacity={0.8}
+                            // >
+                            //     <LinearGradient
+                            //         colors={['#B83AF3', '#21B6E9']}
+                            //         start={{ x: 0, y: 0 }}
+                            //         end={{ x: 1, y: 0 }}
+                            //         style={styles.approvalBadgeGradient}
+                            //     >
+                            //         <View style={styles.approvalBadgeContent}>
+                            //             <View style={styles.loaderIconContainer}>
+                            //                 <ActivityIndicator size="small" color="#fff" />
+                            //             </View>
+                            //             <Text style={styles.approvalBadgeText}>
+                            //                 Waiting for Approval
+                            //             </Text>
+                            //             <Ionicons
+                            //                 name="chevron-forward"
+                            //                 size={16}
+                            //                 color="rgba(255,255,255,0.8)"
+                            //             />
+                            //         </View>
+                            //     </LinearGradient>
+                            // </TouchableOpacity>
+                            <>
+                                <View style={styles.pendingMessageContainer}>
+                                    <Ionicons
+                                        name="time-outline"
+                                        size={48}
+                                        color="rgba(255,255,255,0.7)"
+                                    />
+                                    <Text style={styles.pendingMessageTitle}>
+                                        Application Under Review
+                                    </Text>
+                                    <Text style={styles.pendingMessageText}>
+                                        Thank you for submitting your interest! Your application is
+                                        currently being reviewed by our team. You will receive an email
+                                        notification once your account has been approved.
+                                    </Text>
+
+                                    {isCheckingStatus && (
+                                        <View style={styles.checkingContainer}>
+                                            <ActivityIndicator
+                                                color="rgba(255,255,255,0.7)"
+                                                size="small"
+                                            />
+                                            <Text style={styles.checkingText}>
+                                                Checking approval status...
+                                            </Text>
                                         </View>
-                                        <Text style={styles.approvalBadgeText}>
-                                            Waiting for Approval
-                                        </Text>
-                                        <Ionicons
-                                            name="chevron-forward"
-                                            size={16}
-                                            color="rgba(255,255,255,0.8)"
-                                        />
-                                    </View>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                        ) : (
+                                    )}
+                                </View>
+                                <View style={styles.divider} />
+
+                            </>
+                        ) : isApproved ? (
+                            <>
+                                <View style={styles.pendingMessageContainer}>
+                                    <Ionicons
+                                        name="checkmark-circle-outline"
+                                        size={48}
+                                        color="rgba(0,255,0,0.7)"
+                                    />
+                                    <Text style={styles.pendingMessageTitle}>
+                                        Application Approved!
+                                    </Text>
+                                    <Text style={styles.pendingMessageText}>
+                                        Thank you for submitting your interest! Your application has been approved by our team. You can now verify your account and start using the app.
+                                    </Text>
+
+                                    <TouchableOpacity
+                                        style={[styles.logInButton, { marginTop: 20 }]}
+                                        onPress={handleLoginClick}
+                                    >
+                                        <Text style={styles.logInButtonText}>Verify Account</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.divider} />
+
+                            </>) : (
                             <View style={styles.contactCard}>
                                 <Text style={styles.contactTitle}>Contact Information</Text>
                                 <View style={styles.contactRow}>
@@ -285,7 +341,7 @@ export default function LoginScreen() {
                     )}
 
                     {/* Pending Message - Only show if pending */}
-                    {isPending && (
+                    {/* {isPending && (
                         <View style={styles.pendingMessageContainer}>
                             <Ionicons
                                 name="time-outline"
@@ -313,7 +369,7 @@ export default function LoginScreen() {
                                 </View>
                             )}
                         </View>
-                    )}
+                    )} */}
 
                     {/* University Logo */}
                     <View style={styles.logoContainer}>
