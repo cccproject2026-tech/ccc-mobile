@@ -6,7 +6,7 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import {
   useSetAvailability,
-  useWeeklyAvailability,
+  useMonthlyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
 import { useAuthStore } from "@/stores/auth.store";
 import { SetAvailabilityPayload } from "@/types/appointment.types";
@@ -34,19 +34,9 @@ interface TimeSlot {
   end: string;
 }
 
-interface DayAvailability {
-  enabled: boolean;
+interface DateAvailability {
+  date: string; // "YYYY-MM-DD"
   slots: TimeSlot[];
-}
-
-interface WeeklyAvailability {
-  monday: DayAvailability;
-  tuesday: DayAvailability;
-  wednesday: DayAvailability;
-  thursday: DayAvailability;
-  friday: DayAvailability;
-  saturday: DayAvailability;
-  sunday: DayAvailability;
 }
 
 const AvailabilityScreen = () => {
@@ -72,70 +62,30 @@ const AvailabilityScreen = () => {
   const selectedDateObj = new Date(selectedDate);
   const month = selectedDateObj.getMonth() + 1;
   const year = selectedDateObj.getFullYear();
-  // Weekly availability state
-  // const {
-  //   availability: apiAvailability,
-  //   isLoading: isLoadingAvailability,
-  //   isError,
-  // } = useMonthlyAvailability({
-  //   mentorId: user?.id || null,
-  //   month: month,
-  //   year: year,
-  // });
-
   const { availability: apiAvailability, isLoading: isLoadingAvailability } =
-    useWeeklyAvailability(user?.id || null);
-  const [weeklyAvailability, setWeeklyAvailability] =
-    React.useState<WeeklyAvailability>({
-      monday: { enabled: false, slots: [] },
-      tuesday: { enabled: false, slots: [] },
-      wednesday: { enabled: false, slots: [] },
-      thursday: { enabled: false, slots: [] },
-      friday: { enabled: false, slots: [] },
-      saturday: { enabled: false, slots: [] },
-      sunday: { enabled: false, slots: [] },
+    useMonthlyAvailability({
+      mentorId: user?.id || null,
+      month,
+      year,
     });
 
+  const [dateAvailabilities, setDateAvailabilities] =
+    React.useState<DateAvailability[]>([]);
+
   useEffect(() => {
-    if (apiAvailability) {
-      const newAvailability: WeeklyAvailability = {
-        monday: { enabled: false, slots: [] },
-        tuesday: { enabled: false, slots: [] },
-        wednesday: { enabled: false, slots: [] },
-        thursday: { enabled: false, slots: [] },
-        friday: { enabled: false, slots: [] },
-        saturday: { enabled: false, slots: [] },
-        sunday: { enabled: false, slots: [] },
-      };
+    if (!apiAvailability) return;
 
-      const dayNamesArr = [
-        "sunday",
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-      ];
+    const mapped: DateAvailability[] = apiAvailability.map((day) => ({
+      date: day.date,
+      slots: day.slots.map((s) => ({
+        id: s._id,
+        start: `${s.startTime} ${s.startPeriod}`,
+        end: `${s.endTime} ${s.endPeriod}`,
+      })),
+    }));
 
-      apiAvailability?.weeklySlots.forEach((slot) => {
-        const dayName = dayNamesArr[slot.day] as keyof WeeklyAvailability;
-        if (dayName && newAvailability[dayName]) {
-          newAvailability[dayName] = {
-            enabled: slot.rawSlots.length > 0,
-            slots: slot.rawSlots.map((s) => ({
-              id: s._id,
-              start: `${s.startTime} ${s.startPeriod}`,
-              end: `${s.endTime} ${s.endPeriod}`,
-            })),
-          };
-        }
-      });
-
-      console.log("API availability data:", JSON.stringify(apiAvailability));
-      setWeeklyAvailability(newAvailability);
-    }
-  }, [apiAvailability, searchQuery, selectedDate]);
+    setDateAvailabilities(mapped);
+  }, [apiAvailability]);
   useEffect(() => {
     if (searchQuery.length !== 10) return;
 
@@ -200,7 +150,6 @@ const AvailabilityScreen = () => {
   // Time picker states
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{
-    day: keyof WeeklyAvailability;
     slotId: string;
     field: "start" | "end";
   } | null>(null);
@@ -252,52 +201,51 @@ const AvailabilityScreen = () => {
     }
   };
 
-  const toggleDayEnabled = (day: keyof WeeklyAvailability) => {
-    setWeeklyAvailability((prev) => ({
-      ...prev,
-      [day]: { ...prev[day], enabled: !prev[day].enabled },
-    }));
+  const getSlotsForDate = (date: string): TimeSlot[] => {
+    const found = dateAvailabilities.find((d) => d.date === date);
+    return found ? found.slots : [];
   };
 
-  const addTimeSlot = (day: keyof WeeklyAvailability) => {
+  const setSlotsForDate = (date: string, slots: TimeSlot[]) => {
+    setDateAvailabilities((prev) => {
+      const index = prev.findIndex((d) => d.date === date);
+      if (index === -1) return [...prev, { date, slots }];
+      const updated = [...prev];
+      updated[index] = { ...updated[index], slots };
+      return updated;
+    });
+  };
+
+  const addTimeSlot = () => {
     const newSlot: TimeSlot = {
       id: Date.now().toString(),
       start: "10:00 AM",
       end: "12:00 PM",
     };
 
-    setWeeklyAvailability((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        slots: [...prev[day].slots, newSlot],
-      },
-    }));
+    const currentSlots = getSlotsForDate(selectedDate);
+    setSlotsForDate(selectedDate, [...currentSlots, newSlot]);
   };
 
-  const removeTimeSlot = (day: keyof WeeklyAvailability, slotId: string) => {
-    setWeeklyAvailability((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        slots: prev[day].slots.filter((slot) => slot.id !== slotId),
-      },
-    }));
+  const removeTimeSlot = (slotId: string) => {
+    const currentSlots = getSlotsForDate(selectedDate);
+    setSlotsForDate(
+      selectedDate,
+      currentSlots.filter((slot) => slot.id !== slotId),
+    );
   };
 
   const openTimePicker = (
-    day: keyof WeeklyAvailability,
     slotId: string,
     field: "start" | "end",
   ) => {
-    setSelectedTimeSlot({ day, slotId, field });
+    setSelectedTimeSlot({ slotId, field });
     setShowTimePicker(true);
   };
 
   const selectTime = (time: string) => {
     if (selectedTimeSlot) {
       updateTimeSlot(
-        selectedTimeSlot.day,
         selectedTimeSlot.slotId,
         selectedTimeSlot.field,
         time,
@@ -308,20 +256,15 @@ const AvailabilityScreen = () => {
   };
 
   const updateTimeSlot = (
-    day: keyof WeeklyAvailability,
     slotId: string,
     field: "start" | "end",
     value: string,
   ) => {
-    setWeeklyAvailability((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        slots: prev[day].slots.map((slot) =>
-          slot.id === slotId ? { ...slot, [field]: value } : slot,
-        ),
-      },
-    }));
+    const currentSlots = getSlotsForDate(selectedDate);
+    const updatedSlots = currentSlots.map((slot) =>
+      slot.id === slotId ? { ...slot, [field]: value } : slot,
+    );
+    setSlotsForDate(selectedDate, updatedSlots);
   };
 
   // Helper function to parse time from "10:00 AM" to { time: "10", period: "AM" }
@@ -352,39 +295,6 @@ const AvailabilityScreen = () => {
     return match ? parseInt(match[1], 10) : 60;
   };
 
-  // Helper function to get week dates starting from selected date
-  const getWeekDates = (startDate: string): string[] => {
-    const date = new Date(startDate);
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-
-    // Get Monday of the week
-    const monday = new Date(date);
-    monday.setDate(date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
-
-    const weekDates: string[] = [];
-    for (let i = 0; i < 7; i++) {
-      const currentDate = new Date(monday);
-      currentDate.setDate(monday.getDate() + i);
-      weekDates.push(currentDate.toISOString().split("T")[0]);
-    }
-
-    return weekDates;
-  };
-
-  // Helper function to map day name to day number (0 = Sunday, 1 = Monday, etc.)
-  const getDayNumber = (dayName: keyof WeeklyAvailability): number => {
-    const dayMap: Record<keyof WeeklyAvailability, number> = {
-      sunday: 0,
-      monday: 1,
-      tuesday: 2,
-      wednesday: 3,
-      thursday: 4,
-      friday: 5,
-      saturday: 6,
-    };
-    return dayMap[dayName];
-  };
-
   const convertToMinutes = (timeString: string): number => {
     const { time, period } = parseTime(timeString);
     let hour = parseInt(time, 10);
@@ -393,17 +303,14 @@ const AvailabilityScreen = () => {
     return hour * 60;
   };
 
-  const validateSlots = (
-    dayLabel: string,
-    slots: TimeSlot[],
-  ): string | null => {
+  const validateSlots = (label: string, slots: TimeSlot[]): string | null => {
     for (let i = 0; i < slots.length; i++) {
       const slot = slots[i];
       const start = convertToMinutes(slot.start);
       const end = convertToMinutes(slot.end);
 
       if (start >= end) {
-        return `${dayLabel}: Start time (${slot.start}) must be before end time (${slot.end}).`;
+        return `${label}: Start time (${slot.start}) must be before end time (${slot.end}).`;
       }
 
       for (let j = i + 1; j < slots.length; j++) {
@@ -412,7 +319,7 @@ const AvailabilityScreen = () => {
         const otherEnd = convertToMinutes(other.end);
 
         if (start < otherEnd && end > otherStart) {
-          return `${dayLabel}: Overlapping slots detected: ${slot.start}-${slot.end} and ${other.start}-${other.end}.`;
+          return `${label}: Overlapping slots detected: ${slot.start}-${slot.end} and ${other.start}-${other.end}.`;
         }
       }
     }
@@ -425,41 +332,24 @@ const AvailabilityScreen = () => {
       return;
     }
 
-    // Validate slots for all enabled days
-    for (const { key, label } of dayNames) {
-      if (weeklyAvailability[key].enabled) {
-        const error = validateSlots(label, weeklyAvailability[key].slots);
-        if (error) {
-          Alert.alert("Invalid Availability", error);
-          return;
-        }
+    // Validate slots for all selected dates
+    for (const day of dateAvailabilities) {
+      const error = validateSlots(day.date, day.slots);
+      if (error) {
+        Alert.alert("Invalid Availability", error);
+        return;
       }
     }
 
     try {
-      // Get week dates
-      const weekDates = getWeekDates(selectedDate);
+      const weeklySlots: SetAvailabilityPayload["weeklySlots"] =
+        dateAvailabilities
+          .filter((day) => day.slots.length > 0)
+          .map((day) => {
+            const jsDate = new Date(day.date);
+            const dayNumber = jsDate.getDay();
 
-      // Transform UI state to API payload
-      const weeklySlots: SetAvailabilityPayload["weeklySlots"] = [];
-
-      const dayNames: (keyof WeeklyAvailability)[] = [
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-      ];
-
-      dayNames.forEach((dayName, index) => {
-        const dayAvailability = weeklyAvailability[dayName];
-        const dayNumber = getDayNumber(dayName);
-        const date = weekDates[index];
-
-        const slots = dayAvailability.enabled
-          ? dayAvailability.slots.map((slot) => {
+            const slots = day.slots.map((slot) => {
               const startTime = parseTime(slot.start);
               const endTime = parseTime(slot.end);
 
@@ -469,15 +359,14 @@ const AvailabilityScreen = () => {
                 endTime: endTime.time,
                 endPeriod: endTime.period,
               };
-            })
-          : [];
+            });
 
-        weeklySlots.push({
-          day: dayNumber,
-          date: date,
-          slots: slots,
-        });
-      });
+            return {
+              day: dayNumber,
+              date: day.date,
+              slots,
+            };
+          });
 
       const payload: SetAvailabilityPayload = {
         mentorId: user.id,
@@ -524,15 +413,7 @@ const AvailabilityScreen = () => {
     );
   };
 
-  const dayNames = [
-    { key: "monday" as keyof WeeklyAvailability, label: "Mon" },
-    { key: "tuesday" as keyof WeeklyAvailability, label: "Tue" },
-    { key: "wednesday" as keyof WeeklyAvailability, label: "Wed" },
-    { key: "thursday" as keyof WeeklyAvailability, label: "Thu" },
-    { key: "friday" as keyof WeeklyAvailability, label: "Fri" },
-    { key: "saturday" as keyof WeeklyAvailability, label: "Sat" },
-    { key: "sunday" as keyof WeeklyAvailability, label: "Sun" },
-  ];
+  const slotsForSelectedDate = getSlotsForDate(selectedDate);
 
   return (
     <>
@@ -646,85 +527,67 @@ const AvailabilityScreen = () => {
                   </View>
 
                   <View style={styles.hoursContainer}>
-                    {dayNames.map(({ key, label }) => (
-                      <View key={key} style={styles.dayContainer}>
-                        <View style={styles.dayHeader}>
-                          <Pressable
-                            style={styles.checkbox}
-                            onPress={() => toggleDayEnabled(key)}
-                          >
-                            {weeklyAvailability[key].enabled && (
-                              <Ionicons
-                                name="checkmark"
-                                size={16}
-                                color="#1E3A6F"
-                              />
-                            )}
-                          </Pressable>
-                          <Text style={styles.dayLabel}>{label}</Text>
-                        </View>
-
-                        {weeklyAvailability[key].enabled && (
-                          <View style={styles.timeSlotsContainer}>
-                            {weeklyAvailability[key].slots.map((slot) => (
-                              <View key={slot.id} style={styles.timeSlotRow}>
-                                <View style={styles.timeSlotInputs}>
-                                  <Pressable
-                                    style={styles.timeInput}
-                                    onPress={() =>
-                                      openTimePicker(key, slot.id, "start")
-                                    }
-                                  >
-                                    <Text style={styles.timeInputText}>
-                                      {slot.start}
-                                    </Text>
-                                    <Ionicons
-                                      name="chevron-down"
-                                      size={16}
-                                      color="#FFFFFF"
-                                    />
-                                  </Pressable>
-                                  <Text style={styles.timeSeparator}>to</Text>
-                                  <Pressable
-                                    style={styles.timeInput}
-                                    onPress={() =>
-                                      openTimePicker(key, slot.id, "end")
-                                    }
-                                  >
-                                    <Text style={styles.timeInputText}>
-                                      {slot.end}
-                                    </Text>
-                                    <Ionicons
-                                      name="chevron-down"
-                                      size={16}
-                                      color="#FFFFFF"
-                                    />
-                                  </Pressable>
-                                </View>
-                                {weeklyAvailability[key].slots.length > 1 && (
-                                  <Pressable
-                                    style={styles.removeSlotButton}
-                                    onPress={() => removeTimeSlot(key, slot.id)}
-                                  >
-                                    <Ionicons
-                                      name="close"
-                                      size={16}
-                                      color="#FF6B6B"
-                                    />
-                                  </Pressable>
-                                )}
-                              </View>
-                            ))}
-                            <Pressable
-                              style={styles.addSlotButton}
-                              onPress={() => addTimeSlot(key)}
-                            >
-                              <Text style={styles.addSlotText}>+ Add</Text>
-                            </Pressable>
-                          </View>
-                        )}
+                    <View style={styles.dayContainer}>
+                      <View style={styles.dayHeader}>
+                        <Text style={styles.dayLabel}>{selectedDate}</Text>
                       </View>
-                    ))}
+
+                      <View style={styles.timeSlotsContainer}>
+                        {slotsForSelectedDate.map((slot) => (
+                          <View key={slot.id} style={styles.timeSlotRow}>
+                            <View style={styles.timeSlotInputs}>
+                              <Pressable
+                                style={styles.timeInput}
+                                onPress={() =>
+                                  openTimePicker(slot.id, "start")
+                                }
+                              >
+                                <Text style={styles.timeInputText}>
+                                  {slot.start}
+                                </Text>
+                                <Ionicons
+                                  name="chevron-down"
+                                  size={16}
+                                  color="#FFFFFF"
+                                />
+                              </Pressable>
+                              <Text style={styles.timeSeparator}>to</Text>
+                              <Pressable
+                                style={styles.timeInput}
+                                onPress={() => openTimePicker(slot.id, "end")}
+                              >
+                                <Text style={styles.timeInputText}>
+                                  {slot.end}
+                                </Text>
+                                <Ionicons
+                                  name="chevron-down"
+                                  size={16}
+                                  color="#FFFFFF"
+                                />
+                              </Pressable>
+                            </View>
+                            {slotsForSelectedDate.length > 1 && (
+                              <Pressable
+                                style={styles.removeSlotButton}
+                                onPress={() => removeTimeSlot(slot.id)}
+                              >
+                                <Ionicons
+                                  name="close"
+                                  size={16}
+                                  color="#FF6B6B"
+                                />
+                              </Pressable>
+                            )}
+                          </View>
+                        ))}
+                        <Pressable
+                          style={styles.addSlotButton}
+                          onPress={addTimeSlot}
+                        >
+                          <Text style={styles.addSlotText}>+ Add</Text>
+                        </Pressable>
+                      </View>
+                    </View>
                   </View>
                 </View>
 
