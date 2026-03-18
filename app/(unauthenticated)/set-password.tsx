@@ -154,9 +154,9 @@ export default function VerifyEmailScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.welcomeBanner}>
-                        <Text style={styles.welcomeTitle}>WELCOME !</Text>
+                        <Text style={styles.welcomeTitle}>CONGRATULATIONS!</Text>
                         <Text style={styles.welcomeSubtitle}>
-                            You are now enrolled in the CCC mentoring program at Andrews University Seminary
+                            {"Your application has been approved.\nPlease verify your email."}
                         </Text>
                     </View>
 
