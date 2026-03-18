@@ -264,6 +264,36 @@ export default function LoginScreen() {
                         </View>
                     )}
 
+                    {isPending && (
+                        <View style={styles.pendingMessageContainer}>
+                            <Ionicons
+                                name="time-outline"
+                                size={48}
+                                color="rgba(255,255,255,0.7)"
+                            />
+                            <Text style={styles.pendingMessageTitle}>
+                                Application Under Review
+                            </Text>
+                            <Text style={styles.pendingMessageText}>
+                            {"Thank you for your submission \n"}
+                            {"Your application is under review.\n"}
+                            {"We will notify you soon. God bless you!"}
+                            </Text>
+
+                            {isCheckingStatus && (
+                                <View style={styles.checkingContainer}>
+                                    <ActivityIndicator
+                                        color="rgba(255,255,255,0.7)"
+                                        size="small"
+                                    />
+                                    <Text style={styles.checkingText}>
+                                        Checking approval status...
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    )}
+
                     {/* Welcome Videos Carousel */}
                     <ScrollView
                         horizontal
@@ -345,37 +375,6 @@ export default function LoginScreen() {
                     ))}
 
                     <View style={styles.divider} />
-
-                    {/* Pending Message - Only show if pending */}
-                    {isPending && (
-                        <View style={styles.pendingMessageContainer}>
-                            <Ionicons
-                                name="time-outline"
-                                size={48}
-                                color="rgba(255,255,255,0.7)"
-                            />
-                            <Text style={styles.pendingMessageTitle}>
-                                Application Under Review
-                            </Text>
-                            <Text style={styles.pendingMessageText}>
-                                Thank you for submitting your interest! Your application is
-                                currently being reviewed by our team. You will receive an email
-                                notification once your account has been approved.
-                            </Text>
-
-                            {isCheckingStatus && (
-                                <View style={styles.checkingContainer}>
-                                    <ActivityIndicator
-                                        color="rgba(255,255,255,0.7)"
-                                        size="small"
-                                    />
-                                    <Text style={styles.checkingText}>
-                                        Checking approval status...
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    )}
 
                     {/* Contact Information - moved below the submit flow */}
                     <View style={{ marginTop: 16 }}>
@@ -799,7 +798,8 @@ const styles = StyleSheet.create({
         borderColor: "rgba(255,255,255,0.3)",
         padding: 24,
         alignItems: "center",
-        marginTop: 20,
+        marginTop: 14,
+        marginBottom: 18,
     },
     pendingMessageTitle: {
         fontSize: 20,
