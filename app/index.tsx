@@ -64,7 +64,10 @@ export default function RoleSelectionScreen() {
         if (isAuthenticated && user?.role === 'pastor') {
             router.push('/(pastor)/(tabs)');
         } else {
-            router.push('/(unauthenticated)');
+            router.push({
+                pathname: '/(unauthenticated)',
+                params: { role },
+            });
         }
     };
 
@@ -72,7 +75,10 @@ export default function RoleSelectionScreen() {
         if (isAuthenticated && user?.role === 'mentor') {
             router.push('/(mentor)/(tabs)');
         } else {
-            router.push('/(unauthenticated)');
+            router.push({
+                pathname: '/(unauthenticated)',
+                params: { role },
+            });
         }
     };
 

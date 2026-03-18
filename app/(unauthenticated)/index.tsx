@@ -1,10 +1,10 @@
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
 import { useCheckApprovalStatus } from "@/hooks/onboarding/useOnboarding";
-import { useOnboardingStore } from "@/stores";
+import { useAuthStore, useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
     ActivityIndicator,
@@ -55,6 +55,8 @@ const MORE_VIDEOS = [
 export default function LoginScreen() {
     const { bottom } = useSafeAreaInsets();
     const { interestStatus, userId, interestData } = useOnboardingStore();
+    const { user } = useAuthStore();
+    const { role: roleParam } = useLocalSearchParams<{ role?: string }>();
 
     // State to toggle status panel visibility
     const [isStatusExpanded, setIsStatusExpanded] = useState(false);
@@ -63,7 +65,29 @@ export default function LoginScreen() {
     const isPending =
         interestStatus === 'pending' || interestStatus === 'new';
 
-    const mentorshipRole = (interestData?.title || '').trim() || 'Pastor';
+    const mentorshipRole =
+        (interestData?.title || '').trim() ||
+        (roleParam === 'pastor'
+            ? 'Pastor'
+            : roleParam === 'layleader'
+              ? 'Lay Leader'
+              : roleParam === 'seminarian'
+                ? 'Seminarian'
+                : roleParam === 'mentor'
+                  ? 'Mentor'
+                  : roleParam === 'fieldmentor'
+                    ? 'Field Mentor'
+                    : roleParam === 'director'
+                      ? 'Director'
+                      : '') ||
+        (user?.role === 'pastor'
+            ? 'Pastor'
+            : user?.role === 'mentor'
+              ? 'Mentor'
+              : user?.role === 'director'
+                ? 'Director'
+                : '') ||
+        'Pastor';
 
     // Check approval status periodically when pending
     const { isLoading: isCheckingStatus, refetch, isFetching } = useCheckApprovalStatus(isPending);
