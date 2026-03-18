@@ -276,7 +276,8 @@ const ScheduleMeetingBottomSheet = forwardRef<
       userId: user?.id || undefined,
     });
 
-    const { createAppointmentAsync } = useCreateAppointment();
+    const { createAppointmentAsync, rescheduleAppointmentAsync } =
+      useCreateAppointment();
 
     // Debug log only after mentorId is available
     useEffect(() => {
@@ -503,18 +504,23 @@ const ScheduleMeetingBottomSheet = forwardRef<
           selectedDate,
           selectedTime,
         });
-        await createAppointmentAsync({
-          userId: currentUser?.id ?? "",
-          mentorId: selectedMentor.id,
-          meetingDate: meetingDate,
-          platform: platform as AppointmentPlatform,
-          meetingLink: undefined,
-          notes: `Meeting with ${selectedMentor.name}`,
-          ...(mode === "reschedule" && {
+        if (mode === "reschedule" && existingAppointment) {
+          await rescheduleAppointmentAsync({
+            appointmentId: existingAppointment.id,
+            newDate: meetingDate,
             startTime: selectedTime.apiSlot.startTime,
-            startPeriod: selectedTime.apiSlot.startPeriod,
-          }),
-        });
+            startPeriod: selectedTime.apiSlot.startPeriod as "AM" | "PM",
+          });
+        } else {
+          await createAppointmentAsync({
+            userId: currentUser?.id ?? "",
+            mentorId: selectedMentor.id,
+            meetingDate: meetingDate,
+            platform: platform as AppointmentPlatform,
+            meetingLink: undefined,
+            notes: `Meeting with ${selectedMentor.name}`,
+          });
+        }
 
         if (onScheduleComplete) {
           onScheduleComplete();
