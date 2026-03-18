@@ -42,6 +42,7 @@ import {
   Alert,
   Dimensions,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -123,11 +124,13 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const snapPoints = useMemo(() => {
       const safeHeight = screenHeight - top - 20;
       const percentage = Math.min(95, Math.max(80, (safeHeight / screenHeight) * 100));
+      // Reschedule mode has more content (calendar, time slots, meeting option, buttons) — use taller sheet
+      const tall = mode === "reschedule";
       if (isSmallDevice) return ["92%", "98%"];
-      if (deviceType === "small") return ["90%", "96%"];
-      else if (deviceType === "medium") return ["85%", "92%"];
-      return ["80%", "88%"];
-    }, [deviceType, screenHeight, top]);
+      if (deviceType === "small") return tall ? ["94%", "98%"] : ["90%", "96%"];
+      if (deviceType === "medium") return tall ? ["90%", "96%"] : ["85%", "92%"];
+      return tall ? ["88%", "95%"] : ["80%", "88%"];
+    }, [deviceType, screenHeight, top, mode]);
 
     // Get current user and their role
     const { user: currentUser } = useAuthStore();
@@ -576,6 +579,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
         <BottomSheetModal
           ref={ref}
           snapPoints={snapPoints}
+          index={mode === "reschedule" ? 1 : 0}
           enablePanDownToClose={!disableOutsideClose}
           backgroundComponent={() => null}
           backdropComponent={renderBackdrop}
@@ -794,7 +798,10 @@ const ScheduleMeetingBottomSheet = forwardRef<
               <BottomSheetScrollView
                 style={[styles.contentContainer]}
                 contentContainerStyle={{
-                  paddingBottom: getSpacing(isSmallDevice ? 40 : 50),
+                  // Use guaranteed min bottom padding: safe area is often 0 inside modal on Android
+                  paddingBottom:
+                    (isAndroid ? Math.max(bottom, 80) : bottom + getSpacing(24)) +
+                    getSpacing(isSmallDevice ? 40 : 50),
                   paddingTop: getSpacing(isSmallDevice ? 8 : 12),
                 }}
                 showsVerticalScrollIndicator={false}
