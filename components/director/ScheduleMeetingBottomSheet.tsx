@@ -1,4 +1,3 @@
-import { Colors } from "@/constants/Colors";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
 import {
@@ -15,11 +14,9 @@ import {
 } from "@/types/appointment.types";
 import { UserRole } from "@/types/auth.types";
 import {
-  getDeviceType,
   getFontSize,
   getIconSize,
   getSpacing,
-  isAndroid,
   isSmallDevice,
 } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
@@ -41,8 +38,8 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  FlatList,
   Image,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -51,6 +48,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GradientCalendar from "../atom/calendar";
 import SimpleSuccessModal from "../atom/SimpleSuccessModal";
+import SearchBar from "./SearchBar";
 
 interface TimeSlot {
   id: string;
@@ -117,20 +115,8 @@ const ScheduleMeetingBottomSheet = forwardRef<
     },
     ref,
   ) => {
-    const { bottom, top } = useSafeAreaInsets();
-    const deviceType = getDeviceType();
-    const { height: screenHeight } = Dimensions.get("window");
-    
-    const snapPoints = useMemo(() => {
-      const safeHeight = screenHeight - top - 20;
-      const percentage = Math.min(95, Math.max(80, (safeHeight / screenHeight) * 100));
-      // Reschedule mode has more content (calendar, time slots, meeting option, buttons) — use taller sheet
-      const tall = mode === "reschedule";
-      if (isSmallDevice) return ["92%", "98%"];
-      if (deviceType === "small") return tall ? ["94%", "98%"] : ["90%", "96%"];
-      if (deviceType === "medium") return tall ? ["90%", "96%"] : ["85%", "92%"];
-      return tall ? ["88%", "95%"] : ["80%", "88%"];
-    }, [deviceType, screenHeight, top, mode]);
+    const { bottom } = useSafeAreaInsets();
+    const snapPoints = useMemo(() => ["95%"], []);
 
     // Get current user and their role
     const { user: currentUser } = useAuthStore();
@@ -555,17 +541,12 @@ const ScheduleMeetingBottomSheet = forwardRef<
     };
 
   const handleClose = () => {
-    onClose();
-    setTimeout(() => {
-      resetForm();
-    }, 300);
-  };
-
-  const handleManualClose = () => {
-    onClose();
-    setTimeout(() => {
-      resetForm();
-    }, 300);
+    if (!disableOutsideClose) {
+      onClose();
+      setTimeout(() => {
+        resetForm();
+      }, 300);
+    }
   };
 
     const isStep1Valid = selectedMentor !== null;
@@ -579,7 +560,6 @@ const ScheduleMeetingBottomSheet = forwardRef<
         <BottomSheetModal
           ref={ref}
           snapPoints={snapPoints}
-          index={mode === "reschedule" ? 1 : 0}
           enablePanDownToClose={!disableOutsideClose}
           backgroundComponent={() => null}
           backdropComponent={renderBackdrop}
@@ -594,25 +574,10 @@ const ScheduleMeetingBottomSheet = forwardRef<
               flex: 1,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
-              paddingTop: getSpacing(16),
-              paddingBottom: bottom + getSpacing(16),
-              paddingHorizontal: getSpacing(16),
+              paddingTop: 20,
             }}
           >
-            {/* Header with Close Button */}
-            <View style={styles.headerRow}>
-              <View style={styles.headerSpacer} />
-              <Pressable
-                style={styles.closeButtonContainer}
-                onPress={handleManualClose}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <View style={styles.closeButtonCircle}>
-                  <Ionicons name="close" size={getIconSize(20)} color="#FFFFFF" />
-                </View>
-              </Pressable>
-            </View>
-
+            <View style={styles.contentContainer}>
             {showMentorSelection ? (
               // Step 1: Select Mentor
               <View style={{ flex: 1 }}>
@@ -661,6 +626,15 @@ const ScheduleMeetingBottomSheet = forwardRef<
                     ))}
                   </View>
 
+                  <View style={styles.searchBarContainer}>
+                    <SearchBar
+                      backgroundColor="rgba(251, 243, 243, 0.75)"
+                      placeholderTextColor="rgba(0, 31, 193, 1)"
+                      placeholder="Search"
+                      value={searchQuery}
+                      onChangeValue={setSearchQuery}
+                    />
+                  </View>
                 </View>
 
                 <View
@@ -724,20 +698,29 @@ const ScheduleMeetingBottomSheet = forwardRef<
                             </View>
                           )}
 
-                          <Text
-                            style={[
-                              styles.mentorNameStep1,
-                              { color: colorScheme.text },
-                            ]}
-                          >
-                            {mentor.name} - {mentor.role}
-                          </Text>
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={[
+                                styles.mentorNameStep1,
+                                { color: colorScheme.text },
+                              ]}
+                            >
+                              {mentor.name}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.mentorRoleStep1,
+                                { color: "rgba(255, 255, 255, 0.6)" },
+                              ]}
+                            >
+                              {mentor.role}
+                            </Text>
+                          </View>
                         </Pressable>
                       )}
-                      // Single-page user list; no infinite scroll pagination
+                      contentContainerStyle={{ paddingBottom: getSpacing(20) }}
                       onEndReached={undefined}
                       onEndReachedThreshold={0.5}
-                      ListFooterComponent={null}
                     />
                   ) : (
                     <View style={styles.emptyStateContainer}>
@@ -747,13 +730,13 @@ const ScheduleMeetingBottomSheet = forwardRef<
                           { color: "rgba(255, 255, 255, 0.6)" },
                         ]}
                       >
-                        No results found
+                        No {selectedRole === "mentor" ? "mentors" : selectedRole === "pastor" ? "pastors" : "users"} found
                       </Text>
                     </View>
                   )}
                 </View>
 
-                <View style={styles.step1Footer}>
+                <View style={[styles.step1Footer, { paddingBottom: bottom + getSpacing(12) }]}>
                   {showCancelButton && (
                     <Pressable
                       style={[
@@ -794,180 +777,127 @@ const ScheduleMeetingBottomSheet = forwardRef<
                   </Pressable>
                 </View>
               </View>
-            ) : (
+            ) : showDateTimeSelection ? (
               <BottomSheetScrollView
-                style={[styles.contentContainer]}
-                contentContainerStyle={{
-                  // Use guaranteed min bottom padding: safe area is often 0 inside modal on Android
-                  paddingBottom:
-                    (isAndroid ? Math.max(bottom, 80) : bottom + getSpacing(24)) +
-                    getSpacing(isSmallDevice ? 40 : 50),
-                  paddingTop: getSpacing(isSmallDevice ? 8 : 12),
-                }}
                 showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: bottom + getSpacing(24) }}
               >
-                <View>
-                  {showDateTimeSelection ? (
-                    // Step 2: Schedule/Reschedule Date & Time
-                    <View style={styles.stepContent}>
-                      {mode === "reschedule" && selectedMentor && (
-                        <View
-                          style={[
-                            styles.titleContainer,
-                            {
-                              borderColor: "rgba(255, 255, 255, 0.3)",
-                              marginBottom: 16,
-                            },
-                          ]}
-                        >
+                <View style={styles.stepContent}>
+                  {mode === "reschedule" && selectedMentor && (
+                    <View
+                      style={[
+                        styles.titleContainer,
+                        {
+                          borderColor: "rgba(255, 255, 255, 0.3)",
+                          marginBottom: 16,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.sectionTitle,
+                          { color: colorScheme.text },
+                        ]}
+                      >
+                        Rescheduling with {selectedMentor.name}
+                      </Text>
+                    </View>
+                  )}
+
+                  <Text
+                    style={[styles.stepTitle, { color: colorScheme.text }]}
+                  >
+                    Schedule New Meeting
+                  </Text>
+
+                  <View style={styles.calendarContainer}>
+                    <GradientCalendar
+                      selected={selectedDate}
+                      setSelected={setSelectedDate}
+                      onMonthChange={(month, year) => {
+                        setCurrentMonth(month);
+                        setCurrentYear(year);
+                      }}
+                      recurringAvailability={{
+                        type: "weekly",
+                        daysOfWeek: availableDaysOfWeek,
+                      }}
+                      availableDates={availableDates}
+                      showHeader={false}
+                      disablePastDates={true}
+                      markToday={false}
+                    />
+                  </View>
+
+                  {selectedDate && (
+                    <>
+                      <Text
+                        style={[
+                          styles.sectionTitle,
+                          { color: colorScheme.text },
+                        ]}
+                      >
+                        Choose a Time
+                      </Text>
+
+                      {isLoadingAvailability ? (
+                        <View style={styles.noTimeSlotsContainer}>
+                          <ActivityIndicator color={colorScheme.text} />
+                        </View>
+                      ) : timeSlots.length > 0 ? (
+                        <FlatList
+                          horizontal
+                          data={timeSlots}
+                          keyExtractor={(item) => item?.id}
+                          renderItem={({ item }) => (
+                            <Pressable
+                              style={[
+                                styles.timeSlotGridItem,
+                                {
+                                  backgroundColor:
+                                    selectedTime?.id === item.id
+                                      ? "#FFFFFF"
+                                      : "transparent",
+                                  borderColor:
+                                    selectedTime?.id === item.id
+                                      ? "#FFFFFF"
+                                      : "rgba(255, 255, 255, 0.6)",
+                                },
+                              ]}
+                              onPress={() => setSelectedTime(item)}
+                            >
+                              <Text
+                                style={[
+                                  styles.timeSlotText,
+                                  {
+                                    color:
+                                      selectedTime?.id === item.id
+                                        ? colorScheme.background
+                                        : colorScheme.text,
+                                  },
+                                ]}
+                              >
+                                {item.label}
+                              </Text>
+                            </Pressable>
+                          )}
+                          contentContainerStyle={{ gap: 10 }}
+                          showsHorizontalScrollIndicator={false}
+                        />
+                      ) : (
+                        <View style={styles.noTimeSlotsContainer}>
                           <Text
                             style={[
-                              styles.sectionTitle,
-                              { color: colorScheme.text },
+                              styles.noTimeSlotsText,
+                              { color: `${colorScheme.text}80` },
                             ]}
                           >
-                            Rescheduling with {selectedMentor.name}
+                            No available time slots for this date
                           </Text>
                         </View>
                       )}
-
-                      <Text
-                        style={[styles.stepTitle, { color: colorScheme.text }]}
-                      >
-                        Select Available Date
-                      </Text>
-
-                      <View style={styles.calendarContainer}>
-                        <GradientCalendar
-                          selected={selectedDate}
-                          setSelected={setSelectedDate}
-                          onMonthChange={(month, year) => {
-                            setCurrentMonth(month);
-                            setCurrentYear(year);
-                          }}
-                          recurringAvailability={{
-                            type: "weekly",
-                            daysOfWeek: availableDaysOfWeek,
-                          }}
-                          availableDates={availableDates}
-                          showHeader={true}
-                          disablePastDates={true}
-                          markToday={true}
-                        />
-                      </View>
-
-                      {selectedDate && (
-                        <>
-                          <Text
-                            style={[
-                              styles.sectionTitle,
-                              { color: colorScheme.text },
-                            ]}
-                          >
-                            Select a Time
-                          </Text>
-
-                          {isLoadingAvailability ? (
-                            <View style={styles.noTimeSlotsContainer}>
-                              <Text
-                                style={[
-                                  styles.noTimeSlotsText,
-                                  { color: `${colorScheme.text}80` },
-                                ]}
-                              >
-                                Loading available slots...
-                              </Text>
-                            </View>
-                          ) : timeSlots.length > 0 ? (
-                            <BottomSheetFlatList
-                              horizontal
-                              data={timeSlots}
-                              keyExtractor={(item: any) => item.id}
-                              showsHorizontalScrollIndicator={false}
-                              contentContainerStyle={styles.timeSlotGrid}
-                              decelerationRate="fast"
-                              renderItem={({ item }: any) => (
-                                <Pressable
-                                  style={[
-                                    styles.timeSlotGridItem,
-                                    {
-                                      backgroundColor:
-                                        selectedTime?.id === item.id
-                                          ? "#FFFFFF"
-                                          : Colors.blueShade,
-                                    },
-                                  ]}
-                                  onPress={() => setSelectedTime(item)}
-                                >
-                                  <Text
-                                    style={[
-                                      styles.timeSlotText,
-                                      {
-                                        color:
-                                          selectedTime?.id === item.id
-                                            ? colorScheme.background
-                                            : colorScheme.text,
-                                      },
-                                    ]}
-                                  >
-                                    {item.label}
-                                  </Text>
-                                </Pressable>
-                              )}
-                            />
-                          ) : (
-                            // <ScrollView
-                            //   horizontal
-                            //   showsHorizontalScrollIndicator={false}
-                            //   contentContainerStyle={styles.timeSlotGrid}
-                            // >
-                            //   {timeSlots.map((slot) => (
-                            //     <Pressable
-                            //       key={slot.id}
-                            //       style={[
-                            //         styles.timeSlotGridItem,
-                            //         {
-                            //           backgroundColor:
-                            //             selectedTime?.id === slot.id
-                            //               ? "#FFFFFF"
-                            //               : "transparent",
-                            //           borderColor:
-                            //             selectedTime?.id === slot.id
-                            //               ? "#FFFFFF"
-                            //               : `${colorScheme.text}50`,
-                            //         },
-                            //       ]}
-                            //       onPress={() => setSelectedTime(slot)}
-                            //     >
-                            //       <Text
-                            //         style={[
-                            //           styles.timeSlotText,
-                            //           {
-                            //             color:
-                            //               selectedTime?.id === slot.id
-                            //                 ? colorScheme.background
-                            //                 : colorScheme.text,
-                            //           },
-                            //         ]}
-                            //       >
-                            //         {slot.label}
-                            //       </Text>
-                            //     </Pressable>
-                            //   ))}
-                            // </ScrollView>
-                            <View style={styles.noTimeSlotsContainer}>
-                              <Text
-                                style={[
-                                  styles.noTimeSlotsText,
-                                  { color: `${colorScheme.text}80` },
-                                ]}
-                              >
-                                No available time slots for this date
-                              </Text>
-                            </View>
-                          )}
-                        </>
-                      )}
+                    </>
+                  )}
 
                       <Text
                         style={[
@@ -1051,56 +981,55 @@ const ScheduleMeetingBottomSheet = forwardRef<
                         </View>
                       )}
 
-                      <View style={styles.step2Footer}>
-                        <Pressable
-                          style={[
-                            styles.cancelButton,
-                            {
-                              borderColor: `${colorScheme.text}80`,
-                              backgroundColor: "#FFFFFF",
-                            },
-                          ]}
-                          onPress={handleBack}
-                        >
-                          <Text
-                            style={[
-                              styles.cancelButtonText,
-                              { color: "#4A5BCC" },
-                            ]}
-                          >
-                            {mode === "reschedule" ? "Cancel" : "Back"}
-                          </Text>
-                        </Pressable>
+                  <View style={styles.step2Footer}>
+                    <Pressable
+                      style={[
+                        styles.cancelButton,
+                        {
+                          borderColor: `${colorScheme.text}80`,
+                          backgroundColor: "#FFFFFF",
+                        },
+                      ]}
+                      onPress={handleBack}
+                    >
+                      <Text
+                        style={[
+                          styles.cancelButtonText,
+                          { color: "#4A5BCC" },
+                        ]}
+                      >
+                        {mode === "reschedule" ? "Cancel" : "Back"}
+                      </Text>
+                    </Pressable>
 
-                        <Pressable
-                          style={[
-                            styles.scheduleButton,
-                            {
-                              backgroundColor: "rgba(30, 54, 111, 1)",
-                              borderWidth: 1,
-                              borderColor: isStep2Valid
-                                ? "#fff"
-                                : "rgba(74, 91, 204, 0.5)",
-                            },
-                          ]}
-                          onPress={handleSchedule}
-                          disabled={!isStep2Valid}
-                        >
-                          <Text
-                            style={[
-                              styles.scheduleButtonText,
-                              { color: "#FFFFFF" },
-                            ]}
-                          >
-                            {mode === "reschedule" ? "Reschedule" : "Schedule"}
-                          </Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  ) : null}
+                    <Pressable
+                      style={[
+                        styles.scheduleButton,
+                        {
+                          backgroundColor: "rgba(30, 54, 111, 1)",
+                          borderWidth: 1,
+                          borderColor: isStep2Valid
+                            ? "#fff"
+                            : "rgba(74, 91, 204, 0.5)",
+                        },
+                      ]}
+                      onPress={handleSchedule}
+                      disabled={!isStep2Valid}
+                    >
+                      <Text
+                        style={[
+                          styles.scheduleButtonText,
+                          { color: "#FFFFFF" },
+                        ]}
+                      >
+                        {mode === "reschedule" ? "Reschedule" : "Schedule"}
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               </BottomSheetScrollView>
-            )}
+            ) : null}
+            </View>
           </LinearGradient>
         </BottomSheetModal>
 
@@ -1130,43 +1059,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: getSpacing(isSmallDevice ? 12 : 16),
-    borderWidth: 1,
-    borderColor: "#FFFFFF73",
-    borderRadius: getSpacing(12),
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    marginBottom: getSpacing(8),
-    paddingHorizontal: getSpacing(4),
-  },
-  headerSpacer: {
-    flex: 1,
-  },
-  closeButtonContainer: {
-    padding: getSpacing(4),
-  },
-  closeButtonCircle: {
-    width: getSpacing(32),
-    height: getSpacing(32),
-    borderRadius: getSpacing(16),
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  closeButton: {
-    position: "absolute",
-    top: getSpacing(12),
-    right: getSpacing(16),
-    zIndex: 10,
-    width: getSpacing(isAndroid ? 28 : 32),
-    height: getSpacing(isAndroid ? 28 : 32),
-    alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: getSpacing(16),
   },
   header: {
     paddingTop: getSpacing(12),
@@ -1232,26 +1125,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderRadius: 12,
     padding: 4,
-    paddingVertical: 4,
-    marginBottom: getSpacing(isSmallDevice ? 8 : 12),
-    marginHorizontal: getSpacing(isSmallDevice ? 16 : 30),
-    marginTop: getSpacing(isSmallDevice ? 4 : 8),
+    marginBottom: getSpacing(12),
+    gap: 20,
+    paddingHorizontal: 25,
   },
   roleTab: {
     flex: 1,
     paddingVertical: 10,
     alignItems: "center",
     borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
   },
   activeRoleTab: {
     backgroundColor: "#FFFFFF",
-    marginRight: 2,
-    marginLeft: 2,
   },
   inactiveRoleTab: {
     backgroundColor: "transparent",
-    marginRight: 2,
-    marginLeft: 2,
     borderColor: "rgba(255, 255, 255, 0.7)",
     borderWidth: 1,
   },
@@ -1264,17 +1153,18 @@ const styles = StyleSheet.create({
     color: "#1E3A6F",
   },
   mentorListContainer: {
-    height: Dimensions.get("window").height * (isSmallDevice ? 0.38 : 0.42),
+    maxHeight: Dimensions.get("window").height * 0.5,
+    minHeight: Dimensions.get("window").height * 0.3,
     borderWidth: 1.5,
     borderRadius: getSpacing(12),
-    padding: getSpacing(isSmallDevice ? 12 : 16),
+    padding: getSpacing(isSmallDevice ? 14 : 16),
     marginBottom: getSpacing(isSmallDevice ? 8 : 12),
-    marginTop: getSpacing(8),
+    overflow: "hidden",
   },
   stepTitle: {
-    fontSize: getFontSize(isSmallDevice ? 14 : 16),
+    fontSize: getFontSize(isSmallDevice ? 15 : 16),
     fontWeight: "600",
-    marginBottom: getSpacing(isSmallDevice ? 10 : 16),
+    marginBottom: getSpacing(isSmallDevice ? 16 : 18),
     textAlign: "center",
   },
   // Step 1 specific styles
@@ -1294,9 +1184,8 @@ const styles = StyleSheet.create({
   },
 
   searchBarContainer: {
-    marginBottom: getSpacing(isSmallDevice ? 6 : 10),
-    marginTop: getSpacing(isSmallDevice ? 8 : 12),
-    marginHorizontal: getSpacing(isSmallDevice ? 16 : 34),
+    marginBottom: getSpacing(isSmallDevice ? 10 : 12),
+    paddingHorizontal: 30,
   },
 
   mentorListStep1: {
@@ -1342,22 +1231,25 @@ const styles = StyleSheet.create({
   },
   mentorNameStep1: {
     fontSize: getFontSize(isSmallDevice ? 13 : 14),
-    fontWeight: "500",
-    flex: 1,
+    fontWeight: "600",
+  },
+  mentorRoleStep1: {
+    fontSize: getFontSize(isSmallDevice ? 10 : 11),
+    marginTop: 2,
+    textTransform: "capitalize",
   },
   step1Footer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     gap: getSpacing(isSmallDevice ? 8 : 12),
-    marginTop: getSpacing(isSmallDevice ? 12 : 16),
-    paddingTop: getSpacing(8),
+    marginTop: getSpacing(isSmallDevice ? 16 : 18),
+    marginBottom: getSpacing(6),
     width: "100%",
-    paddingHorizontal: getSpacing(isSmallDevice ? 4 : 8),
+    paddingHorizontal: getSpacing(isSmallDevice ? 6 : 12),
   },
   cancelButton: {
-    minWidth: isSmallDevice ? 90 : 110,
-    flexGrow: 1,
+    minWidth: 110,
     paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
     borderRadius: 10,
     borderWidth: 1,
@@ -1366,9 +1258,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   nextButton: {
-    minWidth: isSmallDevice ? 90 : 110,
-    flexGrow: 1,
-    paddingVertical: getSpacing(isSmallDevice ? 12 : 14),
+    minWidth: 110,
+    paddingVertical: 14,
     backgroundColor: "rgba(30, 54, 111, 1)",
     borderWidth: 2,
     borderColor: "#fff",
@@ -1376,19 +1267,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   scheduleButton: {
-    minWidth: isSmallDevice ? 90 : 110,
-    flexGrow: 1,
-    paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
+    minWidth: 110,
+    paddingVertical: 14,
     backgroundColor: "rgba(30, 54, 111, 1)",
     borderWidth: 2,
     borderColor: "#fff",
     borderRadius: 10,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 6,
   },
 
   cancelButtonText: {
@@ -1403,25 +1288,12 @@ const styles = StyleSheet.create({
 
   step2Footer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    alignSelf: "center",
-    gap: getSpacing(isSmallDevice ? 10 : 12),
-    marginTop: getSpacing(isSmallDevice ? 20 : 24),
-    marginBottom: getSpacing(isSmallDevice ? 16 : 20),
-    paddingTop: getSpacing(8),
-    width: isSmallDevice ? "85%" : "75%",
-    paddingHorizontal: getSpacing(isSmallDevice ? 4 : 8),
-  },
-  backButton: {
-    minWidth: 110,
-    flexGrow: 1,
-    paddingVertical: 14,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#fff",
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    gap: getSpacing(isSmallDevice ? 8 : 12),
+    marginTop: getSpacing(isSmallDevice ? 18 : 20),
+    width: "100%",
+    paddingHorizontal: getSpacing(isSmallDevice ? 6 : 12),
   },
 
   scheduleButtonText: {
@@ -1484,14 +1356,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   calendarContainer: {
-    marginBottom: getSpacing(isSmallDevice ? 8 : 16),
-    marginTop: getSpacing(isSmallDevice ? 2 : 6),
+    borderRadius: getSpacing(12),
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   sectionTitle: {
-    fontSize: getFontSize(isSmallDevice ? 13 : 14),
+    fontSize: getFontSize(14),
     fontWeight: "600",
-    marginBottom: getSpacing(isSmallDevice ? 8 : 12),
-    marginTop: getSpacing(isSmallDevice ? 8 : 12),
+    marginBottom: getSpacing(12),
+    marginTop: getSpacing(16),
   },
   emptyStateContainer: {
     flex: 1,
@@ -1503,22 +1377,14 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(14),
     fontStyle: "italic",
   },
-  timeSlotGrid: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: getSpacing(isSmallDevice ? 36 : 40),
-    marginBottom: getSpacing(isSmallDevice ? 6 : 8),
-    paddingVertical: getSpacing(4),
-  },
   timeSlotGridItem: {
-    paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
-    paddingHorizontal: getSpacing(isSmallDevice ? 12 : 16),
-    borderRadius: getSpacing(isSmallDevice ? 8 : 10),
+    paddingVertical: getSpacing(12),
+    paddingHorizontal: getSpacing(8),
+    borderRadius: getSpacing(10),
     borderWidth: 1,
-    marginRight: getSpacing(isSmallDevice ? 8 : 12),
+    marginBottom: getSpacing(10),
     alignItems: "center",
     justifyContent: "center",
-    borderColor: "#FFFFFF",
   },
   timeSlotText: {
     fontSize: getFontSize(isSmallDevice ? 11 : 12),
