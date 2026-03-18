@@ -281,6 +281,7 @@ export interface RoadmapCardData {
     image?: string | number;
     title: string;
     description?: string;
+    phaseLabel?: string;
     completionTime?: string;
     status?: RoadmapCardStatus;
     completedDate?: string;

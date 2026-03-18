@@ -11,7 +11,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { useProgressByUserId } from "@/hooks/progress/useProgress";
 import { mergeRoadmapWithProgress, useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
-import { getCardStatus } from "@/lib/roadmap/helpers";
+import { getCardStatus, getPhaseNumber } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Mentee } from "@/types/mentee.types";
@@ -131,7 +131,25 @@ console.log('selectedPastor----->>>>>>>>>>>>>>', selectedPastor);
         if (selectedPastor === null) {
             let filtered = mentees.map(mentee => ({
                 type: 'MENTEE' as const,
-                data: mentee
+                data: (() => {
+                    // Derive phase/phaseNumber from assigned roadmap IDs using already-fetched roadmaps list
+                    // Progress API does not include roadmap metadata like phase.
+                    const assignedIds = mentee.assignedRoadmapIds ?? [];
+                    const firstAssignedRoadmap = assignedIds.length
+                        ? assignedIds
+                            .map(id => roadmaps?.find(r => r._id === id))
+                            .find(r => Boolean(r?.phase))
+                        : undefined;
+
+                    const derivedPhase = firstAssignedRoadmap?.phase;
+                    const derivedPhaseNumber = derivedPhase ? getPhaseNumber(derivedPhase) : undefined;
+
+                    return {
+                        ...mentee,
+                        phase: mentee.phase ?? derivedPhase,
+                        phaseNumber: mentee.phaseNumber ?? derivedPhaseNumber,
+                    };
+                })()
             }));
 
             if (pastorSearch.trim()) {

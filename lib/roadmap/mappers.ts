@@ -76,6 +76,7 @@ export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
             image: undefined,
             title: 'Unknown Roadmap',
             description: undefined,
+            phaseLabel: undefined,
             completionTime: 'Completion Time\nMonths 1 - 1',
             status: 'initial',
             showArrow: true,
@@ -92,7 +93,8 @@ export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
     return {
         image: roadmap.imageUrl,
         title: roadmap.name || 'Untitled Roadmap',
-        description: roadmap.roadMapDetails,
+        description: roadmap.roadMapDetails || roadmap.description,
+        phaseLabel: roadmap.phase,
         completionTime: `Completion Time\nMonths ${min} - ${max}`,
         status,
         completedDate: roadmap.completedOn ? formatDate(roadmap.completedOn) : undefined,
@@ -114,7 +116,8 @@ export function getTaskCard(task: NestedRoadmap): RoadmapCardData {
     return {
         image: task.imageUrl,
         title: task.name,
-        description: task.roadMapDetails,
+        description: task.roadMapDetails || task.description,
+        phaseLabel: task.phase,
         completionTime: task.duration ? `Duration: ${task.duration}` : undefined,
         status,
         completedDate: task.completedOn ? formatDate(task.completedOn) : undefined,
@@ -133,7 +136,8 @@ export function getSimpleRoadmapCard(roadmap: Roadmap): Omit<RoadmapCardData, 'c
     return {
         image: roadmap.imageUrl,
         title: roadmap.name,
-        description: roadmap.roadMapDetails,
+        description: roadmap.roadMapDetails || roadmap.description,
+        phaseLabel: roadmap.phase,
         status,
         showArrow: true,
         showCheckmark: status === 'completed',

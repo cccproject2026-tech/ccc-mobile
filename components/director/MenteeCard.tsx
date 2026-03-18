@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Dimensions, Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isSmallDevice = SCREEN_WIDTH < 375;
+// Dimensions import is kept for existing style consistency (some builds rely on it elsewhere)
+Dimensions.get('window');
 
 
 
@@ -44,6 +44,13 @@ export default function MenteeCard({
     onInviteAsFieldMentor,
 }: MenteeCardProps) {
     const isSelectionMode = onToggleSelect !== undefined;
+    const displayName = data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '');
+    const displaySubtext =
+        (data.description && data.description.trim()) ||
+        ((data as any).email as string | undefined) ||
+        (data.phase ? `Phase : ${data.phase}` : '') ||
+        'Tap to view roadmaps';
+
     // LIST VIEW (Compact)
     if (layout === 'list') {
         return (
@@ -61,7 +68,7 @@ export default function MenteeCard({
 
                 <View style={styles.listNameSection}>
                     <Text style={styles.listName} numberOfLines={1}>
-                        {data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '')}
+                        {displayName}
                     </Text>
                 </View>
 
@@ -147,7 +154,7 @@ export default function MenteeCard({
                     <View style={styles.contentSection}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={[styles.name, disabled && styles.disabledText]} numberOfLines={1}>
-                                {data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '')}
+                                {displayName}
                             </Text>
                             {disabled && (
                                 <View style={styles.alreadyAssignedBadge}>
@@ -157,7 +164,7 @@ export default function MenteeCard({
                         </View>
 
                         <Text style={styles.description} numberOfLines={3}>
-                            {data.description}
+                            {displaySubtext}
                         </Text>
 
                         {data.lastContacted && (
@@ -246,12 +253,20 @@ export default function MenteeCard({
 
                 <View style={styles.contentSection}>
                     <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-                        {data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '')}{data.role && ` (${data.role})`}
+                        {displayName}{data.role && ` (${data.role})`}
                     </Text>
 
                     <Text style={styles.description} numberOfLines={3}>
-                        {data.description}
+                        {displaySubtext}
                     </Text>
+
+                    {!!data.phase && (
+                        <View style={styles.phasePill}>
+                            <Text style={styles.phasePillText} numberOfLines={2}>
+                                <Text style={styles.phasePillLabel}>Phase :</Text> {data.phase}
+                            </Text>
+                        </View>
+                    )}
 
                     {/* SCHOLARSHIP INFO */}
                     {data.scholarshipAmount && (
@@ -322,12 +337,6 @@ export default function MenteeCard({
                 {data.hasCompleted && data.completedOn ? (
                     <View style={styles.statusBadge}>
                         <Text style={styles.statusText}>Completed on :{data.completedOn}</Text>
-                    </View>
-                ) : data.phase && data.phaseNumber && !data.hasCompleted ? (
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>
-                            Phase {data.phaseNumber} : {data.phase}
-                        </Text>
                     </View>
                 ) : null}
             </View>
@@ -521,6 +530,28 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.8)',
         lineHeight: getFontSize(16),
         marginBottom: getSpacing(6),
+    },
+    phasePill: {
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.35)',
+        borderRadius: getSpacing(12),
+        paddingVertical: getSpacing(8),
+        paddingHorizontal: getSpacing(12),
+        alignSelf: 'flex-start',
+        marginBottom: getSpacing(8),
+        maxWidth: '100%',
+        backgroundColor: 'rgba(0,0,0,0.06)',
+    },
+    phasePillText: {
+        fontSize: getFontSize(13),
+        color: 'rgba(255,255,255,0.92)',
+        lineHeight: getFontSize(18),
+        fontWeight: '500',
+        flexShrink: 1,
+    },
+    phasePillLabel: {
+        fontWeight: '800',
+        color: '#fff',
     },
     infoRow: {
         fontSize: getFontSize(12),

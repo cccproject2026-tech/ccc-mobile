@@ -100,14 +100,22 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
             const mentees = backendMentees.map((m, idx) => {
                 const progress = progressResponses[idx];
                 // Handle different roadmap structures (array or paginated object)
-                const roadmaps = Array.isArray(progress?.roadmaps)
+                const roadmapsRaw = Array.isArray(progress?.roadmaps)
                     ? progress.roadmaps
-                    : (progress?.roadmaps?.items ?? []);
+                    : (progress?.roadmaps?.items ?? progress?.roadmaps ?? []);
+
+                const roadmaps = Array.isArray(roadmapsRaw) ? roadmapsRaw : [];
+
+                // Some APIs return roadmap assignments as strings (ids) or objects with varying keys.
+                const assignedRoadmapIds = roadmaps
+                    .map((item: any) => {
+                        if (!item) return undefined;
+                        if (typeof item === 'string') return item;
+                        return item.roadMapId || item.roadmapId || item._id || item.id;
+                    })
+                    .filter(Boolean) as string[];
 
                 const firstRoadmap = roadmaps[0] ?? null;
-
-                // Extract assigned roadmap IDs
-                const assignedRoadmapIds = roadmaps.map((item: any) => item.roadMapId || item._id);
 
                 // Handle different assessment structures
                 const assessments = Array.isArray(progress?.assessments)
@@ -119,7 +127,9 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
 
                 return {
                     ...m,
-                    description: "",
+                    // Keep a meaningful line under the mentee name for list cards
+                    // (roadmap landing shows this; backend often doesn't provide `description`)
+                    description: m.description || m.profileInfo || m.email || "",
                     progress: progress?.overallRoadmapProgress ?? 0,
                     phase: firstRoadmap?.phase,
                     phaseNumber: firstRoadmap?.phaseNumber,

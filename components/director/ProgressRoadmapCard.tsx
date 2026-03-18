@@ -63,7 +63,7 @@ export const RoadmapCard: React.FC<Props> = ({
                 resizeMode="cover"
             />
 
-            {data.phaseNumber && (
+            {data.phaseNumber && !data.phaseLabel && (
                 <View style={styles.phaseBadge}>
                     <Text style={styles.phaseBadgeText}>Phase {data.phaseNumber}</Text>
                 </View>
@@ -185,6 +185,14 @@ export const RoadmapCard: React.FC<Props> = ({
                         >
                             {data.description}
                         </Text>
+                    )}
+
+                    {!!data.phaseLabel && (
+                        <View style={[styles.phasePill, !hasActions && styles.phasePillNoActions]}>
+                            <Text style={styles.phasePillText} numberOfLines={1}>
+                                Phase : {data.phaseLabel}
+                            </Text>
+                        </View>
                     )}
 
                     {data.completionTime && !data.status && (
@@ -363,6 +371,29 @@ const styles = StyleSheet.create({
     // ✅ Remove padding when no actions
     descriptionNoActions: {
         paddingRight: 0,
+    },
+    phasePill: {
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.25)',
+        borderRadius: 12,
+        paddingHorizontal: getSpacing(12),
+        paddingVertical: getSpacing(8),
+        alignSelf: 'flex-start',
+        marginTop: getSpacing(-2),
+        marginBottom: getSpacing(10),
+        backgroundColor: 'rgba(0,0,0,0.06)',
+        paddingRight: getSpacing(12),
+        minWidth: 0,
+        maxWidth: '100%',
+    },
+    phasePillNoActions: {
+        // keep same; placeholder for any no-actions tweaks
+    },
+    phasePillText: {
+        color: '#FFFFFF',
+        fontSize: getFontSize(13),
+        fontWeight: '600',
+        opacity: 0.95,
     },
     statusRow: {
         marginTop: getSpacing(6),
