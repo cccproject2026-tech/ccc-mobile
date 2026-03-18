@@ -1,4 +1,11 @@
 import GradientCalendar from "@/components/atom/calendar"
+import {
+  formatTimeSlot,
+  useMonthlyAvailability,
+  useWeeklyAvailability,
+} from "@/hooks/mentors/useMentorsAvailability"
+import { useAuthStore } from "@/stores"
+import { AppointmentPlatform, TimeSlot } from "@/types/appointment.types"
 import { Mentee } from "@/types/mentee.types"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -9,6 +16,8 @@ import {
 import { LinearGradient } from "expo-linear-gradient"
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
 import {
+  ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -24,22 +33,171 @@ export interface ScheduleMeetingBottomSheetRef {
 interface ScheduleMeetingBottomSheetProps {
   mentee: Mentee | null
   onClose?: () => void
-  onSchedule?: (date: Date, time: string, option: string) => void
+  onSchedule?: (data: {
+    selectedDate: string
+    selectedSlot: TimeSlot
+    optionId: string
+    platform: AppointmentPlatform
+  }) => void
+  onSetAvailabilityPress?: () => void
 }
 
 const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, ScheduleMeetingBottomSheetProps>(
-  ({ mentee, onClose, onSchedule }, ref) => {
+  ({ mentee, onClose, onSchedule, onSetAvailabilityPress }, ref) => {
     const bottomSheetRef = useRef<BottomSheetModal>(null)
     const { bottom } = useSafeAreaInsets()
+    const { user } = useAuthStore()
+    const [isSheetOpen, setIsSheetOpen] = useState(false)
+    const now = new Date()
+    const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1)
+    const [currentYear, setCurrentYear] = useState(now.getFullYear())
     const [selectedDate, setSelectedDate] = useState<string>("")
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
+    const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
     const [selectedOption, setSelectedOption] = useState<string | null>(null)
     const [showMeetingOptions, setShowMeetingOptions] = useState(false)
+
+    const {
+      availability,
+      isLoading: isLoadingAvailability,
+    } = useMonthlyAvailability(
+      {
+        mentorId: user?.id ?? null,
+        month: currentMonth,
+        year: currentYear,
+        role: "mentor",
+      },
+      { enabled: !!user?.id && isSheetOpen, allowDefaultForMentee: false },
+    )
+
+    const { weeklySlots, isLoading: isLoadingWeekly } = useWeeklyAvailability(
+      user?.id ?? null,
+      { enabled: !!user?.id && isSheetOpen, role: "mentor" },
+    )
+
+    const generatedMonthlyFromWeeklyPattern = useMemo(() => {
+      if (!weeklySlots?.length) return []
+
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate()
+      const byDayOfWeek = new Map<number, TimeSlot[]>()
+
+      weeklySlots.forEach((ws: any) => {
+        const dayNum =
+          typeof ws?.day === "number"
+            ? ws.day
+            : typeof ws?.date === "string"
+              ? new Date(ws.date).getDay()
+              : null
+        if (dayNum === null || Number.isNaN(dayNum)) return
+
+        const slotsCandidate = ws?.rawSlots ?? ws?.slots
+        const slots = Array.isArray(slotsCandidate) ? slotsCandidate : []
+        if (slots.length === 0) return
+
+        byDayOfWeek.set(dayNum, slots)
+      })
+
+      if (byDayOfWeek.size === 0) return []
+
+      const out: any[] = []
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(currentYear, currentMonth - 1, day)
+        const dow = d.getDay()
+        const slots = byDayOfWeek.get(dow)
+        if (!slots || slots.length === 0) continue
+
+        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+        out.push({
+          date: dateStr,
+          day: dow,
+          rawSlots: slots,
+          slots,
+        })
+      }
+
+      return out
+    }, [weeklySlots, currentMonth, currentYear])
+
+    const fallbackMonthlyFromWeekly = useMemo(() => {
+      if (!weeklySlots?.length) return []
+      return weeklySlots
+        .map((slotDay: any) => {
+          const rawDate = slotDay?.date
+          const dateStr =
+            typeof rawDate === "string" && rawDate.includes("T")
+              ? rawDate.split("T")[0]
+              : rawDate
+          if (typeof dateStr !== "string" || dateStr.length < 10) return null
+          const [y, m] = dateStr.split("-").map((v) => parseInt(v, 10))
+          if (y !== currentYear || m !== currentMonth) return null
+          // Some APIs return `rawSlots`, others return `slots`.
+          const rawSlotsCandidate = slotDay?.rawSlots ?? slotDay?.slots
+          const rawSlots = Array.isArray(rawSlotsCandidate)
+            ? rawSlotsCandidate
+            : []
+          return {
+            date: dateStr,
+            day: typeof slotDay?.day === "number" ? slotDay.day : new Date(dateStr).getDay(),
+            rawSlots,
+            slots: rawSlots,
+          }
+        })
+        .filter(Boolean) as any[]
+    }, [weeklySlots, currentMonth, currentYear])
+
+    const effectiveAvailability = useMemo(() => {
+      if (availability && availability.length > 0) return availability
+      if (fallbackMonthlyFromWeekly.length > 0) return fallbackMonthlyFromWeekly
+      return generatedMonthlyFromWeeklyPattern
+    }, [
+      availability,
+      fallbackMonthlyFromWeekly,
+      generatedMonthlyFromWeeklyPattern,
+    ])
+
+    const availableDates = useMemo(() => {
+      if (!effectiveAvailability?.length) return []
+      return effectiveAvailability
+        .filter((day) => {
+          const slots = (day as any).rawSlots ?? day.slots
+          return (slots?.length ?? 0) > 0
+        })
+        .map((day) => {
+          const d = day.date
+          return typeof d === "string" && d.includes("T") ? d.split("T")[0] : d
+        })
+    }, [effectiveAvailability])
+
+    const hasAnyAvailability = availableDates.length > 0
+
+    const selectedDateAvailability = useMemo(() => {
+      if (!selectedDate || !effectiveAvailability?.length) return null
+      const day = effectiveAvailability.find((dayItem: any) => {
+        const d = dayItem.date
+        const dateStr = typeof d === "string" && d.includes("T") ? d.split("T")[0] : d
+        return dateStr === selectedDate
+      })
+      return day ?? null
+    }, [effectiveAvailability, selectedDate])
+
+    const availableSlots: TimeSlot[] = useMemo(() => {
+      if (!selectedDateAvailability) return []
+      const raw = (selectedDateAvailability as any).rawSlots ?? selectedDateAvailability.slots
+      return Array.isArray(raw) ? raw : []
+    }, [selectedDateAvailability])
 
     const snapPoints = useMemo(() => ["90%"], [])
 
     useImperativeHandle(ref, () => ({
-      present: () => bottomSheetRef.current?.present(),
+      present: () => {
+        // Reset any stale selections before showing
+        setSelectedDate("")
+        setSelectedTime(null)
+        setSelectedSlot(null)
+        setSelectedOption(null)
+        setShowMeetingOptions(false)
+        bottomSheetRef.current?.present()
+      },
       dismiss: () => bottomSheetRef.current?.dismiss(),
     }))
 
@@ -59,17 +217,11 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
     const handleDismiss = () => {
       setSelectedDate("")
       setSelectedTime(null)
+      setSelectedSlot(null)
       setSelectedOption(null)
       setShowMeetingOptions(false)
       onClose?.()
     }
-
-    const timeSlots = [
-      "09:00 am - 10:00 am",
-      "11:00 am - 12:00 pm",
-      "01:00 pm - 02:00 pm",
-      "03:00 pm - 04:00 pm",
-    ]
 
     const meetingOptions = [
       { id: "zoom", label: "Zoom Meeting", icon: "videocam" },
@@ -79,10 +231,50 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
     ]
 
     const handleSchedule = () => {
-      if (selectedDate && selectedTime && selectedOption && onSchedule) {
-        const date = new Date(selectedDate)
-        onSchedule(date, selectedTime, selectedOption)
+      if (!onSchedule || !selectedDate || !selectedOption) return
+      if (!hasAnyAvailability) {
+        Alert.alert(
+          "Set Availability First",
+          "You don’t have any availability set yet. Please set your availability, then schedule a meeting.",
+        )
+        return
       }
+      if (!selectedDateAvailability) {
+        Alert.alert(
+          "Invalid Date",
+          "No availability for selected date.",
+        )
+        return
+      }
+      const isValidSlot =
+        selectedSlot &&
+        availableSlots.some(
+          (s) =>
+            s.startTime === selectedSlot.startTime &&
+            s.startPeriod === selectedSlot.startPeriod,
+        )
+      if (!isValidSlot) {
+        Alert.alert(
+          "Invalid Time",
+          "Selected time is not available.",
+        )
+        return
+      }
+      if (!selectedSlot) return
+      const platformMap: Record<string, AppointmentPlatform> = {
+        zoom: "zoom",
+        "google-meet": "google_meet",
+        teams: "teams",
+        "in-person": "in_person",
+      }
+      const platform = platformMap[selectedOption.toLowerCase()] ?? "zoom"
+
+      onSchedule({
+        selectedDate,
+        selectedSlot,
+        optionId: selectedOption,
+        platform,
+      })
       bottomSheetRef.current?.dismiss()
     }
 
@@ -94,6 +286,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
         backdropComponent={renderBackdrop}
         backgroundComponent={() => null}
         handleIndicatorStyle={styles.handleIndicator}
+        onChange={(index) => setIsSheetOpen(index >= 0)}
         onDismiss={handleDismiss}
         android_keyboardInputMode="adjustResize"
         keyboardBehavior="interactive"
@@ -126,40 +319,99 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
 
             {/* Date Picker using GradientCalendar */}
             <View style={styles.section}>
+              {isLoadingAvailability ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.loadingText}>Loading availability…</Text>
+                </View>
+              ) : null}
+              {!isLoadingAvailability && !hasAnyAvailability ? (
+                <View style={styles.warningBox}>
+                  <Ionicons name="alert-circle-outline" size={18} color="#FFD166" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.warningText}>
+                      No availability set. Please set your availability first to enable scheduling.
+                    </Text>
+                    {onSetAvailabilityPress ? (
+                      <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={onSetAvailabilityPress}
+                        style={styles.setAvailabilityButton}
+                      >
+                        <Text style={styles.setAvailabilityButtonText}>Set availability</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </View>
+              ) : null}
               <GradientCalendar
                 selected={selectedDate}
-                setSelected={setSelectedDate}
+                setSelected={(dateStr) => {
+                  setSelectedDate(dateStr)
+                  setSelectedTime(null)
+                  setSelectedSlot(null)
+                }}
                 showHeader={true}
                 disablePastDates={true}
                 markToday={true}
+                // While loading, pass [] so users can't select random dates.
+                // Once loaded, enable ONLY the available dates.
+                availableDates={
+                  isLoadingAvailability || isLoadingWeekly ? [] : availableDates
+                }
+                onMonthChange={(month, year) => {
+                  setCurrentMonth(month)
+                  setCurrentYear(year)
+                }}
                 gradientColors={["#176192", "#1D548D", "#0d2847"]}
               />
             </View>
 
-            {/* Time Picker */}
+            {/* Time Picker - only valid slots from mentor availability */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Choose a Time</Text>
-              <View style={styles.timeGrid}>
-                {timeSlots.map((time) => (
-                  <TouchableOpacity
-                    key={time}
-                    style={[
-                      styles.timeSlot,
-                      selectedTime === time && styles.selectedTimeSlot,
-                    ]}
-                    onPress={() => setSelectedTime(time)}
-                  >
-                    <Text
-                      style={[
-                        styles.timeText,
-                        selectedTime === time && styles.selectedTimeText,
-                      ]}
-                    >
-                      {time}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {selectedDate ? (
+                availableSlots.length === 0 ? (
+                  <Text style={styles.noSlotsText}>
+                    No slots available for this date.
+                  </Text>
+                ) : (
+                  <View style={styles.timeGrid}>
+                    {availableSlots.map((slot) => {
+                      const label = formatTimeSlot(slot)
+                      const isSelected =
+                        selectedSlot?.startTime === slot.startTime &&
+                        selectedSlot?.startPeriod === slot.startPeriod
+                      return (
+                        <TouchableOpacity
+                          key={slot._id ?? label}
+                          style={[
+                            styles.timeSlot,
+                            isSelected && styles.selectedTimeSlot,
+                          ]}
+                          onPress={() => {
+                            setSelectedSlot(slot)
+                            setSelectedTime(label)
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.timeText,
+                              isSelected && styles.selectedTimeText,
+                            ]}
+                          >
+                            {label}
+                          </Text>
+                        </TouchableOpacity>
+                      )
+                    })}
+                  </View>
+                )
+              ) : (
+                <Text style={styles.noSlotsText}>
+                  Select a date first.
+                </Text>
+              )}
             </View>
 
             {/* Meeting Option Dropdown */}
@@ -229,11 +481,14 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
               <TouchableOpacity
                 style={[
                   styles.scheduleButton,
-                  (!selectedDate || !selectedTime || !selectedOption) &&
+                  (!hasAnyAvailability ||
+                    !selectedDate ||
+                    !selectedSlot ||
+                    !selectedOption) &&
                     styles.disabledButton,
                 ]}
                 onPress={handleSchedule}
-                disabled={!selectedDate || !selectedTime || !selectedOption}
+                disabled={!hasAnyAvailability || !selectedDate || !selectedSlot || !selectedOption}
               >
                 <Text style={styles.scheduleButtonText}>Schedule</Text>
               </TouchableOpacity>
@@ -288,6 +543,55 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
+  },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  loadingText: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 14,
+  },
+  warningBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 209, 102, 0.35)",
+    backgroundColor: "rgba(255, 209, 102, 0.12)",
+    marginBottom: 12,
+  },
+  warningText: {
+    flex: 1,
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+  },
+  setAvailabilityButton: {
+    alignSelf: "flex-start",
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+  },
+  setAvailabilityButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  noSlotsText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 14,
+    fontStyle: "italic",
   },
   sectionTitle: {
     color: "#FFFFFF",

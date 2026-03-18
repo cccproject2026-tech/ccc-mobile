@@ -200,6 +200,14 @@ interface UseMonthlyAvailabilityParams {
 
 interface UseMonthlyAvailabilityOptions {
   enabled?: boolean;
+  /**
+   * When true (default), pastors/mentees with no saved availability get
+   * generated default monthly availability (Mon–Fri, 9AM–5PM).
+   *
+   * IMPORTANT: For scheduling flows, set this to false so the UI doesn't show
+   * "fake" availability that the backend will reject.
+   */
+  allowDefaultForMentee?: boolean;
 }
 
 export const useMonthlyAvailability = (
@@ -224,7 +232,8 @@ export const useMonthlyAvailability = (
       // If it's a pastor/mentee and they have no availability set, return defaults
       const isMentee =
         role?.toLowerCase() === "pastor" || role?.toLowerCase() === "mentee";
-      if (isMentee && (!data || data.length === 0)) {
+      const allowDefaultForMentee = options?.allowDefaultForMentee ?? true;
+      if (allowDefaultForMentee && isMentee && (!data || data.length === 0)) {
         return generateDefaultMonthlyAvailability(month, year);
       }
       return data;

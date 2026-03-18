@@ -106,13 +106,10 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
 
     if (disablePastDates && dateStr < today) return false;
 
-    if (availableDates && availableDates.length > 0) {
-      const enabled = availableDates.includes(dateStr);
-      if (__DEV__) {
-        console.log("calendar date:", dateStr);
-        console.log("enabled:", enabled);
-      }
-      return enabled;
+    // When availableDates is provided, ONLY those dates are enabled.
+    // (If it's an empty array, that means no availability → disable all.)
+    if (availableDates) {
+      return availableDates.includes(dateStr);
     }
 
     if (recurringAvailability) {

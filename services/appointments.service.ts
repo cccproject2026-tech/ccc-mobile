@@ -65,30 +65,10 @@ export const appointmentService = {
     if (!mentorId) {
       throw new Error("mentorId is required for getWeeklyAvailability");
     }
-
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const year = now.getFullYear();
-
-    const monthly = await appointmentService.getMonthlyAvailability(
-      mentorId,
-      month,
-      year,
+    const response = await apiClient.get<GetWeeklyAvailabilityApiResponse>(
+      ENDPOINTS.APPOINTMENTS.GET_WEEKLY_AVAILABILITY(mentorId),
     );
-
-    const weeklySlots = monthly.map((day) => ({
-      day: day.day,
-      date: day.date,
-      rawSlots: day.slots,
-    }));
-
-    return {
-      mentorId,
-      weeklySlots,
-      maxBookingsPerDay: undefined,
-      meetingDuration: undefined,
-      minSchedulingNoticeHours: undefined,
-    };
+    return response.data.data;
   },
 
   /**

@@ -135,12 +135,17 @@ export default function MyMentees() {
     }
   }
 
-  const handleScheduleMeeting = (date: Date, time: string, option: string) => {
+  const handleScheduleMeeting = (data: {
+    selectedDate: string
+    selectedSlot: { startTime: string; startPeriod: "AM" | "PM" }
+    optionId: string
+    platform: any
+  }) => {
     console.log("Meeting scheduled:", {
       mentee: selectedMentee?.firstName + " " + selectedMentee?.lastName,
-      date: date.toDateString(),
-      time,
-      option,
+      date: data.selectedDate,
+      time: `${data.selectedSlot.startTime} ${data.selectedSlot.startPeriod}`,
+      option: data.optionId,
     })
     // Here you would typically save the meeting to your backend
   }
@@ -574,6 +579,9 @@ export default function MyMentees() {
           ref={scheduleMeetingRef}
           mentee={selectedMentee}
           onSchedule={handleScheduleMeeting}
+          onSetAvailabilityPress={() =>
+            router.push("/(mentor)/appointments/availability" as any)
+          }
         />
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

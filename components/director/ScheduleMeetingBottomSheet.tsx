@@ -227,17 +227,22 @@ const ScheduleMeetingBottomSheet = forwardRef<
     );
     const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
 
-    // ✅ Fix: Make sure selectedMentor is set before fetching availability
+    /**
+     * The backend models availability under the *mentor* participant.
+     * - If the logged-in user is a mentor and they are scheduling with a pastor/director,
+     *   availability must be fetched for the logged-in mentor (currentUser.id).
+     * - Otherwise (pastor/director scheduling with a mentor), availability belongs to the selected mentor.
+     * - Reschedule always uses the appointment's mentorId.
+     */
     const mentorIdForAvailability = useMemo(() => {
-      if (selectedMentor?.id) {
-        return selectedMentor.id;
-      }
-      // In reschedule mode, use the appointment's mentor ID
       if (mode === "reschedule" && existingAppointment) {
         return existingAppointment.mentorId;
       }
-      return null;
-    }, [selectedMentor, mode, existingAppointment]);
+      if (currentUserRole === "mentor") {
+        return currentUser?.id ?? null;
+      }
+      return selectedMentor?.id ?? null;
+    }, [mode, existingAppointment, currentUserRole, currentUser?.id, selectedMentor?.id]);
 
     const shouldFetchAvailability = Boolean(mentorIdForAvailability) && isSheetOpen;
 
@@ -256,6 +261,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       },
       {
         enabled: shouldFetchAvailability,
+        allowDefaultForMentee: false,
       },
     );
 
@@ -265,19 +271,19 @@ const ScheduleMeetingBottomSheet = forwardRef<
       { role: selectedRole, enabled: shouldFetchAvailability },
     );
 
-    // Fetch mentor appointments to check max bookings
+    // Fetch mentor appointments to check max bookings (availability owner)
     const { appointments: mentorAppointments } = useAppointments(
-      mentorIdForAvailability
-        ? {
-            mentorId: mentorIdForAvailability,
-          }
-        : {},
+      mentorIdForAvailability ? { mentorId: mentorIdForAvailability } : {},
     );
 
-    // Fetch user appointments to check for overlaps
-    const { user } = useAuthStore();
+    // Fetch appointments for the "mentee/user" participant to check overlaps.
+    // When a mentor schedules with a pastor/director, the mentee is the selected user.
+    const overlapUserId =
+      currentUserRole === "mentor"
+        ? selectedMentor?.id
+        : currentUser?.id;
     const { appointments: userAppointments } = useAppointments({
-      userId: user?.id || undefined,
+      userId: overlapUserId || undefined,
     });
 
     const { createAppointmentAsync, rescheduleAppointmentAsync } =
@@ -531,9 +537,18 @@ const ScheduleMeetingBottomSheet = forwardRef<
               startPeriod: selectedTime.apiSlot.startPeriod as "AM" | "PM",
             });
           } else {
+            // Correctly assign mentor/user participants depending on who is logged-in.
+            const payloadMentorId =
+              currentUserRole === "mentor"
+                ? (currentUser?.id ?? "")
+                : selectedMentor.id;
+            const payloadUserId =
+              currentUserRole === "mentor"
+                ? selectedMentor.id
+                : (currentUser?.id ?? "");
             await createAppointmentAsync({
-              userId: currentUser?.id ?? "",
-              mentorId: selectedMentor.id,
+              userId: payloadUserId,
+              mentorId: payloadMentorId,
               meetingDate: meetingDate,
               platform: platform as AppointmentPlatform,
               meetingLink: undefined,

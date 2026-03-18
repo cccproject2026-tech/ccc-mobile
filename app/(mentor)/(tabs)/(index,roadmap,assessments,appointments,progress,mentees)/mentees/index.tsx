@@ -9,8 +9,11 @@ import ScheduleMeetingBottomSheet, { ScheduleMeetingBottomSheetRef } from "@/com
 import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
+import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment"
 import { useMentees } from "@/hooks/mentees/useMentees"
+import { appointmentService } from "@/services/appointments.service"
 import { useAuthStore } from "@/stores"
+import { AppointmentPlatform } from "@/types/appointment.types"
 import { Mentee } from "@/types/mentee.types"
 import { Feather, Ionicons } from "@expo/vector-icons"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
@@ -19,6 +22,7 @@ import { Stack, router } from "expo-router"
 import React, { useCallback, useMemo, useRef, useState } from "react"
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   ScrollView,
@@ -96,6 +100,11 @@ export default function MyMentees() {
 
   const menteeMenuRef = useRef<MenteeMenuBottomSheetRef>(null)
   const scheduleMeetingRef = useRef<ScheduleMeetingBottomSheetRef>(null)
+  const { createAppointmentAsync } = useCreateAppointment({
+    onSuccess: () => {
+      scheduleMeetingRef.current?.dismiss()
+    },
+  })
 
 
   const tabData = [
@@ -162,14 +171,68 @@ export default function MyMentees() {
     setShowMarkCompleteModal(false)
   }
 
-  const handleScheduleMeeting = (date: Date, time: string, option: string) => {
-    console.log("Meeting scheduled:", {
-      mentee: selectedMentee?.firstName + " " + selectedMentee?.lastName,
-      date: date.toDateString(),
-      time,
-      option,
+  const handleScheduleMeeting = async (data: {
+    selectedDate: string
+    selectedSlot: { startTime: string; startPeriod: "AM" | "PM" }
+    optionId: string
+    platform: AppointmentPlatform
+  }) => {
+    if (!selectedMentee?.id || !user?.id) {
+      return
+    }
+    console.log("Logged in user:", user)
+    if (user?.role !== "mentor") {
+      Alert.alert(
+        "Error",
+        "Only mentors can schedule meetings from this screen.",
+      )
+      return
+    }
+
+    const meetingDate = appointmentService.createMeetingDate(
+      data.selectedDate,
+      {
+        startTime: data.selectedSlot.startTime,
+        startPeriod: data.selectedSlot.startPeriod,
+      },
+    )
+    const platform = data.platform ?? "zoom"
+    const menteeName = `${selectedMentee.firstName ?? ""} ${selectedMentee.lastName ?? ""}`.trim()
+    console.log("📤 Mentor Create Payload:", {
+      mentorId: user.id,
+      userId: selectedMentee.id,
+      role: user.role,
+      meetingDate,
+      platform,
     })
-    // Here you would typically save the meeting to your backend
+    try {
+      await createAppointmentAsync({
+        userId: selectedMentee.id,
+        mentorId: user.id,
+        meetingDate,
+        platform,
+        meetingLink: undefined,
+        notes: `Meeting with ${menteeName}`,
+      })
+      scheduleMeetingRef.current?.dismiss()
+    } catch (err) {
+      console.error("Failed to create appointment:", err)
+      const message =
+        (err as any)?.message ||
+        (err as any)?.response?.data?.message ||
+        "Failed to create meeting."
+      if (
+        typeof message === "string" &&
+        message.toLowerCase().includes("no availability")
+      ) {
+        Alert.alert(
+          "Set Availability First",
+          "Your mentor availability is not set. Please set your availability, then try scheduling again.",
+        )
+      } else {
+        Alert.alert("Error", message)
+      }
+    }
   }
 
   const loadMore = useCallback(() => {
@@ -620,6 +683,9 @@ export default function MyMentees() {
           ref={scheduleMeetingRef}
           mentee={selectedMentee}
           onSchedule={handleScheduleMeeting}
+          onSetAvailabilityPress={() =>
+            router.push("/(mentor)/appointments/availability" as any)
+          }
         />
 
         {/* Mark Complete Confirmation Modal */}
