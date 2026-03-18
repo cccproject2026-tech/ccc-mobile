@@ -7,7 +7,10 @@ import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { useAppointments } from "@/hooks/appointments/useAppointments";
+import {
+  useAppointments,
+  useCancelAppointment,
+} from "@/hooks/appointments/useAppointments";
 import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
 import { useUpdateAppointment } from "@/hooks/appointments/useUpadteAppointment";
 import { Mentor, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
@@ -77,8 +80,9 @@ const Appointments = () => {
     },
   });
 
-  // Update appointment
+  // Update appointment (for change mode)
   const { updateAppointmentAsync, isUpdating } = useUpdateAppointment();
+  const { mutateAsync: cancelAppointmentAsync } = useCancelAppointment();
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
 
   React.useEffect(() => {
@@ -137,6 +141,16 @@ const Appointments = () => {
   };
 
   const selectedDateAppointments = getAppointmentsByDate(selectedDate);
+  const uniqueSelectedDateAppointments = selectedDateAppointments.filter(
+    (apt, index, self) =>
+      index ===
+      self.findIndex(
+        (a) => a.meetingDate === apt.meetingDate && a.mentorId === apt.mentorId,
+      ),
+  );
+  const finalSelectedDateAppointments = uniqueSelectedDateAppointments.filter(
+    (apt) => apt.status !== "cancelled",
+  );
 
   // ✅ Removed duplicate declaration (moved to top)
 
@@ -156,10 +170,7 @@ const Appointments = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await updateAppointmentAsync({
-                id: appointment.id,
-                payload: { status: 'cancelled' }
-              });
+              await cancelAppointmentAsync(appointment.id);
               Alert.alert('Success', 'Meeting cancelled successfully');
             } catch (error) {
               Alert.alert('Error', 'Failed to cancel meeting');
@@ -372,18 +383,18 @@ const Appointments = () => {
                   </View>
                 </View>
 
-                {selectedDateAppointments.length > 0 && (
+                {finalSelectedDateAppointments.length > 0 && (
                   <View style={styles.appointmentsContainer}>
                     <View style={styles.rowBetween}>
                       <Text style={styles.upcomingText}>
                         {isToday(selectedDate)
-                          ? `You have ${selectedDateAppointments.length} Appointments Today`
-                          : `You have ${selectedDateAppointments.length} Appointments on ${formatDisplayDate(selectedDate)}`
+                          ? `You have ${finalSelectedDateAppointments.length} Appointments Today`
+                          : `You have ${finalSelectedDateAppointments.length} Appointments on ${formatDisplayDate(selectedDate)}`
                         }
                       </Text>
                     </View>
                     <View style={{ gap: 10 }}>
-                      {selectedDateAppointments.map((appointment) => {
+                      {finalSelectedDateAppointments.map((appointment) => {
                         const mentor = mentorsForBottomSheet.find(m => m.id === appointment.mentorId);
 
                         return (
@@ -424,7 +435,7 @@ const Appointments = () => {
                   </View>
                 )}
 
-                {selectedDateAppointments.length === 0 && (
+                {finalSelectedDateAppointments.length === 0 && (
                   <View style={styles.appointmentsContainer}>
                     <View style={styles.rowBetween}>
                       <Text style={styles.upcomingText}>

@@ -71,7 +71,7 @@ const Appointments: React.FC = () => {
   });
 
   const {
-    mutate: cancelAppointment,
+    mutateAsync: cancelAppointmentAsync,
     isPending: isCancelling,
   } = useCancelAppointment();
 
@@ -222,7 +222,19 @@ const Appointments: React.FC = () => {
     if (!appointments || !getAppointmentsByDate) return [];
     const dateAppointments = getAppointmentsByDate(selectedDate);
 
-    return dateAppointments.map((apt) => {
+    const uniqueDateAppointments = dateAppointments.filter(
+      (apt, index, self) =>
+        index ===
+        self.findIndex(
+          (a) => a.meetingDate === apt.meetingDate && a.mentorId === apt.mentorId,
+        ),
+    );
+
+    const activeDateAppointments = uniqueDateAppointments.filter(
+      (apt) => apt.status !== "cancelled",
+    );
+
+    return activeDateAppointments.map((apt) => {
       const menteeName = getMenteeName(apt.userId);
       const startTime = formatTime(apt.meetingDate);
       const endTime = formatTime(apt.endTime);
@@ -258,7 +270,17 @@ const Appointments: React.FC = () => {
     if (!appointments || !getUpcomingAppointments) return [];
 
     const dateAppointments = getUpcomingAppointments();
-    return dateAppointments.map((apt) => {
+    const uniqueUpcomingAppointments = dateAppointments.filter(
+      (apt, index, self) =>
+        index ===
+        self.findIndex(
+          (a) => a.meetingDate === apt.meetingDate && a.mentorId === apt.mentorId,
+        ),
+    );
+    const activeUpcomingAppointments = uniqueUpcomingAppointments.filter(
+      (apt) => apt.status !== "cancelled",
+    );
+    return activeUpcomingAppointments.map((apt) => {
       const menteeName = getMenteeName(apt.userId);
       const startTime = formatTime(apt.meetingDate);
       const endTime = formatTime(apt.endTime);
@@ -302,8 +324,6 @@ const Appointments: React.FC = () => {
   };
 
   const handleCancel = (appointment: any) => {
-    console.log("Appointment before cancel:", appointment);
-
     if (appointment?.status !== "scheduled") {
       Alert.alert(
         "Cannot Cancel",
@@ -320,27 +340,24 @@ const Appointments: React.FC = () => {
         {
           text: "Yes",
           style: "destructive",
-          onPress: () => {
+          onPress: async () => {
             if (!appointment?.id) {
-              console.warn("Missing appointment id for cancel");
+              Alert.alert("Error", "Missing appointment id.");
               return;
             }
-
-            cancelAppointment(appointment.id, {
-              onSuccess: () => {
-                setResponseModal({
-                  visible: true,
-                  message: "Meeting has been Canceled",
-                  buttonText: "OK",
-                });
-              },
-              onError: () => {
-                Alert.alert(
-                  "Error",
-                  "Failed to cancel the meeting. Please try again.",
-                );
-              },
-            });
+            try {
+              await cancelAppointmentAsync(appointment.id);
+              setResponseModal({
+                visible: true,
+                message: "Meeting has been Canceled",
+                buttonText: "OK",
+              });
+            } catch {
+              Alert.alert(
+                "Error",
+                "Failed to cancel the meeting. Please try again.",
+              );
+            }
           },
         },
       ],
