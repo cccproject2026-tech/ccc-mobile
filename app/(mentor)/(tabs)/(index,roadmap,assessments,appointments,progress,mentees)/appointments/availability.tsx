@@ -338,8 +338,35 @@ const AvailabilityScreen = () => {
       return;
     }
 
+    // Clean payload inputs to avoid duplicate dates/slots being sent
+    const cleanedDateAvailabilities = dateAvailabilities
+      .map((day) => {
+        const dateOnly =
+          typeof day.date === "string" && day.date.includes("T")
+            ? day.date.split("T")[0]
+            : day.date;
+
+        const uniqueSlots = day.slots.filter(
+          (slot, index, self) =>
+            index ===
+            self.findIndex(
+              (s) => s.start === slot.start && s.end === slot.end,
+            ),
+        );
+
+        return {
+          ...day,
+          date: dateOnly,
+          slots: uniqueSlots,
+        };
+      })
+      .filter(
+        (day, index, self) =>
+          index === self.findIndex((d) => d.date === day.date),
+      );
+
     // Validate slots for all selected dates
-    for (const day of dateAvailabilities) {
+    for (const day of cleanedDateAvailabilities) {
       const error = validateSlots(day.date, day.slots);
       if (error) {
         Alert.alert("Invalid Availability", error);
@@ -349,23 +376,35 @@ const AvailabilityScreen = () => {
 
     try {
       const weeklySlots: SetAvailabilityPayload["weeklySlots"] =
-        dateAvailabilities
+        cleanedDateAvailabilities
           .filter((day) => day.slots.length > 0)
           .map((day) => {
             const jsDate = new Date(day.date);
             const dayNumber = jsDate.getDay();
 
-            const slots = day.slots.map((slot) => {
-              const startTime = parseTime(slot.start);
-              const endTime = parseTime(slot.end);
+            const slots = day.slots
+              .map((slot) => {
+                const startTime = parseTime(slot.start);
+                const endTime = parseTime(slot.end);
 
-              return {
-                startTime: startTime.time,
-                startPeriod: startTime.period,
-                endTime: endTime.time,
-                endPeriod: endTime.period,
-              };
-            });
+                return {
+                  startTime: startTime.time,
+                  startPeriod: startTime.period,
+                  endTime: endTime.time,
+                  endPeriod: endTime.period,
+                };
+              })
+              .filter(
+                (slot, index, self) =>
+                  index ===
+                  self.findIndex(
+                    (s) =>
+                      s.startTime === slot.startTime &&
+                      s.startPeriod === slot.startPeriod &&
+                      s.endTime === slot.endTime &&
+                      s.endPeriod === slot.endPeriod,
+                  ),
+              );
 
             return {
               day: dayNumber,
@@ -382,6 +421,10 @@ const AvailabilityScreen = () => {
         maxBookingsPerDay: parseInt(maxBookingPerDay, 10),
       };
 
+      console.log(
+        "📦 FINAL AVAILABILITY PAYLOAD:",
+        JSON.stringify(payload, null, 2),
+      );
       await setAvailabilityAsync(payload);
     } catch (error) {
       console.error("Error submitting availability:", error);

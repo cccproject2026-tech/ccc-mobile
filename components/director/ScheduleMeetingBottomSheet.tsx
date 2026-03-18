@@ -32,6 +32,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -137,6 +138,9 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const [meetingOption, setMeetingOption] = useState("Zoom");
     const [showMeetingOptions, setShowMeetingOptions] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const isSubmittingRef = useRef(false);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     // Determine initial role tab based on currentUserRole
     const initialSelectedRole = useMemo(() => {
@@ -235,7 +239,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       return null;
     }, [selectedMentor, mode, existingAppointment]);
 
-    const shouldFetchAvailability = Boolean(mentorIdForAvailability);
+    const shouldFetchAvailability = Boolean(mentorIdForAvailability) && isSheetOpen;
 
     // Fetch availability for selected mentor (only when mentorId is defined)
     const {
@@ -285,10 +289,11 @@ const ScheduleMeetingBottomSheet = forwardRef<
       console.log("🔍 Reschedule Debug:", {
         mode,
         mentorId: mentorIdForAvailability,
+        enabled: shouldFetchAvailability,
         hasAvailability: !!monthlyAvailability,
         availabilityLength: monthlyAvailability?.length || 0,
       });
-    }, [mode, mentorIdForAvailability, monthlyAvailability]);
+    }, [mode, mentorIdForAvailability, shouldFetchAvailability, monthlyAvailability]);
 
     // Transform API availability to available dates
     const availableDates = useMemo(() => {
@@ -404,134 +409,145 @@ const ScheduleMeetingBottomSheet = forwardRef<
     };
 
     const handleSchedule = async () => {
-      if (selectedMentor && selectedDate && selectedTime) {
-        // Build meeting date in ISO format
-        const [year, month, day] = selectedDate.split("-").map(Number);
-        let hour = parseInt(selectedTime.apiSlot.startTime, 10);
-        if (selectedTime.apiSlot.startPeriod === "PM" && hour !== 12) {
-          hour += 12;
-        } else if (selectedTime.apiSlot.startPeriod === "AM" && hour === 12) {
-          hour = 0;
-        }
-
-        const istDate = new Date(Date.UTC(year, month - 1, day, hour, 0, 0, 0));
-        const utcTimestamp = istDate.getTime() - 5.5 * 60 * 60 * 1000;
-        const meetingDate = new Date(utcTimestamp).toISOString();
-
-        // --- VALIDATION START ---
-        const now = new Date();
-        const meetingDateTime = new Date(meetingDate);
-
-        // 1. Check Minimum Notice
-        if (settings?.minSchedulingNoticeHours) {
-          const hoursNotice =
-            (meetingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-          if (hoursNotice < settings.minSchedulingNoticeHours) {
-            Alert.alert(
-              "Notice Period Required",
-              `This mentor requires at least ${settings.minSchedulingNoticeHours} hours notice for appointments.`,
-            );
-            return;
+      if (isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+      setIsSubmitting(true);
+      try {
+        if (selectedMentor && selectedDate && selectedTime) {
+          // Build meeting date in ISO format
+          const [year, month, day] = selectedDate.split("-").map(Number);
+          let hour = parseInt(selectedTime.apiSlot.startTime, 10);
+          if (selectedTime.apiSlot.startPeriod === "PM" && hour !== 12) {
+            hour += 12;
+          } else if (selectedTime.apiSlot.startPeriod === "AM" && hour === 12) {
+            hour = 0;
           }
-        }
 
-        // 2. Check Max Bookings per Day
-        if (settings?.maxBookingsPerDay) {
-          const bookingsOnDate = mentorAppointments.filter(
+          const istDate = new Date(
+            Date.UTC(year, month - 1, day, hour, 0, 0, 0),
+          );
+          const utcTimestamp = istDate.getTime() - 5.5 * 60 * 60 * 1000;
+          const meetingDate = new Date(utcTimestamp).toISOString();
+
+          // --- VALIDATION START ---
+          const now = new Date();
+          const meetingDateTime = new Date(meetingDate);
+
+          // 1. Check Minimum Notice
+          if (settings?.minSchedulingNoticeHours) {
+            const hoursNotice =
+              (meetingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+            if (hoursNotice < settings.minSchedulingNoticeHours) {
+              Alert.alert(
+                "Notice Period Required",
+                `This mentor requires at least ${settings.minSchedulingNoticeHours} hours notice for appointments.`,
+              );
+              return;
+            }
+          }
+
+          // 2. Check Max Bookings per Day
+          if (settings?.maxBookingsPerDay) {
+            const bookingsOnDate = mentorAppointments.filter(
+              (apt) =>
+                apt.meetingDate.split("T")[0] === selectedDate &&
+                apt.status !== "cancelled",
+            );
+            if (bookingsOnDate.length >= settings.maxBookingsPerDay) {
+              Alert.alert(
+                "Daily Limit Reached",
+                "This mentor has reached their maximum number of bookings for the selected date.",
+              );
+              return;
+            }
+          }
+
+          // 3. Check for Overlapping Appointments for the User
+          const hasOverlap = userAppointments.some(
             (apt) =>
-              apt.meetingDate.split("T")[0] === selectedDate &&
-              apt.status !== "cancelled",
+              apt.meetingDate === meetingDate && apt.status !== "cancelled",
           );
-          if (bookingsOnDate.length >= settings.maxBookingsPerDay) {
+          if (hasOverlap) {
             Alert.alert(
-              "Daily Limit Reached",
-              "This mentor has reached their maximum number of bookings for the selected date.",
+              "Schedule Conflict",
+              "You already have another appointment scheduled at this time.",
             );
             return;
           }
-        }
+          // --- VALIDATION END ---
 
-        // 3. Check for Overlapping Appointments for the User
-        const hasOverlap = userAppointments.some(
-          (apt) =>
-            apt.meetingDate === meetingDate && apt.status !== "cancelled",
-        );
-        if (hasOverlap) {
-          Alert.alert(
-            "Schedule Conflict",
-            "You already have another appointment scheduled at this time.",
-          );
-          return;
-        }
-        // --- VALIDATION END ---
-
-        // Map platform
-        const platformMap: Record<string, string> = {
-          Zoom: "zoom",
-          "Google Meet": "google_meet",
-          "Microsoft Teams": "teams",
-          "Phone Call": "phone",
-          "In-Person Meeting": "in_person",
-        };
-        const platform = platformMap[meetingOption] || "zoom";
-        console.log("Platform:", platform);
-        console.log(selectedMentor, "--------");
-        onSchedule({
-          mentorId: selectedMentor.id,
-          meetingDate,
-          platform,
-          meetingLink: undefined,
-          notes: `Meeting with ${selectedMentor.name}`,
-          ...(mode === "reschedule" && {
-            startTime: selectedTime.apiSlot.startTime,
-            startPeriod: selectedTime.apiSlot.startPeriod,
-          }),
-          selectedMentor,
-          selectedDate,
-          selectedTime,
-        });
-        console.log("Scheduled meeting with data:", {
-          mentorId: selectedMentor.id,
-          meetingDate,
-          platform,
-          meetingLink: undefined,
-          notes: `Meeting with ${selectedMentor.name}`,
-          ...(mode === "reschedule" && {
-            startTime: selectedTime.apiSlot.startTime,
-            startPeriod: selectedTime.apiSlot.startPeriod,
-          }),
-          selectedMentor,
-          selectedDate,
-          selectedTime,
-        });
-        if (mode === "reschedule" && existingAppointment) {
-          await rescheduleAppointmentAsync({
-            appointmentId: existingAppointment.id,
-            newDate: meetingDate,
-            startTime: selectedTime.apiSlot.startTime,
-            startPeriod: selectedTime.apiSlot.startPeriod as "AM" | "PM",
-          });
-        } else {
-          await createAppointmentAsync({
-            userId: currentUser?.id ?? "",
+          // Map platform
+          const platformMap: Record<string, string> = {
+            Zoom: "zoom",
+            "Google Meet": "google_meet",
+            "Microsoft Teams": "teams",
+            "Phone Call": "phone",
+            "In-Person Meeting": "in_person",
+          };
+          const platform = platformMap[meetingOption] || "zoom";
+          console.log("Platform:", platform);
+          console.log(selectedMentor, "--------");
+          onSchedule({
             mentorId: selectedMentor.id,
-            meetingDate: meetingDate,
-            platform: platform as AppointmentPlatform,
+            meetingDate,
+            platform,
             meetingLink: undefined,
             notes: `Meeting with ${selectedMentor.name}`,
+            ...(mode === "reschedule" && {
+              startTime: selectedTime.apiSlot.startTime,
+              startPeriod: selectedTime.apiSlot.startPeriod,
+            }),
+            selectedMentor,
+            selectedDate,
+            selectedTime,
           });
+          console.log("Scheduled meeting with data:", {
+            mentorId: selectedMentor.id,
+            meetingDate,
+            platform,
+            meetingLink: undefined,
+            notes: `Meeting with ${selectedMentor.name}`,
+            ...(mode === "reschedule" && {
+              startTime: selectedTime.apiSlot.startTime,
+              startPeriod: selectedTime.apiSlot.startPeriod,
+            }),
+            selectedMentor,
+            selectedDate,
+            selectedTime,
+          });
+
+          if (mode === "reschedule" && existingAppointment) {
+            await rescheduleAppointmentAsync({
+              appointmentId: existingAppointment.id,
+              newDate: meetingDate,
+              startTime: selectedTime.apiSlot.startTime,
+              startPeriod: selectedTime.apiSlot.startPeriod as "AM" | "PM",
+            });
+          } else {
+            await createAppointmentAsync({
+              userId: currentUser?.id ?? "",
+              mentorId: selectedMentor.id,
+              meetingDate: meetingDate,
+              platform: platform as AppointmentPlatform,
+              meetingLink: undefined,
+              notes: `Meeting with ${selectedMentor.name}`,
+            });
+          }
+
+          if (onScheduleComplete) {
+            onScheduleComplete();
+          }
+
+          setShowSuccessModal(true);
+
+          setTimeout(() => {
+            onClose();
+            resetForm();
+          }, 2000);
         }
-
-        if (onScheduleComplete) {
-          onScheduleComplete();
-        }
-
-        setShowSuccessModal(true);
-
-        setTimeout(() => {
-          onClose();
-          resetForm();
-        }, 2000);
+      } finally {
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
       }
     };
 
@@ -570,6 +586,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
           backgroundComponent={() => null}
           backdropComponent={renderBackdrop}
           handleIndicatorStyle={styles.handleIndicator}
+          onChange={(index) => setIsSheetOpen(index >= 0)}
           onDismiss={handleClose}
         >
           <LinearGradient
@@ -1020,7 +1037,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
                         },
                       ]}
                       onPress={handleSchedule}
-                      disabled={!isStep2Valid}
+                      disabled={!isStep2Valid || isSubmitting}
                     >
                       <Text
                         style={[
