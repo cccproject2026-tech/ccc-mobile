@@ -149,7 +149,7 @@ const Appointments = () => {
       ),
   );
   const finalSelectedDateAppointments = uniqueSelectedDateAppointments.filter(
-    (apt) => apt.status !== "cancelled",
+    (apt) => !String(apt.status ?? "").trim().toLowerCase().startsWith("cancel"),
   );
 
   // ✅ Removed duplicate declaration (moved to top)

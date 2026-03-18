@@ -39,25 +39,44 @@ export const useAppointments = (options?: UseAppointmentsOptions) => {
   const isError = userId ? userQuery.isError : mentorQuery.isError;
   const error = userId ? userQuery.error : mentorQuery.error;
 
+  const isCancelledStatus = (status: unknown) => {
+    const normalized = String(status ?? "")
+      .trim()
+      .toLowerCase();
+    // Be tolerant to API variations: "cancelled" vs "canceled", casing, etc.
+    return normalized === "cancelled" || normalized === "canceled" || normalized.startsWith("cancel");
+  };
+
   // Filter helpers
   const getAppointmentsByStatus = (status: AppointmentStatus) => {
     return appointments.filter((apt) => apt.status === status);
   };
 
-  const getAppointmentsByDate = (date: string) => {
-    return appointments.filter((apt) => apt.meetingDate.split("T")[0] === date);
+  const getAppointmentsByDate = (
+    date: string,
+    opts?: { includeCancelled?: boolean },
+  ) => {
+    const includeCancelled = opts?.includeCancelled ?? false;
+    return appointments.filter((apt) => {
+      if (!includeCancelled && isCancelledStatus(apt.status)) return false;
+      return apt.meetingDate.split("T")[0] === date;
+    });
   };
 
-  const getUpcomingAppointments = () => {
-    return appointments.filter((apt) =>
-      appointmentService.isUpcoming(apt.meetingDate),
-    );
+  const getUpcomingAppointments = (opts?: { includeCancelled?: boolean }) => {
+    const includeCancelled = opts?.includeCancelled ?? false;
+    return appointments.filter((apt) => {
+      if (!includeCancelled && isCancelledStatus(apt.status)) return false;
+      return appointmentService.isUpcoming(apt.meetingDate);
+    });
   };
 
-  const getPastAppointments = () => {
-    return appointments.filter(
-      (apt) => !appointmentService.isUpcoming(apt.meetingDate),
-    );
+  const getPastAppointments = (opts?: { includeCancelled?: boolean }) => {
+    const includeCancelled = opts?.includeCancelled ?? false;
+    return appointments.filter((apt) => {
+      if (!includeCancelled && isCancelledStatus(apt.status)) return false;
+      return !appointmentService.isUpcoming(apt.meetingDate);
+    });
   };
 
   return {
@@ -84,7 +103,19 @@ export const useCancelAppointment = () => {
   return useMutation({
     mutationFn: (appointmentId: string) =>
       appointmentService.cancelAppointment(appointmentId),
-    onSuccess: () => {
+    onSuccess: (cancelledAppointment) => {
+      // Immediately reflect the cancelled status in any cached appointment lists
+      queryClient.setQueriesData(
+        { queryKey: appointmentKeys.all },
+        (oldData: unknown) => {
+          if (!Array.isArray(oldData)) return oldData;
+          return oldData.map((apt) =>
+            apt?.id === cancelledAppointment.id ? cancelledAppointment : apt,
+          );
+        },
+      );
+
+      // Then refetch to stay consistent with server data
       queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
     },
   });

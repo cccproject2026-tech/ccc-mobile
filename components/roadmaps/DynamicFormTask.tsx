@@ -2131,7 +2131,9 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
     const isSaving =
         createExtras.isPending || updateExtras.isPending || uploadDocument.isPending;
 
-    const scheduledMeeting = task.meetings?.find(m => m.status !== 'cancelled');
+    const scheduledMeeting = task.meetings?.find(
+        (m) => !String(m?.status ?? '').trim().toLowerCase().startsWith('cancel'),
+    );
     const isTaskCompleted = task.status === 'completed';
 
     const formatDate = (dateString: string) => {

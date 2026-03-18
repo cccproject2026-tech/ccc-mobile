@@ -231,7 +231,7 @@ const Appointments: React.FC = () => {
     );
 
     const activeDateAppointments = uniqueDateAppointments.filter(
-      (apt) => apt.status !== "cancelled",
+      (apt) => !String(apt.status ?? "").trim().toLowerCase().startsWith("cancel"),
     );
 
     return activeDateAppointments.map((apt) => {
@@ -278,7 +278,7 @@ const Appointments: React.FC = () => {
         ),
     );
     const activeUpcomingAppointments = uniqueUpcomingAppointments.filter(
-      (apt) => apt.status !== "cancelled",
+      (apt) => !String(apt.status ?? "").trim().toLowerCase().startsWith("cancel"),
     );
     return activeUpcomingAppointments.map((apt) => {
       const menteeName = getMenteeName(apt.userId);

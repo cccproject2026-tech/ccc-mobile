@@ -451,7 +451,10 @@ const ScheduleMeetingBottomSheet = forwardRef<
             const bookingsOnDate = mentorAppointments.filter(
               (apt) =>
                 apt.meetingDate.split("T")[0] === selectedDate &&
-                apt.status !== "cancelled",
+                !String(apt.status ?? "")
+                  .trim()
+                  .toLowerCase()
+                  .startsWith("cancel"),
             );
             if (bookingsOnDate.length >= settings.maxBookingsPerDay) {
               Alert.alert(
@@ -465,7 +468,11 @@ const ScheduleMeetingBottomSheet = forwardRef<
           // 3. Check for Overlapping Appointments for the User
           const hasOverlap = userAppointments.some(
             (apt) =>
-              apt.meetingDate === meetingDate && apt.status !== "cancelled",
+              apt.meetingDate === meetingDate &&
+              !String(apt.status ?? "")
+                .trim()
+                .toLowerCase()
+                .startsWith("cancel"),
           );
           if (hasOverlap) {
             Alert.alert(
