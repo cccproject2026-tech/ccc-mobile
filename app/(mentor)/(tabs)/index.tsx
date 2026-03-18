@@ -105,6 +105,7 @@ export default function MentorDashboard() {
     appointments,
     isLoading: isLoadingAppointments,
     getAppointmentsByDate,
+    getUpcomingAppointments,
   } = useAppointments({
     mentorId: user?.id,
   });
@@ -153,15 +154,19 @@ export default function MentorDashboard() {
     return new Date().toISOString().split("T")[0];
   }, []);
 
-  // Get today's appointments and format them
-  const todayAppointments = useMemo(() => {
-    if (!appointments || !getAppointmentsByDate) return [];
+  const upcomingAppointments = useMemo(() => {
+    if (!appointments || !getUpcomingAppointments) return [];
 
-    const todayApts = getAppointmentsByDate(today);
-    return todayApts.map((apt: Appointment) => {
-      // Map platform to mode for AppointmentCard
+    const upcoming = getUpcomingAppointments()
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.meetingDate).getTime() - new Date(b.meetingDate).getTime(),
+      )
+      .slice(0, 3);
+
+    return upcoming.map((apt: Appointment) => {
       const mode = apt.platform === "zoom" ? "duo" : "meet";
-
       return {
         date: formatDate(apt.meetingDate),
         time: formatTime(apt.meetingDate),
@@ -170,7 +175,7 @@ export default function MentorDashboard() {
         mode: mode,
       };
     });
-  }, [appointments, getAppointmentsByDate, today, formatDate, formatTime]);
+  }, [appointments, getUpcomingAppointments, formatDate, formatTime]);
 
   // Format roadmaps for RoadMapCard
   const formattedRoadmaps = useMemo(() => {
@@ -291,7 +296,7 @@ export default function MentorDashboard() {
                 <Text
                   style={{ fontSize: 15, color: "#e7f6fc", fontWeight: "700" }}
                 >
-                  Today's Appointments
+                  Upcoming Appointments
                 </Text>
                 <Text
                   style={{ color: "#cfe9f3", fontWeight: "600", fontSize: 13 }}
@@ -319,8 +324,8 @@ export default function MentorDashboard() {
                   >
                     Loading appointments...
                   </Text>
-                ) : todayAppointments.length > 0 ? (
-                  todayAppointments.map((e, i) => (
+                ) : upcomingAppointments.length > 0 ? (
+                  upcomingAppointments.map((e, i) => (
                     <AppointmentCard
                       data={e}
                       dataKey={i.toString()}
@@ -337,7 +342,7 @@ export default function MentorDashboard() {
                       paddingVertical: 20,
                     }}
                   >
-                    No appointments today
+                    No upcoming appointments
                   </Text>
                 )}
               </View>

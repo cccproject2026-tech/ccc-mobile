@@ -59,6 +59,7 @@ const Appointments = () => {
     error,
     refetch,
     getAppointmentsByDate,
+    getUpcomingAppointments,
   } = useAppointments({ userId: user.id });
 
   // Fetch assigned mentors
@@ -151,6 +152,18 @@ const Appointments = () => {
   const finalSelectedDateAppointments = uniqueSelectedDateAppointments.filter(
     (apt) => !String(apt.status ?? "").trim().toLowerCase().startsWith("cancel"),
   );
+
+  const nextAppointments = useMemo(() => {
+    const upcoming = getUpcomingAppointments()
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.meetingDate).getTime() - new Date(b.meetingDate).getTime(),
+      );
+
+    const selectedIds = new Set(finalSelectedDateAppointments.map((a) => a.id));
+    return upcoming.filter((a) => !selectedIds.has(a.id)).slice(0, 3);
+  }, [getUpcomingAppointments, finalSelectedDateAppointments]);
 
   // ✅ Removed duplicate declaration (moved to top)
 
@@ -449,6 +462,61 @@ const Appointments = () => {
                       <Text style={styles.noAppointmentsText}>
                         Select a different date to view appointments or schedule a new meeting.
                       </Text>
+                    </View>
+                  </View>
+                )}
+
+                {nextAppointments.length > 0 && (
+                  <View style={styles.appointmentsContainer}>
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.upcomingText}>Next Appointment</Text>
+                    </View>
+                    <View style={{ gap: 10 }}>
+                      {nextAppointments.map((appointment) => {
+                        const mentor = mentorsForBottomSheet.find(
+                          (m) => m.id === appointment.mentorId,
+                        );
+
+                        return (
+                          <AppointmentCard
+                            key={appointment.id}
+                            date={appointment.meetingDate.split("T")[0]}
+                            time={`${formatTimeIST(appointment.meetingDate)} - ${formatTimeIST(appointment.endTime)}`}
+                            tz="IST"
+                            person={mentor?.name || "Unknown Mentor"}
+                            role={mentor?.role || "Mentor"}
+                            mode={getModeLabel(appointment.platform)}
+                            platformIcon={getPlatformIcon(appointment.platform)}
+                            menuItems={[
+                              {
+                                key: "reschedule",
+                                title: "Reschedule Meeting",
+                                icon: {
+                                  ios: "calendar.badge.clock",
+                                  android: "ic_event_available",
+                                },
+                                onSelect: () => handleReschedule(appointment),
+                              },
+                              {
+                                key: "change_mode",
+                                title: "Change Mode",
+                                icon: {
+                                  ios: "arrow.2.circlepath",
+                                  android: "ic_sync",
+                                },
+                                onSelect: () => handleChangeMode(appointment),
+                              },
+                              {
+                                key: "cancel",
+                                title: "Cancel Meeting",
+                                destructive: true,
+                                icon: { ios: "trash", android: "ic_menu_delete" },
+                                onSelect: () => handleCancel(appointment),
+                              },
+                            ]}
+                          />
+                        );
+                      })}
                     </View>
                   </View>
                 )}
