@@ -176,16 +176,18 @@ export default function LoginScreen() {
                                         style={styles.joinSubmitTouchable}
                                     >
                                         <Text style={styles.joinSubmitText}>
-                                            Submit Interest
+                                             Submit Interest 
                                         </Text>
                                     </TouchableOpacity>
                                 </LinearGradient>
 
                                 <TouchableOpacity
-                                    style={[styles.logInButton, { marginVertical: 8 }]}
+                                    style={styles.joinLoginButton}
                                     onPress={handleLoginClick}
                                 >
-                                    <Text style={styles.logInButtonText}>Log in</Text>
+                                    <Text style={styles.joinLoginButtonText}>
+                                        Already applied ? Log in →
+                                    </Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -447,27 +449,27 @@ const styles = StyleSheet.create({
 
     // Contact Card
     contactCard: {
-        backgroundColor: "rgba(255,255,255,0.1)",
-        borderRadius: 12,
+        backgroundColor: "rgba(255,255,255,0.12)",
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.3)",
-        padding: 16,
+        borderColor: "rgba(255,255,255,0.35)",
+        padding: 18,
     },
     contactCardWithStatus: {
         flex: 1,
         marginRight: 12,
     },
     contactTitle: {
-        fontSize: 18,
-        fontWeight: "600",
+        fontSize: 16,
+        fontWeight: "700",
         color: "#fff",
-        marginBottom: 12,
+        marginBottom: 10,
     },
     contactRow: {
         paddingVertical: 2,
         flexDirection: "row",
-        alignItems: "flex-start",
-        marginBottom: 8,
+        alignItems: "center",
+        marginBottom: 10,
     },
     contactText: {
         color: "#fff",
@@ -606,7 +608,7 @@ const styles = StyleSheet.create({
     divider: {
         height: 1,
         backgroundColor: "rgba(255,255,255,0.3)",
-        marginVertical: 20,
+        marginVertical: 18,
     },
 
     // Section Header
@@ -614,34 +616,34 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: 14,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 18,
+        fontWeight: "800",
         color: "#fff",
     },
     showAllText: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#fff",
+        fontSize: 14,
+        fontWeight: "700",
+        color: "rgba(255,255,255,0.95)",
     },
 
     // Video List Item
     videoListItem: {
         flexDirection: "row",
-        backgroundColor: "rgba(255,255,255,0.1)",
-        borderRadius: 12,
+        backgroundColor: "rgba(255,255,255,0.11)",
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.2)",
-        padding: 12,
+        borderColor: "rgba(255,255,255,0.25)",
+        padding: 14,
         position: "relative",
     },
     videoThumbnail: {
         width: 100,
         height: 100,
         backgroundColor: "rgba(0,0,0,0.3)",
-        borderRadius: 12,
+        borderRadius: 14,
         marginRight: 12,
     },
     videoListPlayButton: {
@@ -672,7 +674,7 @@ const styles = StyleSheet.create({
     listDivider: {
         height: 1,
         backgroundColor: "rgba(255,255,255,0.3)",
-        marginVertical: 16,
+        marginVertical: 14,
     },
 
     // Log In Button
@@ -691,49 +693,71 @@ const styles = StyleSheet.create({
 
     // Join Program (top block before videos/contact)
     joinSection: {
-        marginTop: 16,
-        marginBottom: 16,
+        marginTop: 18,
+        marginBottom: 18,
     },
     joinCard: {
+        width: "100%",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.55)",
-        borderRadius: 12,
-        paddingVertical: 16,
-        paddingHorizontal: 12,
+        borderColor: "rgba(255,255,255,0.45)",
+        borderRadius: 16,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
         marginBottom: 14,
-        backgroundColor: "rgba(255,255,255,0.06)",
+        backgroundColor: "rgba(255,255,255,0.08)",
         alignItems: "center",
+        justifyContent: "center",
     },
     joinCardTitle: {
         color: "#fff",
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 18,
+        fontWeight: "500",
+        lineHeight: 24,
         textAlign: "center",
     },
     joinCardSubtitle: {
         color: "rgba(255,255,255,0.95)",
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: "500",
         textAlign: "center",
         marginTop: 6,
     },
     joinActions: {
-        paddingHorizontal: 16,
+        width: "100%",
+        alignItems: "stretch",
     },
     joinSubmitGradient: {
-        borderRadius: 10,
+        width: "100%",
+        borderRadius: 16,
         overflow: "hidden",
         borderWidth: 1,
-        borderColor: "#fff",
+        borderColor: "rgba(255,255,255,0.55)",
     },
     joinSubmitTouchable: {
-        paddingVertical: 14,
+        width: "100%",
+        paddingVertical: 16,
         alignItems: "center",
     },
     joinSubmitText: {
         color: "#fff",
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "500",
+    },
+
+    joinLoginButton: {
+        width: "100%",
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.7)",
+        paddingVertical: 12,
+        alignItems: "center",
+        marginTop: 12,
+    },
+    joinLoginButtonText: {
+        color: "#1A5490",
+        fontSize: 16,
+        fontWeight: "500",
     },
 
     // Action Buttons
