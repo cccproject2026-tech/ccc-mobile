@@ -12,9 +12,9 @@ import {
 import { apiClient } from "@/services/api/client";
 import { ENDPOINTS } from "@/services/api/endpoints";
 import { roadmapService } from '@/services/roadmap.service';
+import { useAuthStore } from "@/stores";
 import { UserRole } from "@/types";
 import { RoadmapProgress } from "@/types/progress.types";
-import { useAuthStore } from "@/stores";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { progressKeys, useProgress } from "../progress/useProgress";
@@ -67,7 +67,7 @@ export function mergeRoadmapWithProgress(
     // Map nested roadmaps with their progress
     const updatedNestedRoadmaps = roadmap.roadmaps.map((nestedRoadmap) => {
         if (!nestedRoadmap) return nestedRoadmap;
-        
+
         const nestedProgress = progressItem.nestedRoadmaps?.find(
             (np) => np && np.nestedRoadmapId === nestedRoadmap._id
         );
@@ -99,7 +99,6 @@ export const useAllRoadmaps = () => {
     return useQuery({
         queryKey: roadmapKeys.lists(),
         queryFn: async () => {
-            console.log("📤 Fetching all roadmaps...");
             const response = await apiClient.get(ENDPOINTS.ROADMAPS.GET_ALL);
 
             if (!response.data.success) {
@@ -135,7 +134,6 @@ export const useAssignedRoadmaps = (userId?: string) => {
     const roadmapsQuery = useQuery({
         queryKey: roadmapKeys.assigned(assignedRoadmapIds.join(',')),
         queryFn: async () => {
-            console.log("📤 Fetching roadmaps for filtering and status merge...");
             const response = await apiClient.get(ENDPOINTS.ROADMAPS.GET_ALL);
 
             if (!response.data.success) {
@@ -148,8 +146,6 @@ export const useAssignedRoadmaps = (userId?: string) => {
             const assignedRoadmaps = allRoadmaps.filter(roadmap =>
                 assignedRoadmapIds.includes(roadmap._id)
             );
-
-            console.log("📥 Roadmaps filtered. Total:", allRoadmaps.length, "Assigned:", assignedRoadmaps.length);
 
             return assignedRoadmaps;
         },
@@ -165,16 +161,12 @@ export const useAssignedRoadmaps = (userId?: string) => {
             return roadmapsQuery.data || [];
         }
 
-        console.log("🔄 Merging roadmaps with progress data...",roadmapsQuery.data, progressData);
-
         const merged = roadmapsQuery.data.map((roadmap) => {
             const progressItem = progressData?.roadmaps?.items?.find(
                 (p) => p && p.roadMapId === roadmap._id
             );
             return mergeRoadmapWithProgress(roadmap, progressItem);
         });
-
-        console.log("✅ Roadmaps merged with progress status",merged);
         return merged;
     }, [roadmapsQuery.data, progressData]);
 

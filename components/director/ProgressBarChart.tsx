@@ -16,15 +16,25 @@ export interface ChartData {
 interface ProgressChartProps {
     data: ChartData;
     showRemaining: boolean;
+    gridLineColor?: string;
+    maxValue?: number;
 }
 
-export const ProgressBarChart: React.FC<ProgressChartProps> = ({ data, showRemaining }) => {
-    const maxValue = 5;
+export const ProgressBarChart: React.FC<ProgressChartProps> = ({
+    data,
+    showRemaining,
+    gridLineColor = '#1A5A7F',
+    maxValue,
+}) => {
     const chartHeight = 200;
     const barWidth = 28;
     const barGap = 6;
     const groupGap = 60;
     const paddingHorizontal = 40;
+
+    const baseMax = maxValue !== undefined ? Math.max(5, maxValue) : 5;
+    const yAxisStep = Math.max(1, Math.ceil(baseMax / 5));
+    const yAxisMax = yAxisStep * 5;
 
     const barsPerGroup = showRemaining ? 3 : 2;
     const groupWidth = (barsPerGroup * barWidth) + ((barsPerGroup - 1) * barGap);
@@ -32,7 +42,7 @@ export const ProgressBarChart: React.FC<ProgressChartProps> = ({ data, showRemai
     const chartContentWidth = Math.max(SCREEN_WIDTH - 80, totalContentWidth);
 
     const calculateHeight = (value: number) => {
-        return (value / maxValue) * chartHeight;
+        return (value / yAxisMax) * chartHeight;
     };
 
     const calculateY = (value: number) => {
@@ -69,7 +79,7 @@ export const ProgressBarChart: React.FC<ProgressChartProps> = ({ data, showRemai
             <View style={styles.chartWrapper}>
 
                 <View style={styles.yAxisContainer}>
-                    {[5, 4, 3, 2, 1, 0].map((value) => (
+                    {[yAxisMax, yAxisMax - yAxisStep, yAxisMax - (yAxisStep * 2), yAxisMax - (yAxisStep * 3), yAxisMax - (yAxisStep * 4), 0].map((value) => (
                         <Text key={value} style={styles.yAxisLabel}>
                             {value}
                         </Text>
@@ -109,7 +119,7 @@ export const ProgressBarChart: React.FC<ProgressChartProps> = ({ data, showRemai
                                         y1={i * (chartHeight / 5)}
                                         x2={chartContentWidth}
                                         y2={i * (chartHeight / 5)}
-                                        stroke="#1A5A7F"
+                                        stroke={gridLineColor}
                                         strokeWidth="1"
                                     />
                                 ))}
@@ -206,7 +216,7 @@ export const ProgressBarChart: React.FC<ProgressChartProps> = ({ data, showRemai
 
                             <View style={[styles.xAxisContainer, { width: chartContentWidth }]}>
                                 <View style={styles.xAxisLabelsWrapper}>
-                                    <Text style={styles.xAxisLabel}>Roadmaps</Text>
+                                    <Text style={styles.xAxisLabel}>Roadmap</Text>
                                     <Text style={styles.xAxisLabel}>Assessments</Text>
                                 </View>
                             </View>

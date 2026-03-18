@@ -173,6 +173,7 @@ export interface DeleteFinalCommentApiResponse {
 export interface GetProgressResponse {
     _id: string;
     userId: string;
+    overallProgress: number;
     roadmaps: RoadmapProgress[];
     totalRoadmaps: number;
     completedRoadmaps: number;

@@ -6,12 +6,13 @@ import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { useMentees } from "@/hooks/mentees/useMentees";
+import { useAuthStore } from "@/stores";
 import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function ProgressTracker() {
@@ -23,7 +24,12 @@ export default function ProgressTracker() {
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const { data, isLoading, isError } = useMentees();
+  const { user } = useAuthStore();
+  const { data, isLoading, isError } = useMentees(100, user?.id);
+
+  const allMentees = useMemo(() => {
+    return data?.pages.flatMap((p) => p.mentees) ?? [];
+  }, [data]);
 
   const getFilterOptions = (): FilterOption[] => {
     return [
@@ -37,9 +43,7 @@ export default function ProgressTracker() {
   const filterOptions = useMemo(() => getFilterOptions(), []);
 
   const filteredMentees = useMemo(() => {
-    const mentees = data?.mentees ?? [];
-
-    let filtered = mentees;
+    let filtered = allMentees;
 
     if (search) {
       filtered = filtered.filter((m) =>
@@ -61,7 +65,7 @@ export default function ProgressTracker() {
     });
 
     return filtered;
-  }, [data?.mentees, search, activeTab]);
+  }, [allMentees, search, activeTab]);
 
   const tabs = [
     { key: "all", label: "All" },
@@ -217,7 +221,7 @@ export default function ProgressTracker() {
   );
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   headerContainer: {
     width: "100%",
     alignItems: "center",
@@ -612,4 +616,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-

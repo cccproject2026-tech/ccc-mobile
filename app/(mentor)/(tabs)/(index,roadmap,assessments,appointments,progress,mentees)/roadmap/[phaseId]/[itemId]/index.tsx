@@ -22,10 +22,8 @@ export default function ItemDetail() {
     }>();
     const router = useRouter();
     const { user } = useAuthStore();
-    console.log('menteeId----->>>>>>>>>>>>>>', menteeId, menteeName);
     // Use menteeId if available (mentor viewing mentee), otherwise fallback to current user
     const targetUserId = menteeId || user?.id;
-console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
     // Fetch parent roadmap
     const { data: roadmap, isLoading, error } = useRoadmap(phaseId, targetUserId);
 
@@ -515,4 +513,3 @@ const styles = StyleSheet.create({
     },
     sectionText: { fontSize: 16, lineHeight: 22, color: '#FFFFFF' },
 });
-

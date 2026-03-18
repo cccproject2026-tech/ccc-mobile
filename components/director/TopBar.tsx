@@ -1,4 +1,6 @@
+import { useNotifications } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores';
+import { getRoleNotificationRoute } from '@/utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,8 +29,9 @@ type Props = {
 
 const TopBar: React.FC<Props> = ({
     showUserName = false,
-    notifications = 0,
+    notifications,
     showNotifications = true,
+    showSearch = true,
     showDrawer = true,
     showBackButton = false,
     showBackButtonText = false,
@@ -43,17 +46,13 @@ const TopBar: React.FC<Props> = ({
     const navigation = useNavigation();
     const router = useRouter();
     const { user, isAuthenticated } = useAuthStore();
-    // Always show search icon for authenticated users. Avoid referencing an undefined `showSearch`.
-    const showSearchIcon = !!isAuthenticated;
+    const { data: notificationItems } = useNotifications(user?.id);
+    const showSearchIcon = !!isAuthenticated && showSearch;
+    const notificationCount =
+        notificationItems?.filter((item) => !item.read).length ?? notifications ?? 0;
     const onMenuPress = () => navigation.dispatch(DrawerActions.openDrawer());
     const handleNotificationsPress = () => {
-        if (role === 'director') {
-            router.push('/(director)/(tabs)/notification');
-        } else if (role === 'pastor') {
-            router.push('/(pastor)/(tabs)/notifications');
-        } else {
-            router.push('/(mentor)/(tabs)/notifications');
-        }
+        router.push(getRoleNotificationRoute(role || user?.role) as any);
     }
 
     const handleBackPress = () => {
@@ -125,10 +124,10 @@ const TopBar: React.FC<Props> = ({
                 {showNotifications && (
                     <Pressable onPress={handleNotificationsPress} hitSlop={10} style={{ position: 'relative', marginRight: 7 }}>
                         <Ionicons name="notifications-outline" size={size - 10} color={color} />
-                        {notifications > 0 && (
+                        {notificationCount > 0 && (
                             <View style={styles.notificationBadge}>
                                 <Text style={styles.notificationBadgeText}>
-                                    {notifications > 9 ? '9+' : notifications}
+                                    {notificationCount > 9 ? '9+' : notificationCount}
                                 </Text>
                             </View>
                         )}

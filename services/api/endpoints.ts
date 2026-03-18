@@ -18,6 +18,8 @@ export const ENDPOINTS = {
     GET_ALL_USERS: (role?: UserRole) => `/users?role=${role}`,
     GET_USER: (userId: string) => `/users/${userId}`,
     UPDATE_USER: (userId: string) => `/users/${userId}`,
+    MARK_COMPLETE: (userId: string) => `/users/${userId}/mark-completed`,
+    ISSUE_CERTIFICATE: (userId: string) => `/users/${userId}/issue-certificate`,
     CHECK_STATUS: (userId: string) => `/users/check-status/${userId}`,
     GET_INTERESTS: (email: string) => `/interests/by-email/${email}`,
     UPDATE_INTERESTS: (email: string) => `/interests/by-email/${email}`,
@@ -52,6 +54,7 @@ export const ENDPOINTS = {
   HOME: {
     MENTEES: "/home/mentees",
     MENTORS: "/home/mentors",
+    REGISTER_DEVICE_TOKEN: "/home/device-token",
     GET_MENTOR_BY_EMAIL: (email: string) => `/home/mentor/${email}`,
     GET_MENTEE_BY_EMAIL: (email: string) => `/home/mentee/${email}`,
   },

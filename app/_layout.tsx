@@ -1,4 +1,5 @@
 import { FloatingToast } from '@/components/atom/toast';
+import AppNotificationsProvider from '@/components/providers/AppNotificationsProvider';
 import { DataProvider } from '@/dataContext';
 import "@/global.css";
 import '@/services/api/interceptors';
@@ -78,7 +79,9 @@ export default function RootLayout() {
           <DataProvider>
             <KeyboardProvider>
               <BottomSheetModalProvider>
-                <RootLayoutNav />
+                <AppNotificationsProvider>
+                  <RootLayoutNav />
+                </AppNotificationsProvider>
                 <Toast config={toastConfig} topOffset={60} />
               </BottomSheetModalProvider>
             </KeyboardProvider>

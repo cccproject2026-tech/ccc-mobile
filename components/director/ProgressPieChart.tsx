@@ -48,11 +48,11 @@ export const ProgressPieChart: React.FC<ProgressPieChartProps> = ({ data, title 
                     <View style={styles.legendBlock}>
                         <View style={styles.legendItem}>
                             <View style={[styles.legendDot, { backgroundColor: '#223568' }]} />
-                            <Text style={styles.legendText}>Completed Task</Text>
+                            <Text style={styles.legendText}>Completed</Text>
                         </View>
                         <View style={styles.legendItem}>
                             <View style={[styles.legendDot, { backgroundColor: '#e0e6ed' }]} />
-                            <Text style={styles.legendText}>Remaining Task</Text>
+                            <Text style={styles.legendText}>Remaining</Text>
                         </View>
                     </View>
                 </View>

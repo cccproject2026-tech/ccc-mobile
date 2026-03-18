@@ -1,17 +1,16 @@
-import { Tab } from "@/components/atom/tab";
 import PMPBottomSheet from "@/components/director/PMPBottomSheet";
-import ProgressAssessmentCard from "@/components/director/ProgressAssessmentCard";
+import { ProgressAssessmentCard } from "@/components/director/ProgressAssessmentCard";
 import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarChart";
 import { ProgressPieChart } from "@/components/director/ProgressPieChart";
-import RoadmapCard from "@/components/director/ProgressRoadmapCard";
+import { RoadmapCard } from "@/components/director/ProgressRoadmapCard";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
-import { useAssessmentProgress, useProgress, useRoadmapProgress } from '@/hooks/progress/useProgress';
+import { useProgress } from '@/hooks/progress/useProgress';
 import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
 import { getRoadmapCard } from '@/lib/roadmap/mappers';
-import { useAuthStore } from '@/stores/auth.store';
+import { sharePdfFromHtml } from "@/utils/pdf";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -22,81 +21,151 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabKey = 'All' | 'Completed' | 'Remaining';
 
+function toEpochMs(dateString?: string): number {
+  if (!dateString) return 0;
+  const parsed = Date.parse(dateString);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function getAssessmentActivityEpochMs(a: any): number {
+  return (
+    toEpochMs(a?.completionDate) ||
+    toEpochMs(a?.completedOn) ||
+    toEpochMs(a?.submittedDate) ||
+    toEpochMs(a?.dueDate) ||
+    toEpochMs(a?.meetingDate) ||
+    0
+  );
+}
+
 export default function ProgressScreen() {
   const [roadmapTabs, setRoadmapTabs] = useState<TabKey>("All");
   const [assessmentTabs, setAssessmentTabs] = useState<TabKey>("All");
   const pmpSheetRef = useRef<BottomSheetModal>(null);
   const { bottom } = useSafeAreaInsets();
-  const { user } = useAuthStore();
 
   // Fetch all backend data
   const { data: progressData, isLoading: isProgressLoading, error: progressError } = useProgress();
   const { data: roadmaps, isLoading: isRoadmapsLoading, refetch: refetchRoadmaps, isRefetching: isRoadmapsRefetching } = useRoadmaps('pastor');
-  const { data: assessments, isLoading: isAssessmentsLoading, refetch: refetchAssessments } = useAssignedAssessments();
-
-  const { data: roadmapProgress } = useRoadmapProgress();
-  const { data: assessmentProgress } = useAssessmentProgress();
+  const { data: assessments } = useAssignedAssessments();
 
   // Overall Pie Progress
   const overallProgress = useMemo(() => {
-    if (!progressData)
-      return { completedPercentage: 0, remainingPercentage: 100 };
-
-    return {
-      completedPercentage: progressData.overallProgress,
-      remainingPercentage: 100 - progressData.overallProgress,
-    };
+    const completedPercentage = round1(progressData?.overallProgress ?? 0);
+    const remainingPercentage = round1(100 - completedPercentage);
+    return { completedPercentage, remainingPercentage };
   }, [progressData]);
 
+  console.log('=======================')
+  console.log("OverallProgress:", overallProgress);
+  console.log("ProgressData:", progressData);
+  console.log("========================================");
   // Handle PMP sheet
   const closePMPSheet = useCallback(() => pmpSheetRef.current?.dismiss(), []);
   const openPMPSheet = useCallback(() => pmpSheetRef.current?.present(), []);
-  const handleNext = () => { closePMPSheet(); router.push('/progress/report'); };
-  const handleDownload = () => { closePMPSheet(); router.push('/progress/report'); };
+  const handleNext = () => {
+    closePMPSheet();
+    router.push({
+      pathname: "/progress/report",
+      params: {
+        userName: "John Ross",
+        completedDate: new Date().toLocaleDateString("en-GB"),
+        assessmentTitle: "Recommendations",
+      },
+    });
+  };
+
+  const handleDownload = async () => {
+    closePMPSheet();
+
+    const plans = [
+      "Schedule 1-on-1 with a mentor",
+      "Take trauma survey (via Claritysoft)",
+      "Identify areas of stress/anxiety",
+      "Family Wellbeing survey",
+      "Collaborate on a healing plan",
+      "Collaborate on a physical Exercise plan",
+      "Establish a prayer covenant/partnership",
+      "Finalize a growth plan",
+    ];
+
+    const listHtml = plans.map((t) => `<li>${t}</li>`).join("");
+
+    const html = `
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <style>
+            body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial; padding: 24px; color: #0f172a; }
+            h1 { font-size: 18px; margin: 0 0 10px; color: #1e3a8a; }
+            h2 { font-size: 16px; margin: 18px 0 10px; border-bottom: 2px solid #1e3a8a; padding-bottom: 6px; color: #1e3a8a; }
+            ul { margin: 0; padding-left: 18px; }
+            li { margin: 0 0 8px; line-height: 1.35; }
+          </style>
+        </head>
+        <body>
+          <h1>Recommendations</h1>
+          <h2>Section 1 - Personal Well-Being</h2>
+          <ul>${listHtml}</ul>
+        </body>
+      </html>
+    `;
+
+    await sharePdfFromHtml({
+      html,
+      fileName: "Recommendations_Report.pdf",
+    });
+  };
 
   const availableTabs = [{ tab: "All" }, { tab: "Completed" }, { tab: "Remaining" }];
 
   // Filter Roadmaps
   const filteredRoadmaps = useMemo(() => {
     if (!roadmaps) return [];
+    const sorted = [...roadmaps].sort((a, b) => toEpochMs(b.updatedAt) - toEpochMs(a.updatedAt));
     switch (roadmapTabs) {
-      case 'Completed': return roadmaps.filter(r => r.status === 'completed');
-      case 'Remaining': return roadmaps.filter(r => r.status !== 'completed');
-      default: return roadmaps;
+      case 'Completed': return sorted.filter(r => r.status === 'completed').slice(0, 5);
+      case 'Remaining': return sorted.filter(r => r.status !== 'completed').slice(0, 5);
+      default: return sorted.slice(0, 5);
     }
   }, [roadmaps, roadmapTabs]);
 
   // Filter Assessments
   const filteredAssessments = useMemo(() => {
     if (!assessments) return [];
+    const sorted = [...assessments].sort((a, b) => getAssessmentActivityEpochMs(b) - getAssessmentActivityEpochMs(a));
     switch (assessmentTabs) {
-      case 'Completed': return assessments.filter(a => a.status === "Completed");
-      case 'Remaining': return assessments.filter(a => a.status !== "Completed");
-      default: return assessments;
+      case 'Completed': return sorted.filter(a => a.status === "Completed").slice(0, 5);
+      case 'Remaining': return sorted.filter(a => a.status !== "Completed").slice(0, 5);
+      default: return sorted.slice(0, 5);
     }
   }, [assessments, assessmentTabs]);
 
-  // Bar chart data based on backend
+  // Bar chart data based on latest 5 items (matches design)
   const chartData: ChartData = useMemo(() => {
-    if (!roadmapProgress || !assessmentProgress)
-      return {
-        roadmapsTotal: 0,
-        roadmapsCompleted: 0,
-        roadmapsRemaining: 0,
-        assessmentsTotal: 0,
-        assessmentsCompleted: 0,
-        assessmentsRemaining: 0,
-      };
+    const latestRoadmaps = [...(roadmaps || [])]
+      .sort((a, b) => toEpochMs(b.updatedAt) - toEpochMs(a.updatedAt))
+      .slice(0, 5);
+    const latestAssessments = [...(assessments || [])]
+      .sort((a, b) => getAssessmentActivityEpochMs(b) - getAssessmentActivityEpochMs(a))
+      .slice(0, 5);
+
+    const roadmapsCompleted = latestRoadmaps.filter((r) => r.status === 'completed').length;
+    const assessmentsCompleted = latestAssessments.filter((a) => a.status === 'Completed').length;
 
     return {
-      roadmapsTotal: roadmapProgress.total,
-      roadmapsCompleted: roadmapProgress.completed,
-      roadmapsRemaining: roadmapProgress.total - roadmapProgress.completed,
-      assessmentsTotal: assessmentProgress.total,
-      assessmentsCompleted: assessmentProgress.completed,
-      assessmentsRemaining: assessmentProgress.total - assessmentProgress.completed,
+      roadmapsTotal: latestRoadmaps.length,
+      roadmapsCompleted,
+      roadmapsRemaining: Math.max(0, latestRoadmaps.length - roadmapsCompleted),
+      assessmentsTotal: latestAssessments.length,
+      assessmentsCompleted,
+      assessmentsRemaining: Math.max(0, latestAssessments.length - assessmentsCompleted),
     };
-  }, [roadmapProgress, assessmentProgress]);
+  }, [roadmaps, assessments]);
 
   // Refresh
   const handleRefresh = useCallback(() => refetchRoadmaps(), [refetchRoadmaps]);
@@ -113,6 +182,16 @@ export default function ProgressScreen() {
     },
     []
   );
+
+  const handleAssessmentPress = useCallback((assessment: any) => {
+    const assessmentId = assessment?.id || assessment?.assessmentId || assessment?._id;
+    if (!assessmentId) return;
+
+    router.push({
+      pathname: "/assessments/survey-guidelines",
+      params: { assessmentId: String(assessmentId) },
+    });
+  }, []);
 
   const isLoading = isProgressLoading || isRoadmapsLoading;
 
@@ -147,6 +226,32 @@ export default function ProgressScreen() {
   }
 
   const currentTitle = "Individual - Roadmaps, Assessments";
+
+  const FilterTabs = ({
+    value,
+    onChange,
+  }: {
+    value: TabKey;
+    onChange: (next: TabKey) => void;
+  }) => (
+    <View style={styles.filterTabsRow}>
+      {availableTabs.map((t) => {
+        const isActive = value === (t.tab as TabKey);
+        return (
+          <TouchableOpacity
+            key={t.tab}
+            onPress={() => onChange(t.tab as TabKey)}
+            style={[styles.filterTabButton, isActive && styles.filterTabButtonActive]}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.filterTabText, isActive && styles.filterTabTextActive]}>
+              {t.tab}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
 
   return (
     <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
@@ -184,7 +289,12 @@ export default function ProgressScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{currentTitle}</Text>
             <View style={styles.chartWrapper}>
-              <ProgressBarChart data={chartData} showRemaining={true} />
+              <ProgressBarChart
+                data={chartData}
+                showRemaining={true}
+                gridLineColor="rgba(255, 255, 255, 0.35)"
+                maxValue={5}
+              />
             </View>
           </View>
 
@@ -193,22 +303,7 @@ export default function ProgressScreen() {
             <Text style={styles.progressBlockTitle}>Revitalization Roadmap Progress</Text>
 
             {/* Tabs */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tabScrollContent}
-              style={styles.tabScroll}
-            >
-              {availableTabs.map((e, i) => (
-                <Tab
-                  key={i}
-                  data={e}
-                  tabs={roadmapTabs}
-                  setTabs={(tab: string) => setRoadmapTabs(tab as TabKey)}
-                  onPress={() => setRoadmapTabs(e.tab as TabKey)}
-                />
-              ))}
-            </ScrollView>
+            <FilterTabs value={roadmapTabs} onChange={setRoadmapTabs} />
 
             {/* Roadmap Cards */}
             <View style={styles.cardListContainer}>
@@ -252,29 +347,18 @@ export default function ProgressScreen() {
             <Text style={styles.progressBlockTitle}>Assessment Progress</Text>
 
             {/* Tabs */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tabScrollContent}
-              style={styles.tabScroll}
-            >
-              {availableTabs.map((e, i) => (
-                <Tab
-                  key={i}
-                  data={e}
-                  tabs={assessmentTabs}
-                  setTabs={(tab: string) => setAssessmentTabs(tab as TabKey)}
-                  onPress={() => setAssessmentTabs(e.tab as TabKey)}
-                />
-              ))}
-            </ScrollView>
+            <FilterTabs value={assessmentTabs} onChange={setAssessmentTabs} />
 
             {/* Assessment Cards */}
             <View style={styles.cardListContainer}>
               {filteredAssessments.length > 0 ? (
                 filteredAssessments.map((a, i) => (
                   <View key={`assessment-${i}`} style={[styles.cardWrapper, { paddingTop: i === 0 ? 15 : 0 }]}>
-                    <ProgressAssessmentCard onDevelopmentPlanPress={openPMPSheet} data={a as any} />
+                    <ProgressAssessmentCard
+                      onPress={() => handleAssessmentPress(a)}
+                      onDevelopmentPlanPress={openPMPSheet}
+                      data={a as any}
+                    />
                   </View>
                 ))
               ) : (
@@ -365,8 +449,34 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     paddingHorizontal: 16,
   },
-  tabScroll: { maxHeight: 50, marginTop: 15 },
-  tabScrollContent: { paddingHorizontal: 16, gap: 8, paddingBottom: 5 },
+  filterTabsRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 16,
+    marginTop: 15,
+  },
+  filterTabButton: {
+    flex: 1,
+    height: 38,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.35)",
+    backgroundColor: "rgba(255, 255, 255, 0.16)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterTabButtonActive: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(255, 255, 255, 0.85)",
+  },
+  filterTabText: {
+    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  filterTabTextActive: {
+    color: "#1535A8",
+  },
   cardListContainer: {
     marginVertical: 10,
     paddingHorizontal: 16,

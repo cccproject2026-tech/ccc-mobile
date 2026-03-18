@@ -149,39 +149,36 @@ const PMPBottomSheet = forwardRef<BottomSheetModal, PMPBottomSheetProps>(
                         </View>
 
                         {/* Navigation Buttons */}
-                        <View style={styles.bottomButtons}>
-                            <View style={styles.navigationButtons}>
-                                {showPreviousButton && onPrevious && (
-                                    <Pressable
-                                        onPress={onPrevious}
-                                        style={styles.previousButton}
-                                    >
+                        <View style={styles.bottomButtonsRow}>
+                            <View style={styles.leftButtons}>
+                                {showPreviousButton && onPrevious ? (
+                                    <Pressable onPress={onPrevious} style={styles.previousButton}>
                                         <Text style={styles.previousButtonText}>
                                             {'<<'}Previous
                                         </Text>
                                     </Pressable>
+                                ) : (
+                                    <View />
                                 )}
+                            </View>
 
+                            <View style={styles.rightButtons}>
                                 <Pressable
                                     onPress={onNext}
-                                    style={[
-                                        styles.nextButton,
-                                        showPreviousButton && styles.nextButtonWithPrevious
-                                    ]}
+                                    style={styles.nextButton}
                                 >
                                     <Text style={styles.nextButtonText}>Next {'>>'}</Text>
                                 </Pressable>
-                            </View>
 
-                            {/* Download Button */}
-                            <Pressable onPress={onDownload} style={styles.downloadButton}>
-                                <Ionicons
-                                    name="download-outline"
-                                    size={getFontSize(18)}
-                                    color="#FFFFFF"
-                                />
-                                <Text style={styles.downloadButtonText}>Download</Text>
-                            </Pressable>
+                                <Pressable onPress={onDownload} style={styles.downloadButton}>
+                                    <Ionicons
+                                        name="download-outline"
+                                        size={getFontSize(18)}
+                                        color="#FFFFFF"
+                                    />
+                                    <Text style={styles.downloadButtonText}>Download</Text>
+                                </Pressable>
+                            </View>
                         </View>
                     </BottomSheetScrollView>
                 </LinearGradient>
@@ -189,6 +186,8 @@ const PMPBottomSheet = forwardRef<BottomSheetModal, PMPBottomSheetProps>(
         );
     }
 );
+
+PMPBottomSheet.displayName = 'PMPBottomSheet';
 
 const styles = StyleSheet.create({
     sheetGradient: {
@@ -291,24 +290,30 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         lineHeight: getFontSize(isSmallDevice ? 19 : 22),
     },
-    bottomButtons: {
-        gap: getSpacing(12),
+    bottomButtonsRow: {
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-between',
         alignItems: 'center',
         paddingTop: getSpacing(4),
     },
-    navigationButtons: {
+    leftButtons: {
         flexDirection: 'row',
-        gap: getSpacing(10),
-        width: '100%',
-        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+    },
+    rightButtons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: getSpacing(12),
+        flex: 1,
     },
     previousButton: {
         backgroundColor: '#FFFFFF',
         paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
         paddingHorizontal: getSpacing(isSmallDevice ? 20 : 28),
         borderRadius: getSpacing(10),
-        flex: 1,
-        maxWidth: getSpacing(isSmallDevice ? 140 : 160),
         alignItems: 'center',
     },
     previousButtonText: {
@@ -319,16 +324,9 @@ const styles = StyleSheet.create({
     nextButton: {
         backgroundColor: '#FFFFFF',
         paddingVertical: getSpacing(isSmallDevice ? 10 : 12),
-        paddingHorizontal: getSpacing(isSmallDevice ? 28 : 36),
+        paddingHorizontal: getSpacing(isSmallDevice ? 16 : 20),
         borderRadius: getSpacing(10),
-        minWidth: getSpacing(isSmallDevice ? 140 : 160),
         alignItems: 'center',
-    },
-    nextButtonWithPrevious: {
-        flex: 1,
-        maxWidth: getSpacing(isSmallDevice ? 140 : 160),
-        minWidth: 0,
-        paddingHorizontal: getSpacing(isSmallDevice ? 20 : 28),
     },
     nextButtonText: {
         color: '#1C4ED8',

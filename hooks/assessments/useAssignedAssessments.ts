@@ -7,7 +7,7 @@ import { useAssessments } from "./useAssessments";
 /**
  * Hook to get only assessments assigned to the current user with progress status
  */
-export const useAssignedAssessments = () => {
+export const useAssignedAssessments = (userId?: string) => {
   // Fetch all assessments
   const {
     data: allAssessments,
@@ -19,7 +19,7 @@ export const useAssignedAssessments = () => {
 
   // Fetch user's progress data
   const { data: assessmentProgress, isLoading: isLoadingProgress } =
-    useAssessmentProgress();
+    useAssessmentProgress(userId);
 
   // Get array of assigned assessment progress items
   const progressMap = useMemo(() => {

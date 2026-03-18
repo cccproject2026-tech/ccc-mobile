@@ -6,12 +6,13 @@ import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import type { Assessment } from "@/types/assessment.types";
+import { sharePdfFromHtml } from "@/utils/pdf";
 import { getFontSize, getIconSize, getSpacing } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -43,41 +44,43 @@ export default function Survey() {
   const pmpBottomSheetRef = useRef<BottomSheetModal>(null);
   const [selectedAssessment, setSelectedAssessment] =
     useState<Assessment | null>(null);
-  const [currentSection, setCurrentSection] = useState(0);
   // change Mode Modal state
   const [changeModeModalVisible, setChangeModeModalVisible] = useState(false);
   const [selectedMode, setSelectedMode] = React.useState("Zoom");
   // Mock sections data
-  const sections = [
-    {
-      title: "Section 1 - Personal Well-Being",
-      level: "Level 1",
-      plans: [
-        { id: 1, text: "Schedule 1-on-1 with a mentor" },
-        { id: 2, text: "Take trauma survey (via Claritysoft)" },
-        { id: 3, text: "Identify areas of stress/anxiety" },
-        { id: 4, text: "Family Wellbeing survey" },
-        { id: 5, text: "Collaborate on a healing plan" },
-        { id: 6, text: "Collaborate on a physical Exercise plan" },
-        { id: 7, text: "Establish a prayer covenant/partnership" },
-        { id: 8, text: "Finalize a growth plan" },
-      ],
-    },
-    {
-      title: "Section 2 - Professional Development/Leadership style",
-      level: "Level 1",
-      plans: [
-        { id: 1, text: "Schedule 1-on-1 with a mentor" },
-        { id: 2, text: "Take trauma survey (via Claritysoft)" },
-        { id: 3, text: "Identify areas of stress/anxiety" },
-        { id: 4, text: "Family Wellbeing survey" },
-        { id: 5, text: "Collaborate on a healing plan" },
-        { id: 6, text: "Collaborate on a physical Exercise plan" },
-        { id: 7, text: "Establish a prayer covenant/partnership" },
-        { id: 8, text: "Finalize a growth plan" },
-      ],
-    },
-  ];
+  const sections = useMemo(
+    () => [
+      {
+        title: "Section 1 - Personal Well-Being",
+        level: "Level 1",
+        plans: [
+          { id: 1, text: "Schedule 1-on-1 with a mentor" },
+          { id: 2, text: "Take trauma survey (via Claritysoft)" },
+          { id: 3, text: "Identify areas of stress/anxiety" },
+          { id: 4, text: "Family Wellbeing survey" },
+          { id: 5, text: "Collaborate on a healing plan" },
+          { id: 6, text: "Collaborate on a physical Exercise plan" },
+          { id: 7, text: "Establish a prayer covenant/partnership" },
+          { id: 8, text: "Finalize a growth plan" },
+        ],
+      },
+      {
+        title: "Section 2 - Professional Development/Leadership style",
+        level: "Level 1",
+        plans: [
+          { id: 1, text: "Schedule 1-on-1 with a mentor" },
+          { id: 2, text: "Take trauma survey (via Claritysoft)" },
+          { id: 3, text: "Identify areas of stress/anxiety" },
+          { id: 4, text: "Family Wellbeing survey" },
+          { id: 5, text: "Collaborate on a healing plan" },
+          { id: 6, text: "Collaborate on a physical Exercise plan" },
+          { id: 7, text: "Establish a prayer covenant/partnership" },
+          { id: 8, text: "Finalize a growth plan" },
+        ],
+      },
+    ],
+    [],
+  );
 
   // Handle pull to refresh
   const handleRefresh = () => {
@@ -134,25 +137,72 @@ export default function Survey() {
 
   const handleCustomizedPress = (assessment: Assessment) => {
     setSelectedAssessment(assessment);
-    setCurrentSection(0);
     pmpBottomSheetRef.current?.present();
   };
 
-  const handleNextSection = () => {
-    if (currentSection < sections.length - 1) {
-      setCurrentSection((prev) => prev + 1);
-    } else {
-      pmpBottomSheetRef.current?.dismiss();
-    }
-  };
+  const reportHtml = useMemo(() => {
+    const escapeHtml = (value: string) =>
+      value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 
-  const handlePreviousSection = () => {
-    if (currentSection > 0) {
-      setCurrentSection((prev) => prev - 1);
-    }
-  };
+    const sectionsHtml = sections
+      .map((section) => {
+        const plansHtml = section.plans
+          .map((p: any) => `<li>${escapeHtml(p.text)}</li>`)
+          .join("");
+        return `
+          <div class="section">
+            <h2>${escapeHtml(section.title)}</h2>
+            <h3>Customized Development Plans</h3>
+            <ul>${plansHtml}</ul>
+          </div>
+        `;
+      })
+      .join("");
 
-  const handleDownload = () => {
+    const userName = "John Ross";
+    const completedDate = new Date().toLocaleDateString("en-GB");
+    const assessmentTitle = selectedAssessment?.title || "Assessment";
+
+    return `
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <style>
+            body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial; padding: 24px; color: #0f172a; }
+            .header { text-align: center; margin-bottom: 18px; }
+            .name { font-size: 22px; font-weight: 700; margin: 0; }
+            .date { font-size: 13px; color: #475569; margin: 6px 0 0; }
+            .survey { margin: 18px 0 22px; }
+            .surveyLabel { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: #1e3a8a; }
+            .surveyValue { font-size: 16px; font-weight: 700; margin: 0; color: #1e3a8a; }
+            .section { margin-bottom: 22px; }
+            h2 { font-size: 16px; margin: 0 0 10px; border-bottom: 2px solid #1e3a8a; padding-bottom: 6px; color: #1e3a8a; }
+            h3 { font-size: 14px; margin: 0 0 10px; color: #1e3a8a; }
+            ul { margin: 0; padding-left: 18px; }
+            li { margin: 0 0 8px; line-height: 1.35; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <p class="name">${escapeHtml(userName)}</p>
+            <p class="date">Completed on: ${escapeHtml(completedDate)}</p>
+          </div>
+          <div class="survey">
+            <p class="surveyLabel">Survey Name :</p>
+            <p class="surveyValue">${escapeHtml(assessmentTitle)}</p>
+          </div>
+          ${sectionsHtml}
+        </body>
+      </html>
+    `;
+  }, [sections, selectedAssessment?.title]);
+
+  const handleNextFromSheet = useCallback(() => {
     pmpBottomSheetRef.current?.dismiss();
     router.push({
       pathname: "/assessments/report",
@@ -160,15 +210,27 @@ export default function Survey() {
         assessmentId: selectedAssessment?.id || "",
         userName: "John Ross",
         completedDate: new Date().toLocaleDateString("en-GB"),
+        assessmentTitle: selectedAssessment?.title || "Assessment",
       },
     });
-  };
+  }, [selectedAssessment?.id, selectedAssessment?.title]);
+
+  const handleDownload = useCallback(async () => {
+    // Direct download from the bottom sheet (no navigation).
+    await sharePdfFromHtml({
+      html: reportHtml,
+      fileName: `${(selectedAssessment?.title || "Assessment").replaceAll(
+        " ",
+        "_",
+      )}_Report.pdf`,
+    });
+  }, [reportHtml, selectedAssessment?.title]);
 
   const handleCloseSheet = () => {
     pmpBottomSheetRef.current?.dismiss();
   };
 
-  const currentSectionData = sections[currentSection];
+  const currentSectionData = sections[0];
 
   // Loading state (initial load only)
   if (isLoading && !isRefetching) {
@@ -330,12 +392,11 @@ export default function Survey() {
         sectionTitle={currentSectionData?.title}
         levelText={`You are at ${currentSectionData?.level}!`}
         developmentPlans={currentSectionData?.plans}
-        showPreviousButton={currentSection > 0}
-        onPrevious={handlePreviousSection}
-        onNext={handleNextSection}
+        showPreviousButton={false}
+        onNext={handleNextFromSheet}
         onDownload={handleDownload}
         onClose={handleCloseSheet}
-        currentSection={currentSection + 1}
+        currentSection={1}
         totalSections={sections.length}
       />
 

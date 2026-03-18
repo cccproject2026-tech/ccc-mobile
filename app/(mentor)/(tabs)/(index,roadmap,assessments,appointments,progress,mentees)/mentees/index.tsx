@@ -32,6 +32,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler"
 import MapView, { Marker } from "react-native-maps"
 import { SafeAreaView } from "react-native-safe-area-context"
 
+const MENTEE_PROGRESS_ROUTE =
+  "/(mentor)/(tabs)/(index,roadmap,assessments,appointments,progress,mentees)/mentees/mentee-progress"
+
 export default function MyMentees() {
   const [listToggle, setListToggle] = useState(false)
   const [searchText, setSearchText] = useState("")
@@ -140,7 +143,7 @@ export default function MyMentees() {
           break
         case "track-progress":
           router.push({
-            pathname: "/(mentor)/mentees/mentee-progress" as any,
+            pathname: MENTEE_PROGRESS_ROUTE as any,
             params: { menteeId: mentee?.id },
           })
           break

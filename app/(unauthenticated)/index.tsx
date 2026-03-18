@@ -75,13 +75,13 @@ export default function LoginScreen() {
     // Handle status button click - toggle and refetch
     const handleStatusPress = useCallback(async () => {
         console.log('→ Handling status press');
-        
+
         // Always refetch if pending to get latest status
         if (isPending) {
             console.log('🔄 Manually checking approval status...');
             await refetch();
         }
-        
+
         // Toggle expansion
         setIsStatusExpanded(prev => !prev);
     }, [isPending, refetch]);
@@ -137,11 +137,11 @@ export default function LoginScreen() {
                                     <View style={[styles.contactCard, styles.contactCardWithStatus]}>
                                         <Text style={styles.contactTitle}>Contact Information</Text>
                                         <View style={styles.contactRow}>
-                                            <Ionicons name="call-outline" size={16} color="#fff" style={{paddingTop: 2}} />
+                                            <Ionicons name="call-outline" size={16} color="#fff" style={{ paddingTop: 2 }} />
                                             <Text style={styles.contactText}>: 269-471-6159</Text>
                                         </View>
                                         <View style={styles.contactRow}>
-                                            <Ionicons name="mail-outline" size={16} color="#fff" style={{paddingTop: 4}} />
+                                            <Ionicons name="mail-outline" size={16} color="#fff" style={{ paddingTop: 4 }} />
                                             <Text style={styles.contactText}>
                                                 : communitychange@andrews.edu
                                             </Text>
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         paddingVertical: 12,
-        
+
         paddingHorizontal: 12,
         gap: 6,
     },

@@ -57,6 +57,16 @@ export default function AssessmentCard({
   const imageCompress = isIOS ? 0.92 : 1;
   const cardCompress = isIOS ? 0.96 : 1;
   const { user } = useAuthStore();
+  const formatDate = (value?: string) => {
+    if (!value) return "";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   // Update appointment
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
@@ -320,7 +330,7 @@ export default function AssessmentCard({
                     color: "#EAB308",
                   }}
                 >
-                  Due : 20 Oct 2024
+                  Due : {formatDate(data.dueDate)}
                 </Text>
               </View>
             )}
@@ -400,14 +410,26 @@ export default function AssessmentCard({
                   }}
                 >
                   Completed on :{" "}
-                  {new Date(data.completedOn).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}
+                  {formatDate(data.completedOn)}
                 </Text>
               </View>
             )}
+
+            {data?.status === "Submitted" &&
+              (data?.completionDate || data?.completedOn || data?.createdAt) && (
+                <View style={{ marginTop: getSpacing(4 * spacingCompress) }}>
+                  <Text
+                    style={{
+                      fontSize: getFontSize(13 * fontCompress),
+                      fontWeight: "500",
+                      color: "white",
+                    }}
+                  >
+                    Submitted on :{" "}
+                    {formatDate(data.completionDate || data.completedOn || data.createdAt)}
+                  </Text>
+                </View>
+              )}
 
             {user?.role === "pastor" &&
               (data?.status === "Not Started" || data?.status === "Due") && (
@@ -437,7 +459,7 @@ export default function AssessmentCard({
               )}
           </View>
         </View>
-        {data?.type === "PMP" && (
+            {data?.type === "PMP" && (
           <View
             style={{
               paddingTop: 5,
@@ -455,7 +477,12 @@ export default function AssessmentCard({
                   marginVertical: getSpacing(8 * spacingCompress),
                   width: "95%",
                 }}
-                onPress={onCustomizedPress}
+                onPress={(event) => {
+                  // Prevent parent card press from triggering.
+                  // @ts-expect-error - stopPropagation exists on native events in RN.
+                  event?.stopPropagation?.();
+                  onCustomizedPress?.();
+                }}
               >
                 <Text
                   style={{
