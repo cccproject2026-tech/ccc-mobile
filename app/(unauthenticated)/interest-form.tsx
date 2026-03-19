@@ -22,6 +22,116 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
+type PhoneCountryOption = {
+    id: string;
+    name: string;
+    dialCode: string;
+    minLength: number;
+};
+
+const PHONE_COUNTRY_OPTIONS: PhoneCountryOption[] = [
+    { id: "US", name: "United States", dialCode: "+1", minLength: 10 },
+    { id: "CA", name: "Canada", dialCode: "+1", minLength: 10 },
+];
+
+const DEFAULT_PHONE_COUNTRY = PHONE_COUNTRY_OPTIONS[0];
+
+const findPhoneCountryByName = (countryName?: string | null): PhoneCountryOption | null => {
+    if (!countryName) return null;
+    const trimmed = countryName.trim().toLowerCase();
+    return (
+        PHONE_COUNTRY_OPTIONS.find((c) => c.name.toLowerCase() === trimmed) ||
+        PHONE_COUNTRY_OPTIONS.find((c) =>
+            trimmed.includes(c.name.toLowerCase())
+        ) ||
+        null
+    );
+};
+
+type PhoneInputWithCountryProps = {
+    value: string;
+    onChangeText: (value: string) => void;
+    selectedCountry: PhoneCountryOption;
+    onSelectCountry: (country: PhoneCountryOption) => void;
+    placeholder?: string;
+    disabled?: boolean;
+    hasError?: boolean;
+};
+
+const PhoneInputWithCountry: React.FC<PhoneInputWithCountryProps> = ({
+    value,
+    onChangeText,
+    selectedCountry,
+    onSelectCountry,
+    placeholder = "Enter phone number",
+    disabled,
+    hasError,
+}) => {
+    const [showDropdown, setShowDropdown] = useState(false);
+
+    return (
+        <View style={[styles.halfWidth, styles.phoneCountryDropdownWrapper]}>
+            <View
+                style={[
+                    styles.phoneInputContainer,
+                    hasError && styles.inputError,
+                    disabled && styles.inputDisabled,
+                ]}
+            >
+                <TouchableOpacity
+                    style={styles.phoneCountryButton}
+                    onPress={() => setShowDropdown((prev) => !prev)}
+                    disabled={disabled}
+                >
+                    <Text style={styles.phoneCountryCodeText}>
+                        {selectedCountry.dialCode}
+                    </Text>
+                    <Ionicons
+                        name={showDropdown ? "chevron-up" : "chevron-down"}
+                        size={16}
+                        color="rgba(255,255,255,0.8)"
+                    />
+                </TouchableOpacity>
+                <TextInput
+                    style={styles.phoneTextInput}
+                    placeholder={placeholder}
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                    value={value}
+                    onChangeText={(text) => {
+                        const numericOnly = text.replace(/[^\d]/g, "");
+                        onChangeText(numericOnly);
+                    }}
+                    keyboardType="phone-pad"
+                    editable={!disabled}
+                />
+            </View>
+            {showDropdown && (
+                <View style={styles.phoneCountryDropdownMenu}>
+                    {PHONE_COUNTRY_OPTIONS.map((option) => (
+                        <TouchableOpacity
+                            key={option.id}
+                            style={styles.countryDropdownItem}
+                            onPress={() => {
+                                onSelectCountry(option);
+                                setShowDropdown(false);
+                            }}
+                        >
+                            <View style={styles.countryRadio}>
+                                {selectedCountry.id === option.id && (
+                                    <View style={styles.countryRadioSelected} />
+                                )}
+                            </View>
+                            <Text style={styles.countryDropdownItemText}>
+                                {option.name} ({option.dialCode})
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
+        </View>
+    );
+};
+
 const INITIAL_CHURCH: ChurchInfo = {
     churchName: '',
     churchPhone: '',
@@ -68,6 +178,16 @@ export default function InterestFormScreen() {
     const [showStateDropdown, setShowStateDropdown] = useState<number | null>(
         null
     );
+
+    const [personalPhoneCountry, setPersonalPhoneCountry] = useState<PhoneCountryOption>(
+        DEFAULT_PHONE_COUNTRY
+    );
+    const [churchPhoneCountries, setChurchPhoneCountries] = useState<PhoneCountryOption[]>([
+        DEFAULT_PHONE_COUNTRY,
+    ]);
+
+    const [personalPhoneError, setPersonalPhoneError] = useState(false);
+    const [churchPhoneErrors, setChurchPhoneErrors] = useState<boolean[]>([]);
 
     // Transform metadata to form options
     const TITLE_OPTIONS = useMemo(() => metadata?.titles || [], [metadata]);
@@ -117,6 +237,8 @@ export default function InterestFormScreen() {
             ...prev,
             churchDetails: [...(prev.churchDetails || []), INITIAL_CHURCH],
         }));
+        setChurchPhoneCountries((prev) => [...prev, DEFAULT_PHONE_COUNTRY]);
+        setChurchPhoneErrors((prev) => [...prev, false]);
     }, []);
 
     const removeChurch = useCallback((index: number) => {
@@ -125,6 +247,10 @@ export default function InterestFormScreen() {
             churchDetails:
                 prev.churchDetails?.filter((_, i) => i !== index) || [],
         }));
+        setChurchPhoneCountries((prev) =>
+            prev.filter((_, i) => i !== index)
+        );
+        setChurchPhoneErrors((prev) => prev.filter((_, i) => i !== index));
     }, []);
 
     const toggleInterest = useCallback((interest: string) => {
@@ -150,10 +276,51 @@ export default function InterestFormScreen() {
             Alert.alert('Error', 'Please enter your email');
             return false;
         }
-        if (!formData.phoneNumber?.trim()) {
+
+        setPersonalPhoneError(false);
+        setChurchPhoneErrors([]);
+
+        const rawPersonal = (formData.phoneNumber || "").replace(/[^\d]/g, "");
+        if (!rawPersonal) {
+            setPersonalPhoneError(true);
             Alert.alert('Error', 'Please enter your phone number');
             return false;
         }
+        if (rawPersonal.length < personalPhoneCountry.minLength) {
+            setPersonalPhoneError(true);
+            Alert.alert(
+                'Error',
+                `Please enter a valid phone number for ${personalPhoneCountry.name}.`
+            );
+            return false;
+        }
+
+        const newChurchErrors: boolean[] = [];
+        const churches = formData.churchDetails || [];
+        churches.forEach((church, index) => {
+            const rawChurchPhone = (church.churchPhone || "").replace(/[^\d]/g, "");
+            const country = churchPhoneCountries[index] || DEFAULT_PHONE_COUNTRY;
+
+            if (rawChurchPhone) {
+                if (rawChurchPhone.length < country.minLength) {
+                    newChurchErrors[index] = true;
+                } else {
+                    newChurchErrors[index] = false;
+                }
+            } else {
+                newChurchErrors[index] = false;
+            }
+        });
+
+        if (newChurchErrors.some(Boolean)) {
+            setChurchPhoneErrors(newChurchErrors);
+            Alert.alert(
+                'Error',
+                'Please enter valid church phone numbers (check highlighted fields).'
+            );
+            return false;
+        }
+
         if (!formData.churchDetails || formData.churchDetails.length === 0) {
             Alert.alert('Error', 'Please add at least one church');
             return false;
@@ -163,17 +330,50 @@ export default function InterestFormScreen() {
             return false;
         }
         return true;
-    }, [formData]);
+    }, [formData, personalPhoneCountry, churchPhoneCountries]);
 
     // Submit handler
     const handleSubmit = useCallback(() => {
         if (!validateForm()) return;
 
-        console.log('📤 Submitting interest form:', formData);
+        const rawPersonal = (formData.phoneNumber || "").replace(/[^\d]/g, "");
+        const fullPersonalPhone = `${personalPhoneCountry.dialCode}${rawPersonal}`;
+
+        const updatedChurches: ChurchInfo[] = (formData.churchDetails || []).map(
+            (church, index) => {
+                const rawChurchPhone = (church.churchPhone || "").replace(/[^\d]/g, "");
+                const country = churchPhoneCountries[index] || DEFAULT_PHONE_COUNTRY;
+                const fullChurchPhone = rawChurchPhone
+                    ? `${country.dialCode}${rawChurchPhone}`
+                    : "";
+
+                // Optional enhancement: sync phone country from selected church country
+                const syncedCountry =
+                    findPhoneCountryByName(church.country) || country;
+
+                const usedCountry = syncedCountry || country;
+                const finalChurchPhone = rawChurchPhone
+                    ? `${usedCountry.dialCode}${rawChurchPhone}`
+                    : "";
+
+                return {
+                    ...church,
+                    churchPhone: finalChurchPhone || fullChurchPhone,
+                };
+            }
+        );
+
+        const payload: InterestFormData = {
+            ...(formData as InterestFormData),
+            phoneNumber: fullPersonalPhone,
+            churchDetails: updatedChurches,
+        };
+
+        console.log('📤 Submitting interest form:', payload);
         setCurrentStep('submitted');
 
-        submitInterest(formData as InterestFormData);
-    }, [formData, validateForm, submitInterest, setCurrentStep]);
+        submitInterest(payload);
+    }, [formData, validateForm, personalPhoneCountry, churchPhoneCountries, setCurrentStep, submitInterest]);
 
     return (
         <>
@@ -227,14 +427,19 @@ export default function InterestFormScreen() {
                             />
                         </View>
                         <View style={styles.row}>
-                            <TextInput
-                                style={[styles.input, styles.halfWidth]}
+                            <PhoneInputWithCountry
+                                value={formData.phoneNumber || ''}
+                                onChangeText={(text) => {
+                                    setPersonalPhoneError(false);
+                                    handleInputChange('phoneNumber', text);
+                                }}
+                                selectedCountry={personalPhoneCountry}
+                                onSelectCountry={(country) =>
+                                    setPersonalPhoneCountry(country)
+                                }
                                 placeholder="Phone Number *"
-                                placeholderTextColor="rgba(255,255,255,0.5)"
-                                value={formData.phoneNumber}
-                                onChangeText={(text) => handleInputChange('phoneNumber', text)}
-                                keyboardType="phone-pad"
-                                editable={!isLoading}
+                                disabled={isLoading}
+                                hasError={personalPhoneError}
                             />
                             <TextInput
                                 style={[styles.input, styles.halfWidth]}
@@ -284,16 +489,30 @@ export default function InterestFormScreen() {
                                 />
 
                                 <View style={styles.row}>
-                                    <TextInput
-                                        style={[styles.input, styles.halfWidth]}
-                                        placeholder="Church Phone"
-                                        placeholderTextColor="rgba(255,255,255,0.5)"
-                                        value={church.churchPhone}
-                                        onChangeText={(text) =>
-                                            handleChurchChange(index, 'churchPhone', text)
+                                    <PhoneInputWithCountry
+                                        value={church.churchPhone || ''}
+                                        onChangeText={(text) => {
+                                            setChurchPhoneErrors((prev) => {
+                                                const copy = [...prev];
+                                                copy[index] = false;
+                                                return copy;
+                                            });
+                                            handleChurchChange(index, 'churchPhone', text);
+                                        }}
+                                        selectedCountry={
+                                            churchPhoneCountries[index] ||
+                                            DEFAULT_PHONE_COUNTRY
                                         }
-                                        keyboardType="phone-pad"
-                                        editable={!isLoading}
+                                        onSelectCountry={(country) =>
+                                            setChurchPhoneCountries((prev) => {
+                                                const copy = [...prev];
+                                                copy[index] = country;
+                                                return copy;
+                                            })
+                                        }
+                                        placeholder="Church Phone"
+                                        disabled={isLoading}
+                                        hasError={churchPhoneErrors[index]}
                                     />
                                     <TextInput
                                         style={[styles.input, styles.halfWidth]}
@@ -800,6 +1019,58 @@ const styles = StyleSheet.create({
         height: 10,
         borderRadius: 5,
         backgroundColor: "#fff",
+    },
+    phoneInputContainer: {
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.3)",
+        borderRadius: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 12,
+        overflow: 'hidden',
+        backgroundColor: "transparent",
+    },
+    phoneCountryButton: {
+        paddingHorizontal: 12,
+        paddingVertical: 14,
+        borderRightWidth: 1,
+        borderRightColor: "rgba(255,255,255,0.3)",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+    },
+    phoneCountryCodeText: {
+        fontSize: 15,
+        color: "#fff",
+    },
+    phoneTextInput: {
+        flex: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 14,
+        fontSize: 15,
+        color: "#fff",
+    },
+    phoneCountryDropdownWrapper: {
+        position: 'relative',
+    },
+    phoneCountryDropdownMenu: {
+        backgroundColor: "#1E3A5F",
+        borderRadius: 10,
+        marginTop: 4,
+        overflow: "hidden",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.3)",
+        position: "absolute",
+        top: 60,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+    },
+    inputError: {
+        borderColor: "#F87171",
+    },
+    inputDisabled: {
+        opacity: 0.6,
     },
     interestsMenu: {
         // backgroundColor: "rgba(255,255,255,0.95)",
