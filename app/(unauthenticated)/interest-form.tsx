@@ -641,38 +641,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    header: {
-        flexDirection: "row",
-        alignItems: "flex-end",
-        justifyContent: "flex-end",
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "rgba(255, 255, 255, 0.3)",
-    },
-    headerTitle: {
-        marginLeft: 12,
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#fff",
-        flex: 1,
-    },
-    autoFillButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "rgba(255, 215, 0, 0.2)",
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#FFD700",
-        gap: 6,
-    },
-    autoFillButtonText: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: "#FFD700",
-    },
     scrollContent: {
         paddingHorizontal: 16,
     },
