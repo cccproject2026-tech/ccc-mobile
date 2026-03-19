@@ -279,7 +279,7 @@ export default function LoginScreen() {
                                 color="rgba(255,255,255,0.7)"
                             />
                             <Text style={styles.pendingMessageTitle}>
-                                Application Under Review
+                              Your Application Under Review
                             </Text>
                             <Text style={styles.pendingMessageText}>
                             {"Thank you for your submission \n"}

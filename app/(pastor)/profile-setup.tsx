@@ -194,6 +194,8 @@ export default function ProfileUpload() {
                                     />
                                 )}
                             </View>
+                            <Text style={styles.sectionTitle}>Upload your profile photo</Text>
+                           
 
                             {/* Upload Image Button */}
                             <TouchableOpacity
@@ -214,6 +216,11 @@ export default function ProfileUpload() {
                                 )}
                             </TouchableOpacity>
 
+                            <Text style={styles.sectionTitle}>Upload supporting documents</Text>
+                            <Text style={styles.sectionHint}>
+                                Examples: ID proof, church letter, certificates
+                            </Text>
+
                             {/* Upload Document Button */}
                             <TouchableOpacity
                                 style={styles.uploadDocButton}
@@ -227,7 +234,7 @@ export default function ProfileUpload() {
                                         <Text style={styles.uploadDocText}>
                                             {documentName
                                                 ? 'Uploaded: ' + documentName
-                                                : 'Upload documents'}
+                                                : 'Upload Documents'}
                                         </Text>
                                         <Image
                                             source={icons.gradientClip}
@@ -302,7 +309,20 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     avatarContainer: {
-        marginBottom: 40,
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 6,
+        textAlign: 'center',
+    },
+    sectionHint: {
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 13,
+        textAlign: 'center',
+        marginBottom: 14,
     },
     uploadImageButton: {
         backgroundColor: '#304C89',
