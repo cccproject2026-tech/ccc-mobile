@@ -6,10 +6,9 @@ import { ChurchInfo, InterestFormData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     Dimensions,
     StyleSheet,
     Text,
@@ -58,79 +57,87 @@ type PhoneInputWithCountryProps = {
     hasError?: boolean;
 };
 
-const PhoneInputWithCountry: React.FC<PhoneInputWithCountryProps> = ({
-    value,
-    onChangeText,
-    selectedCountry,
-    onSelectCountry,
-    placeholder = "Enter phone number",
-    disabled,
-    hasError,
-}) => {
-    const [showDropdown, setShowDropdown] = useState(false);
+const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryProps>(
+    (
+        {
+            value,
+            onChangeText,
+            selectedCountry,
+            onSelectCountry,
+            placeholder = "Enter phone number",
+            disabled,
+            hasError,
+        },
+        ref
+    ) => {
+        const [showDropdown, setShowDropdown] = useState(false);
 
-    return (
-        <View style={[styles.halfWidth, styles.phoneCountryDropdownWrapper]}>
-            <View
-                style={[
-                    styles.phoneInputContainer,
-                    hasError && styles.inputError,
-                    disabled && styles.inputDisabled,
-                ]}
-            >
-                <TouchableOpacity
-                    style={styles.phoneCountryButton}
-                    onPress={() => setShowDropdown((prev) => !prev)}
-                    disabled={disabled}
+        return (
+            <View style={[styles.halfWidth, styles.phoneCountryDropdownWrapper]}>
+                <View
+                    style={[
+                        styles.phoneInputContainer,
+                        hasError && styles.inputError,
+                        disabled && styles.inputDisabled,
+                    ]}
                 >
-                    <Text style={styles.phoneCountryCodeText}>
-                        {selectedCountry.dialCode}
-                    </Text>
-                    <Ionicons
-                        name={showDropdown ? "chevron-up" : "chevron-down"}
-                        size={16}
-                        color="rgba(255,255,255,0.8)"
+                    <TouchableOpacity
+                        style={styles.phoneCountryButton}
+                        onPress={() => setShowDropdown((prev) => !prev)}
+                        disabled={disabled}
+                    >
+                        <Text style={styles.phoneCountryCodeText}>
+                            {selectedCountry.dialCode}
+                        </Text>
+                        <Ionicons
+                            name={showDropdown ? "chevron-up" : "chevron-down"}
+                            size={16}
+                            color="rgba(255,255,255,0.8)"
+                        />
+                    </TouchableOpacity>
+                    <TextInput
+                        ref={ref}
+                        style={styles.phoneTextInput}
+                        placeholder={placeholder}
+                        placeholderTextColor="rgba(255,255,255,0.5)"
+                        value={value}
+                        onChangeText={(text) => {
+                            const numericOnly = text.replace(/[^\d]/g, "");
+                            onChangeText(numericOnly);
+                        }}
+                        keyboardType="phone-pad"
+                        editable={!disabled}
                     />
-                </TouchableOpacity>
-                <TextInput
-                    style={styles.phoneTextInput}
-                    placeholder={placeholder}
-                    placeholderTextColor="rgba(255,255,255,0.5)"
-                    value={value}
-                    onChangeText={(text) => {
-                        const numericOnly = text.replace(/[^\d]/g, "");
-                        onChangeText(numericOnly);
-                    }}
-                    keyboardType="phone-pad"
-                    editable={!disabled}
-                />
-            </View>
-            {showDropdown && (
-                <View style={styles.phoneCountryDropdownMenu}>
-                    {PHONE_COUNTRY_OPTIONS.map((option) => (
-                        <TouchableOpacity
-                            key={option.id}
-                            style={styles.countryDropdownItem}
-                            onPress={() => {
-                                onSelectCountry(option);
-                                setShowDropdown(false);
-                            }}
-                        >
-                            <View style={styles.countryRadio}>
-                                {selectedCountry.id === option.id && (
-                                    <View style={styles.countryRadioSelected} />
-                                )}
-                            </View>
-                            <Text style={styles.countryDropdownItemText}>
-                                {option.name} ({option.dialCode})
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
                 </View>
-            )}
-        </View>
-    );
-};
+                {showDropdown && (
+                    <View style={styles.phoneCountryDropdownMenu}>
+                        {PHONE_COUNTRY_OPTIONS.map((option) => (
+                            <TouchableOpacity
+                                key={option.id}
+                                style={styles.countryDropdownItem}
+                                onPress={() => {
+                                    onSelectCountry(option);
+                                    setShowDropdown(false);
+                                }}
+                            >
+                                <View style={styles.countryRadio}>
+                                    {selectedCountry.id === option.id && (
+                                        <View style={styles.countryRadioSelected} />
+                                    )}
+                                </View>
+                                <Text style={styles.countryDropdownItemText}>
+                                    {option.name} ({option.dialCode})
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
+            </View>
+        );
+    }
+);
+
+PhoneInputWithCountry.displayName = "PhoneInputWithCountry";
 
 const INITIAL_CHURCH: ChurchInfo = {
     churchName: '',
@@ -188,6 +195,16 @@ export default function InterestFormScreen() {
 
     const [personalPhoneError, setPersonalPhoneError] = useState(false);
     const [churchPhoneErrors, setChurchPhoneErrors] = useState<boolean[]>([]);
+    const [firstNameError, setFirstNameError] = useState(false);
+    const [lastNameError, setLastNameError] = useState(false);
+    const [emailError, setEmailError] = useState(false);
+    const [titleError, setTitleError] = useState(false);
+
+    const firstNameRef = useRef<TextInput | null>(null);
+    const lastNameRef = useRef<TextInput | null>(null);
+    const emailRef = useRef<TextInput | null>(null);
+    const personalPhoneRef = useRef<TextInput | null>(null);
+    const churchPhoneRefs = useRef<(TextInput | null)[]>([]);
 
     // Transform metadata to form options
     const TITLE_OPTIONS = useMemo(() => metadata?.titles || [], [metadata]);
@@ -264,34 +281,38 @@ export default function InterestFormScreen() {
 
     // Form validation
     const validateForm = useCallback((): boolean => {
+        setFirstNameError(false);
+        setLastNameError(false);
+        setEmailError(false);
+        setTitleError(false);
+        setPersonalPhoneError(false);
+        setChurchPhoneErrors([]);
+
         if (!formData.firstName?.trim()) {
-            Alert.alert('Error', 'Please enter your first name');
+            setFirstNameError(true);
+            firstNameRef.current?.focus();
             return false;
         }
         if (!formData.lastName?.trim()) {
-            Alert.alert('Error', 'Please enter your last name');
+            setLastNameError(true);
+            lastNameRef.current?.focus();
             return false;
         }
         if (!formData.email?.trim()) {
-            Alert.alert('Error', 'Please enter your email');
+            setEmailError(true);
+            emailRef.current?.focus();
             return false;
         }
-
-        setPersonalPhoneError(false);
-        setChurchPhoneErrors([]);
 
         const rawPersonal = (formData.phoneNumber || "").replace(/[^\d]/g, "");
         if (!rawPersonal) {
             setPersonalPhoneError(true);
-            Alert.alert('Error', 'Please enter your phone number');
+            personalPhoneRef.current?.focus();
             return false;
         }
         if (rawPersonal.length < personalPhoneCountry.minLength) {
             setPersonalPhoneError(true);
-            Alert.alert(
-                'Error',
-                `Please enter a valid phone number for ${personalPhoneCountry.name}.`
-            );
+            personalPhoneRef.current?.focus();
             return false;
         }
 
@@ -314,19 +335,21 @@ export default function InterestFormScreen() {
 
         if (newChurchErrors.some(Boolean)) {
             setChurchPhoneErrors(newChurchErrors);
-            Alert.alert(
-                'Error',
-                'Please enter valid church phone numbers (check highlighted fields).'
-            );
+            const firstInvalidIndex = newChurchErrors.findIndex(Boolean);
+            if (firstInvalidIndex !== -1) {
+                setTimeout(() => {
+                    const ref = churchPhoneRefs.current[firstInvalidIndex];
+                    ref?.focus();
+                }, 50);
+            }
             return false;
         }
 
         if (!formData.churchDetails || formData.churchDetails.length === 0) {
-            Alert.alert('Error', 'Please add at least one church');
             return false;
         }
         if (!formData.title) {
-            Alert.alert('Error', 'Please select a title');
+            setTitleError(true);
             return false;
         }
         return true;
@@ -410,7 +433,12 @@ export default function InterestFormScreen() {
                         <Text style={styles.sectionTitle}>Personal Information</Text>
                         <View style={styles.row}>
                             <TextInput
-                                style={[styles.input, styles.halfWidth]}
+                                ref={firstNameRef}
+                                style={[
+                                    styles.input,
+                                    styles.halfWidth,
+                                    firstNameError && styles.inputError,
+                                ]}
                                 placeholder="First Name *"
                                 placeholderTextColor="rgba(255,255,255,0.5)"
                                 value={formData.firstName}
@@ -418,7 +446,12 @@ export default function InterestFormScreen() {
                                 editable={!isLoading}
                             />
                             <TextInput
-                                style={[styles.input, styles.halfWidth]}
+                                ref={lastNameRef}
+                                style={[
+                                    styles.input,
+                                    styles.halfWidth,
+                                    lastNameError && styles.inputError,
+                                ]}
                                 placeholder="Last Name *"
                                 placeholderTextColor="rgba(255,255,255,0.5)"
                                 value={formData.lastName}
@@ -428,6 +461,7 @@ export default function InterestFormScreen() {
                         </View>
                         <View style={styles.row}>
                             <PhoneInputWithCountry
+                                ref={personalPhoneRef}
                                 value={formData.phoneNumber || ''}
                                 onChangeText={(text) => {
                                     setPersonalPhoneError(false);
@@ -442,7 +476,12 @@ export default function InterestFormScreen() {
                                 hasError={personalPhoneError}
                             />
                             <TextInput
-                                style={[styles.input, styles.halfWidth]}
+                                ref={emailRef}
+                                style={[
+                                    styles.input,
+                                    styles.halfWidth,
+                                    emailError && styles.inputError,
+                                ]}
                                 placeholder="Email *"
                                 placeholderTextColor="rgba(255,255,255,0.5)"
                                 value={formData.email}
@@ -490,6 +529,9 @@ export default function InterestFormScreen() {
 
                                 <View style={styles.row}>
                                     <PhoneInputWithCountry
+                                        ref={(el) => {
+                                            churchPhoneRefs.current[index] = el;
+                                        }}
                                         value={church.churchPhone || ''}
                                         onChangeText={(text) => {
                                             setChurchPhoneErrors((prev) => {
@@ -711,6 +753,7 @@ export default function InterestFormScreen() {
                                 style={[
                                     styles.dropdownText,
                                     !formData.title && styles.placeholderText,
+                                    titleError && styles.dropdownErrorText,
                                 ]}
                             >
                                 {formData.title || 'Title *'}
@@ -1068,6 +1111,9 @@ const styles = StyleSheet.create({
     },
     inputError: {
         borderColor: "#F87171",
+    },
+    dropdownErrorText: {
+        color: "#FCA5A5",
     },
     inputDisabled: {
         opacity: 0.6,
