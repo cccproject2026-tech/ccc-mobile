@@ -1,10 +1,10 @@
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
 import { useCheckApprovalStatus } from "@/hooks/onboarding/useOnboarding";
-import { useOnboardingStore } from "@/stores";
+import { useAuthStore, useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, router } from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -54,7 +54,9 @@ const MORE_VIDEOS = [
 ];
 export default function LoginScreen() {
     const { bottom } = useSafeAreaInsets();
-    const { interestStatus, userId } = useOnboardingStore();
+    const { interestStatus, userId, interestData } = useOnboardingStore();
+    const { user } = useAuthStore();
+    const { role: roleParam } = useLocalSearchParams<{ role?: string }>();
 
     // State to toggle status panel visibility
     const [isStatusExpanded, setIsStatusExpanded] = useState(false);
@@ -62,7 +64,30 @@ export default function LoginScreen() {
     // Check if user is pending approval
     const isPending =
         interestStatus === 'pending' || interestStatus === 'new';
-    const isApproved = interestStatus === 'accepted';
+
+    const mentorshipRole =
+        (interestData?.title || '').trim() ||
+        (roleParam === 'pastor'
+            ? 'Pastor'
+            : roleParam === 'layleader'
+              ? 'Lay Leader'
+              : roleParam === 'seminarian'
+                ? 'Seminarian'
+                : roleParam === 'mentor'
+                  ? 'Mentor'
+                  : roleParam === 'fieldmentor'
+                    ? 'Field Mentor'
+                    : roleParam === 'director'
+                      ? 'Director'
+                      : '') ||
+        (user?.role === 'pastor'
+            ? 'Pastor'
+            : user?.role === 'mentor'
+              ? 'Mentor'
+              : user?.role === 'director'
+                ? 'Director'
+                : '') ||
+        'Pastor';
 
     // Check approval status periodically when pending
     const { isLoading: isCheckingStatus, refetch, isFetching } = useCheckApprovalStatus(isPending);
@@ -72,7 +97,7 @@ export default function LoginScreen() {
     console.log('⏳ Is Pending:', isPending);
     console.log('🔍 Checking Status:', isCheckingStatus);
 
-    // If the Director accepts the request, take the user to password setup.
+    // If the Director accepts the request, take the Pastor to email verification.
     useEffect(() => {
         if (interestStatus === "accepted") {
             router.replace("/(unauthenticated)/set-password");
@@ -82,13 +107,13 @@ export default function LoginScreen() {
     // Handle status button click - toggle and refetch
     const handleStatusPress = useCallback(async () => {
         console.log('→ Handling status press');
-
+        
         // Always refetch if pending to get latest status
         if (isPending) {
             console.log('🔄 Manually checking approval status...');
             await refetch();
         }
-
+        
         // Toggle expansion
         setIsStatusExpanded(prev => !prev);
     }, [isPending, refetch]);
@@ -134,66 +159,57 @@ export default function LoginScreen() {
                 >
                     <TopBar showDrawer={false} showNotifications={false} />
 
-                    {/* Contact Info with Status Button */}
-                    <View style={styles.topSection}>
-                        {isPending ? (
-                            // Pending state: Show contact info OR approval badge based on toggle
-                            <View style={styles.topSectionRow}>
-                                {/* Contact Info - Hidden when status is expanded */}
-                                {!isStatusExpanded && (
-                                    <View style={[styles.contactCard, styles.contactCardWithStatus]}>
-                                        <Text style={styles.contactTitle}>Contact Information</Text>
-                                        <View style={styles.contactRow}>
-                                            <Ionicons name="call-outline" size={16} color="#fff" style={{ paddingTop: 2 }} />
-                                            <Text style={styles.contactText}>: 269-471-6159</Text>
-                                        </View>
-                                        <View style={styles.contactRow}>
-                                            <Ionicons name="mail-outline" size={16} color="#fff" style={{ paddingTop: 4 }} />
-                                            <Text style={styles.contactText}>
-                                                : communitychange@andrews.edu
-                                            </Text>
-                                        </View>
-                                    </View>
-                                )}
+                    {!isPending && (
+                        <View style={styles.joinSection}>
+                            <View style={styles.joinCard}>
+                                <Text style={styles.joinCardTitle}>
+                                    Join the CCC {mentorshipRole} Mentorship Program.
+                                </Text>
+                                <Text style={styles.joinCardSubtitle}>
+                                    Submit your interest form today.
+                                </Text>
+                            </View>
 
-                                {/* Approval Status Panel - Expanded */}
-                                {/* {isStatusExpanded && (
-                                    <View style={styles.approvalPanelExpanded}>
-                                        <TouchableOpacity
-                                style={styles.approvalBadgeWrapper}
-                                activeOpacity={0.8}
-                            >
+                            <View style={styles.joinActions}>
                                 <LinearGradient
-                                    colors={['#B83AF3', '#21B6E9']}
+                                    colors={['#7C3AED', '#3B82F6', '#1E40AF']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
-                                    style={styles.approvalBadgeGradient}
+                                    style={styles.joinSubmitGradient}
                                 >
-                                    <View style={styles.approvalBadgeContent}>
-                                        <View style={styles.loaderIconContainer}>
-                                            <ActivityIndicator size="small" color="#fff" />
-                                        </View>
-                                        <Text style={styles.approvalBadgeText}>
-                                            Waiting for Approval
+                                    <TouchableOpacity
+                                        onPress={handleInterestFormPress}
+                                        activeOpacity={0.8}
+                                        style={styles.joinSubmitTouchable}
+                                    >
+                                        <Text style={styles.joinSubmitText}>
+                                             Submit Interest 
                                         </Text>
-                                        <Ionicons
-                                            name="chevron-forward"
-                                            size={16}
-                                            color="rgba(255,255,255,0.8)"
-                                        />
-                                    </View>
+                                    </TouchableOpacity>
                                 </LinearGradient>
-                            </TouchableOpacity>
-                                    </View>
-                                )} */}
 
+                                <TouchableOpacity
+                                    style={styles.joinLoginButton}
+                                    onPress={handleLoginClick}
+                                >
+                                    <Text style={styles.joinLoginButtonText}>
+                                        Already applied ? Log in →
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+
+                    {isPending && (
+                        <View style={styles.topSection}>
+                            <View style={styles.topSectionRow}>
                                 {/* Status Button - Always visible when pending */}
-                                {/* 
-                                    To ensure the 'Status' button/approval badge 
-                                    is aligned to the right side, we wrap it in a container 
-                                    that uses 'alignItems: "flex-end"'.
-                                */}
-                                <View style={{ flex: !isStatusExpanded ? 0 : 1, alignItems: "flex-end" }}>
+                                <View
+                                    style={{
+                                        flex: !isStatusExpanded ? 0 : 1,
+                                        alignItems: "flex-end",
+                                    }}
+                                >
                                     {isStatusExpanded ? (
                                         <View style={styles.approvalBadgeWrapper}>
                                             <TouchableOpacity
@@ -237,7 +253,11 @@ export default function LoginScreen() {
                                             >
                                                 <View style={styles.statusButtonContent}>
                                                     <Ionicons
-                                                        name={isStatusExpanded ? "chevron-forward" : "chevron-back"}
+                                                        name={
+                                                            isStatusExpanded
+                                                                ? "chevron-forward"
+                                                                : "chevron-back"
+                                                        }
                                                         size={16}
                                                         color="rgba(255,255,255,0.9)"
                                                     />
@@ -248,23 +268,38 @@ export default function LoginScreen() {
                                     )}
                                 </View>
                             </View>
-                        ) : (
-                            // Not pending: Show only contact info
-                            <View style={styles.contactCard}>
-                                <Text style={styles.contactTitle}>Contact Information</Text>
-                                <View style={styles.contactRow}>
-                                    <Ionicons name="call-outline" size={16} color="#fff" />
-                                    <Text style={styles.contactText}>: 269-471-6159</Text>
-                                </View>
-                                <View style={styles.contactRow}>
-                                    <Ionicons name="mail-outline" size={16} color="#fff" />
-                                    <Text style={styles.contactText}>
-                                        : communitychange@andrews.edu
+                        </View>
+                    )}
+
+                    {isPending && (
+                        <View style={styles.pendingMessageContainer}>
+                            <Ionicons
+                                name="time-outline"
+                                size={48}
+                                color="rgba(255,255,255,0.7)"
+                            />
+                            <Text style={styles.pendingMessageTitle}>
+                                Application Under Review
+                            </Text>
+                            <Text style={styles.pendingMessageText}>
+                            {"Thank you for your submission \n"}
+                            {"Your application is under review.\n"}
+                            {"We will notify you soon. God bless you!"}
+                            </Text>
+
+                            {isCheckingStatus && (
+                                <View style={styles.checkingContainer}>
+                                    <ActivityIndicator
+                                        color="rgba(255,255,255,0.7)"
+                                        size="small"
+                                    />
+                                    <Text style={styles.checkingText}>
+                                        Checking approval status...
                                     </Text>
                                 </View>
-                            </View>
-                        )}
-                    </View>
+                            )}
+                        </View>
+                    )}
 
                     {/* Welcome Videos Carousel */}
                     <ScrollView
@@ -348,84 +383,22 @@ export default function LoginScreen() {
 
                     <View style={styles.divider} />
 
-                    {/* Login Section - Only show if not pending */}
-                    {!isPending && (
-                        <>
-                            <TouchableOpacity
-                                style={styles.logInButton}
-                                onPress={handleLoginClick}
-                            >
-                                <Text style={styles.logInButtonText}>Log in</Text>
-                            </TouchableOpacity>
-
-                            <View style={styles.divider} />
-
-                            {/* Action Buttons */}
-                            <View style={styles.actionButtonWrapper}>
-                                <LinearGradient
-                                    colors={['#7C3AED', '#3B82F6', '#1E40AF']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={styles.gradientContainer}
-                                >
-                                    <View style={styles.actionButtonsRow}>
-                                        <TouchableOpacity
-                                            onPress={handleInterestFormPress}
-                                            style={styles.actionButton}
-                                            activeOpacity={0.8}
-                                        >
-                                            <Text style={styles.actionButtonText}>
-                                                New User {'>>'}
-                                            </Text>
-                                        </TouchableOpacity>
-
-                                        <View style={styles.verticalDivider} />
-
-                                        <TouchableOpacity
-                                            onPress={handleInterestFormPress}
-                                            style={styles.actionButton}
-                                            activeOpacity={0.8}
-                                        >
-                                            <Text style={styles.actionButtonText}>
-                                                Submit Interest
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </LinearGradient>
+                    {/* Contact Information - moved below the submit flow */}
+                    <View style={{ marginTop: 16 }}>
+                        <View style={styles.contactCard}>
+                            <Text style={styles.contactTitle}>Contact Information</Text>
+                            <View style={styles.contactRow}>
+                                <Ionicons name="call-outline" size={16} color="#fff" />
+                                <Text style={styles.contactText}>: 269-471-6159</Text>
                             </View>
-                        </>
-                    )}
-
-                    {/* Pending Message - Only show if pending */}
-                    {/* {isPending && (
-                        <View style={styles.pendingMessageContainer}>
-                            <Ionicons
-                                name="time-outline"
-                                size={48}
-                                color="rgba(255,255,255,0.7)"
-                            />
-                            <Text style={styles.pendingMessageTitle}>
-                                Application Under Review
-                            </Text>
-                            <Text style={styles.pendingMessageText}>
-                                Thank you for submitting your interest! Your application is
-                                currently being reviewed by our team. You will receive an email
-                                notification once your account has been approved.
-                            </Text>
-
-                            {isCheckingStatus && (
-                                <View style={styles.checkingContainer}>
-                                    <ActivityIndicator
-                                        color="rgba(255,255,255,0.7)"
-                                        size="small"
-                                    />
-                                    <Text style={styles.checkingText}>
-                                        Checking approval status...
-                                    </Text>
-                                </View>
-                            )}
+                            <View style={styles.contactRow}>
+                                <Ionicons name="mail-outline" size={16} color="#fff" />
+                                <Text style={styles.contactText}>
+                                    : communitychange@andrews.edu
+                                </Text>
+                            </View>
                         </View>
-                    )} */}
+                    </View>
 
                     {/* University Logo */}
                     <View style={styles.logoContainer}>
@@ -482,27 +455,27 @@ const styles = StyleSheet.create({
 
     // Contact Card
     contactCard: {
-        backgroundColor: "rgba(255,255,255,0.1)",
-        borderRadius: 12,
+        backgroundColor: "rgba(255,255,255,0.12)",
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.3)",
-        padding: 16,
+        borderColor: "rgba(255,255,255,0.35)",
+        padding: 18,
     },
     contactCardWithStatus: {
         flex: 1,
         marginRight: 12,
     },
     contactTitle: {
-        fontSize: 18,
-        fontWeight: "600",
+        fontSize: 16,
+        fontWeight: "700",
         color: "#fff",
-        marginBottom: 12,
+        marginBottom: 10,
     },
     contactRow: {
         paddingVertical: 2,
         flexDirection: "row",
-        alignItems: "flex-start",
-        marginBottom: 8,
+        alignItems: "center",
+        marginBottom: 10,
     },
     contactText: {
         color: "#fff",
@@ -527,7 +500,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         paddingVertical: 12,
-
+        
         paddingHorizontal: 12,
         gap: 6,
     },
@@ -641,7 +614,7 @@ const styles = StyleSheet.create({
     divider: {
         height: 1,
         backgroundColor: "rgba(255,255,255,0.3)",
-        marginVertical: 20,
+        marginVertical: 18,
     },
 
     // Section Header
@@ -649,34 +622,34 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: 14,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 18,
+        fontWeight: "800",
         color: "#fff",
     },
     showAllText: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#fff",
+        fontSize: 14,
+        fontWeight: "700",
+        color: "rgba(255,255,255,0.95)",
     },
 
     // Video List Item
     videoListItem: {
         flexDirection: "row",
-        backgroundColor: "rgba(255,255,255,0.1)",
-        borderRadius: 12,
+        backgroundColor: "rgba(255,255,255,0.11)",
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.2)",
-        padding: 12,
+        borderColor: "rgba(255,255,255,0.25)",
+        padding: 14,
         position: "relative",
     },
     videoThumbnail: {
         width: 100,
         height: 100,
         backgroundColor: "rgba(0,0,0,0.3)",
-        borderRadius: 12,
+        borderRadius: 14,
         marginRight: 12,
     },
     videoListPlayButton: {
@@ -707,7 +680,7 @@ const styles = StyleSheet.create({
     listDivider: {
         height: 1,
         backgroundColor: "rgba(255,255,255,0.3)",
-        marginVertical: 16,
+        marginVertical: 14,
     },
 
     // Log In Button
@@ -722,6 +695,75 @@ const styles = StyleSheet.create({
         color: "#1A5490",
         fontSize: 16,
         fontWeight: "600",
+    },
+
+    // Join Program (top block before videos/contact)
+    joinSection: {
+        marginTop: 18,
+        marginBottom: 18,
+    },
+    joinCard: {
+        width: "100%",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.45)",
+        borderRadius: 16,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
+        marginBottom: 14,
+        backgroundColor: "rgba(255,255,255,0.08)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    joinCardTitle: {
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "500",
+        lineHeight: 24,
+        textAlign: "center",
+    },
+    joinCardSubtitle: {
+        color: "rgba(255,255,255,0.95)",
+        fontSize: 14,
+        fontWeight: "500",
+        textAlign: "center",
+        marginTop: 6,
+    },
+    joinActions: {
+        width: "100%",
+        alignItems: "stretch",
+    },
+    joinSubmitGradient: {
+        width: "100%",
+        borderRadius: 16,
+        overflow: "hidden",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.55)",
+    },
+    joinSubmitTouchable: {
+        width: "100%",
+        paddingVertical: 16,
+        alignItems: "center",
+    },
+    joinSubmitText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "500",
+    },
+
+    joinLoginButton: {
+        width: "100%",
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.7)",
+        paddingVertical: 12,
+        alignItems: "center",
+        marginTop: 12,
+    },
+    joinLoginButtonText: {
+        color: "#1A5490",
+        fontSize: 16,
+        fontWeight: "500",
     },
 
     // Action Buttons
@@ -763,7 +805,8 @@ const styles = StyleSheet.create({
         borderColor: "rgba(255,255,255,0.3)",
         padding: 24,
         alignItems: "center",
-        marginTop: 20,
+        marginTop: 14,
+        marginBottom: 18,
     },
     pendingMessageTitle: {
         fontSize: 20,
