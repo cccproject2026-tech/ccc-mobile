@@ -17,7 +17,9 @@ import { useProfile } from "@/hooks/profile/useProfile";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useAuthStore } from "@/stores";
 import { AppointmentPlatform } from "@/types/appointment.types";
+import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { Route, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -44,6 +46,7 @@ export default function PastorDashboard() {
   const [greetingPeriod, setGreetingPeriod] = useState<
     "morning" | "afternoon" | "evening"
   >("morning");
+  const [isFirstDashboardVisit, setIsFirstDashboardVisit] = useState(false);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pastorFocusSheetRef = useRef<BottomSheetModal>(null);
@@ -142,7 +145,7 @@ export default function PastorDashboard() {
     [],
   );
 
-  const handleScheduleAppointment = (mentor: Mentor) => {
+  const handleScheduleAppointment = (mentor: any) => {
     console.log("Schedule appointment with", mentor.name);
     router.push({
       pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
@@ -150,7 +153,7 @@ export default function PastorDashboard() {
     });
   };
 
-  const handleCardPress = (mentor: Mentor) => {
+  const handleCardPress = (mentor: any) => {
     router.push({
       pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
       params: { mentorData: JSON.stringify(mentor) },
@@ -162,6 +165,65 @@ export default function PastorDashboard() {
     if (greetingPeriod === "afternoon") return "Good Afternoon";
     return "Good Evening";
   }, [greetingPeriod]);
+
+  const displayName = useMemo(() => {
+    const first = data?.user?.firstName || user?.firstName || "Pastor";
+    return first.trim();
+  }, [data?.user?.firstName, user?.firstName]);
+
+  const primaryMentor = useMemo(() => {
+    if (!mentors || mentors.length === 0) return null;
+    return mentors[0] as Mentor;
+  }, [mentors]);
+  const hasMentorInProgress = useMemo(() => {
+    if (!mentors || mentors.length === 0) return false;
+    return mentors.some((mentor) => {
+      const status = (mentor.status || "").toLowerCase();
+      return status === "new" || status === "pending";
+    });
+  }, [mentors]);
+  const acceptedMentor = useMemo(() => {
+    if (!mentors || mentors.length === 0) return null;
+    // Important precedence:
+    // if any assignment is still pending/new, don't show "assigned" card yet.
+    if (hasMentorInProgress) return null;
+    return (
+      mentors.find((mentor) => {
+        const status = (mentor.status || "").toLowerCase();
+        return status === "accepted" || status === "active";
+      }) || null
+    );
+  }, [mentors, hasMentorInProgress]);
+
+  const overallProgress = data?.progress?.overallProgress ?? 0;
+  const hasAssignedRoadmap = (roadmaps?.length ?? 0) > 0;
+  const showProgressInWelcome =
+    !isFirstDashboardVisit && (overallProgress > 0 || hasAssignedRoadmap);
+
+  useEffect(() => {
+    const checkFirstDashboardVisit = async () => {
+      const userId = user?.id;
+      if (!userId) {
+        setIsFirstDashboardVisit(false);
+        return;
+      }
+
+      const storageKey = `pastor_dashboard_seen_${userId}`;
+      const hasSeen = await AsyncStorage.getItem(storageKey);
+      const isFirst = !hasSeen;
+
+      setIsFirstDashboardVisit(isFirst);
+
+      if (isFirst) {
+        await AsyncStorage.setItem(storageKey, "true");
+      }
+    };
+
+    checkFirstDashboardVisit().catch((err) => {
+      console.log("Failed to check dashboard first visit:", err);
+      setIsFirstDashboardVisit(false);
+    });
+  }, [user?.id]);
 
   // Format time for appointments
   const formatTimeIST = useCallback((isoString: string) => {
@@ -223,6 +285,19 @@ export default function PastorDashboard() {
     getModeLabel,
     getPlatformIcon,
   ]);
+  const hasUpcomingAppointments =
+    Array.isArray(upcomingAppointments) && upcomingAppointments.length > 0;
+  const showAssignedMentorCard =
+    !!acceptedMentor && (!isFirstDashboardVisit || hasUpcomingAppointments);
+  const mentorAssignedMessage = useMemo(() => {
+    if (hasUpcomingAppointments) {
+      return "You already have upcoming mentor meetings. You can schedule another meeting anytime.";
+    }
+    if (isFirstDashboardVisit) {
+      return "You can schedule your first meeting anytime.";
+    }
+    return "You can schedule a meeting with your mentor anytime.";
+  }, [hasUpcomingAppointments, isFirstDashboardVisit]);
 
   // Transform roadmaps for RoadMapCard (limit to 3 for dashboard)
   const dashboardRoadmaps = useMemo(() => {
@@ -380,9 +455,62 @@ export default function PastorDashboard() {
           <WelcomeCard
             onClick={handleWelcomeRoute}
             avatar={icons.myProfile}
-            message={`${data?.user?.firstName} ${data?.user?.lastName}, Welcome!`}
-            progress={data?.progress?.overallProgress ?? 0}
+            message={
+              isFirstDashboardVisit
+                ? `Welcome aboard, ${displayName}!`
+                : `Welcome back, ${displayName}!`
+            }
+            progress={showProgressInWelcome ? overallProgress : undefined}
           />
+        </View>
+
+        {!showProgressInWelcome && (
+          <View style={styles.gettingStartedCard}>
+            <Text style={styles.gettingStartedTitle}>Getting started</Text>
+            <Text style={styles.gettingStartedMessage}>
+              Your progress will appear once your roadmap and tasks become
+              active.
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.mentorStatusCard}>
+          {showAssignedMentorCard ? (
+            <>
+              <View style={styles.mentorStatusHeader}>
+                <Text style={styles.mentorStatusTitle}>Mentor Assigned</Text>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={18}
+                  color="#22C55E"
+                />
+              </View>
+              <Text style={styles.mentorStatusName}>{acceptedMentor.name}</Text>
+              <Text style={styles.mentorStatusMessage}>
+                {mentorAssignedMessage}
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.scheduleButton}
+                onPress={() => handleScheduleAppointment(acceptedMentor)}
+              >
+                <Text style={styles.scheduleButtonText}>
+                  Schedule Meeting with Mentor
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.mentorStatusTitle}>
+                Mentor Assignment in Progress ⏳
+              </Text>
+              <Text style={styles.mentorStatusMessage}>
+                {hasMentorInProgress
+                  ? "Your mentor assignment request is under review. You’ll be notified once confirmed."
+                  : "You’ll be notified once a mentor is assigned."}
+              </Text>
+            </>
+          )}
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
@@ -890,5 +1018,68 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "500",
     fontSize: 16,
+  },
+  mentorStatusCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
+  },
+  mentorStatusTitle: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  mentorStatusHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  mentorStatusMessage: {
+    color: "rgba(255,255,255,0.92)",
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  mentorStatusName: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 18,
+  },
+  scheduleButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  scheduleButtonText: {
+    color: "#1A5490",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  gettingStartedCard: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  gettingStartedTitle: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
+    marginBottom: 6,
+  },
+  gettingStartedMessage: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 13,
+    lineHeight: 19,
   },
 });
