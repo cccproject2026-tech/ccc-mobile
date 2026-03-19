@@ -22,11 +22,8 @@ export default function ItemDetail() {
     }>();
     const router = useRouter();
     const { user } = useAuthStore();
-    console.log('menteeId----->>>>>>>>>>>>>>', menteeId, menteeName);
-    const isLibraryView = !menteeId;
     // Use menteeId if available (mentor viewing mentee), otherwise fallback to current user
     const targetUserId = menteeId || user?.id;
-console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
     // Fetch parent roadmap
     const { data: roadmap, isLoading, error } = useRoadmap(phaseId, targetUserId);
 
@@ -115,7 +112,7 @@ console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="mentor" showUserName customTitle={isLibraryView ? 'Roadmap Library' : menteeName} />
+                    <TopBar role="mentor" showUserName customTitle={menteeName} />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -130,7 +127,7 @@ console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
         return (
             <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="mentor" showUserName customTitle={isLibraryView ? 'Roadmap Library' : menteeName} />
+                    <TopBar role="mentor" showUserName customTitle={menteeName} />
                 </View>
                 <View style={styles.notFoundContainer}>
                     <Ionicons name="alert-circle" size={48} color="#fff" />
@@ -151,7 +148,7 @@ console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
     return (
         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
             <View style={styles.topBarWrapper}>
-                <TopBar role="mentor" showUserName customTitle={isLibraryView ? 'Roadmap Library' : menteeName} />
+                <TopBar role="mentor" showUserName customTitle={menteeName} />
             </View>
 
             {/* Header */}
@@ -186,10 +183,7 @@ console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
-                            {isLibraryView
-                                ? `Roadmap Library > ${roadmap?.name}`
-                                : `My Mentee > ${menteeName} > ${roadmap?.name}`
-                            }
+                            My Mentee &gt; {menteeName} &gt; {roadmap?.name}
                         </Text>
                     </View>
                 </View>
@@ -224,103 +218,89 @@ console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
                     </Text>
                 </TouchableOpacity>
 
-                {!isLibraryView && (
-                    <>
-                        <TouchableOpacity
-                            onPress={() =>
-                                router.push({
-                                    pathname: '/(mentor)/roadmap/comments',
-                                    params: { roadmapId: phaseId, userId: targetUserId },
-                                } as any)
-                            }
+                <TouchableOpacity
+                    onPress={() =>
+                        router.push({
+                            pathname: '/(mentor)/roadmap/comments',
+                            params: { roadmapId: phaseId, userId: targetUserId },
+                        } as any)
+                    }
+                    style={[
+                        styles.tabButton,
+                        activeTab === 'comments' ? styles.tabActive : styles.tabInactive,
+                        styles.tabWithBadge,
+                    ]}
+                >
+                    <Text
+                        style={[
+                            styles.tabText,
+                            activeTab === 'comments' ? styles.tabTextActive : styles.tabTextInactive,
+                        ]}
+                    >
+                        Comments
+                    </Text>
+                    {comments && comments.comments && comments.comments.length > 0 && (
+                        <View
                             style={[
-                                styles.tabButton,
-                                activeTab === 'comments' ? styles.tabActive : styles.tabInactive,
-                                styles.tabWithBadge,
+                                styles.badge,
+                                activeTab === 'comments' ? styles.badgeActive : styles.badgeInactive,
                             ]}
                         >
                             <Text
                                 style={[
-                                    styles.tabText,
-                                    activeTab === 'comments' ? styles.tabTextActive : styles.tabTextInactive,
+                                    styles.badgeText,
+                                    activeTab === 'comments' ? styles.badgeTextActive : styles.badgeTextInactive,
                                 ]}
                             >
-                                Comments
+                                {comments.comments.length}
                             </Text>
-                            {comments && comments.comments && comments.comments.length > 0 && (
-                                <View
-                                    style={[
-                                        styles.badge,
-                                        activeTab === 'comments' ? styles.badgeActive : styles.badgeInactive,
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.badgeText,
-                                            activeTab === 'comments' ? styles.badgeTextActive : styles.badgeTextInactive,
-                                        ]}
-                                    >
-                                        {comments.comments.length}
-                                    </Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
+                        </View>
+                    )}
+                </TouchableOpacity>
 
-                        <TouchableOpacity
-                            onPress={() =>
-                                router.push({
-                                    pathname: '/(mentor)/roadmap/queries',
-                                    params: {
-                                        taskId: task._id,
-                                        roadmapId: phaseId,
-                                        userId: targetUserId,
-                                        ...(menteeName ? { menteeName } : {}),
-                                    },
-                                } as any)
-                            }
+                <TouchableOpacity
+                    onPress={() =>
+                        router.push({
+                            pathname: '/(mentor)/roadmap/queries',
+                            params: { taskId: task._id, roadmapId: phaseId, userId: targetUserId, menteeName: menteeName },
+                        } as any)
+                    }
+                    style={[
+                        styles.tabButton,
+                        activeTab === 'queries' ? styles.tabActive : styles.tabInactive,
+                        styles.tabWithBadge,
+                    ]}
+                >
+                    <Text
+                        style={[
+                            styles.tabText,
+                            activeTab === 'queries' ? styles.tabTextActive : styles.tabTextInactive,
+                        ]}
+                    >
+                        Queries
+                    </Text>
+                    {queries && queries.length > 0 && (
+                        <View
                             style={[
-                                styles.tabButton,
-                                activeTab === 'queries' ? styles.tabActive : styles.tabInactive,
-                                styles.tabWithBadge,
+                                styles.badge,
+                                activeTab === 'queries' ? styles.badgeActive : styles.badgeInactive,
                             ]}
                         >
                             <Text
                                 style={[
-                                    styles.tabText,
-                                    activeTab === 'queries' ? styles.tabTextActive : styles.tabTextInactive,
+                                    styles.badgeText,
+                                    activeTab === 'queries' ? styles.badgeTextActive : styles.badgeTextInactive,
                                 ]}
                             >
-                                Queries
+                                {queries.length}
                             </Text>
-                            {queries && queries.length > 0 && (
-                                <View
-                                    style={[
-                                        styles.badge,
-                                        activeTab === 'queries' ? styles.badgeActive : styles.badgeInactive,
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.badgeText,
-                                            activeTab === 'queries' ? styles.badgeTextActive : styles.badgeTextInactive,
-                                        ]}
-                                    >
-                                        {queries.length}
-                                    </Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    </>
-                )}
+                        </View>
+                    )}
+                </TouchableOpacity>
             </View>
 
             {/* Content */}
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {isLibraryView && (
-                    <View style={styles.libraryPreviewPill}>
-                        <Text style={styles.libraryPreviewText}>Library Preview</Text>
-                    </View>
-                )}
                 {/* Cover Image */}
                 <View style={styles.coverImageContainer}>
                     {task.imageUrl ? (
@@ -344,7 +324,7 @@ console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
 
                 {/* Completion Time / Status */}
                 <View style={styles.completionBox}>
-                    {!isLibraryView && task.status === 'completed' ? (
+                    {task.status === 'completed' ? (
                         <View style={styles.completionContainer}>
                             <Text style={styles.completionStatusText}>Completed</Text>
                             <View style={styles.completionInfoColumn}>
@@ -358,13 +338,13 @@ console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
                         </View>
                     ) : (
                         <Text style={styles.completionText}>
-                            {isLibraryView ? 'Estimated duration:' : 'Completion Time Months:'} {task.duration}
+                            Completion Time Months: {task.duration}
                         </Text>
                     )}
                 </View>
 
                 {/* Roadmap Section */}
-                <Text style={styles.sectionTitle}>{isLibraryView ? 'Roadmap overview' : 'Roadmap'}</Text>
+                <Text style={styles.sectionTitle}>Roadmap</Text>
                 <View style={styles.sectionBox}>
                     <Text style={styles.sectionText}>
                         {task.roadMapDetails || roadmap.roadMapDetails || task.name}
@@ -372,7 +352,7 @@ console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
                 </View>
 
                 {/* Description Section */}
-                <Text style={styles.sectionTitle}>{isLibraryView ? 'About this roadmap' : 'Description'}</Text>
+                <Text style={styles.sectionTitle}>Description</Text>
                 <View style={styles.sectionBox}>
                     <Text style={styles.sectionText}>
                         {task.description || 'No description provided'}
@@ -380,7 +360,7 @@ console.log('targetUserId----->>>>>>>>>>>>>>', targetUserId);
                 </View>
 
                 {/* Dynamic Form - Render extras */}
-                {!isLibraryView && task.extras && task.extras.length > 0 && (
+                {task.extras && task.extras.length > 0 && (
                     <MentorTaskView task={task} phaseId={phaseId} itemId={itemId} userId={menteeId} />
                 )}
             </ScrollView>
@@ -469,22 +449,6 @@ const styles = StyleSheet.create({
     badgeTextActive: { color: '#FFFFFF' },
     badgeTextInactive: { color: '#1A4882' },
     scrollContainer: { paddingHorizontal: 16, paddingBottom: 24 },
-    libraryPreviewPill: {
-        alignSelf: 'flex-start',
-        marginBottom: getSpacing(12),
-        paddingHorizontal: getSpacing(12),
-        paddingVertical: getSpacing(8),
-        borderRadius: 999,
-        backgroundColor: 'rgba(255,255,255,0.12)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.18)',
-    },
-    libraryPreviewText: {
-        color: 'rgba(255,255,255,0.9)',
-        fontSize: getFontSize(12),
-        fontWeight: '700',
-        letterSpacing: 0.2,
-    },
     coverImageContainer: {
         position: 'relative',
         marginBottom: 0,
@@ -549,4 +513,3 @@ const styles = StyleSheet.create({
     },
     sectionText: { fontSize: 16, lineHeight: 22, color: '#FFFFFF' },
 });
-

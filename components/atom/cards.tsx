@@ -13,6 +13,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { formatNotificationDate, formatNotificationTitle } from "@/utils/notifications";
 import { icons } from "../../constants/images";
 import { getFontSize, getSpacing, isSmallDevice, moderateScale } from "../../utils/responsive";
 import { UploadPDFButton } from "./buttons";
@@ -91,18 +92,16 @@ export const AppointmentCard = ({
 };
 export const NotificationCard = ({
   data,
-  type,
   iconsStyles,
 }: {
   data: any;
-  type?: string;
   iconsStyles?: ViewStyle;
 }) => {
   return (
     <View style={styles.NotificationBox}>
       <View
         style={[
-          { width: 100, height: "100%", alignItems: "center", padding: 8 },
+          styles.notificationIconWrap,
           iconsStyles,
         ]}
       >
@@ -114,58 +113,25 @@ export const NotificationCard = ({
                 ? icons.edit2
                 : icons.profile2
           }
-          style={{
-            width: type === "mentor" ? 40 : 60,
-            height: type === "mentor" ? 45 : 60,
-          }}
-        // resizeMode={"contain"}
+          style={styles.notificationIcon}
+          resizeMode="contain"
         />
       </View>
-      <View style={styles.appointmentDetails}>
-        <View>
-          <Text
-            style={{
-              color: "white",
-              fontSize: 16,
-              fontWeight: "600",
-              lineHeight: 22,
-            }}
-            ellipsizeMode="tail"
-          >
-            {data.title.toUpperCase()}
+      <View style={styles.notificationContent}>
+        <View style={styles.notificationHeaderRow}>
+          <Text style={styles.notificationTitle} numberOfLines={2}>
+            {formatNotificationTitle(data.title).toUpperCase()}
           </Text>
+          {!data.read && <View style={styles.notificationUnreadDot} />}
         </View>
-        {type === "mentor" && (
-          <View className="flex flex-row items-center text-base font-medium text-white/70 gap-[6px]">
-            <Image
-              source={icons.myProfile} // Replace with actual user profile image URL
-              style={{ width: 20, height: 20, borderRadius: 10 }}
-              resizeMode="contain"
-            />
-            <Text style={{ color: "white", fontWeight: "200" }}>
-              Pr. John Doe
-            </Text>
-          </View>
-        )}
-        <Text style={{ color: "white", fontWeight: "200" }}>
+        <Text style={styles.notificationDescription}>
           {data.description}
         </Text>
-      </View>
-      {!data.read && (
-        <View
-          style={{
-            width: 8,
-            height: 8,
-            backgroundColor: "yellow",
-            borderRadius: 999999,
-            position: "absolute",
-            top: 16,
-            right: 16,
-          }}
-        ></View>
-      )}
-      <View style={{ position: "absolute", bottom: 3, right: 6 }}>
-        <Text style={{ color: "white", fontWeight: "200" }}>{data.time}</Text>
+        {!!data.time && (
+          <Text style={styles.notificationTimeInline}>
+            {formatNotificationDate(data.time)}
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -173,79 +139,12 @@ export const NotificationCard = ({
 
 export const NotificationMentorCard = ({
   data,
-  type,
   iconsStyles,
 }: {
   data: any;
-  type?: string;
   iconsStyles?: ViewStyle;
 }) => {
-  return (
-    <View style={styles.NotificationBox}>
-      <View style={[{ width: "auto", height: "100%" }, iconsStyles]}>
-        <Image
-          source={
-            data.type == "course" || data.type == "assignment"
-              ? icons.Revitalization2
-              : data.type == "note"
-                ? icons.edit2
-                : icons.profile2
-          }
-          style={{
-            width: type === "mentor" ? 40 : 60,
-            height: type === "mentor" ? 45 : 60,
-          }}
-        // resizeMode={"contain"}
-        />
-      </View>
-      <View style={{ ...styles.appointmentDetails, marginLeft: 12 }}>
-        <View>
-          <Text
-            style={{
-              color: "white",
-              fontSize: 16,
-              fontWeight: "600",
-              lineHeight: 22,
-            }}
-            ellipsizeMode="tail"
-          >
-            {data.title.toUpperCase()}
-          </Text>
-        </View>
-        {type === "mentor" && (
-          <View className="flex flex-row items-center text-base font-medium text-white/70 gap-[6px]">
-            <Image
-              source={icons.myProfile} // Replace with actual user profile image URL
-              style={{ width: 20, height: 20, borderRadius: 10 }}
-              resizeMode="contain"
-            />
-            <Text style={{ color: "white", fontWeight: "200" }}>
-              Pr. John Doe
-            </Text>
-          </View>
-        )}
-        <Text style={{ color: "white", fontWeight: "200" }}>
-          {data.description}
-        </Text>
-      </View>
-      {!data.read && (
-        <View
-          style={{
-            width: 8,
-            height: 8,
-            backgroundColor: "yellow",
-            borderRadius: 999999,
-            position: "absolute",
-            top: 16,
-            right: 16,
-          }}
-        ></View>
-      )}
-      <View style={{ position: "absolute", bottom: 3, right: 6 }}>
-        <Text style={{ color: "white", fontWeight: "200" }}>{data.time}</Text>
-      </View>
-    </View>
-  );
+  return <NotificationCard data={data} iconsStyles={iconsStyles} />;
 };
 
 export const RevitalizationCard = ({
@@ -1992,13 +1891,62 @@ const styles = StyleSheet.create({
   NotificationBox: {
     width: "100%",
     backgroundColor: "#14517d", // customBlueOne
-    borderRadius: 10,
-    paddingVertical: 8,
+    borderRadius: 16,
+    paddingVertical: 14,
     paddingHorizontal: 12,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
+  },
+  notificationIconWrap: {
+    width: 56,
+    minHeight: 72,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingTop: 2,
+  },
+  notificationIcon: {
+    width: 34,
+    height: 40,
+  },
+  notificationContent: {
+    flex: 1,
+    marginLeft: 12,
+    gap: 8,
+  },
+  notificationHeaderRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  notificationTitle: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    lineHeight: 22,
+  },
+  notificationDescription: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "400",
+  },
+  notificationTimeInline: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
+  },
+  notificationUnreadDot: {
+    width: 10,
+    height: 10,
+    backgroundColor: "#FDE047",
+    borderRadius: 999,
+    marginTop: 6,
+    flexShrink: 0,
   },
 
   // ListCard styling

@@ -1,8 +1,10 @@
 // hooks/useProfile.ts
 import { profileService } from "@/services/profile.service";
+import { notificationsService } from "@/services/notifications.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { CombinedProfile, Notification, UpdateProfileData } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getNotificationId } from "@/utils/notifications";
 import { useProgress } from "../progress/useProgress";
 
 // Query Keys Factory - centralized management
@@ -364,10 +366,53 @@ export const useDeleteDocument = () => {
 export const useNotifications = (userId?: string) => {
   return useQuery<Notification[]>({
     queryKey: ["notifications", userId],
-    queryFn: () => profileService.getNotifications(userId!),
+    queryFn: async () => {
+      const [notifications, locallyReadIds] = await Promise.all([
+        profileService.getNotifications(userId!),
+        notificationsService.getReadNotificationIds(userId!),
+      ]);
+
+      return notifications.map((notification) => ({
+        ...notification,
+        read:
+          !!notification.read ||
+          locallyReadIds.includes(getNotificationId(notification)),
+      }));
+    },
     enabled: !!userId,
     staleTime: 2000, // 2 seconds (was 5 minutes)
     gcTime: 1000 * 60 * 20, // 20 minutes
     retry: 1,
+  });
+};
+
+export const useMarkNotificationAsRead = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  return useMutation({
+    mutationFn: async (notification: Notification) => {
+      if (!user?.id) {
+        throw new Error("User ID is required");
+      }
+
+      await notificationsService.markNotificationAsRead(user.id, notification);
+      return notification;
+    },
+    onSuccess: (notification) => {
+      if (!user?.id) {
+        return;
+      }
+
+      queryClient.setQueryData<Notification[]>(
+        ["notifications", user.id],
+        (current = []) =>
+          current.map((item) =>
+            getNotificationId(item) === getNotificationId(notification)
+              ? { ...item, read: true }
+              : item
+          )
+      );
+    },
   });
 };

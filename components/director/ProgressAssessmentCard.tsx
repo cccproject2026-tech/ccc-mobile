@@ -1,19 +1,70 @@
 import { AssessmentProgress } from '@/constants/mockData';
+import { icons } from '@/constants/images';
+import { useAuthStore } from '@/stores/auth.store';
+import type { Assessment } from '@/types/assessment.types';
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
-    data: AssessmentProgress;
+    data: AssessmentProgress | Assessment;
     onDevelopmentPlanPress?: () => void;
+    onPress?: () => void;
 }
 
-export const ProgressAssessmentCard: React.FC<Props> = ({ data, onDevelopmentPlanPress }) => {
-    const isCompleted = data.status.toLowerCase() === 'completed';
+export const ProgressAssessmentCard: React.FC<Props> = ({ data, onDevelopmentPlanPress, onPress }) => {
+    const statusLower = data.status.toLowerCase();
+    const isCompleted = statusLower === 'completed';
+    const { user } = useAuthStore();
+
+    const formatDisplayDate = (value?: string): string | null => {
+        if (!value) return null;
+        const parsed = Date.parse(value);
+        if (Number.isNaN(parsed)) return value;
+        return new Date(parsed).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        });
+    };
+
+    const imageSource: ImageSourcePropType = (() => {
+        const maybeImage = (data as any)?.image;
+        if (maybeImage) {
+            if (typeof maybeImage === 'number') return maybeImage;
+            if (typeof maybeImage === 'string') return { uri: maybeImage };
+            if (typeof maybeImage === 'object' && (maybeImage as any).uri) return maybeImage;
+        }
+
+        // Fallback for API-backed assessments (no image field).
+        if (user?.profilePicture) return { uri: user.profilePicture };
+        return icons.myProfile;
+    })();
+
+    const dateLabel = (() => {
+        const submittedDate = (data as any)?.submittedDate;
+        const dueDate = (data as any)?.dueDate;
+        const completionDate = (data as any)?.completionDate;
+        const completedOn = (data as any)?.completedOn;
+        const createdAt = (data as any)?.createdAt;
+
+        const submitted = formatDisplayDate(submittedDate);
+        const due = formatDisplayDate(dueDate);
+        const completed = formatDisplayDate(completionDate || completedOn);
+        const created = formatDisplayDate(createdAt);
+
+        if (submitted) return `Submitted on : ${submitted}`;
+        if (statusLower === 'submitted' && (completionDate || completedOn || createdAt)) {
+            return `Submitted on : ${completed || created || completionDate || completedOn || createdAt}`;
+        }
+        if (isCompleted && (completionDate || completedOn)) return `Completed on : ${completed || completionDate || completedOn}`;
+        if (due) return `Due : ${due}`;
+        return null;
+    })();
 
     const renderCustomizedBadge = () => (
         <TouchableOpacity
-            onPress={() => {
-                console.log('Development Plan button pressed', { data: data.title, onDevelopmentPlanPress });
+            onPress={(event) => {
+                event?.stopPropagation?.();
                 onDevelopmentPlanPress?.();
             }}
             style={styles.customBadge}>
@@ -21,25 +72,23 @@ export const ProgressAssessmentCard: React.FC<Props> = ({ data, onDevelopmentPla
         </TouchableOpacity>
     );
 
+    const CardWrapper = onPress ? TouchableOpacity : View;
+
     return (
-        <View style={styles.card}>
+        <CardWrapper style={styles.card} onPress={onPress} activeOpacity={0.85}>
             <View style={styles.content}>
                 <View style={styles.imageContainer}>
-                    <Image source={data.image} style={styles.image} />
+                    <Image source={imageSource} style={styles.image} />
                 </View>
 
                 <View style={styles.textContent}>
                     <Text style={styles.title} numberOfLines={2}>{data.title}</Text>
                     {data.description && <Text style={styles.description} numberOfLines={2}>{data.description}</Text>}
                     {isCompleted && renderCustomizedBadge()}
-                    {data.submittedDate ? (
-                        <Text style={styles.dateText}>Submitted on : {data.submittedDate}</Text>
-                    ) : data.dueDate ? (
-                        <Text style={styles.dateText}>Due : {data.dueDate}</Text>
-                    ) : null}
+                    {dateLabel ? <Text style={styles.dateText}>{dateLabel}</Text> : null}
                 </View>
             </View>
-        </View>
+        </CardWrapper>
     );
 };
 

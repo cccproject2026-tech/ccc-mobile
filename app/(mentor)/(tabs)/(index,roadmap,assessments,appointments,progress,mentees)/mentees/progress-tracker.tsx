@@ -6,15 +6,45 @@ import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { useMentees } from "@/hooks/mentees/useMentees";
+import { usersService } from "@/services/users.service";
+import { useAuthStore } from "@/stores";
 import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const MENTEE_PROGRESS_ROUTE =
+  "/(mentor)/(tabs)/mentees/mentee-progress";
+
+const toEpochMs = (dateValue?: string) => {
+  if (!dateValue) return 0;
+  const parsed = Date.parse(dateValue);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const getStableMenteeSortValue = (mentee: Mentee) =>
+  toEpochMs(mentee.completedOn ?? mentee.updatedAt ?? mentee.createdAt);
+
+const compareMentees = (a: Mentee, b: Mentee) => {
+  const dateDiff = getStableMenteeSortValue(b) - getStableMenteeSortValue(a);
+  if (dateDiff !== 0) return dateDiff;
+
+  const nameA = `${a.firstName ?? ""} ${a.lastName ?? ""}`.trim().toLowerCase();
+  const nameB = `${b.firstName ?? ""} ${b.lastName ?? ""}`.trim().toLowerCase();
+  const nameDiff = nameA.localeCompare(nameB);
+  if (nameDiff !== 0) return nameDiff;
+
+  return (a.id ?? "").localeCompare(b.id ?? "");
+};
 
 export default function ProgressTracker() {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "in-progress" | "completed">("all");
   const [viewMode, setViewMode] = useState<"list" | "card">("card");
@@ -23,7 +53,30 @@ export default function ProgressTracker() {
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const { data, isLoading, isError } = useMentees();
+  const { data, isLoading, isError } = useMentees(100, user?.id);
+  const markCompleteMutation = useMutation({
+    mutationFn: (userId: string) => usersService.markUserCompleted(userId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["mentees"] }),
+        queryClient.invalidateQueries({ queryKey: ["progress"] }),
+      ]);
+    },
+  });
+  const issueCertificateMutation = useMutation({
+    mutationFn: ({ userId, issuedBy }: { userId: string; issuedBy: string }) =>
+      usersService.issueCertificate(userId, { issuedBy }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["mentees"] }),
+        queryClient.invalidateQueries({ queryKey: ["progress"] }),
+      ]);
+    },
+  });
+
+  const allMentees = useMemo(() => {
+    return data?.pages.flatMap((p) => p.mentees) ?? [];
+  }, [data]);
 
   const getFilterOptions = (): FilterOption[] => {
     return [
@@ -34,12 +87,12 @@ export default function ProgressTracker() {
     ];
   };
 
+
+
   const filterOptions = useMemo(() => getFilterOptions(), []);
 
   const filteredMentees = useMemo(() => {
-    const mentees = data?.mentees ?? [];
-
-    let filtered = mentees;
+    let filtered = allMentees;
 
     if (search) {
       filtered = filtered.filter((m) =>
@@ -53,15 +106,10 @@ export default function ProgressTracker() {
       filtered = filtered.filter((m) => !m.hasCompleted);
     }
 
-    // Default sort: latest completion / creation first
-    filtered = [...filtered].sort((a, b) => {
-      const aDate = a.completedOn ?? a.updatedAt ?? a.createdAt ?? "";
-      const bDate = b.completedOn ?? b.updatedAt ?? b.createdAt ?? "";
-      return (bDate || "").localeCompare(aDate || "");
-    });
+    filtered = [...filtered].sort(compareMentees);
 
     return filtered;
-  }, [data?.mentees, search, activeTab]);
+  }, [allMentees, search, activeTab]);
 
   const tabs = [
     { key: "all", label: "All" },
@@ -83,6 +131,110 @@ export default function ProgressTracker() {
     return mentee.id;
   };
 
+  const sanitizePhoneNumber = (phoneNumber?: string) => phoneNumber?.replace(/[^\d]/g, "") ?? "";
+
+  const openLink = useCallback(async (url: string, fallbackMessage: string) => {
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        Alert.alert("Unavailable", fallbackMessage);
+        return;
+      }
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert("Unavailable", fallbackMessage);
+    }
+  }, []);
+
+  const handleCall = useCallback((mentee: Mentee) => {
+    if (!mentee.phoneNumber) {
+      Alert.alert("Phone unavailable", "This mentee does not have a phone number.");
+      return;
+    }
+    void openLink(`tel:${mentee.phoneNumber}`, "Unable to open the phone app for this mentee.");
+  }, [openLink]);
+
+  const handleChat = useCallback((mentee: Mentee) => {
+    if (!mentee.phoneNumber) {
+      Alert.alert("Phone unavailable", "This mentee does not have a phone number.");
+      return;
+    }
+    void openLink(`sms:${mentee.phoneNumber}`, "Unable to open messages for this mentee.");
+  }, [openLink]);
+
+  const handleMail = useCallback((mentee: Mentee) => {
+    if (!mentee.email) {
+      Alert.alert("Email unavailable", "This mentee does not have an email address.");
+      return;
+    }
+    void openLink(`mailto:${mentee.email}`, "Unable to open the mail app for this mentee.");
+  }, [openLink]);
+
+  const handleWhatsApp = useCallback((mentee: Mentee) => {
+    const phone = sanitizePhoneNumber(mentee.phoneNumber);
+    if (!phone) {
+      Alert.alert("Phone unavailable", "This mentee does not have a WhatsApp number.");
+      return;
+    }
+    void openLink(`https://wa.me/${phone}`, "Unable to open WhatsApp for this mentee.");
+  }, [openLink]);
+
+  const handleMarkComplete = useCallback((mentee: Mentee) => {
+    if (!mentee.id) return;
+
+    Alert.alert(
+      "Mark as Complete",
+      `Mark ${mentee.firstName ?? "this mentee"} as completed?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Confirm",
+          onPress: () => {
+            markCompleteMutation.mutate(mentee.id, {
+              onSuccess: () => {
+                Alert.alert("Updated", "Mentee marked as complete.");
+              },
+              onError: () => {
+                Alert.alert("Error", "Failed to mark mentee as complete. Please try again.");
+              },
+            });
+          },
+        },
+      ]
+    );
+  }, [markCompleteMutation]);
+
+  const handleIssueCertificate = useCallback((mentee: Mentee) => {
+    if (!mentee.id || !user?.id) return;
+
+    Alert.alert(
+      "Issue Certificate",
+      `Issue certificate for ${mentee.firstName ?? "this mentee"}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Confirm",
+          onPress: () => {
+            issueCertificateMutation.mutate(
+              {
+                userId: mentee.id,
+                issuedBy: user.id,
+              },
+              {
+                onSuccess: () => {
+                  Alert.alert("Updated", "Certificate issued successfully.");
+                },
+                onError: () => {
+                  Alert.alert("Error", "Failed to issue certificate. Please try again.");
+                },
+              }
+            );
+          },
+        },
+      ]
+    );
+  }, [issueCertificateMutation, user?.id]);
+
   const menuItems = [
     {
       icon: "book-outline",
@@ -91,38 +243,50 @@ export default function ProgressTracker() {
         const id = selectedMentee ? mapMenteeToProfileId(selectedMentee) : "john-ross";
         handleCloseModal();
         setTimeout(() => {
-          router.push({ pathname: "/(mentor)/mentees/mentee-progress" as any, params: { menteeId: id } });
+          router.push({ pathname: MENTEE_PROGRESS_ROUTE as any, params: { menteeId: id } });
         }, 300);
       },
     },
-    { icon: "call-outline", label: "Call", onPress: () => handleCloseModal() },
-    { icon: "chatbubble-outline", label: "Chat", onPress: () => handleCloseModal() },
-    { icon: "mail-outline", label: "Mail", onPress: () => handleCloseModal() },
-    { icon: "logo-whatsapp", label: "WhatsApp", onPress: () => handleCloseModal() },
+    {
+      icon: "call-outline",
+      label: "Call",
+      onPress: () => {
+        if (selectedMentee) handleCall(selectedMentee);
+        handleCloseModal();
+      },
+    },
+    {
+      icon: "chatbubble-outline",
+      label: "Chat",
+      onPress: () => {
+        if (selectedMentee) handleChat(selectedMentee);
+        handleCloseModal();
+      },
+    },
+    {
+      icon: "mail-outline",
+      label: "Mail",
+      onPress: () => {
+        if (selectedMentee) handleMail(selectedMentee);
+        handleCloseModal();
+      },
+    },
+    {
+      icon: "logo-whatsapp",
+      label: "WhatsApp",
+      onPress: () => {
+        if (selectedMentee) handleWhatsApp(selectedMentee);
+        handleCloseModal();
+      },
+    },
   ];
-
-  const handleCall = (mentee: Mentee) => {
-    Linking.openURL(`tel:${mentee.phoneNumber}`);
-  };
-
-  const handleChat = (mentee: Mentee) => {
-    Linking.openURL(`sms:${mentee.phoneNumber}`);
-  };
-
-  const handleMail = (mentee: Mentee) => {
-    Linking.openURL(`mailto:${mentee.email}`);
-  };
-
-  const handleWhatsApp = (mentee: Mentee) => {
-    Linking.openURL(`https://wa.me/${mentee.phoneNumber}`);
-  };
 
   return (
     <LinearGradient colors={["#176192", "#1D548D", "#264387"]} style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
       <View className="flex-1">
         <View className="flex-1">
-          <TopBar notifications={3} showUserName showNotifications />
+          <TopBar notifications={3} showUserName showNotifications showSearch={false} />
 
           <View className="flex-1 pt-6">
             {isLoading && (
@@ -182,7 +346,7 @@ export default function ProgressTracker() {
                     data={mentee}
                     layout={viewMode}
                     onPress={() => {
-                      router.push({ pathname: "/(mentor)/mentees/mentee-progress" as any, params: { menteeId: mapMenteeToProfileId(mentee) } });
+                      router.push({ pathname: MENTEE_PROGRESS_ROUTE as any, params: { menteeId: mapMenteeToProfileId(mentee) } });
                     }}
                     onCall={() => handleCall(mentee)}
                     onChat={() => handleChat(mentee)}
@@ -192,7 +356,10 @@ export default function ProgressTracker() {
                       handleMenuPress(mentee);
                     }}
                     onMarkComplete={() => {
-                      handleMenuPress(mentee);
+                      handleMarkComplete(mentee);
+                    }}
+                    onIssueCertificate={() => {
+                      handleIssueCertificate(mentee);
                     }}
                   />
                 ))}
@@ -612,4 +779,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-

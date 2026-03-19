@@ -1,9 +1,13 @@
 // types/notification.types.ts
 
 export interface Notification {
+    _id?: string;
     name: string;
     details: string;
     module: string;
+    read?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface NotificationsData {
@@ -20,7 +24,6 @@ export interface NotificationsResponse {
     message: string;
     data: NotificationsData;
 }
-
 
 
 

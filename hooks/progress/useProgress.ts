@@ -26,13 +26,10 @@ export const useProgress = (userId?: string) => {
         queryFn: async () => {
             if (!targetUserId) throw new Error("User ID is missing");
 
-            console.log("📤 Fetching progress for user:", targetUserId);
-
             const response = await progressService.getProgress(targetUserId);
 
             // Handle null data case (no progress record)
             if (!response.success || !response.data) {
-                console.log("⚠️ No progress record found for user");
                 return {
                     overallProgress: 0,
                     roadmaps: {
@@ -54,7 +51,7 @@ export const useProgress = (userId?: string) => {
             const data = response.data;
 
             const progressData: ProgressData = {
-                overallProgress: data.overallRoadmapProgress ?? 0,
+                overallProgress: data.overallProgress ?? data.overallRoadmapProgress ?? 0,
                 roadmaps: {
                     total: data.totalRoadmaps ?? 0,
                     completed: data.completedRoadmaps ?? 0,
@@ -70,7 +67,6 @@ export const useProgress = (userId?: string) => {
                 finalComments: data.finalComments || []
             };
 
-            console.log("📥 Progress data fetched:", progressData);
             return progressData;
         },
         enabled: !!targetUserId,
@@ -122,7 +118,7 @@ export const useRoadmapProgress = (userId?: string) => {
  */
 export const useAssessmentProgress = (userId?: string) => {
     const { data, isLoading, isError, error } = useProgress(userId);
-    
+
     return {
         data: data?.assessments,
         overallProgress: data?.assessments?.percentage ?? 0,
@@ -213,13 +209,10 @@ export const useProgressByUserId = (userId: string | undefined) => {
         queryFn: async () => {
             if (!userId) throw new Error("User ID is missing");
 
-            console.log("📤 Fetching progress for user:", userId);
-
             const response = await progressService.getProgress(userId);
 
             // Handle null data case (no progress record)
             if (!response.success || !response.data) {
-                console.log("⚠️ No progress record found for user");
                 return {
                     overallProgress: 0,
                     roadmaps: {
@@ -257,7 +250,6 @@ export const useProgressByUserId = (userId: string | undefined) => {
                 finalComments: data.finalComments || []
             };
 
-            console.log("📥 Progress data fetched:", progressData);
             return progressData;
         },
         enabled: !!userId,

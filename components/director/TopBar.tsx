@@ -1,12 +1,13 @@
+import { useNotifications } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores';
+import { getRoleNotificationRoute } from '@/utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { moderateScale, getIconSize, getFontSize, isSmallDevice } from '@/utils/responsive';
 
 const LOGO = require('@/assets/logos/CCClogo.png');
 
@@ -26,12 +27,11 @@ type Props = {
     showSearch?: boolean;
 };
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 const TopBar: React.FC<Props> = ({
     showUserName = false,
-    notifications = 0,
+    notifications,
     showNotifications = true,
+    showSearch = true,
     showDrawer = true,
     showBackButton = false,
     showBackButtonText = false,
@@ -46,26 +46,13 @@ const TopBar: React.FC<Props> = ({
     const navigation = useNavigation();
     const router = useRouter();
     const { user, isAuthenticated } = useAuthStore();
-    // Always show search icon for authenticated users. Avoid referencing an undefined `showSearch`.
-    const showSearchIcon = !!isAuthenticated;
-    
-    // Responsive icon sizes
-    const menuIconSize = getIconSize(size);
-    const searchIconSize = getIconSize(size - 6);
-    const notificationIconSize = getIconSize(size - 10);
-    const backIconSize = getIconSize(size - 8);
-    
-    // Calculate max width for name container based on screen width
-    const maxNameWidth = Math.min(moderateScale(180), SCREEN_WIDTH * 0.4);
+    const { data: notificationItems } = useNotifications(user?.id);
+    const showSearchIcon = !!isAuthenticated && showSearch;
+    const notificationCount =
+        notificationItems?.filter((item) => !item.read).length ?? notifications ?? 0;
     const onMenuPress = () => navigation.dispatch(DrawerActions.openDrawer());
     const handleNotificationsPress = () => {
-        if (role === 'director') {
-            router.push('/(director)/(tabs)/notification');
-        } else if (role === 'pastor') {
-            router.push('/(pastor)/(tabs)/notifications');
-        } else {
-            router.push('/(mentor)/(tabs)/notifications');
-        }
+        router.push(getRoleNotificationRoute(role || user?.role) as any);
     }
 
     const handleBackPress = () => {
@@ -82,7 +69,7 @@ const TopBar: React.FC<Props> = ({
             <View style={styles.leftIconBox}>
                 {showDrawer && (
                     <Pressable hitSlop={10} onPress={onMenuPress}>
-                        <Ionicons name="menu" size={menuIconSize} color={color} />
+                        <Ionicons name="menu" size={size} color={color} />
                     </Pressable>
                 )}
                 {showBackButton && (
@@ -93,7 +80,7 @@ const TopBar: React.FC<Props> = ({
                                 onPress={handleBackPress}
                                 style={styles.backButtonWithText}
                             >
-                                <Ionicons name="chevron-back" size={getIconSize(24)} color="#fff" />
+                                <Ionicons name="chevron-back" size={24} color="#fff" />
                                 <Text style={styles.backButtonTextStyle}>Back</Text>
                             </Pressable>
                         ) : (
@@ -102,7 +89,7 @@ const TopBar: React.FC<Props> = ({
                                 onPress={handleBackPress}
                                 style={styles.backButtonBox}
                             >
-                                <Ionicons name="arrow-back" size={backIconSize} color={color} />
+                                <Ionicons name="arrow-back" size={size - 8} color={color} />
                             </Pressable>
                         )}
                     </>
@@ -117,8 +104,8 @@ const TopBar: React.FC<Props> = ({
                         end={{ x: 1, y: 0 }}
                         style={styles.gradientBorder}
                     >
-                        <View style={[styles.innerNameContainer, { maxWidth: maxNameWidth }]}>
-                            <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">
+                        <View style={styles.innerNameContainer}>
+                            <Text style={styles.nameText} numberOfLines={1}>
                                 {customTitle ? customTitle : user?.firstName && user?.lastName
                                     ? `${user.firstName} ${user.lastName}`
                                     : user?.firstName || user?.lastName || 'User'}
@@ -130,17 +117,17 @@ const TopBar: React.FC<Props> = ({
             {/* Right */}
             <View style={styles.rightIconBox}>
                 {showSearchIcon && (
-                    <Pressable onPress={() => router.push('/search')} hitSlop={10} style={styles.iconButton}>
-                        <Ionicons name="search" size={searchIconSize} color={color} />
+                    <Pressable onPress={() => router.push('/search')} hitSlop={10} style={{ marginRight: 8 }}>
+                        <Ionicons name="search" size={size - 6} color={color} />
                     </Pressable>
                 )}
                 {showNotifications && (
-                    <Pressable onPress={handleNotificationsPress} hitSlop={10} style={[styles.iconButton, { position: 'relative' }]}>
-                        <Ionicons name="notifications-outline" size={notificationIconSize} color={color} />
-                        {notifications > 0 && (
+                    <Pressable onPress={handleNotificationsPress} hitSlop={10} style={{ position: 'relative', marginRight: 7 }}>
+                        <Ionicons name="notifications-outline" size={size - 10} color={color} />
+                        {notificationCount > 0 && (
                             <View style={styles.notificationBadge}>
                                 <Text style={styles.notificationBadgeText}>
-                                    {notifications > 9 ? '9+' : notifications}
+                                    {notificationCount > 9 ? '9+' : notificationCount}
                                 </Text>
                             </View>
                         )}
@@ -148,7 +135,7 @@ const TopBar: React.FC<Props> = ({
                 )}
                 <Pressable onPress={onProfilePress} hitSlop={10}>
                     <View style={styles.profileBox}>
-                        <Image source={LOGO} style={styles.profileImage} />
+                        <Image source={LOGO} style={{ width: 27, height: 27, borderRadius: 15 }} />
                     </View>
                 </Pressable>
             </View>
@@ -161,62 +148,61 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: moderateScale(12),
+        paddingHorizontal: 16,
         width: "100%",
         backgroundColor: "transparent",
     },
     leftIconBox: {
         flexDirection: "row",
-        alignItems: "center",
-        minWidth: moderateScale(40),
-        flexShrink: 0,
+        flex: 0.2,
     },
     backButtonBox: {
-        paddingHorizontal: moderateScale(4),
+        paddingHorizontal: 4,
     },
     backButtonWithText: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(139, 168, 189, 0.8)",
-        paddingVertical: moderateScale(8),
-        paddingHorizontal: moderateScale(12),
-        paddingLeft: moderateScale(8),
-        paddingRight: moderateScale(14),
-        borderRadius: moderateScale(12),
-        gap: moderateScale(6),
-        minWidth: moderateScale(80),
+        backgroundColor: "rgba(139, 168, 189, 0.8)", // More opaque blue-gray
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        paddingLeft: 10,
+        paddingRight: 16,
+        borderRadius: 12,
+        gap: 8,
+        minWidth: 90,
     },
     backButtonTextStyle: {
         color: "#fff",
-        fontSize: getFontSize(18),
+        fontSize: 20,
         fontWeight: "700",
         letterSpacing: 0.5,
     },
+
     centerArea: {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        paddingHorizontal: moderateScale(8),
-        flexShrink: 1,
+        paddingHorizontal: 12,
+        marginRight: 8,
     },
     gradientBorder: {
         padding: 2,
-        borderRadius: moderateScale(13),
-        flexShrink: 1,
+        borderRadius: 13,
     },
     innerNameContainer: {
         backgroundColor: "#176192",
-        borderRadius: moderateScale(11),
-        paddingVertical: moderateScale(7),
-        paddingHorizontal: isSmallDevice ? moderateScale(16) : moderateScale(24),
+        borderRadius: 11,
+        paddingVertical: 9,
+        paddingHorizontal: 28,
         alignItems: "center",
         justifyContent: "center",
-        minWidth: moderateScale(70),
+        minWidth: 85,
+        maxWidth: 210,
     },
     nameText: {
         color: "#E2E8F0",
-        fontSize: getFontSize(16),
+        fontSize: 18,
         fontWeight: "600",
         textAlign: "center",
     },
@@ -224,42 +210,35 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "flex-end",
-        minWidth: moderateScale(90),
-        flexShrink: 0,
-    },
-    iconButton: {
-        paddingHorizontal: moderateScale(6),
+        flex: 0.2,
+        gap: 8,
+        marginLeft: 8,
     },
     notificationBadge: {
         position: "absolute",
         backgroundColor: "#FACC15",
-        width: moderateScale(16),
-        height: moderateScale(16),
-        borderRadius: moderateScale(8),
-        right: moderateScale(-6),
-        top: moderateScale(-5),
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        right: -10,
+        top: -7,
         alignItems: "center",
         justifyContent: "center",
     },
     notificationBadgeText: {
         color: "#000",
         fontWeight: "700",
-        fontSize: getFontSize(10),
+        fontSize: 11,
     },
     profileBox: {
-        width: moderateScale(26),
-        height: moderateScale(26),
-        borderRadius: moderateScale(14),
+        width: 28,
+        height: 28,
+        borderRadius: 16,
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.65)",
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "rgba(255,255,255,0.08)",
-    },
-    profileImage: {
-        width: moderateScale(24),
-        height: moderateScale(24),
-        borderRadius: moderateScale(12),
     },
 });
 

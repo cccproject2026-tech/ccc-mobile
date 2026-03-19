@@ -81,6 +81,10 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
         name="progress/progress"
         getId={({ params }) => String(Date.now())}
       />
+      <Stack.Screen
+        name="progress/report"
+        getId={({ params }) => String(Date.now())}
+      />
 
       {/* Mentees routes */}
       <Stack.Screen name="mentees/index" />

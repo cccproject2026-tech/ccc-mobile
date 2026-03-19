@@ -148,16 +148,10 @@ export const profileService = {
     },
 
     getNotifications: async (userId: string): Promise<Notification[]> => {
-        console.log("📤 Fetching notifications for user:", userId);
-
         const response = await apiClient.get<NotificationsResponse>(
             ENDPOINTS.USERS.GET_NOTIFICATIONS(userId)
         );
 
-        const notifications = response.data.data?.notifications || [];
-
-        console.log("📥 Notifications fetched:", notifications);
-
-        return notifications;
+        return response.data.data?.notifications || [];
     },
 };

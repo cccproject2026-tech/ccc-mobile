@@ -22,7 +22,8 @@ export default function RoadmapDetail() {
     const { phaseId, menteeId, menteeName } = useLocalSearchParams<{ phaseId: string, menteeId?: string, menteeName?: string }>();
 
     // Fetch single roadmap
-    const { data: roadmap, isLoading, error, refetch } = useRoadmap(phaseId);
+    const targetUserId = menteeId;
+    const { data: roadmap, isLoading, error, refetch } = useRoadmap(phaseId, targetUserId);
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -386,4 +387,3 @@ export default function RoadmapDetail() {
         </LinearGradient>
     );
 }
-

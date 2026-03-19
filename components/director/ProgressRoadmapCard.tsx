@@ -1,5 +1,6 @@
 // components/director/ProgressRoadmapCard.tsx
 import { RoadmapCardData } from '@/lib/roadmap/types';
+import { icons } from '@/constants/images';
 import { getFontSize, getSpacing, isSmallDevice } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
@@ -36,7 +37,6 @@ export const RoadmapCard: React.FC<Props> = ({
             ? Math.min(100, (data.taskProgress.completed / data.taskProgress.total) * 100)
             : 0;
     }, [data.taskProgress]);
-    console.log("data.taskProgressr:----->>>>>>>>>>>>>>", data.status);
 
     const statusConfig = useMemo(() => {
         const configs = {
@@ -54,11 +54,11 @@ export const RoadmapCard: React.FC<Props> = ({
     const renderImage = () => (
         <View style={styles.imageContainer}>
             <Image
-                source={
-                    typeof data.image === 'number'
-                        ? data.image
-                        : { uri: data.image || 'https://via.placeholder.com/300x200?text=No+Image' }
-                }
+                source={(() => {
+                    if (typeof data.image === 'number') return data.image;
+                    if (typeof data.image === 'string' && data.image.trim().length > 0) return { uri: data.image };
+                    return icons.dummyImage;
+                })()}
                 style={styles.image}
                 resizeMode="cover"
             />
@@ -119,7 +119,6 @@ export const RoadmapCard: React.FC<Props> = ({
     };
 
     const renderProgressSection = () => {
-        console.log("hasProgress:----->>>>>>>>>>>>>>", hasProgress, data.taskProgress, data);
         if (!hasProgress || !data.taskProgress) return null;
 
         return (

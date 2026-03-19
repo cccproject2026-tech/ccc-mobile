@@ -69,6 +69,33 @@ const getMenteesKey = (mentorId?: string | null) => (mentorId ? ['mentees', 'ass
 /** Normalize backend user (may have _id) to have id for progress API */
 const toMenteeWithId = (m: any): Mentee => ({ ...m, id: m.id ?? m._id });
 
+const ROADMAP_STATUS_PRIORITY: Record<string, number> = {
+    in_progress: 0,
+    "in-progress": 0,
+    not_started: 1,
+    "not started": 1,
+    completed: 2,
+};
+
+function getCurrentRoadmapPhase(roadmaps: any[] = []) {
+    const roadmapWithPhase = roadmaps
+        .filter((item) => item?.phase || item?.phaseNumber)
+        .sort((a, b) => {
+            const statusDiff =
+                (ROADMAP_STATUS_PRIORITY[a?.status] ?? 99) -
+                (ROADMAP_STATUS_PRIORITY[b?.status] ?? 99);
+
+            if (statusDiff !== 0) return statusDiff;
+
+            const aUpdated = Date.parse(a?.updatedAt ?? a?.endDate ?? a?.startDate ?? "") || 0;
+            const bUpdated = Date.parse(b?.updatedAt ?? b?.endDate ?? b?.startDate ?? "") || 0;
+
+            return bUpdated - aUpdated;
+        });
+
+    return roadmapWithPhase[0] ?? null;
+}
+
 export const useMentees = (limit: number = 10, mentorId?: string | null) => {
     const isAssignedOnly = Boolean(mentorId);
 
@@ -82,23 +109,30 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
 
             const backendMentees: Mentee[] = (res.users ?? []).map(toMenteeWithId);
 
-            // fetch progress in parallel for the current page only
-            const progressResponses = await Promise.all(
+            // Fetch profile + progress in parallel so cards have complete user info.
+            const menteeDetails = await Promise.all(
                 backendMentees.map(async (m) => {
-                    try {
-                        const r = await apiClient.get(
-                            ENDPOINTS.USERS.GET_PROGRESS(m.id)
-                        );
-                        return r.data?.data ?? null;
-                    } catch {
-                        return null;
-                    }
+                    const [profileResult, progressResult] = await Promise.allSettled([
+                        apiClient.get(ENDPOINTS.USERS.GET_USER(m.id)),
+                        apiClient.get(ENDPOINTS.USERS.GET_PROGRESS(m.id)),
+                    ]);
+
+                    return {
+                        profile:
+                            profileResult.status === "fulfilled"
+                                ? profileResult.value.data?.data ?? null
+                                : null,
+                        progress:
+                            progressResult.status === "fulfilled"
+                                ? progressResult.value.data?.data ?? null
+                                : null,
+                    };
                 })
             );
 
             // merge
             const mentees = backendMentees.map((m, idx) => {
-                const progress = progressResponses[idx];
+                const { profile, progress } = menteeDetails[idx] ?? {};
                 // Handle different roadmap structures (array or paginated object)
                 const roadmapsRaw = Array.isArray(progress?.roadmaps)
                     ? progress.roadmaps
@@ -125,15 +159,33 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
                 // Extract assigned assessment IDs
                 const assignedAssessmentIds = assessments.map((item: any) => item.assessmentId || item._id);
 
+                const interest = profile?.interest;
+                const mAny = m as Mentee & { profileInfo?: string };
+                // Prefer interest profile text; fall back to list-card fields (main) when API omits it
+                const description =
+                    interest?.profileInfo ||
+                    m.description ||
+                    mAny.profileInfo ||
+                    m.email ||
+                    "";
+                const phaseSource = getCurrentRoadmapPhase(roadmaps) ?? firstRoadmap;
+                const completedOn = m.hasCompleted
+                    ? (progress?.updatedAt ?? progress?.completedAt ?? m.updatedAt)
+                    : undefined;
+
                 return {
                     ...m,
-                    // Keep a meaningful line under the mentee name for list cards
-                    // (roadmap landing shows this; backend often doesn't provide `description`)
-                    description: m.description || m.profileInfo || m.email || "",
+                    ...profile,
+                    id: profile?.id ?? m.id,
+                    profilePicture: profile?.profilePicture ?? interest?.profilePicture ?? m.profilePicture,
+                    firstName: profile?.firstName ?? interest?.firstName ?? m.firstName,
+                    lastName: profile?.lastName ?? interest?.lastName ?? m.lastName,
+                    phoneNumber: profile?.phoneNumber ?? interest?.phoneNumber ?? m.phoneNumber,
+                    description,
                     progress: progress?.overallRoadmapProgress ?? 0,
-                    phase: firstRoadmap?.phase,
-                    phaseNumber: firstRoadmap?.phaseNumber,
-                    completedOn: m.hasCompleted ? m.updatedAt : undefined,
+                    phase: phaseSource?.phase,
+                    phaseNumber: phaseSource?.phaseNumber,
+                    completedOn,
                     assignedRoadmapIds,
                     assignedAssessmentIds,
                 };

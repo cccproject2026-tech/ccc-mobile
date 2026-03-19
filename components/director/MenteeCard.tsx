@@ -72,14 +72,19 @@ export default function MenteeCard({
                     </Text>
                 </View>
 
-                {data.hasCompleted && (data.hasIssuedCertificate || data.isFieldMentor) && (
+                {(data.hasCompleted || data.hasIssuedCertificate || data.isFieldMentor) && (
                     <View style={styles.listBadges}>
+                        {data.hasCompleted && (
+                            <View style={styles.listBadgeIcon}>
+                                <Image source={icons.fieldMentorIcon} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
+                            </View>
+                        )}
                         {data.hasIssuedCertificate && (
                             <View style={styles.listBadgeIcon}>
                                 <Image source={icons.certificateBadge} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                             </View>
                         )}
-                        {data.isFieldMentor && (
+                        {!data.hasCompleted && data.isFieldMentor && (
                             <View style={styles.listBadgeIcon}>
                                 <Image source={icons.fieldMentorIcon} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                             </View>
@@ -224,14 +229,19 @@ export default function MenteeCard({
             )}
 
             {/* Top Badges */}
-            {data.hasCompleted && (data.hasIssuedCertificate || data.isFieldMentor) && (
+            {(data.hasCompleted || data.hasIssuedCertificate || data.isFieldMentor) && (
                 <View style={styles.topBadges}>
+                    {data.hasCompleted && (
+                        <View style={styles.badgeIcon}>
+                            <Image source={icons.fieldMentorIcon} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
+                        </View>
+                    )}
                     {data.hasIssuedCertificate && (
                         <View style={styles.badgeIcon}>
                             <Image source={icons.certificateBadge} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                         </View>
                     )}
-                    {data.isFieldMentor && (
+                    {!data.hasCompleted && data.isFieldMentor && (
                         <View style={styles.badgeIcon}>
                             <Image source={icons.fieldMentorIcon} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                         </View>
@@ -517,7 +527,8 @@ const styles = StyleSheet.create({
     contentSection: {
         flex: 1,
         justifyContent: 'flex-start',
-        maxWidth: '75%',
+        minWidth: 0,
+        paddingRight: getSpacing(74),
     },
     name: {
         fontSize: getFontSize(16),
