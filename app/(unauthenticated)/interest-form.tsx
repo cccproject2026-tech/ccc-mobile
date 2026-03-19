@@ -229,6 +229,7 @@ export default function InterestFormScreen() {
                     showNotifications={false}
                     showUserName
                     customTitle="Interest Form"
+                    showBackButton={true}
                 />
 
                 <KeyboardAwareScrollView
