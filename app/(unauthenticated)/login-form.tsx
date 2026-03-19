@@ -216,15 +216,7 @@ export default function LoginFormScreen() {
                             style={styles.gradientContainer}
                         >
                             <View style={styles.actionButtonsRow}>
-                                <TouchableOpacity
-                                    onPress={handleNewUser}
-                                    style={styles.actionButton}
-                                    activeOpacity={0.8}
-                                    disabled={isLoading}
-                                >
-                                    <Text style={styles.actionButtonText}>New User {'>>'}</Text>
-                                </TouchableOpacity>
-
+           
                                 <View style={styles.verticalDivider} />
 
                                 <TouchableOpacity
