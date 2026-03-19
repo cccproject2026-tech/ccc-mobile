@@ -13,6 +13,8 @@ const LOGO = require('@/assets/logos/CCClogo.png');
 
 type Props = {
     showUserName?: boolean;
+    /** Optional display name (e.g. director views); takes precedence over auth user name when set */
+    userName?: string;
     notifications?: number;
     showNotifications?: boolean;
     showDrawer?: boolean;
@@ -29,6 +31,7 @@ type Props = {
 
 const TopBar: React.FC<Props> = ({
     showUserName = false,
+    userName,
     notifications,
     showNotifications = true,
     showSearch = true,
@@ -106,9 +109,13 @@ const TopBar: React.FC<Props> = ({
                     >
                         <View style={styles.innerNameContainer}>
                             <Text style={styles.nameText} numberOfLines={1}>
-                                {customTitle ? customTitle : user?.firstName && user?.lastName
-                                    ? `${user.firstName} ${user.lastName}`
-                                    : user?.firstName || user?.lastName || 'User'}
+                                {customTitle
+                                    ? customTitle
+                                    : userName
+                                      ? userName
+                                      : user?.firstName && user?.lastName
+                                        ? `${user.firstName} ${user.lastName}`
+                                        : user?.firstName || user?.lastName || 'User'}
                             </Text>
                         </View>
                     </LinearGradient>

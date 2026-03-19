@@ -5,7 +5,7 @@ import { useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Image,
@@ -71,6 +71,13 @@ export default function LoginScreen() {
     console.log('👤 User ID:', userId);
     console.log('⏳ Is Pending:', isPending);
     console.log('🔍 Checking Status:', isCheckingStatus);
+
+    // If the Director accepts the request, take the user to password setup.
+    useEffect(() => {
+        if (interestStatus === "accepted") {
+            router.replace("/(unauthenticated)/set-password");
+        }
+    }, [interestStatus]);
 
     // Handle status button click - toggle and refetch
     const handleStatusPress = useCallback(async () => {
