@@ -94,49 +94,7 @@ export default function InterestFormScreen() {
 
 
     // Auto-fill function for testing
-    const autoFillForm = useCallback(() => {
-        if (!metadata) {
-            Alert.alert('Error', 'Metadata not loaded yet. Please wait.');
-            return;
-        }
-
-        const firstTitle = metadata.titles?.[0] || '';
-        const firstCountry = metadata.countries?.[0] || '';
-        const firstState = getStatesForCountry(firstCountry)?.[0] || '';
-        const firstInterest = metadata.interests?.[0] || '';
-
-        setFormData({
-            firstName: 'John',
-            lastName: 'Doe',
-            phoneNumber: '269-471-6159',
-            email: 'john.doe@example.com',
-            churchDetails: [
-                {
-                    churchName: 'First Community Church',
-                    churchPhone: '269-555-0123',
-                    churchWebsite: 'www.firstcommunitychurch.org',
-                    churchAddress: '123 Main Street',
-                    city: 'Berrien Springs',
-                    state: firstState,
-                    zipCode: '49103',
-                    country: firstCountry,
-                },
-            ],
-            title: firstTitle,
-            yearsInMinistry: '5',
-            conference: 'Lake Union Conference',
-            currentCommunityProjects:
-                'Food bank ministry, Youth mentoring program, Community outreach events',
-            interests: firstInterest ? [firstInterest] : [],
-            comments:
-                'I am excited to learn more about community engagement opportunities and would love to connect with other pastors doing similar work.',
-        });
-
-        Alert.alert(
-            'Form Auto-Filled!',
-            'All fields have been populated with sample data.'
-        );
-    }, [metadata, getStatesForCountry]);
+    // Removed - no longer needed
 
     // Input handlers
     const handleInputChange = useCallback((field: string, value: string) => {
@@ -246,17 +204,6 @@ export default function InterestFormScreen() {
                             <Text style={{ color: '#fff', marginTop: 8 }}>Loading form options...</Text>
                         </View>
                     )}
-                    {/* Auto-Fill Button */}
-                    <View style={styles.header}>
-                        <TouchableOpacity
-                            style={styles.autoFillButton}
-                            onPress={autoFillForm}
-                            disabled={isLoading || isLoadingMetadata}
-                        >
-                            <Ionicons name="flash" size={18} color="#FFD700" />
-                            <Text style={styles.autoFillButtonText}>Auto-Fill</Text>
-                        </TouchableOpacity>
-                    </View>
 
                     {/* Personal Information Section */}
                     <View style={styles.section}>
