@@ -30,6 +30,16 @@ export default function RoleLandingScreen() {
 
     const avatars = [icons.dummyUser, icons.dummyUser2, icons.myProfile];
 
+    const handleBackPress = () => {
+        // Returns to the previous screen in the navigation stack.
+        // If opened directly (no history), `router.back()` is a no-op, so we fall back to the role selector.
+        try {
+            router.back();
+        } catch {
+            router.replace("/");
+        }
+    };
+
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
@@ -41,6 +51,15 @@ export default function RoleLandingScreen() {
                 {/* Decorative background circle */}
                 <View style={styles.bgCircleTop} />
                 <View style={styles.bgCircleBottom} />
+
+                {/* Top-left back icon */}
+                <Pressable
+                    onPress={handleBackPress}
+                    style={[styles.backButton, { top: top + 8 }]}
+                    hitSlop={10}
+                >
+                    <Ionicons name="chevron-back" size={26} color="#fff" />
+                </Pressable>
 
                 <View style={styles.center}>
                     {/* Pill badge */}
@@ -69,7 +88,7 @@ export default function RoleLandingScreen() {
                     <Pressable
                         onPress={() =>
                             router.push({
-                                pathname: "/(unauthenticated)/interest-form",
+                                pathname: "/(unauthenticated)/pastor-start-journey/[role]",
                                 params: role ? { role } : undefined,
                             })
                         }
@@ -126,6 +145,19 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 22,
         overflow: "hidden",
+    },
+    backButton: {
+        position: "absolute",
+        left: 14,
+        width: 30,
+        height: 30,
+        borderRadius: 20,
+        backgroundColor: "rgba(255,255,255,0.14)",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 10,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.22)",
     },
     bgCircleTop: {
         position: "absolute",
