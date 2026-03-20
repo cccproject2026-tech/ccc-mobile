@@ -124,12 +124,12 @@ const TopBar: React.FC<Props> = ({
             {/* Right */}
             <View style={styles.rightIconBox}>
                 {showSearchIcon && (
-                    <Pressable onPress={() => router.push('/search')} hitSlop={10} style={{ marginRight: 8 }}>
+                    <Pressable onPress={() => router.push('/search')} hitSlop={10}>
                         <Ionicons name="search" size={size - 6} color={color} />
                     </Pressable>
                 )}
                 {showNotifications && (
-                    <Pressable onPress={handleNotificationsPress} hitSlop={10} style={{ position: 'relative', marginRight: 7 }}>
+                    <Pressable onPress={handleNotificationsPress} hitSlop={10} style={{ position: 'relative' }}>
                         <Ionicons name="notifications-outline" size={size - 10} color={color} />
                         {notificationCount > 0 && (
                             <View style={styles.notificationBadge}>
@@ -155,13 +155,14 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: 16,
+        paddingHorizontal: 12,
         width: "100%",
         backgroundColor: "transparent",
     },
     leftIconBox: {
         flexDirection: "row",
-        flex: 0.2,
+        flexGrow: 0,
+        flexShrink: 1,
     },
     backButtonBox: {
         paddingHorizontal: 4,
@@ -188,10 +189,11 @@ const styles = StyleSheet.create({
 
     centerArea: {
         flex: 1,
+        flexShrink: 1,
+        minWidth: 0, // Allows the name tag to truncate/shrink instead of overflowing.
         alignItems: "center",
         justifyContent: "center",
-        paddingHorizontal: 12,
-        marginRight: 8,
+        paddingHorizontal: 8,
     },
     gradientBorder: {
         padding: 2,
@@ -201,25 +203,28 @@ const styles = StyleSheet.create({
         backgroundColor: "#176192",
         borderRadius: 11,
         paddingVertical: 9,
-        paddingHorizontal: 28,
+        paddingHorizontal: 18,
         alignItems: "center",
         justifyContent: "center",
-        minWidth: 85,
-        maxWidth: 210,
+        minWidth: 60,
+        maxWidth: "58%",
+        overflow: "hidden",
+        flexShrink: 1,
     },
     nameText: {
         color: "#E2E8F0",
         fontSize: 18,
         fontWeight: "600",
         textAlign: "center",
+        flexShrink: 1,
     },
     rightIconBox: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "flex-end",
-        flex: 0.2,
+        flexGrow: 0,
+        flexShrink: 0,
         gap: 8,
-        marginLeft: 8,
     },
     notificationBadge: {
         position: "absolute",
