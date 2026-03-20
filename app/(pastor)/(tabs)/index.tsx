@@ -21,7 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import { Route, useRouter } from "expo-router";
+import { Route, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -56,7 +56,7 @@ export default function PastorDashboard() {
 
   const { user } = useAuthStore();
 
-  const { data, isLoading, isError, error } = useProfile();
+  const { data, isLoading, isError, error, progressQuery } = useProfile();
   const { mentors, isEmpty } = useAssignedMentors(user?.id as string);
   const { sections: focusSections, isLoading: isFocusLoading } =
     usePastorFocusItems();
@@ -127,7 +127,7 @@ export default function PastorDashboard() {
   } = useAppointments({ userId: user?.id });
 
   // Fetch roadmaps
-  const { data: roadmaps, isLoading: isRoadmapsLoading } =
+  const { data: roadmaps, isLoading: isRoadmapsLoading, refetch: refetchRoadmaps } =
     useRoadmaps("pastor");
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -197,8 +197,17 @@ export default function PastorDashboard() {
 
   const overallProgress = data?.progress?.overallProgress ?? 0;
   const hasAssignedRoadmap = (roadmaps?.length ?? 0) > 0;
-  const showProgressInWelcome =
-    !isFirstDashboardVisit && (overallProgress > 0 || hasAssignedRoadmap);
+  const showProgressInWelcome = overallProgress > 0 || hasAssignedRoadmap;
+
+  useFocusEffect(
+    useCallback(() => {
+      // Refresh progress and assigned roadmaps when the user returns to dashboard.
+      progressQuery.refetch();
+      if (typeof refetchRoadmaps === "function") {
+        refetchRoadmaps();
+      }
+    }, [progressQuery, refetchRoadmaps])
+  );
 
   useEffect(() => {
     const checkFirstDashboardVisit = async () => {
