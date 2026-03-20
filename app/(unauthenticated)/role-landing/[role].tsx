@@ -89,7 +89,7 @@ export default function RoleLandingScreen() {
                         onPress={() =>
                             router.push({
                                 pathname: "/(unauthenticated)/pastor-start-journey/[role]",
-                                params: role ? { role } : undefined,
+                                params: { role: role || "pastor" },
                             })
                         }
                         style={styles.primaryButton}

@@ -59,7 +59,7 @@ export default function PastorStartJourneyScreen() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <LinearGradient
-                colors={["#1A4F7A", "#1B6FA3", "#2389C2"]}
+                colors={["#0D3B6E", "#0A5C8A", "#0B84B0"]}
                 locations={[0, 0.5, 1]}
                 style={[styles.gradient, { paddingTop: top || 44, paddingBottom: bottom || 24 }]}
             >

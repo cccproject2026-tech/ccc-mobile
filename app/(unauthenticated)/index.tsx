@@ -147,7 +147,8 @@ export default function LoginScreen() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <LinearGradient
-                colors={['#176192', '#1D548D', '#264387']}
+                colors={["#0D3B6E", "#0A5C8A", "#0B84B0"]}
+                locations={[0, 0.5, 1]}
                 style={styles.container}
             >
                 <ScrollView
