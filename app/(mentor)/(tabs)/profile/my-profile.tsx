@@ -365,43 +365,78 @@ export default function ProfileScreen() {
               </Text>
             </View>
             <View className="relative">
-              <TextArea
-                label="Profile Info"
-                value={isEditMode ? formData.bio : interest?.profileInfo || ""}
-                onChangeText={(text) => handleInputChange("bio", text)}
-                editable={isEditMode}
-              />
+              {isEditMode ? (
+                <TextArea
+                  label="Profile Info"
+                  value={formData.bio}
+                  onChangeText={(text) => handleInputChange("bio", text)}
+                  editable={true}
+                />
+              ) : (
+                <View style={styles.readOnlyBox}>
+                  <Text style={styles.readOnlyLabel}>Profile Info</Text>
+                  <Text style={styles.readOnlyValue}>
+                    {interest?.profileInfo || ""}
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Detailed Personal Info */}
-            <View className="gap-4 p-2 pb-10 mt-4 border rounded-md border-white/45">
+            <View
+              className="gap-4 p-2 pb-10 mt-4 rounded-md"
+              style={isEditMode ? styles.personalInfoContainerEdit : styles.personalInfoContainerView}
+            >
               <View className="gap-6 mt-2">
                 <Text className="font-[AlbertRegular] text-white text-[14px]">
                   Personal Information
                 </Text>
-                <View style={styles.rowContainer}>
-                  <TextInputField
-                    label="First Name"
-                    value={isEditMode ? formData.firstName : user.firstName}
-                    editable={isEditMode}
-                    onChangeText={(text) => handleInputChange("firstName", text)}
-                  />
-                  <TextInputField
-                    label="Last Name"
-                    value={isEditMode ? formData.lastName : user.lastName}
-                    editable={isEditMode}
-                    onChangeText={(text) => handleInputChange("lastName", text)}
-                  />
-                </View>
-                <View style={styles.rowContainer}>
-                  <TextInputField
-                    label="Phone Number"
-                    value={isEditMode ? formData.phoneNumber : interest?.phoneNumber || ""}
-                    editable={isEditMode}
-                    onChangeText={(text) => handleInputChange("phoneNumber", text)}
-                  />
-                  <TextInputField label="Email" value={user.email} editable={false} />
-                </View>
+                {isEditMode ? (
+                  <>
+                    <View style={styles.rowContainer}>
+                      <TextInputField
+                        label="First Name"
+                        value={formData.firstName}
+                        editable={true}
+                        onChangeText={(text) => handleInputChange("firstName", text)}
+                      />
+                      <TextInputField
+                        label="Last Name"
+                        value={formData.lastName}
+                        editable={true}
+                        onChangeText={(text) => handleInputChange("lastName", text)}
+                      />
+                    </View>
+                    <View style={styles.rowContainer}>
+                      <TextInputField
+                        label="Phone Number"
+                        value={formData.phoneNumber}
+                        editable={true}
+                        onChangeText={(text) => handleInputChange("phoneNumber", text)}
+                      />
+                      <TextInputField label="Email" value={user.email} editable={false} />
+                    </View>
+                  </>
+                ) : (
+                  <View style={styles.readOnlyStack}>
+                    <View style={styles.readOnlyField}>
+                      <Text style={styles.readOnlyLabel}>First Name</Text>
+                      <Text style={styles.readOnlyValue}>{user.firstName || ""}</Text>
+                    </View>
+                    <View style={styles.readOnlyField}>
+                      <Text style={styles.readOnlyLabel}>Last Name</Text>
+                      <Text style={styles.readOnlyValue}>{user.lastName || ""}</Text>
+                    </View>
+                    <View style={styles.readOnlyField}>
+                      <Text style={styles.readOnlyLabel}>Phone Number</Text>
+                      <Text style={styles.readOnlyValue}>{interest?.phoneNumber || ""}</Text>
+                    </View>
+                    <View style={styles.readOnlyField}>
+                      <Text style={styles.readOnlyLabel}>Email</Text>
+                      <Text style={styles.readOnlyValue}>{user.email || ""}</Text>
+                    </View>
+                  </View>
+                )}
               </View>
               <View style={styles.divider} />
 
@@ -423,63 +458,102 @@ export default function ProfileScreen() {
                       )}
                     </View>
 
-                    <View className="gap-6 mt-4">
-                    <TextInputField
-                      label={isEditMode ? "Church Name *" : "Church Name"}
-                      value={church?.churchName || ""}
-                      editable={isEditMode}
-                      onChangeText={(text) => handleInputChange("churches", text, idx, "churchName")}
-                    />
-                    <View style={styles.rowContainer}>
-                      <TextInputField
-                        label={isEditMode ? "Church Phone *" : "Church Phone"}
-                        value={church?.churchPhone || ""}
-                        editable={isEditMode}
-                        onChangeText={(text) => handleInputChange("churches", text, idx, "churchPhone")}
-                      />
-                      <TextInputField
-                        label={isEditMode ? "Church Website *" : "Church Website"}
-                        value={church?.churchWebsite || ""}
-                        editable={isEditMode}
-                        onChangeText={(text) => handleInputChange("churches", text, idx, "churchWebsite")}
-                      />
-                    </View>
-                    <TextInputField
-                      label={isEditMode ? "Church Address *" : "Church Address"}
-                      value={church?.churchAddress || ""}
-                      editable={isEditMode}
-                      onChangeText={(text) => handleInputChange("churches", text, idx, "churchAddress")}
-                    />
-                    <View style={styles.rowContainer}>
-                      <TextInputField
-                        label={isEditMode ? "City *" : "City"}
-                        value={church?.city || ""}
-                        editable={isEditMode}
-                        onChangeText={(text) => handleInputChange("churches", text, idx, "city")}
-                      />
-                      <TextInputField
-                        label={isEditMode ? "State *" : "State"}
-                        value={church?.state || ""}
-                        editable={isEditMode}
-                        onChangeText={(text) => handleInputChange("churches", text, idx, "state")}
-                      />
-                    </View>
-                    <View style={styles.rowContainer}>
-                      <TextInputField
-                        label={isEditMode ? "Zip Code *" : "Zip Code"}
-                        value={church?.zipCode || ""}
-                        editable={isEditMode}
-                        onChangeText={(text) => handleInputChange("churches", text, idx, "zipCode")}
-                      />
-                      <TextInputField
-                        label={isEditMode ? "Country *" : "Country"}
-                        value={church?.country || ""}
-                        editable={isEditMode}
-                        onChangeText={(text) => handleInputChange("churches", text, idx, "country")}
-                      />
-                    </View>
-                    </View>
-                    <View style={styles.divider} className="my-4" />
+                    {isEditMode ? (
+                      <View className="gap-6 mt-4">
+                        <TextInputField
+                          label="Church Name *"
+                          value={church?.churchName || ""}
+                          editable={true}
+                          onChangeText={(text) => handleInputChange("churches", text, idx, "churchName")}
+                        />
+                        <View style={styles.rowContainer}>
+                          <TextInputField
+                            label="Church Phone *"
+                            value={church?.churchPhone || ""}
+                            editable={true}
+                            onChangeText={(text) => handleInputChange("churches", text, idx, "churchPhone")}
+                          />
+                          <TextInputField
+                            label="Church Website *"
+                            value={church?.churchWebsite || ""}
+                            editable={true}
+                            onChangeText={(text) => handleInputChange("churches", text, idx, "churchWebsite")}
+                          />
+                        </View>
+                        <TextInputField
+                          label="Church Address *"
+                          value={church?.churchAddress || ""}
+                          editable={true}
+                          onChangeText={(text) => handleInputChange("churches", text, idx, "churchAddress")}
+                        />
+                        <View style={styles.rowContainer}>
+                          <TextInputField
+                            label="City *"
+                            value={church?.city || ""}
+                            editable={true}
+                            onChangeText={(text) => handleInputChange("churches", text, idx, "city")}
+                          />
+                          <TextInputField
+                            label="State *"
+                            value={church?.state || ""}
+                            editable={true}
+                            onChangeText={(text) => handleInputChange("churches", text, idx, "state")}
+                          />
+                        </View>
+                        <View style={styles.rowContainer}>
+                          <TextInputField
+                            label="Zip Code *"
+                            value={church?.zipCode || ""}
+                            editable={true}
+                            onChangeText={(text) => handleInputChange("churches", text, idx, "zipCode")}
+                          />
+                          <TextInputField
+                            label="Country *"
+                            value={church?.country || ""}
+                            editable={true}
+                            onChangeText={(text) => handleInputChange("churches", text, idx, "country")}
+                          />
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={styles.readOnlyStack}>
+                        <View style={styles.readOnlyField}>
+                          <Text style={styles.readOnlyLabel}>Church Name</Text>
+                          <Text style={styles.readOnlyValue}>{church?.churchName || ""}</Text>
+                        </View>
+                        <View style={styles.readOnlyField}>
+                          <Text style={styles.readOnlyLabel}>Church Phone</Text>
+                          <Text style={styles.readOnlyValue}>{church?.churchPhone || ""}</Text>
+                        </View>
+                        <View style={styles.readOnlyField}>
+                          <Text style={styles.readOnlyLabel}>Church Website</Text>
+                          <Text style={styles.readOnlyValue}>{church?.churchWebsite || ""}</Text>
+                        </View>
+                        <View style={styles.readOnlyField}>
+                          <Text style={styles.readOnlyLabel}>Church Address</Text>
+                          <Text style={styles.readOnlyValue}>{church?.churchAddress || ""}</Text>
+                        </View>
+                        <View style={styles.readOnlyField}>
+                          <Text style={styles.readOnlyLabel}>City</Text>
+                          <Text style={styles.readOnlyValue}>{church?.city || ""}</Text>
+                        </View>
+                        <View style={styles.readOnlyField}>
+                          <Text style={styles.readOnlyLabel}>State</Text>
+                          <Text style={styles.readOnlyValue}>{church?.state || ""}</Text>
+                        </View>
+                        <View style={styles.readOnlyField}>
+                          <Text style={styles.readOnlyLabel}>Zip Code</Text>
+                          <Text style={styles.readOnlyValue}>{church?.zipCode || ""}</Text>
+                        </View>
+                        <View style={styles.readOnlyField}>
+                          <Text style={styles.readOnlyLabel}>Country</Text>
+                          <Text style={styles.readOnlyValue}>{church?.country || ""}</Text>
+                        </View>
+                      </View>
+                    )}
+                    {idx < churchArray.length - 1 && (
+                      <View style={styles.divider} className="my-4" />
+                    )}
                   </View>
                 ));
               })()}
@@ -501,46 +575,78 @@ export default function ProfileScreen() {
               </View>
 
               <View className="gap-6">
-                {/* <DropDrawer
-                  selectedValues={isEditMode ? [formData.title || ""] : [interest?.title || ""]}
-                  setSelectedValues={(vals) => handleInputChange("title", vals[0])}
-                  items={titleOptions}
-                  placeholder="Select Title"
-                  useCircleIndicator={true}
-                  editable={isEditMode}
-                /> */}
-                <View style={styles.rowContainer}>
-                  <TextInputField
-                    label="Years in Ministry"
-                    value={isEditMode ? formData.yearsInMinistry : interest?.yearsInMinistry || ""}
-                    onChangeText={(text) => handleInputChange("yearsInMinistry", text)}
-                    editable={isEditMode}
-                  />
-                  <TextInputField
-                    label="Conference"
-                    value={isEditMode ? formData.conference : interest?.conference || ""}
-                    onChangeText={(text) => handleInputChange("conference", text)}
-                    editable={isEditMode}
-                  />
-                </View>
-                <TextInputField
-                  label="Community Projects"
-                  value={isEditMode ? formData.currentCommunityServiceProjects : interest?.currentCommunityProjects || ""}
-                  onChangeText={(text) => handleInputChange("currentCommunityServiceProjects", text)}
-                  editable={isEditMode}
-                />
-                <TextArea
-                  label="Interests"
-                  value={isEditMode ? (Array.isArray(formData.interests) ? formData.interests.join(", ") : "") : (Array.isArray(interest?.interests) ? interest?.interests.join(", ") : "")}
-                  onChangeText={(text) => handleInputChange("interests", text.split(", ").map(s => s.trim()))}
-                  editable={isEditMode}
-                />
-                <TextArea
-                  label="Comments"
-                  value={isEditMode ? formData.comments : interest?.comments || ""}
-                  onChangeText={(text) => handleInputChange("comments", text)}
-                  editable={isEditMode}
-                />
+                {isEditMode ? (
+                  <>
+                    <View style={styles.rowContainer}>
+                      <TextInputField
+                        label="Years in Ministry"
+                        value={formData.yearsInMinistry}
+                        onChangeText={(text) => handleInputChange("yearsInMinistry", text)}
+                        editable={true}
+                      />
+                      <TextInputField
+                        label="Conference"
+                        value={formData.conference}
+                        onChangeText={(text) => handleInputChange("conference", text)}
+                        editable={true}
+                      />
+                    </View>
+                    <TextInputField
+                      label="Community Projects"
+                      value={formData.currentCommunityServiceProjects}
+                      onChangeText={(text) => handleInputChange("currentCommunityServiceProjects", text)}
+                      editable={true}
+                    />
+                    <TextArea
+                      label="Interests"
+                      value={
+                        Array.isArray(formData.interests)
+                          ? formData.interests.join(", ")
+                          : ""
+                      }
+                      onChangeText={(text) =>
+                        handleInputChange(
+                          "interests",
+                          text.split(", ").map((s: string) => s.trim())
+                        )
+                      }
+                      editable={true}
+                    />
+                    <TextArea
+                      label="Comments"
+                      value={formData.comments}
+                      onChangeText={(text) => handleInputChange("comments", text)}
+                      editable={true}
+                    />
+                  </>
+                ) : (
+                  <View style={styles.readOnlyStack}>
+                    <View style={styles.readOnlyField}>
+                      <Text style={styles.readOnlyLabel}>Years in Ministry</Text>
+                      <Text style={styles.readOnlyValue}>{interest?.yearsInMinistry || ""}</Text>
+                    </View>
+                    <View style={styles.readOnlyField}>
+                      <Text style={styles.readOnlyLabel}>Conference</Text>
+                      <Text style={styles.readOnlyValue}>{interest?.conference || ""}</Text>
+                    </View>
+                    <View style={styles.readOnlyField}>
+                      <Text style={styles.readOnlyLabel}>Community Projects</Text>
+                      <Text style={styles.readOnlyValue}>{interest?.currentCommunityProjects || ""}</Text>
+                    </View>
+                    <View style={styles.readOnlyField}>
+                      <Text style={styles.readOnlyLabel}>Interests</Text>
+                      <Text style={styles.readOnlyValue}>
+                        {Array.isArray(interest?.interests)
+                          ? interest?.interests.join(", ")
+                          : ""}
+                      </Text>
+                    </View>
+                    <View style={styles.readOnlyField}>
+                      <Text style={styles.readOnlyLabel}>Comments</Text>
+                      <Text style={styles.readOnlyValue}>{interest?.comments || ""}</Text>
+                    </View>
+                  </View>
+                )}
               </View>
             </View>
           </View>
@@ -586,6 +692,37 @@ const styles = StyleSheet.create({
     height: 0.5,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     marginHorizontal: 50,
+  },
+  readOnlyBox: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  readOnlyStack: {
+    gap: 12,
+  },
+  readOnlyField: {
+    gap: 4,
+  },
+  readOnlyLabel: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.75)",
+    fontWeight: "500",
+  },
+  readOnlyValue: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  personalInfoContainerEdit: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.02)",
+  },
+  personalInfoContainerView: {
+    borderWidth: 0,
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
   progressContainer: {
     flexDirection: "row",

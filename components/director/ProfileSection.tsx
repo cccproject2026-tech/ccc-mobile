@@ -141,22 +141,20 @@ export const PersonalInfoSection = ({
                     First Name : {profileData?.user?.firstName}
                 </Text>
             </View>
-            <View style={styles.row}>
-                <View style={[styles.viewField, styles.halfInput]}>
-                    <Text style={styles.viewFieldText}>
-                        Last Name : {profileData?.user?.lastName}
-                    </Text>
-                </View>
-                <View style={[styles.viewField, styles.halfInput]}>
-                    <Text style={styles.viewFieldText}>Email : {profileData?.user?.email}</Text>
-                </View>
+            <View style={styles.viewField}>
+                <Text style={styles.viewFieldText}>
+                    Last Name : {profileData?.user?.lastName}
+                </Text>
             </View>
-            <View style={styles.row}>
-                <View style={[styles.viewField, styles.halfInput]}>
-                    <Text style={styles.viewFieldText}>
-                        Phone Number : {profileData?.interest?.phoneNumber}
-                    </Text>
-                </View>
+            <View style={styles.viewField}>
+                <Text style={styles.viewFieldText}>
+                    Email : {profileData?.user?.email}
+                </Text>
+            </View>
+            <View style={styles.viewField}>
+                <Text style={styles.viewFieldText}>
+                    Phone Number : {profileData?.interest?.phoneNumber}
+                </Text>
             </View>
         </View>
     );
@@ -336,30 +334,28 @@ export const ChurchInfoSection = ({
                                 Church Name : {church.churchName}
                             </Text>
                         </View>
-                        <View style={styles.row}>
-                            <View style={[styles.viewField, styles.halfInput]}>
-                                <Text style={styles.viewFieldText}>
-                                    Phone : {church.churchPhone}
-                                </Text>
-                            </View>
-                            <View style={[styles.viewField, styles.halfInput]}>
-                                <Text style={styles.viewFieldText}>City : {church.city}</Text>
-                            </View>
+                        <View style={styles.viewField}>
+                            <Text style={styles.viewFieldText}>
+                                Phone : {church.churchPhone}
+                            </Text>
+                        </View>
+                        <View style={styles.viewField}>
+                            <Text style={styles.viewFieldText}>City : {church.city}</Text>
                         </View>
                         <View style={styles.viewField}>
                             <Text style={styles.viewFieldText}>
                                 Address : {church.churchAddress}
                             </Text>
                         </View>
-                        <View style={styles.row}>
-                            <View style={[styles.viewField, styles.halfInput]}>
-                                <Text style={styles.viewFieldText}>State : {church.state}</Text>
-                            </View>
-                            <View style={[styles.viewField, styles.halfInput]}>
-                                <Text style={styles.viewFieldText}>
-                                    Country : {church.country}
-                                </Text>
-                            </View>
+                        <View style={styles.viewField}>
+                            <Text style={styles.viewFieldText}>
+                                State : {church.state}
+                            </Text>
+                        </View>
+                        <View style={styles.viewField}>
+                            <Text style={styles.viewFieldText}>
+                                Country : {church.country}
+                            </Text>
                         </View>
                     </View>
                 );
@@ -489,17 +485,15 @@ export const OtherInfoSection = ({
             <View style={styles.viewField}>
                 <Text style={styles.viewFieldText}>Title : {profileData?.interest?.title}</Text>
             </View>
-            <View style={styles.row}>
-                <View style={[styles.viewField, styles.halfInput]}>
-                    <Text style={styles.viewFieldText}>
-                        Years in Ministry : {profileData?.interest?.yearsInMinistry}
-                    </Text>
-                </View>
-                <View style={[styles.viewField, styles.halfInput]}>
-                    <Text style={styles.viewFieldText}>
-                        Conference : {profileData?.interest?.conference}
-                    </Text>
-                </View>
+            <View style={styles.viewField}>
+                <Text style={styles.viewFieldText}>
+                    Years in Ministry : {profileData?.interest?.yearsInMinistry}
+                </Text>
+            </View>
+            <View style={styles.viewField}>
+                <Text style={styles.viewFieldText}>
+                    Conference : {profileData?.interest?.conference}
+                </Text>
             </View>
             <View style={styles.viewField}>
                 <Text style={styles.viewFieldText}>
@@ -532,8 +526,8 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     profileInfoBox: {
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.4)',
+        borderWidth: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
         borderRadius: 12,
         padding: 16,
     },
@@ -581,16 +575,17 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     viewField: {
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.6)',
+        borderWidth: 0,
+        backgroundColor: 'rgba(255,255,255,0.03)',
         borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
         marginBottom: 12,
     },
     viewFieldText: {
         color: '#fff',
-        fontSize: 13,
+        fontSize: 14,
+        fontWeight: '600',
     },
     editFieldContainer: {
         marginBottom: 12,
