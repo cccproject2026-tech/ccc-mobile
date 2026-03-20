@@ -47,6 +47,7 @@ export default function PastorDashboard() {
     "morning" | "afternoon" | "evening"
   >("morning");
   const [isFirstDashboardVisit, setIsFirstDashboardVisit] = useState(false);
+  const lastProgressRefetchAtRef = useRef<number>(0);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pastorFocusSheetRef = useRef<BottomSheetModal>(null);
@@ -127,7 +128,7 @@ export default function PastorDashboard() {
   } = useAppointments({ userId: user?.id });
 
   // Fetch roadmaps
-  const { data: roadmaps, isLoading: isRoadmapsLoading, refetch: refetchRoadmaps } =
+  const { data: roadmaps, isLoading: isRoadmapsLoading } =
     useRoadmaps("pastor");
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -201,12 +202,19 @@ export default function PastorDashboard() {
 
   useFocusEffect(
     useCallback(() => {
-      // Refresh progress and assigned roadmaps when the user returns to dashboard.
+      // Refresh progress when user returns to this screen.
+      // Throttle to avoid backend 429 from repeated focus events.
+      const now = Date.now();
+      const cooldownMs = 7000;
+      const canRefetch =
+        now - lastProgressRefetchAtRef.current > cooldownMs &&
+        !progressQuery.isFetching;
+
+      if (!canRefetch) return;
+
+      lastProgressRefetchAtRef.current = now;
       progressQuery.refetch();
-      if (typeof refetchRoadmaps === "function") {
-        refetchRoadmaps();
-      }
-    }, [progressQuery, refetchRoadmaps])
+    }, [progressQuery.isFetching, progressQuery.refetch])
   );
 
   useEffect(() => {
