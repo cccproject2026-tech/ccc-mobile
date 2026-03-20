@@ -50,7 +50,9 @@ export default function PastorStartJourneyScreen() {
     }, [router, role]);
 
     const handleContinue = useCallback(() => {
-        router.push({ pathname: "/(unauthenticated)/interest-form", params: role ? { role } : undefined });
+        router.push(
+            `/(unauthenticated)/pastor-start-journey/step-2/${role || "pastor"}` as any
+        );
     }, [router, role]);
 
     return (
