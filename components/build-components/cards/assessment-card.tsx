@@ -539,59 +539,6 @@ export default function AssessmentCard({
             >
               Meeting Scheduled on {data?.meetingDate}
             </Text>
-
-            {/* Absolutely positioned right icons */}
-            <View style={styles.rightIconsContainer}>
-              {1 == 1 && (
-                // Use Zeego menu if menuItems provided
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger>
-                    <Pressable hitSlop={12} style={styles.iconButton}>
-                      <Ionicons
-                        name="ellipsis-vertical"
-                        size={20}
-                        color="#EAF7FF"
-                      />
-                    </Pressable>
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Content>
-                    {menuItems?.map((item: MenuItem) =>
-                      item.key.startsWith("separator") ? (
-                        <DropdownMenu.Separator key={item.key} />
-                      ) : (
-                        <DropdownMenu.Item
-                          key={item.key}
-                          destructive={item.destructive}
-                          onSelect={() => {
-                            if (item.title == "Change Mode") {
-                              setChangeModeModalVisible(true);
-                            } else {
-                              handleReschedule(data);
-                            }
-                            //item.onSelect();
-                          }}
-                        >
-                          <DropdownMenu.ItemTitle>
-                            {item.title}
-                          </DropdownMenu.ItemTitle>
-                          {item.icon && (
-                            <DropdownMenu.ItemIcon
-                              ios={{
-                                name:
-                                  Platform.OS === "android"
-                                    ? item.icon.android || "ic_menu_view"
-                                    : item.icon.ios || "circle",
-                                destructive: item.destructive,
-                              }}
-                            />
-                          )}
-                        </DropdownMenu.Item>
-                      ),
-                    )}
-                  </DropdownMenu.Content>
-                </DropdownMenu.Root>
-              )}
-            </View>
           </TouchableOpacity>
         </LinearGradient>
       )}
