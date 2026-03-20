@@ -61,6 +61,13 @@ export default function PastorDashboard() {
   const { mentors, isEmpty } = useAssignedMentors(user?.id as string);
   const { sections: focusSections, isLoading: isFocusLoading } =
     usePastorFocusItems();
+  const [focusSheetSectionId, setFocusSheetSectionId] = useState<string | null>(null);
+  const [focusSheetTitle, setFocusSheetTitle] = useState<string | undefined>(undefined);
+
+  const displayedFocusSections = useMemo(() => {
+    if (!focusSheetSectionId) return focusSections;
+    return focusSections.filter((s) => s.id === focusSheetSectionId);
+  }, [focusSheetSectionId, focusSections]);
 
   const handleCall = (mentor: Mentor) => {
     if (!mentor.phoneNumber) {
@@ -316,43 +323,34 @@ export default function PastorDashboard() {
     return "You can schedule a meeting with your mentor anytime.";
   }, [hasUpcomingAppointments, isFirstDashboardVisit]);
 
-  // Transform roadmaps for RoadMapCard (limit to 3 for dashboard)
-  const dashboardRoadmaps = useMemo(() => {
-    if (!roadmaps || roadmaps.length === 0) return [];
-    return roadmaps.slice(0, 3).map((roadmap) => {
-      // Map roadmap status to card status
-      let status = "Remaining";
-      if (roadmap.status === "completed") {
-        status = "Completed";
-      } else if (roadmap.status === "in-progress") {
-        status = "In progress";
-      } else if (roadmap.status === "not started") {
-        status = "Not Started";
-      }
-
-      return {
-        phase: roadmap.phase || "Phase",
-        title: roadmap.name || "Roadmap",
-        status: status,
-        roadmapId: roadmap._id,
-      };
-    });
-  }, [roadmaps]);
-
   const presentFocusSheet = useCallback(() => {
     if (hasPresentedForSessionRef.current) return;
     if (!pastorFocusSheetRef.current) return;
+
+    // Auto-open should show the full set of focus sections.
+    setFocusSheetSectionId(null);
+    setFocusSheetTitle(undefined);
 
     pastorFocusSheetRef.current.present();
     hasPresentedForSessionRef.current = true;
     pendingSheetOpenRef.current = false;
   }, []);
 
-  const openThingsToFocusSheet = useCallback(() => {
-    // Button should always open the sheet on demand (even after auto-open).
-    pastorFocusSheetRef.current?.present();
-    pendingSheetOpenRef.current = false;
-  }, []);
+  const openThingsToFocusSheet = useCallback(
+    (opts?: { sectionId?: string; title?: string }) => {
+      // Tile presses should keep the user on the home screen:
+      // show the relevant focus section inside the existing bottom sheet.
+      const nextSectionId = opts?.sectionId ?? null;
+      setFocusSheetSectionId(nextSectionId);
+      setFocusSheetTitle(opts?.title);
+
+      requestAnimationFrame(() => {
+        pastorFocusSheetRef.current?.present();
+      });
+      pendingSheetOpenRef.current = false;
+    },
+    [],
+  );
 
   const setPastorFocusSheetRef = useCallback(
     (instance: BottomSheetModal | null) => {
@@ -497,21 +495,6 @@ export default function PastorDashboard() {
           </View>
         )}
 
-        <TouchableOpacity
-          activeOpacity={0.9}
-          style={styles.thingsToFocusButton}
-          onPress={openThingsToFocusSheet}
-        >
-          <View style={styles.thingsToFocusButtonRow}>
-            <Ionicons
-              name="list-outline"
-              size={18}
-              color="rgba(255,255,255,0.9)"
-            />
-            <Text style={styles.thingsToFocusButtonText}>Things to focus on</Text>
-          </View>
-        </TouchableOpacity>
-
         <View style={styles.mentorStatusCard}>
           {showAssignedMentorCard ? (
             <>
@@ -551,138 +534,80 @@ export default function PastorDashboard() {
           )}
         </View>
 
-        <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.videoScrollView}
-            contentContainerStyle={styles.videoContentContainer}
-          >
-            {[...Array(3)].map((_, i) => (
-              <View key={i} style={styles.videoCard}>
-                <Image
-                  source={icons.video}
-                  style={styles.videoImage}
-                  resizeMode="cover"
-                />
-              </View>
-            ))}
-          </ScrollView>
-        </View>
+        <View style={styles.thingsToFocusCard}>
+          <Text style={styles.thingsToFocusTitle}>Things to Focus On</Text>
+          <Text style={styles.thingsToFocusDescription}>
+            Here are the most important things you should focus on today.
+          </Text>
 
-        <View style={styles.separator} />
-
-        <View
-          style={{ paddingHorizontal: 16, marginTop: 14, marginBottom: 20 }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{ fontSize: 15, color: "#e7f6fc", fontWeight: "700" }}
-            >
-              Upcoming Appointments
-            </Text>
+          <View style={styles.thingsToFocusTilesGrid}>
             <Pressable
+              style={styles.thingsToFocusTile}
               onPress={() =>
-                router.push("/(pastor)/(tabs)/(appointments)/appointments")
+                openThingsToFocusSheet({
+                  sectionId: "meetings",
+                  title: "Today's Meetings",
+                })
               }
             >
-              <Text
-                style={{ color: "#cfe9f3", fontWeight: "600", fontSize: 13 }}
-              >
-                See all
+              <Ionicons name="calendar-outline" size={22} color="#FFFFFF" />
+              <Text style={styles.thingsToFocusTileText}>
+                Today's Meetings
               </Text>
             </Pressable>
-          </View>
 
-          <View
-            style={{
-              marginTop: 10,
-              gap: 12,
-              borderBottomColor: "#ffffff22",
-              borderBottomWidth: 1,
-              paddingBottom: 18,
-            }}
-          >
-            {upcomingAppointments.length > 0 ? (
-              upcomingAppointments.map((a) => (
-                <TouchableOpacity
-                  key={a.id}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    router.push(
-                      "/(pastor)/(tabs)/(appointments)/appointments",
-                    )
-                  }
-                >
-                  <AppointmentCard
-                    date={a.date}
-                    time={a.time}
-                    tz={a.tz}
-                    person={a.person}
-                    role={a.role}
-                    mode={a.mode}
-                    platformIcon={a.icon}
-                    avatar={icons.myProfile}
-                    onPressChevron={() => { }}
-                    onCall={() => { }}
-                    onChat={() => { }}
-                    onMail={() => { }}
-                  />
-                </TouchableOpacity>
-              ))
-            ) : (
-              <View style={{ paddingVertical: 20, alignItems: "center" }}>
-                <Text
-                  style={{ color: "rgba(255, 255, 255, 0.6)", fontSize: 14 }}
-                >
-                  No upcoming appointments
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.RoadMapContainer}>
-          <View style={styles.RoadMapHeaderRow}>
-            <Text style={styles.roadmapTitle}>Today's Roadmap List</Text>
             <Pressable
-              onPress={() => router.push("/(pastor)/(tabs)/(roadmap)/roadmap")}
+              style={styles.thingsToFocusTile}
+              onPress={() =>
+                openThingsToFocusSheet({
+                  sectionId: "roadmaps",
+                  title: "Roadmap Phases",
+                })
+              }
             >
-              <Text style={styles.roadmapSeeAll}>See all</Text>
+              <Ionicons name="layers-outline" size={22} color="#FFFFFF" />
+              <Text style={styles.thingsToFocusTileText}>
+                In Progress Roadmap Phases
+              </Text>
             </Pressable>
-          </View>
-          <View style={styles.roadmapList}>
-            {dashboardRoadmaps.length > 0 ? (
-              dashboardRoadmaps.map((e, i) => (
-                <TouchableOpacity
-                  key={e.roadmapId || i}
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    if (e.roadmapId) {
-                      router.push(
-                        `/(pastor)/(tabs)/(roadmap)/roadmap/${e.roadmapId}`,
-                      );
-                    }
-                  }}
-                >
-                  <RoadMapCardNew data={e} dataKey={i.toString()} />
-                </TouchableOpacity>
-              ))
-            ) : (
-              <View style={{ paddingVertical: 20, alignItems: "center" }}>
-                <Text
-                  style={{ color: "rgba(255, 255, 255, 0.6)", fontSize: 14 }}
-                >
-                  No roadmaps assigned
-                </Text>
-              </View>
-            )}
+
+            <Pressable
+              style={styles.thingsToFocusTile}
+              onPress={() =>
+                openThingsToFocusSheet({
+                  sectionId: "assessments",
+                  title: "Assessments",
+                })
+              }
+            >
+              <Ionicons
+                name="document-text-outline"
+                size={22}
+                color="#FFFFFF"
+              />
+              <Text style={styles.thingsToFocusTileText}>
+                In Progress Assessments
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.thingsToFocusTile}
+              onPress={() =>
+                openThingsToFocusSheet({
+                  sectionId: "mentor-feedback",
+                  title: "Mentor Comments",
+                })
+              }
+            >
+              <Ionicons
+                name="chatbubble-outline"
+                size={22}
+                color="#FFFFFF"
+              />
+              <Text style={styles.thingsToFocusTileText}>
+                New Mentor Comments
+              </Text>
+            </Pressable>
           </View>
         </View>
 
@@ -786,7 +711,8 @@ export default function PastorDashboard() {
 
         <PastorFocusBottomSheet
           ref={setPastorFocusSheetRef}
-          sections={focusSections}
+          sections={displayedFocusSections}
+          title={focusSheetTitle}
           isLoading={isLoading || isFocusLoading}
           onSelectItem={handleFocusItemPress}
         />
@@ -1139,5 +1065,53 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 14,
+  },
+
+  thingsToFocusCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  thingsToFocusTitle: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  thingsToFocusDescription: {
+    color: "rgba(225, 241, 255, 0.85)",
+    fontSize: 12,
+    lineHeight: 18,
+    paddingRight: 8,
+  },
+  thingsToFocusTilesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  thingsToFocusTile: {
+    width: "48%",
+    backgroundColor: "rgba(19, 84, 131, 0.50)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  thingsToFocusTileText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 11,
+    textAlign: "center",
+    lineHeight: 14,
   },
 });
