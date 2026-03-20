@@ -459,6 +459,25 @@ export default function PastorDashboard() {
           {/* ── Divider ── */}
           <View style={styles.divider} />
 
+          {/* ── How to do ? ── */}
+          <View style={styles.card}>
+            <View style={styles.exploreHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.exploreHelpHeading}>How to do ?</Text>
+                <Text style={styles.exploreHelpDesc}>
+                  We've got simple steps to help you move forward.
+                </Text>
+              </View>
+
+              <Pressable
+                style={styles.exploreHelpButton}
+                onPress={() => openThingsToFocusSheet()}
+              >
+                <Text style={styles.exploreHelpButtonText}>Help..</Text>
+              </Pressable>
+            </View>
+          </View>
+
           {/* ── Explore CCC ── */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Explore CCC</Text>
@@ -710,6 +729,41 @@ const styles = StyleSheet.create({
   },
   exploreItem: {
     width: "48%",
+  },
+  exploreHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: 6,
+    marginBottom: 10,
+  },
+  exploreHelpHeading: {
+    color: "rgba(255,255,255,0.85)",
+    fontWeight: "700",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  exploreHelpDesc: {
+    color: "rgba(255,255,255,0.55)",
+    fontWeight: "600",
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  exploreHelpButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  exploreHelpButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 12,
   },
   exploreTile: {
     height: 90,
