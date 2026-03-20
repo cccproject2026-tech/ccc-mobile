@@ -263,10 +263,10 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         marginTop: 8,
-        fontSize: 14,
-        color: "rgba(255,255,255,0.5)",
-        fontWeight: "400",
-        letterSpacing: 0.3,
+        fontSize: 18,
+        color: "rgba(255,255,255,0.85)",
+        fontWeight: "700",
+        letterSpacing: 0.2,
     },
 
     // Divider
