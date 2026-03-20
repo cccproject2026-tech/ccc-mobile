@@ -348,6 +348,12 @@ export default function PastorDashboard() {
     pendingSheetOpenRef.current = false;
   }, []);
 
+  const openThingsToFocusSheet = useCallback(() => {
+    // Button should always open the sheet on demand (even after auto-open).
+    pastorFocusSheetRef.current?.present();
+    pendingSheetOpenRef.current = false;
+  }, []);
+
   const setPastorFocusSheetRef = useCallback(
     (instance: BottomSheetModal | null) => {
       pastorFocusSheetRef.current = instance;
@@ -490,6 +496,21 @@ export default function PastorDashboard() {
             </Text>
           </View>
         )}
+
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={styles.thingsToFocusButton}
+          onPress={openThingsToFocusSheet}
+        >
+          <View style={styles.thingsToFocusButtonRow}>
+            <Ionicons
+              name="list-outline"
+              size={18}
+              color="rgba(255,255,255,0.9)"
+            />
+            <Text style={styles.thingsToFocusButtonText}>Things to focus on</Text>
+          </View>
+        </TouchableOpacity>
 
         <View style={styles.mentorStatusCard}>
           {showAssignedMentorCard ? (
@@ -1098,5 +1119,25 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.9)",
     fontSize: 13,
     lineHeight: 19,
+  },
+  thingsToFocusButton: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(26, 42, 89, 0.45)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  thingsToFocusButtonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  thingsToFocusButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
   },
 });
