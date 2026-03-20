@@ -41,14 +41,14 @@ export default function AssessmentCard({
   onMeetingPress,
   onMeetingIconPress,
   onCustomizedPress,
-  onPressMenu,
+  onMenuPress,
 }: {
   data: Assessment;
   onPress?: (data: Assessment) => void;
   onMeetingPress?: () => void;
   onMeetingIconPress?: () => void;
   onCustomizedPress?: () => void;
-  onPressMenu?: () => void;
+  onMenuPress?: () => void;
   menuItems?: MenuItem[];
 }) {
   // iOS compression factors
@@ -228,11 +228,11 @@ export default function AssessmentCard({
       }}
     >
       {/* Three dots menu button */}
-      {user?.role !== "pastor" && (
+      {user?.role !== "pastor" && onMenuPress && (
         <TouchableOpacity
           onPress={(e) => {
-            e.stopPropagation();
-            // onMenuPress?.();
+            e.stopPropagation?.();
+            onMenuPress?.();
           }}
           style={{
             position: "absolute",
@@ -479,7 +479,7 @@ export default function AssessmentCard({
                 }}
                 onPress={(event) => {
                   // Prevent parent card press from triggering.
-                  // @ts-expect-error - stopPropagation exists on native events in RN.
+              
                   event?.stopPropagation?.();
                   onCustomizedPress?.();
                 }}

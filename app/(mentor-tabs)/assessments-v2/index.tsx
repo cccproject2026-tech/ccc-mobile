@@ -41,11 +41,17 @@ export default function MentorAssessmentsLibrary() {
     
     // Format mentees for display
     const mentees = useMemo(() => {
-        if (!menteesData?.mentees) return [];
-        return menteesData.mentees.map((mentee) => ({
-            id: mentee.id,
-            name: `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee",
-            avatar: mentee.profilePicture ? { uri: mentee.profilePicture } : icons.myProfile,
+        const rawMentees =
+            menteesData?.pages?.flatMap((page: any) => page?.mentees ?? []) ?? [];
+
+        return rawMentees.map((mentee: any) => ({
+            id: mentee.id ?? mentee._id,
+            name:
+                `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() ||
+                "Mentee",
+            avatar: mentee.profilePicture?.trim?.()
+                ? { uri: mentee.profilePicture.trim() }
+                : icons.myProfile,
         }));
     }, [menteesData]);
 

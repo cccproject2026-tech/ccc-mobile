@@ -3,7 +3,7 @@ import { getFontSize, getIconSize, getSpacing, isIOS, moderateScale } from "@/ut
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
+import React, { forwardRef, useCallback, useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -19,14 +19,10 @@ const AssessmentMenuBottomSheet = forwardRef<BottomSheetModal, AssessmentMenuBot
     ({ assessment, onClose, onAssignTo, onEditSurvey, onDeleteSurvey }, ref) => {
         const { bottom } = useSafeAreaInsets();
         const snapPoints = useMemo(() => ["40%"], []);
-        const internalRef = useRef<BottomSheetModal>(null);
 
         const fontCompress = isIOS ? 0.92 : 1;
         const spacingCompress = isIOS ? 0.85 : 1;
         const imageCompress = isIOS ? 0.92 : 1;
-
-        // Forward the ref
-        useImperativeHandle(ref, () => internalRef.current as BottomSheetModal, []);
 
         const renderBackdrop = useCallback(
             (props: any) => (
@@ -63,13 +59,15 @@ const AssessmentMenuBottomSheet = forwardRef<BottomSheetModal, AssessmentMenuBot
         };
 
         const handleClose = () => {
-            internalRef.current?.dismiss();
+            if (ref && typeof ref !== "function") {
+                ref.current?.dismiss();
+            }
             onClose();
         };
 
         return (
             <BottomSheetModal
-                ref={internalRef}
+                ref={ref}
                 snapPoints={snapPoints}
                 enablePanDownToClose
                 backdropComponent={renderBackdrop}

@@ -285,6 +285,7 @@ export default function PmpSurvey() {
               title={assessment.name}
               subTitle="Assessment"
               hideSearchBar={true}
+              showSettings={false}
               onMenuPress={() => {
                 if (isMentor) {
                   bottomSheetRef.current?.present();
@@ -312,6 +313,7 @@ export default function PmpSurvey() {
             {/* Content Section */}
             <AssessmentCard
               data={assessmentData}
+              onMenuPress={() => bottomSheetRef.current?.present()}
             />
 
             {/* Guidelines points Section */}

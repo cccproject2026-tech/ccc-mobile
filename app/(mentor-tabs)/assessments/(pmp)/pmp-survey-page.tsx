@@ -240,6 +240,7 @@ export default function PmpSurvey() {
               title={assessment.name}
               subTitle="Assessment"
               hideSearchBar={true}
+              showSettings={false}
             />
 
             {/* Tabs Section */}
