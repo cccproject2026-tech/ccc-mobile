@@ -65,8 +65,7 @@ export default function RoleSelectionScreen() {
             router.push('/(pastor)/(tabs)');
         } else {
             router.push({
-                pathname: '/(unauthenticated)',
-                params: { role },
+                pathname: `/(unauthenticated)/role-landing/${role}`,
             });
         }
     };

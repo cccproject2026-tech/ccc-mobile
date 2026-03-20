@@ -5,8 +5,8 @@ import { useOnboardingStore } from "@/stores";
 import { ChurchInfo, InterestFormData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack } from "expo-router";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Stack, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Dimensions,
@@ -168,15 +168,42 @@ export default function InterestFormScreen() {
     const { bottom } = useSafeAreaInsets();
     const { mutate: submitInterest, isPending: isLoading } = useSubmitInterest();
     const { setCurrentStep } = useOnboardingStore();
+    const { role } = useLocalSearchParams<{ role?: string }>();
 
     // Fetch metadata from API
     const { data: metadata, isLoading: isLoadingMetadata } = useInterestMetadata();
 
     console.log('Metadata:', metadata?.countryStates);
+
+    const prefillTitle = useMemo(() => {
+        switch (role) {
+            case "pastor":
+                return "Pastor";
+            case "layleader":
+                return "Lay Leader";
+            case "seminarian":
+                return "Seminarian";
+            default:
+                return "";
+        }
+    }, [role]);
+
     // Form state
-    const [formData, setFormData] = useState<Partial<InterestFormData>>(
-        INITIAL_FORM_DATA
-    );
+    const [formData, setFormData] = useState<Partial<InterestFormData>>(() => ({
+        ...INITIAL_FORM_DATA,
+        title: prefillTitle || "",
+    }));
+
+    // Once metadata loads, ensure the prefilled title exists in the backend dropdown options.
+    useEffect(() => {
+        if (!prefillTitle) return;
+        if (!metadata?.titles?.length) return;
+
+        const safeTitle = metadata.titles.includes(prefillTitle)
+            ? prefillTitle
+            : "";
+        setFormData((prev) => ({ ...prev, title: safeTitle }));
+    }, [metadata?.titles, prefillTitle]);
     const [showTitleDropdown, setShowTitleDropdown] = useState(false);
     const [showInterestsDropdown, setShowInterestsDropdown] = useState(false);
     const [showCountryDropdown, setShowCountryDropdown] = useState<number | null>(
