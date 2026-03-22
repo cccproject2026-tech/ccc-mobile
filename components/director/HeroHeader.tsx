@@ -1,21 +1,29 @@
 import { formatClock, formatDate } from '@/utils/date';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ImageBackground, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
 import Animated, { SharedValue, interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import TopBar from './TopBar';
 
 type Props = {
+    /** Ignored when showBackgroundImage is false (header sizes to TopBar only). */
     height: number;
     image: ImageSourcePropType;
     bottomBlendColor: string;
     blendHeight?: number;
     scrollOffset: SharedValue<number>;
     role: 'director' | 'pastor' | 'mentor';
+    /** When false, no photo hero — only TopBar on the screen gradient. Default true. */
+    showBackgroundImage?: boolean;
+    /** When false, hides the large clock and date block (e.g. compact pastor home). Default true. */
+    showClockDate?: boolean;
     // Optional props for backward compatibility - if provided, use them instead of internal state
     clock?: string;
     date?: string;
     // Callback for when greeting period changes (only used when clock/date are not provided)
     onGreetingPeriodChange?: (period: 'morning' | 'afternoon' | 'evening') => void;
+    /** Rendered over the lower part of the hero image (e.g. greeting + welcome card). */
+    children?: ReactNode;
 };
 
 const HeaderHero: React.FC<Props> = ({
@@ -23,9 +31,12 @@ const HeaderHero: React.FC<Props> = ({
     image,
     scrollOffset,
     role,
+    showBackgroundImage = true,
+    showClockDate = true,
     clock: externalClock,
     date: externalDate,
-    onGreetingPeriodChange
+    onGreetingPeriodChange,
+    children,
 }) => {
     const [now, setNow] = useState(new Date());
     const previousPeriodRef = useRef<'morning' | 'afternoon' | 'evening' | null>(null);
@@ -82,11 +93,43 @@ const HeaderHero: React.FC<Props> = ({
         ],
     }));
 
+    if (!showBackgroundImage) {
+        return (
+            <View style={{ width: '100%' }}>
+                <TopBar
+                    notifications={3}
+                    showUserName={false}
+                    role={role}
+                />
+                {children ? (
+                    <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
+                        {children}
+                    </View>
+                ) : null}
+            </View>
+        );
+    }
+
     return (
         <View style={{ width: '100%', height, overflow: 'hidden', position: 'relative' }}>
             <Animated.View style={[StyleSheet.absoluteFill, animStyle]}>
                 <ImageBackground source={image} resizeMode="cover" style={StyleSheet.absoluteFill} />
             </Animated.View>
+
+            {children ? (
+                <LinearGradient
+                    colors={['transparent', 'rgba(12, 40, 65, 0.2)', 'rgba(12, 40, 65, 0.82)']}
+                    locations={[0, 0.45, 1]}
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: '72%',
+                    }}
+                    pointerEvents="none"
+                />
+            ) : null}
 
             <View style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
                 <TopBar
@@ -96,22 +139,29 @@ const HeaderHero: React.FC<Props> = ({
                 // ...other TopBar props
                 />
             </View>
-            {/* <LinearGradient
-                colors={['rgba(135,206,235,0.4)', 'transparent']}
-                style={[StyleSheet.absoluteFill, { height: 120 }]}
-                pointerEvents="none"
-            />
 
-            <LinearGradient
-                colors={['transparent', bottomBlendColor]}
-                style={{ position: 'absolute', left: 0, right: 0, bottom: -1, height: blendHeight }}
-                pointerEvents="none"
-            /> */}
+            {showClockDate ? (
+                <View style={{ position: 'absolute', left: 0, right: 0, top: '38%', alignItems: 'center' }}>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 32 }}>{clock}</Text>
+                    <Text style={{ color: '#fff', opacity: 0.95, marginTop: 6 }}>{date}</Text>
+                </View>
+            ) : null}
 
-            <View style={{ position: 'absolute', left: 0, right: 0, top: '38%', alignItems: 'center' }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 32 }}>{clock}</Text>
-                <Text style={{ color: '#fff', opacity: 0.95, marginTop: 6 }}>{date}</Text>
-            </View>
+            {children ? (
+                <View
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        paddingHorizontal: 16,
+                        paddingBottom: 14,
+                        gap: 8,
+                    }}
+                >
+                    {children}
+                </View>
+            ) : null}
         </View>
     );
 };

@@ -4,7 +4,6 @@ import WelcomeCard from "@/components/director/WelcomeCard";
 import PastorFocusBottomSheet, {
   PastorFocusItem,
 } from "@/components/sheets/PastorFocusBottomSheet";
-import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
@@ -17,6 +16,7 @@ import { AppointmentPlatform } from "@/types/appointment.types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -31,11 +31,31 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Animated, {
-  useAnimatedRef,
-  useScrollViewOffset,
-} from "react-native-reanimated";
+import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const EXPLORE_TILES = [
+  {
+    title: "Roadmap",
+    icon: icons.Revitalization2,
+    route: "/(pastor)/(tabs)/roadmap",
+  },
+  {
+    title: "Assessments",
+    icon: icons.Assessments2,
+    route: "/(pastor)/(tabs)/assessments",
+  },
+  {
+    title: "Progress",
+    icon: icons.progress2,
+    route: "/(pastor)/(tabs)/progress",
+  },
+  {
+    title: "Appointments",
+    icon: icons.Appointments2,
+    route: "/(pastor)/(tabs)/appointments",
+  },
+] as const;
 
 export default function PastorDashboard() {
   const [greetingPeriod, setGreetingPeriod] = useState<
@@ -44,6 +64,7 @@ export default function PastorDashboard() {
   const [isFirstDashboardVisit, setIsFirstDashboardVisit] = useState(false);
   const lastProgressRefetchAtRef = useRef<number>(0);
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const router = useRouter();
   const pastorFocusSheetRef = useRef<BottomSheetModal>(null);
   const appStateRef = useRef(AppState.currentState);
@@ -102,8 +123,7 @@ export default function PastorDashboard() {
   const { data: roadmaps, isLoading: isRoadmapsLoading } =
     useRoadmaps("pastor");
 
-  const scrollRef = useAnimatedRef<Animated.ScrollView>();
-  const scrollOffset = useScrollViewOffset(scrollRef);
+  const scrollOffset = useSharedValue(0);
 
   const handleGreetingPeriodChange = useCallback(
     (period: "morning" | "afternoon" | "evening") => setGreetingPeriod(period),
@@ -222,13 +242,50 @@ export default function PastorDashboard() {
   }, [allAppointments, mentors, getUpcomingAppointments, formatTimeIST, getModeLabel, getPlatformIcon]);
 
   const hasUpcomingAppointments = upcomingAppointments.length > 0;
-  const showAssignedMentorCard = !!acceptedMentor && (!isFirstDashboardVisit || hasUpcomingAppointments);
-
   const mentorAssignedMessage = useMemo(() => {
     if (hasUpcomingAppointments) return "You already have upcoming mentor meetings. You can schedule another anytime.";
     if (isFirstDashboardVisit) return "You can schedule your first meeting anytime.";
     return "You can schedule a meeting with your mentor anytime.";
   }, [hasUpcomingAppointments, isFirstDashboardVisit]);
+
+  const focusTiles = useMemo(
+    () => [
+      {
+        icon: "calendar-outline" as const,
+        line1: "Your today's",
+        line2:
+          upcomingAppointments.length === 0
+            ? "Meetings"
+            : upcomingAppointments.length === 1
+              ? "1 meeting"
+              : `${upcomingAppointments.length} meetings`,
+        sheetTitle: "Today's Meetings",
+        sectionId: "meetings",
+      },
+      {
+        icon: "layers-outline" as const,
+        line1: "Roadmap",
+        line2: "Phases",
+        sheetTitle: "Roadmap Phases",
+        sectionId: "roadmaps",
+      },
+      {
+        icon: "document-text-outline" as const,
+        line1: "In progress",
+        line2: "Assessments",
+        sheetTitle: "In Progress Assessments",
+        sectionId: "assessments",
+      },
+      {
+        icon: "chatbubble-outline" as const,
+        line1: "Mentor",
+        line2: "Feedback",
+        sheetTitle: "Mentor Comments",
+        sectionId: "mentor-feedback",
+      },
+    ],
+    [upcomingAppointments.length],
+  );
 
   const presentFocusSheet = useCallback(() => {
     if (hasPresentedForSessionRef.current || !pastorFocusSheetRef.current) return;
@@ -310,192 +367,180 @@ export default function PastorDashboard() {
     );
   }
 
-  // ─── Focus tiles config ───────────────────────────────────────────────────
-  const FOCUS_TILES = [
-    { icon: "calendar-outline" as const, label: "Today's\nMeetings", sectionId: "meetings" },
-    { icon: "layers-outline" as const, label: "Roadmap\nPhases", sectionId: "roadmaps" },
-    { icon: "document-text-outline" as const, label: "In Progress\nAssessments", sectionId: "assessments" },
-    { icon: "chatbubble-outline" as const, label: "Mentor\nComments", sectionId: "mentor-feedback" },
-  ];
-
-  const EXPLORE_TILES = [
-    {
-      title: "Revitalization\nRoadmap",
-      icon: icons.Revitalization2,
-      route: "/(pastor)/(tabs)/roadmap",
-    },
-    {
-      title: "Assessments",
-      icon: icons.Assessments2,
-      route: "/(pastor)/(tabs)/assessments",
-    },
-    {
-      title: "Progress",
-      icon: icons.progress2,
-      route: "/(pastor)/(tabs)/progress",
-    },
-    {
-      title: "Appointments",
-      icon: icons.Appointments2,
-      route: "/(pastor)/(tabs)/appointments",
-    },
-  ];
-
   // ─── Main render ──────────────────────────────────────────────────────────
   return (
     <LinearGradient
       colors={["#1A4F7A", "#1B6FA3", "#2389C2"]}
-      style={{ flex: 1 }}
+      style={styles.screenRoot}
     >
-      <Animated.ScrollView
-        ref={scrollRef}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
-      >
-        {/* Hero header */}
+      <View style={styles.screenInner}>
         <HeaderHero
-          height={280}
+          height={248}
           image={icons.backgroundImage}
           bottomBlendColor="#1A4F7A"
           scrollOffset={scrollOffset}
           role="pastor"
+          showClockDate={false}
           onGreetingPeriodChange={handleGreetingPeriodChange}
-        />
+        >
+          <Text style={styles.greetingOnHero}>{greeting}</Text>
+          <WelcomeCard
+            compact
+            onClick={() => router.push("/(pastor)/(tabs)/profile")}
+            avatar={icons.myProfile}
+            message={
+              isFirstDashboardVisit
+                ? `Welcome aboard, ${displayName}!`
+                : `Welcome back, ${displayName}!`
+            }
+            progress={showProgressInWelcome ? overallProgress : undefined}
+            bg="rgba(255,255,255,0.14)"
+            borderColor="rgba(255,255,255,0.28)"
+          />
+        </HeaderHero>
 
-        <View style={styles.bodyContainer}>
-
-          {/* ── Greeting + Welcome card ── */}
-          <View style={styles.section}>
-            <Text style={styles.greetingText}>{greeting}</Text>
-            <WelcomeCard
-              onClick={() => router.push("/(pastor)/(tabs)/profile")}
-              avatar={icons.myProfile}
-              message={isFirstDashboardVisit ? `Welcome aboard, ${displayName}!` : `Welcome back, ${displayName}!`}
-              progress={showProgressInWelcome ? overallProgress : undefined}
-            />
-          </View>
-
-          {/* ── Getting started (no roadmap yet) ── */}
-          {!showProgressInWelcome && (
+        <View
+          style={[
+            styles.bodyContainer,
+            { paddingBottom: tabBarHeight + 10 },
+          ]}
+        >
+          {!showProgressInWelcome ? (
             <View style={styles.infoCard}>
               <View style={styles.infoCardRow}>
                 <View style={styles.infoIconWrap}>
-                  <Ionicons name="compass-outline" size={18} color="rgba(255,255,255,0.7)" />
+                  <Ionicons
+                    name="compass-outline"
+                    size={16}
+                    color="rgba(255,255,255,0.7)"
+                  />
                 </View>
                 <View style={styles.infoCardText}>
                   <Text style={styles.infoCardTitle}>Getting started</Text>
-                  <Text style={styles.infoCardDesc}>
-                    Your progress will appear once your roadmap and tasks become active.
+                  <Text style={styles.infoCardDesc} numberOfLines={2}>
+                    Progress appears when your roadmap and tasks are active.
                   </Text>
                 </View>
               </View>
             </View>
-          )}
+          ) : null}
 
-          {/* ── Mentor status card ── */}
-          <View style={styles.card}>
-            {showAssignedMentorCard ? (
-              <>
-                <View style={styles.cardHeaderRow}>
-                  <Text style={styles.cardTitle}>Your Mentor</Text>
-                  <View style={styles.statusBadge}>
-                    <Ionicons name="checkmark-circle" size={13} color="#4ADE80" />
-                    <Text style={styles.statusBadgeText}>Assigned</Text>
+          {isFirstDashboardVisit ? (
+            <View style={styles.card}>
+              {acceptedMentor ? (
+                <>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.cardTitle}>Your Mentor</Text>
+                    <View style={styles.statusBadge}>
+                      <Ionicons name="checkmark-circle" size={13} color="#4ADE80" />
+                      <Text style={styles.statusBadgeText}>Assigned</Text>
+                    </View>
                   </View>
-                </View>
-                <Text style={styles.mentorName}>{acceptedMentor!.name}</Text>
-                <Text style={styles.cardBody}>{mentorAssignedMessage}</Text>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  style={styles.cardBtn}
-                  onPress={() => handleScheduleAppointment(acceptedMentor)}
-                >
-                  <Text style={styles.cardBtnText}>Schedule a Meeting</Text>
-                  <Ionicons name="arrow-forward" size={14} color="#1A4F7A" />
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <View style={styles.cardHeaderRow}>
-                  <Text style={styles.cardTitle}>Mentor Assignment</Text>
-                  <Text style={styles.pendingBadge}>In Progress</Text>
-                </View>
-                <Text style={styles.cardBody}>
-                  {hasMentorInProgress
-                    ? "Your request is under review. You'll be notified once a mentor is confirmed."
-                    : "You'll be notified once a mentor is assigned to you."}
-                </Text>
-              </>
-            )}
-          </View>
+                  <Text style={styles.mentorName} numberOfLines={1}>
+                    {acceptedMentor.name}
+                  </Text>
+                  <Text style={styles.cardBody} numberOfLines={2}>
+                    {mentorAssignedMessage}
+                  </Text>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={styles.cardBtn}
+                    onPress={() => handleScheduleAppointment(acceptedMentor)}
+                  >
+                    <Text style={styles.cardBtnText}>Schedule a Meeting</Text>
+                    <Ionicons name="arrow-forward" size={14} color="#1A4F7A" />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.cardTitle}>Mentor Assignment</Text>
+                    <Text style={styles.pendingBadge}>In Progress</Text>
+                  </View>
+                  <Text style={styles.cardBody} numberOfLines={3}>
+                    {hasMentorInProgress
+                      ? "Your request is under review. You'll be notified once a mentor is confirmed."
+                      : "You'll be notified once a mentor is assigned to you."}
+                  </Text>
+                </>
+              )}
+            </View>
+          ) : null}
 
-          {/* ── Things to focus on ── */}
           <View style={styles.card}>
-            <View style={styles.cardHeaderRow}>
-              <View>
+            <View style={styles.focusSectionHeader}>
+              <View style={styles.focusSectionTitles}>
                 <Text style={styles.cardTitle}>Things to Focus On</Text>
-                <Text style={styles.cardSubtitle}>
-                  The most important actions for today.
+                <Text style={styles.focusIntroText}>
+                  Here are the most important things you should focus on today.
                 </Text>
               </View>
             </View>
-            <View style={styles.tilesGrid}>
-              {FOCUS_TILES.map((tile, i) => (
+            <View style={styles.focusRow}>
+              {focusTiles.map((tile, i) => (
                 <Pressable
                   key={i}
                   style={styles.focusTile}
-                  onPress={() => openThingsToFocusSheet({ sectionId: tile.sectionId, title: tile.label.replace("\n", " ") })}
+                  onPress={() =>
+                    openThingsToFocusSheet({
+                      sectionId: tile.sectionId,
+                      title: tile.sheetTitle,
+                    })
+                  }
                 >
                   <View style={styles.focusTileIcon}>
-                    <Ionicons name={tile.icon} size={20} color="#fff" />
+                    <Ionicons name={tile.icon} size={16} color="#fff" />
                   </View>
-                  <Text style={styles.focusTileText}>{tile.label}</Text>
+                  <View style={styles.focusTileLabels}>
+                    <Text style={styles.focusTileLine1} numberOfLines={1}>
+                      {tile.line1}
+                    </Text>
+                    <Text style={styles.focusTileLine2} numberOfLines={1}>
+                      {tile.line2}
+                    </Text>
+                  </View>
                 </Pressable>
               ))}
             </View>
           </View>
 
-          {/* ── Divider ── */}
-          <View style={styles.divider} />
-
-          {/* ── How to do ? ── */}
           <View style={styles.card}>
-            <View style={styles.exploreHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.exploreHelpHeading}>How to do ?</Text>
-                <Text style={styles.exploreHelpDesc}>
-                  We've got simple steps to help you move forward.
+            <View style={styles.howToHeader}>
+              <View style={styles.howToTitles}>
+                <Text style={styles.cardTitle}>How to do?</Text>
+                <Text style={styles.cardSubtitle}>
+                  We&apos;ve got simple steps to help you move forward.
                 </Text>
               </View>
-
               <Pressable
                 style={styles.exploreHelpButton}
                 onPress={() => openThingsToFocusSheet()}
               >
-                <Text style={styles.exploreHelpButtonText}>Help..</Text>
+                <Text style={styles.exploreHelpButtonText}>Help</Text>
               </Pressable>
             </View>
           </View>
 
-          {/* ── Explore CCC ── */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Explore CCC</Text>
-            <View style={styles.exploreGrid}>
+            <Text style={styles.cardSubtitle}>
+              Roadmap, assessments, progress, and appointments.
+            </Text>
+            <View style={styles.exploreRow}>
               {EXPLORE_TILES.map((item, idx) => (
                 <ExploreCard
                   key={idx}
                   icon={item.icon}
                   title={item.title}
                   route={item.route as any}
-                  wrapperStyle={styles.exploreItem}
+                  appearance="frosted"
+                  compact
                 />
               ))}
             </View>
           </View>
-
         </View>
-      </Animated.ScrollView>
+      </View>
 
       <PastorFocusBottomSheet
         ref={setPastorFocusSheetRef}
@@ -544,25 +589,28 @@ const styles = StyleSheet.create({
   },
 
   // ── Layout ────────────────────────────────────────────────────────────────
+  screenRoot: {
+    flex: 1,
+  },
+  screenInner: {
+    flex: 1,
+  },
   bodyContainer: {
+    flex: 1,
     paddingHorizontal: 16,
-    marginTop: 12,
-    gap: 12,
-  },
-  section: {
+    marginTop: 8,
     gap: 8,
+    minHeight: 0,
   },
-  greetingText: {
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: 0.5,
+  greetingOnHero: {
+    color: "rgba(255,255,255,0.95)",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
     textTransform: "uppercase",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    marginVertical: 4,
+    textShadowColor: "rgba(0,0,0,0.45)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
 
   // ── Info card (getting started) ───────────────────────────────────────────
@@ -571,8 +619,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.07)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
   infoCardRow: {
     flexDirection: "row",
@@ -580,9 +628,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   infoIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
@@ -595,12 +643,12 @@ const styles = StyleSheet.create({
   infoCardTitle: {
     color: "#fff",
     fontWeight: "700",
-    fontSize: 14,
+    fontSize: 13,
   },
   infoCardDesc: {
     color: "rgba(255,255,255,0.55)",
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 11,
+    lineHeight: 16,
   },
 
   // ── Generic card ──────────────────────────────────────────────────────────
@@ -609,9 +657,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 8,
   },
   cardHeaderRow: {
     flexDirection: "row",
@@ -621,17 +669,25 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: "#fff",
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: 14,
   },
   cardSubtitle: {
     color: "rgba(255,255,255,0.5)",
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 2,
+    lineHeight: 16,
+  },
+  focusIntroText: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 6,
+    lineHeight: 17,
   },
   cardBody: {
     color: "rgba(255,255,255,0.65)",
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 18,
   },
 
   // ── Mentor card specifics ─────────────────────────────────────────────────
@@ -666,8 +722,8 @@ const styles = StyleSheet.create({
   mentorName: {
     color: "#fff",
     fontWeight: "700",
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 22,
   },
   cardBtn: {
     alignSelf: "flex-start",
@@ -676,8 +732,8 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: "#fff",
     borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     marginTop: 2,
   },
   cardBtnText: {
@@ -686,77 +742,82 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  // ── Focus tiles ───────────────────────────────────────────────────────────
-  tilesGrid: {
+  // ── Focus row (single row) ────────────────────────────────────────────────
+  focusSectionHeader: {
+    marginBottom: 2,
+  },
+  focusSectionTitles: {
+    flex: 1,
+    minWidth: 0,
+  },
+  focusRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 10,
-    marginTop: 2,
+    gap: 6,
+    marginTop: 8,
   },
   focusTile: {
-    width: "48%",
+    flex: 1,
+    minWidth: 0,
     backgroundColor: "rgba(255,255,255,0.07)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
     borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    gap: 5,
   },
   focusTileIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
-  focusTileText: {
-    color: "rgba(255,255,255,0.85)",
+  focusTileLabels: {
+    alignItems: "center",
+    width: "100%",
+    gap: 1,
+  },
+  focusTileLine1: {
+    color: "rgba(255,255,255,0.95)",
+    fontWeight: "700",
+    fontSize: 9,
+    lineHeight: 12,
+    textAlign: "center",
+  },
+  focusTileLine2: {
+    color: "rgba(255,255,255,0.65)",
     fontWeight: "600",
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 8,
+    lineHeight: 11,
+    textAlign: "center",
   },
 
-  // ── Explore grid ──────────────────────────────────────────────────────────
-  exploreGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 10,
-    marginTop: 4,
-  },
-  exploreItem: {
-    width: "48%",
-  },
-  exploreHeader: {
+  // ── How to do / Explore ───────────────────────────────────────────────────
+  howToHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: 12,
-    marginTop: 6,
-    marginBottom: 10,
+    gap: 10,
   },
-  exploreHelpHeading: {
-    color: "rgba(255,255,255,0.85)",
-    fontWeight: "700",
-    fontSize: 12,
-    marginTop: 4,
+  howToTitles: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 4,
   },
-  exploreHelpDesc: {
-    color: "rgba(255,255,255,0.55)",
-    fontWeight: "600",
-    fontSize: 11,
-    lineHeight: 16,
-    marginTop: 2,
+  exploreRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 8,
   },
   exploreHelpButton: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.10)",
+    alignSelf: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
-    paddingVertical: 8,
+    borderColor: "rgba(255,255,255,0.2)",
+    paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 10,
   },
@@ -764,27 +825,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 12,
-  },
-  exploreTile: {
-    height: 90,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.4)",
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  exploreIcon: {
-    width: 42,
-    height: 42,
-    marginBottom: 10,
-  },
-  exploreTileTitle: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 12,
-    textAlign: "center",
-    lineHeight: 16,
   },
 });
