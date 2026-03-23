@@ -428,6 +428,9 @@ export default function PastorDashboard() {
             <WelcomeCard
               compact
               onClick={() => router.push("/(pastor)/(tabs)/profile")}
+              onProgressPress={() =>
+                router.push("/(pastor)/(tabs)/progress" as any)
+              }
               avatar={icons.myProfile}
               message={
                 isFirstDashboardVisit
@@ -576,7 +579,7 @@ export default function PastorDashboard() {
                     <View style={styles.howToIconWrap}>
                       <Ionicons name="library-outline" size={15} color="#fff" />
                     </View>
-                    <Text style={styles.howToTitleText}>How to do?</Text>
+                    <Text style={styles.howToTitleText}>Need a Help?</Text>
                   </View>
                   <Text style={styles.howToDesc} numberOfLines={2}>
                     We&apos;ve got simple steps to help you move forward.

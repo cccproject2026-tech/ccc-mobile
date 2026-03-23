@@ -1,9 +1,11 @@
 import { isSmallDevice } from '@/utils/responsive';
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 type Props = {
     onClick?: () => void;
+    /** When set and progress is shown, tapping the progress row uses this instead of onClick. */
+    onProgressPress?: () => void;
     avatar: any;
     message: string;
     progress?: number;
@@ -20,28 +22,47 @@ const WelcomeCard: React.FC<Props> = ({
     bg = '#14517d',
     borderColor = '#fff',
     onClick,
+    onProgressPress,
     compact = false,
 }) => {
     const showProgress = progress !== undefined && progress >= 0;
+    const progressHandler = onProgressPress ?? onClick;
 
     return (
-        <TouchableOpacity
-            onPress={onClick}
+        <View
             style={[
                 styles.container as ViewStyle,
                 compact ? styles.containerCompact : null,
                 { backgroundColor: bg, borderColor },
             ]}
-            activeOpacity={onClick ? 0.8 : 1}
         >
             <View style={[styles.content, compact && styles.contentCompact]}>
-                <Image source={avatar} style={[styles.avatar, compact && styles.avatarCompact]} />
+                <Pressable
+                    onPress={onClick}
+                    disabled={!onClick}
+                    style={({ pressed }) => [onClick && pressed ? styles.pressedOpacity : null]}
+                >
+                    <Image source={avatar} style={[styles.avatar, compact && styles.avatarCompact]} />
+                </Pressable>
 
-                <View style={styles.messageBlock}>
-                    <Text style={[styles.message, compact && styles.messageCompact]}>{message}</Text>
+                <View style={styles.rightColumn}>
+                    <Pressable
+                        onPress={onClick}
+                        disabled={!onClick}
+                        style={({ pressed }) => [onClick && pressed ? styles.pressedOpacity : null]}
+                    >
+                        <Text style={[styles.message, compact && styles.messageCompact]}>{message}</Text>
+                    </Pressable>
 
                     {showProgress && (
-                        <View style={styles.progressRow}>
+                        <Pressable
+                            onPress={progressHandler}
+                            disabled={!progressHandler}
+                            style={({ pressed }) => [
+                                styles.progressRow,
+                                progressHandler && pressed ? styles.pressedOpacity : null,
+                            ]}
+                        >
                             <Text style={[styles.progressLabel, compact && styles.progressLabelCompact]}>Progress</Text>
 
                             <View style={styles.progressVisuals}>
@@ -50,11 +71,11 @@ const WelcomeCard: React.FC<Props> = ({
                                 </View>
                                 <Text style={[styles.progressText, compact && styles.progressTextCompact]}>{progress} %</Text>
                             </View>
-                        </View>
+                        </Pressable>
                     )}
                 </View>
             </View>
-        </TouchableOpacity>
+        </View>
     );
 };
 
@@ -78,6 +99,13 @@ const styles = StyleSheet.create({
     contentCompact: {
         gap: isSmallDevice ? 10 : 12,
     },
+    rightColumn: {
+        flex: 1,
+        flexDirection: 'column',
+    },
+    pressedOpacity: {
+        opacity: 0.85,
+    },
     avatar: {
         width: isSmallDevice ? 40 : 48,
         height: isSmallDevice ? 40 : 48,
@@ -87,10 +115,6 @@ const styles = StyleSheet.create({
         width: isSmallDevice ? 36 : 40,
         height: isSmallDevice ? 36 : 40,
         borderRadius: isSmallDevice ? 18 : 20,
-    },
-    messageBlock: {
-        flex: 1,
-        flexDirection: 'column',
     },
     message: {
         color: '#fff',
