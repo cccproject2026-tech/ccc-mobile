@@ -9,6 +9,7 @@ import {
     SetPasswordRequest,
     VerifyOtpRequest,
 } from "@/types/auth.types";
+import { markPastorMentorIntroStart } from "@/utils/pastorMentorIntro";
 import { storage } from "@/utils/storage";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -139,6 +140,9 @@ export const useSetPassword = () => {
         // If response contains user data, store it
         if (userData) {
           await storage.setUserData(userData);
+          if (userData.role === "pastor" && userData.id) {
+            await markPastorMentorIntroStart(userData.id);
+          }
         }
 
         // Mark password as set in store

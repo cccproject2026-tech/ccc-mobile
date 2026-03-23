@@ -5,6 +5,7 @@ import { Colors } from '@/constants/Colors';
 import { icons } from '@/constants/images';
 import { useUploadDocument, useUploadProfilePicture } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores/auth.store';
+import { markPastorMentorIntroStart } from '@/utils/pastorMentorIntro';
 import { useOnboardingStore } from '@/stores/onboarding.store';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -134,6 +135,14 @@ export default function ProfileUpload() {
             setHasProfilePicture(true);
             setCurrentStep('complete');
 
+            if (user?.id) {
+                try {
+                    await markPastorMentorIntroStart(user.id);
+                } catch {
+                    /* non-blocking */
+                }
+            }
+
             router.replace('/(pastor)/(tabs)');
         } catch (error) {
             console.error('❌ Continue error:', error);
@@ -141,7 +150,7 @@ export default function ProfileUpload() {
         } finally {
             setActionLoading(false);
         }
-    }, [setCurrentStep, setHasProfilePicture, router]);
+    }, [setCurrentStep, setHasProfilePicture, router, user?.id]);
 
     return (
         <LinearGradient

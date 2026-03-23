@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuthStore } from "@/stores";
+import { markPastorMentorIntroStart } from "@/utils/pastorMentorIntro";
 
 type PastorRole = "pastor" | "layleader" | "seminarian";
 
@@ -45,8 +46,15 @@ export default function PastorJourneyStep3Screen() {
         });
     }, [router, role]);
 
-    const handleStart = useCallback(() => {
+    const handleStart = useCallback(async () => {
         if (isLoggedInPastor) {
+            if (user?.id) {
+                try {
+                    await markPastorMentorIntroStart(user.id);
+                } catch {
+                    /* non-blocking */
+                }
+            }
             router.replace("/(pastor)/(tabs)");
             return;
         }
@@ -54,7 +62,7 @@ export default function PastorJourneyStep3Screen() {
             pathname: "/(unauthenticated)/interest-form",
             params: role ? { role } : undefined,
         });
-    }, [router, role, isLoggedInPastor]);
+    }, [router, role, isLoggedInPastor, user?.id]);
 
     const handleLogin = useCallback(() => {
         router.push("/(unauthenticated)/login-form");

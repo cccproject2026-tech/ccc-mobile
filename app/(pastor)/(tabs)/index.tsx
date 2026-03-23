@@ -13,6 +13,7 @@ import { useProfile } from "@/hooks/profile/useProfile";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useAuthStore } from "@/stores";
 import { AppointmentPlatform } from "@/types/appointment.types";
+import { isPastorMentorIntroActive } from "@/utils/pastorMentorIntro";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -76,6 +77,8 @@ export default function PastorDashboard() {
     "morning" | "afternoon" | "evening"
   >("morning");
   const [isFirstDashboardVisit, setIsFirstDashboardVisit] = useState(false);
+  const [showMentorIntroForNewPastor, setShowMentorIntroForNewPastor] =
+    useState(false);
   const lastProgressRefetchAtRef = useRef<number>(0);
   const { height: windowHeight } = useWindowDimensions();
   const tabBarHeight = useBottomTabBarHeight();
@@ -211,6 +214,26 @@ export default function PastorDashboard() {
     checkFirstDashboardVisit().catch(() => setIsFirstDashboardVisit(false));
   }, [user?.id]);
 
+  const refreshMentorIntroVisibility = useCallback(async () => {
+    const userId = user?.id;
+    if (!userId) {
+      setShowMentorIntroForNewPastor(false);
+      return;
+    }
+    try {
+      const active = await isPastorMentorIntroActive(userId);
+      setShowMentorIntroForNewPastor(active);
+    } catch {
+      setShowMentorIntroForNewPastor(false);
+    }
+  }, [user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshMentorIntroVisibility();
+    }, [refreshMentorIntroVisibility]),
+  );
+
   const formatTimeIST = useCallback((isoString: string) => {
     return new Date(isoString).toLocaleTimeString("en-US", {
       hour: "2-digit", minute: "2-digit", hour12: true,
@@ -260,9 +283,9 @@ export default function PastorDashboard() {
   const hasUpcomingAppointments = upcomingAppointments.length > 0;
   const mentorAssignedMessage = useMemo(() => {
     if (hasUpcomingAppointments) return "You already have upcoming mentor meetings. You can schedule another anytime.";
-    if (isFirstDashboardVisit) return "You can schedule your first meeting anytime.";
+    if (showMentorIntroForNewPastor) return "You can schedule your first meeting anytime.";
     return "You can schedule a meeting with your mentor anytime.";
-  }, [hasUpcomingAppointments, isFirstDashboardVisit]);
+  }, [hasUpcomingAppointments, showMentorIntroForNewPastor]);
 
   const focusTiles = useMemo(
     () => [
@@ -448,7 +471,7 @@ export default function PastorDashboard() {
             </Animated.View>
           )}
 
-          {isFirstDashboardVisit && acceptedMentor && (
+          {showMentorIntroForNewPastor && acceptedMentor && (
             <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.mentorCard}>
               <LinearGradient
                 colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0.05)"]}
@@ -478,7 +501,7 @@ export default function PastorDashboard() {
             </Animated.View>
           )}
 
-          {isFirstDashboardVisit && hasMentorInProgress && !acceptedMentor && (
+          {showMentorIntroForNewPastor && hasMentorInProgress && !acceptedMentor && (
             <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.pendingCard}>
               <LinearGradient
                 colors={["rgba(255,193,7,0.15)", "rgba(255,193,7,0.05)"]}
