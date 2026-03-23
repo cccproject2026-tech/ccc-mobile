@@ -25,7 +25,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  AppState,
   Linking,
   Pressable,
   StyleSheet,
@@ -86,9 +85,6 @@ export default function PastorDashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pastorFocusSheetRef = useRef<BottomSheetModal>(null);
-  const appStateRef = useRef(AppState.currentState);
-  const hasPresentedForSessionRef = useRef(false);
-  const pendingSheetOpenRef = useRef(true);
 
   const { user } = useAuthStore();
 
@@ -327,46 +323,18 @@ export default function PastorDashboard() {
     [],
   );
 
-  const presentFocusSheet = useCallback(() => {
-    if (hasPresentedForSessionRef.current || !pastorFocusSheetRef.current) return;
-    setFocusSheetSectionId(null);
-    setFocusSheetTitle(undefined);
-    pastorFocusSheetRef.current.present();
-    hasPresentedForSessionRef.current = true;
-    pendingSheetOpenRef.current = false;
-  }, []);
-
   const openThingsToFocusSheet = useCallback(
     (opts?: { sectionId?: string; title?: string }) => {
       setFocusSheetSectionId(opts?.sectionId ?? null);
       setFocusSheetTitle(opts?.title);
       requestAnimationFrame(() => pastorFocusSheetRef.current?.present());
-      pendingSheetOpenRef.current = false;
     },
     [],
   );
 
-  const setPastorFocusSheetRef = useCallback(
-    (instance: BottomSheetModal | null) => {
-      pastorFocusSheetRef.current = instance;
-      if (instance && !hasPresentedForSessionRef.current && pendingSheetOpenRef.current) {
-        requestAnimationFrame(() => presentFocusSheet());
-      }
-    },
-    [presentFocusSheet],
-  );
-
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (nextState) => {
-      if (/inactive|background/.test(appStateRef.current) && nextState === "active") {
-        hasPresentedForSessionRef.current = false;
-        pendingSheetOpenRef.current = true;
-        setTimeout(() => presentFocusSheet(), 30);
-      }
-      appStateRef.current = nextState;
-    });
-    return () => sub.remove();
-  }, [presentFocusSheet]);
+  const setPastorFocusSheetRef = useCallback((instance: BottomSheetModal | null) => {
+    pastorFocusSheetRef.current = instance;
+  }, []);
 
   const handleFocusItemPress = useCallback(
     (item: PastorFocusItem) => {
