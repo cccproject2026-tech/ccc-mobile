@@ -543,6 +543,22 @@ export default function PastorDashboard() {
             </Animated.View>
           )}
 
+          {showMentorIntroForNewPastor && !acceptedMentor && !hasMentorInProgress && (
+            <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.unassignedMentorCard}>
+              <View style={styles.unassignedMentorRow}>
+                <View style={styles.unassignedMentorIconWrap}>
+                  <Ionicons name="people-outline" size={18} color="#6FD4BE" />
+                </View>
+                <View style={styles.unassignedMentorTextWrap}>
+                  <Text style={styles.unassignedMentorTitle}>Mentor assignment pending</Text>
+                  <Text style={styles.unassignedMentorMessage}>
+                    Mentor will be assigned to you soon.
+                  </Text>
+                </View>
+              </View>
+            </Animated.View>
+          )}
+
           <View style={styles.mainCardsGroup}>
             <Animated.View entering={FadeInUp.delay(250).springify()} style={styles.focusCard}>
               <View style={styles.focusSectionHeader}>
@@ -886,6 +902,42 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
     lineHeight: 20,
+  },
+  unassignedMentorCard: {
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    padding: 12,
+  },
+  unassignedMentorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  unassignedMentorIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(111, 212, 190, 0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(111, 212, 190, 0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  unassignedMentorTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  unassignedMentorTitle: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  unassignedMentorMessage: {
+    color: "rgba(255,255,255,0.68)",
+    fontSize: 12,
+    lineHeight: 18,
   },
 
   // ── Generic card styles ───────────────────────────────────────────────────
