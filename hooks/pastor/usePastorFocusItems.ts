@@ -1,5 +1,6 @@
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
+import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { roadmapService } from "@/services/roadmap.service";
 import { useAuthStore } from "@/stores";
@@ -77,11 +78,74 @@ const getMentorName = (mentor?: MentorInfo | string) => {
   return `${mentor.firstName} ${mentor.lastName}`.trim();
 };
 
+const toTitleCase = (value: string) =>
+  value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+
+const getSchedulerLabel = (
+  appointment: Appointment,
+  userId?: string,
+  mentorNameById?: Map<string, string>,
+): string => {
+  const apt = appointment as Appointment & Record<string, any>;
+  const source =
+    apt.scheduledBy ??
+    apt.createdBy ??
+    apt.scheduler ??
+    apt.bookedBy ??
+    apt.createdByUser ??
+    null;
+
+  const roleRaw =
+    apt.scheduledByRole ??
+    apt.createdByRole ??
+    (typeof source === "object" ? source?.role : source) ??
+    "";
+
+  const nameRaw =
+    apt.scheduledByName ??
+    apt.createdByName ??
+    (typeof source === "object"
+      ? source?.name ??
+        `${source?.firstName ?? ""} ${source?.lastName ?? ""}`.trim()
+      : "");
+
+  const role = String(roleRaw || "").trim();
+  const name = String(nameRaw || "").trim();
+  if (!role && !name) {
+    if (userId && appointment.userId === userId) {
+      return "Scheduled by Pastor (You)";
+    }
+    const mentorName = mentorNameById?.get(appointment.mentorId);
+    if (mentorName) {
+      return `Scheduled by Mentor ${mentorName}`;
+    }
+    return "Scheduled by Mentor";
+  }
+
+  if (role && name) return `Scheduled by ${toTitleCase(role)} ${name}`;
+  if (role) return `Scheduled by ${toTitleCase(role)}`;
+  return `Scheduled by ${name}`;
+};
+
+const getWithWhomLabel = (
+  appointment: Appointment,
+  mentorNameById?: Map<string, string>,
+): string => {
+  const mentorName = mentorNameById?.get(appointment.mentorId);
+  if (mentorName) return `With Mentor ${mentorName}`;
+  return "With Mentor";
+};
+
 export const usePastorFocusItems = () => {
   const { user } = useAuthStore();
   const { appointments, isLoading: isAppointmentsLoading } = useAppointments({
     userId: user?.id,
   });
+  const { mentors } = useAssignedMentors(user?.id ?? null);
   const { data: roadmaps = [], isLoading: isRoadmapsLoading } = useRoadmaps(
     "pastor",
     user?.id,
@@ -122,6 +186,10 @@ export const usePastorFocusItems = () => {
   });
 
   const sections = useMemo<PastorFocusSection[]>(() => {
+    const mentorNameById = new Map(
+      (mentors || []).map((mentor) => [mentor.id, mentor.name]),
+    );
+
     const flattenedTasks: TaskWithRoadmap[] = roadmaps.flatMap((roadmap: Roadmap) =>
       (roadmap.roadmaps || []).map((task) => ({
         ...task,
@@ -154,16 +222,20 @@ export const usePastorFocusItems = () => {
           toTimestamp(a.meetingDate) - toTimestamp(b.meetingDate),
       )
       .slice(0, MAX_ITEMS_PER_SECTION)
-      .map((appointment: Appointment) => ({
-        id: `meeting-${appointment.id}`,
-        title: "Upcoming meeting",
-        description: `Meeting starts ${formatDateTime(appointment.meetingDate)}.`,
-        meta: `Within ${UPCOMING_MEETING_WINDOW_HOURS} hours`,
-        accentColor: "#38BDF8",
-        route: {
-          pathname: "/appointments",
-        },
-      }));
+      .map((appointment: Appointment) => {
+        const scheduler = getSchedulerLabel(appointment, user?.id, mentorNameById);
+        const withWhom = getWithWhomLabel(appointment, mentorNameById);
+        return {
+          id: `meeting-${appointment.id}`,
+          title: "Upcoming meeting",
+          description: `Meeting starts ${formatDateTime(appointment.meetingDate)}.`,
+          meta: `${scheduler} • ${withWhom} • Within ${UPCOMING_MEETING_WINDOW_HOURS} hours`,
+          accentColor: "#38BDF8",
+          route: {
+            pathname: "/appointments",
+          },
+        };
+      });
 
     const monthlyMeetingItems: PastorFocusItem[] = (appointments || [])
       .filter((appointment: Appointment) => {
@@ -178,16 +250,20 @@ export const usePastorFocusItems = () => {
           toTimestamp(a.meetingDate) - toTimestamp(b.meetingDate),
       )
       .slice(0, MAX_ITEMS_PER_SECTION)
-      .map((appointment: Appointment) => ({
-        id: `meeting-month-${appointment.id}`,
-        title: "Upcoming meeting this month",
-        description: `Meeting starts ${formatDateTime(appointment.meetingDate)}.`,
-        meta: "This month",
-        accentColor: "#22D3EE",
-        route: {
-          pathname: "/appointments",
-        },
-      }));
+      .map((appointment: Appointment) => {
+        const scheduler = getSchedulerLabel(appointment, user?.id, mentorNameById);
+        const withWhom = getWithWhomLabel(appointment, mentorNameById);
+        return {
+          id: `meeting-month-${appointment.id}`,
+          title: "Upcoming meeting this month",
+          description: `Meeting starts ${formatDateTime(appointment.meetingDate)}.`,
+          meta: `${scheduler} • ${withWhom} • This month`,
+          accentColor: "#22D3EE",
+          route: {
+            pathname: "/appointments",
+          },
+        };
+      });
 
     const assessmentItems: PastorFocusItem[] = (assessments || [])
       .filter(
@@ -285,7 +361,7 @@ export const usePastorFocusItems = () => {
         items: mentorFeedbackItems,
       },
     ];
-  }, [appointments, assessments, feedbackQuery.data, roadmaps]);
+  }, [appointments, assessments, feedbackQuery.data, mentors, roadmaps, user?.id]);
 
   return {
     sections,
