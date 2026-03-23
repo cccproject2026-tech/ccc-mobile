@@ -106,6 +106,8 @@ const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryP
                             onChangeText(numericOnly);
                         }}
                         keyboardType="phone-pad"
+                        multiline={false}
+                        numberOfLines={1}
                         editable={!disabled}
                     />
                 </View>
@@ -166,7 +168,12 @@ const INITIAL_FORM_DATA: Partial<InterestFormData> = {
 
 export default function InterestFormScreen() {
     const { bottom } = useSafeAreaInsets();
-    const { mutate: submitInterest, isPending: isLoading } = useSubmitInterest();
+    const {
+        mutate: submitInterest,
+        isPending: isLoading,
+        error: submitError,
+        isError: isSubmitError,
+    } = useSubmitInterest();
     const { setCurrentStep } = useOnboardingStore();
     const { role } = useLocalSearchParams<{ role?: string }>();
 
@@ -226,12 +233,69 @@ export default function InterestFormScreen() {
     const [lastNameError, setLastNameError] = useState(false);
     const [emailError, setEmailError] = useState(false);
     const [titleError, setTitleError] = useState(false);
+    const [interestsError, setInterestsError] = useState(false);
+    const [churchEntriesError, setChurchEntriesError] = useState(false);
+    const [churchNameErrors, setChurchNameErrors] = useState<boolean[]>([]);
+    const [emailErrorText, setEmailErrorText] = useState<string>("");
+    const [personalPhoneErrorText, setPersonalPhoneErrorText] = useState<string>("");
+    const [submitErrorText, setSubmitErrorText] = useState<string>("");
 
     const firstNameRef = useRef<TextInput | null>(null);
     const lastNameRef = useRef<TextInput | null>(null);
     const emailRef = useRef<TextInput | null>(null);
     const personalPhoneRef = useRef<TextInput | null>(null);
     const churchPhoneRefs = useRef<(TextInput | null)[]>([]);
+    const churchNameRefs = useRef<(TextInput | null)[]>([]);
+
+    // KeyboardAwareScrollView typing differs across RN/expo versions; keep ref typed loosely.
+    const scrollViewRef = useRef<any>(null);
+    const fieldLayoutsRef = useRef<Record<string, number>>({});
+
+    const registerFieldLayout = useCallback(
+        (key: string) => (e: any) => {
+            fieldLayoutsRef.current[key] = e?.nativeEvent?.layout?.y;
+        },
+        []
+    );
+
+    const scrollToField = useCallback((key: string) => {
+        const y = fieldLayoutsRef.current[key];
+        if (y == null || !scrollViewRef.current) return;
+
+        // Keep it slightly above the field so the user can see the label + error.
+        (scrollViewRef.current as any)?.scrollTo?.({ y: Math.max(0, y - 24), animated: true });
+    }, []);
+
+    const scrollToAndFocus = useCallback(
+        (key: string, focusFn: () => void) => {
+            scrollToField(key);
+            setTimeout(focusFn, 60);
+        },
+        [scrollToField]
+    );
+
+    // Show server-side submit errors in UI.
+    useEffect(() => {
+        if (!isSubmitError) return;
+
+        const message =
+            (submitError as any)?.message ||
+            (typeof submitError === "string" ? submitError : null) ||
+            "Failed to submit interest form. Please try again.";
+
+        setSubmitErrorText(message);
+
+        // If backend says email already exists, map it to the email field UX.
+        const lower = message.toLowerCase();
+        if (lower.includes("email") && (lower.includes("already") || lower.includes("exists"))) {
+            setEmailError(true);
+            setEmailErrorText(message);
+            // Ensure user can see it immediately.
+            if (emailRef.current) {
+                scrollToAndFocus("email", () => emailRef.current?.focus());
+            }
+        }
+    }, [isSubmitError, submitError, scrollToAndFocus]);
 
     // Transform metadata to form options
     const TITLE_OPTIONS = useMemo(() => metadata?.titles || [], [metadata]);
@@ -283,25 +347,33 @@ export default function InterestFormScreen() {
         }));
         setChurchPhoneCountries((prev) => [...prev, DEFAULT_PHONE_COUNTRY]);
         setChurchPhoneErrors((prev) => [...prev, false]);
+        setChurchNameErrors((prev) => [...prev, false]);
+        setChurchEntriesError(false);
     }, []);
 
     const removeChurch = useCallback((index: number) => {
-        setFormData((prev) => ({
-            ...prev,
-            churchDetails:
-                prev.churchDetails?.filter((_, i) => i !== index) || [],
-        }));
+        setFormData((prev) => {
+            const nextChurchDetails =
+                prev.churchDetails?.filter((_, i) => i !== index) || [];
+            setChurchEntriesError(nextChurchDetails.length === 0);
+            return { ...prev, churchDetails: nextChurchDetails };
+        });
         setChurchPhoneCountries((prev) =>
             prev.filter((_, i) => i !== index)
         );
         setChurchPhoneErrors((prev) => prev.filter((_, i) => i !== index));
+        setChurchNameErrors((prev) => prev.filter((_, i) => i !== index));
     }, []);
 
     const toggleInterest = useCallback((interest: string) => {
+        // Keep interests error message in sync so it disappears as soon as the user selects.
         setFormData((prev) => {
-            const interests = (prev.interests || []).includes(interest)
-                ? (prev.interests || []).filter((i) => i !== interest)
-                : [...(prev.interests || []), interest];
+            const current = prev.interests || [];
+            const interests = current.includes(interest)
+                ? current.filter((i) => i !== interest)
+                : [...current, interest];
+
+            setInterestsError(interests.length === 0);
             return { ...prev, interests };
         });
     }, []);
@@ -311,80 +383,134 @@ export default function InterestFormScreen() {
         setFirstNameError(false);
         setLastNameError(false);
         setEmailError(false);
+        setEmailErrorText("");
         setTitleError(false);
         setPersonalPhoneError(false);
+        setPersonalPhoneErrorText("");
         setChurchPhoneErrors([]);
+        setInterestsError(false);
+        setChurchNameErrors([]);
+        setChurchEntriesError(false);
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!formData.firstName?.trim()) {
             setFirstNameError(true);
-            firstNameRef.current?.focus();
+            scrollToAndFocus("firstName", () => firstNameRef.current?.focus());
             return false;
         }
+
         if (!formData.lastName?.trim()) {
             setLastNameError(true);
-            lastNameRef.current?.focus();
+            scrollToAndFocus("lastName", () => lastNameRef.current?.focus());
             return false;
         }
+
         if (!formData.email?.trim()) {
             setEmailError(true);
-            emailRef.current?.focus();
+            setEmailErrorText("Email is required");
+            scrollToAndFocus("email", () => emailRef.current?.focus());
+            return false;
+        }
+
+        if (!emailRegex.test(formData.email.trim())) {
+            setEmailError(true);
+            setEmailErrorText("Enter a valid email address");
+            scrollToAndFocus("email", () => emailRef.current?.focus());
             return false;
         }
 
         const rawPersonal = (formData.phoneNumber || "").replace(/[^\d]/g, "");
         if (!rawPersonal) {
             setPersonalPhoneError(true);
-            personalPhoneRef.current?.focus();
+            setPersonalPhoneErrorText("Phone number is required");
+            scrollToAndFocus("personalPhone", () => personalPhoneRef.current?.focus());
             return false;
         }
         if (rawPersonal.length < personalPhoneCountry.minLength) {
             setPersonalPhoneError(true);
-            personalPhoneRef.current?.focus();
+            setPersonalPhoneErrorText(`Phone number must be at least ${personalPhoneCountry.minLength} digits`);
+            scrollToAndFocus("personalPhone", () => personalPhoneRef.current?.focus());
             return false;
         }
 
-        const newChurchErrors: boolean[] = [];
         const churches = formData.churchDetails || [];
+
+        // Mandatory: at least one church entry.
+        if (!churches || churches.length === 0) {
+            setChurchEntriesError(true);
+            scrollToField("churchList");
+            return false;
+        }
+
+        // Mandatory: each church entry needs a church name.
+        const nextChurchNameErrors: boolean[] = [];
+        churches.forEach((church, index) => {
+            nextChurchNameErrors[index] = !church.churchName?.trim();
+        });
+
+        if (nextChurchNameErrors.some(Boolean)) {
+            setChurchNameErrors(nextChurchNameErrors);
+            const firstInvalidIndex = nextChurchNameErrors.findIndex(Boolean);
+            scrollToField(`churchName-${firstInvalidIndex}`);
+            setTimeout(() => {
+                churchNameRefs.current[firstInvalidIndex]?.focus();
+            }, 60);
+            return false;
+        }
+
+        // Optional: church phone, but validate min length if the user typed anything.
+        const nextChurchPhoneErrors: boolean[] = [];
         churches.forEach((church, index) => {
             const rawChurchPhone = (church.churchPhone || "").replace(/[^\d]/g, "");
             const country = churchPhoneCountries[index] || DEFAULT_PHONE_COUNTRY;
 
             if (rawChurchPhone) {
-                if (rawChurchPhone.length < country.minLength) {
-                    newChurchErrors[index] = true;
-                } else {
-                    newChurchErrors[index] = false;
-                }
+                nextChurchPhoneErrors[index] = rawChurchPhone.length < country.minLength;
             } else {
-                newChurchErrors[index] = false;
+                nextChurchPhoneErrors[index] = false;
             }
         });
 
-        if (newChurchErrors.some(Boolean)) {
-            setChurchPhoneErrors(newChurchErrors);
-            const firstInvalidIndex = newChurchErrors.findIndex(Boolean);
-            if (firstInvalidIndex !== -1) {
-                setTimeout(() => {
-                    const ref = churchPhoneRefs.current[firstInvalidIndex];
-                    ref?.focus();
-                }, 50);
-            }
+        if (nextChurchPhoneErrors.some(Boolean)) {
+            setChurchPhoneErrors(nextChurchPhoneErrors);
+            const firstInvalidIndex = nextChurchPhoneErrors.findIndex(Boolean);
+            scrollToField(`churchPhone-${firstInvalidIndex}`);
+            setTimeout(() => {
+                churchPhoneRefs.current[firstInvalidIndex]?.focus();
+            }, 60);
             return false;
         }
 
-        if (!formData.churchDetails || formData.churchDetails.length === 0) {
-            return false;
-        }
         if (!formData.title) {
             setTitleError(true);
+            scrollToField("title");
+            setShowTitleDropdown(true);
+            return false;
+        }
+
+        const interestsCount = formData.interests?.length || 0;
+        if (interestsCount === 0) {
+            setInterestsError(true);
+            scrollToField("interests");
+            setShowInterestsDropdown(true);
             return false;
         }
         return true;
-    }, [formData, personalPhoneCountry, churchPhoneCountries]);
+    }, [
+        formData,
+        personalPhoneCountry,
+        churchPhoneCountries,
+        scrollToAndFocus,
+        scrollToField
+    ]);
 
     // Submit handler
     const handleSubmit = useCallback(() => {
         if (!validateForm()) return;
+
+        // Clear any previous server-side error message.
+        setSubmitErrorText("");
 
         const rawPersonal = (formData.phoneNumber || "").replace(/[^\d]/g, "");
         const fullPersonalPhone = `${personalPhoneCountry.dialCode}${rawPersonal}`;
@@ -442,6 +568,7 @@ export default function InterestFormScreen() {
                 />
 
                 <KeyboardAwareScrollView
+                    ref={scrollViewRef as any}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={[
                         styles.scrollContent,
@@ -460,76 +587,111 @@ export default function InterestFormScreen() {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Personal Information</Text>
                         <View style={styles.row}>
-                            <TextInput
-                                ref={firstNameRef}
-                                style={[
-                                    styles.input,
-                                    styles.halfWidth,
-                                    firstNameError && styles.inputError,
-                                ]}
-                                placeholder="First Name *"
-                                placeholderTextColor="rgba(255,255,255,0.5)"
-                                value={formData.firstName}
-                                onChangeText={(text) => handleInputChange('firstName', text)}
-                                editable={!isLoading}
-                            />
-                            <TextInput
-                                ref={lastNameRef}
-                                style={[
-                                    styles.input,
-                                    styles.halfWidth,
-                                    lastNameError && styles.inputError,
-                                ]}
-                                placeholder="Last Name *"
-                                placeholderTextColor="rgba(255,255,255,0.5)"
-                                value={formData.lastName}
-                                onChangeText={(text) => handleInputChange('lastName', text)}
-                                editable={!isLoading}
-                            />
+                            <View style={styles.halfWidth} onLayout={registerFieldLayout("firstName")}>
+                                <TextInput
+                                    ref={firstNameRef}
+                                    style={[styles.input, firstNameError && styles.inputError]}
+                                    placeholder="First Name *"
+                                    placeholderTextColor="rgba(255,255,255,0.5)"
+                                    value={formData.firstName}
+                                    onChangeText={(text) => {
+                                        setFirstNameError(false);
+                                        handleInputChange('firstName', text);
+                                    }}
+                                    editable={!isLoading}
+                                />
+                                {firstNameError && (
+                                    <Text style={styles.errorText}>First name is required</Text>
+                                )}
+                            </View>
+                            <View style={styles.halfWidth} onLayout={registerFieldLayout("lastName")}>
+                                <TextInput
+                                    ref={lastNameRef}
+                                    style={[styles.input, lastNameError && styles.inputError]}
+                                    placeholder="Last Name *"
+                                    placeholderTextColor="rgba(255,255,255,0.5)"
+                                    value={formData.lastName}
+                                    onChangeText={(text) => {
+                                        setLastNameError(false);
+                                        handleInputChange('lastName', text);
+                                    }}
+                                    editable={!isLoading}
+                                />
+                                {lastNameError && (
+                                    <Text style={styles.errorText}>Last name is required</Text>
+                                )}
+                            </View>
                         </View>
                         <View style={styles.row}>
-                            <PhoneInputWithCountry
-                                ref={personalPhoneRef}
-                                value={formData.phoneNumber || ''}
-                                onChangeText={(text) => {
-                                    setPersonalPhoneError(false);
-                                    handleInputChange('phoneNumber', text);
-                                }}
-                                selectedCountry={personalPhoneCountry}
-                                onSelectCountry={(country) =>
-                                    setPersonalPhoneCountry(country)
-                                }
-                                placeholder="Phone Number *"
-                                disabled={isLoading}
-                                hasError={personalPhoneError}
-                            />
-                            <TextInput
-                                ref={emailRef}
-                                style={[
-                                    styles.input,
-                                    styles.halfWidth,
-                                    emailError && styles.inputError,
-                                ]}
-                                placeholder="Email *"
-                                placeholderTextColor="rgba(255,255,255,0.5)"
-                                value={formData.email}
-                                onChangeText={(text) => handleInputChange('email', text)}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                editable={!isLoading}
-                            />
+                            <View
+                                style={styles.halfWidth}
+                                onLayout={registerFieldLayout("personalPhone")}
+                            >
+                                <PhoneInputWithCountry
+                                    ref={personalPhoneRef}
+                                    value={formData.phoneNumber || ''}
+                                    onChangeText={(text) => {
+                                        setPersonalPhoneError(false);
+                                        setPersonalPhoneErrorText('');
+                                        handleInputChange('phoneNumber', text);
+                                    }}
+                                    selectedCountry={personalPhoneCountry}
+                                    onSelectCountry={(country) =>
+                                        setPersonalPhoneCountry(country)
+                                    }
+                                    // Keep placeholders clean; required state is shown via inline error text.
+                                    placeholder="Number"
+                                    disabled={isLoading}
+                                    hasError={personalPhoneError}
+                                />
+                                {personalPhoneError && (
+                                    <Text style={styles.errorText}>
+                                        {personalPhoneErrorText || "Phone number is required"}
+                                    </Text>
+                                )}
+                            </View>
+                            <View style={styles.halfWidth} onLayout={registerFieldLayout("email")}>
+                                <TextInput
+                                    ref={emailRef}
+                                    style={[styles.input, emailError && styles.inputError]}
+                                    placeholder="Email *"
+                                    placeholderTextColor="rgba(255,255,255,0.5)"
+                                    value={formData.email}
+                                    onChangeText={(text) => {
+                                        setEmailError(false);
+                                        setEmailErrorText('');
+                                        setSubmitErrorText("");
+                                        handleInputChange('email', text);
+                                    }}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    editable={!isLoading}
+                                />
+                                {emailError && (
+                                    <Text style={styles.errorText}>
+                                        {emailErrorText || "Email is required"}
+                                    </Text>
+                                )}
+                            </View>
                         </View>
                     </View>
 
                     <View style={styles.divider} />
 
                     {/* Church Information Sections */}
+                    <View onLayout={registerFieldLayout("churchList")}>
+                        {churchEntriesError && (
+                            <Text style={styles.errorText}>
+                                At least one church entry is required
+                            </Text>
+                        )}
+                    </View>
                     {(formData.churchDetails || []).map((church, index) => (
                         <React.Fragment key={`church-${index}`}>
                             <View style={styles.section}>
                                 <View style={styles.sectionHeaderRow}>
                                     <Text style={styles.sectionTitle}>
-                                        Church Information
+                                        Church Information *
                                         {(formData.churchDetails?.length || 0) > 1 &&
                                             ` #${index + 1}`}
                                     </Text>
@@ -544,46 +706,77 @@ export default function InterestFormScreen() {
                                     )}
                                 </View>
 
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Church Name"
-                                    placeholderTextColor="rgba(255,255,255,0.5)"
-                                    value={church.churchName}
-                                    onChangeText={(text) =>
-                                        handleChurchChange(index, 'churchName', text)
-                                    }
-                                    editable={!isLoading}
-                                />
-
-                                <View style={styles.row}>
-                                    <PhoneInputWithCountry
+                                <View onLayout={registerFieldLayout(`churchName-${index}`)}>
+                                    <TextInput
                                         ref={(el) => {
-                                            churchPhoneRefs.current[index] = el;
+                                            churchNameRefs.current[index] = el;
                                         }}
-                                        value={church.churchPhone || ''}
+                                        style={[
+                                            styles.input,
+                                            churchNameErrors[index] && styles.inputError,
+                                        ]}
+                                        placeholder="Church Name *"
+                                        placeholderTextColor="rgba(255,255,255,0.5)"
+                                        value={church.churchName}
                                         onChangeText={(text) => {
-                                            setChurchPhoneErrors((prev) => {
+                                            setChurchNameErrors((prev) => {
                                                 const copy = [...prev];
                                                 copy[index] = false;
                                                 return copy;
                                             });
-                                            handleChurchChange(index, 'churchPhone', text);
+                                            handleChurchChange(index, 'churchName', text);
                                         }}
-                                        selectedCountry={
-                                            churchPhoneCountries[index] ||
-                                            DEFAULT_PHONE_COUNTRY
-                                        }
-                                        onSelectCountry={(country) =>
-                                            setChurchPhoneCountries((prev) => {
-                                                const copy = [...prev];
-                                                copy[index] = country;
-                                                return copy;
-                                            })
-                                        }
-                                        placeholder="Church Phone"
-                                        disabled={isLoading}
-                                        hasError={churchPhoneErrors[index]}
+                                        editable={!isLoading}
                                     />
+                                    {churchNameErrors[index] && (
+                                        <Text style={styles.errorText}>
+                                            Church name is required
+                                        </Text>
+                                    )}
+                                </View>
+
+                                <View style={styles.row}>
+                                    <View
+                                        style={styles.halfWidth}
+                                        onLayout={registerFieldLayout(`churchPhone-${index}`)}
+                                    >
+                                        <PhoneInputWithCountry
+                                            ref={(el) => {
+                                                churchPhoneRefs.current[index] = el;
+                                            }}
+                                            value={church.churchPhone || ''}
+                                            onChangeText={(text) => {
+                                                setChurchPhoneErrors((prev) => {
+                                                    const copy = [...prev];
+                                                    copy[index] = false;
+                                                    return copy;
+                                                });
+                                                handleChurchChange(index, 'churchPhone', text);
+                                            }}
+                                            selectedCountry={
+                                                churchPhoneCountries[index] ||
+                                                DEFAULT_PHONE_COUNTRY
+                                            }
+                                            onSelectCountry={(country) =>
+                                                setChurchPhoneCountries((prev) => {
+                                                    const copy = [...prev];
+                                                    copy[index] = country;
+                                                    return copy;
+                                                })
+                                            }
+                                            // Keep placeholders clean; required state is shown via inline error text.
+                                            placeholder="Number"
+                                            disabled={isLoading}
+                                            hasError={churchPhoneErrors[index]}
+                                        />
+                                        {churchPhoneErrors[index] && (
+                                            <Text style={styles.errorText}>
+                                                Church phone must be at least{" "}
+                                                {(churchPhoneCountries[index] || DEFAULT_PHONE_COUNTRY).minLength}{" "}
+                                                digits
+                                            </Text>
+                                        )}
+                                    </View>
                                     <TextInput
                                         style={[styles.input, styles.halfWidth]}
                                         placeholder="Church Website"
@@ -772,26 +965,31 @@ export default function InterestFormScreen() {
                         <Text style={styles.sectionTitle}>Other Information</Text>
 
                         {/* Title Dropdown */}
-                        <TouchableOpacity
-                            style={styles.dropdown}
-                            onPress={() => setShowTitleDropdown(!showTitleDropdown)}
-                            disabled={isLoading}
-                        >
-                            <Text
-                                style={[
-                                    styles.dropdownText,
-                                    !formData.title && styles.placeholderText,
-                                    titleError && styles.dropdownErrorText,
-                                ]}
+                        <View onLayout={registerFieldLayout("title")}>
+                            <TouchableOpacity
+                                style={styles.dropdown}
+                                onPress={() => setShowTitleDropdown(!showTitleDropdown)}
+                                disabled={isLoading}
                             >
-                                {formData.title || 'Title *'}
-                            </Text>
-                            <Ionicons
-                                name={showTitleDropdown ? 'chevron-up' : 'chevron-down'}
-                                size={20}
-                                color="rgba(255,255,255,0.6)"
-                            />
-                        </TouchableOpacity>
+                                <Text
+                                    style={[
+                                        styles.dropdownText,
+                                        !formData.title && styles.placeholderText,
+                                        titleError && styles.dropdownErrorText,
+                                    ]}
+                                >
+                                    {formData.title || 'Title *'}
+                                </Text>
+                                <Ionicons
+                                    name={showTitleDropdown ? 'chevron-up' : 'chevron-down'}
+                                    size={20}
+                                    color="rgba(255,255,255,0.6)"
+                                />
+                            </TouchableOpacity>
+                            {titleError && (
+                                <Text style={styles.errorText}>Title is required</Text>
+                            )}
+                        </View>
                         {showTitleDropdown && (
                             <View style={styles.titleDropdownMenu}>
                                 {TITLE_OPTIONS.map((option) => (
@@ -799,6 +997,7 @@ export default function InterestFormScreen() {
                                         key={option}
                                         style={styles.titleDropdownItem}
                                         onPress={() => {
+                                            setTitleError(false);
                                             handleInputChange('title', option);
                                             setShowTitleDropdown(false);
                                         }}
@@ -848,28 +1047,36 @@ export default function InterestFormScreen() {
                         />
 
                         {/* Interests Dropdown */}
-                        <TouchableOpacity
-                            style={styles.dropdown}
-                            onPress={() => setShowInterestsDropdown(!showInterestsDropdown)}
-                            disabled={isLoading}
-                        >
-                            <Text
-                                style={[
-                                    styles.dropdownText,
-                                    (formData.interests?.length || 0) === 0 &&
-                                    styles.placeholderText,
-                                ]}
+                        <View onLayout={registerFieldLayout("interests")}>
+                            <TouchableOpacity
+                                style={styles.dropdown}
+                                onPress={() => setShowInterestsDropdown(!showInterestsDropdown)}
+                                disabled={isLoading}
                             >
-                                {(formData.interests?.length || 0) > 0
-                                    ? `${formData.interests?.length} selected`
-                                    : 'Interests'}
-                            </Text>
-                            <Ionicons
-                                name={showInterestsDropdown ? 'chevron-up' : 'chevron-down'}
-                                size={20}
-                                color="rgba(255,255,255,0.6)"
-                            />
-                        </TouchableOpacity>
+                                <Text
+                                    style={[
+                                        styles.dropdownText,
+                                        (formData.interests?.length || 0) === 0 &&
+                                        styles.placeholderText,
+                                        interestsError && styles.dropdownErrorText,
+                                    ]}
+                                >
+                                    {(formData.interests?.length || 0) > 0
+                                        ? `${formData.interests?.length} selected`
+                                        : 'Interests *'}
+                                </Text>
+                                <Ionicons
+                                    name={showInterestsDropdown ? 'chevron-up' : 'chevron-down'}
+                                    size={20}
+                                    color="rgba(255,255,255,0.6)"
+                                />
+                            </TouchableOpacity>
+                            {interestsError && (
+                                <Text style={styles.errorText}>
+                                    Select at least one interest
+                                </Text>
+                            )}
+                        </View>
                         {showInterestsDropdown && (
                             <View style={styles.interestsMenu}>
                                 {INTEREST_OPTIONS.map((option) => (
@@ -902,6 +1109,11 @@ export default function InterestFormScreen() {
                             textAlignVertical="top"
                             editable={!isLoading}
                         />
+
+                        {/* Server-side submit error (only show here if it's not mapped to the email field) */}
+                        {submitErrorText && !emailError && (
+                            <Text style={styles.errorText}>{submitErrorText}</Text>
+                        )}
 
                         {/* Submit Button */}
                         <TouchableOpacity
@@ -1116,6 +1328,9 @@ const styles = StyleSheet.create({
     },
     phoneTextInput: {
         flex: 1,
+        // Prevent the placeholder from wrapping when the input gets narrow.
+        minWidth: 0,
+        flexShrink: 1,
         paddingHorizontal: 12,
         paddingVertical: 14,
         fontSize: 15,
@@ -1142,6 +1357,12 @@ const styles = StyleSheet.create({
     },
     dropdownErrorText: {
         color: "#FCA5A5",
+    },
+    errorText: {
+        color: "#FCA5A5",
+        marginTop: -6,
+        marginBottom: 12,
+        fontSize: 12,
     },
     inputDisabled: {
         opacity: 0.6,
