@@ -43,32 +43,32 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const EXPLORE_TILES = [
   {
-    title: "Roadmap\nPhases",
-    icon: icons.Revitalization2,
-    route: "/(pastor)/(tabs)/roadmap",
-    color: "#FFB347",
-    gradient: ["#FFB347", "#FF8C00"],
+    title: "Personal\nNotes",
+    icon: icons.notesIcon,
+    route: "/(pastor)/(tabs)/profile/notes",
+    color: "#10B981",
+    gradient: ["#10B981", "#059669"],
   },
   {
-    title: "Your\nAssessments",
+    title: "CDP\nResults",
     icon: icons.Assessments2,
-    route: "/(pastor)/(tabs)/assessments",
+    route: "/(pastor)/(tabs)/assessments/report",
     color: "#4CAF50",
     gradient: ["#4CAF50", "#45a049"],
   },
   {
-    title: "Your\nProgress",
+    title: "Progress\nTracker",
     icon: icons.progress2,
     route: "/(pastor)/(tabs)/progress",
     color: "#2196F3",
     gradient: ["#2196F3", "#1976D2"],
   },
   {
-    title: "Your\nAppointments",
-    icon: icons.Appointments2,
-    route: "/(pastor)/(tabs)/appointments",
-    color: "#9C27B0",
-    gradient: ["#9C27B0", "#7B1FA2"],
+    title: "Roadmap",
+    icon: icons.Revitalization2,
+    route: "/(pastor)/(tabs)/roadmap",
+    color: "#FFB347",
+    gradient: ["#FFB347", "#FF8C00"],
   },
 ] as const;
 
