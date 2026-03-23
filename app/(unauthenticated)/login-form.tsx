@@ -71,10 +71,7 @@ export default function LoginFormScreen() {
                     contentContainerStyle={[styles.scroll, { paddingBottom: bottom + 16 }]}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* CCC Logo */}
-                    <View style={styles.logoCard}>
-                        <Image source={icons.communityImage} style={styles.logo} resizeMode="contain" />
-                    </View>
+                 
 
                     {/* Heading */}
                     <View style={styles.headingBlock}>
@@ -217,7 +214,7 @@ const styles = StyleSheet.create({
     logo: { width: "100%", height: 72 },
 
     // Heading
-    headingBlock: { marginBottom: 18, gap: 5 },
+    headingBlock: { marginBottom: 18, gap: 5, marginTop: 100 },
     headingTitle:    { fontSize: 22, fontWeight: "700", color: "#fff",                   letterSpacing: -0.3 },
     headingSubtitle: { fontSize: 13, fontWeight: "400", color: "rgba(255,255,255,0.5)" },
 

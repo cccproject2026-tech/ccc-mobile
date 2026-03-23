@@ -22,6 +22,13 @@ import { OtpInput } from "react-native-otp-entry";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+const accent = {
+    gold: "#E8C88A",
+    mint: "#6FD4BE",
+    mintSoft: "rgba(111, 212, 190, 0.25)",
+    tealDeep: "#0E5A62",
+};
+
 export default function VerifyEmailScreen() {
     const { bottom } = useSafeAreaInsets();
     const router = useRouter();
@@ -157,9 +164,11 @@ export default function VerifyEmailScreen() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <LinearGradient
-                colors={['#176192', '#1D548D', '#264387']}
+                colors={["#0D3B6E", "#0A5C8A", "#0B84B0"]}
                 style={[styles.container, { paddingBottom: bottom }]}
             >
+                <View style={styles.bgCircleTop} />
+                <View style={styles.bgCircleBottom} />
                 <TopBar showDrawer={false} showNotifications={false} />
 
                 <KeyboardAwareScrollView
@@ -167,10 +176,16 @@ export default function VerifyEmailScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.welcomeBanner}>
-                        <Text style={styles.welcomeTitle}>CONGRATULATIONS!</Text>
+                        <View style={styles.welcomeIconWrap}>
+                            <Ionicons name="shield-checkmark-outline" size={26} color={accent.mint} />
+                        </View>
+                        <Text style={styles.welcomeTitle}>Your Application Is Approved</Text>
                         <Text style={styles.welcomeSubtitle}>
-                            {"Your application has been approved.\nPlease verify your email."}
+                            {"Please verify your email to secure your account\nand continue to login."}
                         </Text>
+                        <View style={styles.stepPill}>
+                            <Text style={styles.stepPillText}>Step {step} of 3</Text>
+                        </View>
                     </View>
 
                     <View style={styles.formContainer}>
@@ -189,7 +204,7 @@ export default function VerifyEmailScreen() {
                                 disabled={isLoading}
                             >
                                 <LinearGradient
-                                    colors={['#7C3AED', '#3B82F6']}
+                                    colors={["rgba(111, 212, 190, 0.95)", "rgba(14, 90, 98, 0.95)"]}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     style={styles.gradientButton}
@@ -231,8 +246,8 @@ export default function VerifyEmailScreen() {
                                             height: 56,
                                             borderRadius: 10,
                                             borderWidth: 2,
-                                            backgroundColor: "rgba(255,255,255,0.15)",
-                                            borderColor: "rgba(255,255,255,0.3)",
+                                            backgroundColor: "rgba(255,255,255,0.14)",
+                                            borderColor: "rgba(111, 212, 190, 0.35)",
                                         },
                                         pinCodeTextStyle: {
                                             color: "#fff",
@@ -248,7 +263,7 @@ export default function VerifyEmailScreen() {
                                     disabled={isLoading || otp.join('').length !== 6}
                                 >
                                     {isLoading ? (
-                                        <ActivityIndicator color="#1A5490" />
+                                        <ActivityIndicator color={accent.tealDeep} />
                                     ) : (
                                         <Text style={styles.submitButtonText}>Verify OTP</Text>
                                     )}
@@ -326,7 +341,7 @@ export default function VerifyEmailScreen() {
                                     disabled={isLoading}
                                 >
                                     {isLoading ? (
-                                        <ActivityIndicator color="#1A5490" />
+                                        <ActivityIndicator color={accent.tealDeep} />
                                     ) : (
                                         <Text style={styles.submitButtonText}>Set Password</Text>
                                     )}
@@ -349,30 +364,82 @@ export default function VerifyEmailScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    scrollContent: { flexGrow: 1 },
+    container: { flex: 1, overflow: "hidden" },
+    bgCircleTop: {
+        position: "absolute",
+        top: -120,
+        right: -100,
+        width: 260,
+        height: 260,
+        borderRadius: 130,
+        backgroundColor: "rgba(255,255,255,0.05)",
+    },
+    bgCircleBottom: {
+        position: "absolute",
+        bottom: -90,
+        left: -80,
+        width: 240,
+        height: 240,
+        borderRadius: 120,
+        backgroundColor: "rgba(255,255,255,0.04)",
+    },
+    scrollContent: { flexGrow: 1, paddingHorizontal: 20 },
     welcomeBanner: {
         alignItems: "center",
-        paddingHorizontal: 20,
-        marginTop: 20,
+        paddingHorizontal: 6,
+        marginTop: 16,
+        marginBottom: 14,
+    },
+    welcomeIconWrap: {
+        width: 54,
+        height: 54,
+        borderRadius: 27,
+        backgroundColor: accent.mintSoft,
+        borderWidth: 1,
+        borderColor: "rgba(111, 212, 190, 0.35)",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 10,
     },
     welcomeTitle: {
-        fontSize: 24,
-        fontWeight: "bold",
+        fontSize: 23,
+        fontWeight: "800",
         color: "#fff",
-        marginBottom: 12,
+        marginBottom: 8,
+        textAlign: "center",
     },
     welcomeSubtitle: {
-        fontSize: 14,
-        color: "#FFD700",
+        fontSize: 13,
+        color: "rgba(255,255,255,0.82)",
         textAlign: "center",
-        lineHeight: 20,
+        lineHeight: 19,
     },
-    formContainer: { paddingHorizontal: 20 },
-    input: {
-        backgroundColor: "rgba(255,255,255,0.15)",
+    stepPill: {
+        marginTop: 12,
+        backgroundColor: "rgba(255,255,255,0.1)",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.3)",
+        borderColor: "rgba(232, 200, 138, 0.45)",
+        paddingVertical: 6,
+        paddingHorizontal: 14,
+        borderRadius: 999,
+    },
+    stepPillText: {
+        color: accent.gold,
+        fontSize: 12,
+        fontWeight: "700",
+        letterSpacing: 0.3,
+    },
+    formContainer: {
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.16)",
+        padding: 14,
+    },
+    input: {
+        backgroundColor: "rgba(255,255,255,0.1)",
+        borderWidth: 1,
+        borderColor: "rgba(111, 212, 190, 0.3)",
         borderRadius: 10,
         padding: 14,
         fontSize: 15,
@@ -380,19 +447,19 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     inputDisabled: { opacity: 0.7 },
-    verifyButton: { marginTop: 20, marginBottom: 40 },
+    verifyButton: { marginTop: 8, marginBottom: 20 },
     gradientButton: {
-        padding: 16, borderRadius: 10, alignItems: "center",
+        padding: 15, borderRadius: 12, alignItems: "center",
     },
     buttonText: {
         color: "#fff", fontSize: 16, fontWeight: "600",
     },
     otpLabel: {
-        color: "#fff",
-        fontSize: 14,
+        color: "rgba(255,255,255,0.9)",
+        fontSize: 13,
         textAlign: "center",
-        marginBottom: 20,
-        lineHeight: 20,
+        marginBottom: 14,
+        lineHeight: 19,
     },
     otpContainer: {
         flexDirection: "row",
@@ -404,9 +471,9 @@ const styles = StyleSheet.create({
     otpInput: {
         width: 48,
         height: 56,
-        backgroundColor: "rgba(255,255,255,0.15)",
+        backgroundColor: "rgba(255,255,255,0.14)",
         borderWidth: 2,
-        borderColor: "rgba(255,255,255,0.3)",
+        borderColor: "rgba(111, 212, 190, 0.35)",
         borderRadius: 10,
         textAlign: "center",
         fontSize: 22,
@@ -420,9 +487,9 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     passwordInput: {
-        backgroundColor: "rgba(255,255,255,0.15)",
+        backgroundColor: "rgba(255,255,255,0.1)",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.3)",
+        borderColor: "rgba(111, 212, 190, 0.3)",
         borderRadius: 10,
         padding: 14,
         paddingRight: 50,
@@ -436,19 +503,19 @@ const styles = StyleSheet.create({
     },
     submitButton: {
         backgroundColor: "#fff",
-        padding: 16,
-        borderRadius: 10,
+        padding: 15,
+        borderRadius: 12,
         alignItems: "center",
     },
     submitButtonText: {
-        color: "#1A5490",
+        color: accent.tealDeep,
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "700",
     },
     universityLogoContainer: {
         alignItems: "center",
-        marginBottom: 30,
-        marginTop: 40,
+        marginBottom: 24,
+        marginTop: 26,
     },
     universityLogo: { width: 220, height: 50 },
 });
