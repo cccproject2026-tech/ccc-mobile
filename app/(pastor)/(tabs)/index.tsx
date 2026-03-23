@@ -29,31 +29,45 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useAnimatedRef,
+  useScrollViewOffset,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const EXPLORE_TILES = [
   {
-    title: "Roadmap",
+    title: "Roadmap\nPhases",
     icon: icons.Revitalization2,
     route: "/(pastor)/(tabs)/roadmap",
+    color: "#FFB347",
+    gradient: ["#FFB347", "#FF8C00"],
   },
   {
-    title: "Assessments",
+    title: "Your\nAssessments",
     icon: icons.Assessments2,
     route: "/(pastor)/(tabs)/assessments",
+    color: "#4CAF50",
+    gradient: ["#4CAF50", "#45a049"],
   },
   {
-    title: "Progress",
+    title: "Your\nProgress",
     icon: icons.progress2,
     route: "/(pastor)/(tabs)/progress",
+    color: "#2196F3",
+    gradient: ["#2196F3", "#1976D2"],
   },
   {
-    title: "Appointments",
+    title: "Your\nAppointments",
     icon: icons.Appointments2,
     route: "/(pastor)/(tabs)/appointments",
+    color: "#9C27B0",
+    gradient: ["#9C27B0", "#7B1FA2"],
   },
 ] as const;
 
@@ -63,8 +77,9 @@ export default function PastorDashboard() {
   >("morning");
   const [isFirstDashboardVisit, setIsFirstDashboardVisit] = useState(false);
   const lastProgressRefetchAtRef = useRef<number>(0);
-  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const pastorFocusSheetRef = useRef<BottomSheetModal>(null);
   const appStateRef = useRef(AppState.currentState);
@@ -123,7 +138,8 @@ export default function PastorDashboard() {
   const { data: roadmaps, isLoading: isRoadmapsLoading } =
     useRoadmaps("pastor");
 
-  const scrollOffset = useSharedValue(0);
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
+  const scrollOffset = useScrollViewOffset(scrollRef);
 
   const handleGreetingPeriodChange = useCallback(
     (period: "morning" | "afternoon" | "evening") => setGreetingPeriod(period),
@@ -252,13 +268,8 @@ export default function PastorDashboard() {
     () => [
       {
         icon: "calendar-outline" as const,
-        line1: "Your today's",
-        line2:
-          upcomingAppointments.length === 0
-            ? "Meetings"
-            : upcomingAppointments.length === 1
-              ? "1 meeting"
-              : `${upcomingAppointments.length} meetings`,
+        line1: "Today's",
+        line2: "Meetings",
         sheetTitle: "Today's Meetings",
         sectionId: "meetings",
       },
@@ -271,7 +282,7 @@ export default function PastorDashboard() {
       },
       {
         icon: "document-text-outline" as const,
-        line1: "In progress",
+        line1: "In Progress",
         line2: "Assessments",
         sheetTitle: "In Progress Assessments",
         sectionId: "assessments",
@@ -284,7 +295,7 @@ export default function PastorDashboard() {
         sectionId: "mentor-feedback",
       },
     ],
-    [upcomingAppointments.length],
+    [],
   );
 
   const presentFocusSheet = useCallback(() => {
@@ -316,8 +327,6 @@ export default function PastorDashboard() {
     [presentFocusSheet],
   );
 
-  // Do not auto-open on mount. Only open on explicit tile press.
-
   useEffect(() => {
     const sub = AppState.addEventListener("change", (nextState) => {
       if (/inactive|background/.test(appStateRef.current) && nextState === "active") {
@@ -343,7 +352,7 @@ export default function PastorDashboard() {
   // ─── Loading / Error states ───────────────────────────────────────────────
   if (isLoading) {
     return (
-      <LinearGradient colors={["#1A4F7A", "#1B6FA3", "#2389C2"]} style={styles.centerFill}>
+      <LinearGradient colors={["#0F3B5C", "#1A4F7A", "#2389C2"]} style={styles.centerFill}>
         <ActivityIndicator size="large" color="#fff" />
         <Text style={styles.loadingText}>Loading your dashboard...</Text>
       </LinearGradient>
@@ -352,8 +361,8 @@ export default function PastorDashboard() {
 
   if (isError) {
     return (
-      <LinearGradient colors={["#1A4F7A", "#1B6FA3", "#2389C2"]} style={styles.centerFill}>
-        <Ionicons name="alert-circle-outline" size={40} color="rgba(255,255,255,0.6)" />
+      <LinearGradient colors={["#0F3B5C", "#1A4F7A", "#2389C2"]} style={styles.centerFill}>
+        <Ionicons name="alert-circle-outline" size={48} color="rgba(255,255,255,0.6)" />
         <Text style={styles.errorText}>
           {error?.message || "Failed to load dashboard"}
         </Text>
@@ -367,179 +376,206 @@ export default function PastorDashboard() {
     );
   }
 
+  /** Shorter hero on small phones so body (incl. Explore) fits one screen without scroll. */
+  const heroHeight = Math.min(
+    210,
+    Math.max(162, Math.round(windowHeight * 0.22)),
+  );
+
   // ─── Main render ──────────────────────────────────────────────────────────
   return (
     <LinearGradient
-      colors={["#1A4F7A", "#1B6FA3", "#2389C2"]}
+      colors={["#0F3B5C", "#1A4F7A", "#2389C2"]}
       style={styles.screenRoot}
     >
       <View style={styles.screenInner}>
-        <HeaderHero
-          height={248}
-          image={icons.backgroundImage}
-          bottomBlendColor="#1A4F7A"
-          scrollOffset={scrollOffset}
-          role="pastor"
-          showClockDate={false}
-          onGreetingPeriodChange={handleGreetingPeriodChange}
-        >
-          <Text style={styles.greetingOnHero}>{greeting}</Text>
-          <WelcomeCard
-            compact
-            onClick={() => router.push("/(pastor)/(tabs)/profile")}
-            avatar={icons.myProfile}
-            message={
-              isFirstDashboardVisit
-                ? `Welcome aboard, ${displayName}!`
-                : `Welcome back, ${displayName}!`
-            }
-            progress={showProgressInWelcome ? overallProgress : undefined}
-            bg="rgba(255,255,255,0.14)"
-            borderColor="rgba(255,255,255,0.28)"
-          />
-        </HeaderHero>
-
-        <View
-          style={[
-            styles.bodyContainer,
-            { paddingBottom: tabBarHeight + 10 },
+        <Animated.ScrollView
+          ref={scrollRef}
+          style={styles.bodyScroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingBottom: tabBarHeight + 18 + Math.min(insets.bottom, 10),
+            },
           ]}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          keyboardShouldPersistTaps="handled"
+          bounces
         >
-          {!showProgressInWelcome ? (
-            <View style={styles.infoCard}>
+          <HeaderHero
+            height={heroHeight}
+            image={icons.backgroundImage}
+            bottomBlendColor="#0F3B5C"
+            scrollOffset={scrollOffset}
+            role="pastor"
+            showClockDate={false}
+            onGreetingPeriodChange={handleGreetingPeriodChange}
+          >
+            <Text style={styles.greetingOnHero}>{greeting}</Text>
+            <WelcomeCard
+              compact
+              onClick={() => router.push("/(pastor)/(tabs)/profile")}
+              avatar={icons.myProfile}
+              message={
+                isFirstDashboardVisit
+                  ? `Welcome aboard, ${displayName}!`
+                  : `Welcome back, ${displayName}!`
+              }
+              progress={showProgressInWelcome ? overallProgress : undefined}
+              bg="rgba(255,255,255,0.12)"
+              borderColor="rgba(255,255,255,0.25)"
+            />
+          </HeaderHero>
+
+          <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.scrollBodyStack}>
+          {!showProgressInWelcome && (
+            <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.infoCard}>
               <View style={styles.infoCardRow}>
-                <View style={styles.infoIconWrap}>
-                  <Ionicons
-                    name="compass-outline"
-                    size={16}
-                    color="rgba(255,255,255,0.7)"
-                  />
-                </View>
+                <LinearGradient
+                  colors={["rgba(255,255,255,0.15)", "rgba(255,255,255,0.05)"]}
+                  style={styles.infoIconWrap}
+                >
+                  <Ionicons name="compass-outline" size={18} color="#fff" />
+                </LinearGradient>
                 <View style={styles.infoCardText}>
-                  <Text style={styles.infoCardTitle}>Getting started</Text>
-                  <Text style={styles.infoCardDesc} numberOfLines={2}>
+                  <Text style={styles.infoCardTitle}>Getting Started</Text>
+                  <Text style={styles.infoCardDesc}>
                     Progress appears when your roadmap and tasks are active.
                   </Text>
                 </View>
               </View>
-            </View>
-          ) : null}
+            </Animated.View>
+          )}
 
-          {isFirstDashboardVisit ? (
-            <View style={styles.card}>
-              {acceptedMentor ? (
-                <>
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={styles.cardTitle}>Your Mentor</Text>
-                    <View style={styles.statusBadge}>
-                      <Ionicons name="checkmark-circle" size={13} color="#4ADE80" />
-                      <Text style={styles.statusBadgeText}>Assigned</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.mentorName} numberOfLines={1}>
-                    {acceptedMentor.name}
-                  </Text>
-                  <Text style={styles.cardBody} numberOfLines={2}>
-                    {mentorAssignedMessage}
-                  </Text>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    style={styles.cardBtn}
-                    onPress={() => handleScheduleAppointment(acceptedMentor)}
-                  >
-                    <Text style={styles.cardBtnText}>Schedule a Meeting</Text>
-                    <Ionicons name="arrow-forward" size={14} color="#1A4F7A" />
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={styles.cardTitle}>Mentor Assignment</Text>
-                    <Text style={styles.pendingBadge}>In Progress</Text>
-                  </View>
-                  <Text style={styles.cardBody} numberOfLines={3}>
-                    {hasMentorInProgress
-                      ? "Your request is under review. You'll be notified once a mentor is confirmed."
-                      : "You'll be notified once a mentor is assigned to you."}
-                  </Text>
-                </>
-              )}
-            </View>
-          ) : null}
-
-          <View style={styles.card}>
-            <View style={styles.focusSectionHeader}>
-              <View style={styles.focusSectionTitles}>
-                <Text style={styles.cardTitle}>Things to Focus On</Text>
-                <Text style={styles.focusIntroText}>
-                  Here are the most important things you should focus on today.
-                </Text>
-              </View>
-            </View>
-            <View style={styles.focusRow}>
-              {focusTiles.map((tile, i) => (
-                <Pressable
-                  key={i}
-                  style={styles.focusTile}
-                  onPress={() =>
-                    openThingsToFocusSheet({
-                      sectionId: tile.sectionId,
-                      title: tile.sheetTitle,
-                    })
-                  }
-                >
-                  <View style={styles.focusTileIcon}>
-                    <Ionicons name={tile.icon} size={16} color="#fff" />
-                  </View>
-                  <View style={styles.focusTileLabels}>
-                    <Text style={styles.focusTileLine1} numberOfLines={1}>
-                      {tile.line1}
-                    </Text>
-                    <Text style={styles.focusTileLine2} numberOfLines={1}>
-                      {tile.line2}
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.card}>
-            <View style={styles.howToHeader}>
-              <View style={styles.howToTitles}>
-                <Text style={styles.cardTitle}>How to do?</Text>
-                <Text style={styles.cardSubtitle}>
-                  We&apos;ve got simple steps to help you move forward.
-                </Text>
-              </View>
-              <Pressable
-                style={styles.exploreHelpButton}
-                onPress={() => openThingsToFocusSheet()}
+          {isFirstDashboardVisit && acceptedMentor && (
+            <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.mentorCard}>
+              <LinearGradient
+                colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0.05)"]}
+                style={styles.mentorCardGradient}
               >
-                <Text style={styles.exploreHelpButtonText}>Help</Text>
-              </Pressable>
-            </View>
-          </View>
+                <View style={styles.mentorCardHeader}>
+                  <View style={styles.mentorIconWrapper}>
+                    <Ionicons name="people-outline" size={24} color="#4ADE80" />
+                  </View>
+                  <View style={styles.statusBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color="#4ADE80" />
+                    <Text style={styles.statusBadgeText}>Assigned</Text>
+                  </View>
+                </View>
+                <Text style={styles.mentorName}>{acceptedMentor.name}</Text>
+                <Text style={styles.mentorRole}>{acceptedMentor.role}</Text>
+                <Text style={styles.mentorMessage}>{mentorAssignedMessage}</Text>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={styles.scheduleButton}
+                  onPress={() => handleScheduleAppointment(acceptedMentor)}
+                >
+                  <Text style={styles.scheduleButtonText}>Schedule a Meeting</Text>
+                  <Ionicons name="arrow-forward" size={16} color="#fff" />
+                </TouchableOpacity>
+              </LinearGradient>
+            </Animated.View>
+          )}
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Explore CCC</Text>
-            <Text style={styles.cardSubtitle}>
-              Roadmap, assessments, progress, and appointments.
-            </Text>
-            <View style={styles.exploreRow}>
-              {EXPLORE_TILES.map((item, idx) => (
-                <ExploreCard
-                  key={idx}
-                  icon={item.icon}
-                  title={item.title}
-                  route={item.route as any}
-                  appearance="frosted"
-                  compact
-                />
-              ))}
-            </View>
+          {isFirstDashboardVisit && hasMentorInProgress && !acceptedMentor && (
+            <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.pendingCard}>
+              <LinearGradient
+                colors={["rgba(255,193,7,0.15)", "rgba(255,193,7,0.05)"]}
+                style={styles.pendingCardGradient}
+              >
+                <Ionicons name="time-outline" size={32} color="#FFC107" />
+                <Text style={styles.pendingTitle}>Mentor Assignment In Progress</Text>
+                <Text style={styles.pendingMessage}>
+                  Your request is under review. You'll be notified once a mentor is confirmed.
+                </Text>
+              </LinearGradient>
+            </Animated.View>
+          )}
+
+          <View style={styles.mainCardsGroup}>
+            <Animated.View entering={FadeInUp.delay(250).springify()} style={styles.focusCard}>
+              <View style={styles.focusSectionHeader}>
+                <View>
+                  <View style={styles.sectionTitleRow}>
+                    <View style={styles.sectionTitleIconWrap}>
+                      <Ionicons name="funnel-outline" size={18} color="#fff" />
+                    </View>
+                    <Text style={styles.sectionTitleText}>Things to Focus On</Text>
+                  </View>
+                  <Text style={styles.focusIntroText} numberOfLines={2}>
+                    Here are the most important things you should focus on today.
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.exploreRow}>
+                {focusTiles.map((tile, i) => (
+                  <ExploreCard
+                    key={i}
+                    ionicon={tile.icon}
+                    title={`${tile.line1}\n${tile.line2}`}
+                    appearance="frosted"
+                    compact
+                    onPress={() =>
+                      openThingsToFocusSheet({
+                        sectionId: tile.sectionId,
+                        title: tile.sheetTitle,
+                      })
+                    }
+                  />
+                ))}
+              </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.howToCard}>
+              <View style={styles.howToHeader}>
+                <View style={styles.howToTitles}>
+                  <View style={styles.howToTitleRow}>
+                    <View style={styles.howToIconWrap}>
+                      <Ionicons name="library-outline" size={15} color="#fff" />
+                    </View>
+                    <Text style={styles.howToTitleText}>How to do?</Text>
+                  </View>
+                  <Text style={styles.howToDesc} numberOfLines={2}>
+                    We&apos;ve got simple steps to help you move forward.
+                  </Text>
+                </View>
+                <Pressable
+                  style={styles.helpButtonCompact}
+                  onPress={() => openThingsToFocusSheet()}
+                >
+                  <Ionicons name="help-circle-outline" size={15} color="#fff" />
+                  <Text style={styles.helpButtonCompactText}>Help</Text>
+                </Pressable>
+              </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInUp.delay(350).springify()} style={styles.exploreCard}>
+              <View style={styles.sectionTitleRow}>
+                <View style={styles.sectionTitleIconWrap}>
+                  <Ionicons name="map-outline" size={18} color="#fff" />
+                </View>
+                <Text style={styles.sectionTitleText}>Explore CCC</Text>
+              </View>
+              <Text style={[styles.cardSubtitle, styles.exploreCardSubtitle]} numberOfLines={1}>
+                Roadmap, assessments, progress, and appointments.
+              </Text>
+              <View style={styles.exploreRow}>
+                {EXPLORE_TILES.map((item, idx) => (
+                  <ExploreCard
+                    key={idx}
+                    icon={item.icon}
+                    title={item.title}
+                    route={item.route as any}
+                    appearance="frosted"
+                    compact
+                  />
+                ))}
+              </View>
+            </Animated.View>
           </View>
-        </View>
+          </Animated.View>
+        </Animated.ScrollView>
       </View>
 
       <PastorFocusBottomSheet
@@ -563,24 +599,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   loadingText: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 15,
     fontWeight: "500",
-    marginTop: 4,
+    marginTop: 8,
   },
   errorText: {
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 15,
     textAlign: "center",
     lineHeight: 22,
-    marginTop: 4,
+    marginTop: 8,
   },
   errorBtn: {
-    marginTop: 8,
+    marginTop: 16,
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
     backgroundColor: "#fff",
-    borderRadius: 10,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   errorBtnText: {
     color: "#1A4F7A",
@@ -595,235 +636,315 @@ const styles = StyleSheet.create({
   screenInner: {
     flex: 1,
   },
-  bodyContainer: {
+  bodyScroll: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  scrollBodyStack: {
     paddingHorizontal: 16,
-    marginTop: 8,
-    gap: 8,
-    minHeight: 0,
+    marginTop: 6,
+    gap: 12,
+    paddingBottom: 4,
+  },
+  mainCardsGroup: {
+    gap: 22,
   },
   greetingOnHero: {
     color: "rgba(255,255,255,0.95)",
     fontSize: 12,
     fontWeight: "700",
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
     textTransform: "uppercase",
-    textShadowColor: "rgba(0,0,0,0.45)",
+    textShadowColor: "rgba(0,0,0,0.25)",
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
+    textShadowRadius: 4,
   },
 
   // ── Info card (getting started) ───────────────────────────────────────────
   infoCard: {
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    padding: 12,
   },
   infoCardRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 12,
+    gap: 14,
   },
   infoIconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 1,
+    overflow: "hidden",
   },
   infoCardText: {
     flex: 1,
-    gap: 3,
+    gap: 4,
   },
   infoCardTitle: {
     color: "#fff",
     fontWeight: "700",
-    fontSize: 13,
-  },
-  infoCardDesc: {
-    color: "rgba(255,255,255,0.55)",
-    fontSize: 11,
-    lineHeight: 16,
-  },
-
-  // ── Generic card ──────────────────────────────────────────────────────────
-  card: {
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 8,
-  },
-  cardHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  cardTitle: {
-    color: "#fff",
-    fontWeight: "700",
     fontSize: 14,
   },
-  cardSubtitle: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 11,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  focusIntroText: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 6,
-    lineHeight: 17,
-  },
-  cardBody: {
-    color: "rgba(255,255,255,0.65)",
+  infoCardDesc: {
+    color: "rgba(255,255,255,0.6)",
     fontSize: 12,
     lineHeight: 18,
   },
 
-  // ── Mentor card specifics ─────────────────────────────────────────────────
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    backgroundColor: "rgba(74,222,128,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(74,222,128,0.25)",
-  },
-  statusBadgeText: {
-    color: "#4ADE80",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  pendingBadge: {
-    color: "rgba(255,220,100,0.85)",
-    fontSize: 11,
-    fontWeight: "600",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,200,50,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255,200,50,0.2)",
+  // ── Mentor card ──────────────────────────────────────────────────────────
+  mentorCard: {
+    borderRadius: 20,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
-  mentorName: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-    lineHeight: 22,
+  mentorCardGradient: {
+    padding: 14,
+    gap: 6,
   },
-  cardBtn: {
-    alignSelf: "flex-start",
+  mentorCardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginTop: 2,
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
-  cardBtnText: {
-    color: "#1A4F7A",
-    fontWeight: "700",
-    fontSize: 13,
-  },
-
-  // ── Focus row (single row) ────────────────────────────────────────────────
-  focusSectionHeader: {
-    marginBottom: 2,
-  },
-  focusSectionTitles: {
-    flex: 1,
-    minWidth: 0,
-  },
-  focusRow: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 8,
-  },
-  focusTile: {
-    flex: 1,
-    minWidth: 0,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    alignItems: "center",
-    gap: 5,
-  },
-  focusTileIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.1)",
+  mentorIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(74,222,128,0.15)",
     alignItems: "center",
     justifyContent: "center",
   },
-  focusTileLabels: {
-    alignItems: "center",
-    width: "100%",
-    gap: 1,
+  mentorName: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 20,
+    lineHeight: 28,
   },
-  focusTileLine1: {
-    color: "rgba(255,255,255,0.95)",
-    fontWeight: "700",
-    fontSize: 9,
-    lineHeight: 12,
-    textAlign: "center",
+  mentorRole: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: 4,
   },
-  focusTileLine2: {
+  mentorMessage: {
     color: "rgba(255,255,255,0.65)",
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  scheduleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#4ADE80",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    shadowColor: "#4ADE80",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  scheduleButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: "rgba(74,222,128,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(74,222,128,0.3)",
+  },
+  statusBadgeText: {
+    color: "#4ADE80",
+    fontSize: 12,
     fontWeight: "600",
-    fontSize: 8,
-    lineHeight: 11,
+  },
+
+  // ── Pending card ──────────────────────────────────────────────────────────
+  pendingCard: {
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  pendingCardGradient: {
+    padding: 14,
+    alignItems: "center",
+    gap: 10,
+  },
+  pendingTitle: {
+    color: "#FFC107",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  pendingMessage: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
     textAlign: "center",
+    lineHeight: 20,
+  },
+
+  // ── Generic card styles ───────────────────────────────────────────────────
+  cardTitle: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 6,
+  },
+  sectionTitleIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionTitleText: {
+    flex: 1,
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 16,
+    letterSpacing: -0.2,
+  },
+  cardSubtitle: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  focusCard: {
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    padding: 14,
+    paddingBottom: 16,
+    gap: 10,
+  },
+  howToCard: {
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  howToTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 3,
+  },
+  howToIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  howToTitleText: {
+    flex: 1,
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 14,
+    letterSpacing: -0.15,
+  },
+  howToDesc: {
+    color: "rgba(255,255,255,0.52)",
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 0,
+  },
+  exploreCard: {
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    padding: 14,
+    paddingBottom: 16,
+    gap: 6,
+  },
+  exploreCardSubtitle: {
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  focusIntroText: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 4,
+  },
+
+  // ── Focus row ─────────────────────────────────────────────────────────────
+  focusSectionHeader: {
+    marginBottom: 4,
   },
 
   // ── How to do / Explore ───────────────────────────────────────────────────
   howToHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    gap: 8,
   },
   howToTitles: {
     flex: 1,
     minWidth: 0,
-    paddingRight: 4,
   },
   exploreRow: {
+    width: "100%",
     flexDirection: "row",
+    alignSelf: "stretch",
+    justifyContent: "space-between",
     gap: 6,
-    marginTop: 8,
+    marginTop: 2,
+    paddingBottom: 2,
   },
-  exploreHelpButton: {
-    alignSelf: "center",
+  helpButtonCompact: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     backgroundColor: "rgba(255,255,255,0.1)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    borderColor: "rgba(255,255,255,0.16)",
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    borderRadius: 8,
+    flexShrink: 0,
   },
-  exploreHelpButtonText: {
+  helpButtonCompactText: {
     color: "#FFFFFF",
     fontWeight: "700",
-    fontSize: 12,
+    fontSize: 11,
   },
 });

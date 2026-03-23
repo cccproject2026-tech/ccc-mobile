@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Route, useRouter } from 'expo-router';
 import React from 'react';
@@ -7,8 +8,13 @@ import { Dimensions, Image, Pressable, StyleSheet, Text, View, ViewStyle } from 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
 
+export type ExploreCardIoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
 type Props = {
-    icon: any;
+    /** Image asset (e.g. require). Omit if `ionicon` is set. */
+    icon?: any;
+    /** Ionicons glyph — same frosted tile layout, vector icon instead of image. */
+    ionicon?: ExploreCardIoniconName;
     title: string;
     route?: Route;
     onPress?: () => void;
@@ -21,6 +27,7 @@ type Props = {
 
 const ExploreCard: React.FC<Props> = ({
     icon,
+    ionicon,
     title,
     route,
     onPress,
@@ -31,16 +38,45 @@ const ExploreCard: React.FC<Props> = ({
     const router = useRouter();
     const isFrosted = appearance === 'frosted';
 
+    const iconNode = ionicon ? (
+        <Ionicons
+            name={ionicon}
+            color="#fff"
+            size={
+                isFrosted
+                    ? compact
+                        ? isSmallDevice
+                            ? 22
+                            : 24
+                        : isSmallDevice
+                          ? 26
+                          : 28
+                    : isSmallDevice
+                      ? 32
+                      : 36
+            }
+            style={
+                isFrosted
+                    ? compact
+                        ? styles.ionMarginFrostedCompact
+                        : styles.ionMarginFrosted
+                    : styles.ionMarginGradient
+            }
+        />
+    ) : (
+        <Image
+            source={icon}
+            style={[
+                styles.icon,
+                isFrosted ? (compact ? styles.iconFrostedCompact : styles.iconFrosted) : undefined,
+            ]}
+            resizeMode="contain"
+        />
+    );
+
     const inner = (
         <>
-            <Image
-                source={icon}
-                style={[
-                    styles.icon,
-                    isFrosted ? (compact ? styles.iconFrostedCompact : styles.iconFrosted) : undefined,
-                ]}
-                resizeMode="contain"
-            />
+            {iconNode}
             <Text
                 style={[
                     styles.title,
@@ -81,11 +117,21 @@ const ExploreCard: React.FC<Props> = ({
 export default ExploreCard;
 
 const styles = StyleSheet.create({
+    ionMarginFrostedCompact: {
+        marginBottom: isSmallDevice ? 4 : 5,
+    },
+    ionMarginFrosted: {
+        marginBottom: isSmallDevice ? 6 : 8,
+    },
+    ionMarginGradient: {
+        marginBottom: isSmallDevice ? 8 : 10,
+    },
     wrapper: {
         width: '32%',
     },
     wrapperFrosted: {
         flex: 1,
+        flexBasis: 0,
         minWidth: 0,
     },
     card: {
@@ -111,9 +157,9 @@ const styles = StyleSheet.create({
         minHeight: isSmallDevice ? 72 : 80,
     },
     cardFrostedCompact: {
-        paddingVertical: isSmallDevice ? 6 : 8,
-        paddingHorizontal: 4,
-        minHeight: isSmallDevice ? 56 : 60,
+        paddingVertical: isSmallDevice ? 7 : 8,
+        paddingHorizontal: 5,
+        minHeight: isSmallDevice ? 52 : 56,
     },
     icon: {
         width: isSmallDevice ? 32 : 36,

@@ -155,8 +155,8 @@ const HeaderHero: React.FC<Props> = ({
                         right: 0,
                         bottom: 0,
                         paddingHorizontal: 16,
-                        paddingBottom: 14,
-                        gap: 8,
+                        paddingBottom: 10,
+                        gap: 4,
                     }}
                 >
                     {children}
