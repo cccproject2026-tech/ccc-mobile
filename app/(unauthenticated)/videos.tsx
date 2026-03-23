@@ -1,10 +1,9 @@
 // app/(login)/video-player.tsx
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { icons } from "@/constants/images";
 import { getFontSize, getSpacing } from "@/utils/responsive";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import {
     Dimensions,
     Image,
@@ -16,6 +15,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { WebView } from "react-native-webview";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -23,7 +23,33 @@ export default function VideoPlayerScreen() {
     const router = useRouter();
     const { top, bottom } = useSafeAreaInsets();
     const { videoId, title, description, videoUrl, duration } = useLocalSearchParams();
-    const [isPlaying, setIsPlaying] = useState(false);
+    const VIDEO_URL = "https://video.wixstatic.com/video/028ec0_fb53758a493446ac8d797bcfbc533399/1080p/mp4/file.mp4";
+    const currentVideoUrl = useMemo(
+        () => (typeof videoUrl === "string" && videoUrl.length > 0 ? videoUrl : VIDEO_URL),
+        [VIDEO_URL, videoUrl]
+    );
+
+    const html = useMemo(() => {
+        return `
+<!doctype html>
+<html>
+  <body style="margin:0;background:#000;">
+    <video
+      id="video"
+      src="${currentVideoUrl}"
+      style="width:100%;height:100%;"
+      playsinline
+      webkit-playsinline
+      autoplay
+      muted
+      preload="metadata"
+      controls
+      controlslist="nodownload"
+    ></video>
+  </body>
+</html>
+        `;
+    }, [currentVideoUrl]);
 
     // Related/More videos
     const relatedVideos = [
@@ -76,11 +102,16 @@ export default function VideoPlayerScreen() {
                         {/* Video Player Section */}
                         <View style={styles.videoSection}>
                             <View style={styles.videoContainer}>
-                                {/* Video Image/Thumbnail */}
-                                <Image
-                                    source={icons.church1}
+                                {/* Video Player */}
+                                <WebView
+                                    key={currentVideoUrl}
+                                    source={{ html }}
                                     style={styles.videoImage}
-                                    resizeMode="cover"
+                                    allowsInlineMediaPlayback
+                                    mediaPlaybackRequiresUserAction={false}
+                                    allowsFullscreenVideo
+                                    javaScriptEnabled
+                                    scrollEnabled={false}
                                 />
 
                                 {/* Overlay Controls Container - Absolute */}
@@ -111,42 +142,6 @@ export default function VideoPlayerScreen() {
                                     </View>
                                 </View>
 
-                                {/* Video Controls - Center */}
-                                <View style={styles.videoControlsCenter}>
-                                    <TouchableOpacity activeOpacity={0.7}>
-                                        <Image
-                                            source={icons.prevPlayer}
-                                            style={styles.controlIcon}
-                                            resizeMode="contain"
-                                        />
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        onPress={() => setIsPlaying(!isPlaying)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Image
-                                            source={icons.playButton}
-                                            style={styles.playIcon}
-                                            resizeMode="contain"
-                                        />
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity activeOpacity={0.7}>
-                                        <Image
-                                            source={icons.nextPlayer}
-                                            style={styles.controlIcon}
-                                            resizeMode="contain"
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-
-                                {/* Video Progress Bar (Bottom) */}
-                                <Image
-                                    source={icons.player}
-                                    style={styles.playerControls}
-                                    resizeMode="contain"
-                                />
                             </View>
 
                             {/* Video Info - Blue Background */}
@@ -304,23 +299,52 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: getSpacing(40),
     },
+    controlButton: {
+        backgroundColor: "rgba(0,0,0,0.35)",
+        borderRadius: 999,
+        width: getSpacing(64),
+        height: getSpacing(64),
+        justifyContent: "center",
+        alignItems: "center",
+    },
     controlIcon: {
         width: getSpacing(40),
         height: getSpacing(40),
     },
-    playIcon: {
-        width: getSpacing(64),
-        height: getSpacing(64),
-    },
 
-    // Player Controls (Bottom)
-    playerControls: {
+    // Progress Bar (Bottom)
+    progressBarWrap: {
         position: "absolute",
-        bottom: 0,
+        bottom: getSpacing(16),
+        left: getSpacing(16),
+        right: getSpacing(16),
+        height: getSpacing(20),
+        justifyContent: "center",
+    },
+    progressBarTrack: {
+        position: "absolute",
         left: 0,
         right: 0,
-        width: "100%",
-        height: getSpacing(60),
+        top: getSpacing(8),
+        height: 4,
+        borderRadius: 999,
+        backgroundColor: "rgba(255,255,255,0.25)",
+    },
+    progressBarFill: {
+        position: "absolute",
+        left: 0,
+        top: getSpacing(8),
+        height: 4,
+        borderRadius: 999,
+        backgroundColor: "rgba(255,255,255,0.9)",
+    },
+    progressTimeText: {
+        position: "absolute",
+        bottom: -getSpacing(2),
+        alignSelf: "center",
+        color: "rgba(255,255,255,0.9)",
+        fontSize: getFontSize(11),
+        fontWeight: "600",
     },
 
     // Video Info Container (Blue Background)
