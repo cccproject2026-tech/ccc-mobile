@@ -79,9 +79,7 @@ const AvailabilityScreen = () => {
     React.useState<DateAvailability[]>([]);
 
   useEffect(() => {
-    if (!apiAvailability || apiAvailability.length === 0) return;
-
-    const mapped: DateAvailability[] = apiAvailability.map((day) => ({
+    const mapped: DateAvailability[] = (apiAvailability ?? []).map((day) => ({
       date: day.date,
       slots: day.slots.map((s) => ({
         id: s._id,
@@ -90,6 +88,7 @@ const AvailabilityScreen = () => {
       })),
     }));
 
+    // Always sync local state so stale month/day slots do not remain visible.
     setDateAvailabilities(mapped);
   }, [apiAvailability]);
   useEffect(() => {
@@ -251,6 +250,14 @@ const AvailabilityScreen = () => {
 
   const selectTime = (time: string) => {
     if (selectedTimeSlot) {
+      const slotStillExists = getSlotsForDate(selectedDate).some(
+        (slot) => slot.id === selectedTimeSlot.slotId,
+      );
+      if (!slotStillExists) {
+        setShowTimePicker(false);
+        setSelectedTimeSlot(null);
+        return;
+      }
       updateTimeSlot(
         selectedTimeSlot.slotId,
         selectedTimeSlot.field,
@@ -278,9 +285,8 @@ const AvailabilityScreen = () => {
     timeString: string,
   ): { time: string; period: "AM" | "PM" } => {
     const [timePart, period] = timeString.split(" ");
-    const [hour] = timePart.split(":");
     return {
-      time: hour,
+      time: timePart,
       period: period as "AM" | "PM",
     };
   };
@@ -303,11 +309,19 @@ const AvailabilityScreen = () => {
 
   const convertToMinutes = (timeString: string): number => {
     const { time, period } = parseTime(timeString);
-    let hour = parseInt(time, 10);
+    const [hourStr, minuteStr = "0"] = time.split(":");
+    let hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
     if (period === "PM" && hour !== 12) hour += 12;
     if (period === "AM" && hour === 12) hour = 0;
-    return hour * 60;
+    return hour * 60 + minute;
   };
+
+  useEffect(() => {
+    // Reset picker state when date changes to avoid editing an old slot.
+    setShowTimePicker(false);
+    setSelectedTimeSlot(null);
+  }, [selectedDate]);
 
   const validateSlots = (label: string, slots: TimeSlot[]): string | null => {
     for (let i = 0; i < slots.length; i++) {

@@ -16,8 +16,8 @@ import { Mentor } from "@/hooks/mentors/useMentors";
 import { useAuthStore } from "@/stores/auth.store";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo } from "react";
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -46,6 +46,14 @@ const Appointments: React.FC = () => {
     "appointments" | "availability"
   >("appointments");
   const router = useRouter();
+
+  // When returning from Availability via router.back(), React state is preserved
+  // but we were left on activeTab === "availability" — reset highlight on focus.
+  useFocusEffect(
+    useCallback(() => {
+      setActiveTab("appointments");
+    }, []),
+  );
   const [responseModal, setResponseModal] = React.useState<ResponseModalState>({
     visible: false,
     message: "",
@@ -225,8 +233,12 @@ const Appointments: React.FC = () => {
     const uniqueDateAppointments = dateAppointments.filter(
       (apt, index, self) =>
         index ===
-        self.findIndex(
-          (a) => a.meetingDate === apt.meetingDate && a.mentorId === apt.mentorId,
+        self.findIndex((a) =>
+          a.id
+            ? a.id === apt.id
+            : a.meetingDate === apt.meetingDate &&
+              a.mentorId === apt.mentorId &&
+              a.userId === apt.userId,
         ),
     );
 
@@ -273,8 +285,12 @@ const Appointments: React.FC = () => {
     const uniqueUpcomingAppointments = dateAppointments.filter(
       (apt, index, self) =>
         index ===
-        self.findIndex(
-          (a) => a.meetingDate === apt.meetingDate && a.mentorId === apt.mentorId,
+        self.findIndex((a) =>
+          a.id
+            ? a.id === apt.id
+            : a.meetingDate === apt.meetingDate &&
+              a.mentorId === apt.mentorId &&
+              a.userId === apt.userId,
         ),
     );
     const activeUpcomingAppointments = uniqueUpcomingAppointments.filter(
