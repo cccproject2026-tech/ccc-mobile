@@ -8,6 +8,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type PastorRole = "pastor" | "layleader" | "seminarian";
 
+/** Accents that sit on the existing blue–white base (gold warmth, mint growth). */
+const accent = {
+    gold: "#E8C88A",
+    mint: "#6FD4BE",
+    mintSoft: "rgba(111, 212, 190, 0.28)",
+    tealDeep: "#0E5A62",
+};
+
 const mapRoleToLabel = (role?: string): string => {
     switch (role) {
         case "pastor":
@@ -64,7 +72,10 @@ export default function RoleLandingScreen() {
                 <View style={styles.center}>
                     {/* Pill badge */}
                     <View style={styles.pill}>
-                        <View style={styles.pillDot} />
+                        <View style={styles.pillDots}>
+                            <View style={styles.pillDot} />
+                            <View style={styles.pillDotGold} />
+                        </View>
                         <Text style={styles.pillText}>Welcome to the Center</Text>
                     </View>
 
@@ -73,14 +84,20 @@ export default function RoleLandingScreen() {
                     {/* Main headline */}
                     <View style={styles.titleWrap}>
                         <Text style={styles.titleTop}>Grow your</Text>
-                        <Text style={styles.titleBottom}>community impact</Text>
-                        <Text style={styles.subtitle}>through Christ's method.</Text>
+                        <Text style={styles.titleBottom}>
+                            community{" "}
+                            <Text style={styles.titleAccent}>impact</Text>
+                        </Text>
+                        <Text style={styles.subtitle}>
+                            through{" "}
+                            <Text style={styles.subtitleAccent}>Christ's method.</Text>
+                        </Text>
                     </View>
 
                     {/* Divider */}
                     <View style={styles.dividerRow}>
                         <View style={styles.dividerLine} />
-                        <Ionicons name="leaf-outline" size={14} color="rgba(255,255,255,0.4)" />
+                        <Ionicons name="leaf-outline" size={14} color={accent.mint} />
                         <View style={styles.dividerLine} />
                     </View>
 
@@ -96,7 +113,7 @@ export default function RoleLandingScreen() {
                     >
                         <Text style={styles.primaryButtonText}>Start Your Journey</Text>
                         <View style={styles.arrowCircle}>
-                            <Ionicons name="arrow-forward" size={16} color="#0A5C8A" />
+                            <Ionicons name="arrow-forward" size={16} color={accent.tealDeep} />
                         </View>
                     </Pressable>
 
@@ -118,6 +135,8 @@ export default function RoleLandingScreen() {
                                     key={idx}
                                     style={[
                                         styles.avatarWrap,
+                                        idx === 1 && styles.avatarWrapMint,
+                                        idx === 2 && styles.avatarWrapGold,
                                         idx > 0 ? { marginLeft: -10 } : null,
                                     ]}
                                 >
@@ -190,17 +209,28 @@ const styles = StyleSheet.create({
         gap: 6,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.25)",
+        borderColor: "rgba(255,255,255,0.22)",
         paddingVertical: 7,
         paddingHorizontal: 16,
         backgroundColor: "rgba(255,255,255,0.1)",
         marginBottom: 24,
+    },
+    pillDots: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
     },
     pillDot: {
         width: 7,
         height: 7,
         borderRadius: 4,
         backgroundColor: "#7DD4F8",
+    },
+    pillDotGold: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: accent.gold,
     },
     pillText: {
         color: "rgba(255,255,255,0.9)",
@@ -261,12 +291,20 @@ const styles = StyleSheet.create({
         letterSpacing: -1,
         marginTop: -4,
     },
+    titleAccent: {
+        color: accent.gold,
+        fontWeight: "800",
+    },
     subtitle: {
         marginTop: 8,
         fontSize: 18,
         color: "rgba(255,255,255,0.85)",
         fontWeight: "700",
         letterSpacing: 0.2,
+    },
+    subtitleAccent: {
+        color: accent.mint,
+        fontWeight: "700",
     },
 
     // Divider
@@ -309,7 +347,7 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: "#E8F5FD",
+        backgroundColor: "rgba(232, 200, 138, 0.35)",
         alignItems: "center",
         justifyContent: "center",
     },
@@ -321,7 +359,7 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         paddingHorizontal: 24,
         borderWidth: 1.5,
-        borderColor: "rgba(255,255,255,0.3)",
+        borderColor: "rgba(111, 212, 190, 0.45)",
         backgroundColor: "rgba(255,255,255,0.08)",
         flexDirection: "row",
         alignItems: "center",
@@ -333,7 +371,7 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: "rgba(255,255,255,0.2)",
+        backgroundColor: accent.mintSoft,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -351,6 +389,8 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.1)",
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.15)",
+        borderLeftWidth: 3,
+        borderLeftColor: accent.gold,
         borderRadius: 16,
         paddingVertical: 12,
         paddingHorizontal: 18,
@@ -367,6 +407,12 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: "#0A5C8A",
     },
+    avatarWrapMint: {
+        borderColor: accent.mint,
+    },
+    avatarWrapGold: {
+        borderColor: accent.gold,
+    },
     avatar: {
         width: "100%",
         height: "100%",
@@ -376,7 +422,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     socialCount: {
-        color: "#fff",
+        color: accent.gold,
         fontWeight: "800",
         fontSize: 16,
     },
