@@ -128,6 +128,7 @@ export default function PastorTabLayout() {
             <AssessmentProvider>
                 <Tabs
                     backBehavior="history"
+                    initialRouteName="index"
                     screenOptions={{
                         headerShown: false,
                         tabBarButton: HapticTab,

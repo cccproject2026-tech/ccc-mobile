@@ -180,7 +180,7 @@ export default function PastorDashboard() {
   const hasMentorInProgress = useMemo(() => {
     return mentors?.some((m) => {
       const s = (m.status || "").toLowerCase();
-      return s === "new" || s === "pending";
+      return s === "new" || s === "pending" || s === "requested" || s === "in-review";
     }) ?? false;
   }, [mentors]);
 
@@ -188,7 +188,7 @@ export default function PastorDashboard() {
     if (!mentors?.length || hasMentorInProgress) return null;
     return mentors.find((m) => {
       const s = (m.status || "").toLowerCase();
-      return s === "accepted" || s === "active";
+      return s === "accepted" || s === "assigned";
     }) || null;
   }, [mentors, hasMentorInProgress]);
 

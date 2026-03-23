@@ -10,7 +10,10 @@ export default function PastorCallMentorScreen() {
   const { user } = useAuthStore();
   const { mentors } = useAssignedMentors(user?.id as string);
 
-  const assignedMentor = mentors[0] as any;
+  const assignedMentor = mentors.find((mentor: any) => {
+    const status = String(mentor?.status || "").toLowerCase();
+    return status === "accepted" || status === "assigned";
+  }) as any;
   const mentorName = assignedMentor?.name || "Mentor not assigned";
   const mentorPhone = assignedMentor?.phoneNumber || "Phone number not available";
 
