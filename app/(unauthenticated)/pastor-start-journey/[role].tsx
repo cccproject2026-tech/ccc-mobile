@@ -27,16 +27,19 @@ const mapRoleToLabel = (role?: string): string => {
 const STEPS = [
     {
         icon: "search-outline" as const,
+        number: "01",
         title: "Understand your community",
         description: "Discover the needs and strengths of those around you.",
     },
     {
         icon: "people-outline" as const,
+        number: "02",
         title: "Build relationships",
         description: "Foster meaningful connections rooted in Christ's love.",
     },
     {
         icon: "leaf-outline" as const,
+        number: "03",
         title: "Serve with purpose",
         description: "Lead impactful outreach that transforms lives.",
     },
@@ -80,20 +83,6 @@ export default function PastorStartJourneyScreen() {
                         <Ionicons name="chevron-back" size={20} color="rgba(255,255,255,0.9)" />
                     </Pressable>
 
-                    {/* Progress dots */}
-                    <View style={styles.dotsRow}>
-                        {Array.from({ length: 3 }).map((_, i) => (
-                            <View
-                                key={i}
-                                style={[
-                                    styles.dot,
-                                    i === activeStep ? styles.dotActive : styles.dotInactive,
-                                    i === 1 && i !== activeStep ? styles.dotInactiveMint : null,
-                                ]}
-                            />
-                        ))}
-                    </View>
-
                     <Pressable onPress={handleSkip} hitSlop={12} style={styles.skipBtn}>
                         <Text style={styles.skipText}>Skip</Text>
                     </Pressable>
@@ -109,24 +98,19 @@ export default function PastorStartJourneyScreen() {
                                 <View style={styles.centerIcon}>
                                     <Ionicons
                                         name={STEPS[activeStep].icon}
-                                        size={30}
+                                        size={24}
                                         color="#fff"
                                     />
                                 </View>
                             </View>
                         </View>
-                        <Text style={styles.stepLabel}>
-                            Step{" "}
-                            <Text style={styles.stepLabelAccent}>{activeStep + 1}</Text>
-                            {" "}of 3
-                        </Text>
                     </View>
 
                     {/* Heading */}
                     <View style={styles.headingBlock}>
                         <Text style={styles.headingLight}>We will guide you</Text>
                         <Text style={styles.headingStrong}>
-                            step by <Text style={styles.headingAccent}>step</Text>
+                            to lead with <Text style={styles.headingAccent}>purpose</Text>
                         </Text>
                         <Text style={styles.headingLight}>
                             to grow your{" "}
@@ -148,33 +132,31 @@ export default function PastorStartJourneyScreen() {
                                 <Pressable
                                     key={i}
                                     onPress={() => setActiveStep(i)}
-                                    style={[styles.stepCard, isActive && styles.stepCardActive]}
+                                    style={[
+                                        styles.card,
+                                        i % 2 === 0 ? styles.cardStripeGold : styles.cardStripeMint,
+                                        isActive && styles.cardActive,
+                                    ]}
                                 >
-                                    {/* Step number */}
-                                    <View style={[styles.stepNum, isActive && styles.stepNumActive]}>
-                                        <Text style={[styles.stepNumText, isActive && styles.stepNumTextActive]}>
-                                            {i + 1}
-                                        </Text>
-                                    </View>
+                                    <Text
+                                        style={[
+                                            styles.cardNumber,
+                                            i % 2 === 0 ? styles.cardNumberGold : styles.cardNumberMint,
+                                        ]}
+                                    >
+                                        {step.number}
+                                    </Text>
 
                                     <View style={styles.cardBody}>
                                         <Text style={[styles.cardTitle, isActive && styles.cardTitleActive]}>
                                             {step.title}
                                         </Text>
-                                        {isActive && (
-                                            <Text style={styles.cardDesc}>{step.description}</Text>
-                                        )}
+                                        <Text style={styles.cardDesc}>{step.description}</Text>
                                     </View>
 
-                                    <Ionicons
-                                        name="chevron-forward"
-                                        size={14}
-                                        color={
-                                            isActive
-                                                ? accent.mint
-                                                : "rgba(255,255,255,0.2)"
-                                        }
-                                    />
+                                    <View style={styles.cardIcon}>
+                                        <Ionicons name={step.icon} size={20} color="#fff" />
+                                    </View>
                                 </Pressable>
                             );
                         })}
@@ -234,7 +216,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: 32,
+        marginBottom: 18,
     },
     backBtn: {
         width: 36,
@@ -287,12 +269,12 @@ const styles = StyleSheet.create({
     // Illustration
     illustrationArea: {
         alignItems: "center",
-        marginBottom: 32,
+        marginBottom: 16,
     },
     outerRing: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
+        width: 100,
+        height: 100,
+        borderRadius: 50,
         backgroundColor: "rgba(255,255,255,0.06)",
         alignItems: "center",
         justifyContent: "center",
@@ -300,9 +282,9 @@ const styles = StyleSheet.create({
         borderColor: "rgba(111, 212, 190, 0.35)",
     },
     innerRing: {
-        width: 84,
-        height: 84,
-        borderRadius: 42,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         backgroundColor: "rgba(255,255,255,0.08)",
         alignItems: "center",
         justifyContent: "center",
@@ -310,9 +292,9 @@ const styles = StyleSheet.create({
         borderColor: "rgba(232, 200, 138, 0.35)",
     },
     centerIcon: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 46,
+        height: 46,
+        borderRadius: 23,
         backgroundColor: accent.mintSoft,
         alignItems: "center",
         justifyContent: "center",
@@ -331,19 +313,19 @@ const styles = StyleSheet.create({
 
     // Heading
     headingBlock: {
-        marginBottom: 20,
+        marginBottom: 12,
     },
     headingLight: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: "400",
         color: "rgba(255,255,255,0.65)",
-        lineHeight: 28,
+        lineHeight: 24,
     },
     headingStrong: {
-        fontSize: 26,
+        fontSize: 24,
         fontWeight: "700",
         color: "#fff",
-        lineHeight: 32,
+        lineHeight: 30,
     },
     headingAccent: {
         color: accent.gold,
@@ -358,7 +340,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
-        marginBottom: 20,
+        marginBottom: 12,
     },
     dividerLine: {
         flex: 1,
@@ -368,66 +350,78 @@ const styles = StyleSheet.create({
 
     // Cards
     cardList: {
-        gap: 10,
+        gap: 16,
+        marginBottom: 8,
     },
-    stepCard: {
+    card: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        backgroundColor: "rgba(255,255,255,0.05)",
         gap: 14,
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.12)",
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderLeftWidth: 3,
     },
-    stepCardActive: {
+    cardStripeGold: {
+        borderLeftColor: accent.gold,
+        borderColor: "rgba(111, 212, 190, 0.25)",
+    },
+    cardStripeMint: {
+        borderLeftColor: accent.mint,
+        borderColor: "rgba(255,255,255,0.14)",
+    },
+    cardActive: {
         backgroundColor: "rgba(255,255,255,0.12)",
         borderColor: "rgba(111, 212, 190, 0.45)",
-        borderLeftWidth: 3,
-        borderLeftColor: accent.gold,
     },
-    stepNum: {
+    cardNumber: {
+        fontSize: 20,
+        fontWeight: "800",
         width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: "rgba(255,255,255,0.1)",
-        alignItems: "center",
-        justifyContent: "center",
+        letterSpacing: -0.5,
     },
-    stepNumActive: {
-        backgroundColor: "#fff",
+    cardNumberGold: {
+        color: accent.gold,
     },
-    stepNumText: {
-        fontSize: 12,
-        fontWeight: "700",
-        color: "rgba(255,255,255,0.5)",
-    },
-    stepNumTextActive: {
-        color: accent.tealDeep,
+    cardNumberMint: {
+        color: accent.mint,
     },
     cardBody: {
         flex: 1,
     },
     cardTitle: {
         fontSize: 14,
-        fontWeight: "600",
-        color: "rgba(255,255,255,0.55)",
+        fontWeight: "700",
+        color: "#fff",
+        marginBottom: 2,
+        lineHeight: 18,
     },
     cardTitleActive: {
         color: "#fff",
     },
     cardDesc: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: "400",
-        color: "rgba(255,255,255,0.45)",
-        marginTop: 3,
-        lineHeight: 18,
+        color: "rgba(255,255,255,0.5)",
+        lineHeight: 16,
+    },
+    cardIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: accent.mintSoft,
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     // Bottom
     bottomArea: {
-        gap: 12,
+        gap: 8,
+        paddingTop: 6,
+        paddingBottom: 4,
     },
     continueBtn: {
         width: "100%",
