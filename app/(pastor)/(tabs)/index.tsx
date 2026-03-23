@@ -372,7 +372,15 @@ export default function PastorDashboard() {
     (item: PastorFocusItem) => {
       pastorFocusSheetRef.current?.dismiss();
       setTimeout(() => {
-        router.push({ pathname: item.route.pathname as any, params: item.route.params });
+        const { pathname, params } = item.route;
+        const rid = params?.roadmapId;
+        if (pathname === "/roadmap/comments" && rid) {
+          router.push(
+            `/roadmap/comments?roadmapId=${encodeURIComponent(rid)}` as any,
+          );
+          return;
+        }
+        router.push({ pathname: pathname as any, params: params ?? {} });
       }, 220);
     },
     [router],

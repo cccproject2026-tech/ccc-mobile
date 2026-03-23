@@ -6,6 +6,7 @@ import React from "react";
 import {
     FlatList,
     Image,
+    RefreshControl,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -15,16 +16,23 @@ import {
 import { useRoadmapComments } from "@/hooks/roadmaps/useRoadmaps";
 import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
+import { icons } from "@/constants/images";
+import { paramToString } from "@/utils/routerParams";
 
 
 export default function CommentsScreen() {
     const router = useRouter();
     const { user } = useAuthStore();
 
-    const { roadmapId: phaseId } = useLocalSearchParams<{ roadmapId: string }>();
+    const params = useLocalSearchParams<{ roadmapId?: string | string[] }>();
+    const phaseId = paramToString(params.roadmapId);
+    const userId = user?.id;
 
-    const { data, isLoading } = useRoadmapComments(phaseId, user?.id!);
-    const comments = data?.comments ?? [];
+    const { data, isLoading, isError, error, refetch, isFetching } = useRoadmapComments(
+        phaseId,
+        userId,
+    );
+    const comments = Array.isArray(data?.comments) ? data!.comments : [];
 
     const formatTimestamp = (timestamp: string): string => {
         const commentDate = new Date(timestamp);
@@ -57,17 +65,22 @@ export default function CommentsScreen() {
         return `${month}/${day}/${year}`;
     };
 
-    const renderComment = ({ item }: { item: RoadmapComment }) => (
+    const renderComment = ({ item }: { item: RoadmapComment }) => {
+        const author = item.mentorId;
+        const pic = author?.profilePicture?.trim();
+        return (
         <View style={styles.commentCard}>
             <View style={styles.rowContainer}>
                 <Image
-                    source={{ uri: item.mentorId.profilePicture || undefined }}
+                    source={pic ? { uri: pic } : icons.myProfile}
                     style={styles.avatar}
                 />
                 <View style={styles.contentContainer}>
                     <View style={styles.contentHeader}>
                         <Text style={styles.authorName} numberOfLines={1}>
-                            {item.mentorId.firstName} {item.mentorId.lastName} ({item.mentorId.role})
+                            {author
+                                ? `${[author.firstName, author.lastName].filter(Boolean).join(" ")}${author.role ? ` (${author.role})` : ""}`.trim() || "Mentor"
+                                : "Mentor"}
                         </Text>
                     </View>
 
@@ -95,7 +108,8 @@ export default function CommentsScreen() {
                 </View>
             </View>
         </View>
-    );
+        );
+    };
 
     return (
         <LinearGradient colors={["#176192", "#1D548D", "#264387"]} style={{ flex: 1 }}>
@@ -122,10 +136,23 @@ export default function CommentsScreen() {
                 keyExtractor={(item) => item._id}
                 contentContainerStyle={styles.listContainer}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isFetching}
+                        onRefresh={() => refetch()}
+                        tintColor="#fff"
+                    />
+                }
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>
-                            {isLoading ? "Loading..." : "No comments yet"}
+                            {!phaseId || !userId
+                                ? "Missing roadmap or user. Go back and open Comments from a roadmap task."
+                                : isLoading || isFetching
+                                  ? "Loading..."
+                                  : isError
+                                    ? ((error as Error)?.message || "Could not load comments. Pull to refresh.")
+                                    : "No comments yet"}
                         </Text>
                     </View>
                 }

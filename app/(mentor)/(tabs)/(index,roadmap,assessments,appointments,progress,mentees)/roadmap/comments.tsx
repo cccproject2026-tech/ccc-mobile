@@ -27,10 +27,39 @@ export default function CommentsScreen() {
     const { user } = useAuthStore();
     const [commentText, setCommentText] = useState("");
 
-    const { roadmapId: phaseId } = useLocalSearchParams<{ roadmapId: string }>();
+    const { data: dataParam, roadmapId, userId: menteeUserIdParam } = useLocalSearchParams<{
+        data?: string;
+        roadmapId?: string;
+        userId?: string;
+    }>();
 
-    const { data: roadmap } = useRoadmap(phaseId);
-    const { data, isLoading } = useRoadmapComments(phaseId, user?.id!);
+    let parsedData: Record<string, string> | null = null;
+    if (dataParam) {
+        try {
+            parsedData = JSON.parse(dataParam as string) as Record<string, string>;
+        } catch {
+            parsedData = null;
+        }
+    }
+
+    /** Thread is stored under the pastor/mentee's userId, not the mentor's. */
+    const finalRoadmapId =
+        roadmapId ||
+        parsedData?.roadmapId ||
+        parsedData?._id ||
+        parsedData?.roadMapId ||
+        "";
+
+    const threadUserId =
+        menteeUserIdParam ||
+        parsedData?.userId ||
+        parsedData?.pastorId ||
+        parsedData?.menteeId ||
+        user?.id ||
+        "";
+
+    const { data: roadmap } = useRoadmap(finalRoadmapId || undefined, threadUserId || undefined);
+    const { data, isLoading } = useRoadmapComments(finalRoadmapId || undefined, threadUserId || undefined);
     const comments = data?.comments ?? [];
 
     const addCommentMutation = useAddRoadmapComment();
@@ -72,18 +101,21 @@ export default function CommentsScreen() {
             return;
         }
 
-        if (!phaseId || !user?.id) {
-            Alert.alert("Error", "Missing required information");
+        if (!finalRoadmapId || !threadUserId || !user?.id) {
+            Alert.alert(
+                "Error",
+                "Missing roadmap or mentee context. Open Comments from the pastor's roadmap (mentee view).",
+            );
             return;
         }
 
         try {
             await addCommentMutation.mutateAsync({
-                roadmapId: phaseId,
+                roadmapId: finalRoadmapId,
                 payload: {
                     text: commentText.trim(),
-                    userId: user.id,
-                    mentorId: user.id, // For mentor, mentorId is the same as userId
+                    userId: threadUserId,
+                    mentorId: user.id,
                 },
             });
 

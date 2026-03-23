@@ -14,6 +14,7 @@ import {
   NestedRoadmap,
   Roadmap,
   RoadmapComment,
+  RoadmapCommentAuthor,
   RoadmapQuery,
 } from "@/lib/roadmap/types";
 import type {
@@ -76,6 +77,44 @@ const getMentorName = (mentor?: MentorInfo | string) => {
     return "Mentor";
   }
   return `${mentor.firstName} ${mentor.lastName}`.trim();
+};
+
+/** Exported for query invalidation when roadmap comments change. */
+export const PASTOR_FOCUS_FEEDBACK_QUERY_KEY = "pastor-focus-feedback" as const;
+
+/**
+ * Show roadmap thread items that are mentor feedback for the pastor.
+ * API sometimes sets mentorId._id equal to thread userId while role is still "mentor" — trust role in that case.
+ */
+const isCommentMentorFeedbackForPastor = (
+  comment: RoadmapComment,
+  pastorUserId?: string | null,
+) => {
+  const author = comment.mentorId as RoadmapCommentAuthor | string | null | undefined;
+
+  if (author == null) return false;
+
+  if (typeof author === "string") {
+    const id = author.trim();
+    if (!id) return false;
+    if (pastorUserId && id === pastorUserId) return false;
+    return true;
+  }
+
+  if (typeof author !== "object") return false;
+
+  const r = String(author.role ?? "").toLowerCase().trim();
+  if (r === "pastor" || r === "director") return false;
+
+  const isMentorRole =
+    r === "mentor" ||
+    r === "field mentor" ||
+    (r.length > 0 && /\bmentor\b/.test(r));
+  if (isMentorRole) return true;
+
+  const aid = String(author._id ?? "").trim();
+  if (pastorUserId && aid === pastorUserId) return false;
+  return true;
 };
 
 const toTitleCase = (value: string) =>
@@ -154,30 +193,48 @@ export const usePastorFocusItems = () => {
     useAssignedAssessments(user?.id);
 
   const feedbackQuery = useQuery({
-    queryKey: ["pastor-focus-feedback", user?.id, roadmaps.map((r) => r._id).join(",")],
+    queryKey: [PASTOR_FOCUS_FEEDBACK_QUERY_KEY, user?.id, roadmaps.map((r) => r._id).join(",")],
     enabled: !!user?.id && roadmaps.length > 0,
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
+      const uid = user!.id;
       const feedback = await Promise.all(
         roadmaps.map(async (roadmap) => {
-          const [commentsThread, queries] = await Promise.all([
-            roadmapService.getRoadmapComments(roadmap._id, user!.id),
-            roadmapService.getRoadmapQueries(roadmap._id, user!.id),
-          ]);
+          try {
+            const [commentsThread, queries] = await Promise.all([
+              roadmapService.getRoadmapComments(roadmap._id, uid),
+              roadmapService.getRoadmapQueries(roadmap._id, uid),
+            ]);
 
-          const flatQueries = queries.flatMap((thread) =>
-            thread.queries.map((query) => ({
-              ...query,
+            const raw = commentsThread as { comments?: RoadmapComment[]; Comments?: RoadmapComment[] };
+            const comments =
+              (Array.isArray(raw.comments) && raw.comments) ||
+              (Array.isArray(raw.Comments) && raw.Comments) ||
+              [];
+
+            const flatQueries = (Array.isArray(queries) ? queries : []).flatMap((thread) =>
+              (thread.queries || []).map((query) => ({
+                ...query,
+                roadmapId: roadmap._id,
+                roadmapName: roadmap.name,
+              })),
+            );
+
+            return {
               roadmapId: roadmap._id,
               roadmapName: roadmap.name,
-            })),
-          );
-
-          return {
-            roadmapId: roadmap._id,
-            roadmapName: roadmap.name,
-            comments: commentsThread.comments || [],
-            queries: flatQueries,
-          };
+              comments,
+              queries: flatQueries,
+            };
+          } catch {
+            return {
+              roadmapId: roadmap._id,
+              roadmapName: roadmap.name,
+              comments: [] as RoadmapComment[],
+              queries: [] as (RoadmapQuery & { roadmapId: string; roadmapName: string })[],
+            };
+          }
         }),
       );
 
@@ -293,19 +350,28 @@ export const usePastorFocusItems = () => {
     const mentorFeedbackItems: PastorFocusItem[] = (feedbackQuery.data || [])
       .flatMap((entry) => {
         const commentItems = (entry.comments || [])
-          .filter((comment: RoadmapComment) => comment.mentorId?.role === "mentor")
-          .map((comment: RoadmapComment) => ({
-            id: `comment-${comment._id}`,
-            title: `${comment.mentorId.firstName} commented`,
-            description: comment.text,
-            meta: `${entry.roadmapName} • ${formatDateTime(comment.addedDate)}`,
-            accentColor: "#F472B6",
-            sortKey: comment.addedDate,
-            route: {
-              pathname: `/roadmap/${entry.roadmapId}/comments`,
-              params: { roadmapId: entry.roadmapId },
-            },
-          }));
+          .filter((comment: RoadmapComment) =>
+            isCommentMentorFeedbackForPastor(comment, user?.id),
+          )
+          .map((comment: RoadmapComment) => {
+            const author = comment.mentorId as RoadmapCommentAuthor | string | undefined;
+            const title =
+              typeof author === "object" && author
+                ? `${author.firstName?.trim() || "Mentor"} commented`
+                : "Mentor commented";
+            return {
+              id: `comment-${comment._id}`,
+              title,
+              description: comment.text,
+              meta: `${entry.roadmapName} • ${formatDateTime(comment.addedDate)}`,
+              accentColor: "#F472B6",
+              sortKey: comment.addedDate,
+              route: {
+                pathname: "/roadmap/comments",
+                params: { roadmapId: entry.roadmapId },
+              },
+            };
+          });
 
         const replyItems = (entry.queries || [])
           .filter((query: RoadmapQuery & { roadmapId: string; roadmapName: string }) => query.status === "answered" && !!query.repliedAnswer)
@@ -317,7 +383,7 @@ export const usePastorFocusItems = () => {
             accentColor: "#FB7185",
             sortKey: query.repliedDate || query.createdDate,
             route: {
-              pathname: `/roadmap/${query.roadmapId}/queries`,
+              pathname: "/roadmap/queries",
               params: {
                 roadmapId: query.roadmapId,
               },
@@ -357,7 +423,8 @@ export const usePastorFocusItems = () => {
       {
         id: "mentor-feedback",
         title: "Comments and query replies from Mentor",
-        emptyMessage: "No new mentor feedback is waiting right now.",
+        emptyMessage:
+          "No mentor comments yet. This list shows your mentor's roadmap comments (not your own). When your mentor comments, it will appear here.",
         items: mentorFeedbackItems,
       },
     ];

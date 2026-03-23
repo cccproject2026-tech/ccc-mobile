@@ -418,10 +418,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
+import { paramToString } from '@/utils/routerParams';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ItemDetail() {
-    const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string }>();
+    const { phaseId: phaseIdParam, itemId } = useLocalSearchParams<{
+        phaseId: string | string[];
+        itemId: string | string[];
+    }>();
+    const phaseId = paramToString(phaseIdParam);
+    const itemIdNorm = paramToString(itemId);
     const router = useRouter();
     // Fetch parent roadmap
     const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
@@ -440,8 +446,8 @@ export default function ItemDetail() {
         if (!roadmap) return undefined;
         const allTasks = getTasks(roadmap);
         console.log(allTasks);
-        return allTasks.find(r => r._id === itemId);
-    }, [roadmap, itemId]);
+        return allTasks.find(r => r._id === itemIdNorm);
+    }, [roadmap, itemIdNorm]);
     // Get phase number
     const phaseNumber = useMemo(() => {
         if (!roadmap?.phase) return null;
@@ -638,12 +644,12 @@ export default function ItemDetail() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={() =>
-                        router.push({
-                            pathname: '/roadmap/comments',
-                            params: { roadmapId: phaseId },
-                        })
-                    }
+                    onPress={() => {
+                        if (!phaseId) return;
+                        router.push(
+                            `/roadmap/comments?roadmapId=${encodeURIComponent(phaseId)}` as any,
+                        );
+                    }}
                     style={[
                         styles.tabButton,
                         activeTab === 'comments' ? styles.tabActive : styles.tabInactive,
@@ -788,7 +794,7 @@ export default function ItemDetail() {
 
                 {/* Dynamic Form - Render extras */}
                 {task.extras && task.extras.length > 0 && (
-                    <DynamicFormTask task={task} phaseId={phaseId} itemId={itemId} />
+                    <DynamicFormTask task={task} phaseId={phaseId} itemId={itemIdNorm} />
                 )}
             </ScrollView>
 

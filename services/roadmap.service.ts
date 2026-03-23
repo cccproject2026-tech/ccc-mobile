@@ -9,6 +9,7 @@ import {
     ReplyQueryRequest,
     ReplyQueryResponse,
     Roadmap,
+    RoadmapComment,
     RoadmapCommentsThread,
     RoadmapResponse,
     SubmitQueryRequest,
@@ -18,6 +19,12 @@ import {
 import { CreateNestedRoadmapRequest, CreateNestedRoadmapResponse, CreateRoadmapRequest, CreateRoadmapResponse, UpdateRoadmapRequest, UpdateRoadmapResponse } from '@/lib/roadmaps/types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
+
+/** Axios uses `response.status`; apiClient response interceptor rejects with `{ statusCode }`. */
+const getHttpErrorStatus = (error: unknown): number | undefined => {
+    const e = error as { response?: { status?: number }; statusCode?: number };
+    return e?.response?.status ?? e?.statusCode;
+};
 
 // Helper to append data to FormData with support for nested objects/arrays
 const buildFormData = (formData: FormData, data: any, parentKey?: string) => {
@@ -366,9 +373,8 @@ export const roadmapService = {
             }
 
             return response.data.data;
-        } catch (error: any) {
-            // Handle 404 as empty queries list
-            if (error?.response?.status === 404) {
+        } catch (error: unknown) {
+            if (getHttpErrorStatus(error) === 404) {
                 return [];
             }
             throw error;
@@ -413,10 +419,26 @@ export const roadmapService = {
                 throw new Error(response.data.message || 'Failed to fetch roadmap comments');
             }
 
-            return response.data.data;
-        } catch (error: any) {
-            // Handle 404 as empty comments thread
-            if (error?.response?.status === 404) {
+            const raw = response.data.data as RoadmapCommentsThread & {
+                Comments?: RoadmapComment[];
+            };
+            if (!raw || typeof raw !== "object") {
+                return {
+                    _id: "",
+                    userId,
+                    roadMapId,
+                    comments: [],
+                };
+            }
+            const list =
+                Array.isArray(raw.comments)
+                    ? raw.comments
+                    : Array.isArray(raw.Comments)
+                      ? raw.Comments
+                      : [];
+            return { ...raw, comments: list };
+        } catch (error: unknown) {
+            if (getHttpErrorStatus(error) === 404) {
                 return {
                     _id: '',
                     userId,

@@ -549,6 +549,9 @@ export function useAddRoadmapComment() {
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.comments(variables.roadmapId, variables.payload.userId)
             });
+            queryClient.invalidateQueries({
+                queryKey: ["pastor-focus-feedback"],
+            });
         },
     });
 }
@@ -604,6 +607,9 @@ export function useReplyRoadmapQuery() {
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.all
             });
+            queryClient.invalidateQueries({
+                queryKey: ["pastor-focus-feedback"],
+            });
         },
     });
 }
@@ -632,15 +638,28 @@ export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
 };
 
 
-export function useRoadmapComments(roadMapId?: string, userId?: string) {
-    console.log('Using useRoadmapComments with:', { roadMapId, userId });
+export function useRoadmapComments(
+    roadMapId?: string | string[],
+    userId?: string | string[],
+) {
+    const rid =
+        typeof roadMapId === "string"
+            ? roadMapId
+            : Array.isArray(roadMapId)
+              ? roadMapId[0]
+              : undefined;
+    const uid =
+        typeof userId === "string"
+            ? userId
+            : Array.isArray(userId)
+              ? userId[0]
+              : undefined;
+
     return useQuery<RoadmapCommentsThread>({
-        queryKey: [
-            "roadmap-comments",
-            roadMapId,
-            userId,
-        ],
-        queryFn: () => roadmapService.getRoadmapComments(roadMapId!, userId!),
-        enabled: !!roadMapId && !!userId,
+        queryKey: ["roadmap-comments", rid, uid],
+        queryFn: () => roadmapService.getRoadmapComments(rid!, uid!),
+        enabled: !!rid && !!uid,
+        staleTime: 0,
+        refetchOnMount: "always",
     });
 }

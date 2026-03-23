@@ -175,9 +175,70 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Handle network errors
-    if (!error.response) {
-      console.error("❌ Network Error:", error.message);
+    const err = error as AxiosError & {
+      statusCode?: number;
+      errors?: unknown;
+    };
+
+    // Already-shaped API error (no Axios config) — e.g. re-thrown; don't label as "Network"
+    if (typeof err.statusCode === "number" && !err.config) {
+      if (__DEV__) {
+        if (err.statusCode === 404) {
+          console.log("📭 404", err.message);
+        } else {
+          console.error("❌ API Error:", {
+            message: err.message,
+            statusCode: err.statusCode,
+            errors: err.errors,
+          });
+        }
+      }
+      return Promise.reject(error);
+    }
+
+    // No `response` yet: distinguish real offline/DNS/timeout from HTTP errors some stacks omit `response` for
+    if (!err.response) {
+      const msg = String(err.message || "");
+
+      const statusFromAxiosMsg = msg.match(/status code (\d{3})\b/i);
+      if (statusFromAxiosMsg) {
+        const st = parseInt(statusFromAxiosMsg[1], 10);
+        const apiError = {
+          message: msg,
+          statusCode: st,
+          errors: undefined as undefined,
+        };
+        if (__DEV__) {
+          const url = err.config?.url ?? "";
+          if (st === 404) {
+            console.log(`📭 404 ${url}`, apiError.message);
+          } else {
+            console.error("❌ API Error:", apiError);
+          }
+        }
+        return Promise.reject(apiError);
+      }
+
+      // Server message in `message` but missing `response` (seen on some RN paths)
+      const looksLikeKnownMissingResource =
+        /\bnot found\b/i.test(msg) ||
+        /thread for user\b/i.test(msg) ||
+        /comment thread\b/i.test(msg);
+      if (looksLikeKnownMissingResource && err.config) {
+        const apiError = {
+          message: msg,
+          statusCode: 404,
+          errors: undefined as undefined,
+        };
+        if (__DEV__) {
+          console.log(`📭 404 ${err.config.url ?? ""}`, apiError.message);
+        }
+        return Promise.reject(apiError);
+      }
+
+      if (__DEV__) {
+        console.error("❌ Network Error:", err.message);
+      }
       return Promise.reject({
         message: "Network error. Please check your connection.",
         statusCode: 0,
@@ -185,14 +246,21 @@ apiClient.interceptors.response.use(
     }
 
     // Handle other errors
+    const status = error.response?.status || 500;
     const apiError = {
       message: (error.response?.data as any)?.message || "An error occurred",
-      statusCode: error.response?.status || 500,
+      statusCode: status,
       errors: (error.response?.data as any)?.errors,
     };
 
     if (__DEV__) {
-      console.error("❌ API Error:", apiError);
+      // 404 is often handled upstream (e.g. empty comment thread) — avoid red ERROR noise in Metro
+      const url = (error.config as { url?: string })?.url ?? "";
+      if (status === 404) {
+        console.log(`📭 404 ${url}`, apiError.message);
+      } else {
+        console.error("❌ API Error:", apiError);
+      }
     }
 
     return Promise.reject(apiError);
