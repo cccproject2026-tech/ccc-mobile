@@ -759,6 +759,11 @@ export default function InterestFormScreen() {
                                         {emailErrorText || "Email is required"}
                                     </Text>
                                 )}
+                            {!emailError && (
+                                <Text style={styles.helperText}>
+                                    Your email address will be used as your username for login.
+                                </Text>
+                            )}
                             </View>
                         </View>
                     </View>
@@ -1578,6 +1583,12 @@ const styles = StyleSheet.create({
     },
     errorText: {
         color: "#FCA5A5",
+        marginTop: -6,
+        marginBottom: 12,
+        fontSize: 12,
+    },
+    helperText: {
+        color: "rgba(255,255,255,0.65)",
         marginTop: -6,
         marginBottom: 12,
         fontSize: 12,
