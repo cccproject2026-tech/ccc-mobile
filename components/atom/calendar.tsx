@@ -296,6 +296,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
             key={currentMonth.toISOString()}
             current={currentMonth.toISOString().split("T")[0]}
             onDayPress={handleDayPress}
+            renderHeader={() => <View style={styles.hiddenMonthHeader} />}
             markingType="custom"
             markedDates={markedDates}
             minDate={minDate || (disablePastDates ? today : undefined)}
@@ -364,6 +365,11 @@ const styles = StyleSheet.create({
   },
   calendarWrapper: {
     backgroundColor: "transparent",
+  },
+  hiddenMonthHeader: {
+    height: 0,
+    margin: 0,
+    padding: 0,
   },
 });
 
