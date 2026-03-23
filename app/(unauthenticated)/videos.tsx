@@ -169,17 +169,7 @@ export default function VideoPlayerScreen() {
                                             resizeMode="cover"
                                         />
 
-                                        {/* Play Icon Overlay */}
-                                        <View style={styles.playIconOverlay}>
-                                            <View style={styles.playIconCircle}>
-                                                <IconSymbol
-                                                    name="play.fill"
-                                                    size={getFontSize(24)}
-                                                    color="#FFFFFF"
-                                                />
-                                            </View>
-                                        </View>
-
+                 
                                         {/* Duration Badge */}
                                         <View style={styles.durationBadge}>
                                             <Text style={styles.durationText}>{video.duration}</Text>
