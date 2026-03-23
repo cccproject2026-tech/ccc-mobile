@@ -304,8 +304,8 @@ export default function PastorDashboard() {
       },
       {
         icon: "layers-outline" as const,
-        line1: "Roadmap",
-        line2: "Phases",
+        line1: "In Progress",
+        line2: "Roadmaps",
         sheetTitle: "Roadmap Phases",
         sectionId: "roadmaps",
       },
@@ -319,7 +319,7 @@ export default function PastorDashboard() {
       {
         icon: "chatbubble-outline" as const,
         line1: "Mentor",
-        line2: "Feedback",
+        line2: "Comments",
         sheetTitle: "Mentor Comments",
         sectionId: "mentor-feedback",
       },
@@ -606,13 +606,26 @@ export default function PastorDashboard() {
                     We&apos;ve got simple steps to help you move forward.
                   </Text>
                 </View>
-                <Pressable
-                  style={styles.helpButtonCompact}
-                  onPress={() => openThingsToFocusSheet()}
-                >
-                  <Ionicons name="help-circle-outline" size={15} color="#fff" />
-                  <Text style={styles.helpButtonCompactText}>Help</Text>
-                </Pressable>
+                <View style={styles.howToActions}>
+                  <Pressable
+                    style={styles.helpButtonCompact}
+                    onPress={() =>
+                      router.push("/(pastor)/(tabs)/support/contact-information" as any)
+                    }
+                  >
+                    <Ionicons name="help-circle-outline" size={15} color="#fff" />
+                    <Text style={styles.helpButtonCompactText}>Help</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.helpButtonCompact}
+                    onPress={() =>
+                      router.push("/(pastor)/(tabs)/support/call-mentor" as any)
+                    }
+                  >
+                    <Ionicons name="call-outline" size={15} color="#fff" />
+                    <Text style={styles.helpButtonCompactText}>Call Mentor</Text>
+                  </Pressable>
+                </View>
               </View>
             </Animated.View>
 
@@ -621,7 +634,7 @@ export default function PastorDashboard() {
                 <View style={styles.sectionTitleIconWrap}>
                   <Ionicons name="map-outline" size={18} color="#fff" />
                 </View>
-                <Text style={styles.sectionTitleText}>Explore CCC</Text>
+                <Text style={styles.sectionTitleText}>Quick Links</Text>
               </View>
               <Text style={[styles.cardSubtitle, styles.exploreCardSubtitle]} numberOfLines={1}>
                 Roadmap, assessments, progress, and appointments.
@@ -1052,6 +1065,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
+  },
+  howToActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexShrink: 0,
   },
   howToTitles: {
     flex: 1,
