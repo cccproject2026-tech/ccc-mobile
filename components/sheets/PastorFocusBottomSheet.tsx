@@ -36,13 +36,14 @@ interface PastorFocusBottomSheetProps {
   sections: PastorFocusSection[];
   isLoading?: boolean;
   onClose?: () => void;
+  onNewMeeting?: () => void;
   onSelectItem: (item: PastorFocusItem) => void;
 }
 
 const PastorFocusBottomSheet = forwardRef<
   BottomSheetModal,
   PastorFocusBottomSheetProps
->(({ title = "Things to focus on", sections, isLoading = false, onClose, onSelectItem }, ref) => {
+>(({ title = "Things to focus on", sections, isLoading = false, onClose, onNewMeeting, onSelectItem }, ref) => {
   const { bottom } = useSafeAreaInsets();
   const { dismiss } = useBottomSheetModal();
   const snapPoints = useMemo(() => ["82%"], []);
@@ -89,6 +90,12 @@ const PastorFocusBottomSheet = forwardRef<
           <Text style={styles.subtitle}>
             Focus on these items first to keep your journey moving.
           </Text>
+          {!!onNewMeeting && (
+            <Pressable style={styles.newMeetingButton} onPress={onNewMeeting}>
+              <Ionicons name="add-circle-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.newMeetingButtonText}>New Meeting</Text>
+            </Pressable>
+          )}
         </View>
 
         {sections.map((section) => (
@@ -236,6 +243,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
+  newMeetingButton: {
+    alignSelf: "flex-start",
+    marginTop: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "rgba(58, 136, 229, 0.9)",
+    borderWidth: 1,
+    borderColor: "rgba(190, 220, 255, 0.45)",
+  },
+  newMeetingButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
   section: {
     gap: 10,
   },
@@ -380,4 +405,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export { PastorFocusBottomSheet };
 export default PastorFocusBottomSheet;

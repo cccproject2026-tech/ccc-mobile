@@ -1,7 +1,8 @@
 import ExploreCard from "@/components/director/ExploreCard";
 import HeaderHero from "@/components/director/HeroHeader";
 import WelcomeCard from "@/components/director/WelcomeCard";
-import PastorFocusBottomSheet, {
+import {
+  PastorFocusBottomSheet,
   PastorFocusItem,
 } from "@/components/sheets/PastorFocusBottomSheet";
 import { icons } from "@/constants/images";
@@ -64,7 +65,7 @@ const EXPLORE_TILES = [
     gradient: ["#2196F3", "#1976D2"],
   },
   {
-    title: "Roadmap",
+    title: "Roadmap\nPhases",
     icon: icons.Revitalization2,
     route: "/(pastor)/(tabs)/roadmap",
     color: "#FFB347",
@@ -100,6 +101,11 @@ export default function PastorDashboard() {
 
   const displayedFocusSections = useMemo(() => {
     if (!focusSheetSectionId) return focusSections;
+    if (focusSheetSectionId === "meetings") {
+      return focusSections.filter(
+        (s) => s.id === "meetings" || s.id === "meetings-month",
+      );
+    }
     return focusSections.filter((s) => s.id === focusSheetSectionId);
   }, [focusSheetSectionId, focusSections]);
 
@@ -372,6 +378,13 @@ export default function PastorDashboard() {
     [router],
   );
 
+  const handleNewMeetingPress = useCallback(() => {
+    pastorFocusSheetRef.current?.dismiss();
+    setTimeout(() => {
+      router.push("/(pastor)/(tabs)/appointments" as any);
+    }, 220);
+  }, [router]);
+
   // ─── Loading / Error states ───────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -606,6 +619,7 @@ export default function PastorDashboard() {
         sections={displayedFocusSections}
         title={focusSheetTitle}
         isLoading={isLoading || isFocusLoading}
+        onNewMeeting={focusSheetSectionId === "meetings" ? handleNewMeetingPress : undefined}
         onSelectItem={handleFocusItemPress}
       />
     </LinearGradient>

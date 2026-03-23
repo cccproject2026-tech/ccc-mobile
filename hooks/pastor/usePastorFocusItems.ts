@@ -41,6 +41,18 @@ const isWithinHours = (value: string | undefined, hours: number) => {
   return timestamp >= now && timestamp <= now + hours * 60 * 60 * 1000;
 };
 
+const isUpcomingInCurrentMonth = (value: string | undefined) => {
+  const timestamp = toTimestamp(value);
+  if (!Number.isFinite(timestamp)) return false;
+  const now = new Date();
+  const target = new Date(timestamp);
+  if (target.getTime() < now.getTime()) return false;
+  return (
+    target.getFullYear() === now.getFullYear() &&
+    target.getMonth() === now.getMonth()
+  );
+};
+
 const isWithinDays = (value: string | undefined, days: number) => {
   const timestamp = toTimestamp(value);
   const now = Date.now();
@@ -153,6 +165,30 @@ export const usePastorFocusItems = () => {
         },
       }));
 
+    const monthlyMeetingItems: PastorFocusItem[] = (appointments || [])
+      .filter((appointment: Appointment) => {
+        const in24Hours = isWithinHours(
+          appointment.meetingDate,
+          UPCOMING_MEETING_WINDOW_HOURS,
+        );
+        return !in24Hours && isUpcomingInCurrentMonth(appointment.meetingDate);
+      })
+      .sort(
+        (a: Appointment, b: Appointment) =>
+          toTimestamp(a.meetingDate) - toTimestamp(b.meetingDate),
+      )
+      .slice(0, MAX_ITEMS_PER_SECTION)
+      .map((appointment: Appointment) => ({
+        id: `meeting-month-${appointment.id}`,
+        title: "Upcoming meeting this month",
+        description: `Meeting starts ${formatDateTime(appointment.meetingDate)}.`,
+        meta: "This month",
+        accentColor: "#22D3EE",
+        route: {
+          pathname: "/appointments",
+        },
+      }));
+
     const assessmentItems: PastorFocusItem[] = (assessments || [])
       .filter(
         (assessment: Assessment) =>
@@ -229,6 +265,12 @@ export const usePastorFocusItems = () => {
         title: `Upcoming meetings within ${UPCOMING_MEETING_WINDOW_HOURS} hours`,
         emptyMessage: "No meetings are coming up in the next 24 hours.",
         items: meetingItems,
+      },
+      {
+        id: "meetings-month",
+        title: "Upcoming meetings this month",
+        emptyMessage: "No more meetings are scheduled for this month.",
+        items: monthlyMeetingItems,
       },
       {
         id: "assessments",
