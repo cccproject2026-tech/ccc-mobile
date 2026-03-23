@@ -487,20 +487,32 @@ export default function PastorDashboard() {
           {showMentorIntroForNewPastor && acceptedMentor && (
             <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.mentorCard}>
               <LinearGradient
-                colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0.05)"]}
+                colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0.06)"]}
                 style={styles.mentorCardGradient}
               >
                 <View style={styles.mentorCardHeader}>
-                  <View style={styles.mentorIconWrapper}>
-                    <Ionicons name="people-outline" size={24} color="#4ADE80" />
+                  <View style={styles.mentorHeaderLeft}>
+                    <View style={styles.mentorIconWrapper}>
+                      <Ionicons name="people-outline" size={22} color="#6FD4BE" />
+                    </View>
+                    <View style={styles.mentorHeaderTextWrap}>
+                      <Text style={styles.mentorHeaderTitle}>Mentor assigned</Text>
+                    </View>
                   </View>
                   <View style={styles.statusBadge}>
                     <Ionicons name="checkmark-circle" size={14} color="#4ADE80" />
                     <Text style={styles.statusBadgeText}>Assigned</Text>
                   </View>
                 </View>
-                <Text style={styles.mentorName}>{acceptedMentor.name}</Text>
-                <Text style={styles.mentorRole}>{acceptedMentor.role}</Text>
+
+                <View style={styles.mentorIdentityBlock}>
+                  <Text style={styles.mentorName}>{acceptedMentor.name}</Text>
+                  <View style={styles.mentorRolePill}>
+                    <Ionicons name="person-outline" size={12} color="rgba(255,255,255,0.85)" />
+                    <Text style={styles.mentorRolePillText}>{acceptedMentor.role}</Text>
+                  </View>
+                </View>
+
                 <Text style={styles.mentorMessage}>{mentorAssignedMessage}</Text>
                 <TouchableOpacity
                   activeOpacity={0.85}
@@ -508,7 +520,9 @@ export default function PastorDashboard() {
                   onPress={() => handleScheduleAppointment(acceptedMentor)}
                 >
                   <Text style={styles.scheduleButtonText}>Schedule a Meeting</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#fff" />
+                  <View style={styles.scheduleButtonArrowWrap}>
+                    <Ionicons name="arrow-forward" size={14} color="#0A5A83" />
+                  </View>
                 </TouchableOpacity>
               </LinearGradient>
             </Animated.View>
@@ -737,85 +751,118 @@ const styles = StyleSheet.create({
 
   // ── Mentor card ──────────────────────────────────────────────────────────
   mentorCard: {
-    borderRadius: 20,
+    borderRadius: 14,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
   },
   mentorCardGradient: {
-    padding: 14,
+    padding: 12,
     gap: 6,
   },
   mentorCardHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  mentorHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  mentorHeaderTextWrap: {
+    gap: 0,
+  },
+  mentorHeaderTitle: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
   },
   mentorIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(74,222,128,0.15)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(111, 212, 190, 0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(111, 212, 190, 0.28)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  mentorIdentityBlock: {
+    marginTop: 0,
+    marginBottom: 0,
+    gap: 4,
   },
   mentorName: {
     color: "#fff",
     fontWeight: "800",
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 22,
   },
-  mentorRole: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
-    fontWeight: "500",
-    marginBottom: 4,
+  mentorRolePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+    borderRadius: 999,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  mentorRolePillText: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "capitalize",
   },
   mentorMessage: {
-    color: "rgba(255,255,255,0.65)",
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 4,
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 0,
   },
   scheduleButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
     gap: 8,
-    backgroundColor: "#4ADE80",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginTop: 12,
-    shadowColor: "#4ADE80",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 6,
   },
   scheduleButtonText: {
-    color: "#fff",
+    color: "#0A3F6B",
     fontWeight: "700",
     fontSize: 14,
+  },
+  scheduleButtonArrowWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(10, 92, 138, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: "rgba(74,222,128,0.15)",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(74,222,128,0.2)",
     borderWidth: 1,
-    borderColor: "rgba(74,222,128,0.3)",
+    borderColor: "rgba(74,222,128,0.38)",
   },
   statusBadgeText: {
     color: "#4ADE80",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
   },
 
