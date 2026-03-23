@@ -2,12 +2,12 @@ import { useData } from "@/dataContext";
 import { router } from "expo-router";
 import React from "react";
 import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { icons } from "../../constants/images";
 import { useDrawerStore } from "./DrawerStore";

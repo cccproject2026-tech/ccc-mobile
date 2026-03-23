@@ -51,11 +51,11 @@ const EXPLORE_TILES = [
     gradient: ["#10B981", "#059669"],
   },
   {
-    title: "CDP\nResults",
-    icon: icons.Assessments2,
-    route: "/(pastor)/(tabs)/assessments/report",
-    color: "#4CAF50",
-    gradient: ["#4CAF50", "#45a049"],
+    title: "My\nMentors",
+    icon: icons.myMentors,
+    route: "/(pastor)/(tabs)/mentors",
+    color: "#14B8A6",
+    gradient: ["#14B8A6", "#0D9488"],
   },
   {
     title: "Progress\nTracker",
@@ -637,7 +637,7 @@ export default function PastorDashboard() {
                 <Text style={styles.sectionTitleText}>Quick Links</Text>
               </View>
               <Text style={[styles.cardSubtitle, styles.exploreCardSubtitle]} numberOfLines={1}>
-                Roadmap, assessments, progress, and appointments.
+                Roadmap, mentors, progress, and notes.
               </Text>
               <View style={styles.exploreRow}>
                 {EXPLORE_TILES.map((item, idx) => (
