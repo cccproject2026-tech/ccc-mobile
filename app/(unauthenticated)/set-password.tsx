@@ -173,10 +173,6 @@ export default function VerifyEmailScreen() {
                         </Text>
                     </View>
 
-                    <View style={styles.cccLogoContainer}>
-                        <Image source={icons.communityImage} style={styles.cccLogo} resizeMode="contain" />
-                    </View>
-
                     <View style={styles.formContainer}>
                         <TextInput
                             style={[styles.input, styles.inputDisabled]}
@@ -355,17 +351,6 @@ export default function VerifyEmailScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     scrollContent: { flexGrow: 1 },
-    cccLogoContainer: {
-        alignItems: "center",
-        marginTop: 40,
-        marginBottom: 40,
-        backgroundColor: "#fff",
-        marginHorizontal: 35,
-        paddingVertical: 35,
-        paddingHorizontal: 20,
-        borderRadius: 6,
-    },
-    cccLogo: { width: "100%", height: 90 },
     welcomeBanner: {
         alignItems: "center",
         paddingHorizontal: 20,
