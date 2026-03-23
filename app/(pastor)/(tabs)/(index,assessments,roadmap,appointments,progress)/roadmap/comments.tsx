@@ -13,10 +13,10 @@ import {
     View
 } from "react-native";
 
+import { icons } from "@/constants/images";
 import { useRoadmapComments } from "@/hooks/roadmaps/useRoadmaps";
 import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
-import { icons } from "@/constants/images";
 import { paramToString } from "@/utils/routerParams";
 
 
