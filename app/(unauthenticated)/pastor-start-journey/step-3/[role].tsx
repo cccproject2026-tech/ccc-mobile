@@ -9,6 +9,13 @@ import { useAuthStore } from "@/stores";
 
 type PastorRole = "pastor" | "layleader" | "seminarian";
 
+const accent = {
+    gold: "#E8C88A",
+    mint: "#6FD4BE",
+    mintSoft: "rgba(111, 212, 190, 0.28)",
+    tealDeep: "#0E5A62",
+};
+
 const mapRoleToLabel = (role?: string): string => {
     switch (role) {
         case "pastor": return "Pastor";
@@ -57,10 +64,13 @@ export default function PastorJourneyStep3Screen() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <LinearGradient
-                colors={["#1A4F7A", "#1B6FA3", "#2389C2"]}
+                colors={["#0D3B6E", "#0A5C8A", "#0B84B0"]}
                 locations={[0, 0.5, 1]}
                 style={[styles.gradient, { paddingTop: top || 44, paddingBottom: bottom || 24 }]}
             >
+                <View style={styles.bgCircleTop} />
+                <View style={styles.bgCircleBottom} />
+
                 {/* Top bar */}
                 <View style={styles.topBar}>
                     <Pressable onPress={handleBack} hitSlop={12} style={styles.backBtn}>
@@ -96,14 +106,23 @@ export default function PastorJourneyStep3Screen() {
                         <Text style={styles.quoteSource}>— Ellen G. White</Text>
                     </View>
 
-                    <View style={styles.divider} />
+                    <View style={styles.dividerRow}>
+                        <View style={styles.dividerLine} />
+                        <Ionicons name="leaf-outline" size={14} color={accent.mint} />
+                        <View style={styles.dividerLine} />
+                    </View>
 
                     {/* Ready section */}
                     <View style={styles.readyBlock}>
                         <Text style={styles.readyEyebrow}>You're all set</Text>
-                        <Text style={styles.readyTitle}>Ready to begin your first step?</Text>
+                        <Text style={styles.readyTitle}>
+                            Ready to begin your{" "}
+                            <Text style={styles.readyTitleAccent}>first step?</Text>
+                        </Text>
                         <Text style={styles.readyDesc}>
-                            Whether you're new or returning — your journey toward greater community impact starts here.
+                            Whether you're new or returning — your journey toward greater community{" "}
+                            <Text style={styles.readyDescAccent}>impact</Text>
+                            {" "}starts here.
                         </Text>
                     </View>
 
@@ -119,7 +138,7 @@ export default function PastorJourneyStep3Screen() {
                             <Text style={styles.startBtnTitle}>Start My First Step</Text>
                         </View>
                         <View style={styles.startBtnArrow}>
-                            <Ionicons name="arrow-forward" size={16} color="#1A4F7A" />
+                            <Ionicons name="arrow-forward" size={16} color={accent.tealDeep} />
                         </View>
                     </Pressable>
 
@@ -131,7 +150,7 @@ export default function PastorJourneyStep3Screen() {
                                 <Text style={styles.loginBtnTitle}>Log In</Text>
                             </View>
                             <View style={styles.loginBtnArrow}>
-                                <Ionicons name="arrow-forward" size={16} color="rgba(255,255,255,0.7)" />
+                                <Ionicons name="arrow-forward" size={16} color={accent.mint} />
                             </View>
                         </Pressable>
                     )}
@@ -148,6 +167,25 @@ const styles = StyleSheet.create({
     gradient: {
         flex: 1,
         paddingHorizontal: 24,
+        overflow: "hidden",
+    },
+    bgCircleTop: {
+        position: "absolute",
+        top: -120,
+        right: -95,
+        width: 270,
+        height: 270,
+        borderRadius: 135,
+        backgroundColor: "rgba(255,255,255,0.04)",
+    },
+    bgCircleBottom: {
+        position: "absolute",
+        bottom: -85,
+        left: -75,
+        width: 230,
+        height: 230,
+        borderRadius: 115,
+        backgroundColor: "rgba(255,255,255,0.04)",
     },
 
     // Top bar
@@ -161,14 +199,16 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: "rgba(255,255,255,0.12)",
+        backgroundColor: "rgba(255,255,255,0.14)",
         alignItems: "center",
         justifyContent: "center",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.22)",
     },
     skipText: {
-        color: "rgba(255,255,255,0.5)",
+        color: accent.mint,
         fontSize: 13,
-        fontWeight: "500",
+        fontWeight: "600",
     },
 
     // Content
@@ -189,7 +229,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.12)",
+        borderColor: "rgba(111, 212, 190, 0.35)",
     },
     innerRing: {
         width: 78,
@@ -199,13 +239,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
+        borderColor: "rgba(232, 200, 138, 0.35)",
     },
     centerIcon: {
         width: 52,
         height: 52,
         borderRadius: 26,
-        backgroundColor: "rgba(255,255,255,0.15)",
+        backgroundColor: accent.mintSoft,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -217,7 +257,7 @@ const styles = StyleSheet.create({
     quoteMark: {
         fontSize: 44,
         fontWeight: "800",
-        color: "rgba(255,255,255,0.14)",
+        color: "rgba(111, 212, 190, 0.35)",
         lineHeight: 36,
         marginBottom: 4,
     },
@@ -229,23 +269,29 @@ const styles = StyleSheet.create({
         fontStyle: "italic",
     },
     quoteHighlight: {
-        color: "#fff",
+        color: accent.gold,
         fontWeight: "700",
         fontStyle: "italic",
     },
     quoteSource: {
         marginTop: 10,
         fontSize: 12,
-        color: "rgba(255,255,255,0.35)",
+        color: accent.gold,
         letterSpacing: 0.4,
         fontWeight: "500",
+        opacity: 0.75,
     },
 
-    // Divider
-    divider: {
-        height: 1,
-        backgroundColor: "rgba(255,255,255,0.1)",
+    dividerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
         marginBottom: 22,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: "rgba(255,255,255,0.12)",
     },
 
     // Ready block
@@ -255,7 +301,7 @@ const styles = StyleSheet.create({
     readyEyebrow: {
         fontSize: 11,
         fontWeight: "600",
-        color: "rgba(255,255,255,0.4)",
+        color: accent.mint,
         letterSpacing: 2,
         textTransform: "uppercase",
     },
@@ -265,25 +311,33 @@ const styles = StyleSheet.create({
         color: "#fff",
         lineHeight: 28,
     },
+    readyTitleAccent: {
+        color: accent.gold,
+        fontWeight: "700",
+    },
     readyDesc: {
         fontSize: 13,
         fontWeight: "400",
-        color: "rgba(255,255,255,0.5)",
+        color: "rgba(255,255,255,0.55)",
         lineHeight: 20,
         marginTop: 2,
+    },
+    readyDescAccent: {
+        color: accent.mint,
+        fontWeight: "600",
     },
 
     // Bottom
     bottomArea: {
         gap: 10,
         paddingTop: 4,
-        paddingBottom: 16,
+        paddingBottom: 24,
     },
 
     // Start button (new user)
     startBtn: {
         width: "100%",
-        borderRadius: 12,
+        borderRadius: 999,
         paddingVertical: 16,
         paddingHorizontal: 18,
         backgroundColor: "#fff",
@@ -291,10 +345,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.18,
-        shadowRadius: 10,
-        elevation: 6,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.22,
+        shadowRadius: 14,
+        elevation: 8,
     },
     startBtnLeft: {
         gap: 2,
@@ -302,19 +356,19 @@ const styles = StyleSheet.create({
     startBtnLabel: {
         fontSize: 11,
         fontWeight: "500",
-        color: "rgba(26,79,122,0.5)",
+        color: "rgba(10, 63, 107, 0.55)",
         letterSpacing: 0.3,
     },
     startBtnTitle: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#1A4F7A",
+        color: "#0A3F6B",
     },
     startBtnArrow: {
         width: 34,
         height: 34,
         borderRadius: 17,
-        backgroundColor: "#E0F0FA",
+        backgroundColor: "rgba(232, 200, 138, 0.4)",
         alignItems: "center",
         justifyContent: "center",
     },
@@ -322,12 +376,12 @@ const styles = StyleSheet.create({
     // Login button (existing user)
     loginBtn: {
         width: "100%",
-        borderRadius: 12,
+        borderRadius: 999,
         paddingVertical: 16,
         paddingHorizontal: 18,
-        backgroundColor: "rgba(255,255,255,0.1)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.2)",
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderWidth: 1.5,
+        borderColor: "rgba(111, 212, 190, 0.45)",
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -350,7 +404,7 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 17,
-        backgroundColor: "rgba(255,255,255,0.1)",
+        backgroundColor: accent.mintSoft,
         alignItems: "center",
         justifyContent: "center",
     },

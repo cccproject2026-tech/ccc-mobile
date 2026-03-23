@@ -7,6 +7,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type PastorRole = "pastor" | "layleader" | "seminarian";
 
+/** Same accents as role-landing (gold warmth, mint growth) on the blue gradient. */
+const accent = {
+    gold: "#E8C88A",
+    mint: "#6FD4BE",
+    mintSoft: "rgba(111, 212, 190, 0.28)",
+    tealDeep: "#0E5A62",
+};
+
 const mapRoleToLabel = (role?: string): string => {
     switch (role) {
         case "pastor": return "Pastor";
@@ -63,6 +71,9 @@ export default function PastorStartJourneyScreen() {
                 locations={[0, 0.5, 1]}
                 style={[styles.gradient, { paddingTop: top || 44, paddingBottom: bottom || 24 }]}
             >
+                <View style={styles.bgCircleTop} />
+                <View style={styles.bgCircleBottom} />
+
                 {/* Top bar */}
                 <View style={styles.topBar}>
                     <Pressable onPress={handleBack} hitSlop={12} style={styles.backBtn}>
@@ -77,6 +88,7 @@ export default function PastorStartJourneyScreen() {
                                 style={[
                                     styles.dot,
                                     i === activeStep ? styles.dotActive : styles.dotInactive,
+                                    i === 1 && i !== activeStep ? styles.dotInactiveMint : null,
                                 ]}
                             />
                         ))}
@@ -95,23 +107,38 @@ export default function PastorStartJourneyScreen() {
                         <View style={styles.outerRing}>
                             <View style={styles.innerRing}>
                                 <View style={styles.centerIcon}>
-                                    <Ionicons name="people-outline" size={30} color="#fff" />
+                                    <Ionicons
+                                        name={STEPS[activeStep].icon}
+                                        size={30}
+                                        color="#fff"
+                                    />
                                 </View>
                             </View>
                         </View>
-                        {/* Step label */}
-                        <Text style={styles.stepLabel}>Step {activeStep + 1} of 3</Text>
+                        <Text style={styles.stepLabel}>
+                            Step{" "}
+                            <Text style={styles.stepLabelAccent}>{activeStep + 1}</Text>
+                            {" "}of 3
+                        </Text>
                     </View>
 
                     {/* Heading */}
                     <View style={styles.headingBlock}>
                         <Text style={styles.headingLight}>We will guide you</Text>
-                        <Text style={styles.headingStrong}>step by step</Text>
-                        <Text style={styles.headingLight}>to grow your impact.</Text>
+                        <Text style={styles.headingStrong}>
+                            step by <Text style={styles.headingAccent}>step</Text>
+                        </Text>
+                        <Text style={styles.headingLight}>
+                            to grow your{" "}
+                            <Text style={styles.headingImpact}>impact</Text>.
+                        </Text>
                     </View>
 
-                    {/* Divider */}
-                    <View style={styles.divider} />
+                    <View style={styles.dividerRow}>
+                        <View style={styles.dividerLine} />
+                        <Ionicons name="leaf-outline" size={14} color={accent.mint} />
+                        <View style={styles.dividerLine} />
+                    </View>
 
                     {/* Step cards */}
                     <View style={styles.cardList}>
@@ -142,7 +169,11 @@ export default function PastorStartJourneyScreen() {
                                     <Ionicons
                                         name="chevron-forward"
                                         size={14}
-                                        color={isActive ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)"}
+                                        color={
+                                            isActive
+                                                ? accent.mint
+                                                : "rgba(255,255,255,0.2)"
+                                        }
                                     />
                                 </Pressable>
                             );
@@ -156,7 +187,9 @@ export default function PastorStartJourneyScreen() {
                 <View style={styles.bottomArea}>
                     <Pressable onPress={handleContinue} style={styles.continueBtn}>
                         <Text style={styles.continueText}>Continue</Text>
-                        <Ionicons name="arrow-forward" size={18} color="#1A4F7A" />
+                        <View style={styles.continueArrowCircle}>
+                            <Ionicons name="arrow-forward" size={16} color={accent.tealDeep} />
+                        </View>
                     </Pressable>
 
                     <Text style={styles.disclaimer}>
@@ -175,6 +208,25 @@ const styles = StyleSheet.create({
     gradient: {
         flex: 1,
         paddingHorizontal: 24,
+        overflow: "hidden",
+    },
+    bgCircleTop: {
+        position: "absolute",
+        top: -140,
+        right: -110,
+        width: 300,
+        height: 300,
+        borderRadius: 150,
+        backgroundColor: "rgba(255,255,255,0.04)",
+    },
+    bgCircleBottom: {
+        position: "absolute",
+        bottom: -100,
+        left: -90,
+        width: 260,
+        height: 260,
+        borderRadius: 130,
+        backgroundColor: "rgba(255,255,255,0.04)",
     },
 
     // Top bar
@@ -188,9 +240,11 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: "rgba(255,255,255,0.12)",
+        backgroundColor: "rgba(255,255,255,0.14)",
         alignItems: "center",
         justifyContent: "center",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.22)",
     },
     dotsRow: {
         flexDirection: "row",
@@ -206,9 +260,14 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
         width: 24,
         borderRadius: 4,
+        borderWidth: 1,
+        borderColor: accent.gold,
     },
     dotInactive: {
         backgroundColor: "rgba(255,255,255,0.3)",
+    },
+    dotInactiveMint: {
+        backgroundColor: "rgba(111, 212, 190, 0.35)",
     },
     skipBtn: {
         paddingVertical: 6,
@@ -238,7 +297,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.12)",
+        borderColor: "rgba(111, 212, 190, 0.35)",
     },
     innerRing: {
         width: 84,
@@ -248,13 +307,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
+        borderColor: "rgba(232, 200, 138, 0.35)",
     },
     centerIcon: {
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: "rgba(255,255,255,0.15)",
+        backgroundColor: accent.mintSoft,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -264,6 +323,10 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "500",
         letterSpacing: 0.5,
+    },
+    stepLabelAccent: {
+        color: accent.gold,
+        fontWeight: "700",
     },
 
     // Heading
@@ -282,12 +345,25 @@ const styles = StyleSheet.create({
         color: "#fff",
         lineHeight: 32,
     },
+    headingAccent: {
+        color: accent.gold,
+        fontWeight: "700",
+    },
+    headingImpact: {
+        color: accent.gold,
+        fontWeight: "600",
+    },
 
-    // Divider
-    divider: {
-        height: 1,
-        backgroundColor: "rgba(255,255,255,0.1)",
+    dividerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
         marginBottom: 20,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: "rgba(255,255,255,0.12)",
     },
 
     // Cards
@@ -307,7 +383,9 @@ const styles = StyleSheet.create({
     },
     stepCardActive: {
         backgroundColor: "rgba(255,255,255,0.12)",
-        borderColor: "rgba(255,255,255,0.2)",
+        borderColor: "rgba(111, 212, 190, 0.45)",
+        borderLeftWidth: 3,
+        borderLeftColor: accent.gold,
     },
     stepNum: {
         width: 28,
@@ -326,7 +404,7 @@ const styles = StyleSheet.create({
         color: "rgba(255,255,255,0.5)",
     },
     stepNumTextActive: {
-        color: "#1A4F7A",
+        color: accent.tealDeep,
     },
     cardBody: {
         flex: 1,
@@ -353,24 +431,32 @@ const styles = StyleSheet.create({
     },
     continueBtn: {
         width: "100%",
-        borderRadius: 10,
+        borderRadius: 999,
         paddingVertical: 16,
         paddingHorizontal: 24,
         backgroundColor: "#fff",
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
+        justifyContent: "space-between",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 6,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 14,
+        elevation: 8,
     },
     continueText: {
-        color: "#1A4F7A",
+        color: "#0A3F6B",
         fontWeight: "700",
-        fontSize: 15,
+        fontSize: 16,
+        letterSpacing: 0.2,
+    },
+    continueArrowCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: "rgba(232, 200, 138, 0.35)",
+        alignItems: "center",
+        justifyContent: "center",
     },
     disclaimer: {
         color: "rgba(255,255,255,0.3)",
@@ -379,7 +465,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     disclaimerLink: {
-        color: "rgba(255,255,255,0.5)",
+        color: accent.mint,
         textDecorationLine: "underline",
     },
     hiddenRoleText: {
