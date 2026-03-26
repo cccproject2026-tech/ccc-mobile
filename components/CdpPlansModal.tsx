@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 export interface CdpSection {
     sectionId: string;
@@ -73,25 +74,32 @@ export default function CdpPlansModal({
             onRequestClose={onClose}
         >
             <View style={styles.overlay}>
-                <View style={styles.container}>
-                    <LinearGradient
-                        colors={['#1D548D', '#264387', '#264387']}
-                        style={styles.gradient}
-                    >
-                        <View style={styles.headerRow}>
-                            <View style={styles.titleWrap}>
-                                <Text style={styles.title} numberOfLines={1}>{assessmentTitle}</Text>
-                            </View>
-                            <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={12}>
-                                <Ionicons name="close" size={24} color="#fff" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView
-                            style={styles.scroll}
-                            contentContainerStyle={styles.scrollContent}
-                            showsVerticalScrollIndicator={false}
+                <KeyboardAwareScrollView
+                    style={styles.keyboardAwareWrapper}
+                    contentContainerStyle={styles.keyboardAwareContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.container}>
+                        <LinearGradient
+                            colors={['#1D548D', '#264387', '#264387']}
+                            style={styles.gradient}
                         >
+                            <View style={styles.headerRow}>
+                                <View style={styles.titleWrap}>
+                                    <Text style={styles.title} numberOfLines={1}>{assessmentTitle}</Text>
+                                </View>
+                                <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={12}>
+                                    <Ionicons name="close" size={24} color="#fff" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView
+                                style={styles.scroll}
+                                contentContainerStyle={styles.scrollContent}
+                                showsVerticalScrollIndicator={false}
+                                keyboardShouldPersistTaps="handled"
+                            >
                             {sections.map((section, sectionIndex) => {
                                 const sectionNumber = sectionIndex + 1;
                                 const hasScore = section.score != null;
@@ -189,22 +197,23 @@ export default function CdpPlansModal({
                                     </View>
                                 );
                             })}
-                        </ScrollView>
+                            </ScrollView>
 
-                        <View style={styles.footer}>
-                            {mode === 'mentor' && onSendCdp ? (
-                                <TouchableOpacity style={styles.sendButton} onPress={onSendCdp} activeOpacity={0.8}>
-                                    <Text style={styles.sendButtonText}>Send</Text>
-                                </TouchableOpacity>
-                            ) : mode === 'pastor' ? (
-                                <TouchableOpacity style={styles.downloadButton} activeOpacity={0.8}>
-                                    <Ionicons name="download-outline" size={20} color="#fff" />
-                                    <Text style={styles.downloadButtonText}>Download</Text>
-                                </TouchableOpacity>
-                            ) : null}
-                        </View>
-                    </LinearGradient>
-                </View>
+                            <View style={styles.footer}>
+                                {mode === 'mentor' && onSendCdp ? (
+                                    <TouchableOpacity style={styles.sendButton} onPress={onSendCdp} activeOpacity={0.8}>
+                                        <Text style={styles.sendButtonText}>Send</Text>
+                                    </TouchableOpacity>
+                                ) : mode === 'pastor' ? (
+                                    <TouchableOpacity style={styles.downloadButton} activeOpacity={0.8}>
+                                        <Ionicons name="download-outline" size={20} color="#fff" />
+                                        <Text style={styles.downloadButtonText}>Download</Text>
+                                    </TouchableOpacity>
+                                ) : null}
+                            </View>
+                        </LinearGradient>
+                    </View>
+                </KeyboardAwareScrollView>
             </View>
         </Modal>
     );
@@ -217,6 +226,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: getSpacing(20),
+    },
+    keyboardAwareWrapper: {
+        width: '100%',
+    },
+    keyboardAwareContent: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     container: {
         borderRadius: 16,
