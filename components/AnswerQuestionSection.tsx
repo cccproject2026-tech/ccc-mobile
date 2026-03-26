@@ -76,6 +76,14 @@ export default function AssessmentQuestionsSection({
 
     /** CDP recommendations selected by mentor per section. Key = sectionId, value = selected recommendation texts. */
     const [selectedRecommendations, setSelectedRecommendations] = useState<Record<string, string[]>>({});
+    const [editableMentorSections, setEditableMentorSections] = useState<
+        Array<{
+            sectionId: string;
+            title: string;
+            score?: number;
+            recommendations: string[];
+        }>
+    >([]);
     const [showCdpModal, setShowCdpModal] = useState(false);
 
     const totalSections = assessment.sections.length;
@@ -94,6 +102,10 @@ export default function AssessmentQuestionsSection({
     const isPastor = normalizedRole === 'pastor';
     const isMentor = normalizedRole === 'mentor' || reviewMode;
     const showCdpAsReady = isMentor || hasCdpRecommendations;
+
+    useEffect(() => {
+        setEditableMentorSections(mentorReviewSections ?? []);
+    }, [mentorReviewSections]);
 
     // In view mode, sync any incoming initial answers into local state
     useEffect(() => {
@@ -213,6 +225,50 @@ export default function AssessmentQuestionsSection({
                 ? list.filter(t => t !== recommendationText)
                 : [...list, recommendationText];
             return { ...prev, [sectionId]: nextList };
+        });
+    };
+
+    const updateRecommendationText = (
+        sectionId: string,
+        recommendationIndex: number,
+        nextText: string,
+    ) => {
+        const trimmedText = nextText;
+        let previousText = '';
+
+        setEditableMentorSections((prev) =>
+            prev.map((section) => {
+                if (section.sectionId !== sectionId) {
+                    return section;
+                }
+
+                const nextRecommendations = [...(section.recommendations ?? [])];
+                previousText = nextRecommendations[recommendationIndex] ?? '';
+                nextRecommendations[recommendationIndex] = trimmedText;
+
+                return {
+                    ...section,
+                    recommendations: nextRecommendations,
+                };
+            }),
+        );
+
+        if (!previousText || previousText === trimmedText) {
+            return;
+        }
+
+        setSelectedRecommendations((prev) => {
+            const currentSelected = prev[sectionId] ?? [];
+            if (!currentSelected.includes(previousText)) {
+                return prev;
+            }
+
+            const withoutOld = currentSelected.filter((item) => item !== previousText);
+            if (!trimmedText.trim()) {
+                return { ...prev, [sectionId]: withoutOld };
+            }
+
+            return { ...prev, [sectionId]: [...withoutOld, trimmedText] };
         });
     };
 
@@ -446,14 +502,15 @@ export default function AssessmentQuestionsSection({
                     onClose={() => setShowCdpModal(false)}
                     assessmentTitle={assessment.title}
                     mode={reviewMode ? 'mentor' : 'pastor'}
-                    sections={mentorReviewSections ?? []}
+                    sections={editableMentorSections}
                     selectedRecommendations={reviewMode ? selectedRecommendations : undefined}
                     onToggleRecommendation={reviewMode ? toggleRecommendation : undefined}
+                    onUpdateRecommendation={reviewMode ? updateRecommendationText : undefined}
                     onSendCdp={
-                        reviewMode && onSendCdp && mentorReviewSections
+                        reviewMode && onSendCdp && editableMentorSections
                             ? () => {
                                   const payload = {
-                                      recommendations: mentorReviewSections
+                                      recommendations: editableMentorSections
                                           .map((section) => {
                                               const selected = selectedRecommendations[section.sectionId] ?? [];
                                               return {

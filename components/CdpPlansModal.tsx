@@ -7,6 +7,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -31,6 +32,12 @@ interface CdpPlansModalProps {
     selectedRecommendations?: Record<string, string[]>;
     /** Mentor only: toggle a recommendation */
     onToggleRecommendation?: (sectionId: string, text: string) => void;
+    /** Mentor only: update recommendation text by index */
+    onUpdateRecommendation?: (
+        sectionId: string,
+        recommendationIndex: number,
+        nextText: string,
+    ) => void;
     /** Mentor only: send CDP */
     onSendCdp?: () => void;
 }
@@ -43,8 +50,17 @@ export default function CdpPlansModal({
     sections,
     selectedRecommendations = {},
     onToggleRecommendation,
+    onUpdateRecommendation,
     onSendCdp,
 }: CdpPlansModalProps) {
+    const [mentorActionMode, setMentorActionMode] = React.useState<'select' | 'edit'>('select');
+
+    React.useEffect(() => {
+        if (visible) {
+            setMentorActionMode('select');
+        }
+    }, [visible]);
+
     if (!sections?.length) {
         return null;
     }
@@ -110,11 +126,23 @@ export default function CdpPlansModal({
 
                                         {mode === 'mentor' && (
                                             <View style={styles.controlsRow}>
-                                                <TouchableOpacity style={styles.controlButton}>
+                                                <TouchableOpacity
+                                                    style={[
+                                                        styles.controlButton,
+                                                        mentorActionMode === 'select' && styles.controlButtonActive,
+                                                    ]}
+                                                    onPress={() => setMentorActionMode('select')}
+                                                >
                                                     <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
                                                     <Text style={styles.controlButtonText}>Select</Text>
                                                 </TouchableOpacity>
-                                                <TouchableOpacity style={styles.controlButton}>
+                                                <TouchableOpacity
+                                                    style={[
+                                                        styles.controlButton,
+                                                        mentorActionMode === 'edit' && styles.controlButtonActive,
+                                                    ]}
+                                                    onPress={() => setMentorActionMode('edit')}
+                                                >
                                                     <Ionicons name="pencil-outline" size={18} color="#fff" />
                                                     <Text style={styles.controlButtonText}>Edit</Text>
                                                 </TouchableOpacity>
@@ -129,7 +157,21 @@ export default function CdpPlansModal({
                                                 return (
                                                     <View key={`${section.sectionId}-${idx}`} style={styles.itemRow}>
                                                         <Text style={styles.star}>⭐</Text>
-                                                        {mode === 'mentor' && onToggleRecommendation ? (
+                                                        {mode === 'mentor' && mentorActionMode === 'edit' && onUpdateRecommendation ? (
+                                                            <TextInput
+                                                                value={item}
+                                                                onChangeText={(nextText) =>
+                                                                    onUpdateRecommendation(
+                                                                        section.sectionId,
+                                                                        idx,
+                                                                        nextText,
+                                                                    )
+                                                                }
+                                                                style={styles.itemInput}
+                                                                placeholder="Edit recommendation"
+                                                                placeholderTextColor="rgba(255,255,255,0.5)"
+                                                            />
+                                                        ) : mode === 'mentor' && onToggleRecommendation ? (
                                                             <TouchableOpacity
                                                                 style={styles.itemTouch}
                                                                 onPress={() => onToggleRecommendation(section.sectionId, item)}
@@ -258,6 +300,9 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(148,163,184,0.9)',
     },
+    controlButtonActive: {
+        backgroundColor: 'rgba(148,163,184,0.25)',
+    },
     controlButtonText: {
         fontSize: getFontSize(14),
         fontWeight: '600',
@@ -299,6 +344,16 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(14),
         color: '#fff',
         lineHeight: getFontSize(20),
+    },
+    itemInput: {
+        flex: 1,
+        color: '#fff',
+        borderWidth: 1,
+        borderColor: 'rgba(148,163,184,0.8)',
+        borderRadius: 8,
+        paddingVertical: getSpacing(8),
+        paddingHorizontal: getSpacing(10),
+        fontSize: getFontSize(14),
     },
     itemTextSelected: {
         fontWeight: '600',
