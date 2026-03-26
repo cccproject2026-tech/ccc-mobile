@@ -41,6 +41,8 @@ interface CdpPlansModalProps {
     ) => void;
     /** Mentor only: send CDP */
     onSendCdp?: () => void;
+    /** Pastor only: download CDP as PDF */
+    onDownloadCdp?: () => void;
 }
 
 export default function CdpPlansModal({
@@ -53,6 +55,7 @@ export default function CdpPlansModal({
     onToggleRecommendation,
     onUpdateRecommendation,
     onSendCdp,
+    onDownloadCdp,
 }: CdpPlansModalProps) {
     const [mentorActionMode, setMentorActionMode] = React.useState<'select' | 'edit'>('select');
 
@@ -205,7 +208,11 @@ export default function CdpPlansModal({
                                         <Text style={styles.sendButtonText}>Send</Text>
                                     </TouchableOpacity>
                                 ) : mode === 'pastor' ? (
-                                    <TouchableOpacity style={styles.downloadButton} activeOpacity={0.8}>
+                                    <TouchableOpacity
+                                        style={styles.downloadButton}
+                                        activeOpacity={0.8}
+                                        onPress={onDownloadCdp}
+                                    >
                                         <Ionicons name="download-outline" size={20} color="#fff" />
                                         <Text style={styles.downloadButtonText}>Download</Text>
                                     </TouchableOpacity>

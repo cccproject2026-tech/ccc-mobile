@@ -1,6 +1,7 @@
 import CdpPlansModal from '@/components/CdpPlansModal';
 import { useAssessmentStore } from '@/stores/assessment.store';
 import { Assessment, AssessmentQuestion, QuestionGroup } from '@/types/assessment.types';
+import { sharePdfFromHtml } from '@/utils/pdf';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
@@ -289,6 +290,60 @@ export default function AssessmentQuestionsSection({
         );
     };
 
+    const handleDownloadCdp = async () => {
+        if (!editableMentorSections.length) {
+            Alert.alert('Download', 'No CDP recommendations available to download yet.');
+            return;
+        }
+
+        const escapeHtml = (value: string) =>
+            value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+        const generatedAt = new Date().toLocaleString();
+
+        const sectionsHtml = editableMentorSections
+            .map((section, index) => {
+                const recommendationItems = (section.recommendations ?? [])
+                    .map((item) => `<li>${escapeHtml(item)}</li>`)
+                    .join('');
+
+                return `
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 6px 0; color: #1f2937;">
+                            Section ${index + 1}: ${escapeHtml(section.title)}
+                        </h3>
+                        ${typeof section.score === 'number'
+                        ? `<p style="margin: 0 0 8px 0; color: #4b5563;">Level: ${section.score}</p>`
+                        : ''}
+                        <ul style="margin: 0; padding-left: 18px; color: #111827;">
+                            ${recommendationItems || '<li>No recommendations provided.</li>'}
+                        </ul>
+                    </div>
+                `;
+            })
+            .join('');
+
+        const html = `
+            <html>
+                <body style="font-family: Arial, sans-serif; padding: 24px; color: #111827;">
+                    <h1 style="margin-bottom: 6px;">${escapeHtml(assessment.title)} - CDP</h1>
+                    <p style="margin-top: 0; color: #6b7280;">Generated: ${escapeHtml(generatedAt)}</p>
+                    ${sectionsHtml}
+                </body>
+            </html>
+        `;
+
+        await sharePdfFromHtml({
+            html,
+            fileName: `${assessment.title.replace(/[^a-z0-9]/gi, '_')}_CDP`,
+        });
+    };
+
     const renderQuestion = (question: AssessmentQuestion) => {
         if (question.type === 'radio' && question.options?.length) {
             const selectedChoiceId = answers[currentSectionIndex]?.[question.id] as string | undefined;
@@ -528,6 +583,7 @@ export default function AssessmentQuestionsSection({
                               }
                             : undefined
                     }
+                    onDownloadCdp={!reviewMode ? handleDownloadCdp : undefined}
                 />
             </KeyboardAwareScrollView>
         </>
