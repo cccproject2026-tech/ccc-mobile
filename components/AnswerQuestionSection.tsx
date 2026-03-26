@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
-    ActivityIndicator,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -45,6 +44,8 @@ interface AssessmentQuestionsSectionProps {
             selectedItems: Array<{ level: number; text: string }>;
         }>;
     }) => void;
+    /** Current viewer role to separate pastor vs mentor CDP visibility behavior. */
+    userRole?: string;
 }
 
 export default function AssessmentQuestionsSection({
@@ -58,6 +59,7 @@ export default function AssessmentQuestionsSection({
     mentorReviewSections,
     submittedSections,
     onSendCdp,
+    userRole,
 }: AssessmentQuestionsSectionProps) {
     const previousResponse = useAssessmentStore(
         (state) => state.getDraft(assessmentId)
@@ -79,13 +81,19 @@ export default function AssessmentQuestionsSection({
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
 
-    // CDP is ready only when the ANSWERS API contains recommendations (not the assessment template).
-    const hasCdpRecommendations =
-        submittedSections?.some(
-            (section) => section.recommendations?.length > 0,
-        ) ?? false;
+    // CDP is ready only when the ANSWERS API contains at least one recommendation.
+    // Missing/invalid recommendations are treated as empty.
+    const sections = submittedSections || [];
+    const hasCdpRecommendations = sections.some(
+        (section) =>
+            Array.isArray(section.recommendations) &&
+            section.recommendations.length > 0,
+    );
 
-    const showCdpAsReady = hasCdpRecommendations;
+    const normalizedRole = (userRole || '').toLowerCase();
+    const isPastor = normalizedRole === 'pastor';
+    const isMentor = normalizedRole === 'mentor' || reviewMode;
+    const showCdpAsReady = isMentor || hasCdpRecommendations;
 
     // In view mode, sync any incoming initial answers into local state
     useEffect(() => {
@@ -328,11 +336,11 @@ export default function AssessmentQuestionsSection({
                         <TouchableOpacity
                             style={[
                                 styles.tabSegmentOutline,
-                                !showCdpAsReady && styles.tabSegmentDisabled,
+                                isPastor && !showCdpAsReady && styles.tabSegmentDisabled,
                             ]}
                             onPress={showCdpAsReady ? () => setShowCdpModal(true) : undefined}
                             activeOpacity={showCdpAsReady ? 0.8 : 1}
-                            disabled={!showCdpAsReady}
+                            disabled={isPastor && !showCdpAsReady}
                         >
                             {showCdpAsReady ? (
                                 <Text style={styles.tabSegmentOutlineText}>
@@ -340,13 +348,10 @@ export default function AssessmentQuestionsSection({
                                 </Text>
                             ) : (
                                 <View style={styles.waitingForResponseContainer}>
-                                    <ActivityIndicator
-                                        size="small"
-                                        color="#fff"
-                                        style={styles.waitingSpinner}
-                                    />
                                     <Text style={styles.tabSegmentOutlineText}>
-                                        Waiting for response
+                                        {isPastor
+                                            ? "Waiting for response from mentor"
+                                            : "Customized Development Plans"}
                                     </Text>
                                 </View>
                             )}

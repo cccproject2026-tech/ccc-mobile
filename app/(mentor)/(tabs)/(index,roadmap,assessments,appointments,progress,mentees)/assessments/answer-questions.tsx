@@ -334,6 +334,18 @@ export default function AnswerQuestionPage() {
         (s) => s._id === submittedSection.sectionId,
       );
       const apiSection = apiSectionIndex >= 0 ? data.sections[apiSectionIndex] : undefined;
+      const sectionScore = submittedSection.sectionScore;
+      const templateRecommendations = apiSection?.recommendations ?? [];
+      const levelMatchedTemplateRecommendations =
+        typeof sectionScore === "number" && sectionScore >= 1 && sectionScore <= 4
+          ? (templateRecommendations.find(
+              (recommendationLevel) => recommendationLevel.level === sectionScore,
+            )?.items ?? [])
+          : [];
+      const mentorVisibleRecommendations =
+        submittedSection.recommendations?.length
+          ? submittedSection.recommendations
+          : levelMatchedTemplateRecommendations;
 
       return {
         sectionId: submittedSection.sectionId,
@@ -341,8 +353,8 @@ export default function AnswerQuestionPage() {
           assessment.sections[apiSectionIndex]?.title ??
           apiSection?.title ??
           "Section",
-        score: submittedSection.sectionScore,
-        recommendations: submittedSection.recommendations ?? [],
+        score: sectionScore,
+        recommendations: mentorVisibleRecommendations,
       };
     });
   }, [assessment, data?.sections, submittedAnswers?.data?.sections]);
@@ -413,6 +425,7 @@ export default function AnswerQuestionPage() {
         <AssessmentQuestionsSection
           assessment={assessment}
           assessmentId={assessmentId as string}
+          userRole={user?.role}
           isViewMode={isViewMode}
           initialSectionAnswers={isViewMode ? viewSectionAnswers : undefined}
           reviewMode={isViewMode && !!targetUserId}

@@ -54,8 +54,12 @@ export default function AnswerQuestionPage() {
   const shouldScheduleMeeting = scheduleMeeting === "true";
   console.log("isViewMode", isViewMode, shouldScheduleMeeting);
   // ONLY fetch submitted answers in VIEW MODE (not for regular editing)
-  const { data: submittedAnswers, isLoading: isLoadingSubmitted } =
-    useFetchAnswers(assessmentId as string, user?.id, isViewMode);
+  const {
+    data: submittedAnswers,
+    isLoading: isLoadingSubmitted,
+    isError: isSubmittedAnswersError,
+    error: submittedAnswersError,
+  } = useFetchAnswers(assessmentId as string, user?.id, isViewMode);
   // console.log('submittedAnswers', data);
   // Get draft from store
   const getDraft = useAssessmentStore((state) => state.getDraft);
@@ -248,6 +252,8 @@ export default function AnswerQuestionPage() {
     });
   }, [assessment, data?.sections, submittedAnswers?.data?.sections]);
 
+  const submittedSections = submittedAnswers?.data?.sections || [];
+
   const handleScheduleComplete = (data: any) => {
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
@@ -318,7 +324,14 @@ export default function AnswerQuestionPage() {
   }
 
   // Error state
-  if (error || !assessment) {
+  if (error || !assessment || (isViewMode && isSubmittedAnswersError)) {
+    const errorMessage =
+      isViewMode && isSubmittedAnswersError
+        ? submittedAnswersError instanceof Error
+          ? submittedAnswersError.message
+          : "Failed to load submitted answers"
+        : "Failed to load assessment";
+
     return (
       <LinearGradient
         colors={["#176192", "#1D548D", "#264387"]}
@@ -329,7 +342,7 @@ export default function AnswerQuestionPage() {
       >
         <Ionicons name="alert-circle-outline" size={64} color="#fff" />
         <Text style={{ color: "#fff", fontSize: 18, marginTop: 16 }}>
-          Failed to load assessment
+          {errorMessage}
         </Text>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -366,10 +379,11 @@ export default function AnswerQuestionPage() {
         <AssessmentQuestionsSection
           assessment={assessment}
           assessmentId={assessmentId as string}
+          userRole={user?.role}
           isViewMode={isViewMode}
           initialSectionAnswers={isViewMode ? viewSectionAnswers : undefined}
           mentorReviewSections={cdpSectionsForView}
-          submittedSections={submittedAnswers?.data?.sections}
+          submittedSections={submittedSections}
           onSubmit={handleAssessmentSubmit}
           onClose={() => {
             router.back();
