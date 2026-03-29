@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ccc-new-app",
+    "name": "CCC Pastor & Mentor",
     "slug": "ccc-new-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "cccnewapp",
+    "scheme": "cccpastormentor",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -34,12 +34,7 @@
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.RECORD_AUDIO"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyDUMMY-android-key-1234567890abcdef"
-        }
-      }
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -52,7 +47,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-screen.png",
-          "resizeMode": "cover",
+          "resizeMode": "contain",
           "backgroundColor": "#0F3D5E"
         }
       ],
