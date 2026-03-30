@@ -143,6 +143,14 @@ export default function LoginScreen() {
         router.push('/(unauthenticated)/interest-form');
     }, []);
 
+    // Navigate to mentor onboarding (3-step journey)
+    const handleMentorJourneyPress = useCallback(() => {
+        router.push({
+            pathname: "/(unauthenticated)/mentor-start-journey/[role]",
+            params: { role: "mentor" },
+        });
+    }, [router]);
+
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
@@ -188,6 +196,17 @@ export default function LoginScreen() {
                                         </Text>
                                     </TouchableOpacity>
                                 </LinearGradient>
+
+                                {roleParam === "mentor" && (
+                                    <TouchableOpacity
+                                        style={styles.joinJourneyButton}
+                                        onPress={handleMentorJourneyPress}
+                                    >
+                                        <Text style={styles.joinJourneyButtonText}>
+                                            Start your mentor journey →
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
 
                                 <TouchableOpacity
                                     style={styles.joinLoginButton}
@@ -765,6 +784,22 @@ const styles = StyleSheet.create({
         color: "#1A5490",
         fontSize: 14,
         fontWeight: "400",
+    },
+
+    joinJourneyButton: {
+        width: "100%",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "rgba(111, 212, 190, 0.45)",
+        backgroundColor: "rgba(255,255,255,0.08)",
+        paddingVertical: 10,
+        alignItems: "center",
+        marginTop: 10,
+    },
+    joinJourneyButtonText: {
+        color: "#6FD4BE",
+        fontSize: 14,
+        fontWeight: "500",
     },
 
     // Action Buttons

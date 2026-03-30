@@ -6,7 +6,7 @@ import React, { useMemo } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type PastorRole = "pastor" | "layleader" | "seminarian";
+type RoleParam = "pastor" | "layleader" | "seminarian" | "mentor";
 
 /** Accents that sit on the existing blue–white base (gold warmth, mint growth). */
 const accent = {
@@ -24,6 +24,8 @@ const mapRoleToLabel = (role?: string): string => {
             return "Lay Leader";
         case "seminarian":
             return "Seminarian";
+        case "mentor":
+            return "Mentor";
         default:
             return "";
     }
@@ -32,9 +34,14 @@ const mapRoleToLabel = (role?: string): string => {
 export default function RoleLandingScreen() {
     const { bottom, top } = useSafeAreaInsets();
     const router = useRouter();
-    const { role } = useLocalSearchParams<{ role?: PastorRole }>();
+    const { role } = useLocalSearchParams<{ role?: RoleParam }>();
 
     const roleLabel = useMemo(() => mapRoleToLabel(role), [role]);
+    const socialProofText = useMemo(() => {
+        if (role === "mentor") return "mentors already supporting";
+        if (role === "pastor") return "pastors already engaging";
+        return "leaders already serving";
+    }, [role]);
 
     const avatars = [icons.dummyUser, icons.dummyUser2, icons.myProfile];
 
@@ -104,10 +111,15 @@ export default function RoleLandingScreen() {
                     {/* CTA Buttons */}
                     <Pressable
                         onPress={() =>
-                            router.push({
-                                pathname: "/(unauthenticated)/pastor-start-journey/[role]",
-                                params: { role: role || "pastor" },
-                            })
+                            role === "mentor"
+                                ? router.push({
+                                      pathname: "/(unauthenticated)/mentor-start-journey/[role]",
+                                      params: { role: "mentor" },
+                                  })
+                                : router.push({
+                                      pathname: "/(unauthenticated)/pastor-start-journey/[role]",
+                                      params: { role: (role || "pastor") as Exclude<RoleParam, "mentor"> },
+                                  })
                         }
                         style={styles.primaryButton}
                     >
@@ -146,7 +158,7 @@ export default function RoleLandingScreen() {
                         </View>
                         <View style={styles.socialTextWrap}>
                             <Text style={styles.socialCount}>500+</Text>
-                            <Text style={styles.socialText}>pastors already engaging</Text>
+                            <Text style={styles.socialText}>{socialProofText}</Text>
                         </View>
                     </View>
 

@@ -72,7 +72,11 @@ export default function RoleSelectionScreen() {
         if (isAuthenticated && user?.role === 'mentor') {
             router.push('/(mentor)/(tabs)');
         } else {
-            router.push({ pathname: '/(unauthenticated)', params: { role: 'mentor' } });
+            // Show the mentor welcome ("Start your journey") screen first.
+            router.push({
+                pathname: '/(unauthenticated)/role-landing/[role]',
+                params: { role: 'mentor' },
+            });
         }
     }, [isAuthenticated, router, selectedRole, user?.role]);
 
