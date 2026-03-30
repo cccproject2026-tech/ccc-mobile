@@ -8,6 +8,7 @@ import { Button } from "@/components/build-components";
 import ExploreCard from "@/components/director/ExploreCard";
 import HeaderHero from "@/components/director/HeroHeader";
 import WelcomeCard from "@/components/director/WelcomeCard";
+import MentorDashboardHome from "@/components/mentor/MentorDashboardHome";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { mentorExploreItems } from "@/constants/mockData";
@@ -29,6 +30,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function MentorDashboard() {
+  return <MentorDashboardHome />;
   const [searchText, setSearchText] = useState("");
   const [greetingPeriod, setGreetingPeriod] = useState<
     "morning" | "afternoon" | "evening"
