@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     loginBtnLabel: {
         fontSize: 11,
         fontWeight: "500",
-        color: "rgba(10, 63, 107, 0.4)",
+        color: "rgba(255,255,255,0.4)",
         letterSpacing: 0.3,
     },
     loginBtnTitle: {
