@@ -198,6 +198,9 @@ export default function PastorTabLayout() {
                     {HIDDEN_ROUTES.map((name) => (
                         <Tabs.Screen key={name} name={name} options={{ href: null }} />
                     ))}
+
+                    <Tabs.Screen name="sessions" options={{ href: null }} />
+                    <Tabs.Screen name="sessions/[id]" options={{ href: null }} />
                 </Tabs>
             </AssessmentProvider>
         </RoadmapProgressProvider>

@@ -43,6 +43,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const EXPLORE_TILES = [
   {
+    title: "Mentorship\nSessions",
+    icon: icons.calendarIcon,
+    route: "/(pastor)/(tabs)/sessions" as const,
+    color: "#38BDF8",
+    gradient: ["#38BDF8", "#0EA5E9"],
+  },
+  {
     title: "Personal\nNotes",
     icon: icons.notesIcon,
     route: "/(pastor)/(tabs)/profile/notes",
