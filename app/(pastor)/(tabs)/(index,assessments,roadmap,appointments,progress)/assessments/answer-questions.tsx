@@ -9,6 +9,8 @@ import {
   useSubmitAssessmentAnswers,
   useSubmitPreSurvey,
 } from "@/hooks/assessments/useSubmitAnswers";
+import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
 import { useAuthStore } from "@/stores";
@@ -69,6 +71,79 @@ export default function AnswerQuestionPage() {
   // Submission hooks
   const submitPreSurvey = useSubmitPreSurvey();
   const submitAssessmentAnswers = useSubmitAssessmentAnswers();
+  const { mutateAsync: triggerJumpstartAsync } = useTriggerJumpstart();
+  const { data: assignedRoadmaps = [] } = useRoadmaps("pastor", user?.id);
+  const normalizeRoadmapName = (value: string) =>
+    value.toLowerCase().replace(/[\s-]+/g, "");
+  const jumpstartRoadmapId = useMemo(() => {
+    if (!assignedRoadmaps.length) return undefined;
+    const jumpstart = assignedRoadmaps.find((r: any) => {
+      const normalizedName = normalizeRoadmapName(String(r?.name ?? ""));
+      return normalizedName.includes("jumpstart");
+    });
+    return jumpstart?._id;
+  }, [assignedRoadmaps]);
+  const jumpstartTriggeredUsersRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!jumpstartRoadmapId && assignedRoadmaps.length > 0) {
+      console.warn(
+        "[Jumpstart Trigger] Jumpstart roadmap not found. Skipping trigger.",
+        assignedRoadmaps.map((r: any) => ({ id: r?._id, name: r?.name })),
+      );
+    }
+  }, [jumpstartRoadmapId, assignedRoadmaps]);
+
+  // DEBUG helper: always called from final submit before saving extras.
+  const ensureJumpstartTriggered = async () => {
+    console.log("ensureJumpstartTriggered CALLED");
+    console.log("Check conditions", {
+      isViewMode,
+      userId: user?.id,
+      jumpstartRoadmapId,
+    });
+
+    // Temporary force path for debugging:
+    // if jumpstart roadmap is not detected, use first assigned roadmap id.
+    const debugRoadmapId = jumpstartRoadmapId || assignedRoadmaps[0]?._id;
+    const debugUserId = user?.id;
+
+    console.log("STEP 1: Trigger Jumpstart");
+    console.log("Trigger payload", {
+      roadmapId: debugRoadmapId,
+      userId: debugUserId,
+      source: jumpstartRoadmapId ? "jumpstart-detected" : "fallback-first-assigned",
+    });
+
+    if (!debugRoadmapId) {
+      console.error("❌ Missing roadmapId — cannot trigger Jumpstart");
+    }
+
+    if (!debugUserId) {
+      console.error("❌ Missing userId — cannot trigger Jumpstart");
+    }
+
+    if (!debugRoadmapId || !debugUserId) {
+      return;
+    }
+
+    try {
+      const response = await triggerJumpstartAsync({
+        roadmapId: debugRoadmapId,
+        userId: debugUserId,
+      });
+      console.log("Jumpstart response", response);
+
+      if (response.alreadyExists || response.success) {
+        jumpstartTriggeredUsersRef.current.add(debugUserId);
+      }
+    } catch (triggerError) {
+      console.warn(
+        "[Jumpstart Trigger] Failed (non-blocking). Continuing assessment flow.",
+        triggerError,
+      );
+    }
+  };
 
   const [showModal, setShowModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -194,6 +269,10 @@ export default function AnswerQuestionPage() {
         answers,
       };
 
+      // Trigger jumpstart BEFORE any extras/answers save.
+      await ensureJumpstartTriggered();
+
+      console.log("STEP 2: Saving extras");
       await submitAssessmentAnswers.mutateAsync({
         assessmentId: assessmentId as string,
         payload,

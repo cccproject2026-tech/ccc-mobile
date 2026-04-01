@@ -137,6 +137,7 @@ export default function MentorTabLayout() {
                     <Tabs.Screen name="my-mentors" options={{ href: null }} />
                     <Tabs.Screen name="mentees" options={{ href: null }} />
                     <Tabs.Screen name="sessions" options={{ href: null }} />
+                    <Tabs.Screen name="sessions/[id]" options={{ href: null }} />
                     <Tabs.Screen name="resources" options={{ href: null }} />
                     <Tabs.Screen name="new-roadmap" options={{ href: null }} />
                 </Tabs>

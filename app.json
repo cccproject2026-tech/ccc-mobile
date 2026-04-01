@@ -11,7 +11,7 @@
 
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ccc.pastormentor",
+      "bundleIdentifier": "com.bibleask.ccc.pastormentor",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library so you can select a profile picture.",

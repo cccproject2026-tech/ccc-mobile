@@ -117,6 +117,9 @@ export const ENDPOINTS = {
     GET_ALL: "/roadmaps",
     CREATE: "/roadmaps",
     UPDATE: (roadmapId: string) => `/roadmaps/${roadmapId}`,
+    GET_SESSIONS: (userId: string) => `/roadmaps/sessions/${userId}`,
+    COMPLETE_SESSION: "/roadmaps/complete-session",
+    REDO_SESSION: "/roadmaps/redo-session",
     ADD_COMMENT: (roadmapId: string) => `/roadmaps/${roadmapId}/comments`,
     GET_COMMENTS: (roadmapId: string, userId: string) =>
       `/roadmaps/${roadmapId}/comments?userId=${userId}`,

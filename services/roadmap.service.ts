@@ -19,6 +19,21 @@ import {
 import { CreateNestedRoadmapRequest, CreateNestedRoadmapResponse, CreateRoadmapRequest, CreateRoadmapResponse, UpdateRoadmapRequest, UpdateRoadmapResponse } from '@/lib/roadmaps/types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
+import { menteesService } from './mentees.service';
+import { MentorshipSession, MentorshipSessionsApiResponse } from "@/types/session.types";
+
+/** Backend may return a raw array or { success, data } from GET /roadmaps/sessions/:userId */
+function normalizeRoadmapSessionsPayload(responseData: unknown): any[] {
+    if (Array.isArray(responseData)) return responseData;
+    if (responseData && typeof responseData === 'object') {
+        const wrap = responseData as { success?: boolean; data?: unknown; message?: string };
+        if (wrap.success === false && wrap.message) {
+            throw new Error(wrap.message);
+        }
+        if (Array.isArray(wrap.data)) return wrap.data;
+    }
+    return [];
+}
 
 /** Axios uses `response.status`; apiClient response interceptor rejects with `{ statusCode }`. */
 const getHttpErrorStatus = (error: unknown): number | undefined => {
@@ -56,6 +71,209 @@ const buildFormData = (formData: FormData, data: any, parentKey?: string) => {
 };
 
 export const roadmapService = {
+    async triggerJumpstartComplete(
+        roadmapId: string,
+        userId: string,
+    ): Promise<{ success: boolean; message: string; alreadyExists?: boolean }> {
+        if (!roadmapId) {
+            throw new Error("roadmapId is required to trigger jumpstart completion");
+        }
+        if (!userId) {
+            throw new Error("userId is required to trigger jumpstart completion");
+        }
+
+        try {
+            const response = await apiClient.post<{ success: boolean; message: string }>(
+                `/roadmaps/${roadmapId}/extras`,
+                {
+                    userId,
+                    extras: [{ type: "JUMPSTART_COMPLETE" }],
+                },
+            );
+
+            if (!response.data?.success) {
+                throw new Error(response.data?.message || "Failed to trigger jumpstart completion");
+            }
+
+            return { success: true, message: response.data.message || "Jumpstart completion triggered." };
+        } catch (error: unknown) {
+            const err = error as {
+                response?: { status?: number; data?: { message?: string } };
+                message?: string;
+            };
+            const status = err?.response?.status;
+            const message =
+                err?.response?.data?.message ||
+                err?.message ||
+                "Failed to trigger jumpstart completion";
+
+            // Backend may return conflict/bad request if the extra already exists.
+            if (
+                status === 409 ||
+                (status === 400 && /already exists|duplicate|already/i.test(message))
+            ) {
+                return {
+                    success: true,
+                    message: "Jumpstart completion already recorded.",
+                    alreadyExists: true,
+                };
+            }
+
+            throw error;
+        }
+    },
+
+    async completeSession(appointmentId: string): Promise<{ success: boolean; message: string }> {
+        if (!appointmentId) {
+            throw new Error("appointmentId is required to complete a session");
+        }
+
+        const response = await apiClient.post<{ success: boolean; message: string }>(
+            ENDPOINTS.ROADMAPS.COMPLETE_SESSION,
+            { appointmentId },
+        );
+
+        if (!response.data?.success) {
+            throw new Error(response.data?.message || "Failed to complete session");
+        }
+
+        return response.data;
+    },
+
+    async redoSession(appointmentId: string): Promise<{ success: boolean; message: string }> {
+        if (!appointmentId) {
+            throw new Error("appointmentId is required to redo a session");
+        }
+
+        const response = await apiClient.post<{ success: boolean; message: string }>(
+            ENDPOINTS.ROADMAPS.REDO_SESSION,
+            { appointmentId },
+        );
+
+        if (!response.data?.success) {
+            throw new Error(response.data?.message || "Failed to redo session");
+        }
+
+        return response.data;
+    },
+
+    async getMentorshipSessions(userId: string): Promise<MentorshipSession[]> {
+        if (!userId) {
+            throw new Error("userId is required to fetch mentorship sessions");
+        }
+
+        const response = await apiClient.get<
+            MentorshipSessionsApiResponse | MentorshipSession[] | unknown
+        >(ENDPOINTS.ROADMAPS.GET_SESSIONS(userId));
+
+        const raw = normalizeRoadmapSessionsPayload(response.data);
+
+        return raw.map((item: any, index: number) => {
+            const id = String(item?._id ?? item?.id ?? `session-${index + 1}`);
+            const numberValue = Number(
+                item?.sessionNumber ??
+                item?.sessionNo ??
+                item?.session ??
+                item?.sequence ??
+                index + 1,
+            );
+            const sessionNumber = Number.isFinite(numberValue) && numberValue > 0 ? numberValue : index + 1;
+
+            const scheduledDate = String(
+                item?.scheduledDate ??
+                item?.meetingDate ??
+                item?.date ??
+                item?.createdAt ??
+                "",
+            );
+
+            const statusRaw = String(item?.status ?? "SCHEDULED").toUpperCase();
+            const status = statusRaw === "COMPLETED" ? "COMPLETED" : "SCHEDULED";
+            const mentorNote = item?.mentorNote ? String(item.mentorNote) : undefined;
+            const pastorNote = item?.pastorNote ? String(item.pastorNote) : undefined;
+            const appointmentId = item?.appointmentId
+                ? String(item.appointmentId)
+                : item?.appointment?._id
+                  ? String(item.appointment._id)
+                  : undefined;
+
+            return {
+                id,
+                sessionNumber,
+                scheduledDate,
+                status,
+                mentorNote,
+                pastorNote,
+                appointmentId,
+            } as MentorshipSession;
+        });
+    },
+
+    /**
+     * Fetches mentorship sessions for all pastors assigned to this mentor.
+     * Uses GET /users/:mentorId/assigned then GET /roadmaps/sessions/:pastorId per pastor.
+     */
+    async getMentorshipSessionsForMentor(mentorId: string): Promise<MentorshipSession[]> {
+        if (!mentorId) {
+            throw new Error("mentorId is required to fetch mentorship sessions");
+        }
+
+        const menteesData = await menteesService.getAssignedMentees(mentorId);
+        const users = menteesData.users ?? [];
+        const pastorIds = users.map((u: any) => String(u._id ?? u.id)).filter(Boolean);
+
+        if (__DEV__) {
+            console.log("Pastor IDs:", pastorIds);
+        }
+
+        if (pastorIds.length === 0) {
+            if (__DEV__) {
+                console.log("Fetched sessions:", []);
+            }
+            return [];
+        }
+
+        const nested = await Promise.all(
+            pastorIds.map(async (pastorId) => {
+                try {
+                    const sessions = await this.getMentorshipSessions(pastorId);
+                    const pastor = users.find((u: any) => String(u._id ?? u.id) === pastorId);
+                    const pastorName =
+                        pastor
+                            ? `${pastor.firstName ?? ""} ${pastor.lastName ?? ""}`.trim() || "Pastor"
+                            : "Pastor";
+
+                    return sessions.map((s, idx) => ({
+                        ...s,
+                        pastorId,
+                        pastorName,
+                        id: `${pastorId}-${s.sessionNumber}-${s.appointmentId ?? idx}`,
+                    }));
+                } catch (e) {
+                    if (__DEV__) {
+                        console.warn(`[getMentorshipSessionsForMentor] Failed for pastor ${pastorId}`, e);
+                    }
+                    return [];
+                }
+            }),
+        );
+
+        const all = nested.flat();
+
+        if (__DEV__) {
+            console.log("Fetched sessions:", all);
+        }
+
+        return all.sort((a, b) => {
+            const ta = new Date(a.scheduledDate).getTime();
+            const tb = new Date(b.scheduledDate).getTime();
+            if (!Number.isNaN(ta) && !Number.isNaN(tb) && ta !== tb) {
+                return ta - tb;
+            }
+            return a.sessionNumber - b.sessionNumber;
+        });
+    },
+
     async getRoadmaps() {
         const response = await apiClient.get<RoadmapResponse>('/roadmaps');
         if (!response.data.success) {

@@ -16,7 +16,10 @@ export const assessmentService = {
     const response = await apiClient.get<ApiAssessment[]>(
       ENDPOINTS.ASSESSMENTS.GET_ASSESSMENTS,
     );
-    console.log("📥 Assessments fetched:", JSON.stringify(response.data));
+    console.log(
+      "📥 Assessments fetched count:",
+      Array.isArray(response.data) ? response.data.length : undefined,
+    );
     return response.data;
   },
 

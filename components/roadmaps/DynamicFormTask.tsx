@@ -1091,11 +1091,13 @@ import { SignatureModal } from "@/components/forms/SignatureModal";
 import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
+    useRoadmaps,
     useRoadmapDocuments,
     useRoadmapExtras,
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
+import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
 import { Extra, NestedRoadmap } from "@/lib/roadmap/types";
@@ -1105,7 +1107,7 @@ import * as DocumentPicker from "expo-document-picker";
 import RNFS from "react-native-fs";
 import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
-import { JSX, useEffect, useState } from "react";
+import { JSX, useEffect, useRef, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import {
     ActivityIndicator,
@@ -1207,9 +1209,11 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
     const updateExtras = useUpdateRoadmapExtras();
     const uploadDocument = useUploadRoadmapDocument();
     const deleteDocument = useDeleteRoadmapDocument();
+    const { mutateAsync: triggerJumpstartAsync } = useTriggerJumpstart();
+    const jumpstartTriggeredUsersRef = useRef<Set<string>>(new Set());
+    const { data: assignedRoadmaps = [] } = useRoadmaps("pastor", currentUser?.id);
 
     const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
-    console.log('assessmentProgress', assessmentProgress);
     const isUpdateMode = !!existingExtras;
 
     /** Initialise formData from API or default dates */
@@ -1280,6 +1284,49 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
         return fieldErrors;
     };
 
+    const ensureJumpstartTriggered = async () => {
+        const user = currentUser;
+        const jumpstartRoadmap = assignedRoadmaps.find((r) =>
+            r?.name && String(r.name).toLowerCase().trim().includes("jump"),
+        );
+        const correctRoadmapId = jumpstartRoadmap?._id;
+
+        console.log("Assigned roadmaps:", assignedRoadmaps);
+        console.log("Selected Jumpstart roadmap:", jumpstartRoadmap);
+
+        if (!correctRoadmapId || !user?.id) {
+            console.error("❌ Missing required data", {
+                correctRoadmapId,
+                userId: user?.id,
+            });
+            return;
+        }
+
+        if (jumpstartTriggeredUsersRef.current.has(user.id)) {
+            return;
+        }
+
+        console.log("Using Jumpstart roadmapId", correctRoadmapId);
+        console.log("STEP 1: Jumpstart trigger (POST)");
+
+        try {
+            const response = await triggerJumpstartAsync({
+                roadmapId: correctRoadmapId,
+                userId: user.id,
+            });
+            console.log("Jumpstart API response:", response);
+
+            if (response?.success || response?.alreadyExists) {
+                jumpstartTriggeredUsersRef.current.add(user.id);
+            }
+        } catch (error) {
+            console.warn(
+                "[Jumpstart Trigger] Failed (non-blocking). Continuing extras flow.",
+                error,
+            );
+        }
+    };
+
     /** Save progress – text extras + pending file uploads */
     const handleSubmit = async () => {
         console.log("----------------------------------------------")
@@ -1304,6 +1351,18 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
         }
 
         try {
+            await ensureJumpstartTriggered();
+
+            const extrasAlreadyExistForUser =
+                !!currentUser?.id &&
+                (isUpdateMode || jumpstartTriggeredUsersRef.current.has(currentUser.id));
+
+            console.log(
+                extrasAlreadyExistForUser
+                    ? "STEP 2: Saving extras (PATCH)"
+                    : "STEP 2: Saving extras",
+            );
+
             // 1️⃣ Build extras payload (including upload fields as boolean flags, signature as signatureData)
             const extrasArray = Object.entries(formData).map(([name, value]) => {
                 const type = getExtraType(name, value);
@@ -1317,7 +1376,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                 };
             });
 
-            if (isUpdateMode) {
+            if (extrasAlreadyExistForUser) {
                 await updateExtras.mutateAsync({
                     roadMapId: roadmapId!,
                     payload: { extras: extrasArray },
@@ -1325,12 +1384,29 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                     nestedRoadMapItemId: itemId,
                 });
             } else {
-                await createExtras.mutateAsync({
-                    userId: currentUser.id,
-                    roadMapId: roadmapId!,
-                    nestedRoadMapItemId: itemId,
-                    extras: extrasArray,
-                });
+                try {
+                    await createExtras.mutateAsync({
+                        userId: currentUser.id,
+                        roadMapId: roadmapId!,
+                        nestedRoadMapItemId: itemId,
+                        extras: extrasArray,
+                    });
+                } catch (createError: any) {
+                    const createErrorMessage = String(
+                        createError?.response?.data?.message || createError?.message || "",
+                    ).toLowerCase();
+
+                    if (createErrorMessage.includes("extras already exist")) {
+                        await updateExtras.mutateAsync({
+                            roadMapId: roadmapId!,
+                            payload: { extras: extrasArray },
+                            userId: currentUser.id,
+                            nestedRoadMapItemId: itemId,
+                        });
+                    } else {
+                        throw createError;
+                    }
+                }
             }
 
             // 2️⃣ Upload each pending file batch
