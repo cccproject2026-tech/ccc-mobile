@@ -1091,7 +1091,6 @@ import { SignatureModal } from "@/components/forms/SignatureModal";
 import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
-    useRoadmaps,
     useRoadmapDocuments,
     useRoadmapExtras,
     useUpdateRoadmapExtras,
@@ -1144,7 +1143,13 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [openSignatureField, setOpenSignatureField] = useState<string | null>(null);
 
-    const isValidObjectId = (id: string | undefined) => !!id;
+    /** Match roadmap.service get/update extras: only 24-char hex IDs are sent on GET/PATCH query strings. */
+    const isMongoObjectId = (id: string | undefined): id is string =>
+        !!id &&
+        typeof id === "string" &&
+        id.trim() !== "" &&
+        id.length === 24 &&
+        /^[0-9a-fA-F]{24}$/.test(id);
 
     const ensureUrlScheme = (url: string) => {
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -1200,19 +1205,20 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
 
     /** Load existing extras from API */
     const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } = useRoadmapExtras(
-        isValidObjectId(roadmapId) ? roadmapId : undefined,
-        isValidObjectId(itemId) ? itemId : undefined,
-        isValidObjectId(targetUserId) ? targetUserId : undefined
+        isMongoObjectId(roadmapId) ? roadmapId : undefined,
+        isMongoObjectId(itemId) ? itemId : undefined,
+        isMongoObjectId(targetUserId) ? targetUserId : undefined
     );
 
     const createExtras = useCreateRoadmapExtras();
     const updateExtras = useUpdateRoadmapExtras();
     const uploadDocument = useUploadRoadmapDocument();
     const deleteDocument = useDeleteRoadmapDocument();
-    const { mutateAsync: triggerJumpstartAsync } = useTriggerJumpstart();
+    const {
+        mutateAsync: triggerJumpstartAsync,
+        isPending: isTriggeringJumpstart,
+    } = useTriggerJumpstart();
     const jumpstartTriggeredUsersRef = useRef<Set<string>>(new Set());
-    const { data: assignedRoadmaps = [] } = useRoadmaps("pastor", currentUser?.id);
-
     const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
     const isUpdateMode = !!existingExtras;
 
@@ -1286,17 +1292,13 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
 
     const ensureJumpstartTriggered = async () => {
         const user = currentUser;
-        const jumpstartRoadmap = assignedRoadmaps.find((r) =>
-            r?.name && String(r.name).toLowerCase().trim().includes("jump"),
-        );
-        const correctRoadmapId = jumpstartRoadmap?._id;
+        // Must match GET/PATCH/create: same `roadmapId` as route `phaseId`, not a different "Jumpstart" roadmap from assigned list.
+        const extrasRoadmapId = isMongoObjectId(roadmapId) ? roadmapId : undefined;
+        const nestedForExtras = isMongoObjectId(itemId) ? itemId : undefined;
 
-        console.log("Assigned roadmaps:", assignedRoadmaps);
-        console.log("Selected Jumpstart roadmap:", jumpstartRoadmap);
-
-        if (!correctRoadmapId || !user?.id) {
-            console.error("❌ Missing required data", {
-                correctRoadmapId,
+        if (!extrasRoadmapId || !user?.id) {
+            console.error("❌ Missing required data for jumpstart POST", {
+                extrasRoadmapId,
                 userId: user?.id,
             });
             return;
@@ -1306,13 +1308,17 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
             return;
         }
 
-        console.log("Using Jumpstart roadmapId", correctRoadmapId);
-        console.log("STEP 1: Jumpstart trigger (POST)");
+        console.log("STEP 1: Jumpstart trigger (POST)", {
+            roadmapId: extrasRoadmapId,
+            userId: user.id,
+            nestedRoadMapItemId: nestedForExtras,
+        });
 
         try {
             const response = await triggerJumpstartAsync({
-                roadmapId: correctRoadmapId,
+                roadmapId: extrasRoadmapId,
                 userId: user.id,
+                nestedRoadMapItemId: nestedForExtras,
             });
             console.log("Jumpstart API response:", response);
 
@@ -1376,19 +1382,21 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                 };
             });
 
+            const nestedExtraId = isMongoObjectId(itemId) ? itemId : undefined;
+
             if (extrasAlreadyExistForUser) {
                 await updateExtras.mutateAsync({
                     roadMapId: roadmapId!,
                     payload: { extras: extrasArray },
                     userId: currentUser.id,
-                    nestedRoadMapItemId: itemId,
+                    nestedRoadMapItemId: nestedExtraId,
                 });
             } else {
                 try {
                     await createExtras.mutateAsync({
                         userId: currentUser.id,
                         roadMapId: roadmapId!,
-                        nestedRoadMapItemId: itemId,
+                        nestedRoadMapItemId: nestedExtraId,
                         extras: extrasArray,
                     });
                 } catch (createError: any) {
@@ -1401,7 +1409,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                             roadMapId: roadmapId!,
                             payload: { extras: extrasArray },
                             userId: currentUser.id,
-                            nestedRoadMapItemId: itemId,
+                            nestedRoadMapItemId: nestedExtraId,
                         });
                     } else {
                         throw createError;
@@ -2205,7 +2213,10 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
     const hasOnlyAssessments = task.extras.every((extra: any) => extra.type === 'ASSESSMENT');
 
     const isSaving =
-        createExtras.isPending || updateExtras.isPending || uploadDocument.isPending;
+        createExtras.isPending ||
+        updateExtras.isPending ||
+        uploadDocument.isPending ||
+        isTriggeringJumpstart;
 
     const scheduledMeeting = task.meetings?.find(
         (m) => !String(m?.status ?? '').trim().toLowerCase().startsWith('cancel'),

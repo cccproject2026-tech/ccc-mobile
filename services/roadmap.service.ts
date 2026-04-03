@@ -74,6 +74,7 @@ export const roadmapService = {
     async triggerJumpstartComplete(
         roadmapId: string,
         userId: string,
+        nestedRoadMapItemId?: string,
     ): Promise<{ success: boolean; message: string; alreadyExists?: boolean }> {
         if (!roadmapId) {
             throw new Error("roadmapId is required to trigger jumpstart completion");
@@ -82,13 +83,32 @@ export const roadmapService = {
             throw new Error("userId is required to trigger jumpstart completion");
         }
 
+        // Same ObjectId rules as updateRoadmapExtras / getRoadmapExtras so POST targets the same extras row as PATCH/GET.
+        const validNestedId =
+            nestedRoadMapItemId &&
+            typeof nestedRoadMapItemId === "string" &&
+            nestedRoadMapItemId.trim() !== "" &&
+            nestedRoadMapItemId.length === 24 &&
+            /^[0-9a-fA-F]{24}$/.test(nestedRoadMapItemId)
+                ? nestedRoadMapItemId
+                : undefined;
+
+        const body: {
+            userId: string;
+            extras: { type: string }[];
+            nestedRoadMapItemId?: string;
+        } = {
+            userId,
+            extras: [{ type: "JUMPSTART_COMPLETE" }],
+        };
+        if (validNestedId) {
+            body.nestedRoadMapItemId = validNestedId;
+        }
+
         try {
             const response = await apiClient.post<{ success: boolean; message: string }>(
                 `/roadmaps/${roadmapId}/extras`,
-                {
-                    userId,
-                    extras: [{ type: "JUMPSTART_COMPLETE" }],
-                },
+                body,
             );
 
             if (!response.data?.success) {

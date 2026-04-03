@@ -10,10 +10,20 @@ export const useTriggerJumpstart = () => {
     mutationFn: ({
       roadmapId,
       userId,
+      nestedRoadMapItemId,
     }: {
       roadmapId: string;
       userId: string;
-    }) => roadmapService.triggerJumpstartComplete(roadmapId, userId),
+      nestedRoadMapItemId?: string;
+    }) =>
+      roadmapService.triggerJumpstartComplete(
+        roadmapId,
+        userId,
+        nestedRoadMapItemId,
+      ),
+    // POST /roadmaps/:roadmapId/extras must never be retried automatically.
+    // If it fails (e.g. "Extras already exist"), the caller will handle it and still proceed to PATCH.
+    retry: 0,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: mentorshipSessionKeys.all });
       queryClient.invalidateQueries({ queryKey: pastorSessionKeys.all });

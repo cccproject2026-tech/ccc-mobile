@@ -71,7 +71,10 @@ export default function AnswerQuestionPage() {
   // Submission hooks
   const submitPreSurvey = useSubmitPreSurvey();
   const submitAssessmentAnswers = useSubmitAssessmentAnswers();
-  const { mutateAsync: triggerJumpstartAsync } = useTriggerJumpstart();
+  const {
+    mutateAsync: triggerJumpstartAsync,
+    isPending: isTriggeringJumpstart,
+  } = useTriggerJumpstart();
   const { data: assignedRoadmaps = [] } = useRoadmaps("pastor", user?.id);
   const normalizeRoadmapName = (value: string) =>
     value.toLowerCase().replace(/[\s-]+/g, "");
@@ -378,7 +381,8 @@ export default function AnswerQuestionPage() {
     isLoading ||
     (isViewMode && isLoadingSubmitted) ||
     submitPreSurvey.isPending ||
-    submitAssessmentAnswers.isPending
+    submitAssessmentAnswers.isPending ||
+    isTriggeringJumpstart
   ) {
     return (
       <LinearGradient
