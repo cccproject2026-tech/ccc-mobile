@@ -148,16 +148,32 @@ export const roadmapService = {
             throw new Error("appointmentId is required to complete a session");
         }
 
-        const response = await apiClient.post<{ success: boolean; message: string }>(
+        const response = await apiClient.post<{ success?: boolean; message?: string }>(
             ENDPOINTS.ROADMAPS.COMPLETE_SESSION,
             { appointmentId },
         );
 
-        if (!response.data?.success) {
-            throw new Error(response.data?.message || "Failed to complete session");
+        const status = response.status;
+        const data = response.data;
+
+        // Backend may return 201 with no `success` flag or minimal body — still a successful completion.
+        if (status >= 200 && status < 300) {
+            if (data && typeof data === "object" && data.success === false) {
+                throw new Error(data.message || "Failed to complete session");
+            }
+            return {
+                success: true,
+                message:
+                    (typeof data?.message === "string" && data.message.trim().length > 0
+                        ? data.message
+                        : undefined) ?? "Session completed successfully.",
+            };
         }
 
-        return response.data;
+        throw new Error(
+            (data && typeof data.message === "string" && data.message) ||
+                "Failed to complete session",
+        );
     },
 
     async redoSession(appointmentId: string): Promise<{ success: boolean; message: string }> {
@@ -165,16 +181,31 @@ export const roadmapService = {
             throw new Error("appointmentId is required to redo a session");
         }
 
-        const response = await apiClient.post<{ success: boolean; message: string }>(
+        const response = await apiClient.post<{ success?: boolean; message?: string }>(
             ENDPOINTS.ROADMAPS.REDO_SESSION,
             { appointmentId },
         );
 
-        if (!response.data?.success) {
-            throw new Error(response.data?.message || "Failed to redo session");
+        const status = response.status;
+        const data = response.data;
+
+        if (status >= 200 && status < 300) {
+            if (data && typeof data === "object" && data.success === false) {
+                throw new Error(data.message || "Failed to redo session");
+            }
+            return {
+                success: true,
+                message:
+                    (typeof data?.message === "string" && data.message.trim().length > 0
+                        ? data.message
+                        : undefined) ?? "Session marked for redo.",
+            };
         }
 
-        return response.data;
+        throw new Error(
+            (data && typeof data.message === "string" && data.message) ||
+                "Failed to redo session",
+        );
     },
 
     async getMentorshipSessions(userId: string): Promise<MentorshipSession[]> {

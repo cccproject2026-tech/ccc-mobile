@@ -8,9 +8,22 @@ export const useRedoSession = () => {
 
   return useMutation({
     mutationFn: (appointmentId: string) => roadmapService.redoSession(appointmentId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: mentorshipSessionKeys.all });
-      queryClient.invalidateQueries({ queryKey: pastorSessionKeys.all });
+    retry: 0,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: mentorshipSessionKeys.all,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: pastorSessionKeys.all,
+      });
+      await queryClient.refetchQueries({
+        queryKey: mentorshipSessionKeys.all,
+        type: "active",
+      });
+      await queryClient.refetchQueries({
+        queryKey: pastorSessionKeys.all,
+        type: "active",
+      });
     },
   });
 };

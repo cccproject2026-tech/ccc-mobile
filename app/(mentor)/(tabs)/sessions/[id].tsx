@@ -5,7 +5,7 @@ import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -39,6 +39,8 @@ export default function SessionDetailsScreen() {
   const { mutateAsync: redoSessionAsync, isPending: isRedoing } =
     useRedoSession();
   const isMutating = isCompleting || isRedoing;
+  const completeActionInFlightRef = useRef(false);
+  const redoActionInFlightRef = useRef(false);
 
   const session = useMemo<MentorshipSession | null>(() => {
     if (!sessionId) return null;
@@ -58,6 +60,9 @@ export default function SessionDetailsScreen() {
   };
 
   const handleCompleteSession = async () => {
+    if (isCompleting || completeActionInFlightRef.current) {
+      return;
+    }
     const appointmentId = session?.appointmentId;
     if (!appointmentId) {
       Alert.alert("Missing appointment", "Appointment ID is not available.");
@@ -72,6 +77,10 @@ export default function SessionDetailsScreen() {
         {
           text: "Yes, Complete",
           onPress: async () => {
+            if (completeActionInFlightRef.current) {
+              return;
+            }
+            completeActionInFlightRef.current = true;
             try {
               const response = await completeSessionAsync(appointmentId);
               Alert.alert(
@@ -86,6 +95,8 @@ export default function SessionDetailsScreen() {
                   "Unable to complete this session right now. Please try again.",
                 ),
               );
+            } finally {
+              completeActionInFlightRef.current = false;
             }
           },
         },
@@ -94,6 +105,9 @@ export default function SessionDetailsScreen() {
   };
 
   const handleRedoSession = async () => {
+    if (isRedoing || redoActionInFlightRef.current) {
+      return;
+    }
     const appointmentId = session?.appointmentId;
     if (!appointmentId) {
       Alert.alert("Missing appointment", "Appointment ID is not available.");
@@ -108,6 +122,10 @@ export default function SessionDetailsScreen() {
         {
           text: "Yes, Redo",
           onPress: async () => {
+            if (redoActionInFlightRef.current) {
+              return;
+            }
+            redoActionInFlightRef.current = true;
             try {
               const response = await redoSessionAsync(appointmentId);
               Alert.alert("Success", response.message || "Session marked for redo.");
@@ -119,6 +137,8 @@ export default function SessionDetailsScreen() {
                   "Unable to redo this session right now. Please try again.",
                 ),
               );
+            } finally {
+              redoActionInFlightRef.current = false;
             }
           },
         },
