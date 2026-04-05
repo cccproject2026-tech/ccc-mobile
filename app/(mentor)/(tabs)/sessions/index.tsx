@@ -1,11 +1,21 @@
+import {
+  formatSessionTime,
+  getNextSessionId,
+  sessionCardHighlightStyle,
+  sessionGradientColors,
+  SessionListSkeleton,
+  SessionProgressHeader,
+  SessionStatusBadge,
+} from "@/components/sessions/SessionFlowShared";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -17,28 +27,61 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const SessionRow = ({
   item,
   onPress,
+  isCurrent,
 }: {
   item: MentorshipSession;
   onPress: () => void;
+  isCurrent: boolean;
 }) => {
-  const isCompleted = item.status === "COMPLETED";
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={styles.rowBetween}>
-        <Text style={styles.sessionTitle}>
-          Session {item.sessionNumber}
-          {item.pastorName ? ` · ${item.pastorName}` : ""}
-        </Text>
-        <View
-          style={[
-            styles.statusBadge,
-            isCompleted ? styles.statusCompleted : styles.statusScheduled,
-          ]}
-        >
-          <Text style={styles.statusText}>{item.status}</Text>
+    <Pressable
+      style={[styles.card, sessionCardHighlightStyle(isCurrent)]}
+      onPress={onPress}
+    >
+      <View style={styles.cardTop}>
+        <View style={styles.cardTitleBlock}>
+          <Text style={styles.sessionLabel}>Session {item.sessionNumber}</Text>
+          {isCurrent ? (
+            <View style={styles.currentPill}>
+              <Text style={styles.currentPillText}>Current</Text>
+            </View>
+          ) : null}
         </View>
+        <SessionStatusBadge status={item.status} compact />
       </View>
-      <Text style={styles.dateText}>Scheduled: {formatSessionDate(item.scheduledDate)}</Text>
+
+      <View style={styles.metaBlock}>
+        <View style={styles.metaLine}>
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color="rgba(255,255,255,0.75)"
+          />
+          <Text style={styles.metaText}>{formatSessionDate(item.scheduledDate)}</Text>
+        </View>
+        <View style={styles.metaLine}>
+          <Ionicons
+            name="time-outline"
+            size={16}
+            color="rgba(255,255,255,0.75)"
+          />
+          <Text style={styles.metaText}>
+            {formatSessionTime(item.scheduledDate) || "Time TBD"}
+          </Text>
+        </View>
+        {item.pastorName ? (
+          <View style={styles.metaLine}>
+            <Ionicons
+              name="person-outline"
+              size={16}
+              color="rgba(255,255,255,0.75)"
+            />
+            <Text style={styles.metaText} numberOfLines={1}>
+              Pastor {item.pastorName}
+            </Text>
+          </View>
+        ) : null}
+      </View>
     </Pressable>
   );
 };
@@ -58,17 +101,24 @@ export default function SessionsScreen() {
     return [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber);
   }, [sessions]);
 
+  const nextSessionId = useMemo(
+    () => getNextSessionId(sortedSessions),
+    [sortedSessions],
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
-        <Text style={styles.heading}>Mentorship Sessions</Text>
+      <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
+        <View style={styles.header}>
+          <Text style={styles.heading}>Mentorship Sessions</Text>
+          <Text style={styles.subtitle}>
+            Review sessions with your pastors and track completion.
+          </Text>
+        </View>
 
         {isLoading ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.stateText}>Loading sessions...</Text>
-          </View>
+          <SessionListSkeleton rows={6} />
         ) : isError ? (
           <View style={styles.centerState}>
             <Text style={styles.stateText}>Failed to load sessions.</Text>
@@ -83,20 +133,29 @@ export default function SessionsScreen() {
             <Text style={styles.stateText}>No sessions found.</Text>
           </View>
         ) : (
-          <FlatList
-            data={sortedSessions}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <SessionRow
-                item={item}
-                onPress={() => router.push(`/(mentor)/(tabs)/sessions/${item.id}`)}
-              />
-            )}
-            showsVerticalScrollIndicator={false}
-          />
+          <>
+            <SessionProgressHeader
+              sessions={sortedSessions}
+              nextSessionId={nextSessionId}
+            />
+            <FlatList
+              data={sortedSessions}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.listContent}
+              renderItem={({ item }) => (
+                <SessionRow
+                  item={item}
+                  isCurrent={item.id === nextSessionId}
+                  onPress={() =>
+                    router.push(`/(mentor)/(tabs)/sessions/${item.id}`)
+                  }
+                />
+              )}
+              showsVerticalScrollIndicator={false}
+            />
+          </>
         )}
-      </View>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -106,82 +165,106 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#153C5A",
   },
-  container: {
+  gradient: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
+    paddingBottom: 8,
+  },
+  header: {
+    marginBottom: 8,
   },
   heading: {
     color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 16,
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 8,
   },
   listContent: {
-    paddingBottom: 24,
+    paddingBottom: 28,
   },
   card: {
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.1)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
+    borderColor: "rgba(255,255,255,0.16)",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
   },
-  rowBetween: {
+  cardTop: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 12,
+  },
+  cardTitleBlock: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  sessionLabel: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "800",
+  },
+  currentPill: {
+    backgroundColor: "rgba(250, 204, 21, 0.28)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  currentPillText: {
+    color: "#FDE68A",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+  metaBlock: {
+    gap: 8,
+  },
+  metaLine: {
+    flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  sessionTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  dateText: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 13,
-    marginTop: 8,
-  },
-  statusBadge: {
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  statusScheduled: {
-    backgroundColor: "rgba(56, 189, 248, 0.25)",
-  },
-  statusCompleted: {
-    backgroundColor: "rgba(34, 197, 94, 0.25)",
-  },
-  statusText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.3,
+  metaText: {
+    color: "rgba(255,255,255,0.92)",
+    fontSize: 14,
+    flex: 1,
   },
   centerState: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: 12,
     paddingHorizontal: 20,
+    minHeight: 200,
   },
   stateText: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: 15,
     textAlign: "center",
+    lineHeight: 22,
   },
   retryButton: {
-    marginTop: 6,
+    marginTop: 4,
     backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
   },
   retryText: {
     color: "#153C5A",
-    fontWeight: "700",
+    fontWeight: "800",
+    fontSize: 15,
   },
 });

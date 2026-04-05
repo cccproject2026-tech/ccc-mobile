@@ -1,3 +1,15 @@
+import {
+  ActionsSection,
+  DetailScreenSkeleton,
+  formatSessionTime,
+  getNextSessionId,
+  NoteCard,
+  NotesSection,
+  sessionGradientColors,
+  SessionMetaRow,
+  SessionProgressHeader,
+  SessionStatusBadge,
+} from "@/components/sessions/SessionFlowShared";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
@@ -5,30 +17,13 @@ import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
-import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Toast from "react-native-toast-message";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const NoteCard = ({ title, value }: { title: string; value?: string }) => (
-  <View style={styles.noteCard}>
-    <Text style={styles.noteTitle}>{title}</Text>
-    <Text style={styles.noteText}>
-      {value && value.trim().length > 0 ? value : "No note yet."}
-    </Text>
-  </View>
-);
 
 function normalizeMeetingUrl(raw: string): string {
   const t = raw.trim();
@@ -53,6 +48,16 @@ export default function PastorSessionDetailScreen() {
     mentors.forEach((mentor) => m.set(mentor.id, mentor.name));
     return m;
   }, [mentors]);
+
+  const sortedSessions = useMemo(
+    () => [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber),
+    [sessions],
+  );
+
+  const nextSessionId = useMemo(
+    () => getNextSessionId(sortedSessions),
+    [sortedSessions],
+  );
 
   const session = useMemo<MentorshipSession | null>(() => {
     if (!sessionId) return null;
@@ -82,29 +87,29 @@ export default function PastorSessionDetailScreen() {
     if (!meetingLink) return;
     const url = normalizeMeetingUrl(meetingLink);
     Linking.openURL(url).catch(() => {
-      Alert.alert("Unable to open link", "Check your meeting link in appointments.");
+      Toast.show({
+        type: "floating",
+        position: "top",
+        text1: "Unable to open link",
+        text2: "Check your meeting link in appointments.",
+      });
     });
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={styles.gradient}
-      >
+      <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
         <View style={styles.topRow}>
           <Pressable style={styles.back} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
-          <Text style={styles.heading}>Session Details</Text>
+          <Text style={styles.heading}>Session</Text>
         </View>
 
         {isLoading ? (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.muted}>Loading...</Text>
-          </View>
+          <DetailScreenSkeleton />
         ) : !session ? (
           <View style={styles.center}>
             <Text style={styles.muted}>Session not found.</Text>
@@ -114,44 +119,72 @@ export default function PastorSessionDetailScreen() {
             contentContainerStyle={styles.scroll}
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.summary}>
-              <Text style={styles.sessionTitle}>
-                Session {session.sessionNumber}
-              </Text>
-              <View style={styles.row}>
-                <View
-                  style={[
-                    styles.badge,
-                    session.status === "COMPLETED"
-                      ? styles.badgeDone
-                      : styles.badgeOpen,
-                  ]}
-                >
-                  <Text style={styles.badgeText}>{session.status}</Text>
+            <SessionProgressHeader
+              sessions={sortedSessions}
+              nextSessionId={nextSessionId}
+            />
+
+            <View style={styles.heroCard}>
+              <View style={styles.heroTop}>
+                <View style={styles.heroTitles}>
+                  <Text style={styles.heroKicker}>Session overview</Text>
+                  <Text style={styles.heroTitle}>
+                    Session {session.sessionNumber}
+                  </Text>
                 </View>
+                <SessionStatusBadge status={session.status} />
               </View>
-              <Text style={styles.meta}>
-                Scheduled: {formatSessionDate(session.scheduledDate)}
-              </Text>
+
+              <View style={styles.divider} />
+
+              <SessionMetaRow
+                icon="calendar-outline"
+                label={formatSessionDate(session.scheduledDate)}
+              />
+              <SessionMetaRow
+                icon="time-outline"
+                label={
+                  formatSessionTime(session.scheduledDate) || "Time TBD"
+                }
+              />
               {mentorName ? (
-                <Text style={styles.meta}>Mentor: {mentorName}</Text>
+                <SessionMetaRow
+                  icon="person-outline"
+                  label={`Mentor ${mentorName}`}
+                />
               ) : null}
-              {phase ? <Text style={styles.phase}>{phase}</Text> : null}
+              {phase ? (
+                <Text style={styles.phaseLine}>{phase}</Text>
+              ) : null}
             </View>
 
-            {canJoin ? (
-              <Pressable style={styles.joinBtn} onPress={handleJoin}>
-                <Text style={styles.joinBtnText}>Join Meeting</Text>
-              </Pressable>
-            ) : isScheduled && !meetingLink ? (
-              <Text style={styles.hint}>
-                Meeting link will appear here when your mentor adds it to the
-                appointment.
-              </Text>
-            ) : null}
+            {(canJoin || (isScheduled && !meetingLink)) && (
+              <ActionsSection>
+                {canJoin ? (
+                  <Pressable style={styles.joinBtn} onPress={handleJoin}>
+                    <Ionicons name="videocam" size={22} color="#153C5A" />
+                    <Text style={styles.joinBtnText}>Join meeting</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.hintBox}>
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={20}
+                      color="rgba(255,255,255,0.85)"
+                    />
+                    <Text style={styles.hint}>
+                      Meeting link will appear when your mentor adds it to the
+                      appointment.
+                    </Text>
+                  </View>
+                )}
+              </ActionsSection>
+            )}
 
-            <NoteCard title="Mentor Note" value={session.mentorNote} />
-            <NoteCard title="Pastor Note" value={session.pastorNote} />
+            <NotesSection>
+              <NoteCard title="Mentor note" value={session.mentorNote} />
+              <NoteCard title="Pastor note" value={session.pastorNote} />
+            </NotesSection>
           </ScrollView>
         )}
       </LinearGradient>
@@ -160,73 +193,94 @@ export default function PastorSessionDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, backgroundColor: "#153C5A" },
   gradient: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
   topRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 14,
+    gap: 8,
+    marginBottom: 16,
   },
   back: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.14)",
-    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+    paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 12,
+    gap: 2,
   },
-  backText: { color: "#FFFFFF", fontWeight: "700" },
-  heading: { color: "#FFFFFF", fontSize: 20, fontWeight: "700", flex: 1 },
+  backText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
+  heading: { color: "#FFFFFF", fontSize: 22, fontWeight: "800", flex: 1 },
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
   },
-  muted: { color: "rgba(255,255,255,0.9)", fontSize: 14 },
-  scroll: { paddingBottom: 32, gap: 12 },
-  summary: {
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: 12,
-    padding: 14,
+  muted: { color: "rgba(255,255,255,0.9)", fontSize: 15 },
+  scroll: { paddingBottom: 32, gap: 4 },
+  heroCard: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 16,
+    padding: 18,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.16)",
+    marginBottom: 8,
   },
-  sessionTitle: { color: "#FFFFFF", fontSize: 20, fontWeight: "700" },
-  row: { flexDirection: "row", marginTop: 8 },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+  heroTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
   },
-  badgeOpen: { backgroundColor: "rgba(56, 189, 248, 0.25)" },
-  badgeDone: { backgroundColor: "rgba(34, 197, 94, 0.25)" },
-  badgeText: { color: "#FFFFFF", fontSize: 11, fontWeight: "700" },
-  meta: { color: "rgba(255,255,255,0.9)", fontSize: 14, marginTop: 8 },
-  phase: { color: "rgba(255,255,255,0.7)", fontSize: 13, marginTop: 6 },
+  heroTitles: { flex: 1 },
+  heroKicker: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  heroTitle: { color: "#FFFFFF", fontSize: 22, fontWeight: "800" },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    marginVertical: 14,
+  },
+  phaseLine: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    marginTop: 10,
+    lineHeight: 19,
+  },
   joinBtn: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 15,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
   },
   joinBtnText: { color: "#153C5A", fontSize: 16, fontWeight: "800" },
-  hint: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  noteCard: {
+  hintBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
     backgroundColor: "rgba(255,255,255,0.08)",
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: "rgba(255,255,255,0.14)",
   },
-  noteTitle: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 6,
+  hint: {
+    color: "rgba(255,255,255,0.88)",
+    fontSize: 14,
+    lineHeight: 21,
+    flex: 1,
   },
-  noteText: { color: "#FFFFFF", fontSize: 14, lineHeight: 22 },
 });
