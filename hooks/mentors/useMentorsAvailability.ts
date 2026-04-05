@@ -9,6 +9,134 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 
+/** YYYY-MM-DD from API values (plain date or ISO datetime). */
+export function normalizeAvailabilityDateString(
+    d: string | undefined | null,
+): string {
+    if (!d || typeof d !== "string") return "";
+    const head = d.includes("T") ? d.split("T")[0] : d;
+    return head.length >= 10 ? head.slice(0, 10) : "";
+}
+
+/** Parse a calendar `YYYY-MM-DD` without UTC shift (unlike `new Date("YYYY-MM-DD")`). */
+export function calendarYearMonthFromYmd(ymd: string): {
+    year: number;
+    month: number;
+} | null {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
+    if (!m) return null;
+    const year = parseInt(m[1], 10);
+    const month = parseInt(m[2], 10);
+    if (!year || month < 1 || month > 12) return null;
+    return { year, month };
+}
+
+function calendarDateInMonth(
+    dateStr: string,
+    month: number,
+    year: number,
+): boolean {
+    const n = normalizeAvailabilityDateString(dateStr);
+    if (n.length < 10) return false;
+    const y = parseInt(n.slice(0, 4), 10);
+    const m = parseInt(n.slice(5, 7), 10);
+    return y === year && m === month;
+}
+
+export function slotsFromWeeklyOrMonthlyDay(day: {
+    rawSlots?: TimeSlot[];
+    slots?: TimeSlot[];
+}): TimeSlot[] {
+    const raw = day.rawSlots ?? day.slots;
+    return Array.isArray(raw) ? raw : [];
+}
+
+function dayOfWeekFromYmd(key: string, wsDay: number | undefined): number {
+    if (typeof wsDay === "number" && !Number.isNaN(wsDay)) return wsDay;
+    return new Date(`${key}T12:00:00`).getDay();
+}
+
+function pickRicherAvailabilityDay(
+    monthly: MonthlyAvailabilityDay | undefined,
+    weekly: MonthlyAvailabilityDay | undefined,
+): MonthlyAvailabilityDay | undefined {
+    const mc = monthly?.slots?.length ?? 0;
+    const wc = weekly?.slots?.length ?? 0;
+    // Monthly `/month` often returns one wide window for near-term days; weekly
+    // keeps the real saved hourly blocks. Prefer the side with more segments.
+    if (wc > mc) return weekly;
+    if (mc > wc) return monthly;
+    if (wc > 0) return weekly;
+    return monthly;
+}
+
+/**
+ * Merge monthly `/month` with GET weekly `weeklySlots`.
+ * Near-term days sometimes differ: monthly may collapse to one interval while
+ * weekly has the saved slots — we pick the richer (more slots) representation,
+ * with ties favoring weekly (source of what the mentor saved).
+ */
+export function mergeMonthlyAvailabilityWithWeeklySlotDates(
+    month: number,
+    year: number,
+    monthly: MonthlyAvailabilityDay[] | null | undefined,
+    weeklySlots: any[] | null | undefined,
+): MonthlyAvailabilityDay[] {
+    const monthlyByDate = new Map<string, MonthlyAvailabilityDay>();
+    for (const day of monthly ?? []) {
+        const key = normalizeAvailabilityDateString(day.date);
+        if (!key) continue;
+        const slots = Array.isArray(day.slots) ? day.slots : [];
+        const normalized: MonthlyAvailabilityDay = {
+            ...day,
+            date: key,
+            slots,
+            day: dayOfWeekFromYmd(key, day.day),
+        };
+        const prev = monthlyByDate.get(key);
+        if (!prev || slots.length > (prev.slots?.length ?? 0)) {
+            monthlyByDate.set(key, normalized);
+        }
+    }
+
+    const weeklyByDate = new Map<string, MonthlyAvailabilityDay>();
+    for (const ws of weeklySlots ?? []) {
+        const key = normalizeAvailabilityDateString(ws?.date);
+        if (!key) continue;
+        const slots = slotsFromWeeklyOrMonthlyDay(ws);
+        if (slots.length === 0) continue;
+        const dow = dayOfWeekFromYmd(key, ws?.day);
+        const normalized: MonthlyAvailabilityDay = {
+            date: key,
+            day: dow,
+            slots,
+        };
+        const prev = weeklyByDate.get(key);
+        if (!prev || slots.length > (prev.slots?.length ?? 0)) {
+            weeklyByDate.set(key, normalized);
+        }
+    }
+
+    const keys = new Set<string>([
+        ...monthlyByDate.keys(),
+        ...weeklyByDate.keys(),
+    ]);
+    const out: MonthlyAvailabilityDay[] = [];
+
+    for (const key of keys) {
+        if (!calendarDateInMonth(key, month, year)) continue;
+        const chosen = pickRicherAvailabilityDay(
+            monthlyByDate.get(key),
+            weeklyByDate.get(key),
+        );
+        if (chosen && (chosen.slots?.length ?? 0) > 0) {
+            out.push(chosen);
+        }
+    }
+
+    return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 // Default time slots for users who don't set their own availability (e.g., Pastors)
 export const DEFAULT_TIME_SLOTS: TimeSlot[] = [
   {

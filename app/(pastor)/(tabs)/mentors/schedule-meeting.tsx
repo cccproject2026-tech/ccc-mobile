@@ -22,7 +22,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
-import { formatTimeSlot, useWeeklyAvailability } from "@/hooks/mentors/useMentorsAvailability";
+import {
+  formatTimeSlot,
+  normalizeAvailabilityDateString,
+  slotsFromWeeklyOrMonthlyDay,
+  useWeeklyAvailability,
+} from "@/hooks/mentors/useMentorsAvailability";
 import { appointmentService } from "@/services/appointments.service";
 import { useAuthStore } from "@/stores";
 import { TimeSlot as APITimeSlot } from "@/types/appointment.types";
@@ -96,16 +101,17 @@ const ScheduleMeeting = () => {
   const [showMeetingOptions, setShowMeetingOptions] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Normalize API date to YYYY-MM-DD
+  // Calendar YYYY-MM-DD (avoid UTC shift from Date#toISOString on date-only strings)
   const toDateString = (value: string) =>
-    new Date(value).toISOString().slice(0, 10);
+    normalizeAvailabilityDateString(value);
 
-  // Build availableDates ONLY from weeklySlots.rawSlots (no monthly API)
+  // Build availableDates from weeklySlots (API may use `slots` or `rawSlots`)
   const availableDates = useMemo(() => {
     if (!weeklySlots) return [];
     return weeklySlots
-      .filter((day: any) => Array.isArray(day?.rawSlots) && day.rawSlots.length > 0)
-      .map((day: any) => toDateString(day.date));
+      .filter((day: any) => slotsFromWeeklyOrMonthlyDay(day).length > 0)
+      .map((day: any) => toDateString(day.date))
+      .filter((d: string) => d.length >= 10);
   }, [weeklySlots]);
 
   useEffect(() => {
@@ -120,11 +126,10 @@ const ScheduleMeeting = () => {
     if (!weeklySlots) return [];
     const daysSet = new Set(
       weeklySlots
-        .filter(
-          (day: any) =>
-            Array.isArray(day?.rawSlots) && day.rawSlots.length > 0,
-        )
-        .map((day: any) => new Date(day.date).getDay()),
+        .filter((day: any) => slotsFromWeeklyOrMonthlyDay(day).length > 0)
+        .map((day: any) =>
+          new Date(`${toDateString(day.date)}T12:00:00`).getDay(),
+        ),
     );
     return Array.from(daysSet);
   }, [weeklySlots]);
@@ -137,8 +142,8 @@ const ScheduleMeeting = () => {
       const dayData = weeklySlots.find(
         (day: any) => toDateString(day.date) === dateString,
       ) as any;
-      const slots: APITimeSlot[] = Array.isArray(dayData?.rawSlots)
-        ? dayData.rawSlots
+      const slots: APITimeSlot[] = dayData
+        ? slotsFromWeeklyOrMonthlyDay(dayData)
         : [];
 
       if (slots.length === 0) return [];

@@ -1,50 +1,50 @@
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
 import {
-  formatTimeSlot,
-  useMonthlyAvailability,
-  useWeeklyAvailability,
+    formatTimeSlot,
+    useMonthlyAvailability,
+    useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
 import { useUsersByRole } from "@/hooks/useUsersByRole";
 import { useAuthStore } from "@/stores";
 import {
-  TimeSlot as APITimeSlot,
-  Appointment,
-  AppointmentPlatform,
+    TimeSlot as APITimeSlot,
+    Appointment,
+    AppointmentPlatform,
 } from "@/types/appointment.types";
 import { UserRole } from "@/types/auth.types";
 import {
-  getFontSize,
-  getIconSize,
-  getSpacing,
-  isSmallDevice,
+    getFontSize,
+    getIconSize,
+    getSpacing,
+    isSmallDevice,
 } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  BottomSheetBackdrop,
-  BottomSheetFlatList,
-  BottomSheetModal,
-  BottomSheetScrollView,
+    BottomSheetBackdrop,
+    BottomSheetFlatList,
+    BottomSheetModal,
+    BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    forwardRef,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    FlatList,
+    Image,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GradientCalendar from "../atom/calendar";

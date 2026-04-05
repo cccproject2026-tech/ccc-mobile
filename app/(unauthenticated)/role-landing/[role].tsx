@@ -55,6 +55,10 @@ export default function RoleLandingScreen() {
         }
     };
 
+    const handleSkipToLogin = () => {
+        router.replace("/(unauthenticated)/login-form");
+    };
+
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
@@ -67,13 +71,21 @@ export default function RoleLandingScreen() {
                 <View style={styles.bgCircleTop} />
                 <View style={styles.bgCircleBottom} />
 
-                {/* Top-left back icon */}
+                {/* Top bar: back + skip to login */}
                 <Pressable
                     onPress={handleBackPress}
                     style={[styles.backButton, { top: top + 8 }]}
                     hitSlop={10}
                 >
                     <Ionicons name="chevron-back" size={26} color="#fff" />
+                </Pressable>
+
+                <Pressable
+                    onPress={handleSkipToLogin}
+                    style={[styles.skipButton, { top: top + 8 }]}
+                    hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+                >
+                    <Text style={styles.skipButtonText}>Skip</Text>
                 </Pressable>
 
                 <View style={styles.center}>
@@ -189,6 +201,24 @@ const styles = StyleSheet.create({
         zIndex: 10,
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.22)",
+    },
+    skipButton: {
+        position: "absolute",
+        right: 14,
+        paddingVertical: 6,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        backgroundColor: "rgba(255,255,255,0.12)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.22)",
+        zIndex: 10,
+        justifyContent: "center",
+    },
+    skipButtonText: {
+        color: "rgba(255,255,255,0.95)",
+        fontSize: 15,
+        fontWeight: "600",
+        letterSpacing: 0.3,
     },
     bgCircleTop: {
         position: "absolute",

@@ -1,6 +1,7 @@
 import GradientCalendar from "@/components/atom/calendar"
 import {
   formatTimeSlot,
+  mergeMonthlyAvailabilityWithWeeklySlotDates,
   useMonthlyAvailability,
   useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability"
@@ -118,42 +119,21 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
       return out
     }, [weeklySlots, currentMonth, currentYear])
 
-    const fallbackMonthlyFromWeekly = useMemo(() => {
-      if (!weeklySlots?.length) return []
-      return weeklySlots
-        .map((slotDay: any) => {
-          const rawDate = slotDay?.date
-          const dateStr =
-            typeof rawDate === "string" && rawDate.includes("T")
-              ? rawDate.split("T")[0]
-              : rawDate
-          if (typeof dateStr !== "string" || dateStr.length < 10) return null
-          const [y, m] = dateStr.split("-").map((v) => parseInt(v, 10))
-          if (y !== currentYear || m !== currentMonth) return null
-          // Some APIs return `rawSlots`, others return `slots`.
-          const rawSlotsCandidate = slotDay?.rawSlots ?? slotDay?.slots
-          const rawSlots = Array.isArray(rawSlotsCandidate)
-            ? rawSlotsCandidate
-            : []
-          return {
-            date: dateStr,
-            day: typeof slotDay?.day === "number" ? slotDay.day : new Date(dateStr).getDay(),
-            rawSlots,
-            slots: rawSlots,
-          }
-        })
-        .filter(Boolean) as any[]
-    }, [weeklySlots, currentMonth, currentYear])
+    const mergedMonthlyAndWeekly = useMemo(
+      () =>
+        mergeMonthlyAvailabilityWithWeeklySlotDates(
+          currentMonth,
+          currentYear,
+          availability,
+          weeklySlots,
+        ),
+      [availability, weeklySlots, currentMonth, currentYear],
+    )
 
     const effectiveAvailability = useMemo(() => {
-      if (availability && availability.length > 0) return availability
-      if (fallbackMonthlyFromWeekly.length > 0) return fallbackMonthlyFromWeekly
+      if (mergedMonthlyAndWeekly.length > 0) return mergedMonthlyAndWeekly
       return generatedMonthlyFromWeeklyPattern
-    }, [
-      availability,
-      fallbackMonthlyFromWeekly,
-      generatedMonthlyFromWeeklyPattern,
-    ])
+    }, [mergedMonthlyAndWeekly, generatedMonthlyFromWeeklyPattern])
 
     const availableDates = useMemo(() => {
       if (!effectiveAvailability?.length) return []

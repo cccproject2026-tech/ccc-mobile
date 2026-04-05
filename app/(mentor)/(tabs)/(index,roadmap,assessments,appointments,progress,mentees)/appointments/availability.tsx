@@ -4,15 +4,19 @@ import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import {
+  calendarYearMonthFromYmd,
+  mergeMonthlyAvailabilityWithWeeklySlotDates,
   useMonthlyAvailability,
   useSetAvailability,
+  useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
 import { useAuthStore } from "@/stores/auth.store";
 import { SetAvailabilityPayload } from "@/types/appointment.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { format } from "date-fns";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -43,8 +47,8 @@ const AvailabilityScreen = () => {
   const { bottom } = useSafeAreaInsets();
   const { user } = useAuthStore();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
+  const [selectedDate, setSelectedDate] = useState<string>(() =>
+    format(new Date(), "yyyy-MM-dd"),
   );
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [activeTab, setActiveTab] = useState<"appointments" | "availability">(
@@ -58,9 +62,14 @@ const AvailabilityScreen = () => {
     }, []),
   );
 
-  const selectedDateObj = new Date(selectedDate);
-  const month = selectedDateObj.getMonth() + 1;
-  const year = selectedDateObj.getFullYear();
+  // Calendar strip uses local YYYY-MM-DD; never derive month/year from
+  // `new Date("YYYY-MM-DD")` (UTC midnight shifts month on some timezones).
+  const { month, year } = useMemo(() => {
+    const parsed = calendarYearMonthFromYmd(selectedDate);
+    if (parsed) return parsed;
+    const now = new Date();
+    return { month: now.getMonth() + 1, year: now.getFullYear() };
+  }, [selectedDate]);
   const mentorId = user?.id;
   const shouldFetchAvailability = Boolean(mentorId);
   const { availability: apiAvailability, isLoading: isLoadingAvailability } =
@@ -75,14 +84,25 @@ const AvailabilityScreen = () => {
       },
     );
 
+  const { availability: weeklyAvailabilityApi } = useWeeklyAvailability(
+    shouldFetchAvailability ? (mentorId as string) : null,
+    { enabled: shouldFetchAvailability, role: "mentor" },
+  );
+
   const [dateAvailabilities, setDateAvailabilities] =
     React.useState<DateAvailability[]>([]);
 
   useEffect(() => {
-    const mapped: DateAvailability[] = (apiAvailability ?? []).map((day) => ({
+    const merged = mergeMonthlyAvailabilityWithWeeklySlotDates(
+      month,
+      year,
+      apiAvailability,
+      weeklyAvailabilityApi?.weeklySlots,
+    );
+    const mapped: DateAvailability[] = merged.map((day) => ({
       date: day.date,
-      slots: day.slots.map((s) => ({
-        id: s._id,
+      slots: day.slots.map((s, idx) => ({
+        id: s._id ?? `${day.date}-${idx}`,
         start: `${s.startTime} ${s.startPeriod}`,
         end: `${s.endTime} ${s.endPeriod}`,
       })),
@@ -90,7 +110,7 @@ const AvailabilityScreen = () => {
 
     // Always sync local state so stale month/day slots do not remain visible.
     setDateAvailabilities(mapped);
-  }, [apiAvailability]);
+  }, [apiAvailability, weeklyAvailabilityApi?.weeklySlots, month, year]);
   useEffect(() => {
     if (searchQuery.length !== 10) return;
 
@@ -393,8 +413,7 @@ const AvailabilityScreen = () => {
         cleanedDateAvailabilities
           .filter((day) => day.slots.length > 0)
           .map((day) => {
-            const jsDate = new Date(day.date);
-            const dayNumber = jsDate.getDay();
+            const dayNumber = new Date(`${day.date}T12:00:00`).getDay();
 
             const slots = day.slots
               .map((slot) => {
