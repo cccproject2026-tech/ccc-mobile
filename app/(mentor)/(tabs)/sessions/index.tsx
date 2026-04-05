@@ -7,10 +7,12 @@ import {
   SessionProgressHeader,
   SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
+import { Colors } from "@/constants/Colors";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
@@ -22,7 +24,10 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 const SessionRow = ({
   item,
@@ -86,9 +91,14 @@ const SessionRow = ({
   );
 };
 
+const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
+
 export default function SessionsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const listBottomPad = tabBarHeight + Math.max(insets.bottom, 12) + 8;
   const {
     data: sessions = [],
     isLoading,
@@ -107,7 +117,10 @@ export default function SessionsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: TAB_SCENE_BOTTOM }]}
+      edges={["top"]}
+    >
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
         <View style={styles.header}>
@@ -118,9 +131,11 @@ export default function SessionsScreen() {
         </View>
 
         {isLoading ? (
-          <SessionListSkeleton rows={6} />
+          <View style={styles.fillRest}>
+            <SessionListSkeleton rows={6} />
+          </View>
         ) : isError ? (
-          <View style={styles.centerState}>
+          <View style={[styles.centerState, styles.fillRest]}>
             <Text style={styles.stateText}>Failed to load sessions.</Text>
             <Pressable onPress={() => refetch()} style={styles.retryButton}>
               <Text style={styles.retryText}>
@@ -129,7 +144,7 @@ export default function SessionsScreen() {
             </Pressable>
           </View>
         ) : sortedSessions.length === 0 ? (
-          <View style={styles.centerState}>
+          <View style={[styles.centerState, styles.fillRest]}>
             <Text style={styles.stateText}>No sessions found.</Text>
           </View>
         ) : (
@@ -139,9 +154,16 @@ export default function SessionsScreen() {
               nextSessionId={nextSessionId}
             />
             <FlatList
+              style={styles.listFlex}
               data={sortedSessions}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={[
+                styles.listContent,
+                {
+                  flexGrow: 1,
+                  paddingBottom: listBottomPad,
+                },
+              ]}
               renderItem={({ item }) => (
                 <SessionRow
                   item={item}
@@ -163,13 +185,17 @@ export default function SessionsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#153C5A",
   },
   gradient: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 8,
+  },
+  fillRest: {
+    flex: 1,
+  },
+  listFlex: {
+    flex: 1,
   },
   header: {
     marginBottom: 8,
@@ -187,7 +213,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   listContent: {
-    paddingBottom: 28,
+    paddingTop: 0,
   },
   card: {
     backgroundColor: "rgba(255,255,255,0.1)",

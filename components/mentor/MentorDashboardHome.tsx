@@ -163,6 +163,13 @@ export default function MentorDashboardHome() {
   );
 
   const displayedFocusSections = useMemo(() => {
+    if (focusSheetSectionId === "mentorship-sessions-today") {
+      return sections.filter(
+        (s) =>
+          s.id === "mentorship-sessions-today" ||
+          s.id === "mentorship-program-upcoming",
+      );
+    }
     if (!focusSheetSectionId) return sections;
     return sections.filter((s) => s.id === focusSheetSectionId);
   }, [focusSheetSectionId, sections]);

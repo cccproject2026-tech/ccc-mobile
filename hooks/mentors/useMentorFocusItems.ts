@@ -3,10 +3,12 @@ import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { useAssessments } from "@/hooks/assessments/useAssessments";
+import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useAuthStore } from "@/stores";
 import { assessmentService } from "@/services/assessment.service";
 import { roadmapService } from "@/services/roadmap.service";
 import type { Appointment } from "@/types/appointment.types";
+import { formatSessionDate } from "@/utils/date";
 import { format } from "date-fns";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -51,9 +53,13 @@ export const useMentorFocusItems = () => {
   const {
     appointments,
     isLoading: isLoadingAppointments,
-    getAppointmentsByDate,
     getUpcomingAppointments,
   } = useAppointments({ mentorId });
+
+  const {
+    data: mentorshipProgramSessions = [],
+    isLoading: isLoadingMentorshipSessions,
+  } = useMentorshipSessions(mentorId);
 
   // Assigned mentees (these are the "Pastors" the mentor supports)
   const {
@@ -99,27 +105,80 @@ export const useMentorFocusItems = () => {
     return map;
   }, [assessments]);
 
-  const mentorshipSessionsToday = useMemo(() => {
-    if (!appointments?.length) return [];
-    const todays = getAppointmentsByDate(todayISO).sort((a, b) => toEpochMs(a.meetingDate) - toEpochMs(b.meetingDate));
+  const startOfTodayLocal = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
+
+  /** Roadmap mentorship sessions (same source as Sessions tab) — today. */
+  const mentorshipProgramTodayItems = useMemo((): PastorFocusItem[] => {
+    const list = mentorshipProgramSessions
+      .filter((session) => {
+        const date = new Date(session.scheduledDate);
+        if (Number.isNaN(date.getTime())) return false;
+        return date.toDateString() === startOfTodayLocal.toDateString();
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.scheduledDate).getTime() -
+          new Date(b.scheduledDate).getTime(),
+      );
     return clampByLimit(
-      todays.map((apt: Appointment) => {
-        const pastorName = menteeNameById.get(apt.userId) ?? "Pastor";
+      list.map((session) => {
+        const pastor = session.pastorName?.trim()
+          ? session.pastorName
+          : "Pastor";
         return {
-          id: `mentor-today-session-${apt.id}`,
-          title: "Mentorship session",
-          description: `Meeting starts ${formatDateTime(apt.meetingDate)}.`,
-          meta: `${pastorName} • ${apt.platform}`,
+          id: `mentorship-program-today-${session.id}`,
+          title: `Session ${session.sessionNumber}`,
+          description: `${formatSessionDate(session.scheduledDate)} • ${session.status}`,
+          meta: pastor,
           accentColor: "#38BDF8",
           route: {
-            pathname: "/appointments",
+            pathname: `/(mentor)/(tabs)/sessions/${session.id}`,
             params: {},
           },
         } as PastorFocusItem;
       }),
       MAX_ITEMS_PER_SECTION,
     );
-  }, [appointments, getAppointmentsByDate, todayISO, menteeNameById]);
+  }, [mentorshipProgramSessions, startOfTodayLocal]);
+
+  /** Sessions after today (aligned with mentor dashboard “Upcoming”). */
+  const mentorshipProgramUpcomingItems = useMemo((): PastorFocusItem[] => {
+    const dayEnd =
+      startOfTodayLocal.getTime() + 24 * 60 * 60 * 1000;
+    const list = mentorshipProgramSessions
+      .filter((session) => {
+        const date = new Date(session.scheduledDate);
+        if (Number.isNaN(date.getTime())) return false;
+        return date.getTime() > dayEnd;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.scheduledDate).getTime() -
+          new Date(b.scheduledDate).getTime(),
+      );
+    return clampByLimit(
+      list.map((session) => {
+        const pastor = session.pastorName?.trim()
+          ? session.pastorName
+          : "Pastor";
+        return {
+          id: `mentorship-program-upcoming-${session.id}`,
+          title: `Session ${session.sessionNumber}`,
+          description: `${formatSessionDate(session.scheduledDate)} • ${session.status}`,
+          meta: pastor,
+          accentColor: "#22C55E",
+          route: {
+            pathname: `/(mentor)/(tabs)/sessions/${session.id}`,
+            params: {},
+          },
+        } as PastorFocusItem;
+      }),
+      MAX_ITEMS_PER_SECTION,
+    );
+  }, [mentorshipProgramSessions, startOfTodayLocal]);
 
   const otherMeetings = useMemo(() => {
     if (!appointments?.length) return [];
@@ -322,9 +381,15 @@ export const useMentorFocusItems = () => {
     return [
       {
         id: "mentorship-sessions-today",
-        title: "Today's Mentorship Sessions",
-        emptyMessage: "No mentorship sessions today.",
-        items: mentorshipSessionsToday,
+        title: "Today",
+        emptyMessage: "No mentorship sessions scheduled for today.",
+        items: mentorshipProgramTodayItems,
+      },
+      {
+        id: "mentorship-program-upcoming",
+        title: "Upcoming",
+        emptyMessage: "No upcoming mentorship sessions.",
+        items: mentorshipProgramUpcomingItems,
       },
       {
         id: "other-meetings",
@@ -345,7 +410,13 @@ export const useMentorFocusItems = () => {
         items: surveySubmissions,
       },
     ];
-  }, [focusResult?.pastorQueries, focusResult?.surveySubmissions, mentorshipSessionsToday, otherMeetings]);
+  }, [
+    focusResult?.pastorQueries,
+    focusResult?.surveySubmissions,
+    mentorshipProgramTodayItems,
+    mentorshipProgramUpcomingItems,
+    otherMeetings,
+  ]);
 
   const isLoading =
     isLoadingAppointments ||
@@ -353,6 +424,7 @@ export const useMentorFocusItems = () => {
     allRoadmapsQuery.isLoading ||
     isLoadingAssessments ||
     isLoadingFocusResult ||
+    isLoadingMentorshipSessions ||
     false;
 
   return { sections, isLoading };

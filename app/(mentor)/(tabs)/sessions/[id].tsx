@@ -11,6 +11,7 @@ import {
   SessionProgressHeader,
   SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
+import { Colors } from "@/constants/Colors";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
@@ -30,11 +31,20 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+
+const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 
 export default function SessionDetailsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const scrollBottomPad = tabBarHeight + Math.max(insets.bottom, 12) + 16;
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const sessionId = Array.isArray(id) ? id[0] : id;
   const { data: sessions = [], isLoading: isLoadingSessions } =
@@ -186,7 +196,10 @@ export default function SessionDetailsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: TAB_SCENE_BOTTOM }]}
+      edges={["top"]}
+    >
       <Stack.Screen options={{ headerShown: false }} />
       <SessionConfirmModal
         visible={confirmKind !== null}
@@ -204,9 +217,11 @@ export default function SessionDetailsScreen() {
         </View>
 
         {isLoadingSessions ? (
-          <DetailScreenSkeleton />
+          <View style={styles.fillRest}>
+            <DetailScreenSkeleton />
+          </View>
         ) : !session ? (
-          <View style={styles.emptyWrap}>
+          <View style={[styles.emptyWrap, styles.fillRest]}>
             <Text style={styles.emptyText}>
               Session details are not available right now.
             </Text>
@@ -223,7 +238,11 @@ export default function SessionDetailsScreen() {
           </View>
         ) : (
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            style={styles.scrollFlex}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: scrollBottomPad },
+            ]}
             showsVerticalScrollIndicator={false}
           >
             <SessionProgressHeader
@@ -318,13 +337,14 @@ export default function SessionDetailsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#153C5A",
   },
   gradient: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 8,
   },
+  fillRest: { flex: 1 },
+  scrollFlex: { flex: 1 },
   topRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -367,7 +387,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   scrollContent: {
-    paddingBottom: 32,
+    flexGrow: 1,
     gap: 4,
   },
   heroCard: {
