@@ -1,15 +1,15 @@
 import {
-  ActionsSection,
-  DetailScreenSkeleton,
-  formatSessionTime,
-  getNextSessionId,
-  NoteCard,
-  NotesSection,
-  SessionConfirmModal,
-  sessionGradientColors,
-  SessionMetaRow,
-  SessionProgressHeader,
-  SessionStatusBadge,
+    ActionsSection,
+    DetailScreenSkeleton,
+    formatSessionTime,
+    getNextSessionId,
+    NoteCard,
+    NotesSection,
+    SessionConfirmModal,
+    sessionGradientColors,
+    SessionMetaRow,
+    SessionProgressHeader,
+    SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
 import { Colors } from "@/constants/Colors";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
@@ -19,23 +19,23 @@ import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
-import Toast from "react-native-toast-message";
 import {
-  SafeAreaView,
-  useSafeAreaInsets,
+    SafeAreaView,
+    useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import Toast from "react-native-toast-message";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 
@@ -287,45 +287,49 @@ export default function SessionDetailsScreen() {
             </NotesSection>
 
             <ActionsSection>
-              <Pressable
-                style={[
-                  styles.primaryBtn,
-                  (!canComplete || isMutating) && styles.btnDisabled,
-                ]}
-                onPress={handleCompleteSession}
-                disabled={!canComplete || isMutating}
-              >
-                {isCompleting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
-                    <Text style={styles.primaryBtnText}>
-                      {isCompleted ? "Session completed" : "Complete session"}
-                    </Text>
-                  </>
-                )}
-              </Pressable>
+              <View style={styles.sessionActionStack}>
+                <Pressable
+                  style={[
+                    styles.primaryBtn,
+                    (!canComplete || isMutating) && styles.btnDisabled,
+                  ]}
+                  onPress={handleCompleteSession}
+                  disabled={!canComplete || isMutating}
+                >
+                  {isCompleting ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <View style={styles.primaryIconBadge}>
+                        <Ionicons name="checkmark" size={17} color="#15803D" />
+                      </View>
+                      <Text style={styles.primaryBtnText}>
+                        {isCompleted ? "Session completed" : "Complete session"}
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
 
-              <Pressable
-                style={[
-                  styles.secondaryBtn,
-                  (!canRedo || isMutating) && styles.btnDisabled,
-                ]}
-                onPress={handleRedoSession}
-                disabled={!canRedo || isMutating}
-              >
-                {isRedoing ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Ionicons name="refresh" size={20} color="#FFFFFF" />
-                    <Text style={styles.secondaryBtnText}>
-                      {isCompleted ? "Redo unavailable" : "Redo session"}
-                    </Text>
-                  </>
-                )}
-              </Pressable>
+                <Pressable
+                  style={[
+                    styles.secondaryBtn,
+                    (!canRedo || isMutating) && styles.btnDisabled,
+                  ]}
+                  onPress={handleRedoSession}
+                  disabled={!canRedo || isMutating}
+                >
+                  {isRedoing ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="refresh" size={22} color="#FFFFFF" />
+                      <Text style={styles.secondaryBtnText}>
+                        {isCompleted ? "Redo unavailable" : "Redo session"}
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
             </ActionsSection>
           </ScrollView>
         )}
@@ -422,14 +426,28 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.14)",
     marginVertical: 14,
   },
+  sessionActionStack: {
+    width: "100%",
+    gap: 14,
+  },
   primaryBtn: {
-    backgroundColor: "#16A34A",
-    borderRadius: 14,
-    paddingVertical: 15,
+    backgroundColor: "#22C55E",
+    borderRadius: 999,
+    paddingVertical: 16,
+    minHeight: 54,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
+    alignSelf: "stretch",
+  },
+  primaryIconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   primaryBtnText: {
     color: "#FFFFFF",
@@ -437,15 +455,17 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   secondaryBtn: {
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.1)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.28)",
-    borderRadius: 14,
-    paddingVertical: 15,
+    borderColor: "rgba(255,255,255,0.45)",
+    borderRadius: 999,
+    paddingVertical: 16,
+    minHeight: 54,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
+    alignSelf: "stretch",
   },
   secondaryBtnText: {
     color: "#FFFFFF",

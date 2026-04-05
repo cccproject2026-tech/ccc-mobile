@@ -12,6 +12,8 @@ export interface MentorshipSession {
   pastorId?: string;
   /** Display name for mentor UI when aggregating multiple pastors */
   pastorName?: string;
+  /** Profile image URL from assigned mentee record (mentor aggregate sessions only) */
+  pastorProfilePicture?: string;
 }
 
 export interface MentorshipSessionsApiResponse {

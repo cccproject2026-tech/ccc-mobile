@@ -293,11 +293,17 @@ export const roadmapService = {
                         pastor
                             ? `${pastor.firstName ?? ""} ${pastor.lastName ?? ""}`.trim() || "Pastor"
                             : "Pastor";
+                    const rawPic = pastor?.profilePicture;
+                    const pastorProfilePicture =
+                        typeof rawPic === "string" && rawPic.trim().length > 0
+                            ? rawPic.trim()
+                            : undefined;
 
                     return sessions.map((s, idx) => ({
                         ...s,
                         pastorId,
                         pastorName,
+                        pastorProfilePicture,
                         id: `${pastorId}-${s.sessionNumber}-${s.appointmentId ?? idx}`,
                     }));
                 } catch (e) {
