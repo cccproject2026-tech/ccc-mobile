@@ -2,12 +2,9 @@ import ExploreCard from "@/components/director/ExploreCard";
 import HeaderHero from "@/components/director/HeroHeader";
 import WelcomeCard from "@/components/director/WelcomeCard";
 import { PastorFocusBottomSheet, type PastorFocusItem } from "@/components/sheets/PastorFocusBottomSheet";
-import { useMentorFocusItems } from "@/hooks/mentors/useMentorFocusItems";
-import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
-import { useAuthStore } from "@/stores";
-import { MentorshipSession } from "@/types/session.types";
-import { formatSessionDate } from "@/utils/date";
 import { icons } from "@/constants/images";
+import { useMentorFocusItems } from "@/hooks/mentors/useMentorFocusItems";
+import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -23,7 +20,7 @@ import {
   View,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import Animated, { FadeInDown, FadeInUp, useAnimatedRef, useScrollViewOffset } from "react-native-reanimated";
+import Animated, { FadeInUp, useAnimatedRef, useScrollViewOffset } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const EXPLORE_TILES = [
@@ -31,6 +28,11 @@ const EXPLORE_TILES = [
     icon: "document-text-outline",
     title: "Session\nNotes",
     route: "/(mentor)/(tabs)/profile/notes",
+  },
+  {
+    icon: "calendar-outline",
+    title: "Mentorship\nSessions",
+    route: "/(mentor)/(tabs)/sessions",
   },
   {
     icon: "people-outline",
@@ -79,47 +81,6 @@ export default function MentorDashboardHome() {
   }, [greetingPeriod]);
 
   const { sections, isLoading } = useMentorFocusItems();
-  const { data: sessions = [] } = useMentorshipSessions(user?.id);
-
-  const startOfToday = useMemo(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  }, []);
-
-  const todaysSessions = useMemo(() => {
-    return sessions
-      .filter((session) => {
-        const date = new Date(session.scheduledDate);
-        if (Number.isNaN(date.getTime())) return false;
-        return date.toDateString() === startOfToday.toDateString();
-      })
-      .sort(
-        (a, b) =>
-          new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime(),
-      )
-      .slice(0, 3);
-  }, [sessions, startOfToday]);
-
-  const upcomingSessions = useMemo(() => {
-    return sessions
-      .filter((session) => {
-        const date = new Date(session.scheduledDate);
-        if (Number.isNaN(date.getTime())) return false;
-        return date.getTime() > startOfToday.getTime() + 24 * 60 * 60 * 1000;
-      })
-      .sort(
-        (a, b) =>
-          new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime(),
-      )
-      .slice(0, 3);
-  }, [sessions, startOfToday]);
-
-  const openSessionDetails = useCallback(
-    (session: MentorshipSession) => {
-      router.push(`/(mentor)/(tabs)/sessions/${session.id}`);
-    },
-    [router],
-  );
 
   const heroHeight = Math.min(210, Math.max(162, Math.round(windowHeight * 0.22)));
 
@@ -294,94 +255,17 @@ export default function MentorDashboardHome() {
                   </Text>
                 </View>
                 <View style={styles.howToActions}>
-                  <Pressable style={styles.helpButtonCompact} onPress={() => router.push("/(mentor)/(tabs)/resources" as any)}>
+                  <Pressable
+                    style={styles.helpButtonCompact}
+                    onPress={() =>
+                      router.push("/(mentor)/(tabs)/support/contact-information" as any)
+                    }
+                  >
                     <Ionicons name="help-circle-outline" size={15} color="#fff" />
                     <Text style={styles.helpButtonCompactText}>Help</Text>
                   </Pressable>
-                  <Pressable style={styles.helpButtonCompact} onPress={() => router.push("/(mentor)/(tabs)/sessions" as any)}>
-                    <Ionicons name="calendar-outline" size={15} color="#fff" />
-                    <Text style={styles.helpButtonCompactText}>Sessions</Text>
-                  </Pressable>
                 </View>
               </View>
-            </Animated.View>
-
-            <Animated.View entering={FadeInUp.delay(120).springify()} style={styles.sessionsCard}>
-              <View style={styles.sectionTitleRow}>
-                <View style={styles.sectionTitleIconWrap}>
-                  <Ionicons name="calendar-clear-outline" size={18} color="#fff" />
-                </View>
-                <Text style={styles.sectionTitleText}>Mentorship Sessions</Text>
-              </View>
-
-              <View style={styles.sessionGroup}>
-                <Text style={styles.sessionGroupTitle}>Today&apos;s Sessions</Text>
-                {todaysSessions.length === 0 ? (
-                  <Text style={styles.sessionEmpty}>No sessions scheduled for today.</Text>
-                ) : (
-                  todaysSessions.map((session) => (
-                    <Pressable
-                      key={`today-${session.id}`}
-                      style={styles.sessionItem}
-                      onPress={() => openSessionDetails(session)}
-                    >
-                      <Text style={styles.sessionItemTitle}>
-                        Session {session.sessionNumber}
-                        {session.pastorName ? ` · ${session.pastorName}` : ""}
-                      </Text>
-                      <Text style={styles.sessionItemMeta}>
-                        {formatSessionDate(session.scheduledDate)}{" "}
-                        • {session.status}
-                      </Text>
-                    </Pressable>
-                  ))
-                )}
-              </View>
-
-              <View style={styles.sessionGroup}>
-                <Text style={styles.sessionGroupTitle}>Upcoming Sessions</Text>
-                {upcomingSessions.length === 0 ? (
-                  <Text style={styles.sessionEmpty}>No upcoming sessions.</Text>
-                ) : (
-                  upcomingSessions.map((session) => (
-                    <Pressable
-                      key={`upcoming-${session.id}`}
-                      style={styles.sessionItem}
-                      onPress={() => openSessionDetails(session)}
-                    >
-                      <Text style={styles.sessionItemTitle}>
-                        Session {session.sessionNumber}
-                        {session.pastorName ? ` · ${session.pastorName}` : ""}
-                      </Text>
-                      <Text style={styles.sessionItemMeta}>
-                        {formatSessionDate(session.scheduledDate)}{" "}
-                        • {session.status}
-                      </Text>
-                    </Pressable>
-                  ))
-                )}
-              </View>
-            </Animated.View>
-
-            <Animated.View entering={FadeInUp.delay(140).springify()} style={styles.mapCard}>
-              <MapView
-                style={{ width: "100%", height: "100%" }}
-                region={mapRegion}
-                showsUserLocation={false}
-                showsMyLocationButton={false}
-                showsCompass={true}
-                showsScale={true}
-                showsBuildings={true}
-                showsIndoors={true}
-                mapType="standard"
-              >
-                <Marker
-                  coordinate={{
-                    latitude: mapRegion.latitude,
-                    longitude: mapRegion.longitude,
-                  }}
-                />
-              </MapView>
             </Animated.View>
 
             <Animated.View entering={FadeInUp.delay(180).springify()} style={styles.exploreCard}>
@@ -405,6 +289,29 @@ export default function MentorDashboardHome() {
                 ))}
               </View>
             </Animated.View>
+
+
+            <Animated.View entering={FadeInUp.delay(140).springify()} style={styles.mapCard}>
+              <MapView
+                style={{ width: "100%", height: "100%" }}
+                region={mapRegion}
+                showsUserLocation={false}
+                showsMyLocationButton={false}
+                showsCompass={true}
+                showsScale={true}
+                showsBuildings={true}
+                showsIndoors={true}
+                mapType="standard"
+              >
+                <Marker
+                  coordinate={{
+                    latitude: mapRegion.latitude,
+                    longitude: mapRegion.longitude,
+                  }}
+                />
+              </MapView>
+            </Animated.View>
+
           </Animated.View>
         </Animated.ScrollView>
       </View>
@@ -579,47 +486,6 @@ const styles = StyleSheet.create({
     height: 410,
   },
 
-  // Quick Links Card
-  sessionsCard: {
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    padding: 14,
-    gap: 10,
-  },
-  sessionGroup: {
-    gap: 8,
-  },
-  sessionGroupTitle: {
-    color: "#E8F4FF",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  sessionItem: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    gap: 3,
-  },
-  sessionItemTitle: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  sessionItemMeta: {
-    color: "rgba(226, 239, 255, 0.86)",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  sessionEmpty: {
-    color: "rgba(255,255,255,0.62)",
-    fontSize: 12,
-    fontWeight: "500",
-  },
   exploreCard: {
     borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.08)",
