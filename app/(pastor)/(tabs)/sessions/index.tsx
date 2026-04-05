@@ -15,6 +15,7 @@ import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
@@ -26,7 +27,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+
+const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 
 type EnrichedSession = MentorshipSession & {
   mentorName?: string;
@@ -38,6 +44,9 @@ export default function PastorSessionsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const pastorId = user?.id;
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const listBottomPad = tabBarHeight + Math.max(insets.bottom, 12) + 8;
 
   const { data: sessions = [], isLoading, isError, refetch, isRefetching } =
     usePastorSessions(pastorId);
@@ -107,7 +116,10 @@ export default function PastorSessionsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor: TAB_SCENE_BOTTOM }]}
+      edges={["top"]}
+    >
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
         <View style={styles.header}>
@@ -118,9 +130,11 @@ export default function PastorSessionsScreen() {
         </View>
 
         {isLoading ? (
-          <SessionListSkeleton rows={6} />
+          <View style={styles.fillRest}>
+            <SessionListSkeleton rows={6} />
+          </View>
         ) : isError ? (
-          <View style={styles.center}>
+          <View style={[styles.center, styles.fillRest]}>
             <Text style={styles.stateText}>Could not load sessions.</Text>
             <Pressable onPress={() => refetch()} style={styles.retry}>
               <Text style={styles.retryText}>
@@ -129,7 +143,7 @@ export default function PastorSessionsScreen() {
             </Pressable>
           </View>
         ) : displayList.length === 0 ? (
-          <View style={styles.center}>
+          <View style={[styles.center, styles.fillRest]}>
             <Text style={styles.emptyTitle}>
               No sessions yet. Complete Jumpstart to start your journey.
             </Text>
@@ -141,9 +155,16 @@ export default function PastorSessionsScreen() {
               nextSessionId={nextSessionId}
             />
             <FlatList
+              style={styles.listFlex}
               data={displayList}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.list}
+              contentContainerStyle={[
+                styles.list,
+                {
+                  flexGrow: 1,
+                  paddingBottom: listBottomPad,
+                },
+              ]}
               renderItem={({ item }) => (
                 <Pressable
                   style={[styles.card, sessionCardHighlightStyle(item.id === nextSessionId)]}
@@ -221,8 +242,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 8,
   },
+  fillRest: { flex: 1 },
+  listFlex: { flex: 1 },
   gradientBare: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: { marginBottom: 4 },
   heading: {
@@ -259,7 +281,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   retryText: { color: "#153C5A", fontWeight: "800", fontSize: 15 },
-  list: { paddingBottom: 32 },
+  list: {},
   card: {
     backgroundColor: "rgba(255,255,255,0.1)",
     borderWidth: 1,

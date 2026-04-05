@@ -199,7 +199,7 @@ export default function PastorTabLayout() {
                         <Tabs.Screen key={name} name={name} options={{ href: null }} />
                     ))}
 
-                    <Tabs.Screen name="sessions" options={{ href: null }} />
+                    <Tabs.Screen name="sessions/index" options={{ href: null }} />
                     <Tabs.Screen name="sessions/[id]" options={{ href: null }} />
                 </Tabs>
             </AssessmentProvider>

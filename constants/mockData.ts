@@ -653,6 +653,13 @@ export const PastorMenuItems: MenuItem[] = [
     iconType: "image",
     route: "/(pastor)/(tabs)/mentors",
   },
+  {
+    id: "mentorshipSessions",
+    label: "Mentorship Sessions",
+    icon: icons.calendarIcon,
+    iconType: "image",
+    route: "/(pastor)/(tabs)/sessions",
+  },
   // {
   //     id: 'test',
   //     label: 'test roadmap',
@@ -779,6 +786,13 @@ export const MentorMenuItems: MenuItem[] = [
     icon: icons.myMentors,
     iconType: "image",
     route: "/(mentor)/mentees",
+  },
+  {
+    id: "mentorshipSessions",
+    label: "Mentorship Sessions",
+    icon: icons.calendarIcon,
+    iconType: "image",
+    route: "/(mentor)/(tabs)/sessions",
   },
   {
     id: "courses",

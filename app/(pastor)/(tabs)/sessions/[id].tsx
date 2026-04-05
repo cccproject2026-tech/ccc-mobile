@@ -10,6 +10,7 @@ import {
   SessionProgressHeader,
   SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
+import { Colors } from "@/constants/Colors";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
@@ -19,11 +20,17 @@ import { formatSessionDate } from "@/utils/date";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+
+const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 
 function normalizeMeetingUrl(raw: string): string {
   const t = raw.trim();
@@ -35,6 +42,9 @@ function normalizeMeetingUrl(raw: string): string {
 export default function PastorSessionDetailScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const scrollBottomPad = tabBarHeight + Math.max(insets.bottom, 12) + 16;
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const sessionId = Array.isArray(id) ? id[0] : id;
   const pastorId = user?.id;
@@ -97,7 +107,10 @@ export default function PastorSessionDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor: TAB_SCENE_BOTTOM }]}
+      edges={["top"]}
+    >
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
         <View style={styles.topRow}>
@@ -109,14 +122,20 @@ export default function PastorSessionDetailScreen() {
         </View>
 
         {isLoading ? (
-          <DetailScreenSkeleton />
+          <View style={styles.fillRest}>
+            <DetailScreenSkeleton />
+          </View>
         ) : !session ? (
-          <View style={styles.center}>
+          <View style={[styles.center, styles.fillRest]}>
             <Text style={styles.muted}>Session not found.</Text>
           </View>
         ) : (
           <ScrollView
-            contentContainerStyle={styles.scroll}
+            style={styles.scrollFlex}
+            contentContainerStyle={[
+              styles.scroll,
+              { paddingBottom: scrollBottomPad },
+            ]}
             showsVerticalScrollIndicator={false}
           >
             <SessionProgressHeader
@@ -193,8 +212,10 @@ export default function PastorSessionDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#153C5A" },
+  safe: { flex: 1 },
   gradient: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
+  fillRest: { flex: 1 },
+  scrollFlex: { flex: 1 },
   topRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -221,7 +242,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   muted: { color: "rgba(255,255,255,0.9)", fontSize: 15 },
-  scroll: { paddingBottom: 32, gap: 4 },
+  scroll: { flexGrow: 1, gap: 4 },
   heroCard: {
     backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: 16,
