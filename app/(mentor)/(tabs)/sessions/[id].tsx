@@ -188,11 +188,15 @@ export default function SessionDetailsScreen() {
     setConfirmKind("redo");
   };
 
-  const onConfirmModal = async () => {
+  const onConfirmModal = () => {
     const kind = confirmKind;
+    if (kind == null) return;
     setConfirmKind(null);
-    if (kind === "complete") await runComplete();
-    if (kind === "redo") await runRedo();
+    // Close modal first; run mutations after so the dialog dismisses immediately.
+    requestAnimationFrame(() => {
+      if (kind === "complete") void runComplete();
+      else if (kind === "redo") void runRedo();
+    });
   };
 
   return (

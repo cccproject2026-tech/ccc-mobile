@@ -507,7 +507,6 @@ export default function SessionsScreen() {
     try {
       const response = await completeSessionAsync(appointmentId);
       Toast.show({ type: "floating", position: "top", text1: "Session completed", text2: response.message || "Marked as completed." });
-      setConfirmSession(null);
     } catch (error: unknown) {
       Toast.show({ type: "floating", position: "top", text1: "Could not complete session", text2: getFriendlyError(error, "Please try again.") });
     } finally {
@@ -607,7 +606,12 @@ export default function SessionsScreen() {
         visible={!!confirmSession}
         kind="complete"
         onCancel={() => setConfirmSession(null)}
-        onConfirm={() => { if (confirmSession) void runCompleteForSession(confirmSession); }}
+        onConfirm={() => {
+          if (!confirmSession) return;
+          const sessionToComplete = confirmSession;
+          setConfirmSession(null);
+          void runCompleteForSession(sessionToComplete);
+        }}
       />
     </SafeAreaView>
   );
