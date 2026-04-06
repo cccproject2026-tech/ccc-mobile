@@ -1,12 +1,11 @@
+import { buildPastorMeetingsUi } from "@/components/sessions/pastor/buildPastorMeetingsUi";
+import { ExpandableMeetingCard } from "@/components/sessions/pastor/ExpandableMeetingCard";
+import type { PastorMeetingUi } from "@/components/sessions/pastor/pastorSessionDetail.types";
+import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
 import {
-  ActionsSection,
   DetailScreenSkeleton,
-  formatSessionTime,
   getNextSessionId,
-  NoteCard,
-  NotesSection,
   sessionGradientColors,
-  SessionMetaRow,
   SessionProgressHeader,
   SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
@@ -16,7 +15,6 @@ import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
-import { formatSessionDate } from "@/utils/date";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -40,6 +38,7 @@ function normalizeMeetingUrl(raw: string): string {
 }
 
 export default function PastorSessionDetailScreen() {
+  const layout = usePastorMeetingLayout();
   const router = useRouter();
   const { user } = useAuthStore();
   const tabBarHeight = useBottomTabBarHeight();
@@ -93,6 +92,11 @@ export default function PastorSessionDetailScreen() {
   const isScheduled = session?.status === "SCHEDULED";
   const canJoin = isScheduled && !!meetingLink;
 
+  const meetingsUi = useMemo<PastorMeetingUi[]>(
+    () => (session ? buildPastorMeetingsUi(session, appointment) : []),
+    [session, appointment],
+  );
+
   const handleJoin = () => {
     if (!meetingLink) return;
     const url = normalizeMeetingUrl(meetingLink);
@@ -138,12 +142,19 @@ export default function PastorSessionDetailScreen() {
             ]}
             showsVerticalScrollIndicator={false}
           >
-            <SessionProgressHeader
-              sessions={sortedSessions}
-              nextSessionId={nextSessionId}
-            />
+            <View style={styles.progressWrap}>
+              <SessionProgressHeader
+                sessions={sortedSessions}
+                nextSessionId={nextSessionId}
+              />
+            </View>
 
-            <View style={styles.heroCard}>
+            <View
+              style={[
+                styles.heroCard,
+                { marginBottom: layout.sectionGapAfterHero },
+              ]}
+            >
               <View style={styles.heroTop}>
                 <View style={styles.heroTitles}>
                   <Text style={styles.heroKicker}>Session overview</Text>
@@ -156,54 +167,60 @@ export default function PastorSessionDetailScreen() {
 
               <View style={styles.divider} />
 
-              <SessionMetaRow
-                icon="calendar-outline"
-                label={formatSessionDate(session.scheduledDate)}
-              />
-              <SessionMetaRow
-                icon="time-outline"
-                label={
-                  formatSessionTime(session.scheduledDate) || "Time TBD"
-                }
-              />
               {mentorName ? (
-                <SessionMetaRow
-                  icon="person-outline"
-                  label={`Mentor ${mentorName}`}
-                />
+                <Text style={styles.metaLine}>
+                  <Text style={styles.metaEmphasis}>Mentor · </Text>
+                  {mentorName}
+                </Text>
               ) : null}
               {phase ? (
                 <Text style={styles.phaseLine}>{phase}</Text>
               ) : null}
             </View>
 
-            {(canJoin || (isScheduled && !meetingLink)) && (
-              <ActionsSection>
-                {canJoin ? (
-                  <Pressable style={styles.joinBtn} onPress={handleJoin}>
-                    <Ionicons name="videocam" size={22} color="#153C5A" />
-                    <Text style={styles.joinBtnText}>Join meeting</Text>
-                  </Pressable>
-                ) : (
-                  <View style={styles.hintBox}>
-                    <Ionicons
-                      name="information-circle-outline"
-                      size={20}
-                      color="rgba(255,255,255,0.85)"
-                    />
-                    <Text style={styles.hint}>
-                      Meeting link will appear when your mentor adds it to the
-                      appointment.
-                    </Text>
-                  </View>
-                )}
-              </ActionsSection>
-            )}
+            <View
+              style={[
+                styles.meetingsFeed,
+                {
+                  maxWidth: layout.feedMaxWidth,
+                  marginBottom: layout.meetingsBlockBottom,
+                },
+              ]}
+            >
+              <View style={styles.meetingsFeedHeader}>
+                <Text style={styles.meetingsHeading}>Meetings</Text>
+                <Text style={styles.meetingsSub}>
+                  Notes, transcript, and AI summary for each meeting.
+                </Text>
+              </View>
 
-            <NotesSection>
-              <NoteCard title="Mentor note" value={session.mentorNote} />
-              <NoteCard title="Pastor note" value={session.pastorNote} />
-            </NotesSection>
+              {meetingsUi.map((m) => (
+              <ExpandableMeetingCard
+                key={m.id}
+                meeting={m}
+                joinButton={
+                  m.isLatest && canJoin ? (
+                    <Pressable style={styles.joinBtn} onPress={handleJoin}>
+                      <Ionicons name="videocam" size={22} color="#153C5A" />
+                      <Text style={styles.joinBtnText}>Join meeting</Text>
+                    </Pressable>
+                  ) : m.isLatest && isScheduled && !meetingLink ? (
+                    <View style={styles.hintBox}>
+                      <Ionicons
+                        name="information-circle-outline"
+                        size={20}
+                        color="rgba(255,255,255,0.85)"
+                      />
+                      <Text style={styles.hint}>
+                        Meeting link will appear when your mentor adds it to the
+                        appointment.
+                      </Text>
+                    </View>
+                  ) : undefined
+                }
+              />
+            ))}
+            </View>
           </ScrollView>
         )}
       </LinearGradient>
@@ -214,6 +231,14 @@ export default function PastorSessionDetailScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   gradient: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
+  meetingsFeed: {
+    width: "100%",
+    alignSelf: "center",
+  },
+  meetingsFeedHeader: {
+    marginBottom: 14,
+    gap: 6,
+  },
   fillRest: { flex: 1 },
   scrollFlex: { flex: 1 },
   topRow: {
@@ -242,14 +267,34 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   muted: { color: "rgba(255,255,255,0.9)", fontSize: 15 },
-  scroll: { flexGrow: 1, gap: 4 },
+  scroll: { flexGrow: 1 },
+  progressWrap: { marginBottom: 6 },
+  metaLine: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  metaEmphasis: {
+    color: "rgba(255,255,255,0.65)",
+    fontWeight: "700",
+  },
+  meetingsHeading: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  meetingsSub: {
+    color: "rgba(255,255,255,0.58)",
+    fontSize: 14,
+    lineHeight: 21,
+  },
   heroCard: {
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.09)",
+    borderRadius: 18,
     padding: 18,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    marginBottom: 8,
+    borderColor: "rgba(255,255,255,0.14)",
   },
   heroTop: {
     flexDirection: "row",
@@ -279,7 +324,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   joinBtn: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255,255,255,0.94)",
     borderRadius: 14,
     paddingVertical: 15,
     flexDirection: "row",
@@ -287,7 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-  joinBtnText: { color: "#153C5A", fontSize: 16, fontWeight: "800" },
+  joinBtnText: { color: "#0F2847", fontSize: 16, fontWeight: "800", letterSpacing: 0.2 },
   hintBox: {
     flexDirection: "row",
     alignItems: "flex-start",
