@@ -467,3 +467,5 @@ export function sessionCardHighlightStyle(isCurrent: boolean): ViewStyle {
       }
     : {};
 }
+
+export { MentorSessionEnrichmentSection } from "./mentor/MentorSessionEnrichmentSection";

@@ -3,9 +3,8 @@ import { MeetingTranscript } from "@/components/sessions/pastor/MeetingTranscrip
 import type { AiSummarySectionsUi } from "@/components/sessions/pastor/pastorSessionDetail.types";
 import type { MentorshipAiSummary, MentorshipTranscriptLine } from "@/types/session.types";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { emptyMentorAiSummary } from "./mentorSessionAiEmpty";
-import { mentorSessionPremium as T } from "./mentorSessionTheme";
 
 type Props = {
   transcript?: MentorshipTranscriptLine[];
@@ -31,7 +30,6 @@ export function MentorSessionEnrichmentSection({ transcript, aiSummary }: Props)
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.sectionKicker}>Meeting content</Text>
       <MeetingTranscript lines={lines} />
       <View style={styles.aiGap}>
         <MeetingAiSummary summary={summaryUi} />
@@ -44,14 +42,6 @@ const styles = StyleSheet.create({
   wrap: {
     gap: 4,
     marginBottom: 8,
-  },
-  sectionKicker: {
-    color: T.textMuted,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    marginBottom: 10,
   },
   aiGap: {
     marginTop: 4,

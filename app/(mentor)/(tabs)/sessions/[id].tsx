@@ -3,17 +3,17 @@ import {
   DetailScreenSkeleton,
   formatSessionTime,
   getNextSessionId,
+  MentorSessionEnrichmentSection,
   NoteCard,
   NotesSection,
   SessionConfirmModal,
   sessionGradientColors,
-  SessionMetaRow,
   SessionProgressHeader,
   SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
-import { MentorSessionEnrichmentSection } from "@/components/sessions/mentor/MentorSessionEnrichmentSection";
 import { MENTOR_MEETING_UI } from "@/components/sessions/mentor/mentorSessionMeetingConfig";
 import { MeetingJoinDetails } from "@/components/sessions/pastor/MeetingJoinDetails";
+import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
 import { Colors } from "@/constants/Colors";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
@@ -22,6 +22,7 @@ import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
+import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
@@ -52,6 +53,7 @@ function normalizeMeetingUrl(raw: string): string {
 }
 
 export default function SessionDetailsScreen() {
+  const layout = usePastorMeetingLayout();
   const router = useRouter();
   const { user } = useAuthStore();
   const tabBarHeight = useBottomTabBarHeight();
@@ -278,9 +280,22 @@ export default function SessionDetailsScreen() {
     });
   };
 
+  const phase = useMemo(
+    () =>
+      session ? phaseLabelForSessionNumber(session.sessionNumber) : undefined,
+    [session?.sessionNumber],
+  );
+
+  const scheduleText = useMemo(() => {
+    if (!session) return "";
+    const d = formatSessionDate(session.scheduledDate);
+    const t = formatSessionTime(session.scheduledDate);
+    return [d, t].filter(Boolean).join(" · ");
+  }, [session]);
+
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: TAB_SCENE_BOTTOM }]}
+      style={[styles.safe, { backgroundColor: TAB_SCENE_BOTTOM }]}
       edges={["top"]}
     >
       <Stack.Screen options={{ headerShown: false }} />
@@ -292,7 +307,7 @@ export default function SessionDetailsScreen() {
       />
       <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
         <View style={styles.topRow}>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Pressable style={styles.back} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
@@ -323,19 +338,26 @@ export default function SessionDetailsScreen() {
           <ScrollView
             style={styles.scrollFlex}
             contentContainerStyle={[
-              styles.scrollContent,
+              styles.scroll,
               { paddingBottom: scrollBottomPad },
             ]}
             showsVerticalScrollIndicator={false}
           >
-            <SessionProgressHeader
-              sessions={sortedSessions}
-              nextSessionId={nextSessionId}
-            />
+            <View style={styles.progressWrap}>
+              <SessionProgressHeader
+                sessions={sortedSessions}
+                nextSessionId={nextSessionId}
+              />
+            </View>
 
-            <View style={styles.heroCard}>
+            <View
+              style={[
+                styles.heroCard,
+                { marginBottom: layout.sectionGapAfterHero },
+              ]}
+            >
               <View style={styles.heroTop}>
-                <View>
+                <View style={styles.heroTitles}>
                   <Text style={styles.heroKicker}>Session overview</Text>
                   <Text style={styles.heroTitle}>
                     Session {session.sessionNumber}
@@ -346,29 +368,33 @@ export default function SessionDetailsScreen() {
 
               <View style={styles.divider} />
 
-              <SessionMetaRow
-                icon="calendar-outline"
-                label={formatSessionDate(session.scheduledDate)}
-              />
-              <SessionMetaRow
-                icon="time-outline"
-                label={
-                  formatSessionTime(session.scheduledDate) || "Time TBD"
-                }
-              />
               {session.pastorName ? (
-                <SessionMetaRow
-                  icon="person-outline"
-                  label={`Pastor ${session.pastorName}`}
-                />
+                <Text style={styles.metaLine}>
+                  <Text style={styles.metaEmphasis}>Pastor · </Text>
+                  {session.pastorName}
+                </Text>
+              ) : null}
+              {phase ? <Text style={styles.phaseLine}>{phase}</Text> : null}
+              {scheduleText ? (
+                <Text style={styles.scheduleLine}>{scheduleText}</Text>
               ) : null}
             </View>
 
             {meetingLinkForUi ? (
-              <View style={styles.meetingBlock}>
+              <View
+                style={[
+                  styles.meetingBlock,
+                  {
+                    maxWidth: layout.feedMaxWidth,
+                    alignSelf: "center",
+                    width: "100%",
+                  },
+                ]}
+              >
                 {isPlaceholderMeetingUi ? (
                   <Text style={styles.meetingPreviewNote}>
-                  
+                    Preview mode: the link below is a placeholder until your
+                    backend provides the real meeting URL.
                   </Text>
                 ) : null}
                 <MeetingJoinDetails
@@ -409,14 +435,30 @@ export default function SessionDetailsScreen() {
               </View>
             ) : null}
 
-            <NotesSection>
-              <NoteCard title="Mentor note" value={session.mentorNote} />
-            </NotesSection>
+            <View
+              style={[
+                styles.meetingsFeed,
+                {
+                  maxWidth: layout.feedMaxWidth,
+                  marginBottom: layout.meetingsBlockBottom,
+                },
+              ]}
+            >
+              <View style={styles.meetingsFeedHeader}>
+                <Text style={styles.meetingsHeading}>Session content</Text>
+                <Text style={styles.meetingsSub}>
+                  Notes, transcript, and AI summary for this session.
+                </Text>
+              </View>
+              <NotesSection>
+                <NoteCard title="Mentor note" value={session.mentorNote} />
+              </NotesSection>
 
-            <MentorSessionEnrichmentSection
-              transcript={session.transcript}
-              aiSummary={session.aiSummary}
-            />
+              <MentorSessionEnrichmentSection
+                transcript={session.transcript}
+                aiSummary={session.aiSummary}
+              />
+            </View>
 
             <Pressable
               style={styles.insightsCta}
@@ -497,8 +539,25 @@ export default function SessionDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
+  safe: { flex: 1 },
+  meetingsFeed: {
+    width: "100%",
+    alignSelf: "center",
+  },
+  meetingsFeedHeader: {
+    marginBottom: 14,
+    gap: 6,
+  },
+  meetingsHeading: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  meetingsSub: {
+    color: "rgba(255,255,255,0.58)",
+    fontSize: 14,
+    lineHeight: 21,
   },
   gradient: {
     flex: 1,
@@ -513,7 +572,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 8,
   },
-  backButton: {
+  back: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.14)",
@@ -548,10 +607,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 12,
   },
-  scrollContent: {
-    flexGrow: 1,
-    gap: 4,
-  },
+  scroll: { flexGrow: 1 },
+  progressWrap: { marginBottom: 6 },
   meetingBlock: {
     gap: 14,
     marginBottom: 8,
@@ -636,18 +693,39 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   heroCard: {
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.09)",
+    borderRadius: 18,
     padding: 18,
-    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
   },
+  heroTitles: { flex: 1 },
   heroTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
     gap: 12,
+  },
+  metaLine: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  metaEmphasis: {
+    color: "rgba(255,255,255,0.65)",
+    fontWeight: "700",
+  },
+  phaseLine: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    marginTop: 10,
+    lineHeight: 19,
+  },
+  scheduleLine: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 13,
+    marginTop: 10,
+    lineHeight: 19,
   },
   heroKicker: {
     color: "rgba(255,255,255,0.65)",
