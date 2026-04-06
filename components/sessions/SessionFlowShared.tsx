@@ -113,12 +113,20 @@ export function SessionStatusBadge({
   status: MentorshipSession["status"];
   compact?: boolean;
 }) {
-  const isDone = status === "COMPLETED";
+  const raw = status as string;
+  const badgeTone =
+    raw === "COMPLETED"
+      ? progressStyles.badgeDone
+      : raw === "SCHEDULED"
+        ? progressStyles.badgeScheduled
+        : raw === "MISSED"
+          ? progressStyles.badgeMissed
+          : progressStyles.badgeOpen;
   return (
     <View
       style={[
         progressStyles.badge,
-        isDone ? progressStyles.badgeDone : progressStyles.badgeOpen,
+        badgeTone,
         compact && progressStyles.badgeCompact,
       ]}
     >
@@ -158,12 +166,17 @@ export function SessionMetaRow({
 
 export function NotesSection({
   children,
+  hideTitle,
 }: {
   children: React.ReactNode;
+  /** When using segmented tabs, the tab label replaces the section title */
+  hideTitle?: boolean;
 }) {
   return (
     <View style={detailStyles.section}>
-      <Text style={detailStyles.sectionTitle}>Notes</Text>
+      {hideTitle ? null : (
+        <Text style={detailStyles.sectionTitle}>Notes</Text>
+      )}
       {children}
     </View>
   );
@@ -172,15 +185,25 @@ export function NotesSection({
 export function NoteCard({
   title,
   value,
+  surface = "dark",
 }: {
   title: string;
   value?: string;
+  surface?: "dark" | "light";
 }) {
   const has = value && value.trim().length > 0;
+  const cardStyle =
+    surface === "light" ? detailStyles.noteCardLight : detailStyles.noteCard;
+  const titleStyle =
+    surface === "light" ? detailStyles.noteTitleLight : detailStyles.noteTitle;
+  const bodyStyle =
+    surface === "light" ? detailStyles.noteBodyLight : detailStyles.noteBody;
+  const emptyStyle =
+    surface === "light" ? detailStyles.noteEmptyLight : detailStyles.noteEmpty;
   return (
-    <View style={detailStyles.noteCard}>
-      <Text style={detailStyles.noteTitle}>{title}</Text>
-      <Text style={[detailStyles.noteBody, !has && detailStyles.noteEmpty]}>
+    <View style={cardStyle}>
+      <Text style={titleStyle}>{title}</Text>
+      <Text style={[bodyStyle, !has && emptyStyle]}>
         {has ? value : "No note yet."}
       </Text>
     </View>
@@ -325,9 +348,10 @@ const progressStyles = StyleSheet.create({
   },
   badge: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
+    paddingVertical: 7,
+    borderRadius: 999,
     alignSelf: "flex-start",
+    flexShrink: 0,
   },
   badgeCompact: {
     paddingHorizontal: 8,
@@ -336,8 +360,14 @@ const progressStyles = StyleSheet.create({
   badgeOpen: {
     backgroundColor: "rgba(56, 189, 248, 0.28)",
   },
+  badgeScheduled: {
+    backgroundColor: "rgba(59, 130, 246, 0.38)",
+  },
   badgeDone: {
-    backgroundColor: "rgba(34, 197, 94, 0.3)",
+    backgroundColor: "rgba(34, 197, 94, 0.38)",
+  },
+  badgeMissed: {
+    backgroundColor: "rgba(239, 68, 68, 0.38)",
   },
   badgeText: {
     color: "#FFFFFF",
@@ -405,8 +435,29 @@ const detailStyles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.14)",
     marginBottom: 10,
   },
+  noteCardLight: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(15, 23, 42, 0.08)",
+    marginBottom: 0,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   noteTitle: {
     color: "rgba(255,255,255,0.8)",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  noteTitleLight: {
+    color: "rgba(15, 23, 42, 0.55)",
     fontSize: 12,
     fontWeight: "700",
     marginBottom: 8,
@@ -418,8 +469,17 @@ const detailStyles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
+  noteBodyLight: {
+    color: "#0F172A",
+    fontSize: 15,
+    lineHeight: 22,
+  },
   noteEmpty: {
     color: "rgba(255,255,255,0.45)",
+    fontStyle: "italic",
+  },
+  noteEmptyLight: {
+    color: "rgba(15, 23, 42, 0.45)",
     fontStyle: "italic",
   },
   actionsSection: {

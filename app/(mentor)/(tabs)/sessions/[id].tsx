@@ -471,13 +471,14 @@ export default function SessionDetailsScreen() {
                 Session Information, Notes, Complete Meeting Transcript and AI Summary
                 </Text>
               </View>
-              <NotesSection>
-                <NoteCard title="Mentor note" value={session.mentorNote} />
-              </NotesSection>
-
               <MentorSessionEnrichmentSection
                 transcript={transcriptLinesForSession(session)}
                 aiSummary={aiSummaryForSession(session)}
+                notesSlot={
+                  <NotesSection>
+                    <NoteCard title="Mentor note" value={session.mentorNote} />
+                  </NotesSection>
+                }
               />
             </View>
 
@@ -566,8 +567,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   meetingsFeedHeader: {
-    marginBottom: 14,
-    gap: 6,
+    marginBottom: 16,
+    gap: 8,
   },
   meetingsHeading: {
     color: "#FFFFFF",
@@ -579,6 +580,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.58)",
     fontSize: 14,
     lineHeight: 21,
+    flexShrink: 1,
   },
   gradient: {
     flex: 1,
@@ -649,6 +651,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+    width: "100%",
+    alignSelf: "stretch",
   },
   joinBtnText: {
     color: "#0F2847",
@@ -720,7 +724,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",
   },
-  heroTitles: { flex: 1 },
+  heroTitles: { flex: 1, minWidth: 0, flexShrink: 1 },
   heroTop: {
     flexDirection: "row",
     justifyContent: "space-between",

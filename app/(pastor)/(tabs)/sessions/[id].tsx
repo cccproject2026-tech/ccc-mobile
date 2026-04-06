@@ -261,8 +261,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   meetingsFeedHeader: {
-    marginBottom: 14,
-    gap: 6,
+    marginBottom: 16,
+    gap: 8,
   },
   fillRest: { flex: 1 },
   scrollFlex: { flex: 1 },
@@ -313,6 +313,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.58)",
     fontSize: 14,
     lineHeight: 21,
+    flexShrink: 1,
   },
   heroCard: {
     backgroundColor: "rgba(255,255,255,0.09)",
@@ -327,7 +328,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 12,
   },
-  heroTitles: { flex: 1 },
+  heroTitles: { flex: 1, minWidth: 0, flexShrink: 1 },
   heroKicker: {
     color: "rgba(255,255,255,0.65)",
     fontSize: 12,
@@ -363,6 +364,8 @@ const styles = StyleSheet.create({
   },
   joinStack: {
     gap: 14,
+    width: "100%",
+    alignSelf: "stretch",
   },
   joinBtn: {
     backgroundColor: "rgba(255,255,255,0.94)",
@@ -372,6 +375,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+    width: "100%",
+    alignSelf: "stretch",
   },
   joinBtnText: { color: "#0F2847", fontSize: 16, fontWeight: "800", letterSpacing: 0.2 },
   hintBox: {
