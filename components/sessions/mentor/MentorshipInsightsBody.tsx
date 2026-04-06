@@ -39,7 +39,7 @@ function BulletList({ items }: { items: string[] }) {
     <View style={styles.bullets}>
       {items.map((line, i) => (
         <View key={`${i}-${line}`} style={styles.bulletRow}>
-          <Text style={styles.bulletDot}>·</Text>
+          <Text style={styles.bulletDot}>{"\u2022"}</Text>
           <Text style={styles.bulletText}>{line}</Text>
         </View>
       ))}
@@ -51,6 +51,7 @@ export function MentorshipInsightsBody({ data }: Props) {
   const hasAnything =
     data.challenges.length > 0 ||
     data.emotionalTrend.length > 0 ||
+    (data.emotionalTrendNarrative?.length ?? 0) > 0 ||
     data.growthSignals.length > 0;
 
   if (!hasAnything) {
@@ -75,7 +76,15 @@ export function MentorshipInsightsBody({ data }: Props) {
       </InsightCard>
 
       <InsightCard icon="pulse-outline" title="Emotional trend">
-        {data.emotionalTrend.length > 0 ? (
+        {(data.emotionalTrendNarrative?.length ?? 0) > 0 ? (
+          <View style={styles.narrativeStack}>
+            {(data.emotionalTrendNarrative ?? []).map((line, i) => (
+              <Text key={`${i}-${line.slice(0, 24)}`} style={styles.narrativeLine}>
+                {line}
+              </Text>
+            ))}
+          </View>
+        ) : data.emotionalTrend.length > 0 ? (
           <EmotionalTrendBars points={data.emotionalTrend} />
         ) : (
           <Text style={styles.emptyInline}>No trend data yet.</Text>
@@ -151,6 +160,15 @@ const styles = StyleSheet.create({
     color: T.textMuted,
     fontSize: 14,
     lineHeight: 21,
+  },
+  narrativeStack: {
+    gap: 12,
+  },
+  narrativeLine: {
+    color: T.textSecondary,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "500",
   },
   emptyCard: {
     borderRadius: 16,

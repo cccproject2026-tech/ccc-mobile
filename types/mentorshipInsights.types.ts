@@ -9,4 +9,6 @@ export type MentorshipInsightsPayload = {
   challenges: string[];
   emotionalTrend: EmotionalTrendPoint[];
   growthSignals: string[];
+  /** When set, narrative lines replace the bar chart for emotional trend. */
+  emotionalTrendNarrative?: string[];
 };

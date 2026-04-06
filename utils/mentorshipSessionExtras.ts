@@ -75,7 +75,16 @@ export function parseMentorshipInsightsFromApi(
         })
         .filter((x): x is EmotionalTrendPoint => x != null)
     : [];
-  return { challenges, emotionalTrend, growthSignals };
+  const emotionalTrendNarrative = Array.isArray(o.emotionalTrendNarrative)
+    ? o.emotionalTrendNarrative.map((x) => String(x))
+    : undefined;
+  const narrativeClean = emotionalTrendNarrative?.filter((s) => s.trim().length > 0);
+  return {
+    challenges,
+    emotionalTrend,
+    growthSignals,
+    ...(narrativeClean?.length ? { emotionalTrendNarrative: narrativeClean } : {}),
+  };
 }
 
 /** Merge insights from all sessions (unique strings; trend values averaged by label). */
@@ -84,6 +93,7 @@ export function aggregateMentorshipInsights(
 ): MentorshipInsightsPayload {
   const challengeSet = new Set<string>();
   const growthSet = new Set<string>();
+  const narrativeSet = new Set<string>();
   const trendBuckets = new Map<string, number[]>();
 
   for (const s of sessions) {
@@ -96,6 +106,10 @@ export function aggregateMentorshipInsights(
     m.growthSignals.forEach((g) => {
       const t = g.trim();
       if (t) growthSet.add(t);
+    });
+    m.emotionalTrendNarrative?.forEach((line) => {
+      const t = line.trim();
+      if (t) narrativeSet.add(t);
     });
     m.emotionalTrend.forEach((pt) => {
       const label = pt.label.trim();
@@ -116,10 +130,14 @@ export function aggregateMentorshipInsights(
     }),
   );
 
+  const mergedNarrative = [...narrativeSet];
   return {
     challenges: [...challengeSet],
     emotionalTrend,
     growthSignals: [...growthSet],
+    ...(mergedNarrative.length
+      ? { emotionalTrendNarrative: mergedNarrative }
+      : {}),
   };
 }
 
@@ -129,6 +147,7 @@ export function hasMentorshipInsightsData(
   return (
     data.challenges.length > 0 ||
     data.emotionalTrend.length > 0 ||
+    (data.emotionalTrendNarrative?.length ?? 0) > 0 ||
     data.growthSignals.length > 0
   );
 }

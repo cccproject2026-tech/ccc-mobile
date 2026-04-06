@@ -4,10 +4,14 @@ import {
 } from "@/components/sessions/SessionFlowShared";
 import { MentorshipInsightsBody } from "@/components/sessions/mentor/MentorshipInsightsBody";
 import { mentorSessionPremium as T } from "@/components/sessions/mentor/mentorSessionTheme";
+import { DEMO_MENTORSHIP_INSIGHTS } from "@/constants/demoMentorshipInsights";
 import { Colors } from "@/constants/Colors";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useAuthStore } from "@/stores";
-import { aggregateMentorshipInsights } from "@/utils/mentorshipSessionExtras";
+import {
+  aggregateMentorshipInsights,
+  hasMentorshipInsightsData,
+} from "@/utils/mentorshipSessionExtras";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
@@ -30,10 +34,13 @@ export default function MentorshipInsightsScreen() {
 
   const { data: sessions = [], isLoading } = useMentorshipSessions(user?.id);
 
-  const insights = useMemo(
-    () => aggregateMentorshipInsights(sessions),
-    [sessions],
-  );
+  const insights = useMemo(() => {
+    const aggregated = aggregateMentorshipInsights(sessions);
+    if (!hasMentorshipInsightsData(aggregated)) {
+      return DEMO_MENTORSHIP_INSIGHTS;
+    }
+    return aggregated;
+  }, [sessions]);
 
   return (
     <SafeAreaView
