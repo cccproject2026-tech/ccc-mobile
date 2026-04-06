@@ -2,20 +2,13 @@ import { sessionOrdinalLabel } from "@/constants/sessionTitles";
 import { Appointment } from "@/types/appointment.types";
 import { MentorshipSession } from "@/types/session.types";
 import {
-  AiSummarySectionsUi,
+  aiSummaryForSession,
+  transcriptLinesForSession,
+} from "@/utils/sessionTranscriptUi";
+import {
   MeetingStatusUi,
   PastorMeetingUi,
 } from "./pastorSessionDetail.types";
-
-function emptyAiSummary(): AiSummarySectionsUi {
-  return {
-    overview: "",
-    keyDiscussionPoints: "",
-    adviceGiven: "",
-    actionItems: "",
-    nextSessionFocus: "",
-  };
-}
 
 function mapAppointmentStatus(
   session: MentorshipSession,
@@ -51,8 +44,8 @@ export function buildPastorMeetingsUi(
     isLatest: true,
     mentorNote: session.mentorNote,
     pastorNote: session.pastorNote,
-    transcript: [],
-    aiSummary: emptyAiSummary(),
+    transcript: transcriptLinesForSession(session),
+    aiSummary: aiSummaryForSession(session),
   };
 
   return [meeting];

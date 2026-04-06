@@ -27,6 +27,10 @@ import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
+import {
+  aiSummaryForSession,
+  transcriptLinesForSession,
+} from "@/utils/sessionTranscriptUi";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
@@ -472,8 +476,8 @@ export default function SessionDetailsScreen() {
               </NotesSection>
 
               <MentorSessionEnrichmentSection
-                transcript={session.transcript}
-                aiSummary={session.aiSummary}
+                transcript={transcriptLinesForSession(session)}
+                aiSummary={aiSummaryForSession(session)}
               />
             </View>
 
