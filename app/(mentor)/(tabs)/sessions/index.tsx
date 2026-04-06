@@ -262,7 +262,7 @@ const SessionRow = React.memo(function SessionRow({
                 />
               </View>
               <Text style={styles.actionBtnCompleteText} numberOfLines={1}>
-                {isCompleted ? "Session completed" : "Complete session"}
+                {isCompleted ? "Session completed" : "Mark as completed"}
               </Text>
             </View>
           )}
@@ -544,11 +544,31 @@ export default function SessionsScreen() {
 
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerTitleRow}>
-            <Text style={styles.heading}>Mentorship</Text>
-            <View style={styles.headerAccentPill}>
-              <Text style={styles.headerAccentText}>Sessions</Text>
+          <View style={styles.headerTopRow}>
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.heading}>Mentorship</Text>
+              <View style={styles.headerAccentPill}>
+                <Text style={styles.headerAccentText}>Sessions</Text>
+              </View>
             </View>
+            <Pressable
+              onPress={() =>
+                router.push("/(mentor)/(tabs)/sessions/insights")
+              }
+              style={({ pressed }) => [
+                styles.insightsHeaderBtn,
+                pressed && styles.insightsHeaderBtnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Open Mentorship Insights"
+            >
+              <Ionicons
+                name="analytics-outline"
+                size={18}
+                color="rgba(255,255,255,0.88)"
+              />
+              <Text style={styles.insightsHeaderBtnText}>Insights</Text>
+            </Pressable>
           </View>
           <Text style={styles.subtitle}>
             Review sessions with your pastors and track completion.
@@ -626,7 +646,39 @@ const styles = StyleSheet.create({
 
   // ── Header ──────────────────────────────────────────────────────────────────
   header: { marginBottom: 16 },
-  headerTitleRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 6 },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 6,
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+  insightsHeaderBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    flexShrink: 0,
+  },
+  insightsHeaderBtnPressed: { opacity: 0.88 },
+  insightsHeaderBtnText: {
+    color: "rgba(255,255,255,0.92)",
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
   heading: {
     color: TEXT_PRIMARY,
     fontSize: 26,
@@ -634,18 +686,18 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   headerAccentPill: {
-    backgroundColor: "rgba(129,140,248,0.22)",
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
-    borderColor: "rgba(165,180,252,0.35)",
+    borderColor: "rgba(255,255,255,0.14)",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   headerAccentText: {
-    color: "#A5B4FC",
-    fontSize: 13,
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 12,
     fontWeight: "700",
-    letterSpacing: 0.2,
+    letterSpacing: 0.4,
   },
   subtitle: {
     color: TEXT_SECONDARY,

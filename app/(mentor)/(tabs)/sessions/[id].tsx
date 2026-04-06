@@ -1,17 +1,21 @@
 import {
-    ActionsSection,
-    DetailScreenSkeleton,
-    formatSessionTime,
-    getNextSessionId,
-    NoteCard,
-    NotesSection,
-    SessionConfirmModal,
-    sessionGradientColors,
-    SessionMetaRow,
-    SessionProgressHeader,
-    SessionStatusBadge,
+  ActionsSection,
+  DetailScreenSkeleton,
+  formatSessionTime,
+  getNextSessionId,
+  NoteCard,
+  NotesSection,
+  SessionConfirmModal,
+  sessionGradientColors,
+  SessionMetaRow,
+  SessionProgressHeader,
+  SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
+import { MentorSessionEnrichmentSection } from "@/components/sessions/mentor/MentorSessionEnrichmentSection";
+import { MENTOR_MEETING_UI } from "@/components/sessions/mentor/mentorSessionMeetingConfig";
+import { MeetingJoinDetails } from "@/components/sessions/pastor/MeetingJoinDetails";
 import { Colors } from "@/constants/Colors";
+import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
@@ -24,20 +28,28 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import {
-    SafeAreaView,
-    useSafeAreaInsets,
+  SafeAreaView,
+  useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
+
+function normalizeMeetingUrl(raw: string): string {
+  const t = raw.trim();
+  if (!t) return t;
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t}`;
+}
 
 export default function SessionDetailsScreen() {
   const router = useRouter();
@@ -49,6 +61,31 @@ export default function SessionDetailsScreen() {
   const sessionId = Array.isArray(id) ? id[0] : id;
   const { data: sessions = [], isLoading: isLoadingSessions } =
     useMentorshipSessions(user?.id);
+
+  const session = useMemo<MentorshipSession | null>(() => {
+    if (!sessionId) return null;
+    return sessions.find((s) => s.id === sessionId) ?? null;
+  }, [sessions, sessionId]);
+
+  const sortedSessions = useMemo(
+    () => [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber),
+    [sessions],
+  );
+
+  const nextSessionId = useMemo(
+    () => getNextSessionId(sortedSessions),
+    [sortedSessions],
+  );
+
+  /** Mentor-side list (may omit some fields). */
+  const { appointments: mentorAppointments = [] } = useAppointments({
+    mentorId: user?.id,
+  });
+  /** Same appointment is often visible on the mentee/pastor user — use for meeting link fallback. */
+  const { appointments: menteeAppointments = [] } = useAppointments({
+    userId: session?.pastorId,
+  });
+
   const { mutateAsync: completeSessionAsync, isPending: isCompleting } =
     useCompleteSession();
   const { mutateAsync: redoSessionAsync, isPending: isRedoing } = useRedoSession(
@@ -66,25 +103,61 @@ export default function SessionDetailsScreen() {
     null,
   );
 
-  const sortedSessions = useMemo(
-    () => [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber),
-    [sessions],
-  );
+  const appointment = useMemo(() => {
+    if (!session?.appointmentId) return undefined;
+    const id = String(session.appointmentId);
+    return (
+      mentorAppointments.find((a) => String(a.id) === id) ??
+      menteeAppointments.find((a) => String(a.id) === id)
+    );
+  }, [session?.appointmentId, mentorAppointments, menteeAppointments]);
 
-  const nextSessionId = useMemo(
-    () => getNextSessionId(sortedSessions),
-    [sortedSessions],
-  );
+  const isScheduled = session?.status === "SCHEDULED";
+  const apiMeetingLink = appointment?.meetingLink?.trim();
 
-  const session = useMemo<MentorshipSession | null>(() => {
-    if (!sessionId) return null;
-    return sessions.find((s) => s.id === sessionId) ?? null;
-  }, [sessions, sessionId]);
+  const showPlaceholderMeeting =
+    MENTOR_MEETING_UI.usePlaceholderUntilBackend &&
+    isScheduled &&
+    !apiMeetingLink;
+
+  const meetingLinkForUi =
+    apiMeetingLink ||
+    (showPlaceholderMeeting ? MENTOR_MEETING_UI.placeholderMeetingLink : undefined);
+
+  const platformForUi =
+    appointment?.platform ?? MENTOR_MEETING_UI.placeholderPlatform;
+
+  const isPlaceholderMeetingUi = showPlaceholderMeeting;
+
+  const showJoinButton = isScheduled && !!meetingLinkForUi;
 
   const isCompleted = session?.status === "COMPLETED";
   const canComplete = !!session?.appointmentId && !isCompleted;
   const canRedo = !!session?.appointmentId && !isCompleted;
   const canRetryLookup = !isLoadingSessions && !!user?.id;
+
+  const handleJoinMeeting = () => {
+    if (!meetingLinkForUi) return;
+    if (isPlaceholderMeetingUi) {
+      Toast.show({
+        type: "floating",
+        position: "top",
+        text1: "Preview",
+        text2:
+          "The real meeting link will come from your backend. Turn off placeholder in mentorSessionMeetingConfig when ready.",
+      });
+      return;
+    }
+    const url = normalizeMeetingUrl(apiMeetingLink!);
+    Linking.openURL(url).catch(() => {
+      Toast.show({
+        type: "floating",
+        position: "top",
+        text1: "Unable to open link",
+        text2: "Check your meeting link in appointments.",
+      });
+    });
+  };
 
   const getFriendlyError = (error: unknown, fallback: string) => {
     if (error instanceof Error && error.message.trim().length > 0) {
@@ -290,10 +363,88 @@ export default function SessionDetailsScreen() {
               ) : null}
             </View>
 
+            {meetingLinkForUi ? (
+              <View style={styles.meetingBlock}>
+                {isPlaceholderMeetingUi ? (
+                  <Text style={styles.meetingPreviewNote}>
+                    Preview layout — set usePlaceholderUntilBackend to false in
+                    mentorSessionMeetingConfig when the API provides links.
+                  </Text>
+                ) : null}
+                <MeetingJoinDetails
+                  meetingLink={meetingLinkForUi}
+                  platform={platformForUi}
+                />
+                {showJoinButton ? (
+                  <Pressable
+                    style={[
+                      styles.joinBtn,
+                      isPlaceholderMeetingUi && styles.joinBtnPreview,
+                    ]}
+                    onPress={handleJoinMeeting}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isPlaceholderMeetingUi
+                        ? "Join meeting (preview)"
+                        : "Join meeting"
+                    }
+                  >
+                    <Ionicons name="videocam" size={22} color="#153C5A" />
+                    <Text style={styles.joinBtnText}>
+                      {isPlaceholderMeetingUi ? "Join meeting (preview)" : "Join meeting"}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : isScheduled && session.appointmentId ? (
+              <View style={styles.meetingHint}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={20}
+                  color="rgba(255,255,255,0.75)"
+                />
+                <Text style={styles.meetingHintText}>
+                  Meeting link will appear when it is added to the appointment.
+                </Text>
+              </View>
+            ) : null}
+
             <NotesSection>
               <NoteCard title="Mentor note" value={session.mentorNote} />
-              <NoteCard title="Pastor note" value={session.pastorNote} />
             </NotesSection>
+
+            <MentorSessionEnrichmentSection
+              transcript={session.transcript}
+              aiSummary={session.aiSummary}
+            />
+
+            <Pressable
+              style={styles.insightsCta}
+              onPress={() =>
+                router.push("/(mentor)/(tabs)/sessions/insights")
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Open Mentorship Insights"
+            >
+              <View style={styles.insightsCtaIcon}>
+                <Ionicons
+                  name="analytics-outline"
+                  size={24}
+                  color="rgba(255,255,255,0.9)"
+                />
+              </View>
+              <View style={styles.insightsCtaTextWrap}>
+                <Text style={styles.insightsCtaTitle}>Mentorship Insights</Text>
+                <Text style={styles.insightsCtaSub}>
+                  Cross-session AI highlights and trends
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color="rgba(255,255,255,0.55)"
+              />
+            </Pressable>
 
             <ActionsSection>
               <View style={styles.sessionActionStack}>
@@ -313,7 +464,7 @@ export default function SessionDetailsScreen() {
                         <Ionicons name="checkmark" size={17} color="#15803D" />
                       </View>
                       <Text style={styles.primaryBtnText}>
-                        {isCompleted ? "Session completed" : "Complete session"}
+                        {isCompleted ? "Session completed" : "Mark as completed"}
                       </Text>
                     </>
                   )}
@@ -403,10 +554,93 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     gap: 4,
   },
-  heroCard: {
-    backgroundColor: "rgba(255,255,255,0.1)",
+  meetingBlock: {
+    gap: 14,
+    marginBottom: 8,
+  },
+  meetingPreviewNote: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
+    marginBottom: -4,
+  },
+  joinBtn: {
+    backgroundColor: "rgba(255,255,255,0.94)",
+    borderRadius: 14,
+    paddingVertical: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  joinBtnText: {
+    color: "#0F2847",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.2,
+  },
+  joinBtnPreview: {
+    opacity: 0.92,
+  },
+  meetingHint: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  meetingHintText: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 14,
+    lineHeight: 21,
+    flex: 1,
+  },
+  insightsCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  insightsCtaIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  insightsCtaTextWrap: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  insightsCtaTitle: {
+    color: "rgba(255,255,255,0.96)",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  insightsCtaSub: {
+    color: "rgba(255,255,255,0.52)",
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  heroCard: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
     borderRadius: 16,
     padding: 18,
     marginBottom: 8,

@@ -21,6 +21,11 @@ import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 import { menteesService } from './mentees.service';
 import { MentorshipSession, MentorshipSessionsApiResponse } from "@/types/session.types";
+import {
+    parseAiSummaryFromApi,
+    parseMentorshipInsightsFromApi,
+    parseTranscriptFromApi,
+} from "@/utils/mentorshipSessionExtras";
 
 /** Backend may return a raw array or { success, data } from GET /roadmaps/sessions/:userId */
 function normalizeRoadmapSessionsPayload(responseData: unknown): any[] {
@@ -248,6 +253,12 @@ export const roadmapService = {
                   ? String(item.appointment._id)
                   : undefined;
 
+            const transcript = parseTranscriptFromApi(item?.transcript);
+            const aiSummary = parseAiSummaryFromApi(item?.aiSummary);
+            const mentorshipInsights = parseMentorshipInsightsFromApi(
+                item?.mentorshipInsights,
+            );
+
             return {
                 id,
                 sessionNumber,
@@ -256,6 +267,9 @@ export const roadmapService = {
                 mentorNote,
                 pastorNote,
                 appointmentId,
+                ...(transcript ? { transcript } : {}),
+                ...(aiSummary ? { aiSummary } : {}),
+                ...(mentorshipInsights ? { mentorshipInsights } : {}),
             } as MentorshipSession;
         });
     },

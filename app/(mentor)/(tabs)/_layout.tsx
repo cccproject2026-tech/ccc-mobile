@@ -136,9 +136,10 @@ export default function MentorTabLayout() {
                     <Tabs.Screen name="notifications" options={{ href: null }} />
                     <Tabs.Screen name="my-mentors" options={{ href: null }} />
                     <Tabs.Screen name="mentees" options={{ href: null }} />
-                    {/* sessions/ uses index.tsx → screen name is sessions/index, not sessions */}
+                    {/* sessions/* are stack-only (no tab bar); opened via dashboard / links */}
                     <Tabs.Screen name="sessions/index" options={{ href: null }} />
                     <Tabs.Screen name="sessions/[id]" options={{ href: null }} />
+                    <Tabs.Screen name="sessions/insights" options={{ href: null }} />
                     <Tabs.Screen name="resources" options={{ href: null }} />
                     <Tabs.Screen name="support/contact-information" options={{ href: null }} />
                     <Tabs.Screen name="new-roadmap" options={{ href: null }} />
