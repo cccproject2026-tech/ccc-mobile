@@ -61,7 +61,7 @@ export function SessionDetailContentTabs({
   );
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: "transcript", label: "Transcript" },
+    { key: "transcript", label: "Complete Zoom Transcript ||" },
     { key: "summary", label: "Summary" },
   ];
 

@@ -414,8 +414,6 @@ export default function SessionDetailsScreen() {
               >
                 {isPlaceholderMeetingUi ? (
                   <Text style={styles.meetingPreviewNote}>
-                    Preview mode: the link below is a placeholder until your
-                    backend provides the real meeting URL.
                   </Text>
                 ) : null}
                 <MeetingJoinDetails
@@ -547,7 +545,7 @@ export default function SessionDetailsScreen() {
                   ) : (
                     <>
                       <Ionicons name="refresh" size={22} color="#FFFFFF" />
-                      <Text style={styles.secondaryBtnText}>Redo session</Text>
+                      <Text style={styles.secondaryBtnText}>Repeat Session</Text>
                     </>
                   )}
                 </Pressable>

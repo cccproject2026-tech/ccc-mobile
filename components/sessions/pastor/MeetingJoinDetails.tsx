@@ -59,7 +59,7 @@ export function MeetingJoinDetails({ meetingLink, platform }: Props) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.sectionLabel}>Meeting connection</Text>
+     
 
       <View style={styles.row}>
         <Text style={styles.k}>Platform</Text>
