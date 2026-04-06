@@ -1,5 +1,6 @@
 import { buildPastorMeetingsUi } from "@/components/sessions/pastor/buildPastorMeetingsUi";
 import { ExpandableMeetingCard } from "@/components/sessions/pastor/ExpandableMeetingCard";
+import { MeetingJoinDetails } from "@/components/sessions/pastor/MeetingJoinDetails";
 import type { PastorMeetingUi } from "@/components/sessions/pastor/pastorSessionDetail.types";
 import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
 import {
@@ -199,11 +200,19 @@ export default function PastorSessionDetailScreen() {
                 key={m.id}
                 meeting={m}
                 joinButton={
-                  m.isLatest && canJoin ? (
-                    <Pressable style={styles.joinBtn} onPress={handleJoin}>
-                      <Ionicons name="videocam" size={22} color="#153C5A" />
-                      <Text style={styles.joinBtnText}>Join meeting</Text>
-                    </Pressable>
+                  m.isLatest && meetingLink ? (
+                    <View style={styles.joinStack}>
+                      <MeetingJoinDetails
+                        meetingLink={meetingLink}
+                        platform={appointment?.platform ?? "zoom"}
+                      />
+                      {canJoin ? (
+                        <Pressable style={styles.joinBtn} onPress={handleJoin}>
+                          <Ionicons name="videocam" size={22} color="#153C5A" />
+                          <Text style={styles.joinBtnText}>Join meeting</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
                   ) : m.isLatest && isScheduled && !meetingLink ? (
                     <View style={styles.hintBox}>
                       <Ionicons
@@ -322,6 +331,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 10,
     lineHeight: 19,
+  },
+  joinStack: {
+    gap: 14,
   },
   joinBtn: {
     backgroundColor: "rgba(255,255,255,0.94)",
