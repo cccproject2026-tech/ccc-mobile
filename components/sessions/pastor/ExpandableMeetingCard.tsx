@@ -111,7 +111,6 @@ function NotesSectionLocal({ meeting }: { meeting: PastorMeetingUi }) {
     <View style={styles.notesSection}>
       <Text style={styles.notesHeadline}>Notes</Text>
       <View style={styles.notesGap}>
-        <NoteCard title="Mentor note" value={meeting.mentorNote} />
         <NoteCard title="Pastor note" value={meeting.pastorNote} />
       </View>
     </View>
