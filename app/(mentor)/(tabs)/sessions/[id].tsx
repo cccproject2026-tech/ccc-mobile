@@ -15,6 +15,10 @@ import { MENTOR_MEETING_UI } from "@/components/sessions/mentor/mentorSessionMee
 import { MeetingJoinDetails } from "@/components/sessions/pastor/MeetingJoinDetails";
 import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
 import { Colors } from "@/constants/Colors";
+import {
+  sessionOrdinalLabel,
+  sessionTopicSubtitle,
+} from "@/constants/sessionTitles";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
@@ -23,10 +27,6 @@ import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
-import {
-  sessionOrdinalLabel,
-  sessionTopicSubtitle,
-} from "@/constants/sessionTitles";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
@@ -462,9 +462,9 @@ export default function SessionDetailsScreen() {
               ]}
             >
               <View style={styles.meetingsFeedHeader}>
-                <Text style={styles.meetingsHeading}>Session content</Text>
+                <Text style={styles.meetingsHeading}>Sessions</Text>
                 <Text style={styles.meetingsSub}>
-                  Notes, transcript, and AI summary for this session.
+                Session Information, Notes, Complete Meeting Transcript and AI Summary
                 </Text>
               </View>
               <NotesSection>

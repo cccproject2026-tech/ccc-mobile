@@ -45,7 +45,7 @@ type Props = {
   joinButton?: React.ReactNode;
 };
 
-/** Full meeting detail (no accordion): header + notes + transcript + AI summary */
+/** Full session detail (no accordion): header + notes + transcript + AI summary */
 export function ExpandableMeetingCard({ meeting, joinButton }: Props) {
   const { horizontalPad: padH, cardRadius } = usePastorMeetingLayout();
 

@@ -11,27 +11,27 @@ import {
   SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
 import { Colors } from "@/constants/Colors";
+import {
+  sessionOrdinalLabel,
+  sessionTopicSubtitle,
+} from "@/constants/sessionTitles";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
-import {
-  sessionOrdinalLabel,
-  sessionTopicSubtitle,
-} from "@/constants/sessionTitles";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import Toast from "react-native-toast-message";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 
@@ -205,9 +205,9 @@ export default function PastorSessionDetailScreen() {
               ]}
             >
               <View style={styles.meetingsFeedHeader}>
-                <Text style={styles.meetingsHeading}>Meetings</Text>
+                <Text style={styles.meetingsHeading}>Sessions</Text>
                 <Text style={styles.meetingsSub}>
-                  Notes, transcript, and AI summary for each meeting.
+                Session Information, Notes, Complete Meeting Transcript and AI Summary
                 </Text>
               </View>
 
@@ -225,7 +225,7 @@ export default function PastorSessionDetailScreen() {
                       {canJoin ? (
                         <Pressable style={styles.joinBtn} onPress={handleJoin}>
                           <Ionicons name="videocam" size={22} color="#153C5A" />
-                          <Text style={styles.joinBtnText}>Join meeting</Text>
+                          <Text style={styles.joinBtnText}>Join session</Text>
                         </Pressable>
                       ) : null}
                     </View>
@@ -237,7 +237,7 @@ export default function PastorSessionDetailScreen() {
                         color="rgba(255,255,255,0.85)"
                       />
                       <Text style={styles.hint}>
-                        Meeting link will appear when your mentor adds it to the
+                        Session link will appear when your mentor adds it to the
                         appointment.
                       </Text>
                     </View>

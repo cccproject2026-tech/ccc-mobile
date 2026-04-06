@@ -1,3 +1,4 @@
+import { sessionOrdinalLabel } from "@/constants/sessionTitles";
 import { Appointment } from "@/types/appointment.types";
 import { MentorshipSession } from "@/types/session.types";
 import {
@@ -43,7 +44,7 @@ export function buildPastorMeetingsUi(
   const meeting: PastorMeetingUi = {
     id,
     meetingNumber: 1,
-    title: "Meeting 1",
+    title: sessionOrdinalLabel(session.sessionNumber),
     scheduledDate: session.scheduledDate,
     status,
     isRedo: false,
