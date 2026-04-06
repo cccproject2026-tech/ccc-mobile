@@ -51,8 +51,13 @@ export default function SessionDetailsScreen() {
     useMentorshipSessions(user?.id);
   const { mutateAsync: completeSessionAsync, isPending: isCompleting } =
     useCompleteSession();
-  const { mutateAsync: redoSessionAsync, isPending: isRedoing } =
-    useRedoSession();
+  const { mutateAsync: redoSessionAsync, isPending: isRedoing } = useRedoSession(
+    {
+      onBeforeInvalidate: () => {
+        router.replace("/(mentor)/(tabs)/sessions");
+      },
+    },
+  );
   const isMutating = isCompleting || isRedoing;
   const completeActionInFlightRef = useRef(false);
   const redoActionInFlightRef = useRef(false);
