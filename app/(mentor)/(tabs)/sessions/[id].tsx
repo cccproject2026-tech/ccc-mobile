@@ -133,7 +133,8 @@ export default function SessionDetailsScreen() {
 
   const isCompleted = session?.status === "COMPLETED";
   const canComplete = !!session?.appointmentId && !isCompleted;
-  const canRedo = !!session?.appointmentId && !isCompleted;
+  /** Redo uses the same appointment; allowed after completion so mentors can schedule again. */
+  const canRedo = !!session?.appointmentId;
   const canRetryLookup = !isLoadingSessions && !!user?.id;
 
   const handleJoinMeeting = () => {
@@ -367,12 +368,11 @@ export default function SessionDetailsScreen() {
               <View style={styles.meetingBlock}>
                 {isPlaceholderMeetingUi ? (
                   <Text style={styles.meetingPreviewNote}>
-                    Preview layout — set usePlaceholderUntilBackend to false in
-                    mentorSessionMeetingConfig when the API provides links.
+                  
                   </Text>
                 ) : null}
                 <MeetingJoinDetails
-                  meetingLink={meetingLinkForUi}
+                  meetingLink={meetingLinkForUi}  
                   platform={platformForUi}
                 />
                 {showJoinButton ? (
@@ -483,9 +483,7 @@ export default function SessionDetailsScreen() {
                   ) : (
                     <>
                       <Ionicons name="refresh" size={22} color="#FFFFFF" />
-                      <Text style={styles.secondaryBtnText}>
-                        {isCompleted ? "Redo unavailable" : "Redo session"}
-                      </Text>
+                      <Text style={styles.secondaryBtnText}>Redo session</Text>
                     </>
                   )}
                 </Pressable>
