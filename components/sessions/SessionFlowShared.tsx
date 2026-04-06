@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { sessionTopicSubtitle } from "@/constants/sessionTitles";
 import { MentorshipSession } from "@/types/session.types";
 import { formatClock } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
@@ -66,10 +67,31 @@ export function SessionProgressHeader({
           ? `Session ${next.sessionNumber} of ${total}`
           : `Session ${completed + 1} of ${total}`;
 
+  const incomplete = sessions.filter((s) => s.status !== "COMPLETED");
+  const sortedIncomplete = [...incomplete].sort(
+    (a, b) => a.sessionNumber - b.sessionNumber,
+  );
+  const focusSessionNumber =
+    total === 0 || completed >= total
+      ? undefined
+      : (next?.sessionNumber ?? sortedIncomplete[0]?.sessionNumber);
+  const progressTopicLine = sessionTopicSubtitle(focusSessionNumber);
+
   return (
     <View style={progressStyles.wrap}>
       <View style={progressStyles.row}>
-        <Text style={progressStyles.title}>{headline}</Text>
+        <View style={progressStyles.titleCol}>
+          {progressTopicLine ? (
+            <>
+              <Text style={progressStyles.headlineTopic} numberOfLines={3}>
+                {progressTopicLine}
+              </Text>
+              <Text style={progressStyles.titleUnderTopic}>{headline}</Text>
+            </>
+          ) : (
+            <Text style={progressStyles.title}>{headline}</Text>
+          )}
+        </View>
         <Text style={progressStyles.count}>
           {completed}/{total}
         </Text>
@@ -252,15 +274,32 @@ const progressStyles = StyleSheet.create({
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 8,
+  },
+  titleCol: {
+    flex: 1,
+    marginRight: 12,
+    minWidth: 0,
   },
   title: {
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "700",
-    flex: 1,
-    marginRight: 12,
+  },
+  titleUnderTopic: {
+    color: "rgba(255,255,255,0.68)",
+    fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 18,
+    marginTop: 5,
+  },
+  headlineTopic: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 20,
+    letterSpacing: -0.2,
   },
   count: {
     color: "rgba(255,255,255,0.85)",
@@ -469,3 +508,4 @@ export function sessionCardHighlightStyle(isCurrent: boolean): ViewStyle {
 }
 
 export { MentorSessionEnrichmentSection } from "./mentor/MentorSessionEnrichmentSection";
+

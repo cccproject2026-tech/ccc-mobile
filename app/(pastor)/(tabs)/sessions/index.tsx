@@ -15,6 +15,10 @@ import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
+import {
+  sessionOrdinalLabel,
+  sessionTopicSubtitle,
+} from "@/constants/sessionTitles";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -165,7 +169,9 @@ export default function PastorSessionsScreen() {
                   paddingBottom: listBottomPad,
                 },
               ]}
-              renderItem={({ item }) => (
+              renderItem={({ item }) => {
+                const topic = sessionTopicSubtitle(item.sessionNumber);
+                return (
                 <Pressable
                   style={[styles.card, sessionCardHighlightStyle(item.id === nextSessionId)]}
                   onPress={() =>
@@ -174,9 +180,25 @@ export default function PastorSessionsScreen() {
                 >
                   <View style={styles.cardTop}>
                     <View style={styles.titleBlock}>
-                      <Text style={styles.sessionTitle}>
-                        Session {item.sessionNumber}
-                      </Text>
+                      <View style={styles.sessionTitleCol}>
+                        {topic ? (
+                          <>
+                            <Text
+                              style={styles.sessionNameTitle}
+                              numberOfLines={3}
+                            >
+                              {topic}
+                            </Text>
+                            <Text style={styles.sessionOrdinalSmall}>
+                              {sessionOrdinalLabel(item.sessionNumber)}
+                            </Text>
+                          </>
+                        ) : (
+                          <Text style={styles.sessionNameTitle}>
+                            {sessionOrdinalLabel(item.sessionNumber)}
+                          </Text>
+                        )}
+                      </View>
                       {item.id === nextSessionId ? (
                         <View style={styles.currentPill}>
                           <Text style={styles.currentPillText}>Current</Text>
@@ -226,7 +248,8 @@ export default function PastorSessionsScreen() {
                     ) : null}
                   </View>
                 </Pressable>
-              )}
+              );
+              }}
               showsVerticalScrollIndicator={false}
             />
           </>
@@ -300,14 +323,23 @@ const styles = StyleSheet.create({
   titleBlock: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
+    alignItems: "flex-start",
     gap: 8,
   },
-  sessionTitle: {
+  sessionTitleCol: { flex: 1, minWidth: 0 },
+  sessionNameTitle: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "800",
+    lineHeight: 22,
+    letterSpacing: -0.2,
+  },
+  sessionOrdinalSmall: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 18,
+    marginTop: 5,
   },
   currentPill: {
     backgroundColor: "rgba(250, 204, 21, 0.28)",

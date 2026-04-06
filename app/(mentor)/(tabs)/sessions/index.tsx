@@ -14,6 +14,10 @@ import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
+import {
+  sessionOrdinalLabel,
+  sessionTopicSubtitle,
+} from "@/constants/sessionTitles";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
@@ -148,6 +152,7 @@ const SessionRow = React.memo(function SessionRow({
   const isCompleted    = item.status === "COMPLETED";
   const canSubmit      = item.status === "SCHEDULED" && !!item.appointmentId;
   const completeDisabled = isCompleted || !canSubmit || completeBusy;
+  const sessionTopic = sessionTopicSubtitle(item.sessionNumber);
 
   return (
     <View style={[styles.card, isCurrent && styles.cardCurrent]}>
@@ -166,7 +171,7 @@ const SessionRow = React.memo(function SessionRow({
             : undefined
         }
         accessibilityRole="button"
-        accessibilityLabel={`Session ${item.sessionNumber}, view details`}
+        accessibilityLabel={`${sessionOrdinalLabel(item.sessionNumber)}${sessionTopic ? `, ${sessionTopic}` : ""}, view details`}
       >
         {/* Pastor identity row */}
         {(item.pastorName?.trim() || item.pastorProfilePicture) ? (
@@ -194,7 +199,22 @@ const SessionRow = React.memo(function SessionRow({
         {/* Header row */}
         <View style={styles.cardTop}>
           <View style={styles.cardTitleBlock}>
-            <Text style={styles.sessionLabel}>Session {item.sessionNumber}</Text>
+            <View style={styles.cardTitleTextCol}>
+              {sessionTopic ? (
+                <>
+                  <Text style={styles.sessionNameTitle} numberOfLines={3}>
+                    {sessionTopic}
+                  </Text>
+                  <Text style={styles.sessionOrdinalSmall}>
+                    {sessionOrdinalLabel(item.sessionNumber)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.sessionNameTitle}>
+                  {sessionOrdinalLabel(item.sessionNumber)}
+                </Text>
+              )}
+            </View>
             {isCurrent && (
               <View style={styles.currentPill}>
                 <View style={styles.currentPillDot} />
@@ -857,11 +877,25 @@ const styles = StyleSheet.create({
   cardTitleBlock: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     gap: 8,
   },
-  sessionLabel: { color: TEXT_PRIMARY, fontSize: 17, fontWeight: "800" },
+  cardTitleTextCol: { flex: 1, minWidth: 0 },
+  sessionNameTitle: {
+    color: TEXT_PRIMARY,
+    fontSize: 16,
+    fontWeight: "800",
+    lineHeight: 22,
+    letterSpacing: -0.2,
+  },
+  sessionOrdinalSmall: {
+    color: TEXT_MUTED,
+    fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 18,
+    marginTop: 5,
+  },
 
   currentPill: {
     flexDirection: "row",

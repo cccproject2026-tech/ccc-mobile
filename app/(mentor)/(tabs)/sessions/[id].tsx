@@ -23,6 +23,10 @@ import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
+import {
+  sessionOrdinalLabel,
+  sessionTopicSubtitle,
+} from "@/constants/sessionTitles";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
@@ -293,6 +297,8 @@ export default function SessionDetailsScreen() {
     return [d, t].filter(Boolean).join(" · ");
   }, [session]);
 
+  const heroTopic = sessionTopicSubtitle(session?.sessionNumber);
+
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: TAB_SCENE_BOTTOM }]}
@@ -359,9 +365,20 @@ export default function SessionDetailsScreen() {
               <View style={styles.heroTop}>
                 <View style={styles.heroTitles}>
                   <Text style={styles.heroKicker}>Session overview</Text>
-                  <Text style={styles.heroTitle}>
-                    Session {session.sessionNumber}
-                  </Text>
+                  {heroTopic ? (
+                    <>
+                      <Text style={styles.heroSessionName} numberOfLines={4}>
+                        {heroTopic}
+                      </Text>
+                      <Text style={styles.heroSessionOrdinal}>
+                        {sessionOrdinalLabel(session.sessionNumber)}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={styles.heroSessionName}>
+                      {sessionOrdinalLabel(session.sessionNumber)}
+                    </Text>
+                  )}
                 </View>
                 <SessionStatusBadge status={session.status} />
               </View>
@@ -735,10 +752,19 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 4,
   },
-  heroTitle: {
+  heroSessionName: {
     color: "#FFFFFF",
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "800",
+    lineHeight: 27,
+    letterSpacing: -0.3,
+  },
+  heroSessionOrdinal: {
+    color: "rgba(255,255,255,0.62)",
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 20,
+    marginTop: 6,
   },
   divider: {
     height: 1,

@@ -9,6 +9,7 @@ import { assessmentService } from "@/services/assessment.service";
 import { roadmapService } from "@/services/roadmap.service";
 import type { Appointment } from "@/types/appointment.types";
 import { formatSessionDate } from "@/utils/date";
+import { sessionOrdinalLabel, sessionTopicLine } from "@/constants/sessionTitles";
 import { format } from "date-fns";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -130,8 +131,8 @@ export const useMentorFocusItems = () => {
           : "Pastor";
         return {
           id: `mentorship-program-today-${session.id}`,
-          title: `Session ${session.sessionNumber}`,
-          description: `${formatSessionDate(session.scheduledDate)} • ${session.status}`,
+          title: sessionTopicLine(session.sessionNumber),
+          description: `${sessionOrdinalLabel(session.sessionNumber)} · ${formatSessionDate(session.scheduledDate)} • ${session.status}`,
           meta: pastor,
           accentColor: "#38BDF8",
           route: {
@@ -166,8 +167,8 @@ export const useMentorFocusItems = () => {
           : "Pastor";
         return {
           id: `mentorship-program-upcoming-${session.id}`,
-          title: `Session ${session.sessionNumber}`,
-          description: `${formatSessionDate(session.scheduledDate)} • ${session.status}`,
+          title: sessionTopicLine(session.sessionNumber),
+          description: `${sessionOrdinalLabel(session.sessionNumber)} · ${formatSessionDate(session.scheduledDate)} • ${session.status}`,
           meta: pastor,
           accentColor: "#22C55E",
           route: {
