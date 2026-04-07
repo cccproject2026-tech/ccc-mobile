@@ -11,6 +11,7 @@ import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { Mentor } from "@/hooks/mentors/useMentors";
 import { useAuthStore } from "@/stores/auth.store";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -468,6 +469,9 @@ const Appointments: React.FC = () => {
                                   handleCancel(appointment.appointment),
                               },
                             ]}
+                            meetingJoinUrl={getAppointmentJoinUrl(
+                              appointment.appointment,
+                            )}
                           />
                         ))
                       )}

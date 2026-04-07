@@ -1,4 +1,17 @@
-import type { AppointmentPlatform } from "@/types/appointment.types";
+import type {
+  Appointment,
+  AppointmentPlatform,
+} from "@/types/appointment.types";
+
+/** Prefer top-level link, then Zoom embed (API may populate only one). */
+export function getAppointmentJoinUrl(
+  appointment?: Appointment | null,
+): string | null {
+  if (!appointment) return null;
+  const fromLink = appointment.meetingLink?.trim();
+  const fromZoom = appointment.zoomMeeting?.joinUrl?.trim();
+  return fromLink || fromZoom || null;
+}
 
 export function appointmentPlatformLabel(
   platform: AppointmentPlatform,

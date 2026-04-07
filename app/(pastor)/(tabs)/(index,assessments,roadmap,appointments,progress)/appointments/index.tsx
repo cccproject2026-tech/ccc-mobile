@@ -16,6 +16,7 @@ import { useUpdateAppointment } from "@/hooks/appointments/useUpadteAppointment"
 import { Mentor, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { useAuthStore } from "@/stores";
 import { Appointment, AppointmentPlatform } from "@/types/appointment.types";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -420,6 +421,7 @@ const Appointments = () => {
                             role={mentor?.role || 'Mentor'}
                             mode={getModeLabel(appointment.platform)}
                             platformIcon={getPlatformIcon(appointment.platform)}
+                            meetingJoinUrl={getAppointmentJoinUrl(appointment)}
                             menuItems={[
                               {
                                 key: 'reschedule',
@@ -487,6 +489,7 @@ const Appointments = () => {
                             role={mentor?.role || "Mentor"}
                             mode={getModeLabel(appointment.platform)}
                             platformIcon={getPlatformIcon(appointment.platform)}
+                            meetingJoinUrl={getAppointmentJoinUrl(appointment)}
                             menuItems={[
                               {
                                 key: "reschedule",

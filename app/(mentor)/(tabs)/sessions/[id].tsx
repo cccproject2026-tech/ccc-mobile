@@ -123,7 +123,10 @@ export default function SessionDetailsScreen() {
   }, [session?.appointmentId, mentorAppointments, menteeAppointments]);
 
   const isScheduled = session?.status === "SCHEDULED";
-  const apiMeetingLink = appointment?.meetingLink?.trim();
+  const apiMeetingLink =
+    appointment?.meetingLink?.trim() ||
+    appointment?.zoomMeeting?.joinUrl?.trim() ||
+    null;
 
   const showPlaceholderMeeting =
     MENTOR_MEETING_UI.usePlaceholderUntilBackend &&

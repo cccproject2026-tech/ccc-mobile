@@ -26,6 +26,10 @@ export interface Appointment {
     endTime: string; // ISO Date
     platform: AppointmentPlatform;
     meetingLink?: string;
+    /** Present when backend creates a Zoom meeting; join URL may appear here if meetingLink is empty. */
+    zoomMeeting?: {
+        joinUrl?: string;
+    };
     notes?: string;
     status: AppointmentStatus;
     createdAt?: string;

@@ -74,7 +74,10 @@ export default function PastorSessionsScreen() {
       return {
         ...s,
         mentorName,
-        meetingLink: apt?.meetingLink,
+        meetingLink:
+          apt?.meetingLink?.trim() ||
+          apt?.zoomMeeting?.joinUrl?.trim() ||
+          undefined,
         phase: phaseLabelForSessionNumber(s.sessionNumber),
       };
     });

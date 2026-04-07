@@ -90,7 +90,10 @@ export default function PastorSessionDetailScreen() {
     return mentorNameById.get(String(appointment.mentorId));
   }, [appointment?.mentorId, mentorNameById]);
 
-  const meetingLink = appointment?.meetingLink?.trim();
+  const meetingLink =
+    appointment?.meetingLink?.trim() ||
+    appointment?.zoomMeeting?.joinUrl?.trim() ||
+    null;
   const phase = session
     ? phaseLabelForSessionNumber(session.sessionNumber)
     : undefined;

@@ -8,12 +8,20 @@ import {
 import React from "react";
 import {
     Image,
+    Linking,
     Platform,
     Pressable,
     StyleSheet,
     Text,
     View,
 } from "react-native";
+
+function normalizeMeetingUrl(raw: string): string {
+  const t = raw.trim();
+  if (!t) return t;
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t}`;
+}
 import * as DropdownMenu from "zeego/dropdown-menu";
 
 export interface MenuItem {
@@ -39,6 +47,8 @@ type Props = {
   onCall?: () => void;
   onChat?: () => void;
   onMail?: () => void;
+  /** When set, tapping the underlined mode opens this URL (e.g. Zoom join). */
+  meetingJoinUrl?: string | null;
 };
 
 const AppointmentCard: React.FC<Props> = ({
@@ -56,6 +66,7 @@ const AppointmentCard: React.FC<Props> = ({
   onCall,
   onChat,
   onMail,
+  meetingJoinUrl,
 }) => {
   return (
     <View style={styles.card}>
@@ -156,9 +167,22 @@ const AppointmentCard: React.FC<Props> = ({
           </View>
 
           <View style={styles.modeRow}>
-            <Text style={styles.modeLabel}>
-              Mode : <Text style={styles.modeValue}>{mode}</Text>
-            </Text>
+            <View style={styles.modeRowInner}>
+              <Text style={styles.modeLabel}>Mode : </Text>
+              {meetingJoinUrl ? (
+                <Pressable
+                  onPress={() => {
+                    const url = normalizeMeetingUrl(meetingJoinUrl);
+                    Linking.openURL(url).catch(() => {});
+                  }}
+                  hitSlop={8}
+                >
+                  <Text style={styles.modeValue}>{mode}</Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.modeValue}>{mode}</Text>
+              )}
+            </View>
           </View>
 
           <View style={styles.actions}>
@@ -258,6 +282,11 @@ const styles = StyleSheet.create({
   modeRow: {
     marginTop: 6,
     paddingRight: 32,
+  },
+  modeRowInner: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
   },
   modeLabel: {
     color: "#CFE9F3",
