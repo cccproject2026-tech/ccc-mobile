@@ -23,6 +23,7 @@ import MapView, { Marker } from "react-native-maps";
 import Animated, { FadeInUp, useAnimatedRef, useScrollViewOffset } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+/** Quick Links: four tiles. Mentorship Insights is in the drawer menu. */
 const EXPLORE_TILES = [
   {
     icon: "document-text-outline",
@@ -33,11 +34,6 @@ const EXPLORE_TILES = [
     icon: "calendar-outline",
     title: "Mentorship\nSessions",
     route: "/(mentor)/(tabs)/sessions",
-  },
-  {
-    icon: "analytics-outline",
-    title: "Mentorship\nInsights",
-    route: "/(mentor)/(tabs)/sessions/insights",
   },
   {
     icon: "people-outline",

@@ -795,6 +795,13 @@ export const MentorMenuItems: MenuItem[] = [
     route: "/(mentor)/(tabs)/sessions",
   },
   {
+    id: "mentorshipInsights",
+    label: "Mentorship Insights",
+    icon: "analytics-outline",
+    iconType: "ionicon",
+    route: "/(mentor)/(tabs)/sessions/insights",
+  },
+  {
     id: "courses",
     label: "Courses",
     icon: icons.Revitalization,

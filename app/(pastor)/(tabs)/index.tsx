@@ -41,6 +41,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+/** Quick Links: four tiles (sessions, notes, progress, roadmap). Mentors list remains under tab navigation. */
 const EXPLORE_TILES = [
   {
     title: "Mentorship\nSessions",
@@ -55,13 +56,6 @@ const EXPLORE_TILES = [
     route: "/(pastor)/(tabs)/profile/notes",
     color: "#10B981",
     gradient: ["#10B981", "#059669"],
-  },
-  {
-    title: "My\nMentors",
-    icon: icons.myMentors,
-    route: "/(pastor)/(tabs)/mentors",
-    color: "#14B8A6",
-    gradient: ["#14B8A6", "#0D9488"],
   },
   {
     title: "Progress\nTracker",
@@ -623,7 +617,7 @@ export default function PastorDashboard() {
                 <Text style={styles.sectionTitleText}>Quick Links</Text>
               </View>
               <Text style={[styles.cardSubtitle, styles.exploreCardSubtitle]} numberOfLines={1}>
-                Roadmap, mentors, progress, and notes.
+                Sessions, notes, progress, and roadmap.
               </Text>
               <View style={styles.exploreRow}>
                 {EXPLORE_TILES.map((item, idx) => (
