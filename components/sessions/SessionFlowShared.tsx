@@ -186,10 +186,12 @@ export function NoteCard({
   title,
   value,
   surface = "dark",
+  cardStyleOverride,
 }: {
   title: string;
   value?: string;
   surface?: "dark" | "light";
+  cardStyleOverride?: ViewStyle;
 }) {
   const has = value && value.trim().length > 0;
   const cardStyle =
@@ -201,7 +203,7 @@ export function NoteCard({
   const emptyStyle =
     surface === "light" ? detailStyles.noteEmptyLight : detailStyles.noteEmpty;
   return (
-    <View style={cardStyle}>
+    <View style={[cardStyle, cardStyleOverride]}>
       <Text style={titleStyle}>{title}</Text>
       <Text style={[bodyStyle, !has && emptyStyle]}>
         {has ? value : "No note yet."}
@@ -567,5 +569,4 @@ export function sessionCardHighlightStyle(isCurrent: boolean): ViewStyle {
     : {};
 }
 
-export { MentorSessionEnrichmentSection } from "./mentor/MentorSessionEnrichmentSection";
 

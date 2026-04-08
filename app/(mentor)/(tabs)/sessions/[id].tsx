@@ -3,16 +3,12 @@ import {
   DetailScreenSkeleton,
   formatSessionTime,
   getNextSessionId,
-  MentorSessionEnrichmentSection,
-  NoteCard,
-  NotesSection,
   SessionConfirmModal,
   sessionGradientColors,
   SessionProgressHeader,
   SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
 import { MENTOR_MEETING_UI } from "@/components/sessions/mentor/mentorSessionMeetingConfig";
-import { MeetingJoinDetails } from "@/components/sessions/pastor/MeetingJoinDetails";
 import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
 import { Colors } from "@/constants/Colors";
 import {
@@ -24,26 +20,42 @@ import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
 import { useAuthStore } from "@/stores";
-import { MentorshipSession } from "@/types/session.types";
+import type { AppointmentPlatform } from "@/types/appointment.types";
+import { MentorshipSession, MentorshipAiSummary } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
 import {
   aiSummaryForSession,
   transcriptLinesForSession,
 } from "@/utils/sessionTranscriptUi";
+import {
+  appointmentPlatformLabel,
+  formatMeetingIdForDisplay,
+  parseGoogleMeetCodeFromUrl,
+  parseZoomMeetingIdFromUrl,
+  truncateMiddle,
+  zoomUrlHasPasscodeQuery,
+} from "@/utils/meetingLinkDetails";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
+  LayoutAnimation,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
+  UIManager,
+  useWindowDimensions,
   View,
+  ViewStyle,
 } from "react-native";
 import {
   SafeAreaView,
@@ -52,12 +64,381 @@ import {
 import Toast from "react-native-toast-message";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
+const SP = 16;
+const TAB_MIN_HEIGHT = 48;
+const TAB_FONT = 15;
+const SEG_GAP = 4;
+
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 function normalizeMeetingUrl(raw: string): string {
   const t = raw.trim();
   if (!t) return t;
   if (/^https?:\/\//i.test(t)) return t;
   return `https://${t}`;
+}
+
+async function sharePlainText(label: string, value: string) {
+  try {
+    const result = await Share.share({ message: value, title: label });
+    if (result.action === Share.sharedAction) {
+      Toast.show({
+        type: "floating",
+        position: "top",
+        text1: "Shared",
+        text2: label,
+      });
+    }
+  } catch {
+    Toast.show({
+      type: "floating",
+      position: "top",
+      text1: "Could not open share",
+      text2: "Long-press the text above to select and copy.",
+    });
+  }
+}
+
+type TabKey = "transcript" | "summary";
+
+function SessionTabs({
+  transcriptSlot,
+  summarySlot,
+}: {
+  transcriptSlot: React.ReactNode;
+  summarySlot: React.ReactNode;
+}) {
+  const [active, setActive] = useState<TabKey>("transcript");
+  const fade = useRef(new Animated.Value(1)).current;
+
+  const animateTo = useCallback(
+    (key: TabKey) => {
+      Animated.timing(fade, {
+        toValue: 0,
+        duration: 80,
+        useNativeDriver: true,
+      }).start(() => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setActive(key);
+        Animated.timing(fade, {
+          toValue: 1,
+          duration: 120,
+          useNativeDriver: true,
+        }).start();
+      });
+    },
+    [fade],
+  );
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "transcript", label: "Complete Transcript" },
+    { key: "summary", label: "AI Summary" },
+  ];
+
+  const content = active === "transcript" ? transcriptSlot : summarySlot;
+
+  return (
+    <View style={tabsStyles.wrap}>
+      <View style={tabsStyles.track}>
+        {tabs.map((t) => {
+          const isActive = active === t.key;
+          return (
+            <Pressable
+              key={t.key}
+              onPress={() => {
+                if (!isActive) animateTo(t.key);
+              }}
+              style={({ pressed }) => [
+                tabsStyles.segment,
+                isActive ? tabsStyles.segmentOn : tabsStyles.segmentOff,
+                pressed && !isActive && tabsStyles.segmentPressed,
+              ]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              android_ripple={
+                Platform.OS === "android"
+                  ? {
+                      color: "rgba(255, 255, 255, 0.14)",
+                      borderless: false,
+                    }
+                  : undefined
+              }
+            >
+              <Text
+                numberOfLines={1}
+                style={[
+                  tabsStyles.label,
+                  isActive ? tabsStyles.labelOn : tabsStyles.labelOff,
+                ]}
+              >
+                {t.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Animated.View style={[tabsStyles.panel, { opacity: fade }]}>
+        {content}
+      </Animated.View>
+    </View>
+  );
+}
+
+function MeetingJoinDetailsInline({
+  meetingLink,
+  platform,
+}: {
+  meetingLink: string;
+  platform: AppointmentPlatform;
+}) {
+  const link = meetingLink.trim();
+  const zoomId =
+    platform === "zoom" ? parseZoomMeetingIdFromUrl(link) : undefined;
+  const meetCode =
+    platform === "google_meet" ? parseGoogleMeetCodeFromUrl(link) : undefined;
+  const zoomPwd = platform === "zoom" && zoomUrlHasPasscodeQuery(link);
+
+  const displayUrl = truncateMiddle(link, 52);
+
+  return (
+    <View style={joinStyles.wrap}>
+      <View style={joinStyles.row}>
+        <Text style={joinStyles.k}>Platform</Text>
+        <Text style={joinStyles.v}>{appointmentPlatformLabel(platform)}</Text>
+      </View>
+
+      {zoomId ? (
+        <View style={joinStyles.row}>
+          <Text style={joinStyles.k}>Meeting ID</Text>
+          <View style={joinStyles.valueWithCopy}>
+            <Text style={joinStyles.vMono} selectable>
+              {formatMeetingIdForDisplay(zoomId)}
+            </Text>
+            <Pressable
+              accessibilityLabel="Share meeting ID"
+              hitSlop={10}
+              onPress={() =>
+                sharePlainText("Meeting ID", zoomId.replace(/\s/g, ""))
+              }
+              style={joinStyles.copyHit}
+            >
+              <Ionicons
+                name="share-outline"
+                size={18}
+                color="rgba(255,255,255,0.75)"
+              />
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+
+      {meetCode ? (
+        <View style={joinStyles.row}>
+          <Text style={joinStyles.k}>Meet code</Text>
+          <View style={joinStyles.valueWithCopy}>
+            <Text style={joinStyles.vMono} selectable>
+              {meetCode}
+            </Text>
+            <Pressable
+              accessibilityLabel="Share Meet code"
+              hitSlop={10}
+              onPress={() => sharePlainText("Meet code", meetCode)}
+              style={joinStyles.copyHit}
+            >
+              <Ionicons
+                name="share-outline"
+                size={18}
+                color="rgba(255,255,255,0.75)"
+              />
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+
+      {zoomPwd ? (
+        <Text style={joinStyles.hint}>
+          Your Zoom link includes a passcode — use Join meeting and your browser
+          or app will apply it automatically.
+        </Text>
+      ) : null}
+
+      <View style={joinStyles.row}>
+        <Text style={joinStyles.k}>Link</Text>
+        <View style={joinStyles.linkBlock}>
+          <Text style={joinStyles.linkText} selectable numberOfLines={3}>
+            {displayUrl}
+          </Text>
+          <Pressable
+            accessibilityLabel="Share meeting link"
+            style={joinStyles.copyLinkBtn}
+            onPress={() => sharePlainText("Meeting link", link)}
+          >
+            <Ionicons name="share-outline" size={18} color="#153C5A" />
+            <Text style={joinStyles.copyLinkText}>Share link</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function NoteCardInline({
+  title,
+  value,
+  cardStyle,
+}: {
+  title: string;
+  value?: string;
+  cardStyle?: ViewStyle;
+}) {
+  const has = value && value.trim().length > 0;
+  return (
+    <View style={[noteStyles.card, cardStyle]}>
+      <Text style={noteStyles.title}>{title}</Text>
+      <Text style={[noteStyles.body, !has && noteStyles.empty]}>
+        {has ? value : "No note yet."}
+      </Text>
+    </View>
+  );
+}
+
+function MeetingTranscriptInline({
+  lines,
+}: {
+  lines: { role: "mentor" | "pastor"; text: string }[];
+}) {
+  const { width, height: screenHeight } = useWindowDimensions();
+  const transcriptMaxHeight = useMemo(() => {
+    const byWidth = width * 0.55;
+    const byHeight = screenHeight * 0.36;
+    return Math.min(480, Math.max(220, Math.max(byWidth, byHeight)));
+  }, [width, screenHeight]);
+  const hasContent = lines.some((l) => l.text.trim().length > 0);
+
+  if (!hasContent) {
+    return (
+      <View style={transcriptStyles.section}>
+        <View style={transcriptStyles.borderBox}>
+          <View
+            style={[transcriptStyles.emptyWrap, transcriptStyles.emptyWrapInBox]}
+          >
+            <Ionicons
+              name="chatbubbles-outline"
+              size={22}
+              color="rgba(255,255,255,0.45)"
+            />
+            <Text style={transcriptStyles.emptySub}>
+              No transcript is available for this meeting yet.
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={transcriptStyles.section}>
+      <View style={transcriptStyles.borderBox}>
+        <ScrollView
+          style={[transcriptStyles.scroll, { maxHeight: transcriptMaxHeight }]}
+          contentContainerStyle={transcriptStyles.scrollContent}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator
+        >
+          {lines.map((line, i) => {
+            const isMentor = line.role === "mentor";
+            return (
+              <View key={`${i}-${line.role}`} style={transcriptStyles.row}>
+                <View
+                  style={[
+                    transcriptStyles.bubble,
+                    isMentor
+                      ? transcriptStyles.bubbleMentor
+                      : transcriptStyles.bubblePastor,
+                    isMentor
+                      ? transcriptStyles.bubbleMentorTab
+                      : transcriptStyles.bubblePastorTab,
+                  ]}
+                >
+                  <Text style={transcriptStyles.role}>
+                    {isMentor ? "Mentor" : "Pastor"}
+                  </Text>
+                  <Text style={transcriptStyles.text}>{line.text.trim()}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
+function emptyMentorAiSummary(): MentorshipAiSummary {
+  return {
+    overview: "",
+    keyDiscussionPoints: "",
+    adviceGiven: "",
+    actionItems: "",
+    nextSessionFocus: "",
+  };
+}
+
+function MeetingAiSummaryInline({ summary }: { summary?: MentorshipAiSummary }) {
+  const { width } = useWindowDimensions();
+  const cardPad = useMemo(() => (width < 360 ? 14 : width < 420 ? 16 : 18), [width]);
+  const s = summary ?? emptyMentorAiSummary();
+  const sections: { title: string; body: string }[] = [
+    { title: "Overview", body: s.overview },
+    { title: "Key discussion points", body: s.keyDiscussionPoints },
+    { title: "Advice given", body: s.adviceGiven },
+    { title: "Action items", body: s.actionItems },
+    { title: "Next session focus", body: s.nextSessionFocus },
+  ];
+
+  return (
+    <View style={aiStyles.wrap}>
+      <View style={[aiStyles.card, { padding: cardPad, gap: 14 }]}>
+        {sections.map((sec, idx) => {
+          const trimmed = (sec.body ?? "").trim();
+          const empty = !trimmed;
+          const lines = empty
+            ? []
+            : trimmed.split(/\n/).map((x) => x.trim()).filter(Boolean);
+          const isLast = idx === sections.length - 1;
+          return (
+            <View key={sec.title} style={[aiStyles.block, !isLast && aiStyles.blockDivider]}>
+              <Text style={aiStyles.blockTitle}>{sec.title}</Text>
+              {empty ? (
+                <Text style={aiStyles.blockEmpty}>Not available yet.</Text>
+              ) : lines.length > 1 ? (
+                <View style={aiStyles.bulletList}>
+                  {lines.map((line, i) => (
+                    <View key={`${idx}-${i}`} style={aiStyles.bulletRow}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={16}
+                        color="rgba(52, 211, 153, 0.95)"
+                        style={aiStyles.bulletIcon}
+                      />
+                      <Text style={aiStyles.blockBody}>{line}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={aiStyles.blockBody}>{trimmed}</Text>
+              )}
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
 }
 
 export default function SessionDetailsScreen() {
@@ -416,8 +797,8 @@ export default function SessionDetailsScreen() {
                   <Text style={styles.meetingPreviewNote}>
                   </Text>
                 ) : null}
-                <MeetingJoinDetails
-                  meetingLink={meetingLinkForUi}  
+                <MeetingJoinDetailsInline
+                  meetingLink={meetingLinkForUi}
                   platform={platformForUi}
                 />
                 {showJoinButton ? (
@@ -469,15 +850,22 @@ export default function SessionDetailsScreen() {
                 Session Information, Notes, Complete Meeting Transcript and AI Summary
                 </Text>
               </View>
-              <MentorSessionEnrichmentSection
-                transcript={transcriptLinesForSession(session)}
-                aiSummary={aiSummaryForSession(session)}
-                notesSlot={
-                  <NotesSection>
-                    <NoteCard title="Mentor note" value={session.mentorNote} />
-                  </NotesSection>
-                }
-              />
+              <View style={styles.enrichmentWrap}>
+                <View style={styles.notesBlock}>
+                  <Text style={styles.sectionHeadline}>Notes</Text>
+                  <NoteCardInline title="Mentor note" value={session.mentorNote} />
+                </View>
+                <SessionTabs
+                  transcriptSlot={
+                    <MeetingTranscriptInline
+                      lines={transcriptLinesForSession(session)}
+                    />
+                  }
+                  summarySlot={
+                    <MeetingAiSummaryInline summary={aiSummaryForSession(session)} />
+                  }
+                />
+              </View>
             </View>
 
             <Pressable
@@ -835,5 +1223,305 @@ const styles = StyleSheet.create({
   retryText: {
     color: "#153C5A",
     fontWeight: "800",
+  },
+  enrichmentWrap: {
+    marginBottom: 8,
+    width: "100%",
+    minWidth: 0,
+    gap: 18,
+  },
+  notesBlock: {
+    width: "100%",
+    minWidth: 0,
+    gap: 12,
+  },
+  sectionHeadline: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+});
+
+const tabsStyles = StyleSheet.create({
+  wrap: {
+    marginTop: 0,
+    gap: 18,
+    width: "100%",
+    minWidth: 0,
+    alignSelf: "stretch",
+  },
+  track: {
+    flexDirection: "row",
+    width: "100%",
+    minWidth: 0,
+    alignSelf: "stretch",
+    padding: SEG_GAP,
+    borderRadius: 14,
+    gap: SEG_GAP,
+    backgroundColor: "rgba(0, 0, 0, 0.22)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+  },
+  segment: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: TAB_MIN_HEIGHT,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 11,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  segmentOn: {
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+  },
+  segmentOff: {
+    backgroundColor: "transparent",
+  },
+  segmentPressed: {
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+  },
+  label: {
+    fontSize: TAB_FONT,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+    textAlign: "center",
+  },
+  labelOn: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  labelOff: {
+    color: "rgba(255, 255, 255, 0.55)",
+    fontWeight: "600",
+  },
+  panel: {
+    width: "100%",
+    minWidth: 0,
+    alignSelf: "stretch",
+  },
+});
+
+const joinStyles = StyleSheet.create({
+  wrap: {
+    gap: 12,
+    marginBottom: 4,
+  },
+  row: {
+    gap: 6,
+  },
+  k: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  v: {
+    color: "rgba(255,255,255,0.95)",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  vMono: {
+    color: "rgba(255,255,255,0.95)",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    flex: 1,
+    minWidth: 0,
+  },
+  valueWithCopy: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  copyHit: {
+    padding: 4,
+  },
+  hint: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  linkBlock: {
+    gap: 10,
+  },
+  linkText: {
+    color: "rgba(255,255,255,0.88)",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  copyLinkBtn: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.88)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  copyLinkText: {
+    color: "#153C5A",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+});
+
+const noteStyles = StyleSheet.create({
+  card: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    marginBottom: 0,
+  },
+  title: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  body: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  empty: {
+    color: "rgba(255,255,255,0.45)",
+    fontStyle: "italic",
+  },
+});
+
+const transcriptStyles = StyleSheet.create({
+  section: { marginTop: SP, width: "100%", alignSelf: "stretch" },
+  borderBox: {
+    width: "100%",
+    alignSelf: "stretch",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    padding: 14,
+    overflow: "hidden",
+  },
+  emptyWrap: {
+    padding: SP,
+    borderRadius: 12,
+    backgroundColor: "transparent",
+    alignItems: "center",
+    gap: 8,
+  },
+  emptyWrapInBox: {
+    marginTop: 0,
+    borderWidth: 0,
+    paddingVertical: 12,
+  },
+  emptySub: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 19,
+    flexShrink: 1,
+  },
+  scroll: { width: "100%", alignSelf: "stretch" },
+  scrollContent: {
+    paddingBottom: 20,
+    paddingTop: 6,
+    gap: 12,
+  },
+  row: { alignItems: "stretch", width: "100%" },
+  bubble: {
+    maxWidth: "100%",
+    width: "100%",
+    alignSelf: "stretch",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  bubbleMentor: {
+    backgroundColor: "rgba(125, 211, 252, 0.16)",
+  },
+  bubblePastor: {
+    backgroundColor: "rgba(255,255,255,0.09)",
+  },
+  bubbleMentorTab: {
+    borderLeftWidth: 4,
+    borderLeftColor: "rgba(56, 189, 248, 0.85)",
+  },
+  bubblePastorTab: {
+    borderLeftWidth: 4,
+    borderLeftColor: "rgba(255,255,255,0.35)",
+  },
+  role: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "rgba(255,255,255,0.55)",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  text: {
+    color: "rgba(255,255,255,0.95)",
+    fontSize: 15,
+    lineHeight: 24,
+    flexShrink: 1,
+  },
+});
+
+const aiStyles = StyleSheet.create({
+  wrap: { marginTop: SP, width: "100%", minWidth: 0 },
+  card: {
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  block: {
+    gap: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    paddingHorizontal: 2,
+  },
+  blockDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.1)",
+    paddingBottom: 14,
+    marginBottom: 2,
+  },
+  blockTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "rgba(250, 204, 21, 0.95)",
+  },
+  blockBody: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: "rgba(255,255,255,0.9)",
+    flexShrink: 1,
+  },
+  blockEmpty: {
+    fontSize: 14,
+    fontStyle: "italic",
+    lineHeight: 22,
+    color: "rgba(255,255,255,0.45)",
+  },
+  bulletList: {
+    gap: 10,
+    width: "100%",
+  },
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    maxWidth: "100%",
+  },
+  bulletIcon: {
+    marginTop: 3,
+    flexShrink: 0,
   },
 });

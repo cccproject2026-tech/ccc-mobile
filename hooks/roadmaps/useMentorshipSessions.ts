@@ -17,6 +17,16 @@ export const useMentorshipSessions = (mentorId?: string) => {
     staleTime: 60000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 1,
+    retry: (failureCount, error: any) => {
+      const status = error?.statusCode;
+      if (status === 429) return failureCount < 3;
+      return failureCount < 1;
+    },
+    retryDelay: (attemptIndex, error: any) => {
+      if (error?.statusCode === 429) {
+        return Math.min(1000 * 2 ** attemptIndex, 8000);
+      }
+      return 500;
+    },
   });
 };

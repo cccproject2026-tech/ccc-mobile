@@ -321,6 +321,11 @@ export const roadmapService = {
                         id: `${pastorId}-${s.sessionNumber}-${s.appointmentId ?? idx}`,
                     }));
                 } catch (e) {
+                    // If we're being throttled, fail fast so the query keeps its previous data
+                    // (instead of collapsing into an empty list).
+                    if ((e as any)?.statusCode === 429) {
+                        throw e;
+                    }
                     if (__DEV__) {
                         console.warn(`[getMentorshipSessionsForMentor] Failed for pastor ${pastorId}`, e);
                     }

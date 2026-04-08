@@ -1,10 +1,9 @@
 import { buildPastorMeetingsUi } from "@/components/sessions/pastor/buildPastorMeetingsUi";
-import { ExpandableMeetingCard } from "@/components/sessions/pastor/ExpandableMeetingCard";
-import { MeetingJoinDetails } from "@/components/sessions/pastor/MeetingJoinDetails";
 import type { PastorMeetingUi } from "@/components/sessions/pastor/pastorSessionDetail.types";
 import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
 import {
   DetailScreenSkeleton,
+  formatSessionTime,
   getNextSessionId,
   sessionGradientColors,
   SessionProgressHeader,
@@ -19,14 +18,37 @@ import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useAuthStore } from "@/stores";
+import type { AppointmentPlatform } from "@/types/appointment.types";
 import { MentorshipSession } from "@/types/session.types";
+import { formatSessionDate } from "@/utils/date";
+import {
+  appointmentPlatformLabel,
+  formatMeetingIdForDisplay,
+  parseGoogleMeetCodeFromUrl,
+  parseZoomMeetingIdFromUrl,
+  truncateMiddle,
+  zoomUrlHasPasscodeQuery,
+} from "@/utils/meetingLinkDetails";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useRef, useState } from "react";
+import {
+  Animated,
+  LayoutAnimation,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  UIManager,
+  View,
+  ViewStyle,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -34,22 +56,328 @@ import {
 import Toast from "react-native-toast-message";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
+const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+};
 
-function normalizeMeetingUrl(raw: string): string {
-  const t = raw.trim();
-  if (!t) return t;
-  if (/^https?:\/\//i.test(t)) return t;
-  return `https://${t}`;
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+// ============= Utility Functions =============
+const normalizeMeetingUrl = (raw: string): string => {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
+
+const shareContent = async (label: string, value: string) => {
+  try {
+    const result = await Share.share({ message: value, title: label });
+    if (result.action === Share.sharedAction) {
+      Toast.show({
+        type: "success",
+        position: "top",
+        text1: "Shared successfully",
+        text2: label,
+      });
+    }
+  } catch {
+    Toast.show({
+      type: "error",
+      position: "top",
+      text1: "Share failed",
+      text2: "Long-press to copy instead",
+    });
+  }
+};
+
+const getStatusLabel = (status: PastorMeetingUi["status"]): string => {
+  const labels = {
+    SCHEDULED: "Scheduled",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+    RESCHEDULED: "Rescheduled",
+  };
+  return labels[status] || status;
+};
+
+const getStatusStyle = (status: PastorMeetingUi["status"]): ViewStyle => {
+  const styles = {
+    COMPLETED: { backgroundColor: "rgba(34, 197, 94, 0.2)" },
+    CANCELLED: { backgroundColor: "rgba(248, 113, 113, 0.2)" },
+    RESCHEDULED: { backgroundColor: "rgba(250, 204, 21, 0.18)" },
+    SCHEDULED: { backgroundColor: "rgba(59, 130, 246, 0.25)" },
+  };
+  return styles[status] || styles.SCHEDULED;
+};
+
+// ============= Components =============
+const MeetingJoinDetails = ({ meetingLink, platform }: { meetingLink: string; platform: AppointmentPlatform }) => {
+  const link = meetingLink.trim();
+  const zoomId = platform === "zoom" ? parseZoomMeetingIdFromUrl(link) : undefined;
+  const meetCode = platform === "google_meet" ? parseGoogleMeetCodeFromUrl(link) : undefined;
+  const hasZoomPasscode = platform === "zoom" && zoomUrlHasPasscodeQuery(link);
+
+  const details = [
+    { label: "Platform", value: appointmentPlatformLabel(platform), isMono: false },
+    ...(zoomId ? [{ label: "Meeting ID", value: formatMeetingIdForDisplay(zoomId), isMono: true }] : []),
+    ...(meetCode ? [{ label: "Meet code", value: meetCode, isMono: true }] : []),
+  ];
+
+  return (
+    <View style={joinStyles.container}>
+      {details.map((detail, idx) => (
+        <View key={idx} style={joinStyles.detailRow}>
+          <Text style={joinStyles.label}>{detail.label}</Text>
+          <View style={joinStyles.valueContainer}>
+            <Text style={[joinStyles.value, detail.isMono && joinStyles.mono]} selectable>
+              {detail.value}
+            </Text>
+            <Pressable
+              accessibilityLabel={`Share ${detail.label}`}
+              hitSlop={SPACING.sm}
+              onPress={() => shareContent(detail.label, detail.value.replace(/\s/g, ""))}
+            >
+              <Ionicons name="share-outline" size={18} color="rgba(255,255,255,0.6)" />
+            </Pressable>
+          </View>
+        </View>
+      ))}
+
+      {hasZoomPasscode && (
+        <View style={joinStyles.hintRow}>
+          <Ionicons name="lock-closed-outline" size={16} color="rgba(255,255,255,0.55)" />
+          <Text style={joinStyles.hint}>
+            Your Zoom link includes a passcode — it will be applied automatically.
+          </Text>
+        </View>
+      )}
+
+      <View style={joinStyles.detailRow}>
+        <Text style={joinStyles.label}>Link</Text>
+        <View style={joinStyles.linkContainer}>
+          <Text style={joinStyles.link} selectable numberOfLines={3}>
+            {truncateMiddle(link, 52)}
+          </Text>
+          <Pressable style={joinStyles.shareButton} onPress={() => shareContent("Meeting link", link)}>
+            <Ionicons name="share-outline" size={16} color="#153C5A" />
+            <Text style={joinStyles.shareText}>Share</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const NoteCard = ({ title, value }: { title: string; value?: string }) => {
+  const hasContent = value && value.trim().length > 0;
+  return (
+    <View style={noteStyles.card}>
+      <Text style={noteStyles.title}>{title}</Text>
+      <Text style={[noteStyles.content, !hasContent && noteStyles.empty]}>
+        {hasContent ? value : "No note yet."}
+      </Text>
+    </View>
+  );
+};
+
+const MeetingTranscript = ({ lines }: { lines: { role: "mentor" | "pastor"; text: string }[] }) => {
+  const hasContent = lines.some(line => line.text.trim());
+  
+  if (!hasContent) {
+    return (
+      <View style={transcriptStyles.emptyContainer}>
+        <Ionicons name="chatbubbles-outline" size={32} color="rgba(255,255,255,0.3)" />
+        <Text style={transcriptStyles.emptyText}>No transcript available yet</Text>
+        <Text style={transcriptStyles.emptySubtext}>Transcript will appear after the meeting</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={transcriptStyles.scroll}
+      contentContainerStyle={transcriptStyles.scrollContent}
+      showsVerticalScrollIndicator
+      nestedScrollEnabled
+    >
+      {lines.map((line, idx) => {
+        const isMentor = line.role === "mentor";
+        return (
+          <View key={idx} style={transcriptStyles.message}>
+            <View style={[transcriptStyles.bubble, isMentor ? transcriptStyles.mentorBubble : transcriptStyles.pastorBubble]}>
+              <View style={transcriptStyles.roleRow}>
+                <Ionicons
+                  name={isMentor ? "person-outline" : "people-outline"}
+                  size={14}
+                  color="rgba(255,255,255,0.55)"
+                />
+                <Text style={transcriptStyles.role}>
+                  {isMentor ? "Mentor" : "Pastor"}
+                </Text>
+              </View>
+              <Text style={transcriptStyles.text}>{line.text.trim()}</Text>
+            </View>
+          </View>
+        );
+      })}
+    </ScrollView>
+  );
+};
+
+const MeetingSummary = ({ summary }: { summary: PastorMeetingUi["aiSummary"] }) => {
+  const sections = [
+    { title: "Overview", content: summary.overview, icon: "document-text-outline" as const },
+    { title: "Key points", content: summary.keyDiscussionPoints, icon: "bulb-outline" as const },
+    { title: "Advice given", content: summary.adviceGiven, icon: "chatbubbles-outline" as const },
+    { title: "Action items", content: summary.actionItems, icon: "checkmark-circle-outline" as const },
+    { title: "Next focus", content: summary.nextSessionFocus, icon: "calendar-outline" as const },
+  ];
+
+  const formatContent = (content: string) => {
+    if (!content?.trim()) return null;
+    return content.split(/\n/).filter(line => line.trim());
+  };
+
+  return (
+    <View style={summaryStyles.container}>
+      {sections.map((section, idx) => {
+        const lines = formatContent(section.content);
+        if (!lines) return null;
+        
+        return (
+          <View key={idx} style={[summaryStyles.section, idx > 0 && summaryStyles.sectionWithBorder]}>
+            <View style={summaryStyles.sectionTitleRow}>
+              <Ionicons name={section.icon} size={16} color="rgba(250, 204, 21, 0.95)" />
+              <Text style={summaryStyles.sectionTitle}>{section.title}</Text>
+            </View>
+            {lines.length === 1 ? (
+              <Text style={summaryStyles.sectionContent}>{lines[0]}</Text>
+            ) : (
+              lines.map((line, i) => (
+                <View key={i} style={summaryStyles.bulletPoint}>
+                  <View style={summaryStyles.bullet} />
+                  <Text style={summaryStyles.bulletText}>{line}</Text>
+                </View>
+              ))
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
+};
+
+const SessionTabs = ({ transcript, summary }: { transcript: React.ReactNode; summary: React.ReactNode }) => {
+  const [activeTab, setActiveTab] = useState<"transcript" | "summary">("transcript");
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const switchTab = (tab: "transcript" | "summary") => {
+    if (activeTab === tab) return;
+    Animated.timing(fadeAnim, { toValue: 0, duration: 100, useNativeDriver: true }).start(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setActiveTab(tab);
+      Animated.timing(fadeAnim, { toValue: 1, duration: 150, useNativeDriver: true }).start();
+    });
+  };
+
+  return (
+    <View style={tabStyles.container}>
+      <View style={tabStyles.header}>
+        <Pressable
+          style={[tabStyles.tab, activeTab === "transcript" && tabStyles.activeTab]}
+          onPress={() => switchTab("transcript")}
+        >
+          <Ionicons name="chatbubbles" size={18} color={activeTab === "transcript" ? "#fff" : "rgba(255,255,255,0.5)"} />
+          <Text style={[tabStyles.tabText, activeTab === "transcript" && tabStyles.activeTabText]}>Transcript</Text>
+        </Pressable>
+        <Pressable
+          style={[tabStyles.tab, activeTab === "summary" && tabStyles.activeTab]}
+          onPress={() => switchTab("summary")}
+        >
+          <Ionicons name="sparkles" size={18} color={activeTab === "summary" ? "#fff" : "rgba(255,255,255,0.5)"} />
+          <Text style={[tabStyles.tabText, activeTab === "summary" && tabStyles.activeTabText]}>AI Summary</Text>
+        </Pressable>
+      </View>
+      <Animated.View style={{ opacity: fadeAnim }}>
+        {activeTab === "transcript" ? transcript : summary}
+      </Animated.View>
+    </View>
+  );
+};
+
+const SessionAccordion = ({ meeting, joinButton }: { meeting: PastorMeetingUi; joinButton?: React.ReactNode }) => {
+  const [expanded, setExpanded] = useState(false);
+  const { horizontalPad: padH, cardRadius } = usePastorMeetingLayout();
+
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded(prev => !prev);
+  };
+
+  return (
+    <View style={[accordionStyles.container, { borderRadius: cardRadius, paddingHorizontal: padH }]}>
+      <Pressable onPress={toggle} style={accordionStyles.header}>
+        <View style={accordionStyles.headerContent}>
+          <View style={accordionStyles.headerLeft}>
+            <View style={accordionStyles.titleRow}>
+              <Text style={accordionStyles.title} numberOfLines={2}>
+                {meeting.title}
+              </Text>
+              {meeting.isRedo && (
+                <View style={accordionStyles.redoBadge}>
+                  <Text style={accordionStyles.redoText}>Redo</Text>
+                </View>
+              )}
+            </View>
+            <Text style={accordionStyles.date}>
+              {formatSessionDate(meeting.scheduledDate)} · {formatSessionTime(meeting.scheduledDate) || "Time TBD"}
+            </Text>
+          </View>
+          <View style={[accordionStyles.statusBadge, getStatusStyle(meeting.status)]}>
+            <Text style={accordionStyles.statusText}>{getStatusLabel(meeting.status)}</Text>
+          </View>
+          <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={20} color="rgba(255,255,255,0.5)" />
+        </View>
+      </Pressable>
+
+      {joinButton && meeting.isLatest && <View style={accordionStyles.joinSection}>{joinButton}</View>}
+
+      {expanded && (
+        <View style={accordionStyles.body}>
+          <View style={accordionStyles.notesSection}>
+            <View style={accordionStyles.sectionTitleRow}>
+              <Ionicons name="document-text-outline" size={16} color="rgba(255,255,255,0.6)" />
+              <Text style={accordionStyles.sectionTitle}>Notes</Text>
+            </View>
+            <NoteCard title="Pastor's Notes" value={meeting.pastorNote} />
+          </View>
+          <SessionTabs
+            transcript={<MeetingTranscript lines={meeting.transcript} />}
+            summary={<MeetingSummary summary={meeting.aiSummary} />}
+          />
+        </View>
+      )}
+    </View>
+  );
+};
+
+// ============= Main Screen =============
 export default function PastorSessionDetailScreen() {
   const layout = usePastorMeetingLayout();
   const router = useRouter();
   const { user } = useAuthStore();
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
-  const scrollBottomPad = tabBarHeight + Math.max(insets.bottom, 12) + 16;
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  
   const sessionId = Array.isArray(id) ? id[0] : id;
   const pastorId = user?.id;
 
@@ -57,342 +385,417 @@ export default function PastorSessionDetailScreen() {
   const { appointments = [] } = useAppointments({ userId: pastorId });
   const { mentors } = useAssignedMentors(pastorId ?? null);
 
-  const mentorNameById = useMemo(() => {
-    const m = new Map<string, string>();
-    mentors.forEach((mentor) => m.set(mentor.id, mentor.name));
-    return m;
-  }, [mentors]);
+  const mentorMap = useMemo(() => new Map(mentors.map(m => [m.id, m.name])), [mentors]);
+  const sortedSessions = useMemo(() => [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber), [sessions]);
+  const nextSessionId = useMemo(() => getNextSessionId(sortedSessions), [sortedSessions]);
 
-  const sortedSessions = useMemo(
-    () => [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber),
-    [sessions],
-  );
-
-  const nextSessionId = useMemo(
-    () => getNextSessionId(sortedSessions),
-    [sortedSessions],
-  );
-
-  const session = useMemo<MentorshipSession | null>(() => {
-    if (!sessionId) return null;
-    return sessions.find((s) => s.id === sessionId) ?? null;
+  const currentSession = useMemo<MentorshipSession | null>(() => {
+    return sessionId ? sessions.find(s => s.id === sessionId) ?? null : null;
   }, [sessions, sessionId]);
 
   const appointment = useMemo(() => {
-    if (!session?.appointmentId) return undefined;
-    return appointments.find(
-      (a) => String(a.id) === String(session.appointmentId),
-    );
-  }, [session?.appointmentId, appointments]);
+    return currentSession?.appointmentId
+      ? appointments.find((a) => String(a.id) === String(currentSession.appointmentId))
+      : undefined;
+  }, [currentSession?.appointmentId, appointments]);
 
   const mentorName = useMemo(() => {
     if (!appointment?.mentorId) return undefined;
-    return mentorNameById.get(String(appointment.mentorId));
-  }, [appointment?.mentorId, mentorNameById]);
+    return mentorMap.get(String(appointment.mentorId));
+  }, [appointment?.mentorId, mentorMap]);
 
   const meetingLink = appointment?.meetingLink?.trim();
-  const phase = session
-    ? phaseLabelForSessionNumber(session.sessionNumber)
+  const phase = currentSession
+    ? phaseLabelForSessionNumber(currentSession.sessionNumber)
     : undefined;
-  const heroTopic = sessionTopicSubtitle(session?.sessionNumber);
-  const isScheduled = session?.status === "SCHEDULED";
+  const heroTopic = currentSession
+    ? sessionTopicSubtitle(currentSession.sessionNumber)
+    : undefined;
+  const isScheduled = currentSession?.status === "SCHEDULED";
   const canJoin = isScheduled && !!meetingLink;
 
-  const meetingsUi = useMemo<PastorMeetingUi[]>(
-    () => (session ? buildPastorMeetingsUi(session, appointment) : []),
-    [session, appointment],
-  );
+  const meetingsUI = useMemo(() => {
+    return currentSession ? buildPastorMeetingsUi(currentSession, appointment) : [];
+  }, [currentSession, appointment]);
 
   const handleJoin = () => {
     if (!meetingLink) return;
-    const url = normalizeMeetingUrl(meetingLink);
-    Linking.openURL(url).catch(() => {
+    Linking.openURL(normalizeMeetingUrl(meetingLink)).catch(() => {
       Toast.show({
-        type: "floating",
+        type: "error",
         position: "top",
-        text1: "Unable to open link",
-        text2: "Check your meeting link in appointments.",
+        text1: "Cannot open link",
+        text2: "Please check the meeting URL",
       });
     });
   };
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <LinearGradient colors={sessionGradientColors} style={styles.gradient}>
+          <DetailScreenSkeleton />
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
+  if (!currentSession) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <LinearGradient colors={sessionGradientColors} style={styles.gradient}>
+          <View style={styles.emptyState}>
+            <Ionicons name="alert-circle-outline" size={48} color="rgba(255,255,255,0.4)" />
+            <Text style={styles.emptyText}>Session not found</Text>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView
-      style={[styles.safe, { backgroundColor: TAB_SCENE_BOTTOM }]}
-      edges={["top"]}
-    >
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
-        <View style={styles.topRow}>
-          <Pressable style={styles.back} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+      <LinearGradient colors={sessionGradientColors} style={styles.gradient}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
-          <Text style={styles.heading}>Session</Text>
+          <Text style={styles.headerTitle}>Session Details</Text>
+          <View style={{ width: 60 }} />
         </View>
 
-        {isLoading ? (
-          <View style={styles.fillRest}>
-            <DetailScreenSkeleton />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: tabBarHeight + Math.max(insets.bottom, SPACING.lg) + SPACING.xl }
+          ]}
+          nestedScrollEnabled
+        >
+          {/* Progress Indicator */}
+          <View style={styles.progressSection}>
+            <SessionProgressHeader sessions={sortedSessions} nextSessionId={nextSessionId} />
           </View>
-        ) : !session ? (
-          <View style={[styles.center, styles.fillRest]}>
-            <Text style={styles.muted}>Session not found.</Text>
-          </View>
-        ) : (
-          <ScrollView
-            style={styles.scrollFlex}
-            contentContainerStyle={[
-              styles.scroll,
-              { paddingBottom: scrollBottomPad },
-            ]}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.progressWrap}>
-              <SessionProgressHeader
-                sessions={sortedSessions}
-                nextSessionId={nextSessionId}
-              />
+
+          {/* Hero Card */}
+          <View style={styles.heroCard}>
+            <View style={styles.heroHeader}>
+              <View style={styles.heroInfo}>
+                <Text style={styles.heroBadge}>Session Overview</Text>
+                <Text style={styles.heroTitle}>
+                  {heroTopic || sessionOrdinalLabel(currentSession.sessionNumber)}
+                </Text>
+                {heroTopic && (
+                  <Text style={styles.heroSubtitle}>
+                    {sessionOrdinalLabel(currentSession.sessionNumber)}
+                  </Text>
+                )}
+              </View>
+              <SessionStatusBadge status={currentSession.status} />
             </View>
 
-            <View
-              style={[
-                styles.heroCard,
-                { marginBottom: layout.sectionGapAfterHero },
-              ]}
-            >
-              <View style={styles.heroTop}>
-                <View style={styles.heroTitles}>
-                  <Text style={styles.heroKicker}>Session overview</Text>
-                  {heroTopic ? (
-                    <>
-                      <Text style={styles.heroSessionName} numberOfLines={4}>
-                        {heroTopic}
-                      </Text>
-                      <Text style={styles.heroSessionOrdinal}>
-                        {sessionOrdinalLabel(session.sessionNumber)}
-                      </Text>
-                    </>
-                  ) : (
-                    <Text style={styles.heroSessionName}>
-                      {sessionOrdinalLabel(session.sessionNumber)}
+            <View style={styles.divider} />
+
+            {(mentorName || phase) && (
+              <View style={styles.metaInfo}>
+                {mentorName && (
+                  <View style={styles.metaRow}>
+                    <Ionicons name="person-outline" size={16} color="rgba(255,255,255,0.6)" />
+                    <Text style={styles.metaText}>
+                      <Text style={styles.metaLabel}>Mentor: </Text>
+                      {mentorName}
                     </Text>
-                  )}
-                </View>
-                <SessionStatusBadge status={session.status} />
+                  </View>
+                )}
+                {phase && (
+                  <View style={styles.metaRow}>
+                    <Ionicons name="flag-outline" size={16} color="rgba(255,255,255,0.6)" />
+                    <Text style={styles.metaText}>{phase}</Text>
+                  </View>
+                )}
               </View>
+            )}
+          </View>
 
-              <View style={styles.divider} />
-
-              {mentorName ? (
-                <Text style={styles.metaLine}>
-                  <Text style={styles.metaEmphasis}>Mentor · </Text>
-                  {mentorName}
-                </Text>
-              ) : null}
-              {phase ? (
-                <Text style={styles.phaseLine}>{phase}</Text>
-              ) : null}
+          {/* Sessions List */}
+          <View style={styles.sessionsSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Meeting History</Text>
+              <Text style={styles.sectionSubtitle}>
+                Access notes, transcripts, and AI summaries for each session
+              </Text>
             </View>
 
-            <View
-              style={[
-                styles.meetingsFeed,
-                {
-                  maxWidth: layout.feedMaxWidth,
-                  marginBottom: layout.meetingsBlockBottom,
-                },
-              ]}
-            >
-              <View style={styles.meetingsFeedHeader}>
-                <Text style={styles.meetingsHeading}>Sessions</Text>
-                <Text style={styles.meetingsSub}>
-                Session Information, Notes, Complete Meeting Transcript and AI Summary
-                </Text>
-              </View>
-
-              {meetingsUi.map((m) => (
-              <ExpandableMeetingCard
-                key={m.id}
-                meeting={m}
+            {meetingsUI.map(meeting => (
+              <SessionAccordion
+                key={meeting.id}
+                meeting={meeting}
                 joinButton={
-                  m.isLatest && meetingLink ? (
-                    <View style={styles.joinStack}>
-                      <MeetingJoinDetails
-                        meetingLink={meetingLink}
-                        platform={appointment?.platform ?? "zoom"}
-                      />
-                      {canJoin ? (
-                        <Pressable style={styles.joinBtn} onPress={handleJoin}>
-                          <Ionicons name="videocam" size={22} color="#153C5A" />
-                          <Text style={styles.joinBtnText}>Join session</Text>
+                  meeting.isLatest && meetingLink ? (
+                    <View style={styles.joinContainer}>
+                      <MeetingJoinDetails meetingLink={meetingLink} platform={appointment?.platform ?? "zoom"} />
+                      {canJoin && (
+                        <Pressable style={styles.joinButton} onPress={handleJoin}>
+                          <Ionicons name="videocam" size={20} color="#153C5A" />
+                          <Text style={styles.joinButtonText}>Join Meeting</Text>
+                          <Ionicons name="arrow-forward" size={18} color="#153C5A" />
                         </Pressable>
-                      ) : null}
+                      )}
                     </View>
-                  ) : m.isLatest && isScheduled && !meetingLink ? (
-                    <View style={styles.hintBox}>
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={20}
-                        color="rgba(255,255,255,0.85)"
-                      />
-                      <Text style={styles.hint}>
-                        Session link will appear when your mentor adds it to the
-                        appointment.
+                  ) : meeting.isLatest && isScheduled && !meetingLink ? (
+                    <View style={styles.waitingHint}>
+                      <Ionicons name="time-outline" size={20} color="rgba(255,255,255,0.7)" />
+                      <Text style={styles.waitingText}>
+                        Meeting link will appear when your mentor adds it
                       </Text>
                     </View>
                   ) : undefined
                 }
               />
             ))}
-            </View>
-          </ScrollView>
-        )}
+          </View>
+        </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
 }
 
+// ============= Styles =============
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  gradient: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
-  meetingsFeed: {
-    width: "100%",
-    alignSelf: "center",
-  },
-  meetingsFeedHeader: {
-    marginBottom: 16,
-    gap: 8,
-  },
-  fillRest: { flex: 1 },
-  scrollFlex: { flex: 1 },
-  topRow: {
+  gradient: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
+    justifyContent: "space-between",
+    marginBottom: SPACING.xl,
   },
-  back: {
+  backButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
     borderRadius: 12,
-    gap: 2,
+    gap: SPACING.xs,
   },
-  backText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
-  heading: { color: "#FFFFFF", fontSize: 22, fontWeight: "800", flex: 1 },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  muted: { color: "rgba(255,255,255,0.9)", fontSize: 15 },
-  scroll: { flexGrow: 1 },
-  progressWrap: { marginBottom: 6 },
-  metaLine: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  metaEmphasis: {
-    color: "rgba(255,255,255,0.65)",
-    fontWeight: "700",
-  },
-  meetingsHeading: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  meetingsSub: {
-    color: "rgba(255,255,255,0.58)",
-    fontSize: 14,
-    lineHeight: 21,
-    flexShrink: 1,
-  },
+  backText: { color: "#FFFFFF", fontWeight: "600", fontSize: 15 },
+  headerTitle: { color: "#FFFFFF", fontSize: 20, fontWeight: "700" },
+  scrollContent: { flexGrow: 1, gap: SPACING.xl },
+  progressSection: { marginTop: SPACING.xs },
   heroCard: {
-    backgroundColor: "rgba(255,255,255,0.09)",
-    borderRadius: 18,
-    padding: 18,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 20,
+    padding: SPACING.xl,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
+    borderColor: "rgba(255,255,255,0.1)",
   },
-  heroTop: {
+  heroHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 12,
+    gap: SPACING.md,
   },
-  heroTitles: { flex: 1, minWidth: 0, flexShrink: 1 },
-  heroKicker: {
-    color: "rgba(255,255,255,0.65)",
+  heroInfo: { flex: 1 },
+  heroBadge: {
+    color: "rgba(255,255,255,0.6)",
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.8,
-    marginBottom: 4,
+    marginBottom: SPACING.sm,
   },
-  heroSessionName: {
+  heroTitle: {
     color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "800",
-    lineHeight: 27,
-    letterSpacing: -0.3,
+    fontSize: 22,
+    fontWeight: "700",
+    lineHeight: 30,
+    marginBottom: SPACING.xs,
   },
-  heroSessionOrdinal: {
-    color: "rgba(255,255,255,0.62)",
+  heroSubtitle: {
+    color: "rgba(255,255,255,0.5)",
     fontSize: 14,
-    fontWeight: "500",
-    lineHeight: 20,
-    marginTop: 6,
   },
   divider: {
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.14)",
-    marginVertical: 14,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    marginVertical: SPACING.lg,
   },
-  phaseLine: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 13,
-    marginTop: 10,
-    lineHeight: 19,
+  metaInfo: { gap: SPACING.sm },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
   },
-  joinStack: {
-    gap: 14,
-    width: "100%",
-    alignSelf: "stretch",
-  },
-  joinBtn: {
-    backgroundColor: "rgba(255,255,255,0.94)",
+  metaLabel: { fontWeight: "600" },
+  metaText: { color: "rgba(255,255,255,0.8)", fontSize: 14 },
+  sessionsSection: { gap: SPACING.md },
+  sectionHeader: { gap: SPACING.xs, marginBottom: SPACING.sm },
+  sectionTitle: { color: "#FFFFFF", fontSize: 20, fontWeight: "700" },
+  sectionSubtitle: { color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 19 },
+  joinContainer: { gap: SPACING.md },
+  joinButton: {
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
-    paddingVertical: 15,
+    paddingVertical: SPACING.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    width: "100%",
-    alignSelf: "stretch",
+    gap: SPACING.sm,
   },
-  joinBtnText: { color: "#0F2847", fontSize: 16, fontWeight: "800", letterSpacing: 0.2 },
-  hintBox: {
+  joinButtonText: { color: "#153C5A", fontSize: 16, fontWeight: "700" },
+  waitingHint: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+    gap: SPACING.sm,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 12,
+    padding: SPACING.md,
+  },
+  waitingText: { color: "rgba(255,255,255,0.7)", fontSize: 13, flex: 1 },
+  emptyState: { flex: 1, alignItems: "center", justifyContent: "center", gap: SPACING.md },
+  emptyText: { color: "rgba(255,255,255,0.6)", fontSize: 16 },
+});
+
+const joinStyles = StyleSheet.create({
+  container: { gap: SPACING.md },
+  detailRow: { gap: SPACING.xs },
+  label: { color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "600" },
+  valueContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: SPACING.sm,
+  },
+  value: { color: "rgba(255,255,255,0.9)", fontSize: 14, flex: 1 },
+  mono: { fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", letterSpacing: 0.5 },
+  hintRow: { flexDirection: "row", alignItems: "center", gap: SPACING.xs, marginTop: SPACING.xs },
+  hint: { color: "rgba(255,255,255,0.5)", fontSize: 12, lineHeight: 18, flex: 1 },
+  linkContainer: { gap: SPACING.sm },
+  link: { color: "rgba(255,255,255,0.7)", fontSize: 12, lineHeight: 18 },
+  shareButton: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: 8,
+  },
+  shareText: { color: "#153C5A", fontSize: 13, fontWeight: "600" },
+});
+
+const noteStyles = StyleSheet.create({
+  card: {
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 14,
-    padding: 14,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  title: { color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: "600", marginBottom: SPACING.sm },
+  content: { color: "#FFFFFF", fontSize: 14, lineHeight: 21 },
+  empty: { color: "rgba(255,255,255,0.4)", fontStyle: "italic" },
+});
+
+const transcriptStyles = StyleSheet.create({
+  emptyContainer: {
+    alignItems: "center",
+    padding: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  emptyText: { color: "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: "500" },
+  emptySubtext: { color: "rgba(255,255,255,0.3)", fontSize: 13 },
+  scroll: { maxHeight: 400 },
+  scrollContent: { paddingBottom: SPACING.md },
+  message: { marginBottom: SPACING.md },
+  bubble: {
+    borderRadius: 14,
+    padding: SPACING.md,
+    borderLeftWidth: 3,
+  },
+  mentorBubble: {
+    backgroundColor: "rgba(56, 189, 248, 0.12)",
+    borderLeftColor: "#38BDF8",
+  },
+  pastorBubble: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderLeftColor: "rgba(255,255,255,0.3)",
+  },
+  roleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: SPACING.xs },
+  role: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.6)" },
+  text: { color: "rgba(255,255,255,0.9)", fontSize: 14, lineHeight: 22 },
+});
+
+const summaryStyles = StyleSheet.create({
+  container: { gap: SPACING.md, padding: SPACING.md },
+  section: { gap: SPACING.sm },
+  sectionWithBorder: { paddingTop: SPACING.md, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: SPACING.xs },
+  sectionTitle: { color: "#FACC15", fontSize: 14, fontWeight: "700" },
+  sectionContent: { color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 21 },
+  bulletPoint: { flexDirection: "row", alignItems: "flex-start", gap: SPACING.sm },
+  bullet: { width: 4, height: 4, borderRadius: 2, backgroundColor: "#FACC15", marginTop: 8 },
+  bulletText: { color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 21, flex: 1 },
+});
+
+const tabStyles = StyleSheet.create({
+  container: { gap: SPACING.lg },
+  header: {
+    flexDirection: "row",
+    backgroundColor: "rgba(0,0,0,0.2)",
+    borderRadius: 12,
+    padding: 4,
+    gap: 4,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.xs,
+    paddingVertical: SPACING.sm,
+    borderRadius: 10,
+  },
+  activeTab: { backgroundColor: "rgba(255,255,255,0.15)" },
+  tabText: { color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: "600" },
+  activeTabText: { color: "#FFFFFF" },
+});
+
+const accordionStyles = StyleSheet.create({
+  container: {
+    backgroundColor: "rgba(255,255,255,0.09)",
+    marginBottom: SPACING.md,
+    paddingVertical: SPACING.lg,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",
   },
-  hint: {
-    color: "rgba(255,255,255,0.88)",
-    fontSize: 14,
-    lineHeight: 21,
-    flex: 1,
+  header: { width: "100%" },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: SPACING.md,
   },
+  headerLeft: { flex: 1 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: SPACING.sm, marginBottom: SPACING.xs },
+  title: { color: "#FFFFFF", fontSize: 16, fontWeight: "700", flex: 1 },
+  redoBadge: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: 6, backgroundColor: "rgba(250,204,21,0.2)" },
+  redoText: { color: "#FACC15", fontSize: 10, fontWeight: "700" },
+  date: { color: "rgba(255,255,255,0.5)", fontSize: 12 },
+  statusBadge: { paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: 20 },
+  statusText: { color: "#FFFFFF", fontSize: 11, fontWeight: "700" },
+  joinSection: {
+    marginTop: SPACING.md,
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.14)",
+  },
+  body: { marginTop: SPACING.lg, gap: SPACING.xl },
+  notesSection: { gap: SPACING.md },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: SPACING.xs },
+  sectionTitle: { color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: "700", letterSpacing: 0.5 },
 });
