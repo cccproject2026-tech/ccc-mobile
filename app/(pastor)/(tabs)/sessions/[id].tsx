@@ -35,7 +35,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   LayoutAnimation,
@@ -55,6 +55,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { apiClient } from "@/services/api/client";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 const SPACING = {
@@ -117,6 +118,61 @@ const getStatusStyle = (status: PastorMeetingUi["status"]): ViewStyle => {
     SCHEDULED: { backgroundColor: "rgba(59, 130, 246, 0.25)" },
   };
   return styles[status] || styles.SCHEDULED;
+};
+
+type TranscriptSummary = {
+  sessionOverview?: string;
+  keyDiscussionPoints?: string[];
+  mentorGuidance?: string[];
+  actionItems?: string[];
+};
+
+type TranscriptSummaryApiResponse = {
+  success: boolean;
+  data?: {
+    transcript?: string;
+    summary?: TranscriptSummary;
+  };
+};
+
+const TRANSCRIPT_SUMMARY_URL = "https://app.wisdomtooth.tech/api/v1";
+
+const parseTranscriptStringToLines = (transcript: string): { role: "mentor" | "pastor"; text: string }[] => {
+  const raw = transcript ?? "";
+  const lines = raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  if (!lines.length) return [];
+
+  let currentRole: "mentor" | "pastor" = "mentor";
+  const out: { role: "mentor" | "pastor"; text: string }[] = [];
+
+  for (const line of lines) {
+    const match = /^(mentor|pastor)\s*:\s*(.*)$/i.exec(line);
+    if (match) {
+      const role = match[1].toLowerCase() as "mentor" | "pastor";
+      currentRole = role;
+      const text = (match[2] ?? "").trim();
+      if (text) out.push({ role, text });
+      continue;
+    }
+    out.push({ role: currentRole, text: line });
+  }
+
+  return out;
+};
+
+const mapApiSummaryToMeetingSummary = (summary?: TranscriptSummary): PastorMeetingUi["aiSummary"] => {
+  const joinList = (items?: string[]) => (items?.length ? items.filter(Boolean).join("\n") : "");
+  return {
+    overview: summary?.sessionOverview ?? "",
+    keyDiscussionPoints: joinList(summary?.keyDiscussionPoints),
+    adviceGiven: joinList(summary?.mentorGuidance),
+    actionItems: joinList(summary?.actionItems),
+    nextSessionFocus: "",
+  };
 };
 
 // ============= Components =============
@@ -400,6 +456,48 @@ export default function PastorSessionDetailScreen() {
       : undefined;
   }, [currentSession?.appointmentId, appointments]);
 
+  const appointmentId = currentSession?.appointmentId ? String(currentSession.appointmentId) : undefined;
+  const [transcript, setTranscript] = useState<string>("");
+  const [summary, setSummary] = useState<TranscriptSummary | null>(null);
+  const [loadingTranscriptSummary, setLoadingTranscriptSummary] = useState(false);
+  const [transcriptSummaryError, setTranscriptSummaryError] = useState<string | null>(null);
+  const lastFetchedAppointmentIdRef = useRef<string | null>(null);
+
+  const getTranscriptSummary = async (id: string, refresh = false) => {
+    setLoadingTranscriptSummary(true);
+    setTranscriptSummaryError(null);
+    try {
+      const url = `${TRANSCRIPT_SUMMARY_URL}/appointments/pastor/${encodeURIComponent(id)}/transcript-summary`;
+      const res = await apiClient.post<TranscriptSummaryApiResponse>(
+        url,
+        {},
+        { params: { refresh } },
+      );
+
+      if (!res.data?.success) {
+        throw new Error("API returned success=false");
+      }
+
+      setTranscript(res.data.data?.transcript ?? "");
+      setSummary(res.data.data?.summary ?? null);
+    } catch (e) {
+      console.error("Failed to fetch transcript summary", e);
+      setTranscriptSummaryError("Failed to fetch transcript and summary");
+      setTranscript("");
+      setSummary(null);
+    } finally {
+      setLoadingTranscriptSummary(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!appointmentId) return;
+    if (lastFetchedAppointmentIdRef.current === appointmentId) return;
+    lastFetchedAppointmentIdRef.current = appointmentId;
+    getTranscriptSummary(appointmentId, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointmentId]);
+
   const mentorName = useMemo(() => {
     if (!appointment?.mentorId) return undefined;
     return mentorMap.get(String(appointment.mentorId));
@@ -418,6 +516,19 @@ export default function PastorSessionDetailScreen() {
   const meetingsUI = useMemo(() => {
     return currentSession ? buildPastorMeetingsUi(currentSession, appointment) : [];
   }, [currentSession, appointment]);
+
+  const meetingsUiWithApiData = useMemo(() => {
+    if (!meetingsUI.length) return meetingsUI;
+    return meetingsUI.map((m) => ({
+      ...m,
+      transcript: loadingTranscriptSummary
+        ? []
+        : (transcript.trim() ? parseTranscriptStringToLines(transcript) : []),
+      aiSummary: loadingTranscriptSummary
+        ? mapApiSummaryToMeetingSummary(undefined)
+        : mapApiSummaryToMeetingSummary(summary ?? undefined),
+    }));
+  }, [meetingsUI, loadingTranscriptSummary, transcript, summary]);
 
   const handleJoin = () => {
     if (!meetingLink) return;
@@ -530,7 +641,14 @@ export default function PastorSessionDetailScreen() {
               </Text>
             </View>
 
-            {meetingsUI.map(meeting => (
+            {loadingTranscriptSummary && (
+              <Text style={styles.sectionSubtitle}>Loading...</Text>
+            )}
+            {!!transcriptSummaryError && (
+              <Text style={styles.sectionSubtitle}>{transcriptSummaryError}</Text>
+            )}
+
+            {meetingsUiWithApiData.map(meeting => (
               <SessionAccordion
                 key={meeting.id}
                 meeting={meeting}

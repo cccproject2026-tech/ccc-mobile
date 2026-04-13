@@ -20,7 +20,11 @@ import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
 import { useAuthStore } from "@/stores";
 import type { AppointmentPlatform } from "@/types/appointment.types";
-import { MentorshipAiSummary, MentorshipSession } from "@/types/session.types";
+import {
+  MentorshipAiSummary,
+  MentorshipSession,
+  MentorshipTranscriptLine,
+} from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import {
   appointmentPlatformLabel,
@@ -40,7 +44,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -60,6 +64,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { apiClient } from "@/services/api/client";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 const SPACING = {
@@ -110,6 +115,61 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
     return error.message;
   }
   return fallback;
+};
+
+type TranscriptSummary = {
+  sessionOverview?: string;
+  keyDiscussionPoints?: string[];
+  mentorGuidance?: string[];
+  actionItems?: string[];
+};
+
+type TranscriptSummaryApiResponse = {
+  success: boolean;
+  data?: {
+    transcript?: string;
+    summary?: TranscriptSummary;
+  };
+};
+
+const TRANSCRIPT_SUMMARY_URL = "https://app.wisdomtooth.tech/api/v1";
+
+const parseTranscriptStringToLines = (transcript: string): MentorshipTranscriptLine[] => {
+  const raw = transcript ?? "";
+  const lines = raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  if (!lines.length) return [];
+
+  let currentRole: MentorshipTranscriptLine["role"] = "mentor";
+  const out: MentorshipTranscriptLine[] = [];
+
+  for (const line of lines) {
+    const match = /^(mentor|pastor)\s*:\s*(.*)$/i.exec(line);
+    if (match) {
+      const role = match[1].toLowerCase() as MentorshipTranscriptLine["role"];
+      currentRole = role;
+      const text = (match[2] ?? "").trim();
+      if (text) out.push({ role, text });
+      continue;
+    }
+    out.push({ role: currentRole, text: line });
+  }
+
+  return out;
+};
+
+const mapApiSummaryToUiSummary = (summary?: TranscriptSummary): MentorshipAiSummary => {
+  const joinList = (items?: string[]) => (items?.length ? items.filter(Boolean).join("\n") : "");
+  return {
+    overview: summary?.sessionOverview ?? "",
+    keyDiscussionPoints: joinList(summary?.keyDiscussionPoints),
+    adviceGiven: joinList(summary?.mentorGuidance),
+    actionItems: joinList(summary?.actionItems),
+    nextSessionFocus: "",
+  };
 };
 
 // ============= Components =============
@@ -397,6 +457,48 @@ export default function SessionDetailsScreen() {
     return mentorAppointments.find((a) => String(a.id) === id) ?? menteeAppointments.find((a) => String(a.id) === id);
   }, [session?.appointmentId, mentorAppointments, menteeAppointments]);
 
+  const appointmentId = session?.appointmentId ? String(session.appointmentId) : undefined;
+  const [transcript, setTranscript] = useState<string>("");
+  const [summary, setSummary] = useState<TranscriptSummary | null>(null);
+  const [loadingTranscriptSummary, setLoadingTranscriptSummary] = useState(false);
+  const [transcriptSummaryError, setTranscriptSummaryError] = useState<string | null>(null);
+  const lastFetchedAppointmentIdRef = useRef<string | null>(null);
+
+  const getTranscriptSummary = async (id: string, refresh = false) => {
+    setLoadingTranscriptSummary(true);
+    setTranscriptSummaryError(null);
+    try {
+      const url = `${TRANSCRIPT_SUMMARY_URL}/appointments/pastor/${encodeURIComponent(id)}/transcript-summary`;
+      const res = await apiClient.post<TranscriptSummaryApiResponse>(
+        url,
+        {},
+        { params: { refresh } },
+      );
+
+      if (!res.data?.success) {
+        throw new Error("API returned success=false");
+      }
+
+      setTranscript(res.data.data?.transcript ?? "");
+      setSummary(res.data.data?.summary ?? null);
+    } catch (e) {
+      console.error("Failed to fetch transcript summary", e);
+      setTranscriptSummaryError(getErrorMessage(e, "Failed to fetch transcript and summary"));
+      setTranscript("");
+      setSummary(null);
+    } finally {
+      setLoadingTranscriptSummary(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!appointmentId) return;
+    if (lastFetchedAppointmentIdRef.current === appointmentId) return;
+    lastFetchedAppointmentIdRef.current = appointmentId;
+    getTranscriptSummary(appointmentId, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointmentId]);
+
   const isScheduled = session?.status === "SCHEDULED";
   const apiMeetingLink = getAppointmentJoinUrl(appointment);
 
@@ -428,7 +530,7 @@ export default function SessionDetailsScreen() {
       });
       return;
     }
-    Linking.openURL(normalizeMeetingUrl(apiMeetingLink!)).catch(() => {
+    Linking.openURL(normalizeMeetingUrl(meetingLink)).catch(() => {
       Toast.show({
         type: "error",
         position: "top",
@@ -624,9 +726,36 @@ export default function SessionDetailsScreen() {
               <Text style={styles.sectionTitle}>Conversation</Text>
             </View>
             <SessionTabs
-              transcript={<MeetingTranscript lines={transcriptLinesForSession(session)} />}
-              summary={<MeetingSummary summary={aiSummaryForSession(session)} />}
+              transcript={
+                loadingTranscriptSummary ? (
+                  <View style={summaryStyles.emptyContainer}>
+                    <Text style={summaryStyles.emptyTitle}>Loading...</Text>
+                  </View>
+                ) : (
+                  <MeetingTranscript
+                    lines={
+                      transcript.trim().length ? parseTranscriptStringToLines(transcript) : []
+                    }
+                  />
+                )
+              }
+              summary={
+                loadingTranscriptSummary ? (
+                  <View style={summaryStyles.emptyContainer}>
+                    <Text style={summaryStyles.emptyTitle}>Loading...</Text>
+                  </View>
+                ) : (
+                  <MeetingSummary
+                    summary={
+                      summary ? mapApiSummaryToUiSummary(summary) : undefined
+                    }
+                  />
+                )
+              }
             />
+            {!!transcriptSummaryError && (
+              <Text style={styles.waitingText}>{transcriptSummaryError}</Text>
+            )}
           </View>
 
           {/* Insights Card */}
