@@ -26,14 +26,6 @@ export const useRedoSession = (options?: UseRedoSessionOptions) => {
       await queryClient.invalidateQueries({
         queryKey: pastorSessionKeys.all,
       });
-      await queryClient.refetchQueries({
-        queryKey: mentorshipSessionKeys.all,
-        type: "active",
-      });
-      await queryClient.refetchQueries({
-        queryKey: pastorSessionKeys.all,
-        type: "active",
-      });
     },
   });
 };
