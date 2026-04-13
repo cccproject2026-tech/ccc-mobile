@@ -64,7 +64,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { apiClient } from "@/services/api/client";
+import apiClient from "@/services/api";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 const SPACING = {
@@ -132,10 +132,8 @@ type TranscriptSummaryApiResponse = {
   };
 };
 
-const TRANSCRIPT_SUMMARY_URL = "https://app.wisdomtooth.tech/api/v1";
-
 const parseTranscriptStringToLines = (transcript: string): MentorshipTranscriptLine[] => {
-  const raw = transcript ?? "";
+  const raw = (transcript ?? "").replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
   const lines = raw
     .split(/\r?\n/)
     .map((l) => l.trim())
@@ -318,7 +316,7 @@ const MeetingSummary = ({ summary }: { summary?: MentorshipAiSummary }) => {
       <View style={summaryStyles.emptyContainer}>
         <Ionicons name="sparkles-outline" size={32} color="rgba(255,255,255,0.25)" />
         <Text style={summaryStyles.emptyTitle}>AI Summary Pending</Text>
-        <Text style={summaryStyles.emptySubtitle}>Summary will be generated after the meeting</Text>
+        <Text style={summaryStyles.emptySubtitle}>Summary is being generated...</Text>
       </View>
     );
   }
@@ -468,23 +466,44 @@ export default function SessionDetailsScreen() {
     setLoadingTranscriptSummary(true);
     setTranscriptSummaryError(null);
     try {
-      const url = `${TRANSCRIPT_SUMMARY_URL}/appointments/pastor/${encodeURIComponent(id)}/transcript-summary`;
-      const res = await apiClient.post<TranscriptSummaryApiResponse>(
-        url,
+      const response = await apiClient.post<TranscriptSummaryApiResponse>(
+        `/appointments/pastor/${encodeURIComponent(id)}/transcript-summary`,
         {},
-        { params: { refresh } },
+        { params: { refresh }, timeout: 12000 },
       );
+      const result = response.data;
 
-      if (!res.data?.success) {
-        throw new Error("API returned success=false");
+      if (__DEV__) {
+        console.log("Transcript summary response:", result);
       }
 
-      setTranscript(res.data.data?.transcript ?? "");
-      setSummary(res.data.data?.summary ?? null);
+      if (!result?.success) {
+        console.error("Transcript Summary API Error: success=false", result);
+        setSummary(null);
+        return;
+      }
+
+      // Support partial data: transcript may exist even if summary is missing/unavailable.
+      const apiTranscript = result?.data?.transcript;
+      const fallbackTranscript = (appointment as any)?.transcript;
+      const transcriptText =
+        typeof apiTranscript === "string"
+          ? apiTranscript
+          : typeof fallbackTranscript === "string"
+            ? fallbackTranscript
+            : "";
+      setTranscript(transcriptText);
+      setSummary(result?.data?.summary || null);
     } catch (e) {
-      console.error("Failed to fetch transcript summary", e);
-      setTranscriptSummaryError(getErrorMessage(e, "Failed to fetch transcript and summary"));
-      setTranscript("");
+      const error = e as any;
+      console.error(
+        "Transcript Summary API Error:",
+        error?.response || error?.message || error,
+      );
+      // Don't block transcript when summary generation fails (e.g. 422 from AI).
+      setTranscriptSummaryError(null);
+      const fallbackTranscript = (appointment as any)?.transcript;
+      setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : transcript || "");
       setSummary(null);
     } finally {
       setLoadingTranscriptSummary(false);
@@ -727,14 +746,25 @@ export default function SessionDetailsScreen() {
             </View>
             <SessionTabs
               transcript={
-                loadingTranscriptSummary ? (
+                loadingTranscriptSummary && !(typeof transcript === "string" && transcript.trim()) ? (
                   <View style={summaryStyles.emptyContainer}>
                     <Text style={summaryStyles.emptyTitle}>Loading...</Text>
                   </View>
                 ) : (
                   <MeetingTranscript
                     lines={
-                      transcript.trim().length ? parseTranscriptStringToLines(transcript) : []
+                      (() => {
+                        const t = typeof transcript === "string" ? transcript : "";
+                        if (t.trim().length) return parseTranscriptStringToLines(t);
+                        const apptTranscript = (appointment as any)?.transcript;
+                        if (typeof apptTranscript === "string" && apptTranscript.trim().length) {
+                          return parseTranscriptStringToLines(apptTranscript);
+                        }
+                        if (Array.isArray(apptTranscript)) {
+                          return apptTranscript as MentorshipTranscriptLine[];
+                        }
+                        return [];
+                      })()
                     }
                   />
                 )
@@ -744,18 +774,22 @@ export default function SessionDetailsScreen() {
                   <View style={summaryStyles.emptyContainer}>
                     <Text style={summaryStyles.emptyTitle}>Loading...</Text>
                   </View>
-                ) : (
+                ) : summary ? (
                   <MeetingSummary
                     summary={
-                      summary ? mapApiSummaryToUiSummary(summary) : undefined
+                      mapApiSummaryToUiSummary(summary)
                     }
                   />
+                ) : (
+                  <View style={summaryStyles.emptyContainer}>
+                    <Text style={summaryStyles.emptyTitle}>AI Summary</Text>
+                    <Text style={summaryStyles.emptySubtitle}>
+                      Summary is being generated or temporarily unavailable
+                    </Text>
+                  </View>
                 )
               }
             />
-            {!!transcriptSummaryError && (
-              <Text style={styles.waitingText}>{transcriptSummaryError}</Text>
-            )}
           </View>
 
           {/* Insights Card */}

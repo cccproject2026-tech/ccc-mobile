@@ -6,6 +6,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
+      "@/services/api": ["./services/api/client"],
       "tailwind.config": ["./tailwind.config.js"]
     }
   },
