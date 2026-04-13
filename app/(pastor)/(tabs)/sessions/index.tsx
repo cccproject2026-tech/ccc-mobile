@@ -19,6 +19,7 @@ import {
   sessionOrdinalLabel,
   sessionTopicSubtitle,
 } from "@/constants/sessionTitles";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -74,10 +75,7 @@ export default function PastorSessionsScreen() {
       return {
         ...s,
         mentorName,
-        meetingLink:
-          apt?.meetingLink?.trim() ||
-          apt?.zoomMeeting?.joinUrl?.trim() ||
-          undefined,
+        meetingLink: getAppointmentJoinUrl(apt) ?? undefined,
         phase: phaseLabelForSessionNumber(s.sessionNumber),
       };
     });

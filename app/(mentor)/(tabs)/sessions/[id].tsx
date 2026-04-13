@@ -25,6 +25,7 @@ import { formatSessionDate } from "@/utils/date";
 import {
   appointmentPlatformLabel,
   formatMeetingIdForDisplay,
+  getAppointmentJoinUrl,
   parseGoogleMeetCodeFromUrl,
   parseZoomMeetingIdFromUrl,
   truncateMiddle,
@@ -377,8 +378,8 @@ export default function SessionDetailsScreen() {
 
   const nextSessionId = useMemo(() => getNextSessionId(sortedSessions), [sortedSessions]);
 
-  const { appointments: mentorAppointments = [] } = useAppointments({ mentorId: user?.id });
-  const { appointments: menteeAppointments = [] } = useAppointments({ userId: session?.pastorId });
+  const { appointments: mentorAppointments = [] } = useAppointments({ mentorId: user?.id, futureOnly: false });
+  const { appointments: menteeAppointments = [] } = useAppointments({ userId: session?.pastorId, futureOnly: false });
 
   const { mutateAsync: completeSessionAsync, isPending: isCompleting } = useCompleteSession();
   const { mutateAsync: redoSessionAsync, isPending: isRedoing } = useRedoSession({
@@ -397,10 +398,7 @@ export default function SessionDetailsScreen() {
   }, [session?.appointmentId, mentorAppointments, menteeAppointments]);
 
   const isScheduled = session?.status === "SCHEDULED";
-  const apiMeetingLink =
-    appointment?.meetingLink?.trim() ||
-    appointment?.zoomMeeting?.joinUrl?.trim() ||
-    null;
+  const apiMeetingLink = getAppointmentJoinUrl(appointment);
 
   const showPlaceholderMeeting =
     MENTOR_MEETING_UI.usePlaceholderUntilBackend &&

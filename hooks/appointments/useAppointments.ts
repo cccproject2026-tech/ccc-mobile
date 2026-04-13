@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 interface UseAppointmentsOptions {
   userId?: string;
   mentorId?: string;
+  /** When false, include past appointments too (backend: futureOnly=false). */
+  futureOnly?: boolean;
 }
 
 export const appointmentKeys = {
@@ -15,20 +17,20 @@ export const appointmentKeys = {
 };
 
 export const useAppointments = (options?: UseAppointmentsOptions) => {
-  const { userId, mentorId } = options || {};
+  const { userId, mentorId, futureOnly } = options || {};
 
   // Fetch user appointments
   const userQuery = useQuery({
-    queryKey: appointmentKeys.user(userId || ""),
-    queryFn: () => appointmentService.getUserAppointments(userId!),
+    queryKey: [...appointmentKeys.user(userId || ""), { futureOnly }] as const,
+    queryFn: () => appointmentService.getUserAppointments(userId!, { futureOnly }),
     enabled: !!userId,
     staleTime: 20000, // 2 seconds (was 5 minutes)
   });
 
   // Fetch mentor appointments
   const mentorQuery = useQuery({
-    queryKey: appointmentKeys.mentor(mentorId || ""),
-    queryFn: () => appointmentService.getMentorAppointments(mentorId!),
+    queryKey: [...appointmentKeys.mentor(mentorId || ""), { futureOnly }] as const,
+    queryFn: () => appointmentService.getMentorAppointments(mentorId!, { futureOnly }),
     enabled: !!mentorId,
     staleTime: 20000, // 2 seconds (was 5 minutes)
   });

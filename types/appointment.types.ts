@@ -28,7 +28,12 @@ export interface Appointment {
     meetingLink?: string;
     /** Present when backend creates a Zoom meeting; join URL may appear here if meetingLink is empty. */
     zoomMeeting?: {
+        /** Common camelCase form. */
         joinUrl?: string;
+        /** Common snake_case form used by some backends. */
+        join_url?: string;
+        /** Occasionally returned as joinURL. */
+        joinURL?: string;
     };
     notes?: string;
     status: AppointmentStatus;

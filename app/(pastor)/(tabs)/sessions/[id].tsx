@@ -24,6 +24,7 @@ import { formatSessionDate } from "@/utils/date";
 import {
   appointmentPlatformLabel,
   formatMeetingIdForDisplay,
+  getAppointmentJoinUrl,
   parseGoogleMeetCodeFromUrl,
   parseZoomMeetingIdFromUrl,
   truncateMiddle,
@@ -382,7 +383,7 @@ export default function PastorSessionDetailScreen() {
   const pastorId = user?.id;
 
   const { data: sessions = [], isLoading } = usePastorSessions(pastorId);
-  const { appointments = [] } = useAppointments({ userId: pastorId });
+  const { appointments = [] } = useAppointments({ userId: pastorId, futureOnly: false });
   const { mentors } = useAssignedMentors(pastorId ?? null);
 
   const mentorMap = useMemo(() => new Map(mentors.map(m => [m.id, m.name])), [mentors]);
@@ -404,10 +405,7 @@ export default function PastorSessionDetailScreen() {
     return mentorMap.get(String(appointment.mentorId));
   }, [appointment?.mentorId, mentorMap]);
 
-  const meetingLink =
-    appointment?.meetingLink?.trim() ||
-    appointment?.zoomMeeting?.joinUrl?.trim() ||
-    null;
+  const meetingLink = getAppointmentJoinUrl(appointment);
   const phase = currentSession
     ? phaseLabelForSessionNumber(currentSession.sessionNumber)
     : undefined;

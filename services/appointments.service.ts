@@ -19,10 +19,16 @@ export const appointmentService = {
   /**
    * Fetch all appointments for a specific user
    */
-  getUserAppointments: async (userId: string): Promise<Appointment[]> => {
+  getUserAppointments: async (
+    userId: string,
+    opts?: { futureOnly?: boolean },
+  ): Promise<Appointment[]> => {
     try {
+      const futureOnly = opts?.futureOnly;
+      const qs =
+        typeof futureOnly === "boolean" ? `?futureOnly=${futureOnly}` : "";
       const response = await apiClient.get<AppointmentResponse>(
-        ENDPOINTS.APPOINTMENTS.GET(userId),
+        `${ENDPOINTS.APPOINTMENTS.GET(userId)}${qs}`,
       );
       return Array.isArray(response.data.data)
         ? response.data.data
@@ -36,10 +42,16 @@ export const appointmentService = {
   /**
    * Fetch all appointments for a specific mentor
    */
-  getMentorAppointments: async (mentorId: string): Promise<Appointment[]> => {
+  getMentorAppointments: async (
+    mentorId: string,
+    opts?: { futureOnly?: boolean },
+  ): Promise<Appointment[]> => {
     try {
+      const futureOnly = opts?.futureOnly;
+      const qs =
+        typeof futureOnly === "boolean" ? `?futureOnly=${futureOnly}` : "";
       const response = await apiClient.get<AppointmentResponse>(
-        ENDPOINTS.APPOINTMENTS.GET_BY_MENTOR(mentorId),
+        `${ENDPOINTS.APPOINTMENTS.GET_BY_MENTOR(mentorId)}${qs}`,
       );
       console.log(
         "Fetched mentor appointments for mentorId:",

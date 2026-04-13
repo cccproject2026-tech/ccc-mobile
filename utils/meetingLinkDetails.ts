@@ -9,8 +9,20 @@ export function getAppointmentJoinUrl(
 ): string | null {
   if (!appointment) return null;
   const fromLink = appointment.meetingLink?.trim();
-  const fromZoom = appointment.zoomMeeting?.joinUrl?.trim();
-  return fromLink || fromZoom || null;
+  const zoomMeeting: any = (appointment as any).zoomMeeting;
+  const fromZoom =
+    (typeof zoomMeeting?.joinUrl === "string" ? zoomMeeting.joinUrl : undefined)?.trim() ||
+    (typeof zoomMeeting?.join_url === "string" ? zoomMeeting.join_url : undefined)?.trim() ||
+    (typeof zoomMeeting?.joinURL === "string" ? zoomMeeting.joinURL : undefined)?.trim();
+
+  // Some APIs may also return these fields at the top-level.
+  const anyAppt: any = appointment as any;
+  const fromTopLevel =
+    (typeof anyAppt?.joinUrl === "string" ? anyAppt.joinUrl : undefined)?.trim() ||
+    (typeof anyAppt?.join_url === "string" ? anyAppt.join_url : undefined)?.trim() ||
+    (typeof anyAppt?.joinURL === "string" ? anyAppt.joinURL : undefined)?.trim();
+
+  return fromLink || fromZoom || fromTopLevel || null;
 }
 
 export function appointmentPlatformLabel(
