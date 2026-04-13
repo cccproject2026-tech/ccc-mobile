@@ -135,7 +135,9 @@ type TranscriptSummaryApiResponse = {
   };
 };
 
-const parseTranscriptStringToLines = (transcript: string): { role: "mentor" | "pastor"; text: string }[] => {
+const parseTranscriptStringToLines = (
+  transcript: string,
+): { role: "mentor" | "pastor"; text: string; speaker?: string }[] => {
   const raw = (transcript ?? "").replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
   const lines = raw
     .split(/\r?\n/)
@@ -145,18 +147,34 @@ const parseTranscriptStringToLines = (transcript: string): { role: "mentor" | "p
   if (!lines.length) return [];
 
   let currentRole: "mentor" | "pastor" = "mentor";
-  const out: { role: "mentor" | "pastor"; text: string }[] = [];
+  let currentSpeaker: string | undefined;
+  const out: { role: "mentor" | "pastor"; text: string; speaker?: string }[] = [];
 
   for (const line of lines) {
-    const match = /^(mentor|pastor)\s*:\s*(.*)$/i.exec(line);
+    // Supports formats like:
+    // - "Mentor: hello"
+    // - "Pastor - hello"
+    // - "B mentor: hello"
+    // - "Bala's A55 pastor: hello"
+    const match =
+      /^(.+?)\b(mentor|pastor)\b\s*(?::|-)\s*(.*)$/i.exec(line) ||
+      /^(mentor|pastor)\b\s*(?::|-)?\s*(.*)$/i.exec(line);
     if (match) {
-      const role = match[1].toLowerCase() as "mentor" | "pastor";
+      const roleToken = (match.length === 4 ? match[2] : match[1])!;
+      const role = roleToken.toLowerCase() as "mentor" | "pastor";
       currentRole = role;
-      const text = (match[2] ?? "").trim();
-      if (text) out.push({ role, text });
+      const speaker =
+        match.length === 4
+          ? `${match[1] ?? ""}${match[2] ?? ""}`.replace(/\s+/g, " ").trim()
+          : role === "mentor"
+            ? "Mentor"
+            : "Pastor";
+      currentSpeaker = speaker || currentSpeaker;
+      const text = (match.length === 4 ? match[3] : match[2] ?? "").trim();
+      if (text) out.push({ role, speaker: currentSpeaker, text });
       continue;
     }
-    out.push({ role: currentRole, text: line });
+    out.push({ role: currentRole, speaker: currentSpeaker, text: line });
   }
 
   return out;
@@ -243,7 +261,11 @@ const NoteCard = ({ title, value }: { title: string; value?: string }) => {
   );
 };
 
-const MeetingTranscript = ({ lines }: { lines: { role: "mentor" | "pastor"; text: string }[] }) => {
+const MeetingTranscript = ({
+  lines,
+}: {
+  lines: { role: "mentor" | "pastor"; text: string; speaker?: string }[];
+}) => {
   const hasContent = lines.some(line => line.text.trim());
   
   if (!hasContent) {
@@ -278,7 +300,15 @@ const MeetingTranscript = ({ lines }: { lines: { role: "mentor" | "pastor"; text
                   {isMentor ? "Mentor" : "Pastor"}
                 </Text>
               </View>
-              <Text style={transcriptStyles.text}>{line.text.trim()}</Text>
+              <Text style={transcriptStyles.text}>
+                {(() => {
+                  const speaker = line.speaker?.trim();
+                  const base = line.text.trim();
+                  if (!speaker) return base;
+                  if (/^(mentor|pastor)$/i.test(speaker)) return base;
+                  return `${speaker}: ${base}`;
+                })()}
+              </Text>
             </View>
           </View>
         );
