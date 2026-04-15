@@ -135,6 +135,7 @@ type TranscriptSummaryApiResponse = {
 
 const parseTranscriptStringToLines = (
   transcript: string,
+  opts?: { mentorName?: string; pastorName?: string },
 ): (MentorshipTranscriptLine & { speaker?: string })[] => {
   const raw = (transcript ?? "").replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
   const lines = raw
@@ -147,6 +148,51 @@ const parseTranscriptStringToLines = (
   let currentRole: MentorshipTranscriptLine["role"] = "mentor";
   let currentSpeaker: string | undefined;
   const out: (MentorshipTranscriptLine & { speaker?: string })[] = [];
+
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+  const aliasesFor = (name: string) => {
+    const n = norm(name);
+    if (!n) return [] as string[];
+    const parts = n.split(" ").filter(Boolean);
+    const first = parts[0] ?? "";
+    const last = parts[parts.length - 1] ?? "";
+    const out: string[] = [];
+    if (n.length >= 2) out.push(n);
+    if (first.length >= 2) out.push(first);
+    if (last.length >= 2 && last !== first) out.push(last);
+    // "first lastInitial" common shorthand
+    if (first && last) out.push(`${first} ${last[0]}`);
+    return Array.from(new Set(out));
+  };
+
+  const mentorAliases = aliasesFor(opts?.mentorName ?? "");
+  const pastorAliases = aliasesFor(opts?.pastorName ?? "");
+
+  const roleFromSpeaker = (speaker: string): MentorshipTranscriptLine["role"] | null => {
+    const sNorm = norm(speaker);
+    if (!sNorm) return null;
+    const matches = (aliases: string[]) =>
+      aliases.some((a) => a && (sNorm === a || sNorm.startsWith(`${a} `) || sNorm.includes(a)));
+    if (matches(mentorAliases)) return "mentor";
+    if (matches(pastorAliases)) return "pastor";
+    return null;
+  };
+
+  const speakerRoleMap = new Map<string, MentorshipTranscriptLine["role"]>();
+  const assignRoleForUnknownSpeaker = (speaker: string): MentorshipTranscriptLine["role"] => {
+    const key = norm(speaker);
+    const existing = speakerRoleMap.get(key);
+    if (existing) return existing;
+
+    // If we don't know who the speaker is, assign deterministically:
+    // first distinct speaker -> mentor, second -> pastor, then reuse.
+    const usedRoles = new Set(Array.from(speakerRoleMap.values()));
+    const nextRole: MentorshipTranscriptLine["role"] =
+      !usedRoles.has("mentor") ? "mentor" : !usedRoles.has("pastor") ? "pastor" : currentRole;
+
+    speakerRoleMap.set(key, nextRole);
+    return nextRole;
+  };
 
   for (const line of lines) {
     // Supports formats like:
@@ -172,6 +218,22 @@ const parseTranscriptStringToLines = (
       if (text) out.push({ role, speaker: currentSpeaker, text });
       continue;
     }
+
+    // Support "Name: ..." lines (without mentor/pastor keywords)
+    const speakerMatch = /^([^:]{1,40})\s*:\s*(.+)$/.exec(line);
+    if (speakerMatch) {
+      const speaker = (speakerMatch[1] ?? "").trim();
+      const text = (speakerMatch[2] ?? "").trim();
+      const detected = roleFromSpeaker(speaker);
+      const role: MentorshipTranscriptLine["role"] =
+        detected ?? assignRoleForUnknownSpeaker(speaker);
+
+      currentRole = role;
+      currentSpeaker = speaker || currentSpeaker;
+      if (text) out.push({ role, speaker: currentSpeaker, text });
+      continue;
+    }
+
     out.push({ role: currentRole, speaker: currentSpeaker, text: line });
   }
 
@@ -825,10 +887,18 @@ export default function SessionDetailsScreen() {
                     lines={
                       (() => {
                         const t = typeof transcript === "string" ? transcript : "";
-                        if (t.trim().length) return parseTranscriptStringToLines(t);
+                        if (t.trim().length) {
+                          return parseTranscriptStringToLines(t, {
+                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
+                            pastorName: session?.pastorName,
+                          });
+                        }
                         const apptTranscript = (appointment as any)?.transcript;
                         if (typeof apptTranscript === "string" && apptTranscript.trim().length) {
-                          return parseTranscriptStringToLines(apptTranscript);
+                          return parseTranscriptStringToLines(apptTranscript, {
+                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
+                            pastorName: session?.pastorName,
+                          });
                         }
                         if (Array.isArray(apptTranscript)) {
                           return apptTranscript as MentorshipTranscriptLine[];

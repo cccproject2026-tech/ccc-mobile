@@ -138,6 +138,7 @@ type TranscriptSummaryApiResponse = {
 
 const parseTranscriptStringToLines = (
   transcript: string,
+  opts?: { mentorName?: string; pastorName?: string },
 ): { role: "mentor" | "pastor"; text: string; speaker?: string }[] => {
   const raw = (transcript ?? "").replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
   const lines = raw
@@ -150,6 +151,48 @@ const parseTranscriptStringToLines = (
   let currentRole: "mentor" | "pastor" = "mentor";
   let currentSpeaker: string | undefined;
   const out: { role: "mentor" | "pastor"; text: string; speaker?: string }[] = [];
+
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+  const aliasesFor = (name: string) => {
+    const n = norm(name);
+    if (!n) return [] as string[];
+    const parts = n.split(" ").filter(Boolean);
+    const first = parts[0] ?? "";
+    const last = parts[parts.length - 1] ?? "";
+    const out: string[] = [];
+    if (n.length >= 2) out.push(n);
+    if (first.length >= 2) out.push(first);
+    if (last.length >= 2 && last !== first) out.push(last);
+    if (first && last) out.push(`${first} ${last[0]}`);
+    return Array.from(new Set(out));
+  };
+
+  const mentorAliases = aliasesFor(opts?.mentorName ?? "");
+  const pastorAliases = aliasesFor(opts?.pastorName ?? "");
+
+  const roleFromSpeaker = (speaker: string): "mentor" | "pastor" | null => {
+    const sNorm = norm(speaker);
+    if (!sNorm) return null;
+    const matches = (aliases: string[]) =>
+      aliases.some((a) => a && (sNorm === a || sNorm.startsWith(`${a} `) || sNorm.includes(a)));
+    if (matches(mentorAliases)) return "mentor";
+    if (matches(pastorAliases)) return "pastor";
+    return null;
+  };
+
+  const speakerRoleMap = new Map<string, "mentor" | "pastor">();
+  const assignRoleForUnknownSpeaker = (speaker: string): "mentor" | "pastor" => {
+    const key = norm(speaker);
+    const existing = speakerRoleMap.get(key);
+    if (existing) return existing;
+
+    const usedRoles = new Set(Array.from(speakerRoleMap.values()));
+    const nextRole: "mentor" | "pastor" =
+      !usedRoles.has("mentor") ? "mentor" : !usedRoles.has("pastor") ? "pastor" : currentRole;
+
+    speakerRoleMap.set(key, nextRole);
+    return nextRole;
+  };
 
   for (const line of lines) {
     // Supports formats like:
@@ -175,6 +218,21 @@ const parseTranscriptStringToLines = (
       if (text) out.push({ role, speaker: currentSpeaker, text });
       continue;
     }
+
+    // Support "Name: ..." lines (without mentor/pastor keywords)
+    const speakerMatch = /^([^:]{1,40})\s*:\s*(.+)$/.exec(line);
+    if (speakerMatch) {
+      const speaker = (speakerMatch[1] ?? "").trim();
+      const text = (speakerMatch[2] ?? "").trim();
+      const detected = roleFromSpeaker(speaker);
+      const role = detected ?? assignRoleForUnknownSpeaker(speaker);
+
+      currentRole = role;
+      currentSpeaker = speaker || currentSpeaker;
+      if (text) out.push({ role, speaker: currentSpeaker, text });
+      continue;
+    }
+
     out.push({ role: currentRole, speaker: currentSpeaker, text: line });
   }
 
@@ -590,13 +648,16 @@ export default function PastorSessionDetailScreen() {
     return meetingsUI.map((m) => ({
       ...m,
       transcript: transcript.trim()
-        ? parseTranscriptStringToLines(transcript)
+        ? parseTranscriptStringToLines(transcript, {
+            mentorName,
+            pastorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
+          })
         : Array.isArray((appointment as any)?.transcript)
           ? ((appointment as any)?.transcript as any)
           : m.transcript,
       aiSummary: summary ? mapApiSummaryToMeetingSummary(summary) : m.aiSummary,
     }));
-  }, [meetingsUI, transcript, summary, (appointment as any)?.transcript]);
+  }, [meetingsUI, transcript, summary, (appointment as any)?.transcript, mentorName, user?.firstName, user?.lastName]);
 
   const handleJoin = () => {
     if (!meetingLink) return;
