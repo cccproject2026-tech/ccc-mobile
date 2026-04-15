@@ -353,7 +353,13 @@ const MeetingTranscript = ({
       {lines.map((line, idx) => {
         const isMentor = line.role === "mentor";
         return (
-          <View key={idx} style={transcriptStyles.messageContainer}>
+          <View
+            key={idx}
+            style={[
+              transcriptStyles.messageContainer,
+              isMentor ? transcriptStyles.messageRight : transcriptStyles.messageLeft,
+            ]}
+          >
             <View style={[transcriptStyles.bubble, isMentor ? transcriptStyles.mentorBubble : transcriptStyles.pastorBubble]}>
               <View style={transcriptStyles.bubbleHeader}>
                 <View style={transcriptStyles.roleBadge}>
@@ -1144,8 +1150,10 @@ const transcriptStyles = StyleSheet.create({
   emptySubtitle: { color: "rgba(255,255,255,0.3)", fontSize: 13, textAlign: "center" },
   scroll: { maxHeight: 450 },
   scrollContent: { paddingBottom: SPACING.md },
-  messageContainer: { marginBottom: SPACING.md },
-  bubble: { borderRadius: 14, padding: SPACING.md },
+  messageContainer: { marginBottom: SPACING.md, flexDirection: "row" },
+  messageLeft: { justifyContent: "flex-start" },
+  messageRight: { justifyContent: "flex-end" },
+  bubble: { borderRadius: 14, padding: SPACING.md, maxWidth: "88%" },
   mentorBubble: { backgroundColor: "rgba(56, 189, 248, 0.1)", borderLeftWidth: 3, borderLeftColor: "#38BDF8" },
   pastorBubble: { backgroundColor: "rgba(255,255,255,0.05)", borderLeftWidth: 3, borderLeftColor: "rgba(255,255,255,0.3)" },
   bubbleHeader: { marginBottom: SPACING.xs },

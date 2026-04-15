@@ -347,7 +347,13 @@ const MeetingTranscript = ({
       {lines.map((line, idx) => {
         const isMentor = line.role === "mentor";
         return (
-          <View key={idx} style={transcriptStyles.message}>
+          <View
+            key={idx}
+            style={[
+              transcriptStyles.message,
+              isMentor ? transcriptStyles.messageRight : transcriptStyles.messageLeft,
+            ]}
+          >
             <View style={[transcriptStyles.bubble, isMentor ? transcriptStyles.mentorBubble : transcriptStyles.pastorBubble]}>
               <View style={transcriptStyles.roleRow}>
                 <Ionicons
@@ -979,11 +985,14 @@ const transcriptStyles = StyleSheet.create({
   emptySubtext: { color: "rgba(255,255,255,0.3)", fontSize: 13 },
   scroll: { maxHeight: 400 },
   scrollContent: { paddingBottom: SPACING.md },
-  message: { marginBottom: SPACING.md },
+  message: { marginBottom: SPACING.md, flexDirection: "row" },
+  messageLeft: { justifyContent: "flex-start" },
+  messageRight: { justifyContent: "flex-end" },
   bubble: {
     borderRadius: 14,
     padding: SPACING.md,
     borderLeftWidth: 3,
+    maxWidth: "88%",
   },
   mentorBubble: {
     backgroundColor: "rgba(56, 189, 248, 0.12)",
