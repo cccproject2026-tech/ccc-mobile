@@ -557,7 +557,6 @@ export default function SessionDetailsScreen() {
   const appointmentId = session?.appointmentId ? String(session.appointmentId) : undefined;
   const [transcript, setTranscript] = useState<string>("");
   const [summary, setSummary] = useState<TranscriptSummary | null>(null);
-  const [isCachedSummary, setIsCachedSummary] = useState(false);
   const [loadingTranscriptSummary, setLoadingTranscriptSummary] = useState(false);
   const [transcriptSummaryError, setTranscriptSummaryError] = useState<
     "NO_TRANSCRIPT" | "SHORT_TRANSCRIPT" | "GENERAL_ERROR" | null
@@ -573,7 +572,6 @@ export default function SessionDetailsScreen() {
         // Skip API call when transcript is missing/too short.
         setTranscript(fallbackTranscript || "");
         setSummary(null);
-        setIsCachedSummary(false);
         setTranscriptSummaryError("NO_TRANSCRIPT");
         return;
       }
@@ -588,7 +586,6 @@ export default function SessionDetailsScreen() {
 
       setTranscript(result?.data?.transcript || fallbackTranscript || "");
       setSummary(result?.data?.summary || null);
-      setIsCachedSummary(!!result?.data?.cached);
     } catch (e) {
       const error = e as any;
       const message =
@@ -599,7 +596,6 @@ export default function SessionDetailsScreen() {
 
       setTranscript((appointment as any)?.transcript || "");
       setSummary(null);
-      setIsCachedSummary(false);
 
       const lower = String(message).toLowerCase();
       if (lower.includes("too short") || lower.includes("missing")) {
@@ -630,7 +626,6 @@ export default function SessionDetailsScreen() {
     lastFetchedAppointmentIdRef.current = null;
     setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : "");
     setSummary(null);
-    setIsCachedSummary(false);
     setTranscriptSummaryError("NO_TRANSCRIPT");
   }, [appointmentId, (appointment as any)?.transcript]);
 
@@ -868,19 +863,6 @@ export default function SessionDetailsScreen() {
               <Text style={styles.sectionTitle}>Conversation</Text>
             </View>
             <View style={styles.conversationFrame}>
-              {!loadingTranscriptSummary && isCachedSummary && (
-                <Text style={summaryStyles.emptySubtitle}>Showing saved summary</Text>
-              )}
-              {!!appointmentId && (
-                <Pressable
-                  disabled={loadingTranscriptSummary || !transcript || transcript.trim().length < 20}
-                  onPress={() => getTranscriptSummary(appointmentId, true)}
-                >
-                  <Text style={summaryStyles.emptySubtitle}>
-                    {loadingTranscriptSummary ? "Regenerating..." : "Regenerate Summary"}
-                  </Text>
-                </Pressable>
-              )}
               <SessionTabs
                 transcript={
                   loadingTranscriptSummary && !(typeof transcript === "string" && transcript.trim()) ? (

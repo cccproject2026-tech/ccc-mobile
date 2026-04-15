@@ -551,7 +551,6 @@ export default function PastorSessionDetailScreen() {
   const appointmentId = currentSession?.appointmentId ? String(currentSession.appointmentId) : undefined;
   const [transcript, setTranscript] = useState<string>("");
   const [summary, setSummary] = useState<TranscriptSummary | null>(null);
-  const [isCachedSummary, setIsCachedSummary] = useState(false);
   const [loadingTranscriptSummary, setLoadingTranscriptSummary] = useState(false);
   const [transcriptSummaryError, setTranscriptSummaryError] = useState<
     "NO_TRANSCRIPT" | "SHORT_TRANSCRIPT" | "GENERAL_ERROR" | null
@@ -572,7 +571,6 @@ export default function PastorSessionDetailScreen() {
       const result = response.data;
       setTranscript(result?.data?.transcript || fallbackTranscript || "");
       setSummary(result?.data?.summary || null);
-      setIsCachedSummary(!!result?.data?.cached);
     } catch (e) {
       const error = e as any;
       const message =
@@ -583,7 +581,6 @@ export default function PastorSessionDetailScreen() {
 
       setTranscript((appointment as any)?.transcript || "");
       setSummary(null);
-      setIsCachedSummary(false);
 
       const lower = String(message).toLowerCase();
       if (lower.includes("too short") || lower.includes("missing")) {
@@ -607,14 +604,12 @@ export default function PastorSessionDetailScreen() {
     ) {
       setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : "");
       setSummary(null);
-      setIsCachedSummary(false);
       return;
     }
 
     if (!appointmentId) {
       setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : "");
       setSummary(null);
-      setIsCachedSummary(false);
       return;
     }
 
@@ -779,9 +774,6 @@ export default function PastorSessionDetailScreen() {
             {loadingTranscriptSummary && (
               <Text style={styles.sectionSubtitle}>Loading...</Text>
             )}
-            {!loadingTranscriptSummary && isCachedSummary && (
-              <Text style={styles.sectionSubtitle}>Showing saved summary</Text>
-            )}
             {!loadingTranscriptSummary && !summary && (
               <Text style={styles.sectionSubtitle}>
                 {transcriptSummaryError === "GENERAL_ERROR"
@@ -790,16 +782,6 @@ export default function PastorSessionDetailScreen() {
                     ? "Not enough transcript to generate summary"
                     : "No transcript available (meeting not conducted)"}
               </Text>
-            )}
-            {!!appointmentId && (
-              <Pressable
-                disabled={loadingTranscriptSummary || !transcript || transcript.trim().length < 20}
-                onPress={() => getTranscriptSummary(appointmentId, true)}
-              >
-                <Text style={styles.sectionSubtitle}>
-                  {loadingTranscriptSummary ? "Regenerating..." : "Regenerate Summary"}
-                </Text>
-              </Pressable>
             )}
 
             {meetingsUiWithApiData.map(meeting => (
