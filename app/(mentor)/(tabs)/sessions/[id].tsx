@@ -334,11 +334,9 @@ const MeetingTranscript = ({
   if (!hasContent) {
     return (
       <View style={transcriptStyles.emptyContainer}>
-        <View style={transcriptStyles.emptyIcon}>
-          <Ionicons name="chatbubbles-outline" size={32} color="rgba(255,255,255,0.25)" />
-        </View>
-        <Text style={transcriptStyles.emptyTitle}>No Transcript Yet</Text>
-        <Text style={transcriptStyles.emptySubtitle}>Transcript will appear after the meeting</Text>
+        <Ionicons name="chatbubbles-outline" size={32} color="rgba(255,255,255,0.3)" />
+        <Text style={transcriptStyles.emptyText}>No transcript available yet</Text>
+        <Text style={transcriptStyles.emptySubtext}>Transcript will appear after the meeting</Text>
       </View>
     );
   }
@@ -361,13 +359,13 @@ const MeetingTranscript = ({
             ]}
           >
             <View style={[transcriptStyles.bubble, isMentor ? transcriptStyles.mentorBubble : transcriptStyles.pastorBubble]}>
-              <View style={transcriptStyles.bubbleHeader}>
-                <View style={transcriptStyles.roleBadge}>
-                  <Ionicons name={isMentor ? "person" : "people"} size={12} color="rgba(255,255,255,0.7)" />
-                  <Text style={transcriptStyles.role}>
-                    {isMentor ? "Mentor" : "Pastor"}
-                  </Text>
-                </View>
+              <View style={transcriptStyles.roleRow}>
+                <Ionicons
+                  name={isMentor ? "person-outline" : "people-outline"}
+                  size={14}
+                  color="rgba(255,255,255,0.55)"
+                />
+                <Text style={transcriptStyles.role}>{isMentor ? "Mentor" : "Pastor"}</Text>
               </View>
               <Text style={transcriptStyles.text}>
                 {(() => {
@@ -869,77 +867,79 @@ export default function SessionDetailsScreen() {
               <Ionicons name="chatbubbles-outline" size={20} color="rgba(255,255,255,0.7)" />
               <Text style={styles.sectionTitle}>Conversation</Text>
             </View>
-            {!loadingTranscriptSummary && isCachedSummary && (
-              <Text style={summaryStyles.emptySubtitle}>Showing saved summary</Text>
-            )}
-            {!!appointmentId && (
-              <Pressable
-                disabled={loadingTranscriptSummary || !transcript || transcript.trim().length < 20}
-                onPress={() => getTranscriptSummary(appointmentId, true)}
-              >
-                <Text style={summaryStyles.emptySubtitle}>
-                  {loadingTranscriptSummary ? "Regenerating..." : "Regenerate Summary"}
-                </Text>
-              </Pressable>
-            )}
-            <SessionTabs
-              transcript={
-                loadingTranscriptSummary && !(typeof transcript === "string" && transcript.trim()) ? (
-                  <View style={summaryStyles.emptyContainer}>
-                    <Text style={summaryStyles.emptyTitle}>Loading...</Text>
-                  </View>
-                ) : (
-                  <MeetingTranscript
-                    lines={
-                      (() => {
-                        const t = typeof transcript === "string" ? transcript : "";
-                        if (t.trim().length) {
-                          return parseTranscriptStringToLines(t, {
-                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
-                            pastorName: session?.pastorName,
-                          });
-                        }
-                        const apptTranscript = (appointment as any)?.transcript;
-                        if (typeof apptTranscript === "string" && apptTranscript.trim().length) {
-                          return parseTranscriptStringToLines(apptTranscript, {
-                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
-                            pastorName: session?.pastorName,
-                          });
-                        }
-                        if (Array.isArray(apptTranscript)) {
-                          return apptTranscript as MentorshipTranscriptLine[];
-                        }
-                        return [];
-                      })()
-                    }
-                  />
-                )
-              }
-              summary={
-                loadingTranscriptSummary ? (
-                  <View style={summaryStyles.emptyContainer}>
-                    <Text style={summaryStyles.emptyTitle}>Loading...</Text>
-                  </View>
-                ) : summary ? (
-                  <MeetingSummary
-                    summary={
-                      mapApiSummaryToUiSummary(summary)
-                    }
-                  />
-                ) : (
-                  <View style={summaryStyles.emptyContainer}>
-                    <Text style={summaryStyles.emptyTitle}>AI Summary</Text>
-                    <Text style={summaryStyles.emptySubtitle}>
-                      {transcriptSummaryError === "GENERAL_ERROR"
-                        ? "Summary is temporarily unavailable"
-                        : transcript?.trim()
-                          ? "Not enough transcript to generate summary"
-                          : "No transcript available (meeting not conducted)"}
-                    </Text>
-                  </View>
-                )
-              }
-            />
+            <View style={styles.conversationFrame}>
+              {!loadingTranscriptSummary && isCachedSummary && (
+                <Text style={summaryStyles.emptySubtitle}>Showing saved summary</Text>
+              )}
+              {!!appointmentId && (
+                <Pressable
+                  disabled={loadingTranscriptSummary || !transcript || transcript.trim().length < 20}
+                  onPress={() => getTranscriptSummary(appointmentId, true)}
+                >
+                  <Text style={summaryStyles.emptySubtitle}>
+                    {loadingTranscriptSummary ? "Regenerating..." : "Regenerate Summary"}
+                  </Text>
+                </Pressable>
+              )}
+              <SessionTabs
+                transcript={
+                  loadingTranscriptSummary && !(typeof transcript === "string" && transcript.trim()) ? (
+                    <View style={summaryStyles.emptyContainer}>
+                      <Text style={summaryStyles.emptyTitle}>Loading...</Text>
+                    </View>
+                  ) : (
+                    <MeetingTranscript
+                      lines={
+                        (() => {
+                          const t = typeof transcript === "string" ? transcript : "";
+                          if (t.trim().length) {
+                            return parseTranscriptStringToLines(t, {
+                              mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
+                              pastorName: session?.pastorName,
+                            });
+                          }
+                          const apptTranscript = (appointment as any)?.transcript;
+                          if (typeof apptTranscript === "string" && apptTranscript.trim().length) {
+                            return parseTranscriptStringToLines(apptTranscript, {
+                              mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
+                              pastorName: session?.pastorName,
+                            });
+                          }
+                          if (Array.isArray(apptTranscript)) {
+                            return apptTranscript as MentorshipTranscriptLine[];
+                          }
+                          return [];
+                        })()
+                      }
+                    />
+                  )
+                }
+                summary={
+                  loadingTranscriptSummary ? (
+                    <View style={summaryStyles.emptyContainer}>
+                      <Text style={summaryStyles.emptyTitle}>Loading...</Text>
+                    </View>
+                  ) : summary ? (
+                    <MeetingSummary
+                      summary={
+                        mapApiSummaryToUiSummary(summary)
+                      }
+                    />
+                  ) : (
+                    <View style={summaryStyles.emptyContainer}>
+                      <Text style={summaryStyles.emptyTitle}>AI Summary</Text>
+                      <Text style={summaryStyles.emptySubtitle}>
+                        {transcriptSummaryError === "GENERAL_ERROR"
+                          ? "Summary is temporarily unavailable"
+                          : transcript?.trim()
+                            ? "Not enough transcript to generate summary"
+                            : "No transcript available (meeting not conducted)"}
+                      </Text>
+                    </View>
+                  )
+                }
+              />
+            </View>
           </View>
 
           {/* Insights Card */}
@@ -1066,6 +1066,14 @@ const styles = StyleSheet.create({
   waitingTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "600" },
   waitingText: { color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 19 },
   contentSection: { gap: SPACING.md },
+  conversationFrame: {
+    backgroundColor: "rgba(255,255,255,0.09)",
+    borderRadius: 16,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    gap: SPACING.md,
+  },
   actionsSection: { gap: SPACING.md, marginTop: SPACING.sm },
   primaryButton: {
     backgroundColor: "#22C55E",
@@ -1144,21 +1152,19 @@ const noteStyles = StyleSheet.create({
 });
 
 const transcriptStyles = StyleSheet.create({
-  emptyContainer: { alignItems: "center", padding: SPACING.xxxl, gap: SPACING.md },
-  emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.05)", alignItems: "center", justifyContent: "center" },
-  emptyTitle: { color: "rgba(255,255,255,0.5)", fontSize: 16, fontWeight: "600" },
-  emptySubtitle: { color: "rgba(255,255,255,0.3)", fontSize: 13, textAlign: "center" },
-  scroll: { maxHeight: 450 },
+  emptyContainer: { alignItems: "center", padding: SPACING.xl, gap: SPACING.sm },
+  emptyText: { color: "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: "500" },
+  emptySubtext: { color: "rgba(255,255,255,0.3)", fontSize: 13 },
+  scroll: { maxHeight: 400 },
   scrollContent: { paddingBottom: SPACING.md },
   messageContainer: { marginBottom: SPACING.md, flexDirection: "row" },
   messageLeft: { justifyContent: "flex-start" },
   messageRight: { justifyContent: "flex-end" },
-  bubble: { borderRadius: 14, padding: SPACING.md, maxWidth: "88%" },
-  mentorBubble: { backgroundColor: "rgba(56, 189, 248, 0.1)", borderLeftWidth: 3, borderLeftColor: "#38BDF8" },
-  pastorBubble: { backgroundColor: "rgba(255,255,255,0.05)", borderLeftWidth: 3, borderLeftColor: "rgba(255,255,255,0.3)" },
-  bubbleHeader: { marginBottom: SPACING.xs },
-  roleBadge: { flexDirection: "row", alignItems: "center", gap: SPACING.xs },
-  role: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 0.5 },
+  bubble: { borderRadius: 14, padding: SPACING.md, borderLeftWidth: 3, maxWidth: "88%" },
+  mentorBubble: { backgroundColor: "rgba(56, 189, 248, 0.12)", borderLeftColor: "#38BDF8" },
+  pastorBubble: { backgroundColor: "rgba(255,255,255,0.06)", borderLeftColor: "rgba(255,255,255,0.3)" },
+  roleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: SPACING.xs },
+  role: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.6)" },
   text: { color: "rgba(255,255,255,0.9)", fontSize: 14, lineHeight: 22 },
 });
 
