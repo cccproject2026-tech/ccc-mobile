@@ -2,10 +2,6 @@ import { sessionOrdinalLabel } from "@/constants/sessionTitles";
 import { Appointment } from "@/types/appointment.types";
 import { MentorshipSession } from "@/types/session.types";
 import {
-  aiSummaryForSession,
-  transcriptLinesForSession,
-} from "@/utils/sessionTranscriptUi";
-import {
   MeetingStatusUi,
   PastorMeetingUi,
 } from "./pastorSessionDetail.types";
@@ -34,6 +30,15 @@ export function buildPastorMeetingsUi(
   const id = `${session.id}-meeting-1`;
   const status = mapAppointmentStatus(session, appointment);
 
+  const transcript = Array.isArray(session.transcript) ? session.transcript : [];
+  const aiSummary = session.aiSummary ?? {
+    overview: "",
+    keyDiscussionPoints: "",
+    adviceGiven: "",
+    actionItems: "",
+    nextSessionFocus: "",
+  };
+
   const meeting: PastorMeetingUi = {
     id,
     meetingNumber: 1,
@@ -44,8 +49,8 @@ export function buildPastorMeetingsUi(
     isLatest: true,
     mentorNote: session.mentorNote,
     pastorNote: session.pastorNote,
-    transcript: transcriptLinesForSession(session),
-    aiSummary: aiSummaryForSession(session),
+    transcript,
+    aiSummary,
   };
 
   return [meeting];
