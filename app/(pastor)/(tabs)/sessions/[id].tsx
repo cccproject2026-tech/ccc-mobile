@@ -35,7 +35,7 @@ import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -530,8 +530,8 @@ export default function PastorSessionDetailScreen() {
   const sessionId = Array.isArray(id) ? id[0] : id;
   const pastorId = user?.id;
 
-  const { data: sessions = [], isLoading } = usePastorSessions(pastorId);
-  const { appointments = [] } = useAppointments({ userId: pastorId, futureOnly: false });
+  const { data: sessions = [], isLoading, refetch: refetchSessions } = usePastorSessions(pastorId);
+  const { appointments = [], refetch: refetchAppointments } = useAppointments({ userId: pastorId, futureOnly: false });
   const { mentors } = useAssignedMentors(pastorId ?? null);
 
   const mentorMap = useMemo(() => new Map(mentors.map(m => [m.id, m.name])), [mentors]);
@@ -592,6 +592,19 @@ export default function PastorSessionDetailScreen() {
       setLoadingTranscriptSummary(false);
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Ensure fresh data when returning to this screen (new sessions/meeting links/transcripts)
+      refetchSessions?.();
+      refetchAppointments?.();
+
+      if (appointmentId) {
+        lastFetchedAppointmentIdRef.current = null;
+        getTranscriptSummary(appointmentId, false);
+      }
+    }, [appointmentId, refetchAppointments, refetchSessions]),
+  );
 
   useEffect(() => {
     const fallbackTranscript = (appointment as any)?.transcript || "";

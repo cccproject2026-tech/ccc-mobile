@@ -21,7 +21,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -469,6 +469,12 @@ export default function SessionsScreen() {
     refetch,
     isRefetching,
   } = useMentorshipSessions(user?.id);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   const { mutateAsync: completeSessionAsync, isPending: isCompleting } =
     useCompleteSession();

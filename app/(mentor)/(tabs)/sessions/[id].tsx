@@ -43,7 +43,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -521,7 +521,7 @@ export default function SessionDetailsScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   
   const sessionId = Array.isArray(id) ? id[0] : id;
-  const { data: sessions = [], isLoading: isLoadingSessions } = useMentorshipSessions(user?.id);
+  const { data: sessions = [], isLoading: isLoadingSessions, refetch: refetchSessions } = useMentorshipSessions(user?.id);
   
   const session = useMemo<MentorshipSession | null>(() => {
     if (!sessionId) return null;
@@ -535,8 +535,8 @@ export default function SessionDetailsScreen() {
 
   const nextSessionId = useMemo(() => getNextSessionId(sortedSessions), [sortedSessions]);
 
-  const { appointments: mentorAppointments = [] } = useAppointments({ mentorId: user?.id, futureOnly: false });
-  const { appointments: menteeAppointments = [] } = useAppointments({ userId: session?.pastorId, futureOnly: false });
+  const { appointments: mentorAppointments = [], refetch: refetchMentorAppointments } = useAppointments({ mentorId: user?.id, futureOnly: false });
+  const { appointments: menteeAppointments = [], refetch: refetchMenteeAppointments } = useAppointments({ userId: session?.pastorId, futureOnly: false });
 
   const { mutateAsync: completeSessionAsync, isPending: isCompleting } = useCompleteSession();
   const { mutateAsync: redoSessionAsync, isPending: isRedoing } = useRedoSession({
@@ -607,6 +607,19 @@ export default function SessionDetailsScreen() {
       setLoadingTranscriptSummary(false);
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetchSessions?.();
+      refetchMentorAppointments?.();
+      refetchMenteeAppointments?.();
+
+      if (appointmentId) {
+        lastFetchedAppointmentIdRef.current = null;
+        getTranscriptSummary(appointmentId, false);
+      }
+    }, [appointmentId, refetchMenteeAppointments, refetchMentorAppointments, refetchSessions]),
+  );
 
   useEffect(() => {
     const fallbackTranscript = (appointment as any)?.transcript || "";

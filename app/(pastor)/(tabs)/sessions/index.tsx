@@ -23,7 +23,7 @@ import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
   FlatList,
@@ -55,7 +55,7 @@ export default function PastorSessionsScreen() {
 
   const { data: sessions = [], isLoading, isError, refetch, isRefetching } =
     usePastorSessions(pastorId);
-  const { appointments = [] } = useAppointments({ userId: pastorId });
+  const { appointments = [], refetch: refetchAppointments } = useAppointments({ userId: pastorId });
   const { mentors } = useAssignedMentors(pastorId ?? null);
 
   const mentorNameById = useMemo(() => {
@@ -90,6 +90,13 @@ export default function PastorSessionsScreen() {
   const nextSessionId = useMemo(
     () => getNextSessionId(sortedByNumber),
     [sortedByNumber],
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+      refetchAppointments?.();
+    }, [refetch, refetchAppointments]),
   );
 
   const { displayList } = useMemo(() => {
