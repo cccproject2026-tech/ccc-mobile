@@ -20,6 +20,24 @@ export function usePastorSessions(pastorId?: string) {
     staleTime: 60000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 1,
+    // Avoid duplicate bursts on navigation + manual refresh
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+    // Keep showing last good data if a refetch gets throttled (429)
+    placeholderData: (prev) => prev ?? [],
+    retry: (failureCount, error: any) => {
+      const status = error?.statusCode ?? error?.response?.status;
+      if (status === 429) return false;
+      // Transient backend propagation / overload right after session creation
+      if (status === 404 || status === 503) return failureCount < 2;
+      return failureCount < 1;
+    },
+    retryDelay: (attemptIndex, error: any) => {
+      const status = error?.statusCode ?? error?.response?.status;
+      if (status === 404 || status === 503) {
+        return Math.min(1000 * 2 ** attemptIndex, 8000);
+      }
+      return 500;
+    },
   });
 }

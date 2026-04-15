@@ -23,7 +23,7 @@ import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useFocusEffect, useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
   FlatList,
@@ -92,13 +92,6 @@ export default function PastorSessionsScreen() {
     [sortedByNumber],
   );
 
-  useFocusEffect(
-    React.useCallback(() => {
-      refetch();
-      refetchAppointments?.();
-    }, [refetch, refetchAppointments]),
-  );
-
   const { displayList } = useMemo(() => {
     const sorted = [...enriched].sort(
       (a, b) =>
@@ -145,7 +138,7 @@ export default function PastorSessionsScreen() {
           <View style={styles.fillRest}>
             <SessionListSkeleton rows={6} />
           </View>
-        ) : isError ? (
+        ) : isError && displayList.length === 0 ? (
           <View style={[styles.center, styles.fillRest]}>
             <Text style={styles.stateText}>Could not load sessions.</Text>
             <Pressable onPress={() => refetch()} style={styles.retry}>

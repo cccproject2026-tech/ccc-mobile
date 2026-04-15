@@ -43,7 +43,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -607,19 +607,6 @@ export default function SessionDetailsScreen() {
       setLoadingTranscriptSummary(false);
     }
   };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      refetchSessions?.();
-      refetchMentorAppointments?.();
-      refetchMenteeAppointments?.();
-
-      if (appointmentId) {
-        lastFetchedAppointmentIdRef.current = null;
-        getTranscriptSummary(appointmentId, false);
-      }
-    }, [appointmentId, refetchMenteeAppointments, refetchMentorAppointments, refetchSessions]),
-  );
 
   useEffect(() => {
     const fallbackTranscript = (appointment as any)?.transcript || "";

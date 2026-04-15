@@ -21,7 +21,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useFocusEffect, useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -470,12 +470,6 @@ export default function SessionsScreen() {
     isRefetching,
   } = useMentorshipSessions(user?.id);
 
-  useFocusEffect(
-    useCallback(() => {
-      refetch();
-    }, [refetch]),
-  );
-
   const { mutateAsync: completeSessionAsync, isPending: isCompleting } =
     useCompleteSession();
   const completeActionInFlightRef = useRef(false);
@@ -603,7 +597,7 @@ export default function SessionsScreen() {
 
         {isLoading ? (
           <View style={styles.fillRest}><SessionListSkeleton rows={6} /></View>
-        ) : isError ? (
+        ) : isError && pastorGroups.length === 0 ? (
           <View style={[styles.centerState, styles.fillRest]}>
             <View style={styles.emptyIconWrap}>
               <Ionicons name="cloud-offline-outline" size={34} color={TEXT_MUTED} />

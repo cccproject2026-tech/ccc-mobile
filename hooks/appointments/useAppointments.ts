@@ -25,6 +25,9 @@ export const useAppointments = (options?: UseAppointmentsOptions) => {
     queryFn: () => appointmentService.getUserAppointments(userId!, { futureOnly }),
     enabled: !!userId,
     staleTime: 20000, // 2 seconds (was 5 minutes)
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   // Fetch mentor appointments
@@ -33,6 +36,9 @@ export const useAppointments = (options?: UseAppointmentsOptions) => {
     queryFn: () => appointmentService.getMentorAppointments(mentorId!, { futureOnly }),
     enabled: !!mentorId,
     staleTime: 20000, // 2 seconds (was 5 minutes)
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   // Get the right data

@@ -35,7 +35,7 @@ import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -592,19 +592,6 @@ export default function PastorSessionDetailScreen() {
       setLoadingTranscriptSummary(false);
     }
   };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      // Ensure fresh data when returning to this screen (new sessions/meeting links/transcripts)
-      refetchSessions?.();
-      refetchAppointments?.();
-
-      if (appointmentId) {
-        lastFetchedAppointmentIdRef.current = null;
-        getTranscriptSummary(appointmentId, false);
-      }
-    }, [appointmentId, refetchAppointments, refetchSessions]),
-  );
 
   useEffect(() => {
     const fallbackTranscript = (appointment as any)?.transcript || "";

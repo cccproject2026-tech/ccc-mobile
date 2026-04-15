@@ -298,43 +298,50 @@ export const roadmapService = {
             return [];
         }
 
-        const nested = await Promise.all(
-            pastorIds.map(async (pastorId) => {
-                try {
-                    const sessions = await this.getMentorshipSessions(pastorId);
-                    const pastor = users.find((u: any) => String(u._id ?? u.id) === pastorId);
-                    const pastorName =
-                        pastor
-                            ? `${pastor.firstName ?? ""} ${pastor.lastName ?? ""}`.trim() || "Pastor"
-                            : "Pastor";
-                    const rawPic = pastor?.profilePicture;
-                    const pastorProfilePicture =
-                        typeof rawPic === "string" && rawPic.trim().length > 0
-                            ? rawPic.trim()
-                            : undefined;
+        // Limit concurrency to avoid 429 from firing too many requests at once.
+        const concurrency = 2;
+        const results: MentorshipSession[][] = [];
+        for (let i = 0; i < pastorIds.length; i += concurrency) {
+            const batch = pastorIds.slice(i, i + concurrency);
+            const batchResults = await Promise.all(
+                batch.map(async (pastorId) => {
+                    try {
+                        const sessions = await this.getMentorshipSessions(pastorId);
+                        const pastor = users.find((u: any) => String(u._id ?? u.id) === pastorId);
+                        const pastorName =
+                            pastor
+                                ? `${pastor.firstName ?? ""} ${pastor.lastName ?? ""}`.trim() || "Pastor"
+                                : "Pastor";
+                        const rawPic = pastor?.profilePicture;
+                        const pastorProfilePicture =
+                            typeof rawPic === "string" && rawPic.trim().length > 0
+                                ? rawPic.trim()
+                                : undefined;
 
-                    return sessions.map((s, idx) => ({
-                        ...s,
-                        pastorId,
-                        pastorName,
-                        pastorProfilePicture,
-                        id: `${pastorId}-${s.sessionNumber}-${s.appointmentId ?? idx}`,
-                    }));
-                } catch (e) {
-                    // If we're being throttled, fail fast so the query keeps its previous data
-                    // (instead of collapsing into an empty list).
-                    if ((e as any)?.statusCode === 429) {
-                        throw e;
+                        return sessions.map((s, idx) => ({
+                            ...s,
+                            pastorId,
+                            pastorName,
+                            pastorProfilePicture,
+                            id: `${pastorId}-${s.sessionNumber}-${s.appointmentId ?? idx}`,
+                        }));
+                    } catch (e) {
+                        // If we're being throttled, fail fast so the query keeps its previous data
+                        // (instead of collapsing into an empty list).
+                        if ((e as any)?.statusCode === 429) {
+                            throw e;
+                        }
+                        if (__DEV__) {
+                            console.warn(`[getMentorshipSessionsForMentor] Failed for pastor ${pastorId}`, e);
+                        }
+                        return [];
                     }
-                    if (__DEV__) {
-                        console.warn(`[getMentorshipSessionsForMentor] Failed for pastor ${pastorId}`, e);
-                    }
-                    return [];
-                }
-            }),
-        );
+                }),
+            );
+            results.push(...batchResults);
+        }
 
-        const all = nested.flat();
+        const all = results.flat();
 
         if (__DEV__) {
             console.log("Fetched sessions:", all);

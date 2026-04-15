@@ -633,7 +633,18 @@ export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
 
             return flat;
         },
-        enabled: !!roadmapId && !!userId
+        enabled: !!roadmapId && !!userId,
+        // Avoid hammering the backend (429/503) by not refetching on focus
+        // and by treating results as fresh briefly.
+        staleTime: 60000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: true,
+        retry: (failureCount, error: any) => {
+            const status = error?.statusCode ?? error?.response?.status;
+            if (status === 429) return false;
+            return failureCount < 1;
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000),
     });
 };
 
