@@ -17,6 +17,7 @@ import {
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
+import apiClient from "@/services/api";
 import { useAuthStore } from "@/stores";
 import type { AppointmentPlatform } from "@/types/appointment.types";
 import { MentorshipSession } from "@/types/session.types";
@@ -55,7 +56,6 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import apiClient from "@/services/api";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 const SPACING = {
@@ -400,12 +400,11 @@ const SessionTabs = ({ transcript, summary }: { transcript: React.ReactNode; sum
 };
 
 const SessionAccordion = ({ meeting, joinButton }: { meeting: PastorMeetingUi; joinButton?: React.ReactNode }) => {
-  const [expanded, setExpanded] = useState(false);
+  const expanded = true;
   const { horizontalPad: padH, cardRadius } = usePastorMeetingLayout();
 
   const toggle = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded(prev => !prev);
+    // Keep expanded (no accordion collapse)
   };
 
   return (
@@ -500,15 +499,6 @@ export default function PastorSessionDetailScreen() {
     setTranscriptSummaryError(null);
     try {
       const fallbackTranscript = (appointment as any)?.transcript || "";
-      if (!fallbackTranscript || fallbackTranscript.trim().length < 20) {
-        // Skip API call when transcript is missing/too short.
-        setTranscript(fallbackTranscript || "");
-        setSummary(null);
-        setIsCachedSummary(false);
-        setTranscriptSummaryError("NO_TRANSCRIPT");
-        return;
-      }
-
       const cleanId = String(id).replace(/%27/g, "").replace(/['"]/g, "").trim();
       const response = await apiClient.post<TranscriptSummaryApiResponse>(
         `/appointments/pastor/${cleanId}/transcript-summary`,
@@ -516,7 +506,6 @@ export default function PastorSessionDetailScreen() {
         { params: { refresh }, timeout: 12000 },
       );
       const result = response.data;
-
       setTranscript(result?.data?.transcript || fallbackTranscript || "");
       setSummary(result?.data?.summary || null);
       setIsCachedSummary(!!result?.data?.cached);
@@ -546,23 +535,28 @@ export default function PastorSessionDetailScreen() {
   useEffect(() => {
     const fallbackTranscript = (appointment as any)?.transcript || "";
 
+    // If we already determined there's no transcript, skip re-calling.
     if (
       appointmentId &&
-      typeof fallbackTranscript === "string" &&
-      fallbackTranscript.trim().length >= 20
+      transcriptSummaryError === "NO_TRANSCRIPT" &&
+      (!fallbackTranscript || String(fallbackTranscript).trim().length < 20)
     ) {
-      if (lastFetchedAppointmentIdRef.current === appointmentId) return;
-      lastFetchedAppointmentIdRef.current = appointmentId;
-      getTranscriptSummary(appointmentId, false);
+      setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : "");
+      setSummary(null);
+      setIsCachedSummary(false);
       return;
     }
 
-    // No transcript → skip API call
-    lastFetchedAppointmentIdRef.current = null;
-    setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : "");
-    setSummary(null);
-    setIsCachedSummary(false);
-    setTranscriptSummaryError("NO_TRANSCRIPT");
+    if (!appointmentId) {
+      setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : "");
+      setSummary(null);
+      setIsCachedSummary(false);
+      return;
+    }
+
+    if (lastFetchedAppointmentIdRef.current === appointmentId) return;
+    lastFetchedAppointmentIdRef.current = appointmentId;
+    getTranscriptSummary(appointmentId, false);
   }, [appointmentId, (appointment as any)?.transcript]);
 
   useEffect(() => {
@@ -595,10 +589,14 @@ export default function PastorSessionDetailScreen() {
     if (!meetingsUI.length) return meetingsUI;
     return meetingsUI.map((m) => ({
       ...m,
-      transcript: transcript.trim() ? parseTranscriptStringToLines(transcript) : [],
-      aiSummary: mapApiSummaryToMeetingSummary(summary ?? undefined),
+      transcript: transcript.trim()
+        ? parseTranscriptStringToLines(transcript)
+        : Array.isArray((appointment as any)?.transcript)
+          ? ((appointment as any)?.transcript as any)
+          : m.transcript,
+      aiSummary: summary ? mapApiSummaryToMeetingSummary(summary) : m.aiSummary,
     }));
-  }, [meetingsUI, transcript, summary]);
+  }, [meetingsUI, transcript, summary, (appointment as any)?.transcript]);
 
   const handleJoin = () => {
     if (!meetingLink) return;
