@@ -132,6 +132,7 @@ type TranscriptSummaryApiResponse = {
   data?: {
     transcript?: string;
     summary?: TranscriptSummary;
+    cached?: boolean;
   };
 };
 
@@ -487,65 +488,89 @@ export default function PastorSessionDetailScreen() {
   const appointmentId = currentSession?.appointmentId ? String(currentSession.appointmentId) : undefined;
   const [transcript, setTranscript] = useState<string>("");
   const [summary, setSummary] = useState<TranscriptSummary | null>(null);
+  const [isCachedSummary, setIsCachedSummary] = useState(false);
   const [loadingTranscriptSummary, setLoadingTranscriptSummary] = useState(false);
-  const [transcriptSummaryError, setTranscriptSummaryError] = useState<string | null>(null);
+  const [transcriptSummaryError, setTranscriptSummaryError] = useState<
+    "NO_TRANSCRIPT" | "SHORT_TRANSCRIPT" | "GENERAL_ERROR" | null
+  >(null);
   const lastFetchedAppointmentIdRef = useRef<string | null>(null);
 
   const getTranscriptSummary = async (id: string, refresh = false) => {
     setLoadingTranscriptSummary(true);
     setTranscriptSummaryError(null);
     try {
+      const fallbackTranscript = (appointment as any)?.transcript || "";
+      if (!fallbackTranscript || fallbackTranscript.trim().length < 20) {
+        // Skip API call when transcript is missing/too short.
+        setTranscript(fallbackTranscript || "");
+        setSummary(null);
+        setIsCachedSummary(false);
+        setTranscriptSummaryError("NO_TRANSCRIPT");
+        return;
+      }
+
+      const cleanId = String(id).replace(/%27/g, "").replace(/['"]/g, "").trim();
       const response = await apiClient.post<TranscriptSummaryApiResponse>(
-        `/appointments/pastor/${encodeURIComponent(id)}/transcript-summary`,
+        `/appointments/pastor/${cleanId}/transcript-summary`,
         {},
         { params: { refresh }, timeout: 12000 },
       );
       const result = response.data;
 
-      if (__DEV__) {
-        console.log("Transcript summary response:", result);
-      }
-
-      if (!result?.success) {
-        console.error("Transcript Summary API Error: success=false", result);
-        setSummary(null);
-        return;
-      }
-
-      // Support partial data: transcript may exist even if summary is missing/unavailable.
-      const apiTranscript = result?.data?.transcript;
-      const fallbackTranscript = (appointment as any)?.transcript;
-      const transcriptText =
-        typeof apiTranscript === "string"
-          ? apiTranscript
-          : typeof fallbackTranscript === "string"
-            ? fallbackTranscript
-            : "";
-      setTranscript(transcriptText);
+      setTranscript(result?.data?.transcript || fallbackTranscript || "");
       setSummary(result?.data?.summary || null);
+      setIsCachedSummary(!!result?.data?.cached);
     } catch (e) {
       const error = e as any;
-      console.error(
-        "Transcript Summary API Error:",
-        error?.response || error?.message || error,
-      );
-      // Don't block transcript when summary generation fails (e.g. 422 from AI).
-      setTranscriptSummaryError(null);
-      const fallbackTranscript = (appointment as any)?.transcript;
-      setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : transcript || "");
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Something went wrong";
+      console.error("Transcript Summary API Error:", message);
+
+      setTranscript((appointment as any)?.transcript || "");
       setSummary(null);
+      setIsCachedSummary(false);
+
+      const lower = String(message).toLowerCase();
+      if (lower.includes("too short") || lower.includes("missing")) {
+        setTranscriptSummaryError("SHORT_TRANSCRIPT");
+      } else {
+        setTranscriptSummaryError("GENERAL_ERROR");
+      }
     } finally {
       setLoadingTranscriptSummary(false);
     }
   };
 
   useEffect(() => {
-    if (!appointmentId) return;
-    if (lastFetchedAppointmentIdRef.current === appointmentId) return;
-    lastFetchedAppointmentIdRef.current = appointmentId;
-    getTranscriptSummary(appointmentId, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appointmentId]);
+    const fallbackTranscript = (appointment as any)?.transcript || "";
+
+    if (
+      appointmentId &&
+      typeof fallbackTranscript === "string" &&
+      fallbackTranscript.trim().length >= 20
+    ) {
+      if (lastFetchedAppointmentIdRef.current === appointmentId) return;
+      lastFetchedAppointmentIdRef.current = appointmentId;
+      getTranscriptSummary(appointmentId, false);
+      return;
+    }
+
+    // No transcript → skip API call
+    lastFetchedAppointmentIdRef.current = null;
+    setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : "");
+    setSummary(null);
+    setIsCachedSummary(false);
+    setTranscriptSummaryError("NO_TRANSCRIPT");
+  }, [appointmentId, (appointment as any)?.transcript]);
+
+  useEffect(() => {
+    const fallbackTranscript = (appointment as any)?.transcript;
+    if (!transcript?.trim() && typeof fallbackTranscript === "string" && fallbackTranscript.trim()) {
+      setTranscript(fallbackTranscript);
+    }
+  }, [(appointment as any)?.transcript]);
 
   const mentorName = useMemo(() => {
     if (!appointment?.mentorId) return undefined;
@@ -570,14 +595,10 @@ export default function PastorSessionDetailScreen() {
     if (!meetingsUI.length) return meetingsUI;
     return meetingsUI.map((m) => ({
       ...m,
-      transcript: loadingTranscriptSummary
-        ? (transcript.trim() ? parseTranscriptStringToLines(transcript) : [])
-        : (transcript.trim() ? parseTranscriptStringToLines(transcript) : []),
-      aiSummary: loadingTranscriptSummary
-        ? mapApiSummaryToMeetingSummary(undefined)
-        : mapApiSummaryToMeetingSummary(summary ?? undefined),
+      transcript: transcript.trim() ? parseTranscriptStringToLines(transcript) : [],
+      aiSummary: mapApiSummaryToMeetingSummary(summary ?? undefined),
     }));
-  }, [meetingsUI, loadingTranscriptSummary, transcript, summary]);
+  }, [meetingsUI, transcript, summary]);
 
   const handleJoin = () => {
     if (!meetingLink) return;
@@ -693,10 +714,27 @@ export default function PastorSessionDetailScreen() {
             {loadingTranscriptSummary && (
               <Text style={styles.sectionSubtitle}>Loading...</Text>
             )}
+            {!loadingTranscriptSummary && isCachedSummary && (
+              <Text style={styles.sectionSubtitle}>Showing saved summary</Text>
+            )}
             {!loadingTranscriptSummary && !summary && (
               <Text style={styles.sectionSubtitle}>
-                Summary is being generated or temporarily unavailable
+                {transcriptSummaryError === "GENERAL_ERROR"
+                  ? "Summary is temporarily unavailable"
+                  : transcript?.trim()
+                    ? "Not enough transcript to generate summary"
+                    : "No transcript available (meeting not conducted)"}
               </Text>
+            )}
+            {!!appointmentId && (
+              <Pressable
+                disabled={loadingTranscriptSummary || !transcript || transcript.trim().length < 20}
+                onPress={() => getTranscriptSummary(appointmentId, true)}
+              >
+                <Text style={styles.sectionSubtitle}>
+                  {loadingTranscriptSummary ? "Regenerating..." : "Regenerate Summary"}
+                </Text>
+              </Pressable>
             )}
 
             {meetingsUiWithApiData.map(meeting => (
