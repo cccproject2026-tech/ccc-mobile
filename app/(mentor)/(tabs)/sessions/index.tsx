@@ -11,6 +11,7 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
+import { menteesService } from "@/services/mentees.service";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
@@ -47,6 +48,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { useQuery } from "@tanstack/react-query";
 
 const UNKNOWN_PASTOR_KEY = "__unknown_pastor__";
 
@@ -470,13 +472,59 @@ export default function SessionsScreen() {
     isRefetching,
   } = useMentorshipSessions(user?.id);
 
+  const { data: assigned = { users: [] as any[] }, isLoading: isLoadingAssigned } = useQuery({
+    queryKey: ["mentees", "assigned-lite", user?.id ?? ""],
+    queryFn: () => menteesService.getAssignedMentees(user!.id),
+    enabled: !!user?.id,
+    staleTime: 60000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+    retry: (failureCount, error: any) => {
+      const status = error?.statusCode ?? error?.response?.status;
+      if (status === 429) return false;
+      return failureCount < 1;
+    },
+  });
+
   const { mutateAsync: completeSessionAsync, isPending: isCompleting } =
     useCompleteSession();
   const completeActionInFlightRef = useRef(false);
   const [confirmSession, setConfirmSession] = useState<MentorshipSession | null>(null);
   const [completingId,   setCompletingId]   = useState<string | null>(null);
 
-  const pastorGroups = useMemo(() => groupSessionsByPastor(sessions), [sessions]);
+  const pastorGroups = useMemo(() => {
+    const groupsFromSessions = groupSessionsByPastor(sessions);
+
+    // Ensure all assigned pastors show in the avatar bar even if a pastor's sessions
+    // request was throttled/failed and returned zero sessions for that pastor.
+    const assignedUsers = assigned?.users ?? [];
+    if (!assignedUsers.length) return groupsFromSessions;
+
+    const byId = new Map<string, PastorSessionGroup>(groupsFromSessions.map((g) => [g.pastorId, g]));
+    for (const u of assignedUsers) {
+      const pastorId = String((u as any)?._id ?? (u as any)?.id ?? "").trim();
+      if (!pastorId) continue;
+
+      if (!byId.has(pastorId)) {
+        const pastorName = `${(u as any)?.firstName ?? ""} ${(u as any)?.lastName ?? ""}`.trim() || "Pastor";
+        const pic = typeof (u as any)?.profilePicture === "string" ? (u as any).profilePicture : undefined;
+        byId.set(pastorId, {
+          pastorId,
+          pastorName,
+          pastorProfilePicture: pic?.trim() ? pic.trim() : undefined,
+          sessions: [],
+        });
+      }
+    }
+
+    const merged = Array.from(byId.values());
+    merged.sort((a, b) =>
+      a.pastorName.localeCompare(b.pastorName, undefined, { sensitivity: "base" }),
+    );
+    return merged;
+  }, [sessions, assigned]);
   const [selectedPastorId, setSelectedPastorId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -489,7 +537,8 @@ export default function SessionsScreen() {
     if (pastorGroups.length === 0) { setSelectedPastorId(null); return; }
     setSelectedPastorId((prev) => {
       if (prev && pastorGroups.some((g) => g.pastorId === prev)) return prev;
-      return pastorGroups[0].pastorId;
+      const firstWithSessions = pastorGroups.find((g) => (g.sessions?.length ?? 0) > 0);
+      return (firstWithSessions ?? pastorGroups[0]).pastorId;
     });
   }, [pastorGroups]);
 
