@@ -43,6 +43,15 @@ const clampByLimit = <T,>(arr: T[], limit: number) => arr.slice(0, Math.max(0, l
 type MentorFocusResult = {
   pastorQueries: PastorFocusItem[];
   surveySubmissions: PastorFocusItem[];
+  debug?: {
+    scannedPastors: number;
+    scannedRoadmaps: number;
+    returnedThreads: number;
+    returnedQueries: number;
+    returnedPending: number;
+    samplePastors: string[];
+    sampleRoadmapIds: string[];
+  };
 };
 
 export const useMentorFocusItems = () => {
@@ -77,6 +86,23 @@ export const useMentorFocusItems = () => {
     return all;
   }, [menteesData]);
 
+  const pastorQueriesScanStats = useMemo(() => {
+    const menteeCount = (mentees as any[]).filter((m) => m?.id).length;
+    const totalAssignedRoadmaps = (mentees as any[]).reduce((acc, m) => {
+      const ids = Array.isArray(m?.assignedRoadmapIds) ? m.assignedRoadmapIds : [];
+      return acc + Math.min(ids.length, MAX_ROADMAPS_PER_MENTEE_FOR_QUERIES);
+    }, 0);
+    return { menteeCount, totalAssignedRoadmaps };
+  }, [mentees]);
+
+  const menteeIdsKey = useMemo(() => {
+    const ids = (mentees as any[])
+      .map((m) => String(m?.id ?? ""))
+      .filter(Boolean)
+      .sort();
+    return ids.join(",");
+  }, [mentees]);
+
   const menteeNameById = useMemo(() => {
     const map = new Map<string, string>();
     for (const m of mentees as any[]) {
@@ -88,6 +114,15 @@ export const useMentorFocusItems = () => {
   }, [mentees]);
 
   const roadmaps = allRoadmapsQuery.data ?? [];
+  const roadmapIdsKey = useMemo(() => {
+    const ids = (roadmaps as any[])
+      .map((r) => String(r?._id ?? ""))
+      .filter(Boolean)
+      .sort()
+      .slice(0, 20);
+    return ids.join(",");
+  }, [roadmaps]);
+
   const roadmapNameById = useMemo(() => {
     const map = new Map<string, string>();
     for (const r of roadmaps as any[]) {
@@ -210,54 +245,71 @@ export const useMentorFocusItems = () => {
     queryKey: [
       "mentor-focus",
       mentorId ?? "",
-      mentees.map((m: any) => m.id).join(","),
-      roadmaps.map((r: any) => r._id).slice(0, 20).join(","),
+      menteeIdsKey,
+      roadmapIdsKey,
     ],
     enabled:
-      !!mentorId && mentees.length > 0 && !allRoadmapsQuery.isLoading && !isLoadingAssessments,
-    staleTime: 0,
-    retry: 1,
+      !!mentorId && !isLoadingMentees && !allRoadmapsQuery.isLoading && !isLoadingAssessments,
+    staleTime: 30_000,
+    retry: 2,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
-      // Pre-limit roadmaps to reduce nested calls.
-      const uniqueRoadmapIds: string[] = [];
-      const seenRoadmaps = new Set<string>();
-
-      for (const m of mentees as any[]) {
-        const ids: string[] = (m.assignedRoadmapIds ?? []).map((x: any) => String(x));
-        const limited = clampByLimit(ids, MAX_ROADMAPS_PER_MENTEE_FOR_QUERIES);
-        for (const rid of limited) {
-          if (seenRoadmaps.has(rid)) continue;
-          seenRoadmaps.add(rid);
-          uniqueRoadmapIds.push(rid);
-          if (uniqueRoadmapIds.length >= MAX_ROADMAPS_FOR_QUERIES_TOTAL) break;
-        }
-        if (uniqueRoadmapIds.length >= MAX_ROADMAPS_FOR_QUERIES_TOTAL) break;
-      }
-
       // 1) Pastor queries
       const pastorQueryTemp: { item: PastorFocusItem; sortAtMs: number }[] = [];
       const seenQueryIds = new Set<string>();
+      const samplePastors: string[] = [];
+      const sampleRoadmapIds: string[] = [];
+      let scannedPastors = 0;
+      let scannedRoadmaps = 0;
+      let returnedThreads = 0;
+      let returnedQueries = 0;
+      let returnedPending = 0;
 
-      await Promise.all(
-        (mentees as any[]).map(async (mentee: any) => {
-          const pastorId = String(mentee.id);
-          const pastorName = menteeNameById.get(pastorId) ?? "Pastor";
+      // Deterministic + low-concurrency: only query roadmaps actually assigned
+      // to the given mentee. High concurrency here can lead to rate-limits and
+      // random empty results (errors are intentionally swallowed per request).
+      // Do not cap mentees here; instead cap total roadmap calls. Otherwise pending
+      // queries belonging to "later" mentees can disappear depending on list order.
+      const menteesForScan = [...(mentees as any[])].sort((a, b) =>
+        String(a?.id ?? "").localeCompare(String(b?.id ?? "")),
+      );
+      let totalRoadmapCalls = 0;
 
-          for (const rid of uniqueRoadmapIds) {
-            try {
-              const threads = await roadmapService.getRoadmapQueries(rid, pastorId);
-              const roadmapName = roadmapNameById.get(rid) ?? "Roadmap";
+      for (const mentee of menteesForScan) {
+        const pastorId = String(mentee?.id ?? "");
+        if (!pastorId) continue;
+        scannedPastors += 1;
+        const pastorName = menteeNameById.get(pastorId) ?? "Pastor";
+        if (samplePastors.length < 3) samplePastors.push(pastorName);
 
-              const pending = (threads ?? [])
-                .flatMap((t: any) => t?.queries ?? [])
-                .filter((q: any) => q?.status === "pending");
+        const roadmapIds: string[] = clampByLimit(
+          (mentee?.assignedRoadmapIds ?? []).map((x: any) => String(x)).filter(Boolean),
+          MAX_ROADMAPS_PER_MENTEE_FOR_QUERIES,
+        );
 
-              for (const q of pending) {
-                const qid = String(q._id ?? q.id);
-                if (!qid || seenQueryIds.has(qid)) continue;
-                seenQueryIds.add(qid);
+        for (const rid of roadmapIds) {
+          totalRoadmapCalls += 1;
+          if (totalRoadmapCalls > MAX_ROADMAPS_FOR_QUERIES_TOTAL) break;
+          scannedRoadmaps += 1;
+          if (sampleRoadmapIds.length < 4) sampleRoadmapIds.push(rid);
 
-                const createdAt = q.createdDate ?? q.created_at ?? null;
+          try {
+            const threads = await roadmapService.getRoadmapQueries(rid, pastorId);
+            const roadmapName = roadmapNameById.get(rid) ?? "Roadmap";
+            returnedThreads += (threads ?? []).length;
+            returnedQueries += (threads ?? []).reduce((acc: number, t: any) => acc + (Array.isArray(t?.queries) ? t.queries.length : 0), 0);
+
+            const pending = (threads ?? [])
+              .flatMap((t: any) => t?.queries ?? [])
+              .filter((q: any) => String(q?.status ?? "").toLowerCase() === "pending");
+            returnedPending += pending.length;
+
+            for (const q of pending) {
+              const qid = String(q?._id ?? q?.id ?? "");
+              if (!qid || seenQueryIds.has(qid)) continue;
+              seenQueryIds.add(qid);
+
+              const createdAt = q?.createdDate ?? q?.created_at ?? null;
               const createdAtMs = toEpochMs(createdAt);
               const createdAtFormatted = formatDateTime(createdAt);
 
@@ -266,7 +318,7 @@ export const useMentorFocusItems = () => {
                   id: `pastor-query-${qid}`,
                   title: "Pastor query",
                   description:
-                    String(q.actualQueryText ?? "").slice(0, 140) ||
+                    String(q?.actualQueryText ?? "").slice(0, 140) ||
                     "Query needs response.",
                   meta: `${roadmapName} • ${createdAtFormatted}`,
                   accentColor: "#FB7185",
@@ -281,14 +333,14 @@ export const useMentorFocusItems = () => {
                 },
                 sortAtMs: createdAtMs,
               });
-              }
-            } catch {
-              // Swallow per-roadmap errors so the home screen still renders.
-              continue;
             }
+          } catch {
+            continue;
           }
-        }),
-      );
+        }
+
+        if (totalRoadmapCalls > MAX_ROADMAPS_FOR_QUERIES_TOTAL) break;
+      }
 
       pastorQueryTemp.sort((a, b) => b.sortAtMs - a.sortAtMs);
       const pastorQueries = clampByLimit(
@@ -371,13 +423,36 @@ export const useMentorFocusItems = () => {
         MAX_ITEMS_PER_SECTION,
       );
 
-      return { pastorQueries, surveySubmissions };
+      return {
+        pastorQueries,
+        surveySubmissions,
+        debug: {
+          scannedPastors,
+          scannedRoadmaps,
+          returnedThreads,
+          returnedQueries,
+          returnedPending,
+          samplePastors,
+          sampleRoadmapIds,
+        },
+      };
     },
   });
 
   const sections: PastorFocusSection[] = useMemo(() => {
     const pastorQueries = focusResult?.pastorQueries ?? [];
     const surveySubmissions = focusResult?.surveySubmissions ?? [];
+    const debug = focusResult?.debug;
+
+    const pastorQueriesEmptyMessage =
+      pastorQueriesScanStats.menteeCount === 0
+        ? "No assigned pastors yet."
+        : pastorQueriesScanStats.totalAssignedRoadmaps === 0
+          ? "No pastor roadmaps found to scan for queries."
+          : `No pending pastor queries right now. (Scanned ${pastorQueriesScanStats.totalAssignedRoadmaps} roadmap assignments across ${pastorQueriesScanStats.menteeCount} pastors.)` +
+            (debug
+              ? ` API: pastors=${debug.scannedPastors}, roadmaps=${debug.scannedRoadmaps}, threads=${debug.returnedThreads}, queries=${debug.returnedQueries}, pending=${debug.returnedPending}.`
+              : "");
 
     return [
       {
@@ -401,7 +476,7 @@ export const useMentorFocusItems = () => {
       {
         id: "pastor-queries",
         title: "Pastor Queries",
-        emptyMessage: "No pending pastor queries right now.",
+        emptyMessage: pastorQueriesEmptyMessage,
         items: pastorQueries,
       },
       {
@@ -417,6 +492,7 @@ export const useMentorFocusItems = () => {
     mentorshipProgramTodayItems,
     mentorshipProgramUpcomingItems,
     otherMeetings,
+    pastorQueriesScanStats,
   ]);
 
   const isLoading =

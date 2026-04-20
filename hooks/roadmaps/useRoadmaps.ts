@@ -627,6 +627,8 @@ export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
             const flat = threads.flatMap(t =>
                 t.queries.map(q => ({
                     ...q,
+                    // Backend sometimes varies casing ("PENDING"/"Answered"); normalize so UI filtering is stable.
+                    status: String((q as any)?.status ?? "").toLowerCase(),
                     threadId: t._id
                 }))
             );

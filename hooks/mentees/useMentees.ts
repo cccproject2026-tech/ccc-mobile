@@ -144,10 +144,30 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
                 const assignedRoadmapIds = roadmaps
                     .map((item: any) => {
                         if (!item) return undefined;
-                        if (typeof item === 'string') return item;
-                        return item.roadMapId || item.roadmapId || item._id || item.id;
+                        if (typeof item === "string") return item;
+
+                        // Common shapes:
+                        // - { roadMapId: "..." }
+                        // - { roadMapId: { _id: "..." } }
+                        // - { roadmapId: "..." } / { roadmapId: { _id: "..." } }
+                        // - { roadmap: { _id: "..." } }
+                        const candidate =
+                            item.roadMapId ??
+                            item.roadmapId ??
+                            item.roadmap ??
+                            item._id ??
+                            item.id;
+
+                        if (typeof candidate === "string") return candidate;
+                        if (candidate && typeof candidate === "object") {
+                            const obj = candidate as any;
+                            const nested = obj._id ?? obj.id ?? obj.roadMapId ?? obj.roadmapId;
+                            if (typeof nested === "string") return nested;
+                        }
+
+                        return undefined;
                     })
-                    .filter(Boolean) as string[];
+                    .filter((x): x is string => typeof x === "string" && x.trim().length > 0);
 
                 const firstRoadmap = roadmaps[0] ?? null;
 
