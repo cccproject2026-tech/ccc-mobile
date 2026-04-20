@@ -298,50 +298,64 @@ export const roadmapService = {
             return [];
         }
 
-        // Limit concurrency to avoid 429 from firing too many requests at once.
-        const concurrency = 2;
-        const results: MentorshipSession[][] = [];
-        for (let i = 0; i < pastorIds.length; i += concurrency) {
-            const batch = pastorIds.slice(i, i + concurrency);
-            const batchResults = await Promise.all(
-                batch.map(async (pastorId) => {
-                    try {
-                        const sessions = await this.getMentorshipSessions(pastorId);
-                        const pastor = users.find((u: any) => String(u._id ?? u.id) === pastorId);
-                        const pastorName =
-                            pastor
-                                ? `${pastor.firstName ?? ""} ${pastor.lastName ?? ""}`.trim() || "Pastor"
-                                : "Pastor";
-                        const rawPic = pastor?.profilePicture;
-                        const pastorProfilePicture =
-                            typeof rawPic === "string" && rawPic.trim().length > 0
-                                ? rawPic.trim()
-                                : undefined;
+        // Fetch sequentially to avoid backend throttling (429) when mentors have many pastors.
+        // Also retry per pastor on transient 429/503 so one failure doesn't blank all pastors.
+        const all: MentorshipSession[] = [];
 
-                        return sessions.map((s, idx) => ({
-                            ...s,
-                            pastorId,
-                            pastorName,
-                            pastorProfilePicture,
-                            id: `${pastorId}-${s.sessionNumber}-${s.appointmentId ?? idx}`,
-                        }));
-                    } catch (e) {
-                        // If we're being throttled, fail fast so the query keeps its previous data
-                        // (instead of collapsing into an empty list).
-                        if ((e as any)?.statusCode === 429) {
-                            throw e;
-                        }
+        const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+        for (const pastorId of pastorIds) {
+            const pastor = users.find((u: any) => String(u._id ?? u.id) === pastorId);
+            const pastorName =
+                pastor
+                    ? `${pastor.firstName ?? ""} ${pastor.lastName ?? ""}`.trim() || "Pastor"
+                    : "Pastor";
+            const rawPic = pastor?.profilePicture;
+            const pastorProfilePicture =
+                typeof rawPic === "string" && rawPic.trim().length > 0
+                    ? rawPic.trim()
+                    : undefined;
+
+            let sessions: MentorshipSession[] = [];
+            let success = false;
+
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    sessions = await this.getMentorshipSessions(pastorId);
+                    success = true;
+                    break;
+                } catch (e) {
+                    const st = getHttpErrorStatus(e);
+                    const shouldRetry = st === 429 || st === 503;
+                    if (!shouldRetry) {
                         if (__DEV__) {
-                            console.warn(`[getMentorshipSessionsForMentor] Failed for pastor ${pastorId}`, e);
+                            console.warn(
+                                `[getMentorshipSessionsForMentor] Failed for pastor ${pastorId}`,
+                                e,
+                            );
                         }
-                        return [];
+                        break;
                     }
-                }),
-            );
-            results.push(...batchResults);
-        }
+                    // Backoff before retrying to reduce pressure on the backend.
+                    await sleep(500 * (attempt + 1));
+                }
+            }
 
-        const all = results.flat();
+            if (success) {
+                all.push(
+                    ...sessions.map((s, idx) => ({
+                        ...s,
+                        pastorId,
+                        pastorName,
+                        pastorProfilePicture,
+                        id: `${pastorId}-${s.sessionNumber}-${s.appointmentId ?? idx}`,
+                    })),
+                );
+            }
+
+            // Small spacing between pastors to avoid bursts.
+            await sleep(150);
+        }
 
         if (__DEV__) {
             console.log("Fetched sessions:", all);
