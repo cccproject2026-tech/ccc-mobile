@@ -774,6 +774,26 @@ export default function SessionDetailsScreen() {
     refetchSessions,
   ]);
 
+  useEffect(() => {
+    const currentMeetingLink = getAppointmentJoinUrl(appointment);
+    if (!appointmentId || session?.status !== "SCHEDULED" || !!currentMeetingLink) return;
+
+    const pollId = setInterval(() => {
+      refetchMentorAppointments();
+      refetchMenteeAppointments();
+      refetchSessions();
+    }, 15000);
+
+    return () => clearInterval(pollId);
+  }, [
+    appointmentId,
+    session?.status,
+    appointment,
+    refetchMentorAppointments,
+    refetchMenteeAppointments,
+    refetchSessions,
+  ]);
+
   const isScheduled = session?.status === "SCHEDULED";
   const apiMeetingLink = getAppointmentJoinUrl(appointment);
   const hasStringTranscript =
@@ -831,6 +851,11 @@ export default function SessionDetailsScreen() {
     }
     try {
       const response = await completeSessionAsync(appointmentId);
+      await Promise.all([
+        refetchSessions(),
+        refetchMentorAppointments(),
+        refetchMenteeAppointments(),
+      ]);
       Toast.show({ type: "success", position: "top", text1: "✓ Session completed", text2: response.message });
     } catch (error) {
       Toast.show({

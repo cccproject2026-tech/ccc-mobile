@@ -766,6 +766,24 @@ export default function PastorSessionDetailScreen() {
     refetchSessions,
   ]);
 
+  useEffect(() => {
+    const currentMeetingLink = getAppointmentJoinUrl(appointment);
+    if (!appointmentId || currentSession?.status !== "SCHEDULED" || !!currentMeetingLink) return;
+
+    const pollId = setInterval(() => {
+      refetchAppointments();
+      refetchSessions();
+    }, 15000);
+
+    return () => clearInterval(pollId);
+  }, [
+    appointmentId,
+    currentSession?.status,
+    appointment,
+    refetchAppointments,
+    refetchSessions,
+  ]);
+
   const mentorName = useMemo(() => {
     if (!appointment?.mentorId) return undefined;
     return mentorMap.get(String(appointment.mentorId));
