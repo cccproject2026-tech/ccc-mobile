@@ -337,6 +337,63 @@ const AvailabilityScreen = () => {
     return hour * 60 + minute;
   };
 
+  const formatMinutesToTime = (totalMinutes: number): string => {
+    const normalized = ((totalMinutes % (24 * 60)) + 24 * 60) % (24 * 60);
+    const hour24 = Math.floor(normalized / 60);
+    const minute = normalized % 60;
+    const period: "AM" | "PM" = hour24 >= 12 ? "PM" : "AM";
+    const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+    return `${String(hour12).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${period}`;
+  };
+
+  const normalizeSlots = (slots: TimeSlot[]): TimeSlot[] => {
+    if (slots.length <= 1) return slots;
+
+    const sorted = [...slots]
+      .map((slot) => ({
+        ...slot,
+        startMinutes: convertToMinutes(slot.start),
+        endMinutes: convertToMinutes(slot.end),
+      }))
+      .filter((slot) => slot.startMinutes < slot.endMinutes)
+      .sort((a, b) => a.startMinutes - b.startMinutes);
+
+    if (sorted.length <= 1) {
+      return sorted.map(({ id, startMinutes, endMinutes }) => ({
+        id,
+        start: formatMinutesToTime(startMinutes),
+        end: formatMinutesToTime(endMinutes),
+      }));
+    }
+
+    const merged: Array<{ startMinutes: number; endMinutes: number }> = [];
+    for (const slot of sorted) {
+      const prev = merged[merged.length - 1];
+      if (!prev) {
+        merged.push({
+          startMinutes: slot.startMinutes,
+          endMinutes: slot.endMinutes,
+        });
+        continue;
+      }
+
+      if (slot.startMinutes < prev.endMinutes) {
+        prev.endMinutes = Math.max(prev.endMinutes, slot.endMinutes);
+      } else {
+        merged.push({
+          startMinutes: slot.startMinutes,
+          endMinutes: slot.endMinutes,
+        });
+      }
+    }
+
+    return merged.map((slot, index) => ({
+      id: `normalized-${index}-${slot.startMinutes}-${slot.endMinutes}`,
+      start: formatMinutesToTime(slot.startMinutes),
+      end: formatMinutesToTime(slot.endMinutes),
+    }));
+  };
+
   useEffect(() => {
     // Reset picker state when date changes to avoid editing an old slot.
     setShowTimePicker(false);
@@ -387,11 +444,12 @@ const AvailabilityScreen = () => {
               (s) => s.start === slot.start && s.end === slot.end,
             ),
         );
+        const normalizedSlots = normalizeSlots(uniqueSlots);
 
         return {
           ...day,
           date: dateOnly,
-          slots: uniqueSlots,
+          slots: normalizedSlots,
         };
       })
       .filter(
