@@ -391,8 +391,8 @@ export default function PastorDashboard() {
 
   /** Shorter hero on small phones so body (incl. Explore) fits one screen without scroll. */
   const heroHeight = Math.min(
-    210,
-    Math.max(162, Math.round(windowHeight * 0.22)),
+    236,
+    Math.max(186, Math.round(windowHeight * 0.26)),
   );
 
   // ─── Main render ──────────────────────────────────────────────────────────
