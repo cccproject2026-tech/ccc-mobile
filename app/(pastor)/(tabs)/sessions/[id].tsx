@@ -797,7 +797,7 @@ export default function PastorSessionDetailScreen() {
     Array.isArray((appointment as any)?.transcript) &&
     (appointment as any).transcript.length > 0;
   const hasTranscriptAvailable = !!transcript?.trim() || hasStringTranscript || hasArrayTranscript;
-  const checkingForTranscript = !!appointmentId && !hasTranscriptAvailable;
+  const checkingForTranscript = !!appointmentId && !hasTranscriptAvailable && loadingTranscriptSummary;
   const phase = currentSession
     ? phaseLabelForSessionNumber(currentSession.sessionNumber)
     : undefined;

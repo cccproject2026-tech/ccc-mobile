@@ -803,7 +803,7 @@ export default function SessionDetailsScreen() {
     Array.isArray((appointment as any)?.transcript) &&
     (appointment as any).transcript.length > 0;
   const hasTranscriptAvailable = !!transcript?.trim() || hasStringTranscript || hasArrayTranscript;
-  const checkingForTranscript = !!appointmentId && !hasTranscriptAvailable;
+  const checkingForTranscript = !!appointmentId && !hasTranscriptAvailable && loadingTranscriptSummary;
 
   const showPlaceholderMeeting =
     MENTOR_MEETING_UI.usePlaceholderUntilBackend &&
@@ -1036,40 +1036,34 @@ export default function SessionDetailsScreen() {
             <View style={styles.conversationFrame}>
               <SessionTabs
                 transcript={
-                  loadingTranscriptSummary && !(typeof transcript === "string" && transcript.trim()) ? (
-                    <View style={summaryStyles.emptyContainer}>
-                      <Text style={summaryStyles.emptyTitle}>Loading...</Text>
-                    </View>
-                  ) : (
-                    <MeetingTranscript
-                      lines={
-                        (() => {
-                          const t = typeof transcript === "string" ? transcript : "";
-                          if (t.trim().length) {
-                            return parseTranscriptStringToLines(t, {
-                              mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
-                              pastorName: session?.pastorName,
-                            });
-                          }
-                          const apptTranscript = (appointment as any)?.transcript;
-                          if (typeof apptTranscript === "string" && apptTranscript.trim().length) {
-                            return parseTranscriptStringToLines(apptTranscript, {
-                              mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
-                              pastorName: session?.pastorName,
-                            });
-                          }
-                          if (Array.isArray(apptTranscript)) {
-                            return normalizeTranscriptLineArray(apptTranscript as any, {
-                              mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
-                              pastorName: session?.pastorName,
-                            });
-                          }
-                          return [];
-                        })()
-                      }
-                      checkingForTranscript={checkingForTranscript}
-                    />
-                  )
+                  <MeetingTranscript
+                    lines={
+                      (() => {
+                        const t = typeof transcript === "string" ? transcript : "";
+                        if (t.trim().length) {
+                          return parseTranscriptStringToLines(t, {
+                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
+                            pastorName: session?.pastorName,
+                          });
+                        }
+                        const apptTranscript = (appointment as any)?.transcript;
+                        if (typeof apptTranscript === "string" && apptTranscript.trim().length) {
+                          return parseTranscriptStringToLines(apptTranscript, {
+                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
+                            pastorName: session?.pastorName,
+                          });
+                        }
+                        if (Array.isArray(apptTranscript)) {
+                          return normalizeTranscriptLineArray(apptTranscript as any, {
+                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
+                            pastorName: session?.pastorName,
+                          });
+                        }
+                        return [];
+                      })()
+                    }
+                    checkingForTranscript={checkingForTranscript}
+                  />
                 }
                 summary={
                   loadingTranscriptSummary ? (
