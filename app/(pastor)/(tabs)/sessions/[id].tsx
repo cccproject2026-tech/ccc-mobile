@@ -419,8 +419,10 @@ const NoteCard = ({ title, value }: { title: string; value?: string }) => {
 
 const MeetingTranscript = ({
   lines,
+  checkingForTranscript,
 }: {
   lines: { role: "mentor" | "pastor"; text: string; speaker?: string }[];
+  checkingForTranscript?: boolean;
 }) => {
   const hasContent = lines.some(line => line.text.trim());
   
@@ -428,8 +430,14 @@ const MeetingTranscript = ({
     return (
       <View style={transcriptStyles.emptyContainer}>
         <Ionicons name="chatbubbles-outline" size={32} color="rgba(255,255,255,0.3)" />
-        <Text style={transcriptStyles.emptyText}>No transcript available yet</Text>
-        <Text style={transcriptStyles.emptySubtext}>Transcript will appear after the meeting</Text>
+        <Text style={transcriptStyles.emptyText}>
+          {checkingForTranscript ? "Checking for transcript..." : "No transcript available yet"}
+        </Text>
+        <Text style={transcriptStyles.emptySubtext}>
+          {checkingForTranscript
+            ? "Please wait, we are fetching transcript and AI summary."
+            : "Transcript will appear after the meeting"}
+        </Text>
       </View>
     );
   }
@@ -606,7 +614,12 @@ const SessionAccordion = ({ meeting, joinButton }: { meeting: PastorMeetingUi; j
             <NoteCard title="Pastor's Notes" value={meeting.pastorNote} />
           </View>
           <SessionTabs
-            transcript={<MeetingTranscript lines={meeting.transcript} />}
+            transcript={
+              <MeetingTranscript
+                lines={meeting.transcript}
+                checkingForTranscript={checkingForTranscript}
+              />
+            }
             summary={<MeetingSummary summary={meeting.aiSummary} />}
           />
         </View>
@@ -722,12 +735,51 @@ export default function PastorSessionDetailScreen() {
     }
   }, [(appointment as any)?.transcript]);
 
+  useEffect(() => {
+    if (!appointmentId) return;
+
+    const hasStringTranscript =
+      typeof (appointment as any)?.transcript === "string" &&
+      (appointment as any).transcript.trim().length > 0;
+    const hasArrayTranscript =
+      Array.isArray((appointment as any)?.transcript) &&
+      (appointment as any).transcript.length > 0;
+    const hasTranscript = !!transcript?.trim() || hasStringTranscript || hasArrayTranscript;
+    const hasSummary = !!summary;
+    if (hasTranscript && hasSummary) return;
+
+    const pollId = setInterval(() => {
+      if (loadingTranscriptSummary) return;
+      refetchAppointments();
+      refetchSessions();
+      getTranscriptSummary(appointmentId, false);
+    }, 20000);
+
+    return () => clearInterval(pollId);
+  }, [
+    appointmentId,
+    transcript,
+    summary,
+    (appointment as any)?.transcript,
+    loadingTranscriptSummary,
+    refetchAppointments,
+    refetchSessions,
+  ]);
+
   const mentorName = useMemo(() => {
     if (!appointment?.mentorId) return undefined;
     return mentorMap.get(String(appointment.mentorId));
   }, [appointment?.mentorId, mentorMap]);
 
   const meetingLink = getAppointmentJoinUrl(appointment);
+  const hasStringTranscript =
+    typeof (appointment as any)?.transcript === "string" &&
+    (appointment as any).transcript.trim().length > 0;
+  const hasArrayTranscript =
+    Array.isArray((appointment as any)?.transcript) &&
+    (appointment as any).transcript.length > 0;
+  const hasTranscriptAvailable = !!transcript?.trim() || hasStringTranscript || hasArrayTranscript;
+  const checkingForTranscript = !!appointmentId && !hasTranscriptAvailable;
   const phase = currentSession
     ? phaseLabelForSessionNumber(currentSession.sessionNumber)
     : undefined;

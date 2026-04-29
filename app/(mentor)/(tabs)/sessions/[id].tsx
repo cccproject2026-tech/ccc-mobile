@@ -423,8 +423,10 @@ const NoteCard = ({ title, value, icon }: { title: string; value?: string; icon?
 
 const MeetingTranscript = ({
   lines,
+  checkingForTranscript,
 }: {
   lines: { role: "mentor" | "pastor"; text: string; speaker?: string }[];
+  checkingForTranscript?: boolean;
 }) => {
   const hasContent = lines.some(line => line.text.trim());
   
@@ -432,8 +434,14 @@ const MeetingTranscript = ({
     return (
       <View style={transcriptStyles.emptyContainer}>
         <Ionicons name="chatbubbles-outline" size={32} color="rgba(255,255,255,0.3)" />
-        <Text style={transcriptStyles.emptyText}>No transcript available yet</Text>
-        <Text style={transcriptStyles.emptySubtext}>Transcript will appear after the meeting</Text>
+        <Text style={transcriptStyles.emptyText}>
+          {checkingForTranscript ? "Checking for transcript..." : "No transcript available yet"}
+        </Text>
+        <Text style={transcriptStyles.emptySubtext}>
+          {checkingForTranscript
+            ? "Please wait, we are fetching transcript and AI summary."
+            : "Transcript will appear after the meeting"}
+        </Text>
       </View>
     );
   }
@@ -733,8 +741,49 @@ export default function SessionDetailsScreen() {
     }
   }, [(appointment as any)?.transcript]);
 
+  useEffect(() => {
+    if (!appointmentId) return;
+
+    const hasStringTranscript =
+      typeof (appointment as any)?.transcript === "string" &&
+      (appointment as any).transcript.trim().length > 0;
+    const hasArrayTranscript =
+      Array.isArray((appointment as any)?.transcript) &&
+      (appointment as any).transcript.length > 0;
+    const hasTranscript = !!transcript?.trim() || hasStringTranscript || hasArrayTranscript;
+    const hasSummary = !!summary;
+    if (hasTranscript && hasSummary) return;
+
+    const pollId = setInterval(() => {
+      if (loadingTranscriptSummary) return;
+      refetchMentorAppointments();
+      refetchMenteeAppointments();
+      refetchSessions();
+      getTranscriptSummary(appointmentId, false);
+    }, 20000);
+
+    return () => clearInterval(pollId);
+  }, [
+    appointmentId,
+    transcript,
+    summary,
+    (appointment as any)?.transcript,
+    loadingTranscriptSummary,
+    refetchMentorAppointments,
+    refetchMenteeAppointments,
+    refetchSessions,
+  ]);
+
   const isScheduled = session?.status === "SCHEDULED";
   const apiMeetingLink = getAppointmentJoinUrl(appointment);
+  const hasStringTranscript =
+    typeof (appointment as any)?.transcript === "string" &&
+    (appointment as any).transcript.trim().length > 0;
+  const hasArrayTranscript =
+    Array.isArray((appointment as any)?.transcript) &&
+    (appointment as any).transcript.length > 0;
+  const hasTranscriptAvailable = !!transcript?.trim() || hasStringTranscript || hasArrayTranscript;
+  const checkingForTranscript = !!appointmentId && !hasTranscriptAvailable;
 
   const showPlaceholderMeeting =
     MENTOR_MEETING_UI.usePlaceholderUntilBackend &&
@@ -993,6 +1042,7 @@ export default function SessionDetailsScreen() {
                           return [];
                         })()
                       }
+                      checkingForTranscript={checkingForTranscript}
                     />
                   )
                 }
