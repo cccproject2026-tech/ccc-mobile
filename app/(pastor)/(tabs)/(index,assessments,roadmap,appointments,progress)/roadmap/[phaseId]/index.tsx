@@ -1,764 +1,417 @@
-// import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
-// import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
-// import RoadmapCard from '@/components/director/ProgressRoadmapCard';
-// import SearchBar from '@/components/director/SearchBar';
-// import { TabSwitcher } from '@/components/director/TabSwitcher';
-// import TopBar from '@/components/director/TopBar';
-// import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
-// import { mockRevitalization } from '@/lib/roadmap/mock';
-// import { getDivisionsForPhase, getPhase, getPhaseTasks, getTasksForDivision } from '@/lib/roadmap/selectors';
-// import { Task } from '@/lib/roadmap/types';
-// import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
-// import { Ionicons } from '@expo/vector-icons';
-// import { LinearGradient } from 'expo-linear-gradient';
-// import { router, useLocalSearchParams } from 'expo-router';
-// import { useCallback, useMemo, useState } from 'react';
-// import { Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import ContextMenu, { MenuItem } from "@/components/director/ContextMenu";
+import ExpectedOutcomeModal from "@/components/director/ExpectedOutcomeModal";
+import RoadmapCard from "@/components/director/ProgressRoadmapCard";
+import SearchBar from "@/components/director/SearchBar";
+import { TabSwitcher } from "@/components/director/TabSwitcher";
+import TopBar from "@/components/director/TopBar";
+import { Colors } from "@/constants/Colors";
+import { useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
+import { getTasks, getTasksByDivision } from "@/lib/roadmap/helpers";
+import { getTaskCard } from "@/lib/roadmap/mappers";
+import type { NestedRoadmap } from "@/lib/roadmap/types";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// type StatusTabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
-// type TabKey = StatusTabKey | string; // string for division IDs
+type StatusTabKey = "ALL" | "DUE" | "NOT_STARTED" | "COMPLETED";
+type TabKey = StatusTabKey | string;
 
-// export default function PhaseDetail() {
-//     const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
-//     const phase = getPhase(mockRevitalization, phaseId!);
+const accent = {
+  gold: "#E8C88A",
+  mint: "#6FD4BE",
+  mintSoft: "rgba(111, 212, 190, 0.28)",
+  tealDeep: "#0E5A62",
+};
 
-//     // Compute phase number from phaseId
-//     let phaseNumber: number | null = null;
-//     if (phaseId && phaseId.startsWith('phase-')) {
-//         const num = parseInt(phaseId.replace('phase-', ''), 10);
-//         if (!isNaN(num)) phaseNumber = num;
-//     }
+export default function PastorRoadmapDetail() {
+  const { bottom } = useSafeAreaInsets();
+  const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
 
-//     // Check if phase has divisions
-//     const phaseDivisions = getDivisionsForPhase(mockRevitalization, phaseId!);
-//     const hasDivisions = phaseDivisions.length > 0;
+  const { data: roadmap, isLoading, error, refetch, isRefetching } = useRoadmap(phaseId);
 
-//     // Get all tasks (either from divisions or direct)
-//     const allTasks = getPhaseTasks(mockRevitalization, phase);
-//     const { progress } = useRoadmapProgress();
+  const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+  const [selectedOutcome, setSelectedOutcome] = useState("");
+  const [search, setSearch] = useState("");
 
-//     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
-//     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
-//     const [selectedOutcome, setSelectedOutcome] = useState('');
-//     const [search, setSearch] = useState('');
+  const phaseNumber = useMemo(() => {
+    if (!roadmap?.phase) return null;
+    const match = roadmap.phase.match(/\d+/);
+    return match ? parseInt(match[0], 10) : null;
+  }, [roadmap]);
 
-//     // Initialize activeTab - first division if exists, otherwise 'ALL'
-//     const [activeTab, setActiveTab] = useState<TabKey>(
-//         hasDivisions ? (phaseDivisions[0]?.id || 'ALL') : 'ALL'
-//     );
-
-//     // Outcome menu
-//     const outcomeMenuItems = useCallback((): MenuItem[] => [
-//         {
-//             id: 'outcome-4-months',
-//             label: 'Expected Outcome - 4 Months',
-//             onPress: () => {
-//                 setSelectedOutcome('Expected Outcome - First Four Months');
-//                 setShowOutcomeMenu(false);
-//                 setShowOutcomeModal(true);
-//             },
-//         },
-//         {
-//             id: 'outcome-6-months',
-//             label: 'Expected Outcome - 6 Months',
-//             onPress: () => {
-//                 setSelectedOutcome('Expected Outcome - Six Months');
-//                 setShowOutcomeMenu(false);
-//                 setShowOutcomeModal(true);
-//             },
-//         },
-//         {
-//             id: 'outcome-9-months',
-//             label: 'Expected Outcome - 9 Months',
-//             onPress: () => {
-//                 setSelectedOutcome('Expected Outcome - Nine Months');
-//                 setShowOutcomeMenu(false);
-//                 setShowOutcomeModal(true);
-//             },
-//         },
-//         {
-//             id: 'outcome-end-year',
-//             label: 'Expected Outcome - End of Year',
-//             onPress: () => {
-//                 setSelectedOutcome('Expected Outcome - End of Year');
-//                 setShowOutcomeMenu(false);
-//                 setShowOutcomeModal(true);
-//             },
-//         },
-//     ], []);
-
-//     const outcomeData = useCallback(() => [
-//         { id: '1', text: 'The church is committed to the revitalization process.' },
-//         { id: '2', text: 'The Church is praying consistently and intentionally for revitalization.' },
-//         { id: '3', text: 'The church understands its current health and is committed to making improvements.' },
-//         { id: '4', text: 'The church is beginning to feel like a warm and welcoming place for new attendees.' },
-//         { id: '5', text: 'Church members have begun to build new relationships.' },
-//         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
-//     ], []);
-
-//     // Generate tabs: division tabs replace "All" tab, but status tabs remain
-//     const tabs = useMemo(() => {
-//         if (hasDivisions) {
-//             // Division tabs + status filter tabs (without "All")
-//             const divisionTabs = phaseDivisions.map(division => ({
-//                 key: division.id,
-//                 label: division.name,
-//             }));
-
-//             const statusTabs = [
-//                 { key: 'DUE', label: 'Due' },
-//                 { key: 'NOT_STARTED', label: 'Not Started' },
-//                 { key: 'COMPLETED', label: 'Completed' },
-//             ];
-
-//             return [...divisionTabs, ...statusTabs];
-//         } else {
-//             // Standard tabs with "All"
-//             return [
-//                 { key: 'ALL', label: 'All' },
-//                 { key: 'DUE', label: 'Due' },
-//                 { key: 'NOT_STARTED', label: 'Not Started' },
-//                 { key: 'COMPLETED', label: 'Completed' },
-//             ];
-//         }
-//     }, [hasDivisions, phaseDivisions]);
-
-//     // Check if activeTab is a division ID
-//     const isDivisionTab = useMemo(() => {
-//         return hasDivisions && phaseDivisions.some(d => d.id === activeTab);
-//     }, [hasDivisions, phaseDivisions, activeTab]);
-
-//     // Filter tasks based on active tab
-//     const filteredTasks = useMemo(() => {
-//         let tasksToFilter: Task[] = [];
-
-//         // Determine which tasks to filter
-//         if (isDivisionTab) {
-//             // Get tasks for the selected division
-//             tasksToFilter = getTasksForDivision(mockRevitalization, activeTab);
-//         } else if (activeTab === 'ALL') {
-//             // Show all tasks (only for phases without divisions)
-//             tasksToFilter = allTasks;
-//         } else {
-//             // Apply status filter (DUE, NOT_STARTED, COMPLETED)
-//             // For phases with divisions, filter across ALL tasks
-//             tasksToFilter = allTasks.filter(task => {
-//                 const status = progress[task.id]?.status || task.status;
-
-//                 if (activeTab === 'DUE') {
-//                     const today = new Date().toISOString().slice(0, 10);
-//                     return task.dueDate && task.dueDate <= today && status !== 'COMPLETED';
-//                 }
-
-//                 if (activeTab === 'NOT_STARTED') return status === 'NOT_STARTED';
-//                 if (activeTab === 'COMPLETED') return status === 'COMPLETED';
-
-//                 return false;
-//             });
-//         }
-
-//         // Apply search filter
-//         if (search.trim()) {
-//             const searchLower = search.toLowerCase();
-//             tasksToFilter = tasksToFilter.filter(task =>
-//                 task.title.toLowerCase().includes(searchLower) ||
-//                 task.description?.toLowerCase().includes(searchLower)
-//             );
-//         }
-
-//         return tasksToFilter;
-//     }, [isDivisionTab, activeTab, allTasks, progress, search]);
-
-//     // Convert task to card data
-//     const getTaskCardData = useCallback((task: Task) => {
-//         const status = progress[task.id]?.status || task.status;
-//         const cardStatus: 'initial' | 'in-progress' | 'completed' | 'due' =
-//             status === 'COMPLETED' ? 'completed' :
-//                 status === 'IN_PROGRESS' ? 'in-progress' :
-//                     status === 'BLOCKED' ? 'due' :
-//                         'initial';
-
-//         return {
-//             image: task.meta?.coverImage,
-//             title: task.title,
-//             description: task.description,
-//             completionTime: `Completion Time\nMonths ${task.meta?.completionTimeMonths || '1 - 2'}`,
-//             status: cardStatus,
-//             completedDate: status === 'COMPLETED' ? new Date().toISOString().slice(0, 10) : undefined,
-//             showArrow: true,
-//             showCheckmark: status === 'COMPLETED',
-//         };
-//     }, [progress]);
-
-//     console.log({
-//         filteredTasks,
-//         hasDivisions,
-//         activeTab,
-//         isDivisionTab,
-//         totalTasks: allTasks.length
-//     });
-
-//     return (
-//         <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
-//             <View style={{ paddingBottom: 10 }}>
-//                 <TopBar role="pastor" showUserName />
-//             </View>
-
-//             {/* Header */}
-//             <View style={{
-//                 flexDirection: 'row',
-//                 alignItems: 'center',
-//                 justifyContent: 'space-between',
-//                 paddingHorizontal: getSpacing(8),
-//                 paddingVertical: getSpacing(16),
-//                 marginBottom: getSpacing(16),
-//                 borderBottomWidth: 1,
-//                 borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-//             }}>
-//                 {/* Left side - Back button and Text */}
-//                 <View style={{
-//                     flexDirection: 'row',
-//                     alignItems: 'center',
-//                     flex: 1,
-//                     marginRight: getSpacing(12),
-//                 }}>
-//                     <TouchableOpacity
-//                         onPress={() => router.back()}
-//                         style={{ marginRight: getSpacing(8) }}
-//                     >
-//                         <Ionicons name="chevron-back" size={28} color="#fff" />
-//                     </TouchableOpacity>
-
-//                     {/* Text Container with flex to prevent overflow */}
-//                     <View style={{ flex: 1, marginRight: getSpacing(8) }}>
-//                         <Text
-//                             style={{
-//                                 fontSize: isAndroid ? getFontSize(18) : getFontSize(15),
-//                                 fontWeight: '700',
-//                                 lineHeight: getFontSize(18),
-//                                 color: '#FFFFFF',
-//                             }}
-//                             numberOfLines={1}
-//                             ellipsizeMode="tail"
-//                         >
-//                             {phase.title}
-//                         </Text>
-//                         {phase.subtitle && (
-//                             <Text
-//                                 style={{
-//                                     marginTop: getSpacing(4),
-//                                     fontSize: getFontSize(12),
-//                                     color: 'rgba(255, 255, 255, 0.8)',
-//                                 }}
-//                                 numberOfLines={1}
-//                                 ellipsizeMode="tail"
-//                             >
-//                                 {phase.subtitle}
-//                             </Text>
-//                         )}
-//                     </View>
-//                 </View>
-
-//                 {/* Right side - Phase badge and menu */}
-//                 <View style={{
-//                     flexDirection: 'row',
-//                     alignItems: 'center',
-//                     gap: getSpacing(8),
-//                 }}>
-//                     {phaseNumber && (
-//                         <View style={{
-//                             backgroundColor: '#F7E35F',
-//                             borderRadius: 10,
-//                             paddingHorizontal: getSpacing(10),
-//                             paddingVertical: getSpacing(2),
-//                         }}>
-//                             <Text style={{
-//                                 color: '#1D1D1D',
-//                                 fontWeight: '700',
-//                                 fontSize: getFontSize(13),
-//                             }}>
-//                                 Phase {phaseNumber}
-//                             </Text>
-//                         </View>
-//                     )}
-//                     <TouchableOpacity
-//                         onPress={() => setShowOutcomeMenu(true)}
-//                         style={{ padding: getSpacing(4) }}
-//                     >
-//                         <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-//                     </TouchableOpacity>
-//                 </View>
-//             </View>
-
-//             {/* Search & Tabs */}
-//             <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-//                 <SearchBar value={search} onChangeValue={setSearch} />
-//             </View>
-
-//             {/* Tabs: Division tabs (replacing "All") + Status filter tabs */}
-//             <TabSwitcher
-//                 tabs={tabs}
-//                 activeTab={activeTab}
-//                 onChange={(key) => setActiveTab(key as TabKey)}
-//             />
-
-//             {/* Content */}
-//             <ScrollView contentContainerStyle={{ padding: 16 }}>
-//                 {filteredTasks.length > 0 ? (
-//                     filteredTasks.map(task => {
-//                         const cardData = getTaskCardData(task);
-//                         return (
-//                             <Pressable
-//                                 key={task.id}
-//                                 onPress={() => router.push(`/roadmap/${phaseId}/${task.id}`)}
-//                             >
-//                                 <RoadmapCard data={cardData} />
-//                             </Pressable>
-//                         );
-//                     })
-//                 ) : (
-//                     <View style={{ alignItems: 'center', marginTop: 40 }}>
-//                         <Text style={{ color: 'white', fontSize: 16 }}>
-//                             {search.trim()
-//                                 ? 'No tasks match your search.'
-//                                 : 'No tasks available.'}
-//                         </Text>
-//                     </View>
-//                 )}
-//             </ScrollView>
-
-//             {/* Modals */}
-//             <ContextMenu
-//                 visible={showOutcomeMenu}
-//                 items={outcomeMenuItems()}
-//                 onClose={() => setShowOutcomeMenu(false)}
-//                 position={{ top: 60, right: 16 }}
-//                 minWidth={280}
-//                 showIcons={false}
-//                 itemTextStyle={{ fontSize: 15, fontWeight: '500', color: '#1A4882' }}
-//             />
-
-//             <ExpectedOutcomeModal
-//                 visible={showOutcomeModal}
-//                 onClose={() => setShowOutcomeModal(false)}
-//                 title={selectedOutcome}
-//                 outcomes={outcomeData()}
-//                 onSelect={() => setShowOutcomeModal(false)}
-//                 onEdit={() => setShowOutcomeModal(false)}
-//                 onDownload={() => console.log('Download outcome')}
-//             />
-//         </LinearGradient>
-//     );
-// }
-
-
-import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
-import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
-import RoadmapCard from '@/components/director/ProgressRoadmapCard';
-import SearchBar from '@/components/director/SearchBar';
-import { TabSwitcher } from '@/components/director/TabSwitcher';
-import TopBar from '@/components/director/TopBar';
-import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
-import { getTasks, getTasksByDivision } from '@/lib/roadmap/helpers';
-import { getTaskCard } from '@/lib/roadmap/mappers';
-import { NestedRoadmap } from '@/lib/roadmap/types';
-import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-
-type StatusTabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
-type TabKey = StatusTabKey | string; // string for division names
-
-export default function RoadmapDetail() {
-    const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
-
-    // Fetch single roadmap
-    const { data: roadmap, isLoading, error, refetch } = useRoadmap(phaseId);
-
-    const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
-    const [showOutcomeModal, setShowOutcomeModal] = useState(false);
-    const [selectedOutcome, setSelectedOutcome] = useState('');
-    const [search, setSearch] = useState('');
-
-    // Get phase number from phase string
-    const phaseNumber = useMemo(() => {
-        if (!roadmap?.phase) return null;
-        const match = roadmap.phase.match(/\d+/);
-        return match ? parseInt(match[0], 10) : null;
-    }, [roadmap]);
-
-    // Check if roadmap has divisions
-    const hasDivisions = useMemo(() => {
-        return roadmap?.divisions && roadmap.divisions.length > 0;
-    }, [roadmap]);
-
-    // Get divisions
-    const divisions = useMemo(() => {
-        if (!roadmap || !hasDivisions) return [];
-        return roadmap.divisions;
-    }, [roadmap, hasDivisions]);
-
-    // Initialize activeTab to 'ALL' by default
-    const [activeTab, setActiveTab] = useState<TabKey>('ALL');
-
-    // Update active tab when divisions change
-    // FIX: Update active tab logic to handle division removal
-    useMemo(() => {
-        const statusKeys = ['ALL', 'DUE', 'NOT_STARTED', 'COMPLETED'];
-
-        if (activeTab !== 'ALL' && 
-            !statusKeys.includes(activeTab as string) && 
-            hasDivisions && 
-            !divisions.includes(activeTab as string)) {
-            setActiveTab('ALL');
-        }
-    }, [hasDivisions, divisions, activeTab]);
-
-    const outcomeMenuItems = useCallback((): MenuItem[] => [
-        {
-            id: 'outcome-4-months',
-            label: 'Expected Outcome - 4 Months',
-            onPress: () => {
-                setSelectedOutcome('Expected Outcome - First Four Months');
-                setShowOutcomeMenu(false);
-                setShowOutcomeModal(true);
-            },
+  const outcomeMenuItems = useCallback(
+    (): MenuItem[] => [
+      {
+        id: "outcome-4-months",
+        label: "Expected Outcome - 4 Months",
+        onPress: () => {
+          setSelectedOutcome("Expected Outcome - First Four Months");
+          setShowOutcomeMenu(false);
+          setShowOutcomeModal(true);
         },
-        {
-            id: 'outcome-6-months',
-            label: 'Expected Outcome - 6 Months',
-            onPress: () => {
-                setSelectedOutcome('Expected Outcome - Six Months');
-                setShowOutcomeMenu(false);
-                setShowOutcomeModal(true);
-            },
+      },
+      {
+        id: "outcome-6-months",
+        label: "Expected Outcome - 6 Months",
+        onPress: () => {
+          setSelectedOutcome("Expected Outcome - Six Months");
+          setShowOutcomeMenu(false);
+          setShowOutcomeModal(true);
         },
-        {
-            id: 'outcome-9-months',
-            label: 'Expected Outcome - 9 Months',
-            onPress: () => {
-                setSelectedOutcome('Expected Outcome - Nine Months');
-                setShowOutcomeMenu(false);
-                setShowOutcomeModal(true);
-            },
+      },
+      {
+        id: "outcome-9-months",
+        label: "Expected Outcome - 9 Months",
+        onPress: () => {
+          setSelectedOutcome("Expected Outcome - Nine Months");
+          setShowOutcomeMenu(false);
+          setShowOutcomeModal(true);
         },
-        {
-            id: 'outcome-end-year',
-            label: 'Expected Outcome - End of Year',
-            onPress: () => {
-                setSelectedOutcome('Expected Outcome - End of Year');
-                setShowOutcomeMenu(false);
-                setShowOutcomeModal(true);
-            },
+      },
+      {
+        id: "outcome-end-year",
+        label: "Expected Outcome - End of Year",
+        onPress: () => {
+          setSelectedOutcome("Expected Outcome - End of Year");
+          setShowOutcomeMenu(false);
+          setShowOutcomeModal(true);
         },
-    ], []);
+      },
+    ],
+    [],
+  );
 
-    const outcomeData = useCallback(() => [
-        { id: '1', text: 'The church is committed to the revitalization process.' },
-        { id: '2', text: 'The Church is praying consistently and intentionally for revitalization.' },
-        { id: '3', text: 'The church understands its current health and is committed to making improvements.' },
-        { id: '4', text: 'The church is beginning to feel like a warm and welcoming place for new attendees.' },
-        { id: '5', text: 'Church members have begun to build new relationships.' },
-        { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
-    ], []);
+  const outcomeData = useCallback(
+    () => [
+      { id: "1", text: "The church is committed to the revitalization process." },
+      { id: "2", text: "The Church is praying consistently and intentionally for revitalization." },
+      { id: "3", text: "The church understands its current health and is committed to making improvements." },
+      { id: "4", text: "The church is beginning to feel like a warm and welcoming place for new attendees." },
+      { id: "5", text: "Church members have begun to build new relationships." },
+      { id: "6", text: "Church members will begin to feel a sense of hope for the future." },
+    ],
+    [],
+  );
 
-    // Generate tabs based on whether divisions exist
-    const tabs = useMemo(() => {
-        const allTaskTab = { key: 'ALL', label: 'All' };
-        
-        const statusTabs = [
-            { key: 'DUE', label: 'Due' },
-            { key: 'NOT_STARTED', label: 'Not Started' },
-            { key: 'COMPLETED', label: 'Completed' },
-        ];
+  const hasDivisions = useMemo(() => {
+    return Array.isArray((roadmap as any)?.divisions) && (roadmap as any).divisions.length > 0;
+  }, [roadmap]);
 
-        if (hasDivisions && divisions.length > 0) {
-            // Filter out any division that might conflict with 'All Task' or 'All'
-            const filteredDivisions = divisions.filter(d => 
-                d.toLowerCase() !== 'all task' && 
-                d.toLowerCase() !== 'all'
-            );
+  const divisions = useMemo<string[]>(() => {
+    if (!hasDivisions || !roadmap) return [];
+    return (roadmap as any).divisions as string[];
+  }, [hasDivisions, roadmap]);
 
-            const divisionTabs = filteredDivisions.map(division => ({
-                key: division,
-                label: division.charAt(0).toUpperCase() + division.slice(1),
-            }));
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    if (divisions.length > 0) return divisions[0];
+    return "ALL";
+  });
 
-            return [allTaskTab, ...divisionTabs, ...statusTabs];
-        } else {
-            return [allTaskTab, ...statusTabs];
-        }
-    }, [hasDivisions, divisions]);
+  const tabs = useMemo(() => {
+    const base = [
+      { key: "ALL", label: "All" },
+      { key: "DUE", label: "Due" },
+      { key: "NOT_STARTED", label: "Not Started" },
+      { key: "COMPLETED", label: "Completed" },
+    ];
+    if (!hasDivisions || divisions.length === 0) return base;
+    const divisionTabs = divisions.map((d) => ({ key: d, label: d }));
+    return [...divisionTabs, ...base];
+  }, [divisions, hasDivisions]);
 
-    // Check if activeTab is a division
-    const isDivisionTab = useMemo(() => {
-        return hasDivisions && divisions.includes(activeTab as string);
-    }, [hasDivisions, divisions, activeTab]);
+  const allTasks = useMemo<NestedRoadmap[]>(() => {
+    if (!roadmap) return [];
+    return getTasks(roadmap) as NestedRoadmap[];
+  }, [roadmap]);
 
-    // Get all tasks
-    const allTasks = useMemo(() => {
-        return roadmap ? getTasks(roadmap) : [];
-    }, [roadmap]);
+  const tasksForTab = useMemo<NestedRoadmap[]>(() => {
+    if (!roadmap) return [];
 
-    console.log({ allTasks });
-    // Filter tasks based on active tab
-    // Filter tasks based on active tab
-    const filteredTasks = useMemo(() => {
-        if (!roadmap) return [];
+    const statusKeys: StatusTabKey[] = ["ALL", "DUE", "NOT_STARTED", "COMPLETED"];
+    if (
+      hasDivisions &&
+      divisions.includes(activeTab as string) &&
+      !statusKeys.includes(activeTab as StatusTabKey)
+    ) {
+      const grouped = getTasksByDivision(roadmap);
+      const exactMatch = grouped[activeTab as string];
+      if (exactMatch) return exactMatch;
 
-        let tasksToFilter: NestedRoadmap[] = [];
+      const matchingKey = Object.keys(grouped).find(
+        (key) => key.toLowerCase() === String(activeTab).toLowerCase(),
+      );
+      return matchingKey ? grouped[matchingKey] : [];
+    }
+    return allTasks;
+  }, [activeTab, allTasks, divisions, hasDivisions, roadmap]);
 
-        // DEBUG: Uncomment these to see exactly what is happening in your console
-        // console.log('Active Tab:', activeTab);
-        // console.log('Divisions:', divisions);
-        // console.log('Is Division Tab:', isDivisionTab);
+  const filtered = useMemo(() => {
+    let list = tasksForTab;
 
-        // Step 1: Determine which tasks to filter
-        if (isDivisionTab) {
-            const groupedTasks = getTasksByDivision(roadmap);
-
-            // FIX 1: specific safety check to ensure we match the key regardless of casing
-            // Try exact match first, then fallback to lowercase match
-            const exactMatch = groupedTasks[activeTab as string];
-
-            if (exactMatch) {
-                tasksToFilter = exactMatch;
-            } else {
-                // Find the key that matches loosely (e.g., 'church' vs 'Church')
-                const matchingKey = Object.keys(groupedTasks).find(
-                    key => key.toLowerCase() === (activeTab as string).toLowerCase()
-                );
-                tasksToFilter = matchingKey ? groupedTasks[matchingKey] : [];
-            }
-
-        } else if (activeTab === 'ALL') {
-            tasksToFilter = allTasks;
-        } else {
-            // Apply status filter (DUE, NOT_STARTED, COMPLETED)
-            tasksToFilter = allTasks.filter(task => {
-                const status = task.status ? task.status.toLowerCase() : ''; // Safety lowercasing
-
-                if (activeTab === 'DUE') {
-                    // FIX 2: Handle tasks with no endDate. 
-                    // If you want tasks without dates to appear in 'Due', remove the 'task.endDate &&' part.
-                    if (!task.endDate) return false;
-
-                    const today = new Date().toISOString().slice(0, 10);
-                    return task.endDate <= today && status !== 'completed';
-                }
-
-                if (activeTab === 'NOT_STARTED') return status === 'not started';
-                if (activeTab === 'COMPLETED') return status === 'completed';
-
-                return false;
-            });
-        }
-
-        // Step 2: Apply search filter
-        if (search.trim()) {
-            const searchLower = search.toLowerCase();
-            tasksToFilter = tasksToFilter.filter(task =>
-                (task.name && task.name.toLowerCase().includes(searchLower)) ||
-                (task.roadMapDetails && task.roadMapDetails.toLowerCase().includes(searchLower)) ||
-                (task.description && task.description.toLowerCase().includes(searchLower))
-            );
-        }
-
-        return tasksToFilter;
-    }, [roadmap, isDivisionTab, activeTab, allTasks, search]);
-
-    // Loading state
-    if (isLoading) {
-        return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
-                <View style={{ paddingBottom: 10 }}>
-                    <TopBar role="pastor" showUserName />
-                </View>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color="#fff" />
-                    <Text style={{ color: '#fff', marginTop: 16 }}>Loading roadmap details...</Text>
-                </View>
-            </LinearGradient>
-        );
+    if (activeTab === "COMPLETED") {
+      list = list.filter((t) => String(t.status || "").toLowerCase() === "completed");
+    }
+    if (activeTab === "NOT_STARTED") {
+      list = list.filter((t) => String(t.status || "").toLowerCase() === "not started");
+    }
+    if (activeTab === "DUE") {
+      const today = new Date().toISOString().slice(0, 10);
+      list = list.filter((t) => {
+        const status = String(t.status || "").toLowerCase();
+        if (status === "completed") return false;
+        if (!(t as any).endDate) return false;
+        return String((t as any).endDate) <= today;
+      });
     }
 
-    // Error or not found state
-    if (error || !roadmap) {
-        return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
-                <View style={{ paddingBottom: 10 }}>
-                    <TopBar role="pastor" showUserName />
-                </View>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                    <Ionicons name="alert-circle" size={48} color="#fff" />
-                    <Text style={{ color: '#fff', marginTop: 16, textAlign: 'center' }}>
-                        {error ? 'Failed to load roadmap details' : 'Roadmap not found'}
-                    </Text>
-                    <TouchableOpacity
-                        onPress={() => refetch()}
-                        style={{ marginTop: 20, padding: 12, backgroundColor: '#264387', borderRadius: 8 }}
-                    >
-                        <Text style={{ color: '#fff', fontWeight: '600' }}>Retry</Text>
-                    </TouchableOpacity>
-                </View>
-            </LinearGradient>
-        );
-    }
-
-    console.log({
-        filteredTasks,
-
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((t) => {
+      const title = String((t as any).name ?? "").toLowerCase();
+      const desc = String((t as any).description ?? "").toLowerCase();
+      return title.includes(q) || desc.includes(q);
     });
+  }, [activeTab, search, tasksForTab]);
 
+  const handleOpenTask = useCallback(
+    (taskId: string) => {
+      router.push(`/roadmap/${String(phaseId)}/${taskId}` as any);
+    },
+    [phaseId],
+  );
+
+  if (isLoading) {
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
-            <View style={{ paddingBottom: 10 }}>
-                <TopBar role="pastor" showUserName />
-            </View>
-
-            {/* Header */}
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: getSpacing(8),
-                paddingVertical: getSpacing(16),
-                marginBottom: getSpacing(16),
-                borderBottomWidth: 1,
-                borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-            }}>
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    flex: 1,
-                    marginRight: getSpacing(12),
-                }}>
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        style={{ marginRight: getSpacing(8) }}
-                    >
-                        <Ionicons name="chevron-back" size={28} color="#fff" />
-                    </TouchableOpacity>
-
-                    <View style={{ flex: 1, marginRight: getSpacing(8) }}>
-                        <Text
-                            style={{
-                                fontSize: isAndroid ? getFontSize(18) : getFontSize(15),
-                                fontWeight: '700',
-                                lineHeight: getFontSize(18),
-                                color: '#FFFFFF',
-                            }}
-                            numberOfLines={2}
-                            ellipsizeMode="tail"
-                        >
-                            {roadmap.name}
-                        </Text>
-                        {roadmap.roadMapDetails && (
-                            <Text
-                                style={{
-                                    marginTop: getSpacing(4),
-                                    fontSize: getFontSize(12),
-                                    color: 'rgba(255, 255, 255, 0.8)',
-                                }}
-                                numberOfLines={1}
-                                ellipsizeMode="tail"
-                            >
-                                {roadmap.roadMapDetails}
-                            </Text>
-                        )}
-                    </View>
-                </View>
-
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: getSpacing(8),
-                }}>
-                    {phaseNumber && (
-                        <View style={{
-                            backgroundColor: '#F7E35F',
-                            borderRadius: 10,
-                            paddingHorizontal: getSpacing(10),
-                            paddingVertical: getSpacing(2),
-                        }}>
-                            <Text style={{
-                                color: '#1D1D1D',
-                                fontWeight: '700',
-                                fontSize: getFontSize(13),
-                            }}>
-                                Phase {phaseNumber}
-                            </Text>
-                        </View>
-                    )}
-                    <TouchableOpacity
-                        onPress={() => setShowOutcomeMenu(true)}
-                        style={{ padding: getSpacing(4) }}
-                    >
-                        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Search */}
-            <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-                <SearchBar value={search} onChangeValue={setSearch} />
-            </View>
-
-            {/* Tabs */}
-            <TabSwitcher
-                tabs={tabs}
-                activeTab={activeTab}
-                onChange={(key) => setActiveTab(key as TabKey)}
-            />
-
-            {/* Content */}
-            <ScrollView contentContainerStyle={{ padding: 16 }}>
-                {filteredTasks.length > 0 ? (
-                    filteredTasks.map(task => {
-                        const cardData = getTaskCard(task);
-                        return (
-                            <Pressable
-                                key={task._id}
-                                onPress={() => router.push(`/roadmap/${phaseId}/${task._id}`)}
-                            >
-                                <RoadmapCard data={cardData} />
-                            </Pressable>
-                        );
-                    })
-                ) : (
-                    <View style={{ alignItems: 'center', marginTop: 40 }}>
-                        <Text style={{ color: 'white', fontSize: 16 }}>
-                            {search.trim()
-                                ? 'No tasks match your search.'
-                                : 'No tasks available.'}
-                        </Text>
-                    </View>
-                )}
-            </ScrollView>
-
-            {/* Modals */}
-            <ContextMenu
-                visible={showOutcomeMenu}
-                items={outcomeMenuItems()}
-                onClose={() => setShowOutcomeMenu(false)}
-                position={{ top: 60, right: 16 }}
-                minWidth={280}
-                showIcons={false}
-                itemTextStyle={{ fontSize: 15, fontWeight: '500', color: '#1A4882' }}
-            />
-
-            <ExpectedOutcomeModal
-                visible={showOutcomeModal}
-                onClose={() => setShowOutcomeModal(false)}
-                title={selectedOutcome}
-                outcomes={outcomeData()}
-                onSelect={() => setShowOutcomeModal(false)}
-                onEdit={() => setShowOutcomeModal(false)}
-                onDownload={() => console.log('Download outcome')}
-            />
-        </LinearGradient>
+      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+        <TopBar role="pastor" showUserName />
+        <View style={styles.centerFill}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.loadingText}>Loading roadmap…</Text>
+        </View>
+      </LinearGradient>
     );
+  }
+
+  return (
+    <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={styles.root}>
+      <View style={styles.bgCircleTop} pointerEvents="none" />
+      <View style={styles.bgCircleBottom} pointerEvents="none" />
+
+      <TopBar role="pastor" showUserName />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.container, { paddingBottom: bottom + 20 }]}
+        refreshControl={
+          <RefreshControl refreshing={!!isRefetching} onRefresh={refetch} tintColor="#fff" />
+        }
+      >
+        <View style={styles.headerRow}>
+          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.92)" />
+          </Pressable>
+          <View style={styles.headerPillWrap}>
+            <View style={styles.pill}>
+              <View style={styles.pillDots}>
+                <View style={styles.pillDot} />
+                <View style={styles.pillDotGold} />
+              </View>
+              <Text style={styles.pillText} numberOfLines={1}>
+                {(roadmap as any)?.name || "Revitalization Roadmap"}
+              </Text>
+            </View>
+          </View>
+          <Pressable onPress={() => setShowOutcomeMenu(true)} hitSlop={10} style={styles.ellipsisBtn}>
+            <Ionicons name="ellipsis-vertical" size={16} color="rgba(255,255,255,0.92)" />
+          </Pressable>
+        </View>
+
+        <Text style={styles.title}>
+          {phaseNumber ? `Phase ${phaseNumber}` : "Roadmap"} tasks
+        </Text>
+        <Text style={styles.subtitle}>
+          Tap a task to view details, comments, and queries.
+        </Text>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Ionicons name="leaf-outline" size={14} color={accent.mint} />
+          <View style={styles.dividerLine} />
+        </View>
+
+        {!!error ? (
+          <View style={styles.errorCard}>
+            <Ionicons name="alert-circle-outline" size={22} color="#fff" />
+            <Text style={styles.errorText}>Failed to load roadmap. Pull to refresh.</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.searchWrap}>
+          <SearchBar value={search} onChangeValue={setSearch} />
+        </View>
+
+        <View style={styles.tabsWrap}>
+          <TabSwitcher tabs={tabs} activeTab={String(activeTab)} onChange={(k) => setActiveTab(k as TabKey)} />
+        </View>
+
+        <View style={styles.list}>
+          {filtered.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Ionicons name="checkbox-outline" size={28} color="rgba(255,255,255,0.7)" />
+              <Text style={styles.emptyTitle}>No tasks found</Text>
+              <Text style={styles.emptySubtitle}>Try a different filter or search.</Text>
+            </View>
+          ) : (
+            filtered.map((t) => {
+              const cardData = getTaskCard(t);
+              return (
+                <Pressable key={String(t._id)} onPress={() => handleOpenTask(String(t._id))} style={styles.cardPress}>
+                  <RoadmapCard data={cardData as any} />
+                </Pressable>
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
+
+      <ContextMenu
+        visible={showOutcomeMenu}
+        items={outcomeMenuItems()}
+        onClose={() => setShowOutcomeMenu(false)}
+        position={{ top: 60, right: 16 }}
+        minWidth={280}
+        showIcons={false}
+        itemTextStyle={{ fontSize: 15, fontWeight: "500", color: "#1A4882" }}
+      />
+
+      <ExpectedOutcomeModal
+        visible={showOutcomeModal}
+        onClose={() => setShowOutcomeModal(false)}
+        title={selectedOutcome}
+        outcomes={outcomeData()}
+        onSelect={() => setShowOutcomeModal(false)}
+        onEdit={() => setShowOutcomeModal(false)}
+        onDownload={() => {}}
+      />
+    </LinearGradient>
+  );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  container: { paddingHorizontal: 18 },
+  bgCircleTop: {
+    position: "absolute",
+    top: -120,
+    right: -110,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  bgCircleBottom: {
+    position: "absolute",
+    bottom: -90,
+    left: -90,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  centerFill: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+  loadingText: { color: "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: "600" },
+  headerRow: {
+    marginTop: 10,
+    marginBottom: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 12,
+  },
+  headerPillWrap: { flex: 1, minWidth: 0 },
+  backBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  ellipsisBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  pill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  pillDots: { flexDirection: "row", alignItems: "center", gap: 6 },
+  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: accent.mint },
+  pillDotGold: { width: 6, height: 6, borderRadius: 3, backgroundColor: accent.gold },
+  pillText: { color: "rgba(255,255,255,0.95)", fontSize: 12, fontWeight: "700", flexShrink: 1 },
+
+  title: { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: -0.2, marginTop: 8 },
+  subtitle: { color: "rgba(255,255,255,0.72)", marginTop: 4, fontSize: 13, lineHeight: 18 },
+  dividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.12)" },
+
+  errorCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: "rgba(248, 113, 113, 0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(248, 113, 113, 0.28)",
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  errorText: { color: "rgba(255,255,255,0.92)", fontSize: 12, fontWeight: "700", flex: 1 },
+
+  searchWrap: { marginTop: 8 },
+  tabsWrap: { marginTop: 12 },
+  list: { marginTop: 14, gap: 12, paddingBottom: 10 },
+  cardPress: { borderRadius: 16, overflow: "hidden" },
+
+  emptyCard: {
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    padding: 16,
+    alignItems: "center",
+    gap: 8,
+  },
+  emptyTitle: { color: "#fff", fontSize: 15, fontWeight: "800" },
+  emptySubtitle: { color: "rgba(255,255,255,0.65)", fontSize: 12, textAlign: "center" },
+});
+
