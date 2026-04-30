@@ -58,6 +58,46 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
         return url;
     };
 
+    const formatFileName = (rawName: string): string => {
+        const decoded = decodeURIComponent(rawName || "").trim();
+        if (!decoded) return "Untitled file";
+        if (decoded.length <= 44) return decoded;
+        const start = decoded.slice(0, 18);
+        const end = decoded.slice(-18);
+        return `${start}…${end}`;
+    };
+
+    const renderNumberedText = (value: string) => {
+        const lines = String(value || "")
+            .split(/\r?\n+/)
+            .map(l => l.trim())
+            .filter(Boolean);
+
+        const numbered = lines
+            .map((line) => {
+                const match = line.match(/^(\d+)\s*[\)\.:-]\s*(.+)$/);
+                return match ? { n: match[1], text: match[2].trim() } : null;
+            })
+            .filter(Boolean) as Array<{ n: string; text: string }>;
+
+        if (numbered.length >= 2) {
+            return (
+                <View style={styles.numberList}>
+                    {numbered.map((item) => (
+                        <View key={`${item.n}-${item.text.slice(0, 10)}`} style={styles.numberRow}>
+                            <View style={styles.numberBadge}>
+                                <Text style={styles.numberBadgeText}>{item.n}</Text>
+                            </View>
+                            <Text style={styles.numberRowText}>{item.text}</Text>
+                        </View>
+                    ))}
+                </View>
+            );
+        }
+
+        return <Text style={styles.textDisplayTextLeft}>{String(value)}</Text>;
+    };
+
     /** Load existing extras from API */
     const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } = useRoadmapExtras(
         isValidObjectId(roadmapId) ? roadmapId : undefined,
@@ -264,11 +304,20 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                     <View key={doc._id} style={styles.fileRow}>
                                         <Pressable
                                             onPress={() => Linking.openURL(doc.fileUrl)}
-                                            style={{ flex: 1 }}
+                                            style={styles.filePress}
                                         >
-                                            <Text style={styles.fileName}>
-                                                : {decodeURIComponent(doc.fileName)}
-                                            </Text>
+                                            <View style={styles.fileIcon}>
+                                                <Ionicons name="document-attach-outline" size={18} color="#FFFFFF" />
+                                            </View>
+                                            <View style={{ flex: 1, minWidth: 0 }}>
+                                                <Text style={styles.fileName} numberOfLines={1} ellipsizeMode="middle">
+                                                    {formatFileName(doc.fileName)}
+                                                </Text>
+                                                <Text style={styles.fileHint} numberOfLines={1}>
+                                                    Tap to open
+                                                </Text>
+                                            </View>
+                                            <Ionicons name="open-outline" size={18} color="rgba(255,255,255,0.82)" />
                                         </Pressable>
                                     </View>
                                 ))
@@ -359,7 +408,7 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
             case "TEXT_DISPLAY":
                 return (
                     <View key={id} style={styles.textDisplay}>
-                        <Text style={styles.textDisplayText}>{extra.name}</Text>
+                        {renderNumberedText(extra.name)}
                     </View>
                 );
 
@@ -525,7 +574,20 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                     });
                                 }}
                             >
-                                <Text style={styles.centeredLinkText}>View {getExtraName(extra.name)} Survey Results</Text>
+                                <View style={styles.linkRow}>
+                                    <View style={styles.linkIcon}>
+                                        <Ionicons name="document-text-outline" size={18} color="#FFFFFF" />
+                                    </View>
+                                    <View style={styles.linkTextWrap}>
+                                        <Text style={styles.linkTitle} numberOfLines={2}>
+                                            View {getExtraName(extra.name)} Survey Results
+                                        </Text>
+                                        <Text style={styles.linkSubtitle} numberOfLines={1}>
+                                            Opens in read-only view
+                                        </Text>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.85)" />
+                                </View>
                             </TouchableOpacity>
                         </View>
                     );
@@ -538,10 +600,8 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                 <Text style={styles.assessmentTitle}>{extra.name}</Text>
                             </View>
                         </View>
-                        <View style={{ padding: 10,paddingHorizontal: 20}} >
-
                         <Pressable
-                            style={styles.button}
+                            style={styles.centeredLinkButton}
                             onPress={() => {
                                 if (extra.assessmentId) {
                                     router.push({
@@ -555,11 +615,22 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                     });
                                 }
                             }}
-                            >
-                            <Text style={styles.centeredLinkText}>View {getExtraName(extra.name)} Survey</Text>
-                            {/* <Ionicons name="open-outline" size={20} color="#2563eb" /> */}
-                        </Pressable>
+                        >
+                            <View style={styles.linkRow}>
+                                <View style={styles.linkIcon}>
+                                    <Ionicons name="open-outline" size={18} color="#FFFFFF" />
+                                </View>
+                                <View style={styles.linkTextWrap}>
+                                    <Text style={styles.linkTitle} numberOfLines={2}>
+                                        View {getExtraName(extra.name)} Survey
+                                    </Text>
+                                    <Text style={styles.linkSubtitle} numberOfLines={1}>
+                                        Review the submitted answers
+                                    </Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.85)" />
                             </View>
+                        </Pressable>
                     </View>
                 );
 
@@ -713,19 +784,43 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     fileRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 10,
         marginBottom: 10,
+    },
+    filePress: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        width: "100%",
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderRadius: 14,
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.14)",
+    },
+    fileIcon: {
+        width: 34,
+        height: 34,
+        borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(232, 200, 138, 0.18)",
+        borderWidth: 1,
+        borderColor: "rgba(232, 200, 138, 0.24)",
     },
     fileName: {
         color: '#ffffff',
-        fontSize: 16,
-        fontWeight: '400',
+        fontSize: 14,
+        fontWeight: '800',
         flex: 1,
         textAlign: 'left',
         letterSpacing: 0.3,
+    },
+    fileHint: {
+        color: "rgba(255,255,255,0.65)",
+        fontSize: 12,
+        fontWeight: "600",
+        marginTop: 2,
     },
     fieldRow: {
         flexDirection: 'row',
@@ -809,9 +904,9 @@ const styles = StyleSheet.create({
     },
     textDisplay: {
         paddingVertical: 16,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
+        paddingHorizontal: 16,
+        alignItems: 'stretch',
+        justifyContent: 'flex-start',
         marginBottom: 24,
     },
     textDisplayText: {
@@ -819,6 +914,36 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
         textAlign: 'center',
+    },
+    textDisplayTextLeft: {
+        color: "rgba(255,255,255,0.88)",
+        fontSize: 14,
+        fontWeight: "700",
+        lineHeight: 20,
+        textAlign: "left",
+    },
+    numberList: { gap: 10 },
+    numberRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+    numberBadge: {
+        width: 28,
+        height: 28,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(111, 212, 190, 0.18)",
+        borderWidth: 1,
+        borderColor: "rgba(111, 212, 190, 0.26)",
+        marginTop: 1,
+    },
+    numberBadgeText: { color: "#FFFFFF", fontSize: 12, fontWeight: "900" },
+    numberRowText: {
+        flex: 1,
+        minWidth: 0,
+        color: "rgba(255,255,255,0.86)",
+        fontSize: 14,
+        fontWeight: "700",
+        lineHeight: 20,
+        textAlign: "left",
     },
     signaturePlaceholder: {
         minHeight: 140,
@@ -839,18 +964,30 @@ const styles = StyleSheet.create({
     },
     tapToSignText: { color: '#9cc2ff', fontSize: 16 },
     centeredLinkButton: {
-        backgroundColor: 'white',
-        color: '#001FC1',
+        borderRadius: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        marginBottom: 12,
+        backgroundColor: "rgba(255,255,255,0.10)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.18)",
+    },
+    centeredLinkText: { display: "none" },
+    linkRow: { flexDirection: "row", alignItems: "center" },
+    linkIcon: {
+        width: 34,
+        height: 34,
         borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-        marginBottom: 8,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(111, 212, 190, 0.20)",
+        borderWidth: 1,
+        borderColor: "rgba(111, 212, 190, 0.26)",
+        marginRight: 10,
     },
-    centeredLinkText: {
-        color: '#001FC1',
-        fontSize: 16,
-        textDecorationLine: 'underline',
-    },
+    linkTextWrap: { flex: 1, minWidth: 0, paddingRight: 8 },
+    linkTitle: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", lineHeight: 18 },
+    linkSubtitle: { color: "rgba(255,255,255,0.70)", fontSize: 12, fontWeight: "600", marginTop: 2 },
     assessmentButton: {
         backgroundColor: 'rgba(64, 156, 186, 0.5)',
         padding: 16,
