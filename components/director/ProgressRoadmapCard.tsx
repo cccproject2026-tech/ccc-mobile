@@ -51,6 +51,13 @@ export const RoadmapCard: React.FC<Props> = ({
     const showCompletionTimeOnLeft = data.completionTime && data.status;
     const CardWrapper = onPress ? TouchableOpacity : View;
 
+    const accentBorderColor = useMemo(() => {
+        if (data.status === 'completed') return 'rgba(111, 212, 190, 0.85)'; // mint
+        if (data.status === 'due') return 'rgba(232, 200, 138, 0.85)'; // gold
+        if (data.status === 'in-progress') return 'rgba(59, 130, 246, 0.75)'; // blue
+        return 'rgba(255,255,255,0.14)';
+    }, [data.status]);
+
     const renderImage = () => (
         <View style={styles.imageContainer}>
             <Image
@@ -139,7 +146,11 @@ export const RoadmapCard: React.FC<Props> = ({
     };
 
     return (
-        <CardWrapper style={styles.card} onPress={onPress} activeOpacity={0.7}>
+        <CardWrapper
+            style={[styles.card, { borderLeftColor: accentBorderColor }]}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
             {/* ✅ Use dynamic flex ratios based on hasActions */}
             <View style={[
                 styles.inner,
@@ -234,13 +245,18 @@ export const RoadmapCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#194F82',
+        backgroundColor: 'rgba(255,255,255,0.08)',
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.12)',
+        borderColor: 'rgba(255, 255, 255, 0.14)',
         overflow: 'hidden',
-        marginBottom: getSpacing(18),
+        borderLeftWidth: 3,
         padding: getSpacing(12),
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.22,
+        shadowRadius: 14,
+        elevation: 10,
     },
     inner: {
         flexDirection: 'row',

@@ -72,13 +72,14 @@ export default function PastorRoadmapIndex() {
   }, [refetch]);
 
   const handleOpen = useCallback((roadmap: any) => {
-    const roadmapId = roadmap?.id;
+    const roadmapId = roadmap?._id ?? roadmap?.id;
     if (!roadmapId) return;
 
     // If a roadmap has a single nested item, go straight to it.
-    const nested = Array.isArray(roadmap?.nestedRoadmaps) ? roadmap.nestedRoadmaps : [];
-    if (nested.length === 1 && nested[0]?.id) {
-      router.push(`/roadmap/${roadmapId}/${nested[0].id}` as any);
+    const nested = Array.isArray(roadmap?.roadmaps) ? roadmap.roadmaps : [];
+    const firstNestedId = nested?.[0]?._id ?? nested?.[0]?.id;
+    if (nested.length === 1 && firstNestedId) {
+      router.push(`/roadmap/${roadmapId}/${firstNestedId}` as any);
       return;
     }
     router.push(`/roadmap/${roadmapId}` as any);
@@ -114,12 +115,21 @@ export default function PastorRoadmapIndex() {
           />
         }
       >
-        <View style={styles.pill}>
-          <View style={styles.pillDots}>
-            <View style={styles.pillDot} />
-            <View style={styles.pillDotGold} />
+        <View style={styles.headerRow}>
+          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.92)" />
+          </Pressable>
+          <View style={styles.headerPillWrap}>
+            <View style={styles.pill}>
+              <View style={styles.pillDots}>
+                <View style={styles.pillDot} />
+                <View style={styles.pillDotGold} />
+              </View>
+              <Text style={styles.pillText} numberOfLines={1}>
+                Revitalization Roadmap
+              </Text>
+            </View>
           </View>
-          <Text style={styles.pillText}>Revitalization Roadmap</Text>
         </View>
 
         <Text style={styles.title}>Your roadmap phases</Text>
@@ -180,7 +190,7 @@ export default function PastorRoadmapIndex() {
             filtered.map((r: any) => {
               const card = getRoadmapCard(r);
               return (
-                <Pressable key={String(r?.id)} onPress={() => handleOpen(r)} style={styles.cardPress}>
+                <Pressable key={String(r?._id ?? r?.id)} onPress={() => handleOpen(r)} style={styles.cardPress}>
                   <RoadmapCard data={card as any} />
                 </Pressable>
               );
@@ -196,6 +206,28 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   container: {
     paddingHorizontal: 18,
+  },
+  headerRow: {
+    marginTop: 10,
+    marginBottom: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 12,
+  },
+  headerPillWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  backBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
   },
   bgCircleTop: {
     position: "absolute",
@@ -229,8 +261,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.10)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.18)",
-    marginTop: 14,
-    marginBottom: 12,
+    marginTop: 0,
+    marginBottom: 0,
   },
   pillDots: { flexDirection: "row", alignItems: "center", gap: 6 },
   pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: accent.mint },
