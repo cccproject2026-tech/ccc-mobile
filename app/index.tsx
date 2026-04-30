@@ -29,7 +29,6 @@ export default function RoleSelectionScreen() {
     const router = useRouter();
     const { top, bottom } = useSafeAreaInsets();
     const [isClearing, setIsClearing] = useState(false);
-    const [selectedRole, setSelectedRole] = useState<RoleOption | null>(null);
 
     const { user, isAuthenticated, logout } = useAuthStore();
     const {
@@ -39,13 +38,23 @@ export default function RoleSelectionScreen() {
         interestData,
         interestStatus,
         setInterestStatus,
+        isEmailVerified,
+        isPasswordSet,
     } = useOnboardingStore();
 
     const hasSubmittedApplication = !!userId && (!!applicationId || !!interestData);
     const showApplicationStatusButton =
         !isAuthenticated &&
+        !isPasswordSet &&
         hasSubmittedApplication &&
         (interestStatus === "pending" || interestStatus === "new" || interestStatus === "accepted");
+
+    const applicationStatusHint =
+        interestStatus === "accepted"
+            ? isEmailVerified
+                ? "Next: Create password (resumes after reopen)"
+                : "Next: Verify email & create password"
+            : "Track your application progress (tap anytime)";
 
     const handleClearStorage = useCallback(async () => {
         Alert.alert('Clear All Data', 'This will log you out and clear all stored data. Continue?', [
@@ -70,36 +79,29 @@ export default function RoleSelectionScreen() {
         ]);
     }, []);
 
-    const handleContinue = useCallback(() => {
-        if (!selectedRole) return;
-
-        if (selectedRole === 'pastor') {
-            if (isAuthenticated && user?.role === 'pastor') {
-                router.push('/(pastor)/(tabs)');
+    const handleRolePress = useCallback((role: RoleOption) => {
+        if (role === "pastor") {
+            if (isAuthenticated && user?.role === "pastor") {
+                router.push("/(pastor)/(tabs)");
             } else {
-                router.push({ pathname: '/(unauthenticated)/role-landing/[role]', params: { role: 'pastor' } });
+                router.push({
+                    pathname: "/(unauthenticated)/role-landing/[role]",
+                    params: { role: "pastor" },
+                });
             }
             return;
         }
 
-        if (isAuthenticated && user?.role === 'mentor') {
-            router.push('/(mentor)/(tabs)');
+        // mentor
+        if (isAuthenticated && user?.role === "mentor") {
+            router.push("/(mentor)/(tabs)");
         } else {
-            // Show the mentor welcome ("Start your journey") screen first.
             router.push({
-                pathname: '/(unauthenticated)/role-landing/[role]',
-                params: { role: 'mentor' },
+                pathname: "/(unauthenticated)/role-landing/[role]",
+                params: { role: "mentor" },
             });
         }
-    }, [isAuthenticated, router, selectedRole, user?.role]);
-
-    const handlePastorRoleSelect = (role: PastorRole) => {
-        setSelectedRole(role);
-    };
-
-    const handleMentorRoleSelect = (role: MentorRole) => {
-        setSelectedRole(role);
-    };
+    }, [isAuthenticated, router, user?.role]);
 
     const handleViewApplicationStatus = useCallback(() => {
         // If already accepted, continue the verify-email / set-password flow directly.
@@ -115,9 +117,6 @@ export default function RoleSelectionScreen() {
         router.push("/(unauthenticated)");
     }, [hasSubmittedApplication, interestStatus, router, setInterestStatus]);
 
-    const isPastorSelected = selectedRole === 'pastor';
-    const isMentorSelected = selectedRole === 'mentor';
-    
     return (
         <LinearGradient
             colors={["#0D3B6E", "#0A5C8A", "#0B84B0"]}
@@ -180,10 +179,8 @@ export default function RoleSelectionScreen() {
                         style={[
                             styles.roleCard,
                             styles.pastorCard,
-                            isPastorSelected && styles.roleCardSelected,
-                            isPastorSelected && styles.pastorCardSelected,
                         ]}
-                        onPress={() => handlePastorRoleSelect('pastor')}
+                        onPress={() => handleRolePress("pastor")}
                     >
                         <View style={styles.roleCardLeft}>
                             <View style={[styles.roleIconWrap, { backgroundColor: 'rgba(125,212,248,0.15)' }]}>
@@ -196,7 +193,7 @@ export default function RoleSelectionScreen() {
                         </View>
                         <View style={[styles.roleArrow, styles.pastorArrow]}>
                             <Ionicons
-                                name={isPastorSelected ? 'checkmark' : 'chevron-forward'}
+                                name={'chevron-forward'}
                                 size={16}
                                 color={accent.tealDeep}
                             />
@@ -207,10 +204,8 @@ export default function RoleSelectionScreen() {
                         style={[
                             styles.roleCard,
                             styles.mentorCard,
-                            isMentorSelected && styles.roleCardSelected,
-                            isMentorSelected && styles.mentorCardSelected,
                         ]}
-                        onPress={() => handleMentorRoleSelect('mentor')}
+                        onPress={() => handleRolePress("mentor")}
                     >
                         <View style={styles.roleCardLeft}>
                             <View style={[styles.roleIconWrap, { backgroundColor: 'rgba(168,230,207,0.15)' }]}>
@@ -223,7 +218,7 @@ export default function RoleSelectionScreen() {
                         </View>
                         <View style={[styles.roleArrow, styles.mentorArrow]}>
                             <Ionicons
-                                name={isMentorSelected ? 'checkmark' : 'chevron-forward'}
+                                name={'chevron-forward'}
                                 size={16}
                                 color={accent.mint}
                             />
@@ -245,19 +240,13 @@ export default function RoleSelectionScreen() {
                                 <View style={styles.statusTitleRow}>
                                     <Text style={styles.statusTitle}>Application status</Text>
                                 </View>
+                                <Text style={styles.statusHint} numberOfLines={2}>
+                                    {applicationStatusHint}
+                                </Text>
                             </View>
                         </View>
                         <View style={styles.statusArrowCircle}>
                             <Ionicons name="chevron-forward" size={16} color={accent.tealDeep} />
-                        </View>
-                    </Pressable>
-                )}
-
-                {!!selectedRole && (
-                    <Pressable style={styles.continueBtn} onPress={handleContinue}>
-                        <Text style={styles.continueText}>Continue</Text>
-                        <View style={styles.continueArrowCircle}>
-                            <Ionicons name="arrow-forward" size={16} color={accent.tealDeep} />
                         </View>
                     </Pressable>
                 )}
@@ -401,21 +390,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderLeftWidth: 3,
     },
-    roleCardSelected: {
-        borderWidth: 1.5,
-        backgroundColor: 'rgba(255,255,255,0.12)',
-    },
     pastorCard: {
         borderLeftColor: accent.gold,
     },
-    pastorCardSelected: {
-        borderColor: 'rgba(232, 200, 138, 0.55)',
-    },
     mentorCard: {
         borderLeftColor: accent.mint,
-    },
-    mentorCardSelected: {
-        borderColor: 'rgba(111, 212, 190, 0.55)',
     },
     roleCardLeft: {
         flexDirection: 'row',
@@ -460,36 +439,6 @@ const styles = StyleSheet.create({
     mentorArrow: {
         backgroundColor: accent.mintSoft,
     },
-    continueBtn: {
-        width: '100%',
-        borderRadius: 999,
-        paddingVertical: 16,
-        paddingHorizontal: 22,
-        backgroundColor: '#fff',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.24,
-        shadowRadius: 14,
-        elevation: 8,
-    },
-    continueText: {
-        color: '#0A3F6B',
-        fontWeight: '700',
-        fontSize: 16,
-        letterSpacing: 0.2,
-    },
-    continueArrowCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: 'rgba(232, 200, 138, 0.35)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
     // Application status quick entry
     statusPill: {
         width: "100%",
@@ -533,6 +482,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         gap: 10,
+    },
+    statusHint: {
+        marginTop: 3,
+        color: "rgba(255,255,255,0.62)",
+        fontSize: 11,
+        lineHeight: 15,
+        fontWeight: "600",
     },
     statusSubtitle: {
         color: "rgba(255,255,255,0.6)",
