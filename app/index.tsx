@@ -42,6 +42,10 @@ export default function RoleSelectionScreen() {
     } = useOnboardingStore();
 
     const hasSubmittedApplication = !!userId && (!!applicationId || !!interestData);
+    const showApplicationStatusButton =
+        !isAuthenticated &&
+        hasSubmittedApplication &&
+        (interestStatus === "pending" || interestStatus === "new");
 
     const handleClearStorage = useCallback(async () => {
         Alert.alert('Clear All Data', 'This will log you out and clear all stored data. Continue?', [
@@ -222,7 +226,7 @@ export default function RoleSelectionScreen() {
 
                 </View>
 
-                {hasSubmittedApplication && (
+                {showApplicationStatusButton && (
                     <Pressable
                         style={styles.statusPill}
                         onPress={handleViewApplicationStatus}
@@ -232,17 +236,9 @@ export default function RoleSelectionScreen() {
                                 <Ionicons name="time-outline" size={18} color="#fff" />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.statusTitle}>View Application Status</Text>
-                                {!!applicationId && (
-                                    <Text style={styles.statusSubtitle} numberOfLines={1}>
-                                        Application ID: {applicationId}
-                                    </Text>
-                                )}
-                                {!applicationId && (
-                                    <Text style={styles.statusSubtitle} numberOfLines={1}>
-                                        Continue where you left off
-                                    </Text>
-                                )}
+                                <View style={styles.statusTitleRow}>
+                                    <Text style={styles.statusTitle}>Application status</Text>
+                                </View>
                             </View>
                         </View>
                         <View style={styles.statusArrowCircle}>
@@ -501,6 +497,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         marginBottom: 14,
+        borderLeftWidth: 3,
+        borderLeftColor: accent.mint,
     },
     statusPillLeft: {
         flexDirection: "row",
@@ -523,6 +521,12 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontSize: 14,
         fontWeight: "800",
+    },
+    statusTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
     },
     statusSubtitle: {
         color: "rgba(255,255,255,0.6)",
