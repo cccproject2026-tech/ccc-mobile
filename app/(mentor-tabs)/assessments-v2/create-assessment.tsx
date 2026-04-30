@@ -4,7 +4,6 @@ import { icons } from "@/constants/images";
 import { useCreateAssessment } from "@/hooks/assessments";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -20,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 interface Instruction {
   id: string;
@@ -420,7 +420,7 @@ export default function CreateAssessmentPage() {
   };
 
   return (
-    <LinearGradient colors={["#155C93", "#1B2B60"]} style={{ flex: 1 }}>
+    <AppGradientBackground style={{ flex: 1 }}>
       <TopBar role="mentor" showUserName notifications={3} />
 
       {/* Header */}
@@ -666,7 +666,7 @@ export default function CreateAssessmentPage() {
         visible={showSuccessModal}
         onClose={handleSuccessModalClose}
       />
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

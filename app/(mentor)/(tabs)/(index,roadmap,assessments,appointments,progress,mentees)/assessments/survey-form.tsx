@@ -5,7 +5,7 @@ import { SurveyModal } from "@/components/atom/surveyModal";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Stack } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -108,10 +108,7 @@ export default function SurveyForm() {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <ScrollView
@@ -204,7 +201,7 @@ export default function SurveyForm() {
             />
           </ScrollView>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

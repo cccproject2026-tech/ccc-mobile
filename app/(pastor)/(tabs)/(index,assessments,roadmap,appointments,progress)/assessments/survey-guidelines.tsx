@@ -7,6 +7,7 @@ import { useAssessmentStore } from "@/stores/assessment.store";
 import { ApiAssessment } from "@/types/assessment.types";
 import { getFontSize, getSpacing } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo } from "react";
@@ -209,8 +210,7 @@ export default function SurveyGuidelinesPage() {
   // Loading state
   if (isLoading || isLoadingAnswers) {
     return (
-      <LinearGradient
-        colors={["#176192", "#1D548D", "#264387"]}
+      <AppGradientBackground
         style={[
           styles.container,
           { justifyContent: "center", alignItems: "center" },
@@ -220,15 +220,14 @@ export default function SurveyGuidelinesPage() {
         <Text style={{ color: "#fff", marginTop: 16 }}>
           Loading assessment...
         </Text>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   // Error state
   if (error || !assessment) {
     return (
-      <LinearGradient
-        colors={["#176192", "#1D548D", "#264387"]}
+      <AppGradientBackground
         style={[
           styles.container,
           { justifyContent: "center", alignItems: "center" },
@@ -246,7 +245,7 @@ export default function SurveyGuidelinesPage() {
             Go Back
           </Text>
         </TouchableOpacity>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -261,10 +260,7 @@ export default function SurveyGuidelinesPage() {
   }
 
   return (
-    <LinearGradient
-      colors={["#176192", "#1D548D", "#264387"]}
-      style={styles.container}
-    >
+    <AppGradientBackground style={styles.container}>
       <TopBar showUserName={true} showNotifications={true} />
       <View style={styles.headerContainer}>
         <View style={styles.header}>
@@ -380,7 +376,7 @@ export default function SurveyGuidelinesPage() {
           </TouchableOpacity>
         )}
       </ScrollView>
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

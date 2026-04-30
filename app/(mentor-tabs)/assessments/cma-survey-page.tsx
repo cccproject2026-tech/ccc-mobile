@@ -6,9 +6,8 @@ import {
   Header
 } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
 import { useAssessment } from "@/hooks/assessments";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -49,10 +48,7 @@ export default function CmaSurvey() {
 
   if (loading) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -62,16 +58,13 @@ export default function CmaSurvey() {
             </Text>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   if (error || !assessment) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
@@ -80,7 +73,7 @@ export default function CmaSurvey() {
             </Text>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -88,10 +81,7 @@ export default function CmaSurvey() {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <ScrollView
@@ -164,7 +154,7 @@ export default function CmaSurvey() {
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}
         />
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

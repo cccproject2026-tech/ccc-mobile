@@ -7,7 +7,7 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssessment, useSubmitAssessmentAnswers } from "@/hooks/assessments";
 import { useAuthStore } from "@/stores/auth.store";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -188,10 +188,7 @@ export default function SurveyForm() {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <ScrollView
@@ -267,7 +264,7 @@ export default function SurveyForm() {
             />
           </ScrollView>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

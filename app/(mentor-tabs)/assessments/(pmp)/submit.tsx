@@ -7,7 +7,7 @@ import { PastorNavigationHeader } from "@/components/pastor/Header";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
@@ -142,10 +142,7 @@ export default function Submit() {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <ScrollView
@@ -274,7 +271,7 @@ export default function Submit() {
             />
           </ScrollView>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

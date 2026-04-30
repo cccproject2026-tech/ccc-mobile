@@ -18,7 +18,7 @@ import { useAssessmentStore } from "@/stores/assessment.store";
 import { ApiAssessment } from "@/types/assessment.types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -385,8 +385,7 @@ export default function AnswerQuestionPage() {
     isTriggeringJumpstart
   ) {
     return (
-      <LinearGradient
-        colors={["#176192", "#1D548D", "#264387"]}
+      <AppGradientBackground
         style={[
           styles.container,
           { justifyContent: "center", alignItems: "center" },
@@ -402,7 +401,7 @@ export default function AnswerQuestionPage() {
                 ? "Loading submitted answers..."
                 : "Loading assessment..."}
         </Text>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -416,8 +415,7 @@ export default function AnswerQuestionPage() {
         : "Failed to load assessment";
 
     return (
-      <LinearGradient
-        colors={["#176192", "#1D548D", "#264387"]}
+      <AppGradientBackground
         style={[
           styles.container,
           { justifyContent: "center", alignItems: "center" },
@@ -435,15 +433,12 @@ export default function AnswerQuestionPage() {
             Go Back
           </Text>
         </TouchableOpacity>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   return (
-    <LinearGradient
-      colors={["#176192", "#1D548D", "#264387"]}
-      style={styles.container}
-    >
+    <AppGradientBackground style={styles.container}>
       {showPreSurvey ? (
         <TopBar showUserName={true} showNotifications={true} />
       ) : (
@@ -523,7 +518,7 @@ export default function AnswerQuestionPage() {
         }}
         title={successMessage}
       />
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

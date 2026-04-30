@@ -3,11 +3,11 @@ import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { ApiAssessment, Assessment } from "@/lib/assessments/types";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 // Mock images - alternating between community and roadmap images
 const assessmentImages = [
@@ -123,7 +123,7 @@ export default function SelectAssessmentPage() {
   };
 
   return (
-    <LinearGradient colors={["#155C93", "#1B2B60"]} style={{ flex: 1 }}>
+    <AppGradientBackground style={{ flex: 1 }}>
       <TopBar
         userName="Mentor"
         showUserName
@@ -335,7 +335,7 @@ export default function SelectAssessmentPage() {
           </ScrollView>
         )}
       </View>
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

@@ -1,9 +1,8 @@
 import { Button } from "@/components/atom/buttons";
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Header, QuestionFields } from "@/components/build-components";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -61,10 +60,7 @@ export default function AnswerQuestionPage() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <SafeAreaView style={styles.scrollContainer}>
           <KeyboardAwareScrollView
             enableOnAndroid
@@ -133,7 +129,7 @@ export default function AnswerQuestionPage() {
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}
         />
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

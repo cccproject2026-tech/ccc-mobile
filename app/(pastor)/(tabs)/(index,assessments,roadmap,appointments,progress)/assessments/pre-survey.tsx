@@ -5,7 +5,7 @@ import { useAssessmentStore } from '@/stores/assessment.store';
 import { ApiAssessment } from '@/types/assessment.types';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
@@ -86,21 +86,19 @@ export default function PreSurveyPage() {
     // Loading state
     if (isLoading) {
         return (
-            <LinearGradient
-                colors={['#176192', '#1D548D', '#264387']}
+            <AppGradientBackground
                 style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}
             >
                 <ActivityIndicator size="large" color="#fff" />
                 <Text style={{ color: '#fff', marginTop: 16 }}>Loading assessment...</Text>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     // Error state
     if (error || !assessment) {
         return (
-            <LinearGradient
-                colors={['#176192', '#1D548D', '#264387']}
+            <AppGradientBackground
                 style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}
             >
                 <Ionicons name="alert-circle-outline" size={64} color="#fff" />
@@ -108,30 +106,26 @@ export default function PreSurveyPage() {
                 <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
                     <Text style={{ color: '#fff', textDecorationLine: 'underline' }}>Go Back</Text>
                 </TouchableOpacity>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     // No pre-survey questions
     if (!assessment.preSurvey || assessment.preSurvey.length === 0) {
         return (
-            <LinearGradient
-                colors={['#176192', '#1D548D', '#264387']}
+            <AppGradientBackground
                 style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}
             >
                 <Text style={{ color: '#fff', fontSize: 16 }}>No pre-survey questions available</Text>
                 <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
                     <Text style={{ color: '#fff', textDecorationLine: 'underline' }}>Go Back</Text>
                 </TouchableOpacity>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     return (
-        <LinearGradient
-            colors={['#176192', '#1D548D', '#264387']}
-            style={styles.container}
-        >
+        <AppGradientBackground style={styles.container}>
             <TopBar
                 userName="John Ross"
                 showUserName={true}
@@ -199,7 +193,7 @@ export default function PreSurveyPage() {
                     </TouchableOpacity>
                 </View>
             </KeyboardAwareScrollView>
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

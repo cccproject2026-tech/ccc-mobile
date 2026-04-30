@@ -13,7 +13,6 @@ import { Assessment } from "@/lib/assessments/types";
 import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
@@ -27,6 +26,7 @@ import {
 } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function MentorAssessmentsLibrary() {
   const { bottom } = useSafeAreaInsets();
@@ -200,7 +200,7 @@ export default function MentorAssessmentsLibrary() {
   };
 
   return (
-    <LinearGradient colors={["#155C93", "#1B2B60"]} style={{ flex: 1 }}>
+    <AppGradientBackground style={{ flex: 1 }}>
       <TopBar showUserName notifications={3} role="mentor" />
 
       <View style={{ paddingHorizontal: 16 }}>
@@ -423,7 +423,7 @@ export default function MentorAssessmentsLibrary() {
         visible={showDeleteSuccessModal}
         onClose={handleDeleteSuccessModalClose}
       />
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

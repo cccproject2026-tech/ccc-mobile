@@ -5,7 +5,6 @@ import { useAssignAssessment } from "@/hooks/assessments";
 import { icons } from "@/constants/images";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -20,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 interface MenteeDisplay {
   id: string;
@@ -130,7 +130,7 @@ export default function AssignToPage() {
   };
 
   return (
-    <LinearGradient colors={["#155C93", "#1B2B60"]} style={{ flex: 1 }}>
+    <AppGradientBackground style={{ flex: 1 }}>
       <TopBar
         userName="John Doe"
         showUserName
@@ -299,7 +299,7 @@ export default function AssignToPage() {
         visible={showSuccessModal}
         onClose={handleSuccessModalClose}
       />
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

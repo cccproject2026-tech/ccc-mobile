@@ -4,7 +4,6 @@ import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { useAssessment, useUpdateAssessmentInstructions } from "@/hooks/assessments";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -21,6 +20,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 interface Instruction {
   id: string;
@@ -131,10 +131,7 @@ export default function EditInstructionsPage() {
 
   if (loading) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground style={{ flex: 1 }}>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <View
@@ -150,16 +147,13 @@ export default function EditInstructionsPage() {
             </Text>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   if (error || !assessment) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground style={{ flex: 1 }}>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <View
@@ -175,7 +169,7 @@ export default function EditInstructionsPage() {
             </Text>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -183,10 +177,7 @@ export default function EditInstructionsPage() {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground style={{ flex: 1 }}>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <TopBar
@@ -344,7 +335,7 @@ export default function EditInstructionsPage() {
           visible={showSuccessModal}
           onClose={handleSuccessModalClose}
         />
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }
