@@ -5,11 +5,13 @@ import "@/global.css";
 import '@/services/api/interceptors';
 import { useAuthStore } from '@/stores/auth.store';
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import Toast from 'react-native-toast-message';
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 
 const queryClient = new QueryClient({
@@ -26,6 +28,14 @@ const toastConfig = {
   floating: (props: any) => <FloatingToast {...props} />,
 };
 
+const TransparentNavTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: "transparent",
+  },
+};
+
 function RootLayoutNav() {
   const { isAuthenticated, user } = useAuthStore();
 
@@ -40,6 +50,7 @@ function RootLayoutNav() {
     <Stack
       screenOptions={{
         headerShown: false,
+        contentStyle: { backgroundColor: "transparent" },
       }}
     >
       {/* ✅ ADDED: Root index - Always accessible for role selection */}
@@ -81,7 +92,11 @@ export default function RootLayout() {
             <KeyboardProvider>
               <BottomSheetModalProvider>
                 <AppNotificationsProvider>
-                  <RootLayoutNav />
+                  <ThemeProvider value={TransparentNavTheme}>
+                    <AppGradientBackground>
+                      <RootLayoutNav />
+                    </AppGradientBackground>
+                  </ThemeProvider>
                 </AppNotificationsProvider>
                 <Toast config={toastConfig} topOffset={60} />
               </BottomSheetModalProvider>

@@ -6,6 +6,7 @@ export default function UnauthenticatedLayout() {
             screenOptions={{
                 headerShown: false,
                 gestureEnabled: false,
+                contentStyle: { backgroundColor: "transparent" },
             }}
         />
 

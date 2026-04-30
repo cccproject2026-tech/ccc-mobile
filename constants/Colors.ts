@@ -31,6 +31,8 @@ export const Colors = {
   darkBlueGradientThree: "#21B6E9",
   lightBlueGradientFour: "#8A49E6",
   darkBlueGradientFour: "#21B6E9",
+  /** Home-screen background gradient (use app-wide for consistency) */
+  appBgGradient: ["#0F3B5C", "#1A4F7A", "#2389C2"] as const,
   customRed: "#FF4A4A",
   light: {
     text: "#11181C",

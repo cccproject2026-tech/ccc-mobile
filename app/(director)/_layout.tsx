@@ -17,6 +17,7 @@ export default function DirectorDrawerLayout() {
                         width: Platform.OS === 'android' ? 290 : 320,
                     },
                     headerShown: false,
+                    sceneContainerStyle: { backgroundColor: "transparent" },
                 }}
             >
                 <Drawer.Screen

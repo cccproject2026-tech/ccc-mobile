@@ -1,10 +1,10 @@
 import TopBar from "@/components/director/TopBar";
 import { RoadmapCard } from "@/components/director/ProgressRoadmapCard";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Colors } from "@/constants/Colors";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -95,18 +95,18 @@ export default function PastorRoadmapIndex() {
 
   if (isLoading) {
     return (
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground>
         <TopBar role="pastor" showUserName />
         <View style={styles.centerFill}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.loadingText}>Loading your roadmaps...</Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   return (
-    <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={styles.root}>
+    <AppGradientBackground style={styles.root}>
       <View style={styles.bgCircleTop} pointerEvents="none" />
       <View style={styles.bgCircleBottom} pointerEvents="none" />
 
@@ -213,7 +213,7 @@ export default function PastorRoadmapIndex() {
           )}
         </View>
       </ScrollView>
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

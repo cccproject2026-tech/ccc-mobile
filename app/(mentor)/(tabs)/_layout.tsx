@@ -72,6 +72,7 @@ export default function MentorTabLayout() {
                         tabBarActiveTintColor: '#fff',
                         headerShown: false,
                         tabBarButton: HapticTab,
+                        sceneContainerStyle: { backgroundColor: "transparent" },
                         tabBarStyle: {
                             backgroundColor: '#221C70',
                             borderTopWidth: 0,

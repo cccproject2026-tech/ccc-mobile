@@ -15,6 +15,7 @@ import {
     Text,
     View,
 } from "react-native";
+import * as DropdownMenu from "zeego/dropdown-menu";
 
 function normalizeMeetingUrl(raw: string): string {
   const t = raw.trim();
@@ -22,7 +23,6 @@ function normalizeMeetingUrl(raw: string): string {
   if (/^https?:\/\//i.test(t)) return t;
   return `https://${t}`;
 }
-import * as DropdownMenu from "zeego/dropdown-menu";
 
 export interface MenuItem {
   key: string;

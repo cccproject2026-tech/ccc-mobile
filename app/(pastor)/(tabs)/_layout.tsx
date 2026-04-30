@@ -134,6 +134,7 @@ export default function PastorTabLayout() {
                         tabBarButton: HapticTab,
                         tabBarActiveTintColor:   '#fff',
                         tabBarInactiveTintColor: 'rgba(255,255,255,0.38)',
+                        sceneContainerStyle: { backgroundColor: "transparent" },
                         tabBarStyle: {
                             // Solid deep navy — clean & premium
                             backgroundColor: '#0D3351',

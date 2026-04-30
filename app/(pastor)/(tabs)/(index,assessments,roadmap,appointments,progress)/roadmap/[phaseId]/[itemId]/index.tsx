@@ -2,13 +2,13 @@ import ContextMenu, { MenuItem } from "@/components/director/ContextMenu";
 import ExpectedOutcomeModal from "@/components/director/ExpectedOutcomeModal";
 import TopBar from "@/components/director/TopBar";
 import { MentorTaskView } from "@/components/roadmaps/MentorTaskView";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Colors } from "@/constants/Colors";
 import { useRoadmap, useRoadmapComments, useRoadmapQueries } from "@/hooks/roadmaps/useRoadmaps";
 import { getTasks } from "@/lib/roadmap/helpers";
 import type { NestedRoadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -131,18 +131,18 @@ export default function PastorRoadmapItemDetail() {
 
   if (isLoading) {
     return (
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground>
         <TopBar role="pastor" showUserName />
         <View style={styles.centerFill}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.loadingText}>Loading task…</Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   return (
-    <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={styles.root}>
+    <AppGradientBackground style={styles.root}>
       <View style={styles.bgCircleTop} pointerEvents="none" />
       <View style={styles.bgCircleBottom} pointerEvents="none" />
       <TopBar role="pastor" showUserName />
@@ -337,7 +337,7 @@ export default function PastorRoadmapItemDetail() {
         onEdit={() => setShowOutcomeModal(false)}
         onDownload={() => {}}
       />
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

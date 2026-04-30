@@ -334,7 +334,8 @@ export const usePastorFocusItems = () => {
           meta: `${scheduler} • ${withWhom} • Within ${UPCOMING_MEETING_WINDOW_HOURS} hours`,
           accentColor: "#38BDF8",
           route: {
-            pathname: "/appointments",
+            pathname: "/appointments/meeting-details",
+            params: { appointmentId: String(appointment.id) },
           },
         };
       });
@@ -362,7 +363,8 @@ export const usePastorFocusItems = () => {
           meta: `${scheduler} • ${withWhom} • This month`,
           accentColor: "#22D3EE",
           route: {
-            pathname: "/appointments",
+            pathname: "/appointments/meeting-details",
+            params: { appointmentId: String(appointment.id) },
           },
         };
       });

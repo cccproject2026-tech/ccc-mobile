@@ -38,7 +38,7 @@ export const unstable_settings = {
 
 export default function SharedStackLayout({ segment }: { segment: string }) {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }}>
       {/* Roadmap routes */}
       <Stack.Screen name="roadmap/landing/landing" />
       <Stack.Screen name="roadmap/[phaseId]/index" />

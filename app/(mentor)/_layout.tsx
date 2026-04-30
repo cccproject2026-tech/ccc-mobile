@@ -50,6 +50,7 @@ export default function MentorDrawerLayout() {
                 },
                 headerShown: false,
                 freezeOnBlur: true,
+                sceneContainerStyle: { backgroundColor: "transparent" },
             }}
         >
             <Drawer.Screen

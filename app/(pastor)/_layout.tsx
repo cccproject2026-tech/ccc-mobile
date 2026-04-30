@@ -48,6 +48,7 @@ export default function PastorDrawerLayout() {
                 },
                 headerShown: false,
                 freezeOnBlur: true,
+                sceneContainerStyle: { backgroundColor: "transparent" },
             }}
         >
             <Drawer.Screen

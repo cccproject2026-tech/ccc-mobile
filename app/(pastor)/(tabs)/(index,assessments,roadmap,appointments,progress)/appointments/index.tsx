@@ -17,6 +17,7 @@ import { Mentor, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentor
 import { useAuthStore } from "@/stores";
 import { Appointment, AppointmentPlatform } from "@/types/appointment.types";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -347,7 +348,7 @@ const Appointments = () => {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
+        colors={[...Colors.appBgGradient]}
         style={{ flex: 1 }}
       >
         <>
@@ -369,21 +370,26 @@ const Appointments = () => {
               showsVerticalScrollIndicator={false}
             >
               <View
-                style={{
-                  width: "100%",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  paddingHorizontal: 16,
-                  paddingTop: 20,
-                }}
+                style={styles.screenContent}
               >
                 <View style={styles.calendarContainer}>
                   <View style={styles.calendarHeader}>
-                    <Image source={icons.calendarIcon} style={{ width: 24, height: 24 }} />
-                    <Text style={styles.calendarTitle}>
-                      Monthly Meeting Calendar
-                    </Text>
+                    <View style={styles.calendarHeaderLeft}>
+                      <View style={styles.calendarIconWrap}>
+                        <Image source={icons.calendarIcon} style={{ width: 18, height: 18 }} />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.calendarTitle} numberOfLines={1}>
+                          Monthly Meeting Calendar
+                        </Text>
+                        <Text style={styles.calendarSubtitle} numberOfLines={1}>
+                          Select a date to view your meetings
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.datePill}>
+                      <Text style={styles.datePillText}>{formatDisplayDate(selectedDate)}</Text>
+                    </View>
                   </View>
 
                   <View style={{ minHeight: 400 }}>
@@ -399,13 +405,20 @@ const Appointments = () => {
 
                 {finalSelectedDateAppointments.length > 0 && (
                   <View style={styles.appointmentsContainer}>
-                    <View style={styles.rowBetween}>
-                      <Text style={styles.upcomingText}>
-                        {isToday(selectedDate)
-                          ? `You have ${finalSelectedDateAppointments.length} Appointments Today`
-                          : `You have ${finalSelectedDateAppointments.length} Appointments on ${formatDisplayDate(selectedDate)}`
-                        }
-                      </Text>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionHeaderLeft}>
+                        <Text style={styles.sectionTitle} numberOfLines={1}>
+                          {isToday(selectedDate) ? "Appointments" : "Appointments"}
+                        </Text>
+                        <Text style={styles.sectionSubtitle} numberOfLines={1}>
+                          {isToday(selectedDate)
+                            ? "Scheduled for today"
+                            : `Scheduled for ${formatDisplayDate(selectedDate)}`}
+                        </Text>
+                      </View>
+                      <View style={styles.countPill}>
+                        <Text style={styles.countPillText}>{finalSelectedDateAppointments.length}</Text>
+                      </View>
                     </View>
                     <View style={{ gap: 10 }}>
                       {finalSelectedDateAppointments.map((appointment) => {
@@ -452,26 +465,38 @@ const Appointments = () => {
 
                 {finalSelectedDateAppointments.length === 0 && (
                   <View style={styles.appointmentsContainer}>
-                    <View style={styles.rowBetween}>
-                      <Text style={styles.upcomingText}>
-                        {isToday(selectedDate)
-                          ? "No Appointments Today"
-                          : `No Appointments on ${formatDisplayDate(selectedDate)}`
-                        }
-                      </Text>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionHeaderLeft}>
+                        <Text style={styles.sectionTitle} numberOfLines={1}>
+                          {isToday(selectedDate) ? "No appointments today" : "No appointments"}
+                        </Text>
+                        <Text style={styles.sectionSubtitle} numberOfLines={2}>
+                          {isToday(selectedDate)
+                            ? "Try selecting another date or schedule a new meeting."
+                            : `No meetings on ${formatDisplayDate(selectedDate)}. Pick a different date or schedule one.`}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.noAppointmentsContainer}>
-                      <Text style={styles.noAppointmentsText}>
-                        Select a different date to view appointments or schedule a new meeting.
-                      </Text>
+                    <View style={styles.emptyStateIconWrap}>
+                      <Ionicons name="calendar-outline" size={26} color="rgba(255,255,255,0.55)" />
                     </View>
                   </View>
                 )}
 
                 {nextAppointments.length > 0 && (
                   <View style={styles.appointmentsContainer}>
-                    <View style={styles.rowBetween}>
-                      <Text style={styles.upcomingText}>Next Appointment</Text>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionHeaderLeft}>
+                        <Text style={styles.sectionTitle} numberOfLines={1}>
+                          Next up
+                        </Text>
+                        <Text style={styles.sectionSubtitle} numberOfLines={1}>
+                          Your upcoming meetings
+                        </Text>
+                      </View>
+                      <View style={styles.countPillMuted}>
+                        <Text style={styles.countPillTextMuted}>{Math.min(nextAppointments.length, 3)}</Text>
+                      </View>
                     </View>
                     <View style={{ gap: 10 }}>
                       {nextAppointments.map((appointment) => {
@@ -642,28 +667,74 @@ export default Appointments;
 
 
 const styles = StyleSheet.create({
+  screenContent: {
+    width: "100%",
+    flexDirection: "column",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
   // Calendar Container
   calendarContainer: {
     width: "100%",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "white",
-    paddingVertical: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    paddingVertical: 14,
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 16,
   },
 
   // Calendar Header with Icon
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
+    gap: 10,
     marginBottom: 12,
+  },
+  calendarHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+  calendarIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
   },
 
   calendarTitle: {
     fontSize: 16,
-    color: "white",
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  calendarSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.6)",
     fontWeight: "500",
+  },
+  datePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+  },
+  datePillText: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   // Wrapper to control calendar height
@@ -674,39 +745,62 @@ const styles = StyleSheet.create({
 
   // Appointments Container
   appointmentsContainer: {
-    marginTop: 16,
+    marginTop: 14,
     position: "relative",
     width: "100%",
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.09)",
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-    borderRadius: 10,
+    borderColor: "rgba(255,255,255,0.12)",
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 16,
   },
 
-  rowBetween: {
-    marginVertical: 10,
+  sectionHeader: {
     flexDirection: "row",
+    alignItems: "flex-start",
     justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 10,
   },
-
-  upcomingText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontFamily: "AlbertSans-Bold",
-    textAlign: "center",
-  },
-
-  noAppointmentsContainer: {
-    paddingVertical: 20,
+  sectionHeaderLeft: { flex: 1, minWidth: 0 },
+  sectionTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
+  sectionSubtitle: { marginTop: 4, color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: "600", lineHeight: 17 },
+  countPill: {
+    minWidth: 30,
+    height: 26,
     paddingHorizontal: 10,
+    borderRadius: 999,
     alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(250, 204, 21, 0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(250, 204, 21, 0.25)",
   },
+  countPillText: { color: "rgba(250, 204, 21, 0.95)", fontSize: 13, fontWeight: "900" },
+  countPillMuted: {
+    minWidth: 30,
+    height: 26,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+  },
+  countPillTextMuted: { color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "900" },
 
-  noAppointmentsText: {
-    color: "rgba(255, 255, 255, 0.7)",
-    fontSize: 12,
-    textAlign: "center",
-    lineHeight: 18,
+  emptyStateIconWrap: {
+    marginTop: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    alignSelf: "flex-start",
   },
 });

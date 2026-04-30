@@ -3,6 +3,7 @@ import PMPBottomSheet from "@/components/director/PMPBottomSheet";
 import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Colors } from "@/constants/Colors";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import type { Assessment } from "@/types/assessment.types";
@@ -10,7 +11,6 @@ import { sharePdfFromHtml } from "@/utils/pdf";
 import { getFontSize, getIconSize, getSpacing } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -235,27 +235,21 @@ export default function Survey() {
   // Loading state (initial load only)
   if (isLoading && !isRefetching) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={styles.centerContainer}
-      >
+      <AppGradientBackground style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#fff" />
         <Text style={styles.loadingText}>Loading assessments...</Text>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   // Error state
   if (error && !assessments.length) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={styles.centerContainer}
-      >
+      <AppGradientBackground style={styles.centerContainer}>
         <Ionicons name="alert-circle-outline" size={64} color="#fff" />
         <Text style={styles.errorText}>Failed to load assessments</Text>
         <Text style={styles.errorSubtext}>Pull down to retry</Text>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -269,10 +263,7 @@ export default function Survey() {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground style={{ flex: 1 }}>
         <View style={styles.bgCircleTop} pointerEvents="none" />
         <View style={styles.bgCircleBottom} pointerEvents="none" />
         <View style={styles.scrollContainer}>
@@ -393,7 +384,7 @@ export default function Survey() {
             </View>
           </ScrollView>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
 
       <PMPBottomSheet
         ref={pmpBottomSheetRef}

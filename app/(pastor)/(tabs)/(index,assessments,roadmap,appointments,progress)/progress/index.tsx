@@ -4,6 +4,7 @@ import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarCh
 import { ProgressPieChart } from "@/components/director/ProgressPieChart";
 import { RoadmapCard } from "@/components/director/ProgressRoadmapCard";
 import TopBar from "@/components/director/TopBar";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
@@ -13,7 +14,6 @@ import { getRoadmapCard } from '@/lib/roadmap/mappers';
 import { sharePdfFromHtml } from "@/utils/pdf";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
@@ -209,20 +209,20 @@ export default function ProgressScreen() {
   // Loading screen
   if (isLoading) {
     return (
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground>
         <TopBar role="pastor" showUserName />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={{ color: '#fff', marginTop: 16 }}>Loading your progress...</Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   // Error screen
   if (progressError) {
     return (
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground>
         <TopBar role="pastor" showUserName />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
           <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center' }}>
@@ -232,7 +232,7 @@ export default function ProgressScreen() {
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -265,7 +265,7 @@ export default function ProgressScreen() {
   );
 
   return (
-    <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+    <AppGradientBackground>
       <View style={styles.bgCircleTop} pointerEvents="none" />
       <View style={styles.bgCircleBottom} pointerEvents="none" />
       <View style={styles.scrollContainer}>
@@ -433,7 +433,7 @@ export default function ProgressScreen() {
           onDownload={handleDownload}
         />
       </View>
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

@@ -3,10 +3,10 @@ import { Header } from "@/components/build-components";
 import RoadmapCard from "@/components/director/ProgressRoadmapCard";
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from "@/components/director/TopBar";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Colors } from "@/constants/Colors";
 import { mockRevitalization } from '@/lib/roadmap/mock';
 import type { RoadmapCardData, RoadmapCardStatus, Task } from '@/lib/roadmap/types';
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
 import { ScrollView, View } from "react-native";
@@ -199,10 +199,7 @@ export default function Assignment() {
   const { bottom } = useSafeAreaInsets();
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground style={{ flex: 1 }}>
         <View style={{
           flex: 1
         }}>
@@ -257,7 +254,7 @@ export default function Assignment() {
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}
         />
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }
