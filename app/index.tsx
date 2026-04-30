@@ -32,7 +32,16 @@ export default function RoleSelectionScreen() {
     const [selectedRole, setSelectedRole] = useState<RoleOption | null>(null);
 
     const { user, isAuthenticated, logout } = useAuthStore();
-    const { reset: resetOnboarding } = useOnboardingStore();
+    const {
+        reset: resetOnboarding,
+        userId,
+        applicationId,
+        interestData,
+        interestStatus,
+        setInterestStatus,
+    } = useOnboardingStore();
+
+    const hasSubmittedApplication = !!userId && (!!applicationId || !!interestData);
 
     const handleClearStorage = useCallback(async () => {
         Alert.alert('Clear All Data', 'This will log you out and clear all stored data. Continue?', [
@@ -87,6 +96,14 @@ export default function RoleSelectionScreen() {
     const handleMentorRoleSelect = (role: MentorRole) => {
         setSelectedRole(role);
     };
+
+    const handleViewApplicationStatus = useCallback(() => {
+        // If status is missing but we have a stored submission, default to pending to show the status flow.
+        if (!interestStatus && hasSubmittedApplication) {
+            setInterestStatus("pending");
+        }
+        router.push("/(unauthenticated)");
+    }, [hasSubmittedApplication, interestStatus, router, setInterestStatus]);
 
     const isPastorSelected = selectedRole === 'pastor';
     const isMentorSelected = selectedRole === 'mentor';
@@ -204,6 +221,35 @@ export default function RoleSelectionScreen() {
                     </Pressable>
 
                 </View>
+
+                {hasSubmittedApplication && (
+                    <Pressable
+                        style={styles.statusPill}
+                        onPress={handleViewApplicationStatus}
+                    >
+                        <View style={styles.statusPillLeft}>
+                            <View style={styles.statusIconWrap}>
+                                <Ionicons name="time-outline" size={18} color="#fff" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.statusTitle}>View Application Status</Text>
+                                {!!applicationId && (
+                                    <Text style={styles.statusSubtitle} numberOfLines={1}>
+                                        Application ID: {applicationId}
+                                    </Text>
+                                )}
+                                {!applicationId && (
+                                    <Text style={styles.statusSubtitle} numberOfLines={1}>
+                                        Continue where you left off
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
+                        <View style={styles.statusArrowCircle}>
+                            <Ionicons name="chevron-forward" size={16} color={accent.tealDeep} />
+                        </View>
+                    </Pressable>
+                )}
 
                 {!!selectedRole && (
                     <Pressable style={styles.continueBtn} onPress={handleContinue}>
@@ -440,6 +486,56 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(232, 200, 138, 0.35)',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+
+    // Application status quick entry
+    statusPill: {
+        width: "100%",
+        borderRadius: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        backgroundColor: "rgba(255,255,255,0.10)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.18)",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 14,
+    },
+    statusPillLeft: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        flex: 1,
+        paddingRight: 8,
+    },
+    statusIconWrap: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: "rgba(255,255,255,0.12)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.16)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    statusTitle: {
+        color: "#fff",
+        fontSize: 14,
+        fontWeight: "800",
+    },
+    statusSubtitle: {
+        color: "rgba(255,255,255,0.6)",
+        fontSize: 11,
+        marginTop: 2,
+    },
+    statusArrowCircle: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: "rgba(232, 200, 138, 0.35)",
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     // Footer
