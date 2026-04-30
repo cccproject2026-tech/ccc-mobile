@@ -22,6 +22,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 
@@ -43,12 +44,9 @@ export default function MentorshipInsightsScreen() {
   }, [sessions]);
 
   return (
-    <SafeAreaView
-      style={[styles.safe, { backgroundColor: TAB_SCENE_BOTTOM }]}
-      edges={["top"]}
-    >
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
+      <AppGradientBackground style={styles.gradient}>
         <View style={styles.topRow}>
           <Pressable style={styles.back} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={22} color={T.textPrimary} />
@@ -83,7 +81,7 @@ export default function MentorshipInsightsScreen() {
             <MentorshipInsightsBody data={insights} />
           </ScrollView>
         )}
-      </LinearGradient>
+      </AppGradientBackground>
     </SafeAreaView>
   );
 }

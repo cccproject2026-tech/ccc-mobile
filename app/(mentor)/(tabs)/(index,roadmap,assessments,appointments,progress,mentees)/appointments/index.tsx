@@ -33,6 +33,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 interface ResponseModalState {
   visible: boolean;
@@ -448,10 +449,7 @@ const Appointments: React.FC = () => {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <>
           <View style={{ paddingBottom: 10 }}>
             <TopBar role="mentor" showUserName />
@@ -779,7 +777,7 @@ const Appointments: React.FC = () => {
             </ScrollView>
           </View>
         </>
-      </LinearGradient>
+      </AppGradientBackground>
 
       {/* Schedule Meeting Bottom Sheet */}
       <ScheduleMeetingBottomSheet

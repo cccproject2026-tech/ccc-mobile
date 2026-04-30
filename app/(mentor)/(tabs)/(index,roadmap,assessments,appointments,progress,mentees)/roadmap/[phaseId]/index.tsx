@@ -12,14 +12,32 @@ import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
+} from 'react-native';
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type StatusTabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
 type TabKey = StatusTabKey | string;
 
 export default function RoadmapDetail() {
     const { phaseId, menteeId, menteeName } = useLocalSearchParams<{ phaseId: string, menteeId?: string, menteeName?: string }>();
+    const { bottom } = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
+
+    const horizontalPadding = useMemo(() => {
+        const v = Math.round(width * 0.05);
+        return Math.max(16, Math.min(24, v));
+    }, [width]);
+    const maxWidth = useMemo(() => (width >= 520 ? 520 : undefined), [width]);
 
     // Fetch single roadmap
     const targetUserId = menteeId;
@@ -239,43 +257,24 @@ export default function RoadmapDetail() {
     }
 
     return (
-        <AppGradientBackground style={{ flex: 1 }}>
+        <AppGradientBackground style={styles.root}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar role="mentor" showUserName />
             </View>
 
             {/* Header */}
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: getSpacing(8),
-                paddingVertical: getSpacing(16),
-                marginBottom: getSpacing(16),
-                borderBottomWidth: 1,
-                borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-            }}>
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    flex: 1,
-                    marginRight: getSpacing(12),
-                }}>
+            <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth }]}>
+                <View style={styles.headerRow}>
                     <TouchableOpacity
                         onPress={() => router.back()}
-                        style={{ marginRight: getSpacing(8) }}
+                        style={styles.backBtn}
                     >
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
 
-                    <View style={{ flex: 1, marginRight: getSpacing(8) }}>
+                    <View style={styles.headerTextCol}>
                         <Text
-                            style={{
-                                fontSize: isAndroid ? getFontSize(18) : getFontSize(15),
-                                fontWeight: '700',
-                                lineHeight: getFontSize(18),
-                                color: '#FFFFFF',
-                            }}
+                            style={styles.headerTitle}
                             numberOfLines={2}
                             ellipsizeMode="tail"
                         >
@@ -283,11 +282,7 @@ export default function RoadmapDetail() {
                         </Text>
                         {roadmap.roadMapDetails && (
                             <Text
-                                style={{
-                                    marginTop: getSpacing(4),
-                                    fontSize: getFontSize(12),
-                                    color: 'rgba(255, 255, 255, 0.8)',
-                                }}
+                                style={styles.headerSubtitle}
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
                             >
@@ -297,30 +292,17 @@ export default function RoadmapDetail() {
                     </View>
                 </View>
 
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: getSpacing(8),
-                }}>
+                <View style={styles.headerActions}>
                     {phaseNumber && (
-                        <View style={{
-                            backgroundColor: '#F7E35F',
-                            borderRadius: 10,
-                            paddingHorizontal: getSpacing(10),
-                            paddingVertical: getSpacing(2),
-                        }}>
-                            <Text style={{
-                                color: '#1D1D1D',
-                                fontWeight: '700',
-                                fontSize: getFontSize(13),
-                            }}>
+                        <View style={styles.phaseBadge}>
+                            <Text style={styles.phaseBadgeText}>
                                 Phase {phaseNumber}
                             </Text>
                         </View>
                     )}
                     <TouchableOpacity
                         onPress={() => setShowOutcomeMenu(true)}
-                        style={{ padding: getSpacing(4) }}
+                        style={styles.moreBtn}
                     >
                         <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
                     </TouchableOpacity>
@@ -328,19 +310,31 @@ export default function RoadmapDetail() {
             </View>
 
             {/* Search */}
-            <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+            <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth }]}>
                 <SearchBar value={search} onChangeValue={setSearch} />
             </View>
 
             {/* Tabs */}
-            <TabSwitcher
-                tabs={tabs}
-                activeTab={activeTab}
-                onChange={(key) => setActiveTab(key as TabKey)}
-            />
+            <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth }]}>
+                <TabSwitcher
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onChange={(key) => setActiveTab(key as TabKey)}
+                />
+            </View>
 
             {/* Content */}
-            <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[
+                    styles.content,
+                    {
+                        paddingHorizontal: horizontalPadding,
+                        paddingBottom: bottom + 20,
+                        maxWidth,
+                    },
+                ]}
+            >
                 {filteredTasks.length > 0 ? (
                     filteredTasks.map(task => {
                         const cardData = getTaskCard(task);
@@ -348,6 +342,7 @@ export default function RoadmapDetail() {
                             <Pressable
                                 key={task._id}
                                 onPress={() => router.push({pathname: `/(mentor)/roadmap/${phaseId}/${task._id}` as any, params: { menteeId: menteeId, menteeName: menteeName }})}
+                                style={styles.cardPress}
                             >
                                 <RoadmapCard data={cardData} />
                             </Pressable>
@@ -387,3 +382,55 @@ export default function RoadmapDetail() {
         </AppGradientBackground>
     );
 }
+
+const styles = StyleSheet.create({
+    root: { flex: 1 },
+    section: {
+        width: '100%',
+        alignSelf: 'center',
+        marginBottom: 12,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: getSpacing(14),
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255, 255, 255, 0.18)',
+    },
+    backBtn: { marginRight: getSpacing(8) },
+    headerTextCol: { flex: 1, minWidth: 0, marginRight: getSpacing(10) },
+    headerTitle: {
+        fontSize: isAndroid ? getFontSize(18) : getFontSize(16),
+        fontWeight: '800',
+        lineHeight: getFontSize(20),
+        color: '#FFFFFF',
+        letterSpacing: -0.2,
+    },
+    headerSubtitle: {
+        marginTop: getSpacing(4),
+        fontSize: getFontSize(12),
+        color: 'rgba(255, 255, 255, 0.8)',
+    },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: getSpacing(8) },
+    phaseBadge: {
+        backgroundColor: 'rgba(250, 204, 21, 0.28)',
+        borderRadius: 10,
+        paddingHorizontal: getSpacing(10),
+        paddingVertical: getSpacing(3),
+    },
+    phaseBadgeText: {
+        color: '#FDE68A',
+        fontWeight: '800',
+        fontSize: getFontSize(12.5),
+        letterSpacing: 0.2,
+    },
+    moreBtn: { padding: getSpacing(4) },
+    content: {
+        paddingTop: 4,
+        alignSelf: 'center',
+        width: '100%',
+        gap: 12,
+    },
+    cardPress: { borderRadius: 14, overflow: 'hidden' },
+});

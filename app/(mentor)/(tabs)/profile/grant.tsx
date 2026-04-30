@@ -20,6 +20,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 interface ProfileData {
   firstName: string;
@@ -206,10 +207,7 @@ export default function Grant() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <SafeAreaView style={{ flex: 1 }}>
           <PastorNavigationHeader showDrawer={false} showBackButton={true} wrapperClass="mt-5" />
           <KeyboardAvoidingView
@@ -684,7 +682,7 @@ export default function Grant() {
             </View>
           </View>
         </Modal>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

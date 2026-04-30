@@ -49,6 +49,7 @@ import {
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 const UNKNOWN_PASTOR_KEY = "__unknown_pastor__";
 
@@ -607,9 +608,9 @@ export default function SessionsScreen() {
   ), []);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: TAB_SCENE_BOTTOM }]} edges={["top"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
+      <AppGradientBackground style={styles.gradient}>
 
         {/* Header */}
         <View style={styles.header}>
@@ -689,7 +690,7 @@ export default function SessionsScreen() {
             />
           </>
         )}
-      </LinearGradient>
+      </AppGradientBackground>
 
       <SessionConfirmModal
         visible={!!confirmSession}

@@ -20,6 +20,7 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 interface ProfileData {
   firstName: string;
@@ -270,10 +271,7 @@ export default function Certificate() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <SafeAreaView style={{ flex: 1 }}>
           <PastorNavigationHeader />
           <View style={styles.mainContainer}>
@@ -972,7 +970,7 @@ export default function Certificate() {
           isVisible={showSuccessToast}
           onClose={() => setShowSuccessToast(false)}
         /> */}
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

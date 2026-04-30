@@ -5,7 +5,6 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { Mentor, useMentors } from "@/hooks/mentors/useMentors";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { Stack, router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -21,6 +20,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function MyMentorsScreen() {
   const [listToggle, setListToggle] = useState(false);
@@ -49,38 +49,29 @@ export default function MyMentorsScreen() {
 
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color="#fff" />
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   if (isError) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <Text className="text-white text-center">Failed to load mentors. Please try again.</Text>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={{ flex: 1 }}>
           <KeyboardAvoidingView
@@ -307,7 +298,7 @@ export default function MyMentorsScreen() {
           </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

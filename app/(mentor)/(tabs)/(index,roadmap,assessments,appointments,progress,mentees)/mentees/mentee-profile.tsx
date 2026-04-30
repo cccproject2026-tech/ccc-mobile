@@ -4,7 +4,6 @@ import { useMenteeByEmail } from "@/hooks/mentees/useMenteeByEmail"
 import { useMentees } from "@/hooks/mentees/useMentees"
 import { useAuthStore } from "@/stores/auth.store"
 import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack, useLocalSearchParams } from "expo-router"
 import React, { useMemo } from "react"
 import {
@@ -17,6 +16,7 @@ import {
   View,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import AppGradientBackground from "@/components/layout/AppGradientBackground"
 
 export default function MenteeProfileScreen() {
   const { menteeId, email: emailParam } = useLocalSearchParams<{ menteeId?: string; email?: string }>()
@@ -139,28 +139,18 @@ export default function MenteeProfileScreen() {
 
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={["#0D588E", "#0D4578", "#0E3563"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color="#FFFFFF" />
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     )
   }
 
   if (isError || !menteeData) {
     return (
-      <LinearGradient
-        colors={["#0D588E", "#0D4578", "#0E3563"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
           <Text style={{ color: "#FFFFFF", fontSize: 16, textAlign: "center" }}>
@@ -173,17 +163,12 @@ export default function MenteeProfileScreen() {
             <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>Go Back</Text>
           </TouchableOpacity>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     )
   }
 
   return (
-    <LinearGradient
-      colors={["#0D588E", "#0D4578", "#0E3563"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={{ flex: 1 }}
-    >
+    <AppGradientBackground>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -450,7 +435,7 @@ export default function MenteeProfileScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

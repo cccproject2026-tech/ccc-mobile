@@ -6,7 +6,6 @@ import { useMarkNotificationAsRead, useNotifications } from "@/hooks/profile/use
 import { useAuthStore } from "@/stores";
 import { Notification } from "@/types";
 import { formatNotificationDescription, getNotificationRoute } from "@/utils/notifications";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React from "react";
 import {
@@ -16,6 +15,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function NotificationScreen() {
   const { user } = useAuthStore();
@@ -46,10 +46,7 @@ export default function NotificationScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false, title: "Notifications" }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <TopBar role="mentor" showNotifications={false} />
 
         <View style={styles.scrollContainer}>
@@ -87,7 +84,7 @@ export default function NotificationScreen() {
             </ScrollView>
           )}
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

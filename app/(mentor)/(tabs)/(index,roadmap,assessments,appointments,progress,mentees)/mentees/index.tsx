@@ -35,6 +35,7 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import MapView, { Marker } from "react-native-maps"
 import { SafeAreaView } from "react-native-safe-area-context"
+import AppGradientBackground from "@/components/layout/AppGradientBackground"
 
 const MENTEE_PROGRESS_ROUTE =
   "/(mentor)/(tabs)/(index,roadmap,assessments,appointments,progress,mentees)/mentees/mentee-progress"
@@ -579,15 +580,12 @@ export default function MyMentees() {
   if (isLoading && !data) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <LinearGradient
-          colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-          style={{ flex: 1 }}
-        >
+        <AppGradientBackground>
           <Stack.Screen options={{ headerShown: false }} />
           <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
             <ActivityIndicator size="large" color="#fff" />
           </SafeAreaView>
-        </LinearGradient>
+        </AppGradientBackground>
       </GestureHandlerRootView>
     )
   }
@@ -595,15 +593,12 @@ export default function MyMentees() {
   if (isError) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <LinearGradient
-          colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-          style={{ flex: 1 }}
-        >
+        <AppGradientBackground>
           <Stack.Screen options={{ headerShown: false }} />
           <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
             <Text className="text-white text-center">Failed to load mentees. Please try again.</Text>
           </SafeAreaView>
-        </LinearGradient>
+        </AppGradientBackground>
       </GestureHandlerRootView>
     )
   }
@@ -611,10 +606,7 @@ export default function MyMentees() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
-        <LinearGradient
-          colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-          style={{ flex: 1 }}
-        >
+        <AppGradientBackground>
           <Stack.Screen options={{ headerShown: false }} />
           <SafeAreaView style={{ flex: 1 }}>
             {!showMap ? (
@@ -671,7 +663,7 @@ export default function MyMentees() {
               </ScrollView>
             )}
           </SafeAreaView>
-        </LinearGradient>
+        </AppGradientBackground>
 
         {/* Mentee Menu Bottom Sheet */}
         <MenteeMenuBottomSheet

@@ -8,7 +8,6 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -21,6 +20,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function MentorProfileSetup() {
     const router = useRouter();
@@ -137,10 +137,7 @@ export default function MentorProfileSetup() {
     }, [router, setCurrentStep, setHasProfilePicture, user?.id]);
 
     return (
-        <LinearGradient
-            colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-            style={{ flex: 1, justifyContent: "space-between" }}
-        >
+        <AppGradientBackground style={{ justifyContent: "space-between" }}>
             <View style={styles.scrollContainer}>
                 <TopBar role="mentor" showUserName />
                 <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -244,7 +241,7 @@ export default function MentorProfileSetup() {
                     </View>
                 </ScrollView>
             </View>
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

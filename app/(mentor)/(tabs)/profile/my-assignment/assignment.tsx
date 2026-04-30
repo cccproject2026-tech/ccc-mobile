@@ -8,6 +8,7 @@ import { Stack, router } from "expo-router";
 import React from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function Assignment() {
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
@@ -111,10 +112,7 @@ export default function Assignment() {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView className="flex-1">
           <ScrollView
@@ -178,7 +176,7 @@ export default function Assignment() {
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}
         />
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

@@ -19,6 +19,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function DetailedAssignment() {
   const { data: dataParam } = useLocalSearchParams();
@@ -56,10 +57,7 @@ export default function DetailedAssignment() {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <ScrollView
@@ -457,7 +455,7 @@ export default function DetailedAssignment() {
           thirdOptionLabel={"Expected Outcome - 9 Months"}
           fourthOptionLabel={"Expected Outcome - End of year"}
         />
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

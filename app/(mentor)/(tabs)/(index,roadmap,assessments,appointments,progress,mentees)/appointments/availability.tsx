@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { format } from "date-fns";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import {
   ActivityIndicator,
   Alert,
@@ -558,10 +559,7 @@ const AvailabilityScreen = () => {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <>
           <View style={{ paddingBottom: 10 }}>
             <TopBar role="mentor" showUserName />
@@ -824,7 +822,7 @@ const AvailabilityScreen = () => {
             </ScrollView>
           </View>
         </>
-      </LinearGradient>
+      </AppGradientBackground>
 
       {/* Time Picker Modal */}
       <Modal

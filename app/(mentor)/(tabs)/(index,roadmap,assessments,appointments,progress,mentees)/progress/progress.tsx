@@ -11,11 +11,12 @@ import { useProgress } from "@/hooks/progress/useProgress";
 import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
-import { LinearGradient } from "expo-linear-gradient";
+ 
 import { Stack, router } from "expo-router";
 import React, { useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function ProgressScreen() {
   const [roadmapTabs, setRoadmapTabs] = React.useState("All");
@@ -174,25 +175,19 @@ export default function ProgressScreen() {
 
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color="white" />
           <Text style={{ color: "white", fontSize: 18, marginTop: 16 }}>Loading progress...</Text>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <ScrollView
@@ -530,7 +525,7 @@ export default function ProgressScreen() {
             </View>
           </ScrollView>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }
