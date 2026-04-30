@@ -39,12 +39,29 @@ export const RoadmapCard: React.FC<Props> = ({
     }, [data.taskProgress]);
 
     const statusConfig = useMemo(() => {
+        // Match mentorship session badge approach: subtle tinted background + white text
         const configs = {
-            'completed': { text: 'Completed', color: '#fff' },
-            'due': { text: 'Due', color: '#FFD700' },
-            'in-progress': { text: 'In Progress', color: '#fff' },
-            'initial': { text: 'Not Started', color: 'rgba(255,255,255,0.8)' },
-        };
+            'completed': {
+                text: 'Completed',
+                bg: 'rgba(34, 197, 94, 0.18)', // green
+                accent: 'rgba(34, 197, 94, 0.55)',
+            },
+            'due': {
+                text: 'Due',
+                bg: 'rgba(250, 204, 21, 0.20)', // amber (friendlier than red for "due")
+                accent: 'rgba(250, 204, 21, 0.55)',
+            },
+            'in-progress': {
+                text: 'In Progress',
+                bg: 'rgba(59, 130, 246, 0.18)', // blue
+                accent: 'rgba(59, 130, 246, 0.55)',
+            },
+            'initial': {
+                text: 'Not Started',
+                bg: 'rgba(56, 189, 248, 0.16)', // sky
+                accent: 'rgba(56, 189, 248, 0.45)',
+            },
+        } as const;
         return data.status ? configs[data.status as keyof typeof configs] : null;
     }, [data.status]);
 
@@ -52,11 +69,27 @@ export const RoadmapCard: React.FC<Props> = ({
     const CardWrapper = onPress ? TouchableOpacity : View;
 
     const accentBorderColor = useMemo(() => {
-        if (data.status === 'completed') return 'rgba(111, 212, 190, 0.85)'; // mint
-        if (data.status === 'due') return 'rgba(232, 200, 138, 0.85)'; // gold
-        if (data.status === 'in-progress') return 'rgba(59, 130, 246, 0.75)'; // blue
+        if (statusConfig?.accent) return statusConfig.accent;
         return 'rgba(255,255,255,0.14)';
+    }, [statusConfig]);
+
+    const iconTintColor = useMemo(() => {
+        // Keep icons mostly neutral (cleaner, more consistent with session cards)
+        return 'rgba(255,255,255,0.65)';
+    }, []);
+
+    const progressFillColor = useMemo(() => {
+        if (data.status === 'completed') return 'rgba(34, 197, 94, 0.85)'; // green
+        if (data.status === 'due') return 'rgba(250, 204, 21, 0.85)'; // amber
+        if (data.status === 'in-progress') return 'rgba(59, 130, 246, 0.82)'; // blue
+        if (data.status === 'initial') return 'rgba(56, 189, 248, 0.80)'; // sky
+        return 'rgba(255,255,255,0.55)';
     }, [data.status]);
+
+    const secondaryTextColor = useMemo(() => {
+        // Keep secondary text readable and consistent
+        return 'rgba(255,255,255,0.70)';
+    }, []);
 
     const renderImage = () => (
         <View style={styles.imageContainer}>
@@ -110,7 +143,7 @@ export const RoadmapCard: React.FC<Props> = ({
                         <Ionicons
                             name="ellipsis-vertical"
                             size={isSmallDevice ? 20 : 24}
-                            color="rgba(255,255,255,0.6)"
+                            color={iconTintColor}
                         />
                     </TouchableOpacity>
                 )}
@@ -118,7 +151,7 @@ export const RoadmapCard: React.FC<Props> = ({
                     <Ionicons
                         name="chevron-forward"
                         size={isSmallDevice ? 20 : 24}
-                        color="rgba(255,255,255,0.6)"
+                        color={iconTintColor}
                     />
                 )}
             </View>
@@ -133,14 +166,17 @@ export const RoadmapCard: React.FC<Props> = ({
                 <View style={styles.progressRow}>
                     <View style={styles.progressTrack}>
                         <View
-                            style={[styles.progressFill, { width: `${progressPercentage}%` }]}
+                            style={[
+                                styles.progressFill,
+                                { width: `${progressPercentage}%`, backgroundColor: progressFillColor },
+                            ]}
                         />
                     </View>
-                    <Text style={styles.progressFraction}>
+                    <Text style={[styles.progressFraction, { color: secondaryTextColor }]}>
                         {data.taskProgress.completed} / {data.taskProgress.total}
                     </Text>
                 </View>
-                <Text style={styles.progressLabel}>Tasks Completed</Text>
+                <Text style={[styles.progressLabel, { color: secondaryTextColor }]}>Tasks Completed</Text>
             </View>
         );
     };
@@ -219,8 +255,13 @@ export const RoadmapCard: React.FC<Props> = ({
                             styles.statusRow,
                             !hasActions && styles.statusRowNoActions
                         ]}>
-                            <View style={styles.statusPill}>
-                                <Text style={[styles.statusPillText, { color: statusConfig.color }]}>
+                            <View
+                                style={[
+                                    styles.statusPill,
+                                    { backgroundColor: statusConfig.bg, borderColor: statusConfig.accent },
+                                ]}
+                            >
+                                <Text style={styles.statusPillText}>
                                     Status  •  {statusConfig.text}
                                 </Text>
                             </View>
@@ -245,16 +286,16 @@ export const RoadmapCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: 'rgba(255,255,255,0.08)',
-        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.10)',
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.14)',
+        borderColor: 'rgba(255,255,255,0.16)',
         overflow: 'hidden',
         borderLeftWidth: 3,
-        padding: getSpacing(12),
+        padding: getSpacing(16),
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.22,
+        shadowOpacity: 0.18,
         shadowRadius: 14,
         elevation: 10,
     },
@@ -292,13 +333,13 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 8,
         left: 8,
-        backgroundColor: '#B8A641',
+        backgroundColor: 'rgba(250, 204, 21, 0.28)',
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 8,
     },
     phaseBadgeText: {
-        color: '#1D1D1D',
+        color: '#FDE68A',
         fontSize: 11,
         fontWeight: '700',
         letterSpacing: 0.2,
@@ -389,14 +430,14 @@ const styles = StyleSheet.create({
     },
     phasePill: {
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.25)',
+        borderColor: 'rgba(255,255,255,0.16)',
         borderRadius: 12,
         paddingHorizontal: getSpacing(12),
         paddingVertical: getSpacing(8),
         alignSelf: 'flex-start',
         marginTop: getSpacing(-2),
         marginBottom: getSpacing(10),
-        backgroundColor: 'rgba(0,0,0,0.06)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
         paddingRight: getSpacing(12),
         minWidth: 0,
         maxWidth: '100%',
@@ -419,15 +460,16 @@ const styles = StyleSheet.create({
     },
     statusPill: {
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderColor: 'rgba(255,255,255,0.16)',
         paddingHorizontal: getSpacing(12),
-        paddingVertical: getSpacing(8),
+        paddingVertical: getSpacing(7),
         borderRadius: 12,
         alignSelf: 'flex-start',
-        backgroundColor: 'rgba(0,0,0,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
         flexShrink: 1,
     },
     statusPillText: {
+        color: '#FFFFFF',
         fontSize: getFontSize(13),
         fontWeight: '600',
     },
@@ -445,7 +487,7 @@ const styles = StyleSheet.create({
     progressTrack: {
         flex: 1,
         height: 10,
-        backgroundColor: 'rgba(255,255,255,0.9)',
+        backgroundColor: 'rgba(255,255,255,0.18)',
         borderRadius: 8,
         overflow: 'hidden',
         marginRight: getSpacing(12),
@@ -453,7 +495,7 @@ const styles = StyleSheet.create({
     },
     progressFill: {
         height: '100%',
-        backgroundColor: '#1f2b55',
+        backgroundColor: 'rgba(255,255,255,0.55)',
     },
     progressFraction: {
         color: '#fff',

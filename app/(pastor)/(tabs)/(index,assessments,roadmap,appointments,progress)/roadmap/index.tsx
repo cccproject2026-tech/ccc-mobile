@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   errorText: { color: "rgba(255,255,255,0.92)", fontSize: 12, fontWeight: "700", flex: 1 },
 
   list: { gap: 12, paddingBottom: 10 },
-  cardPress: { borderRadius: 16, overflow: "hidden" },
+  cardPress: { borderRadius: 14, overflow: "hidden" },
 
   emptyCard: {
     borderRadius: 16,

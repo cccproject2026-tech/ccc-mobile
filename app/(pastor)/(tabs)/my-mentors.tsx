@@ -5,7 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { Mentor, useMentors } from "@/hooks/mentors/useMentors";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -136,36 +136,27 @@ export default function MyMentorsScreen() {
 
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color="#fff" />
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   if (isError) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <Text className="text-white text-center">Failed to load mentors. Please try again.</Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <>
           <View style={{ paddingBottom: 10 }}>
             <TopBar role="pastor" showUserName />
@@ -285,7 +276,7 @@ export default function MyMentorsScreen() {
             </ScrollView>
           </View>
         </>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }
