@@ -4,7 +4,7 @@ import TopBar from '@/components/director/TopBar';
 import { useAssessments } from '@/hooks/assessments';
 import { ApiAssessment, Assessment } from '@/lib/assessments/types';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -96,10 +96,7 @@ export default function AssessmentsScreen() {
     };
 
     return (
-        <LinearGradient
-            colors={['#176192', '#1D548D', '#264387']}
-            style={styles.container}
-        >
+        <AppGradientBackground style={styles.container}>
             <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
             {/* Header */}
@@ -165,7 +162,7 @@ export default function AssessmentsScreen() {
                     </ScrollView>
                 )}
             </View>
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

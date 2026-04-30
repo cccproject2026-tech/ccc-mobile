@@ -1,6 +1,6 @@
 import { NotesService } from "@/services/notes.service"
 import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
+import AppGradientBackground from "@/components/layout/AppGradientBackground"
 import { router, Stack, useLocalSearchParams, useFocusEffect } from "expo-router"
 import React from "react"
 import {
@@ -91,12 +91,7 @@ export default function NoteDetail() {
   }
 
   return (
-    <LinearGradient
-      colors={["#1A3A6B", "#2B5A8E", "#1A3A6B"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={styles.container}
-    >
+    <AppGradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
@@ -173,7 +168,7 @@ export default function NoteDetail() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </AppGradientBackground>
   )
 }
 

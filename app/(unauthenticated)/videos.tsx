@@ -1,7 +1,7 @@
 // app/(login)/video-player.tsx
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { getFontSize, getSpacing } from "@/utils/responsive";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
@@ -87,10 +87,7 @@ export default function VideoPlayerScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
             <SafeAreaView style={styles.safeArea} edges={['top']}>
-                <LinearGradient
-                    colors={["#176192", "#1D548D", "#264387"]}
-                    style={styles.container}
-                >
+                <AppGradientBackground style={styles.container}>
                     <ScrollView
                         style={styles.scrollView}
                         contentContainerStyle={[
@@ -189,7 +186,7 @@ export default function VideoPlayerScreen() {
                             </View>
                         ))}
                     </ScrollView>
-                </LinearGradient>
+                </AppGradientBackground>
             </SafeAreaView>
         </>
     );

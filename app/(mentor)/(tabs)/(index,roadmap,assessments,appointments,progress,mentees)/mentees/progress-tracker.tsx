@@ -11,7 +11,7 @@ import { useAuthStore } from "@/stores";
 import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { router, Stack } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -282,7 +282,7 @@ export default function ProgressTracker() {
   ];
 
   return (
-    <LinearGradient colors={["#176192", "#1D548D", "#264387"]} style={{ flex: 1 }}>
+    <AppGradientBackground style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
       <View className="flex-1">
         <View className="flex-1">
@@ -380,7 +380,7 @@ export default function ProgressTracker() {
           />
         </View>
       </View>
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

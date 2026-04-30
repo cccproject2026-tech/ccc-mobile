@@ -11,6 +11,7 @@ import {
 } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -243,7 +244,7 @@ export default function MenteeProfile() {
     // Loading state
     if (isLoading) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <TopBar
                     userName="David Roe"
                     showUserName={true}
@@ -256,14 +257,14 @@ export default function MenteeProfile() {
                     <ActivityIndicator size="large" color="#fff" />
                     <Text style={{ color: '#fff', marginTop: 16 }}>Loading mentee profile...</Text>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     // Error state
     if (isError) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <TopBar
                     userName="David Roe"
                     showUserName={true}
@@ -278,7 +279,7 @@ export default function MenteeProfile() {
                         <Text style={styles.actionButtonText}>Go Back</Text>
                     </TouchableOpacity>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
@@ -364,7 +365,7 @@ export default function MenteeProfile() {
 
     if (!isEditing) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <TopBar
                     userName="David Roe"
                     showUserName={true}
@@ -633,15 +634,12 @@ export default function MenteeProfile() {
                     actions={menuItems}
                     onClose={handleCloseModal}
                 />
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     return (
-        <LinearGradient
-            colors={['#176192', '#1D548D', '#264387']}
-            style={{ flex: 1 }}
-        >
+        <AppGradientBackground style={{ flex: 1 }}>
             <TopBar
                 userName="David Roe"
                 showUserName={true}
@@ -881,7 +879,7 @@ export default function MenteeProfile() {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

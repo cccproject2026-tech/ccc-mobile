@@ -4,7 +4,7 @@ import { icons } from '@/constants/images';
 import { useCreateAssessment } from '@/hooks/assessments';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -468,7 +468,7 @@ export default function CreateAssessmentPage() {
     };
 
     return (
-        <LinearGradient colors={['#155C93', '#1B2B60']} style={{ flex: 1 }}>
+        <AppGradientBackground style={{ flex: 1 }}>
             <TopBar
                 role="director"
                 showUserName
@@ -787,7 +787,7 @@ export default function CreateAssessmentPage() {
                 visible={showSuccessModal}
                 onClose={handleSuccessModalClose}
             />
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

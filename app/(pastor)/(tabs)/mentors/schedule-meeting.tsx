@@ -4,6 +4,7 @@ import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { Ionicons } from "@expo/vector-icons";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -448,26 +449,20 @@ const ScheduleMeeting = () => {
   // Loading state
   if (isAvailabilityLoading) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={styles.container}
-      >
+      <AppGradientBackground style={styles.container}>
         <TopBar role="pastor" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFFFFF" />
           <Text style={styles.loadingText}>Loading availability...</Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   // Error state
   if (isError) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={styles.container}
-      >
+      <AppGradientBackground style={styles.container}>
         <TopBar role="pastor" />
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={60} color="rgba(255, 255, 255, 0.5)" />
@@ -477,7 +472,7 @@ const ScheduleMeeting = () => {
             <Text style={styles.retryButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -485,10 +480,7 @@ const ScheduleMeeting = () => {
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={styles.container}
-      >
+      <AppGradientBackground style={styles.container}>
         <TopBar role="pastor" />
         <View style={styles.scrollContainer}>
           <ScrollView
@@ -563,7 +555,7 @@ const ScheduleMeeting = () => {
             </View>
           </ScrollView>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
 
       <SuccessModal
         visible={showSuccessModal}

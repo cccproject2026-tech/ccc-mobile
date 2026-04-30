@@ -1,7 +1,7 @@
 // app/(mentor)/(tabs)/(index,roadmap,assessments,appointments,progress,mentees)/roadmap/select-roadmap.tsx
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import React, { useMemo, useState } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import TopBar from '@/components/director/TopBar';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -97,7 +97,7 @@ const SelectRoadmaps = () => {
     };
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+        <AppGradientBackground style={styles.container}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar role="mentor" showUserName={true} />
             </View>
@@ -180,7 +180,7 @@ const SelectRoadmaps = () => {
                     </ScrollView>
                 )}
             </View>
-        </LinearGradient>
+        </AppGradientBackground>
     );
 };
 

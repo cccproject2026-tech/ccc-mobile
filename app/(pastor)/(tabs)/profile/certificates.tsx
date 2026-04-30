@@ -16,6 +16,7 @@ import { UpdateProfileData } from '@/types';
 import { ChurchInfo } from '@/types/profile.types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -242,23 +243,17 @@ export default function Certificate() {
   // ============= LOADING & ERROR STATES =============
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={styles.container}
-      >
+      <AppGradientBackground style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 16 }}>Loading profile...</Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   if (isError || !profileData?.user) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={styles.container}
-      >
+      <AppGradientBackground style={styles.container}>
         <View
           style={{
             flex: 1,
@@ -271,7 +266,7 @@ export default function Certificate() {
             Failed to load profile data. Please try again.
           </Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -279,10 +274,7 @@ export default function Certificate() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={styles.container}
-      >
+      <AppGradientBackground style={styles.container}>
         <View style={{ flex: 1 }}>
           <TopBar role="director" />
           {/* <Header
@@ -508,7 +500,7 @@ export default function Certificate() {
           message="Profile Updated Successfully"
           onClose={handleSuccessModalClose}
         />
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }

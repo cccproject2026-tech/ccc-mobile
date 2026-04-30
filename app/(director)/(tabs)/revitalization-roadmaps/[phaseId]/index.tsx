@@ -10,7 +10,7 @@ import { getTaskCard } from '@/lib/roadmap/mappers';
 import { NestedRoadmap } from '@/lib/roadmap/types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -220,7 +220,7 @@ export default function PhaseDetail() {
     // Loading state
     if (isLoading) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
                     <TopBar notifications={3} showUserName={true} showNotifications={true} />
                 </View>
@@ -230,14 +230,14 @@ export default function PhaseDetail() {
                         Loading roadmap...
                     </Text>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     // Error state
     if (error) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
                     <TopBar notifications={3} showUserName={true} showNotifications={true} />
                 </View>
@@ -250,26 +250,26 @@ export default function PhaseDetail() {
                         {error instanceof Error ? error.message : 'An unexpected error occurred'}
                     </Text>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     // No roadmap found
     if (!roadmap) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
                     <TopBar notifications={3} showUserName={true} showNotifications={true} />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ color: 'white', fontSize: 16 }}>Roadmap not found</Text>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+        <AppGradientBackground style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
             </View>
@@ -438,6 +438,6 @@ export default function PhaseDetail() {
                 onEdit={() => setShowOutcomeModal(false)}
                 onDownload={() => console.log('Download outcome')}
             />
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }

@@ -3,6 +3,7 @@ import { icons } from "@/constants/images";
 import { useCheckApprovalStatus } from "@/hooks/onboarding/useOnboarding";
 import { useAuthStore, useOnboardingStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
@@ -204,11 +205,7 @@ export default function LoginScreen() {
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
-            <LinearGradient
-                colors={["#0D3B6E", "#0A5C8A", "#0B84B0"]}
-                locations={[0, 0.5, 1]}
-                style={styles.container}
-            >
+            <AppGradientBackground style={styles.container}>
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={[
@@ -407,7 +404,7 @@ export default function LoginScreen() {
                         </View>
                     </View>
                 </ScrollView>
-            </LinearGradient>
+            </AppGradientBackground>
         </>
     );
 }

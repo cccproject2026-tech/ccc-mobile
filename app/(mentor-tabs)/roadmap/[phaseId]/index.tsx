@@ -10,7 +10,7 @@ import { getTaskCard } from '@/lib/roadmap/mappers';
 import { NestedRoadmap } from '@/lib/roadmap/types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -202,7 +202,7 @@ export default function RoadmapDetail() {
     // Loading state
     if (isLoading) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
                     <TopBar role="mentor" showUserName />
                 </View>
@@ -210,14 +210,14 @@ export default function RoadmapDetail() {
                     <ActivityIndicator size="large" color="#fff" />
                     <Text style={{ color: '#fff', marginTop: 16 }}>Loading roadmap details...</Text>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     // Error or not found state
     if (error || !roadmap) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
                     <TopBar role="mentor" showUserName />
                 </View>
@@ -233,12 +233,12 @@ export default function RoadmapDetail() {
                         <Text style={{ color: '#fff', fontWeight: '600' }}>Retry</Text>
                     </TouchableOpacity>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+        <AppGradientBackground style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar role="mentor" showUserName />
             </View>
@@ -383,7 +383,7 @@ export default function RoadmapDetail() {
                 onEdit={() => setShowOutcomeModal(false)}
                 onDownload={() => console.log('Download outcome')}
             />
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

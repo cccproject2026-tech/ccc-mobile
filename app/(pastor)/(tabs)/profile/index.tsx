@@ -11,7 +11,7 @@ import { ChurchInfo } from '@/types/profile.types';
 import { getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -446,23 +446,17 @@ export default function ProfileScreen() {
   // ============= LOADING & ERROR STATES =============
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={['#176192', '#1D548D', '#264387']}
-        style={styles.container}
-      >
+      <AppGradientBackground style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 16 }}>Loading profile...</Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   if (isError || !profileData?.user) {
     return (
-      <LinearGradient
-        colors={['#176192', '#1D548D', '#264387']}
-        style={styles.container}
-      >
+      <AppGradientBackground style={styles.container}>
         <View
           style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}
         >
@@ -481,7 +475,7 @@ export default function ProfileScreen() {
             <Text style={{ color: '#fff' }}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -490,10 +484,7 @@ export default function ProfileScreen() {
   console.log('📝 Profile Image:', profileImage);
   // ============= MAIN RENDER =============
   return (
-    <LinearGradient
-      colors={['#176192', '#1D548D', '#264387']}
-      style={styles.container}
-    >
+    <AppGradientBackground style={styles.container}>
       <TopBar role="pastor" />
       {renderHeader()}
 
@@ -674,7 +665,7 @@ export default function ProfileScreen() {
         message="Profile Updated Successfully"
         onClose={handleSuccessModalClose}
       />
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

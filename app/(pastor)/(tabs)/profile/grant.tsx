@@ -10,7 +10,7 @@ import { useCheckApplication } from "@/hooks/grant/useCheckApplication";
 import { useGrant } from "@/hooks/grant/useGrant";
 import { useAuthStore } from "@/stores";
 import { getFontSize, getSpacing, isSmallDevice } from "@/utils/responsive";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import {
@@ -204,14 +204,14 @@ export default function Grant() {
   // Loading state
   if (isLoading || isCheckingApplication) {
     return (
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground style={{ flex: 1 }}>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={{ color: "#fff", marginTop: 16, fontSize: getFontSize(16) }}>
             Loading form...
           </Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
@@ -230,7 +230,7 @@ export default function Grant() {
   // Error state
   if (error && !form) {
     return (
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground style={{ flex: 1 }}>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
           <Text style={{ color: "#fff", fontSize: getFontSize(18), textAlign: "center", marginBottom: 16 }}>
             Failed to load form
@@ -240,13 +240,13 @@ export default function Grant() {
           </Text>
           <Button title="Retry" type="submit" onPress={fetchGrantForm} style={{ width: "50%" }} />
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   return (
     <>
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground style={{ flex: 1 }}>
         <TopBar
           showDrawer={false}
           showBackButton={true}
@@ -592,7 +592,7 @@ export default function Grant() {
             />
           </Pressable>
         </Pressable>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 

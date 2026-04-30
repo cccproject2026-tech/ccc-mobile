@@ -1,6 +1,6 @@
 import { ApiNote, NotesService } from "@/services/notes.service"
 import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
+import AppGradientBackground from "@/components/layout/AppGradientBackground"
 import { router, Stack, useLocalSearchParams } from "expo-router"
 import React, { useState, useEffect } from "react"
 import { useAuthStore } from "@/stores/auth.store"
@@ -93,12 +93,7 @@ export default function MentorNotes() {
   }
 
   return (
-    <LinearGradient
-      colors={["#1A3A6B", "#2B5A8E", "#1A3A6B"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={styles.container}
-    >
+    <AppGradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
@@ -223,7 +218,7 @@ export default function MentorNotes() {
           ))}
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </AppGradientBackground>
   )
 }
 

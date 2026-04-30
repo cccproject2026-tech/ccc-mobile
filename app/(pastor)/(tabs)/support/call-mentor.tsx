@@ -1,7 +1,7 @@
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { useRouter } from "expo-router";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -23,7 +23,7 @@ export default function PastorCallMentorScreen() {
   };
 
   return (
-    <LinearGradient colors={["#0F3B5C", "#1A4F7A", "#2389C2"]} style={styles.screen}>
+    <AppGradientBackground style={styles.screen}>
       <View style={styles.container}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={16} color="#fff" />
@@ -55,7 +55,7 @@ export default function PastorCallMentorScreen() {
           <Text style={styles.callButtonText}>Call Now</Text>
         </Pressable>
       </View>
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

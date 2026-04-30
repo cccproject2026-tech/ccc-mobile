@@ -15,7 +15,7 @@ import { useAuthStore } from "@/stores";
 import { sharePdfFromHtml } from "@/utils/pdf";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Image, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -391,30 +391,30 @@ export default function MenteeProgressScreen() {
 
   if (isLoading) {
     return (
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground style={{ flex: 1 }}>
         <TopBar role="mentor" showUserName showSearch={false} />
         <View style={styles.stateContainer}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.stateText}>Loading mentee progress...</Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   if (!menteeId || !mentee) {
     return (
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground style={{ flex: 1 }}>
         <TopBar role="mentor" showUserName showSearch={false} />
         <View style={styles.stateContainer}>
           <Text style={styles.stateText}>Mentee not found.</Text>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   if (progressError) {
     return (
-      <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <AppGradientBackground style={{ flex: 1 }}>
         <TopBar role="mentor" showUserName showSearch={false} />
         <View style={styles.stateContainer}>
           <Text style={styles.stateText}>Failed to load progress data.</Text>
@@ -422,12 +422,12 @@ export default function MenteeProgressScreen() {
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   return (
-    <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+    <AppGradientBackground style={{ flex: 1 }}>
       <View style={styles.scrollContainer}>
         <TopBar role="mentor" showUserName showSearch={false} />
 
@@ -648,7 +648,7 @@ export default function MenteeProgressScreen() {
         onNext={handlePmpNext}
         onDownload={handlePmpDownload}
       />
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

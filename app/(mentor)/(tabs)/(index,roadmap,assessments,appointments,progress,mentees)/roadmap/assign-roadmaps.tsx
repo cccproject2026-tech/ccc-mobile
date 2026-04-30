@@ -1,7 +1,7 @@
 // app/(mentor)/(tabs)/(index,roadmap,assessments,appointments,progress,mentees)/roadmap/assign-roadmaps.tsx
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import React, { useMemo, useState } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import TopBar from '@/components/director/TopBar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -195,7 +195,7 @@ const AssignRoadmaps = () => {
       };
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+        <AppGradientBackground style={styles.container}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar role="mentor" showUserName={true} />
             </View>
@@ -293,7 +293,7 @@ const AssignRoadmaps = () => {
                     </View>
                 </View>
             )}
-        </LinearGradient>
+        </AppGradientBackground>
     );
 };
 
