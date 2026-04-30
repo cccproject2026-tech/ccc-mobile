@@ -14,11 +14,11 @@ import {
 } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Dimensions, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 
 export const mockMentors: MentorData[] = [
@@ -225,7 +225,7 @@ export default function Mentors() {
     }, [search, activeTab]);
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+        <AppGradientBackground style={{ flex: 1 }}>
             <View className="flex-1">
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
@@ -313,7 +313,7 @@ export default function Mentors() {
                     />
                 )}
             </View>
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

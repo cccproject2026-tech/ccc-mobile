@@ -10,7 +10,6 @@ import {
 import { getTasks } from '@/lib/roadmap/helpers';
 import { useAuthStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -23,6 +22,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 const { width } = Dimensions.get('window');
 const PADDING = 16;
@@ -278,7 +278,7 @@ export default function ShareMedia() {
     );
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+        <AppGradientBackground style={styles.container}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
@@ -461,7 +461,7 @@ export default function ShareMedia() {
                 onEdit={() => setShowOutcomeModal(false)}
                 onDownload={() => console.log('Download outcome')}
             />
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

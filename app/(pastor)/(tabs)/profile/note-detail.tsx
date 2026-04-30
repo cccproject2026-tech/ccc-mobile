@@ -1,6 +1,5 @@
 import { NotesService } from "@/services/notes.service";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   router,
   Stack,
@@ -17,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function PastorNoteDetail() {
   const params = useLocalSearchParams();
@@ -103,12 +103,7 @@ export default function PastorNoteDetail() {
   };
 
   return (
-    <LinearGradient
-      colors={["#1A3A6B", "#2B5A8E", "#1A3A6B"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={styles.container}
-    >
+    <AppGradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
@@ -185,7 +180,7 @@ export default function PastorNoteDetail() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

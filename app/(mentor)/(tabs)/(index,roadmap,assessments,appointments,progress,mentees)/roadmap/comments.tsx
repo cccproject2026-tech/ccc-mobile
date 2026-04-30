@@ -6,7 +6,6 @@ import { useAddRoadmapComment, useRoadmapComments, useRoadmap } from "@/hooks/ro
 import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -21,6 +20,7 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function CommentsScreen() {
     const router = useRouter();
@@ -170,7 +170,7 @@ export default function CommentsScreen() {
     );
 
     return (
-        <LinearGradient colors={["#176192", "#1D548D", "#264387"]} style={{ flex: 1 }}>
+        <AppGradientBackground style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar role="mentor" showUserName />
             </View>
@@ -244,7 +244,7 @@ export default function CommentsScreen() {
                     />
                 </View>
             </KeyboardAvoidingView>
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

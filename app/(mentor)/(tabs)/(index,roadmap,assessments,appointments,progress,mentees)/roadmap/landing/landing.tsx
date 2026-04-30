@@ -17,9 +17,9 @@ import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 type MainTabKey = 'PASTOR_ROADMAPS' | 'ROADMAP_LIBRARY';
 type StatusTabKey = 'ALL' | 'DUE' | 'IN_PROGRESS' | 'NOT_STARTED' | 'COMPLETED';
@@ -264,7 +264,7 @@ console.log('selectedPastor----->>>>>>>>>>>>>>', selectedPastor);
     }, [isFetchingNextPage]);
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+        <AppGradientBackground style={{ flex: 1 }}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <View style={styles.topBarWrapper}>
@@ -401,7 +401,7 @@ console.log('selectedPastor----->>>>>>>>>>>>>>', selectedPastor);
                 actions={roadmapMenuItems}
                 onClose={() => bottomSheetModalRef.current?.dismiss()}
             />
-        </LinearGradient>
+        </AppGradientBackground>
     )
 }
 

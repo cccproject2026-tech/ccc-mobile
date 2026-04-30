@@ -7,10 +7,10 @@ import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
 import { NestedRoadmap } from '@/lib/roadmap/types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function ItemDetail() {
     const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string; returnTo?: string }>();
@@ -110,7 +110,7 @@ export default function ItemDetail() {
     // Loading state
     if (isLoading) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
                     <TopBar notifications={3} showUserName={true} showNotifications={true} />
                 </View>
@@ -120,14 +120,14 @@ export default function ItemDetail() {
                         Loading roadmap...
                     </Text>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     // Error state
     if (error) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
                     <TopBar notifications={3} showUserName={true} showNotifications={true} />
                 </View>
@@ -140,26 +140,26 @@ export default function ItemDetail() {
                         {error instanceof Error ? error.message : 'An unexpected error occurred'}
                     </Text>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     // Task not found state
     if (!task || !roadmap) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+            <AppGradientBackground style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
                     <TopBar notifications={3} showUserName={true} showNotifications={true} />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ color: 'white', fontSize: 16 }}>Task not found</Text>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+        <AppGradientBackground style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
             </View>
@@ -366,6 +366,6 @@ export default function ItemDetail() {
                 onEdit={() => setShowOutcomeModal(false)}
                 onDownload={() => console.log('Download outcome')}
             />
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }

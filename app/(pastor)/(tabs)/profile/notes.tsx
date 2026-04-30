@@ -1,6 +1,5 @@
 import { ApiNote, NotesService } from "@/services/notes.service";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -13,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { useAuthStore } from "@/stores/auth.store";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function PastorNotes() {
   const { user } = useAuthStore();
@@ -95,12 +95,7 @@ export default function PastorNotes() {
   };
 
   return (
-    <LinearGradient
-      colors={["#1A3A6B", "#2B5A8E", "#1A3A6B"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={styles.container}
-    >
+    <AppGradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
@@ -219,7 +214,7 @@ export default function PastorNotes() {
           ))}
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </AppGradientBackground>
   );
 }
 

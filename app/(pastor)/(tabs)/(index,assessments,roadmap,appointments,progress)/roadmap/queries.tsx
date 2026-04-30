@@ -3,7 +3,6 @@ import { useRoadmapQueries, useSubmitRoadmapQuery } from '@/hooks/roadmaps/useRo
 import { useAuthStore } from '@/stores/auth.store';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
@@ -21,6 +20,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function QueriesScreen() {
     const router = useRouter();
@@ -130,7 +130,7 @@ export default function QueriesScreen() {
     );
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+        <AppGradientBackground style={styles.container}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar role="pastor" showUserName />
             </View>
@@ -275,7 +275,7 @@ export default function QueriesScreen() {
             )}
             </View>
             </KeyboardAvoidingView>
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

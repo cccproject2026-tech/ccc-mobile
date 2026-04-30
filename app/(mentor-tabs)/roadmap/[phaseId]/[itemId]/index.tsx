@@ -8,10 +8,10 @@ import { NestedRoadmap } from '@/lib/roadmap/types';
 import { useAuthStore } from '@/stores';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function ItemDetail() {
     const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string }>();
@@ -104,7 +104,7 @@ export default function ItemDetail() {
     // Loading state
     if (isLoading) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+            <AppGradientBackground style={styles.container}>
                 <View style={styles.topBarWrapper}>
                     <TopBar role="mentor" showUserName />
                 </View>
@@ -112,14 +112,14 @@ export default function ItemDetail() {
                     <ActivityIndicator size="large" color="#fff" />
                     <Text style={{ color: '#fff', marginTop: 16 }}>Loading task details...</Text>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     // Error or not found state
     if (error || !roadmap || !task) {
         return (
-            <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+            <AppGradientBackground style={styles.container}>
                 <View style={styles.topBarWrapper}>
                     <TopBar role="mentor" showUserName />
                 </View>
@@ -135,12 +135,12 @@ export default function ItemDetail() {
                         <Text style={{ color: '#fff', fontWeight: '600' }}>Go Back</Text>
                     </TouchableOpacity>
                 </View>
-            </LinearGradient>
+            </AppGradientBackground>
         );
     }
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={styles.container}>
+        <AppGradientBackground style={styles.container}>
             <View style={styles.topBarWrapper}>
                 <TopBar role="mentor" showUserName />
             </View>
@@ -398,7 +398,7 @@ export default function ItemDetail() {
                 onEdit={() => setShowOutcomeModal(false)}
                 onDownload={() => console.log('Download outcome')}
             />
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

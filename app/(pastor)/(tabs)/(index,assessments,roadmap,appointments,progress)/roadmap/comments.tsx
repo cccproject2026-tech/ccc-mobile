@@ -1,6 +1,5 @@
 import TopBar from "@/components/director/TopBar";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
@@ -16,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { icons } from "@/constants/images";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { useRoadmapComments } from "@/hooks/roadmaps/useRoadmaps";
 import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
@@ -119,7 +119,7 @@ export default function CommentsScreen() {
     };
 
     return (
-        <LinearGradient colors={["#176192", "#1D548D", "#264387"]} style={{ flex: 1 }}>
+        <AppGradientBackground style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar role="pastor" showUserName />
             </View>
@@ -173,7 +173,7 @@ export default function CommentsScreen() {
                     </View>
                 }
             />
-        </LinearGradient>
+        </AppGradientBackground>
     );
 }
 

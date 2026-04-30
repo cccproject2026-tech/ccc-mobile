@@ -10,9 +10,9 @@ import { getCardStatus } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 type MainTabKey = 'PASTOR_ROADMAPS' | 'ROADMAP_LIBRARY';
 type StatusTabKey = 'ALL' | 'DUE' | 'IN_PROGRESS' | 'NOT_STARTED' | 'COMPLETED';
@@ -104,7 +104,7 @@ export default function Landing() {
     }, [roadmapsWithStatus, mainTab, statusTab, search, filterPastorRoadmaps]);
 
     return (
-        <LinearGradient colors={['#176192', '#1D548D', '#264387']} style={{ flex: 1 }}>
+        <AppGradientBackground style={{ flex: 1 }}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <View style={styles.topBarWrapper}>
@@ -222,7 +222,7 @@ export default function Landing() {
                 isMenuVisible={isRoadmapModalVisible}
                 closeMenu={() => setIsRoadmapModalVisible(false)}
             />
-        </LinearGradient>
+        </AppGradientBackground>
     )
 }
 
