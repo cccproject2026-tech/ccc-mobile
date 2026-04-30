@@ -10,8 +10,10 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
+    useWindowDimensions,
     View
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { icons } from "@/constants/images";
 import { useRoadmapComments } from "@/hooks/roadmaps/useRoadmaps";
@@ -23,10 +25,15 @@ import { paramToString } from "@/utils/routerParams";
 export default function CommentsScreen() {
     const router = useRouter();
     const { user } = useAuthStore();
+    const { bottom } = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
 
     const params = useLocalSearchParams<{ roadmapId?: string | string[] }>();
     const phaseId = paramToString(params.roadmapId);
     const userId = user?.id;
+
+    const horizontalPadding = Math.max(16, Math.min(24, Math.round(width * 0.05)));
+    const maxWidth = width >= 520 ? 520 : undefined;
 
     const { data, isLoading, isError, error, refetch, isFetching } = useRoadmapComments(
         phaseId,
@@ -134,7 +141,16 @@ export default function CommentsScreen() {
                 data={comments}
                 renderItem={renderComment}
                 keyExtractor={(item) => item._id}
-                contentContainerStyle={styles.listContainer}
+                contentContainerStyle={[
+                    styles.listContainer,
+                    {
+                        paddingHorizontal: horizontalPadding,
+                        paddingBottom: bottom + 20,
+                        maxWidth,
+                        alignSelf: "center",
+                        width: "100%",
+                    },
+                ]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
@@ -163,7 +179,7 @@ export default function CommentsScreen() {
 
 const styles = StyleSheet.create({
     listContainer: {
-        padding: 16,
+        paddingTop: 16,
     },
     headerContainer: {
         borderBottomWidth: 1,

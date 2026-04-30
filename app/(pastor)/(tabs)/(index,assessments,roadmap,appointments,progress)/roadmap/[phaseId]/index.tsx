@@ -20,6 +20,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,9 +37,16 @@ const accent = {
 
 export default function PastorRoadmapDetail() {
   const { bottom } = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
 
   const { data: roadmap, isLoading, error, refetch, isRefetching } = useRoadmap(phaseId);
+
+  const horizontalPadding = useMemo(() => {
+    const v = Math.round(width * 0.05);
+    return Math.max(16, Math.min(24, v));
+  }, [width]);
+  const maxWidth = useMemo(() => (width >= 520 ? 520 : undefined), [width]);
 
   const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
   const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -213,7 +221,14 @@ export default function PastorRoadmapDetail() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.container, { paddingBottom: bottom + 20 }]}
+        contentContainerStyle={[
+          styles.container,
+          {
+            paddingBottom: bottom + 20,
+            paddingHorizontal: horizontalPadding,
+            maxWidth,
+          },
+        ]}
         refreshControl={
           <RefreshControl refreshing={!!isRefetching} onRefresh={refetch} tintColor="#fff" />
         }
@@ -311,7 +326,7 @@ export default function PastorRoadmapDetail() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  container: { paddingHorizontal: 18 },
+  container: { width: "100%", alignSelf: "center" },
   bgCircleTop: {
     position: "absolute",
     top: -120,

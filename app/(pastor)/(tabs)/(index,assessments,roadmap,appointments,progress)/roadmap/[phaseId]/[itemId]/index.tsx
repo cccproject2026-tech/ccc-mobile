@@ -11,7 +11,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -24,6 +33,7 @@ const accent = {
 
 export default function PastorRoadmapItemDetail() {
   const { bottom } = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const router = useRouter();
   const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string }>();
 
@@ -109,6 +119,16 @@ export default function PastorRoadmapItemDetail() {
     return `${day} ${month} ${year}`;
   };
 
+  const horizontalPadding = useMemo(() => {
+    const v = Math.round(width * 0.05);
+    return Math.max(16, Math.min(24, v));
+  }, [width]);
+  const maxWidth = useMemo(() => (width >= 520 ? 520 : undefined), [width]);
+  const coverHeight = useMemo(() => {
+    const h = Math.round(width * 0.52);
+    return Math.max(170, Math.min(230, h));
+  }, [width]);
+
   if (isLoading) {
     return (
       <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
@@ -129,7 +149,14 @@ export default function PastorRoadmapItemDetail() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.container, { paddingBottom: bottom + 20 }]}
+        contentContainerStyle={[
+          styles.container,
+          {
+            paddingBottom: bottom + 20,
+            paddingHorizontal: horizontalPadding,
+            maxWidth,
+          },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={!!isRefetching}
@@ -237,7 +264,7 @@ export default function PastorRoadmapItemDetail() {
               </Pressable>
             </View>
 
-            <View style={styles.coverImageContainer}>
+            <View style={[styles.coverImageContainer, { height: coverHeight }]}>
               {(task as any).imageUrl ? (
                 <Image source={{ uri: String((task as any).imageUrl) }} style={styles.coverImage} resizeMode="cover" />
               ) : (
@@ -316,7 +343,7 @@ export default function PastorRoadmapItemDetail() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  container: { paddingHorizontal: 18 },
+  container: { width: "100%", alignSelf: "center" },
   bgCircleTop: {
     position: "absolute",
     top: -120,
@@ -389,14 +416,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 12,
     marginBottom: 16,
+    gap: 6,
   },
   tabButton: {
     borderRadius: 999,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    flex: 1,
+    minWidth: 0,
   },
   tabActive: { backgroundColor: "#FFFFFF" },
   tabInactive: {
@@ -404,22 +434,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.4)",
   },
-  tabText: { fontSize: 14, fontWeight: "800" },
+  tabText: { fontSize: 12, fontWeight: "900" },
   tabTextActive: { color: "#1A4882" },
   tabTextInactive: { color: "#FFFFFF" },
   tabWithBadge: {},
   badge: {
-    marginLeft: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    marginLeft: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
     borderRadius: 999,
-    minWidth: 22,
+    minWidth: 18,
     alignItems: "center",
     justifyContent: "center",
   },
   badgeActive: { backgroundColor: "rgba(26,72,130,0.12)" },
   badgeInactive: { backgroundColor: "rgba(255,255,255,0.18)" },
-  badgeText: { fontSize: 12, fontWeight: "900" },
+  badgeText: { fontSize: 11, fontWeight: "900" },
   badgeTextActive: { color: "#1A4882" },
   badgeTextInactive: { color: "#fff" },
 

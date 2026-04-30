@@ -17,13 +17,17 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    useWindowDimensions,
     View
 } from 'react-native';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function QueriesScreen() {
     const router = useRouter();
     const { roadmapId } = useLocalSearchParams<{ roadmapId: string }>();
     const { user } = useAuthStore();
+    const { bottom } = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
 
     const submitQuery = useSubmitRoadmapQuery();
 
@@ -34,6 +38,9 @@ export default function QueriesScreen() {
 
     const [selectedTab, setSelectedTab] = useState<'NEW' | 'ANSWERED' | 'PENDING'>('NEW');
     const [queryText, setQueryText] = useState('');
+
+    const horizontalPadding = Math.max(16, Math.min(24, Math.round(width * 0.05)));
+    const maxWidth = width >= 520 ? 520 : undefined;
 
     const displayQueries = useMemo(() => {
         if (selectedTab === 'NEW') return [];
@@ -132,13 +139,14 @@ export default function QueriesScreen() {
                 style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
+            <View style={{ width: "100%", maxWidth: maxWidth ?? undefined, alignSelf: "center" }}>
             {/* HEADER */}
             <View
                 style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'flex-start',
-                    paddingHorizontal: getSpacing(8),
+                    paddingHorizontal: horizontalPadding,
                     paddingVertical: getSpacing(16),
                     marginBottom: getSpacing(16),
                     borderBottomWidth: 1,
@@ -199,7 +207,11 @@ export default function QueriesScreen() {
             {/* CONTENT */}
             {selectedTab === 'NEW' ? (
                 <ScrollView
-                    contentContainerStyle={{ flexGrow: 1 }}
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        paddingHorizontal: horizontalPadding,
+                        paddingBottom: bottom + 20,
+                    }}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
@@ -243,7 +255,13 @@ export default function QueriesScreen() {
                     data={displayQueries}
                     renderItem={renderQuery}
                     keyExtractor={item => item._id}
-                    contentContainerStyle={styles.listContainer}
+                    contentContainerStyle={[
+                        styles.listContainer,
+                        {
+                            paddingHorizontal: horizontalPadding,
+                            paddingBottom: bottom + 20,
+                        },
+                    ]}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <Text style={styles.emptyText}>
@@ -255,6 +273,7 @@ export default function QueriesScreen() {
                     }
                 />
             )}
+            </View>
             </KeyboardAvoidingView>
         </LinearGradient>
     );

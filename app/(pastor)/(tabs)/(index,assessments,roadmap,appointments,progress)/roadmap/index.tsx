@@ -15,6 +15,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,8 +37,15 @@ function toEpochMs(dateString?: string): number {
 
 export default function PastorRoadmapIndex() {
   const { bottom } = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const [tab, setTab] = useState<TabKey>("All");
   const [search, setSearch] = useState("");
+
+  const horizontalPadding = useMemo(() => {
+    const v = Math.round(width * 0.05);
+    return Math.max(16, Math.min(24, v));
+  }, [width]);
+  const maxWidth = useMemo(() => (width >= 520 ? 520 : undefined), [width]);
 
   const {
     data: roadmaps,
@@ -106,7 +114,14 @@ export default function PastorRoadmapIndex() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.container, { paddingBottom: bottom + 20 }]}
+        contentContainerStyle={[
+          styles.container,
+          {
+            paddingBottom: bottom + 20,
+            paddingHorizontal: horizontalPadding,
+            maxWidth,
+          },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={!!isRefetching}
@@ -205,7 +220,8 @@ export default function PastorRoadmapIndex() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   container: {
-    paddingHorizontal: 18,
+    width: "100%",
+    alignSelf: "center",
   },
   headerRow: {
     marginTop: 10,
@@ -288,9 +304,11 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, color: "#fff", fontSize: 13, fontWeight: "600" },
 
-  tabsRow: { flexDirection: "row", gap: 10, marginTop: 14, marginBottom: 14 },
+  tabsRow: { flexDirection: "row", gap: 10, marginTop: 14, marginBottom: 14, flexWrap: "wrap" },
   tabPill: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 0,
+    minWidth: 108,
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1,
