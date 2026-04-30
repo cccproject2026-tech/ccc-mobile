@@ -943,109 +943,10 @@ export default function InterestFormScreen() {
                                             <Text style={styles.errorText}>City is required</Text>
                                         )}
                                     </View>
-                                    {/* State Dropdown */}
-                                    <View
-                                        style={[styles.halfWidth, styles.countryDropdownWrapper]}
-                                        onLayout={registerFieldLayout(`churchState-${index}`)}
-                                    >
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.dropdown,
-                                                churchStateErrors[index] && styles.inputError,
-                                            ]}
-                                            onPress={() =>
-                                                setShowStateDropdown(
-                                                    showStateDropdown === index ? null : index
-                                                )
-                                            }
-                                            disabled={isLoading || !church.country}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.dropdownText,
-                                                    !church.state && styles.placeholderText,
-                                                ]}
-                                            >
-                                                {church.state || 'State'}
-                                            </Text>
-                                            <Ionicons
-                                                name={
-                                                    showStateDropdown === index
-                                                        ? 'chevron-up'
-                                                        : 'chevron-down'
-                                                }
-                                                size={20}
-                                                color="rgba(255,255,255,0.6)"
-                                            />
-                                        </TouchableOpacity>
-                                        {churchStateErrors[index] && (
-                                            <Text style={styles.errorText}>State is required</Text>
-                                        )}
-                                        {showStateDropdown === index && church.country && (
-                                            <View style={styles.countryDropdownMenu}>
-                                                {getStatesForCountry(church.country).map((state) => (
-                                                    <TouchableOpacity
-                                                        key={state}
-                                                        style={styles.countryDropdownItem}
-                                                        onPress={() => {
-                                                            setChurchStateErrors((prev) => {
-                                                                const copy = [...prev];
-                                                                copy[index] = false;
-                                                                return copy;
-                                                            });
-                                                            handleChurchChange(index, 'state', state);
-                                                            setShowStateDropdown(null);
-                                                        }}
-                                                    >
-                                                        <View style={styles.countryRadio}>
-                                                            {church.state === state && (
-                                                                <View style={styles.countryRadioSelected} />
-                                                            )}
-                                                        </View>
-                                                        <Text style={styles.countryDropdownItemText}>
-                                                            {state}
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                ))}
-                                            </View>
-                                        )}
-                                    </View>
-                                </View>
+                              
 
-                                <View style={styles.row}>
-                                    <View
-                                        style={styles.halfWidth}
-                                        onLayout={registerFieldLayout(`churchZip-${index}`)}
-                                    >
-                                        <TextInput
-                                            ref={(el) => {
-                                                churchZipRefs.current[index] = el;
-                                            }}
-                                            style={[
-                                                styles.input,
-                                                churchZipErrors[index] && styles.inputError,
-                                            ]}
-                                            placeholder="Zip Code"
-                                            placeholderTextColor="rgba(255,255,255,0.5)"
-                                            value={church.zipCode}
-                                            onChangeText={(text) => {
-                                                setChurchZipErrors((prev) => {
-                                                    const copy = [...prev];
-                                                    copy[index] = false;
-                                                    return copy;
-                                                });
-                                                handleChurchChange(index, 'zipCode', text);
-                                            }}
-                                            keyboardType="number-pad"
-                                            editable={!isLoading}
-                                        />
-                                        {churchZipErrors[index] && (
-                                            <Text style={styles.errorText}>Zip code is required</Text>
-                                        )}
-                                    </View>
-
-                                    {/* Country Dropdown */}
-                                    <View
+                                       {/* Country Dropdown */}
+                                       <View
                                         style={[styles.halfWidth, styles.countryDropdownWrapper]}
                                         onLayout={registerFieldLayout(`churchCountry-${index}`)}
                                     >
@@ -1116,6 +1017,110 @@ export default function InterestFormScreen() {
                                                         </View>
                                                         <Text style={styles.countryDropdownItemText}>
                                                             {option.label}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        )}
+                                    </View>
+                                </View>
+
+                                <View style={styles.row}>
+                                    <View
+                                        style={styles.halfWidth}
+                                        onLayout={registerFieldLayout(`churchZip-${index}`)}
+                                    >
+                                        <TextInput
+                                            ref={(el) => {
+                                                churchZipRefs.current[index] = el;
+                                            }}
+                                            style={[
+                                                styles.input,
+                                                churchZipErrors[index] && styles.inputError,
+                                            ]}
+                                            placeholder="Zip Code"
+                                            placeholderTextColor="rgba(255,255,255,0.5)"
+                                            value={church.zipCode}
+                                            onChangeText={(text) => {
+                                                setChurchZipErrors((prev) => {
+                                                    const copy = [...prev];
+                                                    copy[index] = false;
+                                                    return copy;
+                                                });
+                                                handleChurchChange(index, 'zipCode', text);
+                                            }}
+                                            keyboardType="number-pad"
+                                            editable={!isLoading}
+                                        />
+                                        {churchZipErrors[index] && (
+                                            <Text style={styles.errorText}>Zip code is required</Text>
+                                        )}
+                                    </View>
+
+                               
+
+
+                                        {/* State Dropdown */}
+                                        <View
+                                        style={[styles.halfWidth, styles.countryDropdownWrapper]}
+                                        onLayout={registerFieldLayout(`churchState-${index}`)}
+                                    >
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.dropdown,
+                                                churchStateErrors[index] && styles.inputError,
+                                            ]}
+                                            onPress={() =>
+                                                setShowStateDropdown(
+                                                    showStateDropdown === index ? null : index
+                                                )
+                                            }
+                                            disabled={isLoading || !church.country}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.dropdownText,
+                                                    !church.state && styles.placeholderText,
+                                                ]}
+                                            >
+                                                {church.state || 'State'}
+                                            </Text>
+                                            <Ionicons
+                                                name={
+                                                    showStateDropdown === index
+                                                        ? 'chevron-up'
+                                                        : 'chevron-down'
+                                                }
+                                                size={20}
+                                                color="rgba(255,255,255,0.6)"
+                                            />
+                                        </TouchableOpacity>
+                                        {churchStateErrors[index] && (
+                                            <Text style={styles.errorText}>State is required</Text>
+                                        )}
+                                        {showStateDropdown === index && church.country && (
+                                            <View style={styles.countryDropdownMenu}>
+                                                {getStatesForCountry(church.country).map((state) => (
+                                                    <TouchableOpacity
+                                                        key={state}
+                                                        style={styles.countryDropdownItem}
+                                                        onPress={() => {
+                                                            setChurchStateErrors((prev) => {
+                                                                const copy = [...prev];
+                                                                copy[index] = false;
+                                                                return copy;
+                                                            });
+                                                            handleChurchChange(index, 'state', state);
+                                                            setShowStateDropdown(null);
+                                                        }}
+                                                    >
+                                                        <View style={styles.countryRadio}>
+                                                            {church.state === state && (
+                                                                <View style={styles.countryRadioSelected} />
+                                                            )}
+                                                        </View>
+                                                        <Text style={styles.countryDropdownItemText}>
+                                                            {state}
                                                         </Text>
                                                     </TouchableOpacity>
                                                 ))}
