@@ -6,7 +6,7 @@ import { useOnboardingStore } from "@/stores/onboarding.store";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -39,6 +39,8 @@ export default function VerifyEmailScreen() {
         setEmail,
         setEmailVerified,
         setPasswordSet,
+        isEmailVerified,
+        isPasswordSet,
     } = useOnboardingStore();
 
     const { mutate: sendOtp, isPending: isSending } = useSendOtp();
@@ -56,6 +58,20 @@ export default function VerifyEmailScreen() {
 
     const userEmail = interestEmail || email || interestData?.email || '';
     const isLoading = isSending || isVerifying || isSettingPassword;
+
+    // Resume-safe onboarding: if app is closed mid-flow, restore the right step.
+    useEffect(() => {
+        // If password already set, send them to login.
+        if (isPasswordSet) {
+            router.replace("/(unauthenticated)/login-form");
+            return;
+        }
+        // If email already verified, skip directly to create password.
+        if (isEmailVerified) {
+            setIsOtpVerified(true);
+            setStep(3);
+        }
+    }, [isEmailVerified, isPasswordSet, router]);
 
     const handleVerifyEmail = () => {
         if (!userEmail) {

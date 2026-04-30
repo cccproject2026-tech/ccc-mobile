@@ -45,7 +45,7 @@ export default function RoleSelectionScreen() {
     const showApplicationStatusButton =
         !isAuthenticated &&
         hasSubmittedApplication &&
-        (interestStatus === "pending" || interestStatus === "new");
+        (interestStatus === "pending" || interestStatus === "new" || interestStatus === "accepted");
 
     const handleClearStorage = useCallback(async () => {
         Alert.alert('Clear All Data', 'This will log you out and clear all stored data. Continue?', [
@@ -102,6 +102,12 @@ export default function RoleSelectionScreen() {
     };
 
     const handleViewApplicationStatus = useCallback(() => {
+        // If already accepted, continue the verify-email / set-password flow directly.
+        if (interestStatus === "accepted") {
+            router.push("/(unauthenticated)/set-password");
+            return;
+        }
+
         // If status is missing but we have a stored submission, default to pending to show the status flow.
         if (!interestStatus && hasSubmittedApplication) {
             setInterestStatus("pending");
