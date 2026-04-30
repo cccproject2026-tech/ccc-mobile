@@ -48,11 +48,15 @@ export const ProgressPieChart: React.FC<ProgressPieChartProps> = ({ data, title 
                     <View style={styles.legendBlock}>
                         <View style={styles.legendItem}>
                             <View style={[styles.legendDot, { backgroundColor: '#223568' }]} />
-                            <Text style={styles.legendText}>Completed</Text>
+                            <Text style={styles.legendText} numberOfLines={2}>
+                                Completed
+                            </Text>
                         </View>
                         <View style={styles.legendItem}>
                             <View style={[styles.legendDot, { backgroundColor: '#e0e6ed' }]} />
-                            <Text style={styles.legendText}>Remaining</Text>
+                            <Text style={styles.legendText} numberOfLines={2}>
+                                Remaining
+                            </Text>
                         </View>
                     </View>
                 </View>
@@ -83,7 +87,9 @@ const styles = StyleSheet.create({
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 14,
+        gap: 14,
     },
     pieWrapper: {
         position: 'relative',
@@ -124,25 +130,30 @@ const styles = StyleSheet.create({
         fontSize: 18,
     },
     legendBlock: {
-        marginLeft: 32,
+        flex: 1,
+        minWidth: 0,
         justifyContent: 'center',
     },
     legendItem: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 14,
+        alignItems: 'flex-start',
+        marginBottom: 12,
+        minWidth: 0,
     },
     legendDot: {
-        width: 24,
-        height: 24,
+        width: 18,
+        height: 18,
         borderRadius: 8,
         marginRight: 10,
+        marginTop: 2,
         borderWidth: 0.7,
         borderColor: '#a4aec1',
     },
     legendText: {
         color: '#fff',
-        fontSize: 18,
-        fontWeight: '400',
+        fontSize: 14,
+        fontWeight: '500',
+        lineHeight: 18,
+        flexShrink: 1,
     },
 });

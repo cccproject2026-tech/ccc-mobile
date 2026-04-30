@@ -11,15 +11,23 @@ import { useProgress } from '@/hooks/progress/useProgress';
 import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
 import { getRoadmapCard } from '@/lib/roadmap/mappers';
 import { sharePdfFromHtml } from "@/utils/pdf";
+import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { RefreshControl, ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabKey = 'All' | 'Completed' | 'Remaining';
+
+const accent = {
+  gold: "#E8C88A",
+  mint: "#6FD4BE",
+  mintSoft: "rgba(111, 212, 190, 0.28)",
+  tealDeep: "#0E5A62",
+};
 
 function toEpochMs(dateString?: string): number {
   if (!dateString) return 0;
@@ -47,6 +55,9 @@ export default function ProgressScreen() {
   const [assessmentTabs, setAssessmentTabs] = useState<TabKey>("All");
   const pmpSheetRef = useRef<BottomSheetModal>(null);
   const { bottom } = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+
+  const pagePadding = windowWidth >= 430 ? 24 : 16;
 
   // Fetch all backend data
   const { data: progressData, isLoading: isProgressLoading, error: progressError } = useProgress();
@@ -255,23 +266,53 @@ export default function ProgressScreen() {
 
   return (
     <LinearGradient colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]} style={{ flex: 1 }}>
+      <View style={styles.bgCircleTop} pointerEvents="none" />
+      <View style={styles.bgCircleBottom} pointerEvents="none" />
       <View style={styles.scrollContainer}>
         {/* Top Bar */}
         <TopBar role="pastor" showUserName />
 
         {/* Header */}
-        <View style={styles.headerContainer}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Image source={icons.forward} style={styles.backIcon} />
-              <Text style={styles.myProgressText}>My Progress</Text>
-            </TouchableOpacity>
+        <View style={styles.heroHeader}>
+          <View style={styles.pill}>
+            <View style={styles.pillDots}>
+              <View style={styles.pillDot} />
+              <View style={styles.pillDotGold} />
+            </View>
+            <Text style={styles.pillText}>Center for Community Change</Text>
+          </View>
+
+          <View style={styles.heroTitleRow}>
+            <View style={styles.heroLeftRow}>
+              <Pressable onPress={() => router.back()} hitSlop={10} style={styles.heroBackBtn}>
+                <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.92)" />
+              </Pressable>
+              <Text style={styles.heroTitle}>Overall progress</Text>
+            </View>
+            <Pressable onPress={openPMPSheet} hitSlop={10} style={styles.heroMenuBtn}>
+              <Ionicons name="ellipsis-horizontal" size={20} color="rgba(255,255,255,0.9)" />
+            </Pressable>
+          </View>
+          <Text style={styles.heroSubtitle}>
+            Track your roadmap phases and assessments in one place.
+          </Text>
+
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Ionicons name="leaf-outline" size={14} color={accent.mint} />
+            <View style={styles.dividerLine} />
           </View>
         </View>
 
         {/* Body */}
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: bottom * 1.3 }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: bottom * 1.3,
+            paddingTop: 6,
+            paddingHorizontal: pagePadding,
+            alignItems: "center",
+          }}
           refreshControl={
             <RefreshControl
               refreshing={isRoadmapsRefetching}
@@ -282,8 +323,11 @@ export default function ProgressScreen() {
             />
           }
         >
+          <View style={styles.contentWrap}>
           {/* Pie Chart */}
-          <ProgressPieChart data={overallProgress} title="Overall Progress - Roadmaps & Assessments" />
+          <View style={styles.surfaceCard}>
+            <ProgressPieChart data={overallProgress} title="Overall Progress" />
+          </View>
 
           {/* Bar Chart */}
           <View style={styles.section}>
@@ -299,8 +343,11 @@ export default function ProgressScreen() {
           </View>
 
           {/* Roadmaps */}
-          <View style={styles.progressBlock}>
-            <Text style={styles.progressBlockTitle}>Revitalization Roadmap Progress</Text>
+          <View style={styles.surfaceCard}>
+            <View style={styles.blockHeaderRow}>
+              <Text style={styles.blockTitle}>Roadmap progress</Text>
+              <Text style={styles.blockHint}>Latest 5</Text>
+            </View>
 
             {/* Tabs */}
             <FilterTabs value={roadmapTabs} onChange={setRoadmapTabs} />
@@ -343,8 +390,11 @@ export default function ProgressScreen() {
           </View>
 
           {/* Assessments */}
-          <View style={styles.progressBlock}>
-            <Text style={styles.progressBlockTitle}>Assessment Progress</Text>
+          <View style={styles.surfaceCard}>
+            <View style={styles.blockHeaderRow}>
+              <Text style={styles.blockTitle}>Assessment progress</Text>
+              <Text style={styles.blockHint}>Latest 5</Text>
+            </View>
 
             {/* Tabs */}
             <FilterTabs value={assessmentTabs} onChange={setAssessmentTabs} />
@@ -372,6 +422,7 @@ export default function ProgressScreen() {
               )}
             </View>
           </View>
+          </View>
         </ScrollView>
 
         {/* Bottom Sheet */}
@@ -388,19 +439,98 @@ export default function ProgressScreen() {
 
 const styles = StyleSheet.create({
   scrollContainer: { flex: 1 },
-  headerContainer: { width: "100%", alignItems: "center", paddingVertical: 10 },
-  headerContent: {
+  contentWrap: {
     width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    maxWidth: 560,
   },
-  myProgressText: { color: "#fff", fontWeight: "600", fontSize: 17 },
+  bgCircleTop: {
+    position: "absolute",
+    top: -130,
+    right: -100,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  bgCircleBottom: {
+    position: "absolute",
+    bottom: -90,
+    left: -80,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  heroHeader: {
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 6,
+  },
+  pill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  pillDots: { flexDirection: "row", alignItems: "center", gap: 6 },
+  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: accent.mint },
+  pillDotGold: { width: 6, height: 6, borderRadius: 3, backgroundColor: accent.gold },
+  pillText: { color: "rgba(255,255,255,0.95)", fontSize: 12, fontWeight: "700" },
+  heroTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
+  heroLeftRow: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, minWidth: 0 },
+  heroBackBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
+  },
+  heroTitle: { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: -0.2 },
+  heroSubtitle: { color: "rgba(255,255,255,0.72)", marginTop: 4, fontSize: 13, lineHeight: 18 },
+  heroMenuBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
+  },
+  dividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 0 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.12)" },
   searchContainer: { marginHorizontal: 16, marginTop: 10 },
-  backButton: { flexDirection: "row", alignItems: "center", gap: 8 },
-  backIcon: { width: 18, height: 18, transform: [{ scaleX: -1 }] },
+  surfaceCard: {
+    marginTop: 14,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    overflow: "hidden",
+  },
+  blockHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    paddingHorizontal: 4,
+    marginBottom: 10,
+  },
+  blockTitle: { color: "#fff", fontSize: 16, fontWeight: "800", letterSpacing: -0.15 },
+  blockHint: { color: "rgba(255,255,255,0.55)", fontSize: 12, fontWeight: "700" },
   separator: { height: 20, backgroundColor: "transparent", marginVertical: 10 },
   cardWrapper: { width: "100%", marginBottom: 12 },
   toggleContainer: {
@@ -408,7 +538,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
     borderRadius: 25,
     overflow: "hidden",
   },
@@ -426,18 +558,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "rgba(255, 255, 255, 0.7)",
   },
-  toggleButtonTextActive: { color: "#1535A8" },
-  section: { marginHorizontal: 16, marginBottom: 20 },
+  toggleButtonTextActive: { color: accent.tealDeep },
+  section: { marginBottom: 6, marginTop: 14 },
   sectionTitle: {
     color: "white",
-    fontSize: 17,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "700",
     marginBottom: 10,
   },
   chartWrapper: {
     borderWidth: 1,
-    borderColor: "white",
-    borderRadius: 10,
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 14,
     paddingVertical: 20,
     paddingLeft: 16,
     paddingRight: 10,
@@ -452,16 +585,16 @@ const styles = StyleSheet.create({
   filterTabsRow: {
     flexDirection: "row",
     gap: 12,
-    paddingHorizontal: 16,
     marginTop: 15,
+    flexWrap: "nowrap",
   },
   filterTabButton: {
     flex: 1,
     height: 38,
-    borderRadius: 6,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.35)",
-    backgroundColor: "rgba(255, 255, 255, 0.16)",
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -475,11 +608,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   filterTabTextActive: {
-    color: "#1535A8",
+    color: accent.tealDeep,
   },
   cardListContainer: {
     marginVertical: 10,
-    paddingHorizontal: 16,
     width: "100%",
   },
   emptyContainer: {

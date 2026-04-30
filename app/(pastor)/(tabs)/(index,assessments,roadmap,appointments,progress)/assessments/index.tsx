@@ -273,21 +273,30 @@ export default function Survey() {
         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
         style={{ flex: 1 }}
       >
+        <View style={styles.bgCircleTop} pointerEvents="none" />
+        <View style={styles.bgCircleBottom} pointerEvents="none" />
         <View style={styles.scrollContainer}>
           <TopBar role="pastor" showUserName />
 
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={styles.backButton}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={getIconSize(28)}
-                color="#fff"
-              />
-              <Text style={styles.headerTitle}>Assessment</Text>
-            </TouchableOpacity>
+          <View style={styles.heroHeader}>
+            <View style={styles.pill}>
+              <View style={styles.pillDots}>
+                <View style={styles.pillDot} />
+                <View style={styles.pillDotGold} />
+              </View>
+              <Text style={styles.pillText}>Center for Community Change</Text>
+            </View>
+
+            <Text style={styles.heroTitle}>Your assessments</Text>
+            <Text style={styles.heroSubtitle}>
+              Review assigned assessments and track completion.
+            </Text>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Ionicons name="leaf-outline" size={14} color="rgba(111, 212, 190, 1)" />
+              <View style={styles.dividerLine} />
+            </View>
           </View>
 
           <View style={styles.searchContainer}>
@@ -413,29 +422,53 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
+  bgCircleTop: {
+    position: "absolute",
+    top: -130,
+    right: -100,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  bgCircleBottom: {
+    position: "absolute",
+    bottom: -90,
+    left: -80,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
   searchContainer: {
     marginHorizontal: 16,
   },
-  header: {
+  heroHeader: {
+    paddingHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 10,
+  },
+  pill: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: getSpacing(16),
-    paddingBottom: getSpacing(12),
-    marginVertical: getSpacing(16),
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.3)",
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    marginBottom: 12,
   },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerTitle: {
-    marginLeft: getSpacing(8),
-    fontSize: getFontSize(18),
-    fontWeight: "600",
-    color: "#fff",
-  },
+  pillDots: { flexDirection: "row", alignItems: "center", gap: 6 },
+  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#6FD4BE" },
+  pillDotGold: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#E8C88A" },
+  pillText: { color: "rgba(255,255,255,0.95)", fontSize: 12, fontWeight: "700" },
+  heroTitle: { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: -0.2 },
+  heroSubtitle: { color: "rgba(255,255,255,0.72)", marginTop: 4, fontSize: 13, lineHeight: 18 },
+  dividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 0 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.12)" },
   dividerWithMargin: {
     height: 0.5,
     backgroundColor: "rgba(255, 255, 255, 0.3)",
