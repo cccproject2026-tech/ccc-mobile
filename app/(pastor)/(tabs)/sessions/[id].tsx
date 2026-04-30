@@ -2,17 +2,17 @@ import { buildPastorMeetingsUi } from "@/components/sessions/pastor/buildPastorM
 import type { PastorMeetingUi } from "@/components/sessions/pastor/pastorSessionDetail.types";
 import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
 import {
-  DetailScreenSkeleton,
-  formatSessionTime,
-  getNextSessionId,
-  sessionGradientColors,
-  SessionProgressHeader,
-  SessionStatusBadge,
+    DetailScreenSkeleton,
+    formatSessionTime,
+    getNextSessionId,
+    sessionGradientColors,
+    SessionProgressHeader,
+    SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
 import { Colors } from "@/constants/Colors";
 import {
-  sessionOrdinalLabel,
-  sessionTopicSubtitle,
+    sessionOrdinalLabel,
+    sessionTopicSubtitle,
 } from "@/constants/sessionTitles";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
@@ -23,13 +23,13 @@ import type { AppointmentPlatform } from "@/types/appointment.types";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import {
-  appointmentPlatformLabel,
-  formatMeetingIdForDisplay,
-  getAppointmentJoinUrl,
-  parseGoogleMeetCodeFromUrl,
-  parseZoomMeetingIdFromUrl,
-  truncateMiddle,
-  zoomUrlHasPasscodeQuery,
+    appointmentPlatformLabel,
+    formatMeetingIdForDisplay,
+    getAppointmentJoinUrl,
+    parseGoogleMeetCodeFromUrl,
+    parseZoomMeetingIdFromUrl,
+    truncateMiddle,
+    zoomUrlHasPasscodeQuery,
 } from "@/utils/meetingLinkDetails";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
 import { Ionicons } from "@expo/vector-icons";
@@ -38,22 +38,22 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  LayoutAnimation,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  UIManager,
-  View,
-  ViewStyle,
+    Animated,
+    LayoutAnimation,
+    Linking,
+    Platform,
+    Pressable,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    UIManager,
+    View,
+    ViewStyle,
 } from "react-native";
 import {
-  SafeAreaView,
-  useSafeAreaInsets,
+    SafeAreaView,
+    useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -420,9 +420,13 @@ const NoteCard = ({ title, value }: { title: string; value?: string }) => {
 const MeetingTranscript = ({
   lines,
   checkingForTranscript,
+  onRefresh,
+  refreshing,
 }: {
   lines: { role: "mentor" | "pastor"; text: string; speaker?: string }[];
   checkingForTranscript?: boolean;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }) => {
   const hasContent = lines.some(line => line.text.trim());
   
@@ -438,6 +442,30 @@ const MeetingTranscript = ({
             ? "Please wait, we are fetching transcript and AI summary."
             : "Transcript will appear after the meeting"}
         </Text>
+        {!!onRefresh && (
+          <Pressable
+            onPress={onRefresh}
+            disabled={!!refreshing}
+            style={({ pressed }) => [
+              transcriptStyles.refreshButton,
+              (pressed || !!refreshing) && transcriptStyles.refreshButtonPressed,
+            ]}
+          >
+            <View style={transcriptStyles.refreshButtonContent}>
+              <Ionicons
+                name="refresh-outline"
+                size={16}
+                color={refreshing ? "rgba(255,255,255,0.6)" : "#FFFFFF"}
+              />
+              <Text
+                numberOfLines={1}
+                style={[transcriptStyles.refreshButtonText, refreshing && transcriptStyles.refreshButtonTextDisabled]}
+              >
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </Text>
+            </View>
+          </Pressable>
+        )}
       </View>
     );
   }
@@ -568,7 +596,19 @@ const SessionTabs = ({ transcript, summary }: { transcript: React.ReactNode; sum
   );
 };
 
-const SessionAccordion = ({ meeting, joinButton }: { meeting: PastorMeetingUi; joinButton?: React.ReactNode }) => {
+const SessionAccordion = ({
+  meeting,
+  joinButton,
+  checkingForTranscript,
+  onRefreshTranscript,
+  refreshingTranscript,
+}: {
+  meeting: PastorMeetingUi;
+  joinButton?: React.ReactNode;
+  checkingForTranscript?: boolean;
+  onRefreshTranscript?: () => void;
+  refreshingTranscript?: boolean;
+}) => {
   const expanded = true;
   const { horizontalPad: padH, cardRadius } = usePastorMeetingLayout();
 
@@ -618,6 +658,8 @@ const SessionAccordion = ({ meeting, joinButton }: { meeting: PastorMeetingUi; j
               <MeetingTranscript
                 lines={meeting.transcript}
                 checkingForTranscript={checkingForTranscript}
+                onRefresh={onRefreshTranscript}
+                refreshing={refreshingTranscript}
               />
             }
             summary={<MeetingSummary summary={meeting.aiSummary} />}
@@ -683,16 +725,30 @@ export default function PastorSessionDetailScreen() {
       setSummary(result?.data?.summary || null);
     } catch (e) {
       const error = e as any;
+      const status = error?.response?.status;
       const message =
         error?.response?.data?.message ||
         error?.message ||
         "Something went wrong";
+      const lower = String(message).toLowerCase();
+      const isNotFound =
+        status === 404 ||
+        lower.includes("not found") ||
+        lower.includes("appointment with id") && lower.includes("not found");
+
+      if (isNotFound) {
+        // Appointment/transcript isn't available (yet). Treat as "no transcript" to avoid noisy errors + polling.
+        setTranscript("");
+        setSummary(null);
+        setTranscriptSummaryError("NO_TRANSCRIPT");
+        return;
+      }
+
       console.error("Transcript Summary API Error:", message);
 
       setTranscript((appointment as any)?.transcript || "");
       setSummary(null);
 
-      const lower = String(message).toLowerCase();
       if (lower.includes("too short") || lower.includes("missing")) {
         setTranscriptSummaryError("SHORT_TRANSCRIPT");
       } else {
@@ -737,6 +793,7 @@ export default function PastorSessionDetailScreen() {
 
   useEffect(() => {
     if (!appointmentId) return;
+    if (transcriptSummaryError === "NO_TRANSCRIPT") return;
 
     const hasStringTranscript =
       typeof (appointment as any)?.transcript === "string" &&
@@ -958,6 +1015,13 @@ export default function PastorSessionDetailScreen() {
               <SessionAccordion
                 key={meeting.id}
                 meeting={meeting}
+                checkingForTranscript={checkingForTranscript}
+                refreshingTranscript={loadingTranscriptSummary}
+                onRefreshTranscript={() => {
+                  if (!appointmentId) return;
+                  lastFetchedAppointmentIdRef.current = appointmentId;
+                  getTranscriptSummary(appointmentId, true);
+                }}
                 joinButton={
                   meeting.isLatest && meetingLink ? (
                     <View style={styles.joinContainer}>
@@ -1135,6 +1199,23 @@ const transcriptStyles = StyleSheet.create({
   },
   emptyText: { color: "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: "500" },
   emptySubtext: { color: "rgba(255,255,255,0.3)", fontSize: 13 },
+  refreshButton: {
+    marginTop: SPACING.lg,
+    justifyContent: "center",
+    alignSelf: "center",
+    maxWidth: "100%",
+    backgroundColor: "rgba(255,255,255,0.16)",
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.sm,
+    minHeight: 38,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+  },
+  refreshButtonPressed: { backgroundColor: "rgba(255,255,255,0.12)" },
+  refreshButtonContent: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
+  refreshButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", marginLeft: 8, flexShrink: 1 },
+  refreshButtonTextDisabled: { color: "rgba(255,255,255,0.6)" },
   scroll: { maxHeight: 400 },
   scrollContent: { paddingBottom: SPACING.md },
   message: { marginBottom: SPACING.md, flexDirection: "row" },

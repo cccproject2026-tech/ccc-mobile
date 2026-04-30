@@ -1,70 +1,66 @@
 import {
-  DetailScreenSkeleton,
-  formatSessionTime,
-  getNextSessionId,
-  SessionConfirmModal,
-  sessionGradientColors,
-  SessionProgressHeader,
-  SessionStatusBadge
+    DetailScreenSkeleton,
+    formatSessionTime,
+    getNextSessionId,
+    SessionConfirmModal,
+    sessionGradientColors,
+    SessionProgressHeader,
+    SessionStatusBadge
 } from "@/components/sessions/SessionFlowShared";
 import { MENTOR_MEETING_UI } from "@/components/sessions/mentor/mentorSessionMeetingConfig";
 import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
 import { Colors } from "@/constants/Colors";
 import {
-  sessionOrdinalLabel,
-  sessionTopicSubtitle,
+    sessionOrdinalLabel,
+    sessionTopicSubtitle,
 } from "@/constants/sessionTitles";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
+import apiClient from "@/services/api";
 import { useAuthStore } from "@/stores";
 import type { AppointmentPlatform } from "@/types/appointment.types";
 import {
-  MentorshipAiSummary,
-  MentorshipSession,
-  MentorshipTranscriptLine,
+    MentorshipAiSummary,
+    MentorshipSession,
+    MentorshipTranscriptLine,
 } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
 import {
-  appointmentPlatformLabel,
-  formatMeetingIdForDisplay,
-  getAppointmentJoinUrl,
-  parseGoogleMeetCodeFromUrl,
-  parseZoomMeetingIdFromUrl,
-  truncateMiddle,
-  zoomUrlHasPasscodeQuery,
+    appointmentPlatformLabel,
+    formatMeetingIdForDisplay,
+    getAppointmentJoinUrl,
+    parseGoogleMeetCodeFromUrl,
+    parseZoomMeetingIdFromUrl,
+    truncateMiddle,
+    zoomUrlHasPasscodeQuery,
 } from "@/utils/meetingLinkDetails";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
-import {
-  aiSummaryForSession,
-  transcriptLinesForSession,
-} from "@/utils/sessionTranscriptUi";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  LayoutAnimation,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  UIManager,
-  View
+    ActivityIndicator,
+    Animated,
+    LayoutAnimation,
+    Linking,
+    Platform,
+    Pressable,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    UIManager,
+    View
 } from "react-native";
 import {
-  SafeAreaView,
-  useSafeAreaInsets,
+    SafeAreaView,
+    useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import apiClient from "@/services/api";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 const SPACING = {
@@ -424,9 +420,13 @@ const NoteCard = ({ title, value, icon }: { title: string; value?: string; icon?
 const MeetingTranscript = ({
   lines,
   checkingForTranscript,
+  onRefresh,
+  refreshing,
 }: {
   lines: { role: "mentor" | "pastor"; text: string; speaker?: string }[];
   checkingForTranscript?: boolean;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }) => {
   const hasContent = lines.some(line => line.text.trim());
   
@@ -442,6 +442,30 @@ const MeetingTranscript = ({
             ? "Please wait, we are fetching transcript and AI summary."
             : "Transcript will appear after the meeting"}
         </Text>
+        {!!onRefresh && (
+          <Pressable
+            onPress={onRefresh}
+            disabled={!!refreshing}
+            style={({ pressed }) => [
+              transcriptStyles.refreshButton,
+              (pressed || !!refreshing) && transcriptStyles.refreshButtonPressed,
+            ]}
+          >
+            <View style={transcriptStyles.refreshButtonContent}>
+              <Ionicons
+                name="refresh-outline"
+                size={16}
+                color={refreshing ? "rgba(255,255,255,0.6)" : "#FFFFFF"}
+              />
+              <Text
+                numberOfLines={1}
+                style={[transcriptStyles.refreshButtonText, refreshing && transcriptStyles.refreshButtonTextDisabled]}
+              >
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </Text>
+            </View>
+          </Pressable>
+        )}
       </View>
     );
   }
@@ -693,16 +717,29 @@ export default function SessionDetailsScreen() {
       setSummary(result?.data?.summary || null);
     } catch (e) {
       const error = e as any;
+      const status = error?.response?.status;
       const message =
         error?.response?.data?.message ||
         error?.message ||
         "Something went wrong";
+      const lower = String(message).toLowerCase();
+      const isNotFound =
+        status === 404 ||
+        lower.includes("not found") ||
+        lower.includes("appointment with id") && lower.includes("not found");
+
+      if (isNotFound) {
+        setTranscript("");
+        setSummary(null);
+        setTranscriptSummaryError("NO_TRANSCRIPT");
+        return;
+      }
+
       console.error("Transcript Summary API Error:", message);
 
       setTranscript((appointment as any)?.transcript || "");
       setSummary(null);
 
-      const lower = String(message).toLowerCase();
       if (lower.includes("too short") || lower.includes("missing")) {
         setTranscriptSummaryError("SHORT_TRANSCRIPT");
       } else {
@@ -743,6 +780,7 @@ export default function SessionDetailsScreen() {
 
   useEffect(() => {
     if (!appointmentId) return;
+    if (transcriptSummaryError === "NO_TRANSCRIPT") return;
 
     const hasStringTranscript =
       typeof (appointment as any)?.transcript === "string" &&
@@ -1063,6 +1101,12 @@ export default function SessionDetailsScreen() {
                       })()
                     }
                     checkingForTranscript={checkingForTranscript}
+                    refreshing={loadingTranscriptSummary}
+                    onRefresh={() => {
+                      if (!appointmentId) return;
+                      lastFetchedAppointmentIdRef.current = appointmentId;
+                      getTranscriptSummary(appointmentId, true);
+                    }}
                   />
                 }
                 summary={
@@ -1306,6 +1350,23 @@ const transcriptStyles = StyleSheet.create({
   emptyContainer: { alignItems: "center", padding: SPACING.xl, gap: SPACING.sm },
   emptyText: { color: "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: "500" },
   emptySubtext: { color: "rgba(255,255,255,0.3)", fontSize: 13 },
+  refreshButton: {
+    marginTop: SPACING.lg,
+    justifyContent: "center",
+    alignSelf: "center",
+    maxWidth: "100%",
+    backgroundColor: "rgba(255,255,255,0.16)",
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.sm,
+    minHeight: 38,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+  },
+  refreshButtonPressed: { backgroundColor: "rgba(255,255,255,0.12)" },
+  refreshButtonContent: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
+  refreshButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", marginLeft: 8, flexShrink: 1 },
+  refreshButtonTextDisabled: { color: "rgba(255,255,255,0.6)" },
   scroll: { maxHeight: 400 },
   scrollContent: { paddingBottom: SPACING.md },
   messageContainer: { marginBottom: SPACING.md, flexDirection: "row" },
