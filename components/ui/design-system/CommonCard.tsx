@@ -7,7 +7,7 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-/** Frosted surface card used across roadmap/assessments screens. */
+/** Frosted surface card used across roadmap/notes/assessments screens. */
 export function CommonCard({ children, style }: Props) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
@@ -18,7 +18,6 @@ const styles = StyleSheet.create({
     backgroundColor: roadmapTheme.frostedSurface,
     borderWidth: 1,
     borderColor: roadmapTheme.frostedBorder,
-    padding: 16,
   },
 });
 

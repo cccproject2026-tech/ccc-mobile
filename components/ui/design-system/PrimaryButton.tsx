@@ -30,30 +30,26 @@ export function PrimaryButton({ label, onPress, leftIcon, disabled, style }: Pro
 
 const styles = StyleSheet.create({
   btn: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    minHeight: 44,
-    paddingHorizontal: 20,
-    borderRadius: 14,
+    minHeight: 48,
+    paddingHorizontal: 18,
+    borderRadius: 16,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.56)",
   },
-  pressed: {
-    opacity: 0.9,
-  },
-  disabled: {
-    opacity: 0.55,
-  },
-  icon: {
-    marginRight: 0,
-  },
+  pressed: { opacity: 0.9 },
+  disabled: { opacity: 0.55 },
+  icon: { marginRight: 0 },
   text: {
     color: roadmapTheme.textActive,
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "800",
+    letterSpacing: -0.1,
   },
 });
 

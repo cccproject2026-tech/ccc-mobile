@@ -12,7 +12,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { useAuthStore } from "@/stores/auth.store";
-import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import {
+  CommonCard,
+  GradientBackground,
+  RoadmapNavRow,
+  RoadmapTabStrip,
+  SectionHeader,
+} from "@/components/ui/design-system";
 
 export default function MentorNotes() {
   const { user } = useAuthStore();
@@ -70,7 +76,7 @@ export default function MentorNotes() {
 
   const handleNotePress = (note: any) => {
     router.push({
-      pathname: "/(mentor)/profile/note-detail",
+      pathname: "/(mentor)/(tabs)/profile/note-detail",
       params: {
         noteId: note.id,
         menteeId: menteeId,
@@ -81,7 +87,7 @@ export default function MentorNotes() {
 
   const handleNewNote = () => {
     router.push({
-      pathname: "/(mentor)/profile/new-note",
+      pathname: "/(mentor)/(tabs)/profile/new-note",
       params: {
         menteeName: menteeName,
         menteeId: menteeId,
@@ -90,97 +96,40 @@ export default function MentorNotes() {
   };
 
   return (
-    <AppGradientBackground style={styles.container}>
+    <GradientBackground style={styles.container} decorativeOrbs>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => router.back()}
-              style={styles.backButton}
-            >
-              <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
-            </TouchableOpacity>
-            
-            <View style={styles.headerCenter}>
-              <View style={styles.profileBadge}>
-                <Text style={styles.profileName}>{menteeName}</Text>
+        <View style={styles.chrome}>
+          <RoadmapNavRow
+            onBack={() => router.back()}
+            pillLabel={menteeName || "Notes"}
+            rightSlot={
+              <View style={styles.rightActions}>
+                <TouchableOpacity activeOpacity={0.7} style={styles.iconButton}>
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationCount}>3</Text>
+                  </View>
+                  <Ionicons name="notifications" size={22} color="#FFFFFF" />
+                </TouchableOpacity>
+                <TouchableOpacity activeOpacity={0.7} style={styles.iconButton}>
+                  <Ionicons name="share-social" size={22} color="#FFFFFF" />
+                </TouchableOpacity>
               </View>
-            </View>
-
-            <View style={styles.headerRight}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={styles.iconButton}
-              >
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationCount}>3</Text>
-                </View>
-                <Ionicons name="notifications" size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={styles.iconButton}
-              >
-                <Ionicons name="share-social" size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* <View style={styles.titleSection}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-            <Text style={styles.title}>Notes</Text>
-          </View>
-          <Text style={styles.subtitle}>{menteeName}</Text> */}
+            }
+          />
+          <SectionHeader title="Notes" subtitle="Capture thoughts and revisit them anytime." showDivider />
         </View>
 
-        {/* Tab Buttons */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[
-              styles.tabButton,
-              activeTab === "new"
-                ? styles.tabButtonActive
-                : styles.tabButtonInactive,
+        <View style={styles.tabStripWrap}>
+          <RoadmapTabStrip
+            tabs={[
+              { key: "new", label: "New" },
+              { key: "previous", label: "Previous" },
             ]}
-            onPress={handleNewNote}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "new"
-                  ? styles.tabTextActive
-                  : styles.tabTextInactive,
-              ]}
-            >
-              New
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[
-              styles.tabButton,
-              activeTab === "previous"
-                ? styles.tabButtonActive
-                : styles.tabButtonInactive,
-            ]}
-            onPress={() => setActiveTab("previous")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "previous"
-                  ? styles.tabTextActive
-                  : styles.tabTextInactive,
-              ]}
-            >
-              Previous
-            </Text>
-          </TouchableOpacity>
+            activeKey={activeTab}
+            onChange={(k) => (k === "new" ? handleNewNote() : setActiveTab("previous"))}
+          />
         </View>
 
         {/* Notes List */}
@@ -193,29 +142,32 @@ export default function MentorNotes() {
             <TouchableOpacity
               key={note.id}
               activeOpacity={0.85}
-              style={styles.noteCard}
               onPress={() => handleNotePress(note)}
             >
-              <View style={styles.noteContent}>
-                <Text style={styles.notePreview} numberOfLines={3}>
-                  {note.preview}
-                </Text>
-                <View style={styles.noteFooter}>
-                  <Text style={styles.noteDate}>{note.date}</Text>
-                  <Text style={styles.noteTime}>{note.time}</Text>
+              <CommonCard style={styles.noteCard}>
+                <View style={styles.noteRow}>
+                  <View style={styles.noteContent}>
+                    <Text style={styles.notePreview} numberOfLines={3}>
+                      {note.preview}
+                    </Text>
+                    <View style={styles.noteFooter}>
+                      <Text style={styles.noteDate}>{note.date}</Text>
+                      <Text style={styles.noteTime}>{note.time}</Text>
+                    </View>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={22}
+                    color="rgba(255,255,255,0.65)"
+                    style={styles.chevron}
+                  />
                 </View>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={24}
-                color="rgba(255,255,255,0.6)"
-                style={styles.chevron}
-              />
+              </CommonCard>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </SafeAreaView>
-    </AppGradientBackground>
+    </GradientBackground>
   );
 }
 
@@ -226,56 +178,27 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+  chrome: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 6,
   },
-  headerTop: {
+  rightActions: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  profileBadge: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-  },
-  profileName: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 34,
+    height: 34,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
   notificationBadge: {
     position: "absolute",
-    top: 4,
-    right: 4,
+    top: 2,
+    right: 2,
     backgroundColor: "#FFD700",
     borderRadius: 10,
     width: 20,
@@ -289,67 +212,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  titleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  subtitle: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  tabContainer: {
-    flexDirection: "row",
-    gap: 16,
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tabButtonActive: {
-    backgroundColor: "#FFFFFF",
-  },
-  tabButtonInactive: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  tabTextActive: {
-    color: "#1A3A6B",
-  },
-  tabTextInactive: {
-    color: "#FFFFFF",
+  tabStripWrap: {
+    paddingHorizontal: 16,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 24,
+    gap: 12,
   },
   noteCard: {
+    padding: 16,
+  },
+  noteRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    padding: 20,
-    marginBottom: 16,
     gap: 12,
   },
   noteContent: {
@@ -377,6 +256,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   chevron: {
-    marginLeft: 8,
+    marginLeft: 0,
   },
 });
