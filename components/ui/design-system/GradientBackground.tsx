@@ -22,3 +22,4 @@ export function GradientBackground({ children, style, decorativeOrbs }: Props) {
     </LinearGradient>
   );
 }
+

@@ -1,10 +1,12 @@
 import { AssessmentCard } from "@/components/build-components";
 import PMPBottomSheet from "@/components/director/PMPBottomSheet";
-import SearchBar from "@/components/director/SearchBar";
-import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
-import AppGradientBackground from "@/components/layout/AppGradientBackground";
-import { Colors } from "@/constants/Colors";
+import {
+  GradientBackground,
+  RoadmapSearchField,
+  RoadmapTabStrip,
+  SectionHeader,
+} from "@/components/ui/design-system";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import type { Assessment } from "@/types/assessment.types";
 import { sharePdfFromHtml } from "@/utils/pdf";
@@ -235,21 +237,21 @@ export default function Survey() {
   // Loading state (initial load only)
   if (isLoading && !isRefetching) {
     return (
-      <AppGradientBackground style={styles.centerContainer}>
+      <GradientBackground style={styles.centerContainer} decorativeOrbs>
         <ActivityIndicator size="large" color="#fff" />
         <Text style={styles.loadingText}>Loading assessments...</Text>
-      </AppGradientBackground>
+      </GradientBackground>
     );
   }
 
   // Error state
   if (error && !assessments.length) {
     return (
-      <AppGradientBackground style={styles.centerContainer}>
+      <GradientBackground style={styles.centerContainer} decorativeOrbs>
         <Ionicons name="alert-circle-outline" size={64} color="#fff" />
         <Text style={styles.errorText}>Failed to load assessments</Text>
         <Text style={styles.errorSubtext}>Pull down to retry</Text>
-      </AppGradientBackground>
+      </GradientBackground>
     );
   }
 
@@ -263,9 +265,7 @@ export default function Survey() {
 
   return (
     <>
-      <AppGradientBackground style={{ flex: 1 }}>
-        <View style={styles.bgCircleTop} pointerEvents="none" />
-        <View style={styles.bgCircleBottom} pointerEvents="none" />
+      <GradientBackground style={{ flex: 1 }} decorativeOrbs>
         <View style={styles.scrollContainer}>
           <TopBar role="pastor" showUserName />
 
@@ -278,28 +278,31 @@ export default function Survey() {
               <Text style={styles.pillText}>Center for Community Change</Text>
             </View>
 
-            <Text style={styles.heroTitle}>Your assessments</Text>
-            <Text style={styles.heroSubtitle}>
-              Review assigned assessments and track completion.
-            </Text>
-
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Ionicons name="leaf-outline" size={14} color="rgba(111, 212, 190, 1)" />
-              <View style={styles.dividerLine} />
-            </View>
+            <SectionHeader
+              title="Your assessments"
+              subtitle="Review assigned assessments and track completion."
+              showDivider
+              style={{ marginBottom: 0 }}
+            />
           </View>
 
           <View style={styles.searchContainer}>
-            <SearchBar value={search} onChangeValue={setSearch} />
+            <RoadmapSearchField value={search} onChangeText={setSearch} placeholder="Search assessments..." />
           </View>
 
           <View style={{ marginTop: 10 }}>
-            <TabSwitcher
-              tabs={availableTabs}
-              activeTab={tabs}
-              onChange={setTabs}
-            />
+            <View style={styles.tabStripWrap}>
+              <RoadmapTabStrip
+                tabs={availableTabs.map((t) => ({
+                  key: t.key,
+                  label: t.label,
+                  badge: "badge" in t ? t.badge : undefined,
+                }))}
+                activeKey={tabs}
+                onChange={setTabs}
+                scrollable
+              />
+            </View>
           </View>
 
           <ScrollView
@@ -384,7 +387,7 @@ export default function Survey() {
             </View>
           </ScrollView>
         </View>
-      </AppGradientBackground>
+      </GradientBackground>
 
       <PMPBottomSheet
         ref={pmpBottomSheetRef}
@@ -413,26 +416,11 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  bgCircleTop: {
-    position: "absolute",
-    top: -130,
-    right: -100,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  bgCircleBottom: {
-    position: "absolute",
-    bottom: -90,
-    left: -80,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
   searchContainer: {
     marginHorizontal: 16,
+  },
+  tabStripWrap: {
+    paddingHorizontal: 16,
   },
   heroHeader: {
     paddingHorizontal: 16,
@@ -456,10 +444,6 @@ const styles = StyleSheet.create({
   pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#6FD4BE" },
   pillDotGold: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#E8C88A" },
   pillText: { color: "rgba(255,255,255,0.95)", fontSize: 12, fontWeight: "700" },
-  heroTitle: { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: -0.2 },
-  heroSubtitle: { color: "rgba(255,255,255,0.72)", marginTop: 4, fontSize: 13, lineHeight: 18 },
-  dividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 0 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.12)" },
   dividerWithMargin: {
     height: 0.5,
     backgroundColor: "rgba(255, 255, 255, 0.3)",

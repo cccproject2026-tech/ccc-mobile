@@ -3,6 +3,8 @@ export const roadmapTheme = {
   accentGold: "#E8C88A",
   accentMint: "#6FD4BE",
   tealDeep: "#0E5A62",
+  /** Active pill text color (reference screens) */
+  textActive: "#0E5A62",
   frostedSurface: "rgba(255,255,255,0.10)",
   frostedSurfaceStrong: "rgba(255,255,255,0.12)",
   frostedBorder: "rgba(255,255,255,0.16)",

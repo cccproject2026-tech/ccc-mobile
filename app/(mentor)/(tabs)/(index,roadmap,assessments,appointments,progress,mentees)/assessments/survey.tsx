@@ -1,12 +1,15 @@
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
-import { Tab } from "@/components/atom/tab";
-import { AssessmentCard, Header } from "@/components/build-components";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
-import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { AssessmentCard } from "@/components/build-components";
+import TopBar from "@/components/director/TopBar";
+import {
+  GradientBackground,
+  RoadmapSearchField,
+  RoadmapTabStrip,
+  SectionHeader,
+} from "@/components/ui/design-system";
 import { router, Stack } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Survey() {
@@ -114,14 +117,23 @@ export default function Survey() {
     { tab: "On Hold" },
   ];
 
-  const filteredRoadMaps = dummyRoadMaps.filter((item) => {
+  const searchedRoadMaps = dummyRoadMaps.filter((item) => {
+    if (!searchText.trim()) return true;
+    const q = searchText.toLowerCase();
+    return (
+      item.title.toLowerCase().includes(q) ||
+      item.description.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredRoadMaps = searchedRoadMaps.filter((item) => {
     if (tabs === "All") return true;
     return item.status === tabs;
   });
 
   return (
     <>
-      <AppGradientBackground>
+      <GradientBackground decorativeOrbs>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <ScrollView
@@ -130,35 +142,42 @@ export default function Survey() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader showNameTag={true} />
+            <TopBar role="mentor" showUserName />
 
-            {/* Header Section */}
-            <Header title="Assessment" />
+            <View style={styles.heroHeader}>
+              <View style={styles.pill}>
+                <View style={styles.pillDots}>
+                  <View style={styles.pillDot} />
+                  <View style={styles.pillDotGold} />
+                </View>
+                <Text style={styles.pillText} numberOfLines={1}>
+                  Center for Community Change
+                </Text>
+              </View>
+              <SectionHeader
+                title="Your assessments"
+                subtitle="Review assigned assessments and track completion."
+                showDivider
+                style={{ marginBottom: 0 }}
+              />
+            </View>
 
-            {/* Tabs Section */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: 16,
-                gap: 8,
-                marginTop: 15,
-                paddingBottom: 5,
-              }}
-              style={{ maxHeight: 50 }}
-            >
-              {availableTabs.map((e, i) => (
-                <Tab
-                  key={i}
-                  data={e}
-                  tabs={tabs}
-                  setTabs={setTabs}
-                  onPress={() => {
-                    setTabs(e.tab);
-                  }}
-                />
-              ))}
-            </ScrollView>
+            <View style={styles.searchContainer}>
+              <RoadmapSearchField
+                value={searchText}
+                onChangeText={setSearchText}
+                placeholder="Search assessments..."
+              />
+            </View>
+
+            <View style={styles.tabStripWrap}>
+              <RoadmapTabStrip
+                tabs={availableTabs.map((t) => ({ key: t.tab, label: t.tab }))}
+                activeKey={tabs}
+                onChange={setTabs}
+                scrollable
+              />
+            </View>
 
             {/* Content Section */}
             <View
@@ -200,7 +219,7 @@ export default function Survey() {
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}
         />
-      </AppGradientBackground>
+      </GradientBackground>
     </>
   );
 }
@@ -211,8 +230,34 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     marginHorizontal: 16,
-    marginTop: 16,
+    marginTop: 12,
   },
+  tabStripWrap: {
+    paddingHorizontal: 16,
+    marginTop: 10,
+  },
+  heroHeader: {
+    paddingHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 10,
+  },
+  pill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    marginBottom: 12,
+  },
+  pillDots: { flexDirection: "row", alignItems: "center", gap: 6 },
+  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#6FD4BE" },
+  pillDotGold: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#E8C88A" },
+  pillText: { color: "rgba(255,255,255,0.95)", fontSize: 12, fontWeight: "700" },
   separator: {
     height: 2,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
