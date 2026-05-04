@@ -1,14 +1,6 @@
 import React from "react";
 import { Dimensions, StyleSheet, Text, View, ViewStyle } from "react-native";
-import Svg, {
-  Defs,
-  G,
-  Line,
-  Rect,
-  Stop,
-  LinearGradient as SvgLinearGradient,
-  Text as SvgText,
-} from "react-native-svg";
+import Svg, { G, Line, Rect, Text as SvgText } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
 const barWidth = 20; // Reduced width for smaller bars
@@ -143,22 +135,8 @@ const CustomBarChart: React.FC<CustomBarChartProps> = ({
           height={
             normalizeData(value, maxValue) * (customChartHeight / customMaxBarHeight)
           }
-          fill={`url(#${sectionKey}-${key})`}
+          fill={colors[key as keyof Colors][0]}
         />
-        <Defs>
-          <SvgLinearGradient id={`${sectionKey}-${key}`} x1="0" y1="0" x2="0" y2="1">
-            <Stop
-              offset="0"
-              stopColor={colors[key as keyof Colors][0]}
-              stopOpacity="1"
-            />
-            <Stop
-              offset="1"
-              stopColor={colors[key as keyof Colors][1]}
-              stopOpacity="1"
-            />
-          </SvgLinearGradient>
-        </Defs>
       </G>
     ));
   };

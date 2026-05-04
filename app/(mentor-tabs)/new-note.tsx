@@ -3,6 +3,8 @@ import { router, Stack, useLocalSearchParams } from "expo-router"
 import React, { useState, useEffect } from "react"
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -97,6 +99,8 @@ export default function NewNote() {
           Alert.alert("Success", "Note updated successfully!", [{ text: "OK", onPress: () => router.back() }])
         } else {
           await NotesService.createNote(menteeId, noteContent)
+          setNoteContent("")
+          setInitializedFromParams(false)
           Alert.alert("Success", "Note saved successfully!", [{ text: "OK", onPress: () => router.back() }])
         }
       } catch (err) {
@@ -138,6 +142,10 @@ export default function NewNote() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
@@ -202,40 +210,45 @@ export default function NewNote() {
             contentContainerStyle={styles.toolbar}
           >
             <FormatButton icon="text" format="font-size" />
-            <FormatButton icon="document-text" format="bold" />
+            <FormatButton icon="card" format="bold" />
             <FormatButton icon="remove-outline" format="underline" />
             <FormatButton icon="list" format="bullet-list" />
             <FormatButton icon="list-outline" format="numbered-list" />
-            <FormatButton icon="align-horizontal-left" format="align-left" />
-            <FormatButton icon="align-horizontal-center" format="align-center" />
-            <FormatButton icon="align-horizontal-right" format="align-right" />
+            <FormatButton icon="reorder-four" format="align-left" />
+            <FormatButton icon="reorder-four" format="align-center" />
+            <FormatButton icon="reorder-four" format="align-right" />
             <FormatButton icon="reorder-four" format="justify" />
           </ScrollView>
         </View>
 
-        {/* Note Content Area */}
-        <View style={styles.contentContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Write the Notes here..."
-            placeholderTextColor="rgba(255, 255, 255, 0.4)"
-            multiline
-            textAlignVertical="top"
-            value={noteContent}
-            onChangeText={setNoteContent}
-          />
-        </View>
-
-        {/* Save Button */}
-        <View style={styles.bottomContainer}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={styles.saveButton}
-            onPress={handleSave}
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.contentContainer}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Write the Notes here..."
+                placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                multiline
+                textAlignVertical="top"
+                value={noteContent}
+                onChangeText={setNoteContent}
+              />
+            </View>
+
+            <View style={styles.bottomContainer}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.saveButton}
+                onPress={handleSave}
+              >
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </AppGradientBackground>
   )
@@ -407,7 +420,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveButtonText: {
-    color: "#1A3A6B",
+    color: "#1A4882",
     fontSize: 16,
     fontWeight: "700",
   },

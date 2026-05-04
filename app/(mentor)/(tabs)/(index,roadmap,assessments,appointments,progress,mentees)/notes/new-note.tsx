@@ -49,6 +49,14 @@ export default function NewNote() {
     }
   }, [isEdit, params.content, initializedFromParams])
 
+  // Ensure fresh empty editor whenever we are NOT in edit mode
+  useEffect(() => {
+    if (!isEdit) {
+      setNoteContent("")
+      setInitializedFromParams(false)
+    }
+  }, [isEdit])
+
   const toggleFormat = (format: FormatOption) => {
     if (activeFormats.includes(format)) {
       setActiveFormats(activeFormats.filter((f) => f !== format))
@@ -95,6 +103,8 @@ export default function NewNote() {
           ])
         } else {
           await NotesService.createNote(menteeId, noteContent)
+          setNoteContent("")
+          setInitializedFromParams(false)
           Alert.alert("Success", "Note saved successfully!", [
             { text: "OK", onPress: () => router.back() },
           ])
@@ -206,13 +216,13 @@ export default function NewNote() {
               contentContainerStyle={styles.toolbar}
             >
               <FormatButton icon="text" format="font-size" />
-              <FormatButton icon="document-text" format="bold" />
+              <FormatButton icon="card" format="bold" />
               <FormatButton icon="remove-outline" format="underline" />
               <FormatButton icon="list" format="bullet-list" />
               <FormatButton icon="list-outline" format="numbered-list" />
-              <FormatButton icon="align-horizontal-left" format="align-left" />
-              <FormatButton icon="align-horizontal-center" format="align-center" />
-              <FormatButton icon="align-horizontal-right" format="align-right" />
+              <FormatButton icon="reorder-four" format="align-left" />
+              <FormatButton icon="reorder-four" format="align-center" />
+              <FormatButton icon="reorder-four" format="align-right" />
               <FormatButton icon="reorder-four" format="justify" />
             </ScrollView>
           </View>
@@ -260,15 +270,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   backButton: {
     width: 40,
@@ -281,16 +291,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   profileBadge: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-    borderWidth: 2,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.3)",
     backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   profileName: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
   headerRight: {
@@ -330,24 +340,24 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#FFFFFF",
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "700",
   },
   subtitle: {
     color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
   },
   tabContainer: {
     flexDirection: "row",
-    gap: 16,
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    gap: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -358,7 +368,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
   tabTextActive: {
@@ -368,20 +378,20 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   toolbarContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
   toolbar: {
     flexDirection: "row",
-    gap: 8,
-    paddingVertical: 8,
+    gap: 6,
+    paddingVertical: 6,
   },
   formatButton: {
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
+    borderRadius: 10,
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
@@ -392,34 +402,34 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 14,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
-    padding: 20,
+    padding: 16,
   },
   textInput: {
     flex: 1,
     color: "#FFFFFF",
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 14,
+    lineHeight: 20,
   },
   bottomContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   saveButton: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 10,
+    paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   saveButtonText: {
-    color: "#1A3A6B",
-    fontSize: 18,
+    color: "#1A4882",
+    fontSize: 16,
     fontWeight: "700",
   },
 })

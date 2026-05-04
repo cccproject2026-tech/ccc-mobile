@@ -4,7 +4,6 @@ import CustomPieChart from "@/components/atom/CustomPieChart";
 import { Tab } from "@/components/atom/tab";
 import { Header } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssessments } from "@/hooks/assessments/useAssessments";
 import { useProgress } from "@/hooks/progress/useProgress";
@@ -339,15 +338,14 @@ export default function ProgressScreen() {
                     gap: 5,
                   }}
                 >
-                  <LinearGradient
-                    colors={["#183476", "#FFFFFF"]}
+                  <View
                     style={{
                       width: 30,
                       height: 20,
-                      backgroundColor: "#182c5b",
+                      backgroundColor: "#183476",
                       borderRadius: 5,
                     }}
-                  ></LinearGradient>
+                  />
                   <Text
                     style={{
                       color: "white",
@@ -366,15 +364,14 @@ export default function ProgressScreen() {
                     gap: 5,
                   }}
                 >
-                  <LinearGradient
-                    colors={["#1535A8", "#FFFFFF"]}
+                  <View
                     style={{
                       width: 30,
                       height: 20,
-                      backgroundColor: "#182c5b",
+                      backgroundColor: "#1535A8",
                       borderRadius: 5,
                     }}
-                  ></LinearGradient>
+                  />
                   <Text
                     style={{
                       color: "white",
@@ -393,15 +390,14 @@ export default function ProgressScreen() {
                     gap: 5,
                   }}
                 >
-                  <LinearGradient
-                    colors={["#118FBA", "#FFFFFF"]}
+                  <View
                     style={{
                       width: 30,
                       height: 20,
-                      backgroundColor: "#182c5b",
+                      backgroundColor: "#118FBA",
                       borderRadius: 5,
                     }}
-                  ></LinearGradient>
+                  />
                   <Text
                     style={{
                       color: "white",

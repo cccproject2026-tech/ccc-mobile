@@ -1,12 +1,26 @@
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { Ionicons } from "@expo/vector-icons";
+import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useDrawerStore } from "../atom/DrawerStore";
 import { Button } from "../atom/buttons";
+
+/** Open the nearest drawer ancestor (stack → tabs → drawer). Zustand toggle does not move the RN drawer. */
+function openDrawerFromNestedScreen(navigation: ReturnType<typeof useNavigation>) {
+  let nav: ReturnType<typeof useNavigation> | undefined = navigation;
+  for (let i = 0; i < 8 && nav; i += 1) {
+    const state = nav.getState?.() as { type?: string } | undefined;
+    if (state?.type === "drawer") {
+      nav.dispatch(DrawerActions.openDrawer());
+      return;
+    }
+    nav = nav.getParent?.();
+  }
+  navigation.dispatch(DrawerActions.openDrawer());
+}
 
 interface HeaderProps {
   color?: string;
@@ -33,7 +47,8 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
   showBackButton = false,
   route ='/(pastor-tabs)/notifications'
 }) => {
-  const { toggleDrawer } = useDrawerStore();
+  const navigation = useNavigation();
+  const handleOpenDrawer = () => openDrawerFromNestedScreen(navigation);
 
    const handlePress = () => {
     router.push(route as any);
@@ -45,7 +60,7 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
       style={{ paddingTop: 10, paddingHorizontal: 16, display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
     >
       {showDrawer ? (
-        <TouchableOpacity onPress={toggleDrawer}>
+        <TouchableOpacity onPress={handleOpenDrawer}>
           <Ionicons name="menu" size={size} color={color} />
         </TouchableOpacity>
       ) : showBackButton ? (
@@ -86,7 +101,7 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
             <Ionicons name="notifications-outline" size={24} color={color} />
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={toggleDrawer}>
+        <TouchableOpacity onPress={handleOpenDrawer}>
           <Image
             source={image}
             style={{ width: 25, height: 25 }}

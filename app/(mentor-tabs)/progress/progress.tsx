@@ -4,14 +4,13 @@ import CustomPieChart from "@/components/atom/CustomPieChart";
 import { Tab } from "@/components/atom/tab";
 import { Header } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssessments } from "@/hooks/assessments/useAssessments";
 import { useProgress } from "@/hooks/progress/useProgress";
 import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
-import { LinearGradient } from "expo-linear-gradient";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Stack, router } from "expo-router";
 import React, { useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -174,25 +173,19 @@ export default function ProgressScreen() {
 
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color="white" />
           <Text style={{ color: "white", fontSize: 18, marginTop: 16 }}>Loading progress...</Text>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     );
   }
 
   return (
     <>
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
           <ScrollView
@@ -344,15 +337,14 @@ export default function ProgressScreen() {
                     gap: 5,
                   }}
                 >
-                  <LinearGradient
-                    colors={["#183476", "#FFFFFF"]}
+                  <View
                     style={{
                       width: 30,
                       height: 20,
-                      backgroundColor: "#182c5b",
+                      backgroundColor: "#183476",
                       borderRadius: 5,
                     }}
-                  ></LinearGradient>
+                  />
                   <Text
                     style={{
                       color: "white",
@@ -371,15 +363,14 @@ export default function ProgressScreen() {
                     gap: 5,
                   }}
                 >
-                  <LinearGradient
-                    colors={["#1535A8", "#FFFFFF"]}
+                  <View
                     style={{
                       width: 30,
                       height: 20,
-                      backgroundColor: "#182c5b",
+                      backgroundColor: "#1535A8",
                       borderRadius: 5,
                     }}
-                  ></LinearGradient>
+                  />
                   <Text
                     style={{
                       color: "white",
@@ -398,15 +389,14 @@ export default function ProgressScreen() {
                     gap: 5,
                   }}
                 >
-                  <LinearGradient
-                    colors={["#118FBA", "#FFFFFF"]}
+                  <View
                     style={{
                       width: 30,
                       height: 20,
-                      backgroundColor: "#182c5b",
+                      backgroundColor: "#118FBA",
                       borderRadius: 5,
                     }}
-                  ></LinearGradient>
+                  />
                   <Text
                     style={{
                       color: "white",
@@ -530,7 +520,7 @@ export default function ProgressScreen() {
             </View>
           </ScrollView>
         </SafeAreaView>
-      </LinearGradient>
+      </AppGradientBackground>
     </>
   );
 }
