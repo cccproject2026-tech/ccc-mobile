@@ -1,7 +1,12 @@
 import TopBar from '@/components/director/TopBar';
+import {
+    GradientBackground,
+    RoadmapNavRow,
+    SectionHeader,
+} from '@/components/ui/design-system/index';
+import { roadmapTheme } from '@/components/ui/design-system/roadmapTheme';
 import { useRoadmapQueries, useSubmitRoadmapQuery } from '@/hooks/roadmaps/useRoadmaps';
 import { useAuthStore } from '@/stores/auth.store';
-import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
@@ -11,16 +16,17 @@ import {
     FlatList,
     KeyboardAvoidingView,
     Platform,
+    Pressable,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
     useWindowDimensions,
     View
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AppGradientBackground from "@/components/layout/AppGradientBackground";
+
+const PASTOR_QUERY_TABS = ["NEW", "ANSWERED", "PENDING"] as const;
 
 export default function QueriesScreen() {
     const router = useRouter();
@@ -130,7 +136,7 @@ export default function QueriesScreen() {
     );
 
     return (
-        <AppGradientBackground style={styles.container}>
+        <GradientBackground decorativeOrbs style={styles.container}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar role="pastor" showUserName />
             </View>
@@ -140,68 +146,37 @@ export default function QueriesScreen() {
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
             <View style={{ width: "100%", maxWidth: maxWidth ?? undefined, alignSelf: "center" }}>
-            {/* HEADER */}
-            <View
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    paddingHorizontal: horizontalPadding,
-                    paddingVertical: getSpacing(16),
-                    marginBottom: getSpacing(16),
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-                }}
-            >
-                <TouchableOpacity onPress={() => router.back()} style={{ marginRight: getSpacing(8) }}>
-                    <Ionicons name="chevron-back" size={28} color="#fff" />
-                </TouchableOpacity>
-
-                <View style={{ flex: 1 }}>
-                    <Text
-                        style={{
-                            fontSize: isAndroid ? getFontSize(18) : getFontSize(15),
-                            fontWeight: '700',
-                            color: '#FFFFFF',
-                        }}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                    >
-                        Queries
-                    </Text>
-
-                    <Text
-                        style={{
-                            marginTop: getSpacing(4),
-                            fontSize: getFontSize(12),
-                            color: 'rgba(255, 255, 255, 0.8)',
-                        }}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                    >
-                        Revitalization Roadmap
-                    </Text>
-                </View>
+            <View style={{ paddingHorizontal: horizontalPadding, width: "100%" }}>
+                <RoadmapNavRow onBack={() => router.back()} pillLabel="Queries" />
+                <SectionHeader
+                    title="Your questions"
+                    subtitle="Revitalization Roadmap"
+                    showDivider
+                />
             </View>
 
-            {/* TABS */}
-            <View style={styles.tabContainer}>
-                {['NEW', 'ANSWERED', 'PENDING'].map(tab => (
-                    <TouchableOpacity
-                        key={tab}
-                        style={[styles.tab, selectedTab === tab && styles.activeTab]}
-                        onPress={() => setSelectedTab(tab as any)}
-                    >
-                        <Text
+            <View style={[styles.tabRow, { paddingHorizontal: horizontalPadding }]}>
+                {PASTOR_QUERY_TABS.map((tab) => {
+                    const label = tab === 'NEW' ? 'New' : tab === 'ANSWERED' ? 'Answered' : 'Pending';
+                    const active = selectedTab === tab;
+                    return (
+                        <Pressable
+                            key={tab}
+                            onPress={() => setSelectedTab(tab)}
                             style={[
-                                styles.tabText,
-                                selectedTab === tab && styles.activeTabText
+                                styles.tabPill,
+                                active ? styles.tabPillActive : styles.tabPillInactive,
                             ]}
                         >
-                            {tab.charAt(0) + tab.slice(1).toLowerCase()}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
+                            <Text
+                                style={[styles.tabPillText, active ? styles.tabPillTextActive : styles.tabPillTextInactive]}
+                                numberOfLines={1}
+                            >
+                                {label}
+                            </Text>
+                        </Pressable>
+                    );
+                })}
             </View>
 
             {/* CONTENT */}
@@ -233,7 +208,7 @@ export default function QueriesScreen() {
                         <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
                     </View>
 
-                    <TouchableOpacity
+                    <Pressable
                         onPress={handleSubmitQuery}
                         disabled={!queryText.trim() || submitQuery.isPending}
                         style={[
@@ -242,11 +217,11 @@ export default function QueriesScreen() {
                         ]}
                     >
                         {submitQuery.isPending ? (
-                            <ActivityIndicator size="small" color="#1D548D" />
+                            <ActivityIndicator size="small" color={roadmapTheme.tealDeep} />
                         ) : (
                             <Text style={styles.submitButtonText}>Submit</Text>
                         )}
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
                 </ScrollView>
             ) : (
@@ -275,7 +250,7 @@ export default function QueriesScreen() {
             )}
             </View>
             </KeyboardAvoidingView>
-        </AppGradientBackground>
+        </GradientBackground>
     );
 }
 
@@ -303,30 +278,39 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.8)',
         marginTop: 4,
     },
-    tabContainer: {
+    tabRow: {
         flexDirection: 'row',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        gap: 12,
+        alignItems: 'stretch',
+        marginBottom: 16,
+        gap: 10,
     },
-    tab: {
-        paddingHorizontal: 20,
+    tabPill: {
+        flex: 1,
+        minWidth: 0,
+        minHeight: 44,
+        borderRadius: 999,
         paddingVertical: 10,
-        borderRadius: 20,
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        paddingHorizontal: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    activeTab: {
+    tabPillActive: {
         backgroundColor: '#FFFFFF',
     },
-    tabText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#FFFFFF',
+    tabPillInactive: {
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.18)',
     },
-    activeTabText: {
-        color: '#1D548D',
+    tabPillText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    tabPillTextActive: {
+        color: roadmapTheme.tealDeep,
+    },
+    tabPillTextInactive: {
+        color: '#FFFFFF',
     },
     inputSection: {
         flex: 1,
@@ -338,14 +322,14 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     textInput: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 12,
+        backgroundColor: roadmapTheme.frostedSurface,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderColor: roadmapTheme.frostedBorder,
         padding: 16,
         minHeight: 200,
         color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: 15,
         textAlignVertical: 'top',
     },
     inputFooter: {
@@ -360,15 +344,17 @@ const styles = StyleSheet.create({
     },
     submitButton: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 8,
+        borderRadius: 14,
         paddingVertical: 14,
         alignItems: 'center',
         marginTop: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.85)',
     },
     submitButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1D548D',
+        fontSize: 15,
+        fontWeight: '700',
+        color: roadmapTheme.tealDeep,
     },
     submitButtonDisabled: {
         opacity: 0.5,
@@ -377,12 +363,12 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     queryCard: {
-        backgroundColor: '#2A5C8B',
-        borderRadius: 16,
+        backgroundColor: roadmapTheme.frostedSurface,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: 'rgba(150, 190, 220, 0.3)',
-        padding: 20,
-        marginBottom: 16,
+        borderColor: roadmapTheme.frostedBorder,
+        padding: 16,
+        marginBottom: 12,
     },
     questionSection: {
         marginBottom: 16,
@@ -422,9 +408,11 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     responseSection: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'rgba(255, 255, 255, 0.06)',
         borderRadius: 12,
-        padding: 16,
+        padding: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.12)',
     },
     responseText: {
         fontSize: 15,

@@ -1,25 +1,35 @@
-import { Button, ScreenLayout } from "@/components/build-components";
+import { Button } from "@/components/build-components";
 import TextAreaField from "@/components/build-components/text-area";
-import { primary_color } from "@/constants/Colors";
+import TopBar from "@/components/director/TopBar";
+import {
+  GradientBackground,
+  RoadmapNavRow,
+  SectionHeader,
+} from "@/components/ui/design-system/index";
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
 import { icons } from "@/constants/images";
 import { useReplyRoadmapQuery, useRoadmapQueries, useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
 import { RoadmapQuery } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function QueriesScreen() {
-  const { data: dataParam, roadmapId, userId,menteeName } = useLocalSearchParams<{
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { data: dataParam, roadmapId, userId, menteeName } = useLocalSearchParams<{
     data?: string;
     roadmapId?: string;
     userId?: string;
@@ -102,38 +112,6 @@ export default function QueriesScreen() {
     return data?.menteeName || "Mentee";
   };
 
-  const renderTab = (
-    tabName: "pending" | "answered",
-    label: string,
-    badge?: number
-  ) => {
-    const isActive = activeTab === tabName;
-
-    return (
-      <Pressable
-        onPress={() => setActiveTab(tabName)}
-        style={[
-          styles.tabButton,
-          isActive ? styles.activeTab : styles.inactiveTab,
-        ]}
-      >
-        <Text
-          style={[
-            styles.tabText,
-            isActive ? styles.activeTabText : styles.inactiveTabText,
-          ]}
-        >
-          {label}
-        </Text>
-        {badge !== undefined && badge > 0 && isActive && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{badge}</Text>
-          </View>
-        )}
-      </Pressable>
-    );
-  };
-
   const renderQueryCard = (query: RoadmapQuery) => {
     const isExpanded = expandedQueryId === query._id;
     const isSubmitting = replyQueryMutation.isPending && expandedQueryId === query._id;
@@ -182,7 +160,11 @@ export default function QueriesScreen() {
                     label="Write your Response here..."
                     value={responses[query._id] || ""}
                     onChangeText={(text) => handleResponseChange(query._id, text)}
-                    inputClass={{ backgroundColor: primary_color }}
+                    inputClass={{
+                      backgroundColor: roadmapTheme.frostedSurface,
+                      borderWidth: 1,
+                      borderColor: roadmapTheme.frostedBorder,
+                    }}
                     numberOfLines={5}
                     editable={!isSubmitting}
                   />
@@ -237,30 +219,106 @@ export default function QueriesScreen() {
 
   // const menteeName = data?.menteeName || "Mentee";
 
+  const menteeTitle =
+    typeof menteeName === "string" && menteeName.length > 0 ? menteeName : "Mentee";
+
   return (
-    <ScreenLayout
-      enablePastorHeader={true}
-      showNameTag={true}
-      tagName={menteeName}
-      enableHeader={true}
-      headerTitle="Queries"
-      headerSubTitle={`${menteeName}${roadmap?.name ? ` > ${roadmap.name}` : ""}`}
-      // showSettings={true}
-      hideSearchBar={true}
-      paddingX={0}
-    >
-      <View style={styles.container}>
-        {/* Custom Tabs */}
-        <View style={styles.tabsContainer}>
-          {renderTab("pending", "Pending", pendingCount)}
-          {renderTab("answered", "Answered")}
+    <GradientBackground decorativeOrbs style={styles.root}>
+      <View style={styles.topBarWrap}>
+        <TopBar
+          role="mentor"
+          showUserName
+          customTitle={typeof menteeName === "string" ? menteeName : undefined}
+        />
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 24,
+          flexGrow: 1,
+        }}
+      >
+        <View style={styles.chrome}>
+          <RoadmapNavRow onBack={() => router.back()} pillLabel="Queries" />
+          <SectionHeader
+            title="Mentee queries"
+            subtitle={
+              roadmap?.name
+                ? `${menteeTitle} · ${roadmap.name}`
+                : menteeTitle
+            }
+            showDivider
+          />
         </View>
 
-        {/* Queries List */}
+        <View style={styles.tabRow}>
+          <Pressable
+            onPress={() => setActiveTab("pending")}
+            style={[
+              styles.tabPill,
+              activeTab === "pending" ? styles.tabPillActive : styles.tabPillInactive,
+            ]}
+          >
+            <View style={styles.tabLabelRow}>
+              <Text
+                style={[
+                  styles.tabPillText,
+                  activeTab === "pending" ? styles.tabPillTextActive : styles.tabPillTextInactive,
+                ]}
+                numberOfLines={1}
+              >
+                Pending
+              </Text>
+              {pendingCount > 0 ? (
+                <View
+                  style={[
+                    styles.countBadge,
+                    activeTab === "pending" ? styles.countBadgeActive : styles.countBadgeInactive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.countBadgeText,
+                      activeTab === "pending"
+                        ? styles.countBadgeTextActive
+                        : styles.countBadgeTextInactive,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {pendingCount}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setActiveTab("answered")}
+            style={[
+              styles.tabPill,
+              activeTab === "answered" ? styles.tabPillActive : styles.tabPillInactive,
+            ]}
+          >
+            <View style={styles.tabLabelRow}>
+              <Text
+                style={[
+                  styles.tabPillText,
+                  activeTab === "answered" ? styles.tabPillTextActive : styles.tabPillTextInactive,
+                ]}
+                numberOfLines={1}
+              >
+                Answered
+              </Text>
+            </View>
+          </Pressable>
+        </View>
+
         <View style={styles.queriesList}>
           {isLoading ? (
             <View style={styles.emptyState}>
-              <ActivityIndicator size="large" color="white" />
+              <ActivityIndicator size="large" color="#fff" />
             </View>
           ) : filteredQueries.length > 0 ? (
             filteredQueries.map((query) => renderQueryCard(query))
@@ -272,75 +330,95 @@ export default function QueriesScreen() {
             </View>
           )}
         </View>
-      </View>
-    </ScreenLayout>
+      </ScrollView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  root: { flex: 1 },
+  topBarWrap: { paddingBottom: 10 },
+  chrome: {
     paddingHorizontal: 16,
-    marginTop: 24,
+    marginBottom: 4,
   },
-  tabsContainer: {
+  tabRow: {
     flexDirection: "row",
-    gap: 12,
-    marginBottom: 24,
-    justifyContent: "center",
+    alignItems: "stretch",
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    gap: 10,
   },
-  tabButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 15,
-    minWidth: 140,
+  tabPill: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    justifyContent: "center",
     alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
   },
-  activeTab: {
-    backgroundColor: "white",
+  tabPillActive: {
+    backgroundColor: "#FFFFFF",
   },
-  inactiveTab: {
-    backgroundColor: "#14517D",
+  tabPillInactive: {
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderColor: "rgba(255,255,255,0.18)",
   },
-  tabText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  activeTabText: {
-    color: "#1A4882",
-  },
-  inactiveTabText: {
-    color: "white",
-  },
-  badge: {
-    position: "absolute",
-    top: -8,
-    right: 20,
-    backgroundColor: "#FFD700",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
+  tabLabelRow: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
+    maxWidth: "100%",
   },
-  badgeText: {
-    color: "#1A4882",
+  tabPillText: {
     fontSize: 12,
     fontWeight: "700",
   },
+  tabPillTextActive: {
+    color: roadmapTheme.tealDeep,
+  },
+  tabPillTextInactive: {
+    color: "#FFFFFF",
+  },
+  countBadge: {
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 6,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  countBadgeActive: {
+    backgroundColor: "rgba(14, 90, 98, 0.14)",
+  },
+  countBadgeInactive: {
+    backgroundColor: "rgba(255, 255, 255, 0.22)",
+  },
+  countBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  countBadgeTextActive: {
+    color: roadmapTheme.tealDeep,
+  },
+  countBadgeTextInactive: {
+    color: "#FFFFFF",
+  },
   queriesList: {
-    flex: 1,
-    gap: 16,
+    paddingHorizontal: 16,
+    gap: 12,
   },
   queryCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 16,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 4,
   },
   queryHeader: {
     flexDirection: "row",
@@ -396,9 +474,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   responseContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
   },
   responseHeader: {
     flexDirection: "row",

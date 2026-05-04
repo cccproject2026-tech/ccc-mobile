@@ -1,7 +1,12 @@
 import TopBar from "@/components/director/TopBar";
 import { Button } from "@/components/build-components";
 import TextAreaField from "@/components/build-components/text-area";
-import { primary_color } from "@/constants/Colors";
+import {
+    GradientBackground,
+    RoadmapNavRow,
+    SectionHeader,
+} from "@/components/ui/design-system/index";
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
 import { useAddRoadmapComment, useRoadmapComments, useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
 import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
@@ -20,7 +25,6 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function CommentsScreen() {
     const router = useRouter();
@@ -170,24 +174,18 @@ export default function CommentsScreen() {
     );
 
     return (
-        <AppGradientBackground style={{ flex: 1 }}>
+        <GradientBackground decorativeOrbs style={{ flex: 1 }}>
             <View style={{ paddingBottom: 10 }}>
                 <TopBar role="mentor" showUserName />
             </View>
 
-            <View style={styles.headerContainer}>
-                <View style={styles.headerContent}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <Ionicons name="chevron-back" size={28} color="#fff" />
-                    </TouchableOpacity>
-
-                    <View style={styles.headerTextWrapper}>
-                        <Text style={styles.headerTitle}>Comments</Text>
-                        <Text style={styles.headerSubtitle}>
-                            Revitalization Roadmap {roadmap?.name ? ` > ${roadmap.name}` : ""}
-                        </Text>
-                    </View>
-                </View>
+            <View style={styles.screenChrome}>
+                <RoadmapNavRow onBack={() => router.back()} pillLabel="Comments" />
+                <SectionHeader
+                    title="Discussion"
+                    subtitle={roadmap?.name ? `Revitalization Roadmap > ${roadmap.name}` : "Revitalization Roadmap"}
+                    showDivider
+                />
             </View>
 
             <KeyboardAvoidingView
@@ -202,7 +200,11 @@ export default function CommentsScreen() {
                             label="Add a comment..."
                             value={commentText}
                             onChangeText={setCommentText}
-                            inputClass={{ backgroundColor: "#1A4B81" }}
+                            inputClass={{
+                                backgroundColor: roadmapTheme.frostedSurface,
+                                borderColor: roadmapTheme.frostedBorder,
+                                borderWidth: 1,
+                            }}
                             numberOfLines={4}
                         />
                         <View style={styles.submitButtonContainer}>
@@ -244,7 +246,7 @@ export default function CommentsScreen() {
                     />
                 </View>
             </KeyboardAvoidingView>
-        </AppGradientBackground>
+        </GradientBackground>
     );
 }
 
@@ -253,38 +255,16 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingTop: 0,
     },
-    headerContainer: {
-        borderBottomWidth: 1,
-        borderBottomColor: "rgba(255,255,255,0.2)",
-        marginBottom: 20,
+    screenChrome: {
         paddingHorizontal: 16,
-        paddingVertical: 16,
-    },
-    headerContent: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    headerTextWrapper: {
-        marginLeft: 10,
-    },
-    headerTitle: {
-        color: "#FFFFFF",
-        fontSize: 20,
-        fontWeight: "700",
-        lineHeight: 24,
-    },
-    headerSubtitle: {
-        marginTop: 4,
-        color: "rgba(255,255,255,0.8)",
-        fontSize: 14,
-        lineHeight: 18,
+        marginBottom: 4,
     },
     inputSection: {
         paddingHorizontal: 16,
-        paddingTop: 16,
+        paddingTop: 12,
         paddingBottom: 20,
         borderBottomWidth: 1,
-        borderBottomColor: "rgba(255,255,255,0.2)",
+        borderBottomColor: "rgba(255,255,255,0.12)",
     },
     submitButtonContainer: {
         marginTop: 16,
@@ -296,18 +276,18 @@ const styles = StyleSheet.create({
         paddingBottom: 12,
     },
     commentsHeaderText: {
-        color: "#FFFFFF",
-        fontSize: 16,
-        fontWeight: "600",
+        color: roadmapTheme.textPrimary,
+        fontSize: 15,
+        fontWeight: "800",
     },
     commentCard: {
-        backgroundColor: "#233C78",
-        borderRadius: 16,
-        borderWidth: 1.5,
-        borderColor: "rgba(255, 255, 255, 0.35)",
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        marginBottom: 16,
+        backgroundColor: roadmapTheme.frostedSurface,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: roadmapTheme.frostedBorder,
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+        marginBottom: 12,
     },
     unreadCard: {
         borderColor: "rgba(255, 255, 255, 0.45)",
@@ -333,9 +313,9 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
     authorName: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#FFFFFF",
+        fontSize: 15,
+        fontWeight: "700",
+        color: roadmapTheme.textPrimary,
         lineHeight: 20,
         flex: 1,
         marginRight: 8,
@@ -348,7 +328,7 @@ const styles = StyleSheet.create({
     },
     commentText: {
         fontSize: 14,
-        color: "#FFFFFF",
+        color: "rgba(255,255,255,0.92)",
         lineHeight: 20,
         marginTop: 6,
         marginBottom: 8,
@@ -368,9 +348,9 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     timestamp: {
-        fontSize: 14,
-        color: "rgba(255, 255, 255, 0.65)",
-        fontWeight: "400",
+        fontSize: 12,
+        color: roadmapTheme.textMuted,
+        fontWeight: "600",
     },
     emptyContainer: {
         flex: 1,
@@ -379,8 +359,8 @@ const styles = StyleSheet.create({
         paddingVertical: 60,
     },
     emptyText: {
-        fontSize: 16,
-        color: "rgba(255, 255, 255, 0.5)",
-        fontWeight: "400",
+        fontSize: 14,
+        color: roadmapTheme.textSubtle,
+        fontWeight: "600",
     },
 });

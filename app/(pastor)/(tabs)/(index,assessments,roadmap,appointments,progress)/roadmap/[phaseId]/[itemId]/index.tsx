@@ -205,15 +205,16 @@ export default function PastorRoadmapItemDetail() {
             <View style={styles.tabRow}>
               <Pressable
                 onPress={() => setActiveTab("overview")}
-                style={[
-                  styles.tabButton,
-                  activeTab === "overview" ? styles.tabActive : styles.tabInactive,
-                  { marginRight: 8 },
-                ]}
+                style={[styles.tabButton, activeTab === "overview" ? styles.tabActive : styles.tabInactive]}
               >
-                <Text style={[styles.tabText, activeTab === "overview" ? styles.tabTextActive : styles.tabTextInactive]}>
-                  Overview
-                </Text>
+                <View style={styles.tabLabelRow}>
+                  <Text
+                    style={[styles.tabText, activeTab === "overview" ? styles.tabTextActive : styles.tabTextInactive]}
+                    numberOfLines={1}
+                  >
+                    Overview
+                  </Text>
+                </View>
               </Pressable>
 
               <Pressable
@@ -221,23 +222,26 @@ export default function PastorRoadmapItemDetail() {
                   setActiveTab("comments");
                   router.push({ pathname: "/(pastor)/roadmap/comments", params: { roadmapId: phaseId } } as any);
                 }}
-                style={[
-                  styles.tabButton,
-                  activeTab === "comments" ? styles.tabActive : styles.tabInactive,
-                  styles.tabWithBadge,
-                  { marginRight: 8 },
-                ]}
+                style={[styles.tabButton, activeTab === "comments" ? styles.tabActive : styles.tabInactive]}
               >
-                <Text style={[styles.tabText, activeTab === "comments" ? styles.tabTextActive : styles.tabTextInactive]}>
-                  Comments
-                </Text>
-                {comments?.comments && comments.comments.length > 0 ? (
-                  <View style={[styles.badge, activeTab === "comments" ? styles.badgeActive : styles.badgeInactive]}>
-                    <Text style={[styles.badgeText, activeTab === "comments" ? styles.badgeTextActive : styles.badgeTextInactive]}>
-                      {comments.comments.length}
-                    </Text>
-                  </View>
-                ) : null}
+                <View style={styles.tabLabelRow}>
+                  <Text
+                    style={[styles.tabText, activeTab === "comments" ? styles.tabTextActive : styles.tabTextInactive]}
+                    numberOfLines={1}
+                  >
+                    Comments
+                  </Text>
+                  {comments?.comments && comments.comments.length > 0 ? (
+                    <View style={[styles.badge, activeTab === "comments" ? styles.badgeActive : styles.badgeInactive]}>
+                      <Text
+                        style={[styles.badgeText, activeTab === "comments" ? styles.badgeTextActive : styles.badgeTextInactive]}
+                        numberOfLines={1}
+                      >
+                        {comments.comments.length}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
               </Pressable>
 
               <Pressable
@@ -245,22 +249,26 @@ export default function PastorRoadmapItemDetail() {
                   setActiveTab("queries");
                   router.push({ pathname: "/(pastor)/roadmap/queries", params: { roadmapId: phaseId, taskId: task._id } } as any);
                 }}
-                style={[
-                  styles.tabButton,
-                  activeTab === "queries" ? styles.tabActive : styles.tabInactive,
-                  styles.tabWithBadge,
-                ]}
+                style={[styles.tabButton, activeTab === "queries" ? styles.tabActive : styles.tabInactive]}
               >
-                <Text style={[styles.tabText, activeTab === "queries" ? styles.tabTextActive : styles.tabTextInactive]}>
-                  Queries
-                </Text>
-                {Array.isArray(queries) && queries.length > 0 ? (
-                  <View style={[styles.badge, activeTab === "queries" ? styles.badgeActive : styles.badgeInactive]}>
-                    <Text style={[styles.badgeText, activeTab === "queries" ? styles.badgeTextActive : styles.badgeTextInactive]}>
-                      {queries.length}
-                    </Text>
-                  </View>
-                ) : null}
+                <View style={styles.tabLabelRow}>
+                  <Text
+                    style={[styles.tabText, activeTab === "queries" ? styles.tabTextActive : styles.tabTextInactive]}
+                    numberOfLines={1}
+                  >
+                    Queries
+                  </Text>
+                  {Array.isArray(queries) && queries.length > 0 ? (
+                    <View style={[styles.badge, activeTab === "queries" ? styles.badgeActive : styles.badgeInactive]}>
+                      <Text
+                        style={[styles.badgeText, activeTab === "queries" ? styles.badgeTextActive : styles.badgeTextInactive]}
+                        numberOfLines={1}
+                      >
+                        {queries.length}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
               </Pressable>
             </View>
 
@@ -412,46 +420,50 @@ const styles = StyleSheet.create({
 
   tabRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "stretch",
     marginTop: 12,
     marginBottom: 16,
-    gap: 6,
+    gap: 10,
   },
   tabButton: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
     borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tabLabelRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
-    minWidth: 0,
+    gap: 6,
+    maxWidth: "100%",
   },
   tabActive: { backgroundColor: "#FFFFFF" },
   tabInactive: {
-    backgroundColor: "transparent",
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.4)",
+    borderColor: "rgba(255,255,255,0.18)",
   },
-  tabText: { fontSize: 12, fontWeight: "900" },
-  tabTextActive: { color: "#1A4882" },
+  tabText: { fontSize: 12, fontWeight: "700" },
+  tabTextActive: { color: "#0E5A62" },
   tabTextInactive: { color: "#FFFFFF" },
-  tabWithBadge: {},
   badge: {
-    marginLeft: 6,
+    minWidth: 22,
+    height: 22,
     paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 999,
-    minWidth: 18,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
   },
-  badgeActive: { backgroundColor: "rgba(26,72,130,0.12)" },
-  badgeInactive: { backgroundColor: "rgba(255,255,255,0.18)" },
-  badgeText: { fontSize: 11, fontWeight: "900" },
-  badgeTextActive: { color: "#1A4882" },
-  badgeTextInactive: { color: "#fff" },
+  badgeActive: { backgroundColor: "rgba(14, 90, 98, 0.14)" },
+  badgeInactive: { backgroundColor: "rgba(255, 255, 255, 0.22)" },
+  badgeText: { fontSize: 11, fontWeight: "800" },
+  badgeTextActive: { color: "#0E5A62" },
+  badgeTextInactive: { color: "#FFFFFF" },
 
   coverImageContainer: {
     width: "100%",

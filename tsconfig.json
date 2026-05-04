@@ -5,6 +5,7 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
+      "@/components/ui/design-system": ["./components/ui/design-system/index.ts"],
       "@/*": ["./*"],
       "@/services/api": ["./services/api/client"],
       "tailwind.config": ["./tailwind.config.js"]

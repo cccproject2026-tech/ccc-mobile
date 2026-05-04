@@ -198,24 +198,27 @@ export default function ItemDetail() {
                 </View>
             </View>
 
-            {/* Tabs */}
+            {/* Tabs — equal width pills, consistent with roadmap design system */}
             <View style={styles.tabRow}>
                 <TouchableOpacity
                     onPress={() => setActiveTab('overview')}
+                    activeOpacity={0.85}
                     style={[
                         styles.tabButton,
                         activeTab === 'overview' ? styles.tabActive : styles.tabInactive,
-                        { marginRight: 8 },
                     ]}
                 >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            activeTab === 'overview' ? styles.tabTextActive : styles.tabTextInactive,
-                        ]}
-                    >
-                        Overview
-                    </Text>
+                    <View style={styles.tabLabelRow}>
+                        <Text
+                            style={[
+                                styles.tabText,
+                                activeTab === 'overview' ? styles.tabTextActive : styles.tabTextInactive,
+                            ]}
+                            numberOfLines={1}
+                        >
+                            Overview
+                        </Text>
+                    </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -225,37 +228,41 @@ export default function ItemDetail() {
                             params: { roadmapId: phaseId, userId: targetUserId },
                         } as any)
                     }
+                    activeOpacity={0.85}
                     style={[
                         styles.tabButton,
                         activeTab === 'comments' ? styles.tabActive : styles.tabInactive,
-                        styles.tabWithBadge,
                     ]}
                 >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            activeTab === 'comments' ? styles.tabTextActive : styles.tabTextInactive,
-                        ]}
-                    >
-                        Comments
-                    </Text>
-                    {comments && comments.comments && comments.comments.length > 0 && (
-                        <View
+                    <View style={styles.tabLabelRow}>
+                        <Text
                             style={[
-                                styles.badge,
-                                activeTab === 'comments' ? styles.badgeActive : styles.badgeInactive,
+                                styles.tabText,
+                                activeTab === 'comments' ? styles.tabTextActive : styles.tabTextInactive,
                             ]}
+                            numberOfLines={1}
                         >
-                            <Text
+                            Comments
+                        </Text>
+                        {comments && comments.comments && comments.comments.length > 0 ? (
+                            <View
                                 style={[
-                                    styles.badgeText,
-                                    activeTab === 'comments' ? styles.badgeTextActive : styles.badgeTextInactive,
+                                    styles.badge,
+                                    activeTab === 'comments' ? styles.badgeActive : styles.badgeInactive,
                                 ]}
                             >
-                                {comments.comments.length}
-                            </Text>
-                        </View>
-                    )}
+                                <Text
+                                    style={[
+                                        styles.badgeText,
+                                        activeTab === 'comments' ? styles.badgeTextActive : styles.badgeTextInactive,
+                                    ]}
+                                    numberOfLines={1}
+                                >
+                                    {comments.comments.length}
+                                </Text>
+                            </View>
+                        ) : null}
+                    </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -265,37 +272,41 @@ export default function ItemDetail() {
                             params: { taskId: task._id, roadmapId: phaseId, userId: targetUserId, menteeName: menteeName },
                         } as any)
                     }
+                    activeOpacity={0.85}
                     style={[
                         styles.tabButton,
                         activeTab === 'queries' ? styles.tabActive : styles.tabInactive,
-                        styles.tabWithBadge,
                     ]}
                 >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            activeTab === 'queries' ? styles.tabTextActive : styles.tabTextInactive,
-                        ]}
-                    >
-                        Queries
-                    </Text>
-                    {queries && queries.length > 0 && (
-                        <View
+                    <View style={styles.tabLabelRow}>
+                        <Text
                             style={[
-                                styles.badge,
-                                activeTab === 'queries' ? styles.badgeActive : styles.badgeInactive,
+                                styles.tabText,
+                                activeTab === 'queries' ? styles.tabTextActive : styles.tabTextInactive,
                             ]}
+                            numberOfLines={1}
                         >
-                            <Text
+                            Queries
+                        </Text>
+                        {queries && queries.length > 0 ? (
+                            <View
                                 style={[
-                                    styles.badgeText,
-                                    activeTab === 'queries' ? styles.badgeTextActive : styles.badgeTextInactive,
+                                    styles.badge,
+                                    activeTab === 'queries' ? styles.badgeActive : styles.badgeInactive,
                                 ]}
                             >
-                                {queries.length}
-                            </Text>
-                        </View>
-                    )}
+                                <Text
+                                    style={[
+                                        styles.badgeText,
+                                        activeTab === 'queries' ? styles.badgeTextActive : styles.badgeTextInactive,
+                                    ]}
+                                    numberOfLines={1}
+                                >
+                                    {queries.length}
+                                </Text>
+                            </View>
+                        ) : null}
+                    </View>
                 </TouchableOpacity>
             </View>
 
@@ -413,41 +424,51 @@ const styles = StyleSheet.create({
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: getSpacing(8) },
     tabRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: 'stretch',
         paddingHorizontal: 16,
+        marginTop: 4,
         marginBottom: 16,
+        gap: 10,
     },
     tabButton: {
+        flex: 1,
+        minWidth: 0,
+        minHeight: 44,
         borderRadius: 999,
         paddingVertical: 10,
-        paddingHorizontal: 20,
+        paddingHorizontal: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    tabLabelRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        maxWidth: '100%',
     },
     tabActive: { backgroundColor: '#FFFFFF' },
     tabInactive: {
-        backgroundColor: 'transparent',
+        backgroundColor: 'rgba(255,255,255,0.08)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.4)',
+        borderColor: 'rgba(255,255,255,0.18)',
     },
-    tabText: { fontSize: 15, fontWeight: '500' },
-    tabTextActive: { color: '#1A4882' },
+    tabText: { fontSize: 12, fontWeight: '700' },
+    tabTextActive: { color: '#0E5A62' },
     tabTextInactive: { color: '#FFFFFF' },
-    tabWithBadge: { marginRight: 8 },
     badge: {
-        marginLeft: 8,
-        width: 20,
-        height: 20,
-        borderRadius: 10,
+        minWidth: 22,
+        height: 22,
+        paddingHorizontal: 6,
+        borderRadius: 11,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    badgeActive: { backgroundColor: '#1A4882' },
-    badgeInactive: { backgroundColor: '#FFFFFF' },
-    badgeText: { fontSize: 11, fontWeight: '700' },
-    badgeTextActive: { color: '#FFFFFF' },
-    badgeTextInactive: { color: '#1A4882' },
+    badgeActive: { backgroundColor: 'rgba(14, 90, 98, 0.14)' },
+    badgeInactive: { backgroundColor: 'rgba(255, 255, 255, 0.22)' },
+    badgeText: { fontSize: 11, fontWeight: '800' },
+    badgeTextActive: { color: '#0E5A62' },
+    badgeTextInactive: { color: '#FFFFFF' },
     scrollContainer: { paddingHorizontal: 16, paddingBottom: 24 },
     coverImageContainer: {
         position: 'relative',
