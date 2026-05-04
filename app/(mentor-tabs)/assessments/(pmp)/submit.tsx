@@ -3,11 +3,9 @@ import { ChecklistCard } from "@/components/atom/checklistCard";
 import ProgressDots from "@/components/atom/dots";
 import { SurveyModal } from "@/components/atom/surveyModal";
 import { AssessmentCard } from "@/components/build-components";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
-import { icons } from "@/constants/images";
-import { Ionicons } from "@expo/vector-icons";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import AssessmentFlowHeader from "@/components/mentor";
+import { icons } from "@/constants/images";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
@@ -16,7 +14,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -79,10 +76,16 @@ export default function Submit() {
     return (
       <View className="flex gap-8 px-4">
         <AssessmentCard
-          type={dataItems?.type}
-          dueDate={dataItems?.completionDate}
-          dueDateClass="text-white !font-normal"
-          wrapperClass="!px-0"
+          data={{
+            id: '',
+            type: (dataItems?.type as 'CMA' | 'PMP') || 'PMP',
+            title: dataItems?.title || '',
+            description: '',
+            status: (dataItems?.status as 'Due' | 'Not Started' | 'Submitted' | 'Completed') || 'Not Started',
+            dueDate: dataItems?.completionDate,
+            guidelines: [],
+            sections: [],
+          }}
         />
         <View className="flex gap-5">
           <View className="flex flex-row justify-between items-center">
@@ -152,44 +155,15 @@ export default function Submit() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader />
-
-            {/* Header Section */}
-            <View
-              style={{
-                width: "100%",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingHorizontal: 20,
-                paddingTop: 20,
-                alignItems: "center",
-              }}
-            >
-              <TouchableOpacity onPress={() => router.back()}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <Image
-                    source={icons.forward}
-                    style={{
-                      width: 18,
-                      height: 18,
-                      transform: [{ scaleX: -1 }],
-                    }}
-                  />
-                  <Text className="text-white font-semibold text-[17px]">
-                    Pastoral Ministry Profile (PMP)
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity>
-                <Ionicons name="ellipsis-vertical" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
+            <AssessmentFlowHeader
+              title={
+                dataItems?.title?.trim()
+                  ? dataItems.title
+                  : "Pastoral Ministry Profile (PMP)"
+              }
+              showMenu
+              onMenuPress={() => {}}
+            />
 
             <View className="flex gap-5">
               <ProgressDots
@@ -245,7 +219,7 @@ export default function Submit() {
                     title="View Preview Section"
                     onPress={() => handlePageChange(formTab - 1)}
                     bgColor="#ffffff"
-                    textColor="#001FC1"
+                    textColor="#1D548D"
                     disabled={formTab === 0}
                   />
                 )}

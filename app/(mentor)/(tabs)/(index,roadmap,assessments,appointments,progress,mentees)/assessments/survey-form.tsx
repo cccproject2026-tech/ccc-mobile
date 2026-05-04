@@ -2,10 +2,9 @@ import { SurveyButton } from "@/components/atom/buttons";
 import { ChecklistCard } from "@/components/atom/checklistCard";
 import ProgressDots from "@/components/atom/dots";
 import { SurveyModal } from "@/components/atom/surveyModal";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
-import { icons } from "@/constants/images";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import AssessmentFlowHeader from "@/components/mentor";
+import { icons } from "@/constants/images";
 import { Stack } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -66,7 +65,7 @@ export default function SurveyForm() {
           onChange={handlePageChange}
         />
 
-        <View className="w-full p-5 flex justify-center items-center gap-2 rounded-[10px] bg-[#194F82]">
+        <View className="w-full p-5 flex justify-center items-center gap-2 rounded-[16px] bg-[#194F82]/90 border border-white/15">
           <View className="max-w-[105px] px-5 py-2 rounded-[20px] leading-[22px] border border-solid border-[#FFFFFF73]">
             <Text className="font-medium text-[15px] leading-[22px] text-white">
               {title}
@@ -118,11 +117,7 @@ export default function SurveyForm() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader
-              showDrawer={false}
-              showNotificationIcon={false}
-              wrapperClass="!justify-end"
-            />
+            <AssessmentFlowHeader title="Church Assessment Evaluation (CMA)" />
 
             <View className="flex gap-5">
               {formTab === 0 && (
@@ -174,7 +169,7 @@ export default function SurveyForm() {
                   title="Clear Responses"
                   onPress={clearCurrentTabSelections}
                   bgColor="#ffffff"
-                  textColor="#001FC1"
+                  textColor="#1D548D"
                 />
                 <SurveyButton
                   title={

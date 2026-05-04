@@ -2,9 +2,8 @@ import AssessmentDeletedSuccessModal from "@/components/build-components/Assessm
 import AssessmentMenuBottomSheet from "@/components/build-components/AssessmentMenuBottomSheet";
 import AssessmentCard from "@/components/build-components/cards/assessment-card";
 import DeleteConfirmationModal from "@/components/build-components/DeleteConfirmationModal";
-import SearchBar from "@/components/director/SearchBar";
-import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
+import { RoadmapSearchField, RoadmapTabStrip } from "@/components/ui/design-system";
 import { icons } from "@/constants/images";
 import { useDeleteAssessment } from "@/hooks/assessments";
 import { useMenteeAssessments } from "@/hooks/assessments/useMenteeAssessments";
@@ -233,10 +232,10 @@ export default function MentorAssessmentsLibrary() {
                 </View>
 
                 <View style={{ marginTop: 14 }}>
-                    <SearchBar
+                    <RoadmapSearchField
                         value={search}
-                        onChangeValue={setSearch}
-                        placeholder="Search"
+                        onChangeText={setSearch}
+                        placeholder="Search assessments..."
                     />
                 </View>
 
@@ -307,12 +306,19 @@ export default function MentorAssessmentsLibrary() {
 
             {/* Status Tabs - Only show when a mentee is selected */}
             {selectedMentee && (
-                <View style={{ marginTop: 10, paddingHorizontal: 16 }}>
-                    <TabSwitcher
-                        tabs={availableTabs}
-                        activeTab={tabs}
-                        onChange={setTabs}
-                    />
+                <View style={{ marginTop: 10 }}>
+                    <View style={styles.tabStripWrap}>
+                        <RoadmapTabStrip
+                            tabs={availableTabs.map((t) => ({
+                                key: t.key,
+                                label: t.label,
+                                badge: "badge" in t ? t.badge : undefined,
+                            }))}
+                            activeKey={tabs}
+                            onChange={setTabs}
+                            scrollable
+                        />
+                    </View>
                 </View>
             )}
 
@@ -421,6 +427,9 @@ export default function MentorAssessmentsLibrary() {
 }
 
 const styles = StyleSheet.create({
+    tabStripWrap: {
+        paddingHorizontal: 16,
+    },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',

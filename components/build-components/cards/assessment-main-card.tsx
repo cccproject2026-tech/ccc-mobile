@@ -17,8 +17,8 @@ export default function AssessmentCard({
   return (
     <View>
       <View className={`my-2.5 px-4 w-full ${wrapperClass}`}>
-        <View className="w-full min-h-full max-h-[180px] bg-[#00ABAE] border-[5px] border-[#BFFEFE] rounded-[15px] items-center justify-center">
-          <Text className="text-[#001B4A] text-[70px] font-extrabold">
+        <View className="w-full min-h-full max-h-[180px] bg-[#00ABAE] border-[3px] border-white rounded-[16px] items-center justify-center">
+          <Text className="text-[#0F4C75] text-[48px] font-extrabold tracking-wide">
             {type}
           </Text>
           <View className="h-0.5 w-1/2 bg-white rounded-sm -mt-1.5" />

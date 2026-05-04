@@ -1,32 +1,21 @@
-import { Button } from "@/components/atom/buttons";
-import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
-import { Header, QuestionFields } from "@/components/build-components";
+import { QuestionFields } from "@/components/build-components";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
+import AssessmentFlowHeader from "@/components/mentor";
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
+import { getFontSize, getSpacing } from "@/utils/responsive";
 import { router, Stack } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-interface AssessmentData {
-  type: string;
-  title?: string;
-  status?: string;
-  completionDate?: string;
-  taskStatus?: {
-    notStarted: boolean;
-    started: boolean;
-    inProgress: number;
-    toComplete: number;
-    completed: boolean;
-  };
-}
-
 export default function AnswerQuestionPage() {
-  const [isRoadmapModalVisible, setIsRoadmapModalVisible] =
-    React.useState(false);
-
   const questions = [
     {
       id: "membership",
@@ -48,103 +37,117 @@ export default function AnswerQuestionPage() {
     },
   ];
 
-  const handleAnswersChange = (answers: any) => {
+  const handleAnswersChange = (answers: unknown) => {
     console.log("Answers updated:", answers);
   };
 
-  const handleSubmit = (answers: any) => {
+  const handleSubmit = (answers: unknown) => {
     console.log("Form submitted:", answers);
-    // Handle form submission
   };
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <AppGradientBackground>
+      <AppGradientBackground style={styles.flex}>
         <SafeAreaView style={styles.scrollContainer}>
+          <AssessmentFlowHeader title="Church Assessment Evaluation (CMA)" />
+
           <KeyboardAwareScrollView
-            enableOnAndroid
-            extraScrollHeight={100}
-            keyboardOpeningTime={0}
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: 150,
-            }}
+            style={styles.flex}
+            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            bottomOffset={20}
             keyboardShouldPersistTaps="handled"
           >
             <ScrollView
-              contentContainerStyle={{
-                paddingBottom: 80,
-                paddingHorizontal: 10,
-                width: "100%",
-              }}
+              contentContainerStyle={styles.innerScroll}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
-              <PastorNavigationHeader showNameTag={true} />
-              {/* Header Section */}
-              <Header
-                title="Church Assessment Evaluation(CMA)"
-                subTitle="Assessment"
-                hideSearchBar={true}
-                showSettings={false}
-              />
-
-              {/* Question Fields */}
               <QuestionFields
                 questions={questions}
                 onAnswersChange={handleAnswersChange}
                 onSubmit={handleSubmit}
-                wrapperClass="pt-[30%]"
+                wrapperClass="pt-4"
               />
 
-              {/* Form  Buttons */}
-              <View className="flex flex-row items-center justify-center gap-6 mx-auto">
-                <Button
-                  style={{
-                    maxWidth: 87,
-                    width: "100%",
-                  }}
-                  type="cancel"
-                  title={"Cancel"}
-                  onPress={() => { }}
-                />
-                <Button
-                  style={{
-                    maxWidth: 87,
-                    width: "100%",
-                  }}
-                  type="submit"
-                  title={"Submit"}
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => router.back()}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.submitButton}
                   onPress={() =>
                     router.push("/(mentor)/assessments/survey-form" as any)
                   }
-                />
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.submitButtonText}>Submit</Text>
+                </TouchableOpacity>
               </View>
             </ScrollView>
           </KeyboardAwareScrollView>
         </SafeAreaView>
-
-        {/* Modal */}
-        <RoadMapOutcomeModal
-          isMenuVisible={isRoadmapModalVisible}
-          closeMenu={() => setIsRoadmapModalVisible(false)}
-        />
       </AppGradientBackground>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   scrollContainer: {
     flex: 1,
   },
-  searchContainer: {
-    marginHorizontal: 16,
-    marginTop: 16,
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: getSpacing(32),
   },
-  separator: {
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    marginVertical: 18,
+  innerScroll: {
+    paddingBottom: 80,
+    paddingHorizontal: getSpacing(16),
+    width: "100%",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: getSpacing(24),
+    gap: getSpacing(16),
+    width: "80%",
+    alignSelf: "center",
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: getSpacing(14),
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cancelButtonText: {
+    fontSize: getFontSize(16),
+    fontWeight: "600",
+    color: roadmapTheme.textActive,
+  },
+  submitButton: {
+    flex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 12,
+    paddingVertical: getSpacing(14),
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  submitButtonText: {
+    fontSize: getFontSize(16),
+    fontWeight: "600",
+    color: "#fff",
   },
 });

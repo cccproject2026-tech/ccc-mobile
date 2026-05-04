@@ -405,8 +405,11 @@ export default function AnswerQuestionPage() {
 
   return (
     <AppGradientBackground style={styles.container}>
-      {/* TopBar tailored for mentor view */}
-      <TopBar role="mentor" showUserName={true} showNotifications={false} />
+      {showPreSurvey ? (
+        <TopBar role="mentor" showUserName showNotifications />
+      ) : (
+        <TopBar role="mentor" showDrawer={false} showNotifications={false} />
+      )}
 
       {showPreSurvey ? (
         <PreSurveySection
@@ -468,6 +471,8 @@ export default function AnswerQuestionPage() {
           accent: "#FFC107",
           cardBackground: "rgba(255, 255, 255, 0.1)",
         }}
+        mode={undefined}
+        disableOutsideClose
       />
 
       <SimpleSuccessModal

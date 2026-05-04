@@ -2,8 +2,7 @@ import { SurveyButton } from "@/components/atom/buttons";
 import { ChecklistCard } from "@/components/atom/checklistCard";
 import ProgressDots from "@/components/atom/dots";
 import { SurveyModal } from "@/components/atom/surveyModal";
-import { PastorNavigationHeader } from "@/components/pastor/Header";
-import { Colors } from "@/constants/Colors";
+import AssessmentFlowHeader from "@/components/mentor";
 import { icons } from "@/constants/images";
 import { useAssessment, useSubmitAssessmentAnswers } from "@/hooks/assessments";
 import { useAuthStore } from "@/stores/auth.store";
@@ -198,10 +197,8 @@ export default function SurveyForm() {
               paddingBottom: 40,
             }}
           >
-            <PastorNavigationHeader
-              showDrawer={false}
-              showNotificationIcon={false}
-              wrapperClass="!justify-end"
+            <AssessmentFlowHeader
+              title={assessment?.name?.trim() ? assessment.name : "Assessment"}
             />
 
             {loading ? (
@@ -233,7 +230,7 @@ export default function SurveyForm() {
                     title="Clear Responses"
                     onPress={clearCurrentTabSelections}
                     bgColor="#ffffff"
-                    textColor="#001FC1"
+                    textColor="#1D548D"
                   />
                   <SurveyButton
                     title={

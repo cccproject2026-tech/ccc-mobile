@@ -1,5 +1,6 @@
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
 import React from "react";
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 export default function GuidelinesCard({
   title = "Assessment Guidelines",
@@ -12,7 +13,6 @@ export default function GuidelinesCard({
   guidelines?: string[] | undefined;
   showSubtitle?: boolean | undefined;
 }) {
-  // Default guidelines if none provided
   const defaultGuidelines = [
     "Please complete the assessment in a single session without taking breaks.",
     "If there is a power outage or loss of internet connection, the assessment will restart from the beginning.",
@@ -25,41 +25,79 @@ export default function GuidelinesCard({
     guidelines.length > 0 ? guidelines : defaultGuidelines;
 
   return (
-    <View className="w-full mt-4" style={{
-      maxWidth: "93%",
-      marginHorizontal: 12
-    }}>
-      {/* Header */}
-      <View className="text-center mb-7">
-        <Text className="text-white text-base font-semibold mb-2 text-center">{title}</Text>
-        {showSubtitle && (
-          <Text className="inline-block  text-white px-4 py-1 rounded-md text-sm font-medium">
-            {subtitle === "173 x 22" ? "" : subtitle}
-          </Text>
-        )}
+    <View style={styles.wrap}>
+      <View style={styles.titleBlock}>
+        <Text style={styles.title}>{title}</Text>
+        {showSubtitle && subtitle !== "173 x 22" && subtitle ? (
+          <Text style={styles.subtitleHint}>{subtitle}</Text>
+        ) : null}
       </View>
 
-      {/* Guidelines Card */}
-      <View
-        className="rounded-2xl p-8 border border-white/40"
-        style={{}}
-      >
-        <View className="flex flex-col gap-6">
-          {guidelinesToShow.map((guideline, index) => (
-            <View key={index} className="flex flex-row items-start  gap-3">
-              {/* Bullet Point */}
-              <View className="flex-shrink-0 mt-2">
-                <View className="w-3 h-3 bg-white rounded-full shadow-sm"></View>
-              </View>
-
-              {/* Guideline Text */}
-              <Text className="text-white text-base leading-6 font-[500px] flex-1">
-                {guideline}
-              </Text>
+      <View style={styles.card}>
+        {guidelinesToShow.map((guideline, index) => (
+          <View key={index} style={styles.row}>
+            <View style={styles.bulletWrap}>
+              <View style={styles.bullet} />
             </View>
-          ))}
-        </View>
+            <Text style={styles.body}>{guideline}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  wrap: {
+    width: "100%",
+    marginTop: 12,
+    paddingHorizontal: 0,
+  },
+  titleBlock: {
+    marginBottom: 12,
+    alignItems: "center",
+  },
+  title: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+    textAlign: "center",
+  },
+  subtitleHint: {
+    marginTop: 6,
+    color: roadmapTheme.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  card: {
+    borderRadius: 14,
+    padding: 16,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
+    gap: 14,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  bulletWrap: {
+    paddingTop: 6,
+  },
+  bullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: roadmapTheme.textPrimary,
+  },
+  body: {
+    flex: 1,
+    color: roadmapTheme.textPrimary,
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "500",
+  },
+});
