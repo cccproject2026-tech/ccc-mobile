@@ -651,7 +651,7 @@ export const PastorMenuItems: MenuItem[] = [
     label: "My Mentors",
     icon: icons.myMentors,
     iconType: "image",
-    route: "/(pastor)/(tabs)/mentors",
+    route: "/(pastor)/(tabs)/my-mentors",
   },
   {
     id: "mentorshipSessions",

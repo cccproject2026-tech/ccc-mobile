@@ -12,6 +12,8 @@ export interface Mentor {
     email?: string;
     username?: string;
     menteesCount?: number;
+    /** Prefer this for UI components that expect assigned-mentor-shaped objects */
+    profilePicture?: string;
     profileImage?: string;
     status: string;
     isEmailVerified: boolean;
@@ -29,7 +31,11 @@ const transformMentor = (mentor: MentorListItem): Mentor => {
         role: mentor.role,
         email: mentor.email,
         username: mentor.username,
+        // Keep both keys in sync: UI components historically used `profilePicture`,
+        // while this hook previously exposed only `profileImage`.
+        profilePicture: mentor.profilePicture,
         profileImage: mentor.profilePicture,
+        phoneNumber: mentor.phoneNumber,
         status: mentor.status,
         isEmailVerified: mentor.isEmailVerified ?? false,
         hasCompleted: mentor.hasCompleted,

@@ -137,7 +137,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "My Mentees",
       iconKey: "myMentors",
-      navigateLocation: "/(mentor)/my-mentors",
+      navigateLocation: "/(mentor-tabs)/my-mentors",
     },
     {
       name: "Courses",
