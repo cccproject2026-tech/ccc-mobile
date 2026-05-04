@@ -1,3 +1,4 @@
+import { roadmapTheme } from '@/components/ui/design-system/roadmapTheme';
 import { icons } from '@/constants/images';
 import { Mentee } from '@/types/mentee.types';
 import { getFontSize, getIconSize, getSpacing } from '@/utils/responsive';
@@ -10,8 +11,13 @@ Dimensions.get('window');
 
 
 
+/** `roadmap`: mentor “Pastor roadmaps” list — frosted card, email-first subtext, consistent % */
+export type MenteeCardVariant = 'default' | 'roadmap';
+
 interface MenteeCardProps {
     data: Mentee;
+    /** Use on revitalization mentor landing for consistent layout with roadmap cards */
+    variant?: MenteeCardVariant;
     layout?: 'card' | 'list' | 'full';
     isSelected?: boolean;
     disabled?: boolean;
@@ -27,8 +33,19 @@ interface MenteeCardProps {
     onInviteAsFieldMentor?: () => void;
 }
 
+function formatMenteeProgressPercent(p: number | undefined): string {
+    if (p === undefined || Number.isNaN(p)) return '0 %';
+    const x = Math.max(0, Math.min(100, p));
+    const rounded = Math.round(x * 10) / 10;
+    if (Math.abs(rounded - Math.round(rounded)) < 0.05) {
+        return `${Math.round(rounded)} %`;
+    }
+    return `${rounded.toFixed(1)} %`;
+}
+
 export default function MenteeCard({
     data,
+    variant = 'default',
     layout = 'full',
     isSelected = false,
     disabled = false,
@@ -45,11 +62,17 @@ export default function MenteeCard({
 }: MenteeCardProps) {
     const isSelectionMode = onToggleSelect !== undefined;
     const displayName = data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '');
+    const emailRaw = typeof (data as any).email === 'string' ? (data as any).email.trim() : '';
     const displaySubtext =
-        (data.description && data.description.trim()) ||
-        ((data as any).email as string | undefined) ||
-        (data.phase ? `Phase : ${data.phase}` : '') ||
-        'Tap to view roadmaps';
+        variant === 'roadmap'
+            ? emailRaw ||
+              (data.phase ? `Phase · ${data.phase}` : '') ||
+              'Tap to open roadmaps'
+            : (data.description && data.description.trim()) ||
+              emailRaw ||
+              (data.phase ? `Phase : ${data.phase}` : '') ||
+              'Tap to view roadmaps';
+    const phaseShownInSubtext = variant === 'roadmap' && !emailRaw && !!data.phase;
 
     // LIST VIEW (Compact)
     if (layout === 'list') {
@@ -214,9 +237,24 @@ export default function MenteeCard({
         );
     }
 
+    const isRoadmapVariant = variant === 'roadmap';
+    const contactRowVisible =
+        !isRoadmapVariant ||
+        !!(
+            onCall ||
+            onChat ||
+            onMail ||
+            onWhatsApp ||
+            (data.hasCompleted && data.completedOn)
+        );
+
     // FULL CARD VIEW (For mentees list page + SCHOLARSHIP VIEW)
     return (
-        <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
+        <TouchableOpacity
+            style={isRoadmapVariant ? styles.containerRoadmap : styles.container}
+            onPress={onPress}
+            activeOpacity={0.85}
+        >
             {/* Chevron Icon on Right */}
             {onMenuPress ? (
                 <TouchableOpacity style={styles.menuButton} onPress={(e) => { e.stopPropagation(); onMenuPress(); }}>
@@ -250,27 +288,27 @@ export default function MenteeCard({
             )}
 
             {/* Top Section */}
-            <View style={styles.topSection}>
-                <View style={styles.imageContainer}>
+            <View style={[styles.topSection, isRoadmapVariant && !contactRowVisible && styles.topSectionRoadmapTight]}>
+                <View style={[styles.imageContainer, isRoadmapVariant && styles.imageContainerRoadmap]}>
                     {data.profilePicture ? (
                         <Image source={{ uri: data.profilePicture }} style={styles.image} resizeMode="cover" />
                     ) : (
-                        <View style={styles.placeholderImage}>
+                        <View style={[styles.placeholderImage, isRoadmapVariant && styles.placeholderImageRoadmap]}>
                             <Ionicons name="person-outline" size={getIconSize(40)} color="#fff" />
                         </View>
                     )}
                 </View>
 
-                <View style={styles.contentSection}>
-                    <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+                <View style={[styles.contentSection, isRoadmapVariant && styles.contentSectionRoadmap]}>
+                    <Text style={[styles.name, isRoadmapVariant && styles.nameRoadmap]} numberOfLines={1} ellipsizeMode="tail">
                         {displayName}{data.role && ` (${data.role})`}
                     </Text>
 
-                    <Text style={styles.description} numberOfLines={3}>
+                    <Text style={[styles.description, isRoadmapVariant && styles.descriptionRoadmap]} numberOfLines={2}>
                         {displaySubtext}
                     </Text>
 
-                    {!!data.phase && (
+                    {!!data.phase && !phaseShownInSubtext && (
                         <View style={styles.phasePill}>
                             <Text style={styles.phasePillText} numberOfLines={2}>
                                 <Text style={styles.phasePillLabel}>Phase :</Text> {data.phase}
@@ -318,49 +356,53 @@ export default function MenteeCard({
                 </View>
             </View>
 
-            {/* Contact Icons Row */}
-            <View style={styles.contactRow}>
-                <View style={styles.contactIcons}>
-                    {onCall && (
-                        <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onCall(); }}>
-                            <Ionicons name="call-outline" size={getIconSize(20)} color="#fff" />
-                        </TouchableOpacity>
-                    )}
-                    {onChat && (
-                        <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onChat(); }}>
-                            <Ionicons name="chatbubble-outline" size={getIconSize(20)} color="#fff" />
-                        </TouchableOpacity>
-                    )}
-                    {onMail && (
-                        <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onMail(); }}>
-                            <Ionicons name="mail-outline" size={getIconSize(20)} color="#fff" />
-                        </TouchableOpacity>
-                    )}
-                    {onWhatsApp && (
-                        <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onWhatsApp(); }}>
-                            <Ionicons name="logo-whatsapp" size={getIconSize(20)} color="#fff" />
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                {/* Phase or Completed Badge on Right */}
-                {data.hasCompleted && data.completedOn ? (
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>Completed on :{data.completedOn}</Text>
+            {/* Contact Icons Row — hidden on roadmap when empty so progress sits flush (no seam) */}
+            {contactRowVisible ? (
+                <View style={[styles.contactRow, isRoadmapVariant && styles.contactRowRoadmap]}>
+                    <View style={styles.contactIcons}>
+                        {onCall && (
+                            <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onCall(); }}>
+                                <Ionicons name="call-outline" size={getIconSize(20)} color="#fff" />
+                            </TouchableOpacity>
+                        )}
+                        {onChat && (
+                            <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onChat(); }}>
+                                <Ionicons name="chatbubble-outline" size={getIconSize(20)} color="#fff" />
+                            </TouchableOpacity>
+                        )}
+                        {onMail && (
+                            <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onMail(); }}>
+                                <Ionicons name="mail-outline" size={getIconSize(20)} color="#fff" />
+                            </TouchableOpacity>
+                        )}
+                        {onWhatsApp && (
+                            <TouchableOpacity style={styles.iconButton} onPress={(e) => { e.stopPropagation(); onWhatsApp(); }}>
+                                <Ionicons name="logo-whatsapp" size={getIconSize(20)} color="#fff" />
+                            </TouchableOpacity>
+                        )}
                     </View>
-                ) : null}
-            </View>
+
+                    {data.hasCompleted && data.completedOn ? (
+                        <View style={styles.statusBadge}>
+                            <Text style={styles.statusText}>Completed on :{data.completedOn}</Text>
+                        </View>
+                    ) : null}
+                </View>
+            ) : null}
 
             {/* Conditional Rendering Based on State */}
             {(() => {
                 if (!data.hasCompleted && data.progress !== undefined && data.progress < 100) {
+                    const pct = Math.max(0, Math.min(100, data.progress));
                     return (
-                        <View style={styles.progressSection}>
-                            <Text style={styles.progressLabel}>Progress</Text>
-                            <View style={styles.progressBar}>
-                                <View style={[styles.progressFill, { width: `${data.progress}%` }]} />
+                        <View style={[styles.progressSection, isRoadmapVariant && styles.progressSectionRoadmap]}>
+                            <Text style={[styles.progressLabel, isRoadmapVariant && styles.progressLabelRoadmap]}>Progress</Text>
+                            <View style={[styles.progressBar, isRoadmapVariant && styles.progressBarRoadmap]}>
+                                <View style={[styles.progressFill, isRoadmapVariant && styles.progressFillRoadmap, { width: `${pct}%` }]} />
                             </View>
-                            <Text style={styles.progressPercent}>{data.progress} %</Text>
+                            <Text style={[styles.progressPercent, isRoadmapVariant && styles.progressPercentRoadmap]}>
+                                {formatMenteeProgressPercent(data.progress)}
+                            </Text>
                         </View>
                     );
                 }
@@ -368,12 +410,14 @@ export default function MenteeCard({
                 if (!data.hasCompleted && data.progress === 100 && onMarkComplete) {
                     return (
                         <>
-                            <View style={styles.progressSection}>
-                                <Text style={styles.progressLabel}>Progress</Text>
-                                <View style={styles.progressBar}>
-                                    <View style={[styles.progressFill, { width: '100%' }]} />
+                            <View style={[styles.progressSection, isRoadmapVariant && styles.progressSectionRoadmap]}>
+                                <Text style={[styles.progressLabel, isRoadmapVariant && styles.progressLabelRoadmap]}>Progress</Text>
+                                <View style={[styles.progressBar, isRoadmapVariant && styles.progressBarRoadmap]}>
+                                    <View style={[styles.progressFill, isRoadmapVariant && styles.progressFillRoadmap, { width: '100%' }]} />
                                 </View>
-                                <Text style={styles.progressPercent}>100 %</Text>
+                                <Text style={[styles.progressPercent, isRoadmapVariant && styles.progressPercentRoadmap]}>
+                                    {formatMenteeProgressPercent(100)}
+                                </Text>
                             </View>
 
                             <LinearGradient colors={['#7C3AED', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientBorder}>
@@ -478,6 +522,69 @@ const styles = StyleSheet.create({
         padding: getSpacing(14),
         marginBottom: getSpacing(14),
         position: 'relative',
+    },
+    containerRoadmap: {
+        position: 'relative',
+        backgroundColor: roadmapTheme.frostedSurface,
+        borderColor: roadmapTheme.frostedBorder,
+        borderWidth: 1,
+        borderRadius: 14,
+        padding: getSpacing(16),
+        marginBottom: 12,
+        overflow: 'hidden',
+    },
+    topSectionRoadmapTight: {
+        marginBottom: getSpacing(6),
+    },
+    placeholderImageRoadmap: {
+        backgroundColor: 'rgba(255,255,255,0.12)',
+    },
+    contactRowRoadmap: {
+        marginBottom: getSpacing(8),
+    },
+    imageContainerRoadmap: {
+        width: getSpacing(100),
+        height: getSpacing(100),
+        borderRadius: 12,
+    },
+    contentSectionRoadmap: {
+        paddingRight: getSpacing(72),
+    },
+    nameRoadmap: {
+        fontSize: getFontSize(17),
+        fontWeight: '800',
+        letterSpacing: -0.2,
+        marginBottom: getSpacing(4),
+    },
+    descriptionRoadmap: {
+        fontSize: getFontSize(13),
+        lineHeight: getFontSize(18),
+        color: roadmapTheme.textMuted,
+        fontWeight: '500',
+        marginBottom: getSpacing(8),
+    },
+    progressSectionRoadmap: {
+        marginTop: getSpacing(4),
+        marginBottom: 0,
+    },
+    progressLabelRoadmap: {
+        color: 'rgba(255,255,255,0.85)',
+        fontWeight: '600',
+    },
+    progressBarRoadmap: {
+        height: 10,
+        backgroundColor: 'rgba(255,255,255,0.18)',
+        borderRadius: 8,
+    },
+    progressFillRoadmap: {
+        backgroundColor: 'rgba(255,255,255,0.78)',
+        borderRadius: 8,
+    },
+    progressPercentRoadmap: {
+        minWidth: 52,
+        fontSize: getFontSize(13),
+        fontWeight: '700',
+        color: 'rgba(255,255,255,0.95)',
     },
     menuButton: {
         position: 'absolute',

@@ -253,6 +253,7 @@ export default function Landing() {
       if (item.type === "MENTEE") {
         return (
           <MenteeCard
+            variant="roadmap"
             data={item.data}
             onPress={() => setSelectedPastor(item.data)}
           />
