@@ -18,6 +18,8 @@ interface AssessmentQuestionsSectionProps {
     assessment: Assessment;
     assessmentId: string;
     isViewMode: boolean;
+    /** If true (usually from deep-link), open CDP modal immediately when ready. */
+    openCdpOnLoad?: boolean;
     /** Optional initial answers for view mode (e.g. from submitted answers). */
     initialSectionAnswers?: Record<number, Record<string, any>>;
     onSubmit: (sectionAnswers: Record<number, Record<string, any>>) => void;
@@ -53,6 +55,7 @@ export default function AssessmentQuestionsSection({
     assessment,
     assessmentId,
     isViewMode,
+    openCdpOnLoad = false,
     initialSectionAnswers,
     onSubmit,
     onClose,
@@ -107,6 +110,13 @@ export default function AssessmentQuestionsSection({
     useEffect(() => {
         setEditableMentorSections(mentorReviewSections ?? []);
     }, [mentorReviewSections]);
+
+    useEffect(() => {
+        if (!openCdpOnLoad) return;
+        if (!isViewMode) return;
+        if (!showCdpAsReady) return;
+        setShowCdpModal(true);
+    }, [openCdpOnLoad, isViewMode, showCdpAsReady]);
 
     // In view mode, sync any incoming initial answers into local state
     useEffect(() => {
@@ -271,6 +281,16 @@ export default function AssessmentQuestionsSection({
 
             return { ...prev, [sectionId]: [...withoutOld, trimmedText] };
         });
+    };
+
+    const addRecommendationRow = (sectionId: string) => {
+        setEditableMentorSections((prev) =>
+            prev.map((section) => {
+                if (section.sectionId !== sectionId) return section;
+                const nextRecommendations = [...(section.recommendations ?? []), ''];
+                return { ...section, recommendations: nextRecommendations };
+            }),
+        );
     };
 
     const handleSubmitAssessment = () => {
@@ -561,6 +581,7 @@ export default function AssessmentQuestionsSection({
                     selectedRecommendations={reviewMode ? selectedRecommendations : undefined}
                     onToggleRecommendation={reviewMode ? toggleRecommendation : undefined}
                     onUpdateRecommendation={reviewMode ? updateRecommendationText : undefined}
+                    onAddRecommendation={reviewMode ? addRecommendationRow : undefined}
                     onSendCdp={
                         reviewMode && onSendCdp && editableMentorSections
                             ? () => {

@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
@@ -121,6 +121,22 @@ export default function MentorAssessmentsLibrary() {
                 params: { assessmentId: assessment.id },
             });
         }
+    };
+
+    const handleOpenCdp = (assessment: Assessment) => {
+        if (!selectedMentee) {
+            Alert.alert("Select a mentee", "Please select a mentee to view CDP.");
+            return;
+        }
+        router.push({
+            pathname: "/(mentor)/assessments/answer-questions" as any,
+            params: {
+                assessmentId: assessment.id,
+                viewMode: "true",
+                targetUserId: selectedMentee,
+                openCdp: "true",
+            },
+        });
     };
 
     const handleMenuPress = (assessment: Assessment) => {
@@ -390,7 +406,7 @@ export default function MentorAssessmentsLibrary() {
                                     onPress={handleOpenAssessment}
                                     onMeetingPress={() => { }}
                                     onMeetingIconPress={() => { }}
-                                    onCustomizedPress={() => { }}
+                                    onCustomizedPress={() => handleOpenCdp(item)}
                                     onMenuPress={() => handleMenuPress(item)}
                                 />
                                 {index < filteredAssessments.length - 1 && (

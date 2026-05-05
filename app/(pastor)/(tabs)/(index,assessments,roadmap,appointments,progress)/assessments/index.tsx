@@ -138,8 +138,14 @@ export default function Survey() {
   };
 
   const handleCustomizedPress = (assessment: Assessment) => {
-    setSelectedAssessment(assessment);
-    pmpBottomSheetRef.current?.present();
+    router.push({
+      pathname: "/assessments/answer-questions",
+      params: {
+        assessmentId: assessment.id,
+        viewMode: "true",
+        openCdp: "true",
+      },
+    });
   };
 
   const reportHtml = useMemo(() => {
@@ -349,6 +355,7 @@ export default function Survey() {
                     <AssessmentCard
                       data={assessment}
                       onPress={() => handleCardPress(assessment)}
+                      onCustomizedPress={() => handleCustomizedPress(assessment)}
                       menuItems={[
                         {
                           key: "reschedule",

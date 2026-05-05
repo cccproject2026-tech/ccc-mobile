@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Alert,
     Image,
     Pressable,
     ScrollView,
@@ -141,6 +142,22 @@ export default function MentorAssessmentsLibrary() {
         params,
       });
     }
+  };
+
+  const handleOpenCdp = (assessment: Assessment) => {
+    if (!selectedMentee) {
+      Alert.alert("Select a mentee", "Please select a mentee to view CDP.");
+      return;
+    }
+    router.push({
+      pathname: "/(mentor)/assessments/answer-questions" as any,
+      params: {
+        assessmentId: assessment.id,
+        viewMode: "true",
+        targetUserId: selectedMentee,
+        openCdp: "true",
+      },
+    });
   };
 
   const handleMenuPress = (assessment: Assessment) => {
@@ -397,7 +414,7 @@ export default function MentorAssessmentsLibrary() {
                   onPress={handleOpenAssessment}
                   onMeetingPress={() => {}}
                   onMeetingIconPress={() => {}}
-                  onCustomizedPress={() => {}}
+                  onCustomizedPress={() => handleOpenCdp(item)}
                   onMenuPress={() => handleMenuPress(item)}
                 />
                 {index < filteredAssessments.length - 1 && (

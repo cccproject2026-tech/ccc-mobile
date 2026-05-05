@@ -32,7 +32,7 @@ import {
 } from "react-native";
 
 export default function AnswerQuestionPage() {
-  const { assessmentId, viewMode, hasPreSurvey, scheduleMeeting } =
+  const { assessmentId, viewMode, hasPreSurvey, scheduleMeeting, openCdp } =
     useLocalSearchParams();
   console.log(
     "assessmentId",
@@ -54,6 +54,7 @@ export default function AnswerQuestionPage() {
 
   const isViewMode = viewMode === "true";
   const shouldScheduleMeeting = scheduleMeeting === "true";
+  const openCdpOnLoad = openCdp === "true";
   console.log("isViewMode", isViewMode, shouldScheduleMeeting);
   // ONLY fetch submitted answers in VIEW MODE (not for regular editing)
   const {
@@ -459,6 +460,7 @@ export default function AnswerQuestionPage() {
           assessmentId={assessmentId as string}
           userRole={user?.role}
           isViewMode={isViewMode}
+          openCdpOnLoad={openCdpOnLoad}
           initialSectionAnswers={isViewMode ? viewSectionAnswers : undefined}
           mentorReviewSections={cdpSectionsForView}
           submittedSections={submittedSections}

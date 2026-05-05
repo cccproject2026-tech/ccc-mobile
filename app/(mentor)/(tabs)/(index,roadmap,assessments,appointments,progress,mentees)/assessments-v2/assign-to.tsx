@@ -6,6 +6,7 @@ import { useAssessment, useAssignAssessment } from "@/hooks/assessments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {

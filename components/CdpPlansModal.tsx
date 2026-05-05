@@ -39,6 +39,8 @@ interface CdpPlansModalProps {
         recommendationIndex: number,
         nextText: string,
     ) => void;
+    /** Mentor only: add a recommendation row */
+    onAddRecommendation?: (sectionId: string) => void;
     /** Mentor only: send CDP */
     onSendCdp?: () => void;
     /** Pastor only: download CDP as PDF */
@@ -54,6 +56,7 @@ export default function CdpPlansModal({
     selectedRecommendations = {},
     onToggleRecommendation,
     onUpdateRecommendation,
+    onAddRecommendation,
     onSendCdp,
     onDownloadCdp,
 }: CdpPlansModalProps) {
@@ -106,6 +109,13 @@ export default function CdpPlansModal({
                             {sections.map((section, sectionIndex) => {
                                 const sectionNumber = sectionIndex + 1;
                                 const hasScore = section.score != null;
+                                const selectedForSection = selectedRecommendations[section.sectionId] ?? [];
+                                const totalRecommendations = (section.recommendations ?? []).length;
+                                const allSelected =
+                                    mode === 'mentor' &&
+                                    totalRecommendations > 0 &&
+                                    selectedForSection.length > 0 &&
+                                    selectedForSection.length >= totalRecommendations;
 
                                 return (
                                     <View key={section.sectionId} style={styles.sectionBlock}>
@@ -157,6 +167,48 @@ export default function CdpPlansModal({
                                                     <Ionicons name="pencil-outline" size={18} color="#fff" />
                                                     <Text style={styles.controlButtonText}>Edit</Text>
                                                 </TouchableOpacity>
+
+                                                {onAddRecommendation && (
+                                                    <TouchableOpacity
+                                                        style={styles.controlButton}
+                                                        onPress={() => {
+                                                            setMentorActionMode('edit');
+                                                            onAddRecommendation(section.sectionId);
+                                                        }}
+                                                    >
+                                                        <Ionicons name="add-circle-outline" size={18} color="#fff" />
+                                                        <Text style={styles.controlButtonText}>Add</Text>
+                                                    </TouchableOpacity>
+                                                )}
+
+                                                {mentorActionMode === 'select' && onToggleRecommendation && (
+                                                    <TouchableOpacity
+                                                        style={styles.controlButton}
+                                                        onPress={() => {
+                                                            const items = section.recommendations ?? [];
+                                                            if (!items.length) return;
+
+                                                            if (allSelected) {
+                                                                selectedForSection.forEach((text) => {
+                                                                    onToggleRecommendation(section.sectionId, text);
+                                                                });
+                                                                return;
+                                                            }
+
+                                                            const selectedSet = new Set(selectedForSection);
+                                                            items.forEach((text) => {
+                                                                if (!selectedSet.has(text)) {
+                                                                    onToggleRecommendation(section.sectionId, text);
+                                                                }
+                                                            });
+                                                        }}
+                                                    >
+                                                        <Ionicons name="checkbox-outline" size={18} color="#fff" />
+                                                        <Text style={styles.controlButtonText}>
+                                                            {allSelected ? 'Clear all' : 'Select all'}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                )}
                                             </View>
                                         )}
 
@@ -309,13 +361,15 @@ const styles = StyleSheet.create({
     },
     controlsRow: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: getSpacing(12),
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        gap: getSpacing(10),
         marginBottom: getSpacing(16),
     },
     controlButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: getSpacing(6),
         paddingVertical: getSpacing(6),
         paddingHorizontal: getSpacing(14),
@@ -323,6 +377,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
         borderWidth: 1,
         borderColor: 'rgba(148,163,184,0.9)',
+        flexGrow: 1,
+        flexBasis: '48%',
     },
     controlButtonActive: {
         backgroundColor: 'rgba(148,163,184,0.25)',
