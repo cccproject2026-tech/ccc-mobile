@@ -1,6 +1,5 @@
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
     Modal,
@@ -12,6 +11,7 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { roadmapTheme } from './ui/design-system/roadmapTheme';
 
 export interface CdpSection {
     sectionId: string;
@@ -87,10 +87,7 @@ export default function CdpPlansModal({
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.container}>
-                        <LinearGradient
-                            colors={['#1D548D', '#264387', '#264387']}
-                            style={styles.gradient}
-                        >
+                        <View style={styles.card}>
                             <View style={styles.headerRow}>
                                 <View style={styles.titleWrap}>
                                     <Text style={styles.title} numberOfLines={1}>{assessmentTitle}</Text>
@@ -256,21 +253,21 @@ export default function CdpPlansModal({
 
                             <View style={styles.footer}>
                                 {mode === 'mentor' && onSendCdp ? (
-                                    <TouchableOpacity style={styles.sendButton} onPress={onSendCdp} activeOpacity={0.8}>
-                                        <Text style={styles.sendButtonText}>Send</Text>
+                                    <TouchableOpacity style={styles.primaryButton} onPress={onSendCdp} activeOpacity={0.85}>
+                                        <Text style={styles.primaryButtonText}>Send</Text>
                                     </TouchableOpacity>
                                 ) : mode === 'pastor' ? (
                                     <TouchableOpacity
-                                        style={styles.downloadButton}
-                                        activeOpacity={0.8}
+                                        style={styles.primaryButton}
+                                        activeOpacity={0.85}
                                         onPress={onDownloadCdp}
                                     >
-                                        <Ionicons name="download-outline" size={20} color="#fff" />
-                                        <Text style={styles.downloadButtonText}>Download</Text>
+                                        <Ionicons name="download-outline" size={20} color={roadmapTheme.textActive} />
+                                        <Text style={styles.primaryButtonText}>Download</Text>
                                     </TouchableOpacity>
                                 ) : null}
                             </View>
-                        </LinearGradient>
+                        </View>
                     </View>
                 </KeyboardAwareScrollView>
             </View>
@@ -295,14 +292,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     container: {
-        borderRadius: 16,
+        borderRadius: 20,
         maxHeight: '85%',
         width: '100%',
         overflow: 'hidden',
     },
-    gradient: {
-        borderRadius: 16,
+    card: {
+        borderRadius: 20,
         overflow: 'hidden',
+        backgroundColor: 'rgba(25, 79, 130, 0.98)',
+        borderWidth: 1,
+        borderColor: roadmapTheme.frostedBorderStrong,
     },
     headerRow: {
         flexDirection: 'row',
@@ -335,12 +335,13 @@ const styles = StyleSheet.create({
         marginBottom: getSpacing(24),
     },
     sectionHeaderBox: {
-        borderWidth: 2,
-        borderColor: 'rgba(168, 85, 247, 0.8)',
-        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: roadmapTheme.frostedBorderStrong,
+        borderRadius: 16,
         paddingVertical: getSpacing(12),
         paddingHorizontal: getSpacing(16),
         marginBottom: getSpacing(12),
+        backgroundColor: roadmapTheme.frostedSurfaceStrong,
     },
     sectionHeader: {
         fontSize: getFontSize(15),
@@ -356,7 +357,7 @@ const styles = StyleSheet.create({
     },
     subtext: {
         fontSize: getFontSize(13),
-        color: 'rgba(255,255,255,0.9)',
+        color: roadmapTheme.textMuted,
         marginBottom: getSpacing(12),
     },
     controlsRow: {
@@ -373,15 +374,15 @@ const styles = StyleSheet.create({
         gap: getSpacing(6),
         paddingVertical: getSpacing(6),
         paddingHorizontal: getSpacing(14),
-        borderRadius: 8,
-        backgroundColor: 'transparent',
+        borderRadius: 14,
+        backgroundColor: roadmapTheme.frostedSurface,
         borderWidth: 1,
-        borderColor: 'rgba(148,163,184,0.9)',
+        borderColor: roadmapTheme.frostedBorderStrong,
         flexGrow: 1,
         flexBasis: '48%',
     },
     controlButtonActive: {
-        backgroundColor: 'rgba(148,163,184,0.25)',
+        backgroundColor: 'rgba(255,255,255,0.18)',
     },
     controlButtonText: {
         fontSize: getFontSize(14),
@@ -396,16 +397,16 @@ const styles = StyleSheet.create({
     },
     listTitleUnderline: {
         height: 1,
-        backgroundColor: 'rgba(255,255,255,0.5)',
+        backgroundColor: roadmapTheme.divider,
         marginBottom: getSpacing(12),
     },
     listBox: {
         borderWidth: 1,
-        borderColor: 'rgba(148, 163, 184, 0.7)',
-        borderRadius: 14,
+        borderColor: roadmapTheme.frostedBorderStrong,
+        borderRadius: 16,
         paddingVertical: getSpacing(10),
         paddingHorizontal: getSpacing(14),
-        backgroundColor: 'rgba(15,23,42,0.45)',
+        backgroundColor: roadmapTheme.frostedSurfaceStrong,
     },
     itemRow: {
         flexDirection: 'row',
@@ -429,11 +430,12 @@ const styles = StyleSheet.create({
         flex: 1,
         color: '#fff',
         borderWidth: 1,
-        borderColor: 'rgba(148,163,184,0.8)',
-        borderRadius: 8,
+        borderColor: roadmapTheme.frostedBorderStrong,
+        borderRadius: 14,
         paddingVertical: getSpacing(8),
         paddingHorizontal: getSpacing(10),
         fontSize: getFontSize(14),
+        backgroundColor: 'rgba(255,255,255,0.06)',
     },
     itemTextSelected: {
         fontWeight: '600',
@@ -443,34 +445,24 @@ const styles = StyleSheet.create({
         padding: getSpacing(20),
         paddingTop: getSpacing(12),
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.2)',
+        borderTopColor: roadmapTheme.divider,
     },
-    sendButton: {
-        alignSelf: 'center',
-        paddingVertical: getSpacing(10),
-        paddingHorizontal: getSpacing(32),
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(148,163,184,0.9)',
-        backgroundColor: 'rgba(15,23,42,0.9)',
-    },
-    sendButtonText: {
-        fontSize: getFontSize(16),
-        fontWeight: '700',
-        color: '#fff',
-    },
-    downloadButton: {
+    primaryButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: getSpacing(8),
-        backgroundColor: 'transparent',
-        paddingVertical: getSpacing(14),
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        paddingVertical: getSpacing(12),
+        paddingHorizontal: getSpacing(18),
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.56)',
     },
-    downloadButtonText: {
-        fontSize: getFontSize(16),
-        fontWeight: '600',
-        color: '#fff',
-        textDecorationLine: 'underline',
+    primaryButtonText: {
+        color: roadmapTheme.textActive,
+        fontSize: getFontSize(15),
+        fontWeight: '800',
+        letterSpacing: -0.1,
     },
 });
