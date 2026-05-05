@@ -1,4 +1,5 @@
 import { Mentor } from '@/hooks/mentors/useGetAssignedMentors';
+import { roadmapTheme } from '@/components/ui/design-system/roadmapTheme';
 import {
     getCardImageSize,
     getFontSize,
@@ -441,11 +442,11 @@ export default function MentorCard({
 const styles = StyleSheet.create({
     // Card Layout Styles
     card: {
-        backgroundColor: 'rgba(33, 58, 115, 1)',
-        borderRadius: getSpacing(12),
+        backgroundColor: roadmapTheme.frostedSurfaceStrong,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
-        padding: getSpacing(12),
+        borderColor: roadmapTheme.frostedBorder,
+        padding: getSpacing(14),
         marginBottom: getSpacing(12),
     },
     selectedCard: {
@@ -457,7 +458,7 @@ const styles = StyleSheet.create({
         marginBottom: getSpacing(12),
     },
     profileImageContainer: {
-        borderRadius: getSpacing(10),
+        borderRadius: 12,
         overflow: 'hidden',
         marginRight: getSpacing(10),
         flexShrink: 0,
@@ -469,7 +470,9 @@ const styles = StyleSheet.create({
     placeholderImage: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#2A5080',
+        backgroundColor: 'rgba(255,255,255,0.10)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -486,10 +489,11 @@ const styles = StyleSheet.create({
     },
     mentorName: {
         fontSize: getFontSize(isSmallDevice ? 16 : 18),
-        fontWeight: '600',
+        fontWeight: '800',
         color: '#fff',
         flex: 1,
         marginRight: getSpacing(8),
+        letterSpacing: -0.2,
     },
     menteesContainer: {
         flexDirection: 'row',
@@ -500,23 +504,24 @@ const styles = StyleSheet.create({
         width: getSpacing(6),
         height: getSpacing(6),
         borderRadius: getSpacing(3),
-        backgroundColor: '#FFC107',
+        backgroundColor: roadmapTheme.accentGold,
         marginRight: getSpacing(6),
     },
     menteesText: {
         fontSize: getFontSize(isSmallDevice ? 12 : 14),
-        fontWeight: '500',
-        color: '#FFC107',
+        fontWeight: '700',
+        color: roadmapTheme.accentGold,
     },
     roleText: {
         fontSize: getFontSize(isSmallDevice ? 14 : 15),
-        color: '#fff',
+        color: 'rgba(255,255,255,0.9)',
         marginBottom: getSpacing(8),
     },
     descriptionText: {
         fontSize: getFontSize(isSmallDevice ? 13 : 14),
-        color: 'rgba(255, 255, 255, 0.8)',
+        color: roadmapTheme.textMuted,
         lineHeight: getFontSize(isSmallDevice ? 18 : 20),
+        fontWeight: '500',
     },
     menuButton: {
         padding: getSpacing(4),
@@ -536,10 +541,10 @@ const styles = StyleSheet.create({
     listContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(24, 68, 123, 1)',
-        borderRadius: getSpacing(12),
+        backgroundColor: roadmapTheme.frostedSurfaceStrong,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        borderColor: roadmapTheme.frostedBorder,
         padding: isAndroid ? getSpacing(12) : getSpacing(8), // More padding on Android
         marginBottom: getSpacing(8),
         minHeight: isAndroid ? getSpacing(68) : getSpacing(56), // Taller on Android

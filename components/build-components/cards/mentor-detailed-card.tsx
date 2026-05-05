@@ -1,7 +1,9 @@
 import { icons } from "@/constants/images";
 import { Mentee } from "@/types/mentee.types";
 import { Router } from "expo-router";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import React from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
 
 export default function MentorDetailedCard({
   data,
@@ -15,55 +17,112 @@ export default function MentorDetailedCard({
   onMenuPress: () => void;
 }) {
   return (
-    <View className="bg-[#1A4882] rounded-[10px] border border-white/80 p-4 relative">
-      <View className="absolute top-4 right-4 z-10">
-        <TouchableOpacity onPress={onMenuPress}>
-          <Image source={icons.menuVertical} className="w-6 h-6" />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.card}>
+      <TouchableOpacity onPress={onMenuPress} hitSlop={10} style={styles.menuBtn}>
+        <Image source={icons.menuVertical} style={styles.menuIcon} />
+      </TouchableOpacity>
 
-      <View className="flex-row">
-        <View className="mr-4 w-[35%]">
-          <Image
-            source={icons.dummyUser}
-            className="w-[90%] h-[95px] rounded-[10px]"
-          />
-          <View className="flex-row mt-4 gap-[13px] w-[90%] justify-between">
-            <Image
-              source={icons.phone}
-              className="flex-1 w-6 h-6"
-              resizeMode="contain"
-            />
-            <Image
-              source={icons.message}
-              className="flex-1 w-6 h-6"
-              resizeMode="contain"
-            />
-            <Image
-              source={icons.mail}
-              className="flex-1 w-6 h-6"
-              resizeMode="contain"
-            />
-            <Image
-              source={icons.whatsapp}
-              className="flex-1 w-6 h-6"
-              resizeMode="contain"
-            />
+      <View style={styles.row}>
+        <View style={styles.leftCol}>
+          <Image source={icons.dummyUser} style={styles.photo} />
+          <View style={styles.actionsRow}>
+            <Image source={icons.phone} style={styles.actionIcon} />
+            <Image source={icons.message} style={styles.actionIcon} />
+            <Image source={icons.mail} style={styles.actionIcon} />
+            <Image source={icons.whatsapp} style={styles.actionIcon} />
           </View>
         </View>
 
-        <View className="flex-1 pr-5">
-          <Text className="text-white text-base font-medium mb-1">
+        <View style={styles.content}>
+          <Text style={styles.name} numberOfLines={1}>
             {data.firstName + " " + data.lastName}
           </Text>
-          <Text className="text-white text-base font-medium mb-2">
-            {data?.role}
-          </Text>
-          <Text className="text-white/70 text-sm font-normal leading-5">
-            {data?.description}
-          </Text>
+          {!!data?.role && (
+            <Text style={styles.role} numberOfLines={1}>
+              {data.role}
+            </Text>
+          )}
+          {!!data?.description && (
+            <Text style={styles.desc} numberOfLines={3}>
+              {data.description}
+            </Text>
+          )}
         </View>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    width: "100%",
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
+    padding: 14,
+    position: "relative",
+  },
+  menuBtn: {
+    position: "absolute",
+    top: 12,
+    right: 10,
+    padding: 6,
+    zIndex: 5,
+  },
+  menuIcon: {
+    width: 18,
+    height: 18,
+    tintColor: "rgba(255,255,255,0.92)",
+    resizeMode: "contain",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+  },
+  leftCol: {
+    width: 112,
+  },
+  photo: {
+    width: "100%",
+    height: 104,
+    borderRadius: 12,
+  },
+  actionsRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  actionIcon: {
+    width: 18,
+    height: 18,
+    tintColor: "rgba(255,255,255,0.92)",
+    resizeMode: "contain",
+  },
+  content: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 18,
+    gap: 6,
+  },
+  name: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
+  role: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  desc: {
+    color: roadmapTheme.textMuted,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "500",
+  },
+});
