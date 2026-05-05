@@ -1,5 +1,5 @@
 import ScheduleMeetingBottomSheet from "@/components/director/ScheduleMeetingBottomSheet";
-import { Colors } from "@/constants/Colors";
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
 import { Assessment } from "@/lib/assessments/types";
 import { useAuthStore } from "@/stores";
 import {
@@ -7,8 +7,7 @@ import {
   getIconSize,
   getSpacing,
   isIOS,
-  moderateScale,
-  verticalScale,
+  moderateScale
 } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -17,14 +16,12 @@ import React from "react";
 import {
   Dimensions,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import * as DropdownMenu from "zeego/dropdown-menu";
 export interface MenuItem {
   key: string;
   title: string;
@@ -214,19 +211,7 @@ export default function AssessmentCard({
   );
 
   return (
-    <View
-      style={{
-        width: "100%",
-        backgroundColor: "#194F82",
-        borderRadius: moderateScale(10 * cardCompress),
-        paddingVertical: getSpacing(14 * spacingCompress),
-        paddingHorizontal: getSpacing(14 * spacingCompress), // Add more horizontal padding
-        marginVertical: getSpacing(2.5 * spacingCompress),
-        borderWidth: 1,
-        borderColor: "#FFFFFF73",
-        position: "relative",
-      }}
-    >
+    <View style={styles.container}>
       {/* Three dots menu button */}
       {user?.role !== "pastor" && onMenuPress && (
         <TouchableOpacity
@@ -234,13 +219,7 @@ export default function AssessmentCard({
             e.stopPropagation?.();
             onMenuPress?.();
           }}
-          style={{
-            position: "absolute",
-            top: getSpacing(14 * spacingCompress),
-            right: getSpacing(14 * spacingCompress),
-            zIndex: 10,
-            padding: getSpacing(4 * spacingCompress),
-          }}
+          style={styles.menuBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons
@@ -255,59 +234,26 @@ export default function AssessmentCard({
         onPress={() => onPress && onPress(data)}
         activeOpacity={0.8}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-start",
-            width: "100%",
-          }}
-        >
-          <View
-            style={{
-              width: moderateScale(130 * imageCompress),
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{
-                width: "100%",
-                height: verticalScale(138 * imageCompress),
-                backgroundColor: "#00ABAE",
-                borderWidth: moderateScale(5 * cardCompress),
-                borderColor: "#BFFEFE",
-                borderRadius: moderateScale(15 * cardCompress),
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+        <View style={styles.row}>
+          <View style={styles.leftCol}>
+            <View style={styles.badgeBox}>
               <Text
-                style={{
-                  color: "#001B4A",
-                  fontSize: getFontSize(40 * fontCompress),
-                  fontWeight: "800",
-                }}
+                style={[
+                  styles.badgeType,
+                  { fontSize: getFontSize(38 * fontCompress) },
+                ]}
               >
                 {data?.type}
               </Text>
-              <View
-                style={{
-                  height: moderateScale(0.5 * cardCompress),
-                  width: "80%",
-                  backgroundColor: "white",
-                  borderRadius: moderateScale(1 * cardCompress),
-                  marginTop: moderateScale(-6 * cardCompress),
-                }}
-              />
+              <View style={styles.badgeDivider} />
               <Text
-                style={{
-                  color: "white",
-                  fontSize: getFontSize(9 * fontCompress),
-                  fontWeight: "800",
-                  textAlign: "center",
-                  marginTop: getSpacing(8 * spacingCompress),
-                  lineHeight: getFontSize(18 * fontCompress),
-                  paddingHorizontal: getSpacing(4 * spacingCompress),
-                }}
+                style={[
+                  styles.badgeLabel,
+                  {
+                    fontSize: getFontSize(9 * fontCompress),
+                    lineHeight: getFontSize(16 * fontCompress),
+                  },
+                ]}
               >
                 {data?.type === "CMA"
                   ? "CHURCH ASSESSMENT EVALUATION"
@@ -315,20 +261,12 @@ export default function AssessmentCard({
               </Text>
             </View>
             {data?.dueDate && (
-              <View
-                style={{
-                  //alignItems: "center",
-                  width: "100%",
-                  marginLeft: getSpacing(10),
-                  marginTop: getSpacing(3 * spacingCompress),
-                }}
-              >
+              <View style={styles.dueWrap}>
                 <Text
-                  style={{
-                    fontSize: getFontSize(12 * fontCompress),
-                    fontWeight: "700",
-                    color: "#EAB308",
-                  }}
+                  style={[
+                    styles.dueText,
+                    { fontSize: getFontSize(12 * fontCompress) },
+                  ]}
                 >
                   Due : {formatDate(data.dueDate)}
                 </Text>
@@ -336,21 +274,16 @@ export default function AssessmentCard({
             )}
           </View>
 
-          <View
-            style={{
-              marginLeft: getSpacing(10 * spacingCompress),
-              flex: 1,
-              paddingRight: getSpacing(24 * spacingCompress),
-            }}
-          >
+          <View style={styles.rightCol}>
             <View>
               <Text
-                style={{
-                  color: "white",
-                  fontSize: getFontSize(15 * fontCompress),
-                  lineHeight: getFontSize(20 * fontCompress),
-                  fontWeight: "600",
-                }}
+                style={[
+                  styles.title,
+                  {
+                    fontSize: getFontSize(15 * fontCompress),
+                    lineHeight: getFontSize(20 * fontCompress),
+                  },
+                ]}
                 numberOfLines={2}
                 ellipsizeMode="tail"
               >
@@ -358,33 +291,33 @@ export default function AssessmentCard({
               </Text>
             </View>
             <Text
-              style={{
-                paddingVertical: getSpacing(6 * spacingCompress),
-                color: "#F4F2F2B5",
-                fontSize: getFontSize(13 * fontCompress),
-              }}
+              style={[
+                styles.desc,
+                {
+                  paddingVertical: getSpacing(6 * spacingCompress),
+                  fontSize: getFontSize(13 * fontCompress),
+                },
+              ]}
             >
               {data?.description}
             </Text>
             {user?.role === "pastor" && (
               <TouchableOpacity
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#FFFFFF33",
-                  paddingVertical: getSpacing(3 * spacingCompress),
-                  paddingHorizontal: getSpacing(7 * spacingCompress),
-                  marginVertical: getSpacing(3 * spacingCompress),
-                  borderRadius: moderateScale(8 * cardCompress),
-                  maxWidth: "70%",
-                  alignItems: "center",
-                }}
+                style={[
+                  styles.statusPill,
+                  {
+                    paddingVertical: getSpacing(3 * spacingCompress),
+                    paddingHorizontal: getSpacing(7 * spacingCompress),
+                    marginVertical: getSpacing(3 * spacingCompress),
+                    borderRadius: moderateScale(999),
+                  },
+                ]}
               >
                 <Text
-                  style={{
-                    fontSize: getFontSize(13 * fontCompress),
-                    fontWeight: "500",
-                    color: "white",
-                  }}
+                  style={[
+                    styles.statusText,
+                    { fontSize: getFontSize(13 * fontCompress) },
+                  ]}
                 >
                   Status{" "}
                   <Text style={{ fontWeight: "900", color: "white" }}>•</Text>{" "}
@@ -392,7 +325,10 @@ export default function AssessmentCard({
                     style={{
                       fontSize: getFontSize(13 * fontCompress),
                       fontWeight: "500",
-                      color: data?.status === "Due" ? "#EAB308" : "white",
+                      color:
+                        data?.status === "Due"
+                          ? "#EAB308"
+                          : "rgba(255,255,255,0.92)",
                     }}
                   >
                     {data?.status}
@@ -403,11 +339,10 @@ export default function AssessmentCard({
             {data?.completedOn && (
               <View>
                 <Text
-                  style={{
-                    fontSize: getFontSize(13 * fontCompress),
-                    fontWeight: "500",
-                    color: "white",
-                  }}
+                  style={[
+                    styles.metaLine,
+                    { fontSize: getFontSize(13 * fontCompress) },
+                  ]}
                 >
                   Completed on :{" "}
                   {formatDate(data.completedOn)}
@@ -419,11 +354,10 @@ export default function AssessmentCard({
               (data?.completionDate || data?.completedOn || data?.createdAt) && (
                 <View style={{ marginTop: getSpacing(4 * spacingCompress) }}>
                   <Text
-                    style={{
-                      fontSize: getFontSize(13 * fontCompress),
-                      fontWeight: "500",
-                      color: "white",
-                    }}
+                    style={[
+                      styles.metaLine,
+                      { fontSize: getFontSize(13 * fontCompress) },
+                    ]}
                   >
                     Submitted on :{" "}
                     {formatDate(data.completionDate || data.completedOn || data.createdAt)}
@@ -434,24 +368,24 @@ export default function AssessmentCard({
             {user?.role === "pastor" &&
               (data?.status === "Not Started" || data?.status === "Due") && (
                 <TouchableOpacity
-                  style={{
-                    backgroundColor: "white",
-                    alignItems: "center",
-                    borderRadius: moderateScale(10 * cardCompress),
-                    paddingVertical: getSpacing(4 * spacingCompress),
-                    marginVertical: getSpacing(8 * spacingCompress),
-                    width: "70%",
-                  }}
+                  style={[
+                    styles.primaryBtn,
+                    {
+                      paddingVertical: getSpacing(9 * spacingCompress),
+                      marginVertical: getSpacing(8 * spacingCompress),
+                      width: "72%",
+                    },
+                  ]}
                   onPress={() => onPress && onPress(data)}
                 >
                   <Text
-                    style={{
-                      fontSize: getFontSize(15 * fontCompress),
-                      color: "#001FC1",
-                      fontWeight: "600",
-                      paddingBottom: getSpacing(3 * spacingCompress),
-                      lineHeight: getFontSize(20 * fontCompress),
-                    }}
+                    style={[
+                      styles.primaryBtnText,
+                      {
+                        fontSize: getFontSize(15 * fontCompress),
+                        lineHeight: getFontSize(20 * fontCompress),
+                      },
+                    ]}
                   >
                     Start Now
                   </Text>
@@ -459,24 +393,19 @@ export default function AssessmentCard({
               )}
           </View>
         </View>
-            {data?.type === "PMP" && (
-          <View
-            style={{
-              paddingTop: 5,
-            }}
-          >
+        {data?.type === "PMP" && (
+          <View style={styles.footerPad}>
             {data?.status === "Completed" ? (
               <TouchableOpacity
-                style={{
-                  alignSelf: "center",
-                  backgroundColor: "white",
-                  borderRadius: moderateScale(10 * cardCompress),
-                  alignItems: "center",
-                  paddingVertical: getSpacing(5 * spacingCompress),
-                  paddingHorizontal: getSpacing(14 * spacingCompress), // Add horizontal padding
-                  marginVertical: getSpacing(8 * spacingCompress),
-                  width: "95%",
-                }}
+                style={[
+                  styles.secondaryBtn,
+                  {
+                    paddingVertical: getSpacing(11 * spacingCompress),
+                    paddingHorizontal: getSpacing(14 * spacingCompress),
+                    marginVertical: getSpacing(8 * spacingCompress),
+                    width: "100%",
+                  },
+                ]}
                 onPress={(event) => {
                   // Prevent parent card press from triggering.
               
@@ -485,13 +414,13 @@ export default function AssessmentCard({
                 }}
               >
                 <Text
-                  style={{
-                    paddingVertical: getSpacing(3 * spacingCompress),
-                    fontSize: getFontSize(14 * fontCompress),
-                    color: "#001FC1",
-                    fontWeight: "600",
-                    lineHeight: getFontSize(18 * fontCompress),
-                  }}
+                  style={[
+                    styles.secondaryBtnText,
+                    {
+                      fontSize: getFontSize(14 * fontCompress),
+                      lineHeight: getFontSize(18 * fontCompress),
+                    },
+                  ]}
                 >
                   Customized Development Plans
                 </Text>
@@ -502,45 +431,40 @@ export default function AssessmentCard({
       </TouchableOpacity>
       {/* data?.status === "Submitted" && data?.meetingDate */}
       {1 == 1 && (
-        <LinearGradient
-          colors={["#B83AF3", "#21B6E9"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{
-            borderRadius: moderateScale(8 * cardCompress),
-            padding: moderateScale(2 * cardCompress),
-            alignSelf: "center",
-            paddingVertical: getSpacing(1 * spacingCompress),
-            paddingHorizontal: getSpacing(1 * spacingCompress), // Add horizontal padding
-            marginVertical: getSpacing(8 * spacingCompress),
-            width: "95%",
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#194F82",
-              borderRadius: moderateScale(8 * cardCompress),
-              alignItems: "center",
-              paddingVertical: getSpacing(5 * spacingCompress),
-              paddingHorizontal: getSpacing(14 * spacingCompress), // Add horizontal padding
-              flexDirection: "row",
-              justifyContent: "space-between",
-            }}
-            onPress={onMeetingPress}
-          >
-            <Text
-              style={{
-                fontSize: getFontSize(14 * fontCompress),
-                color: "#E9E010",
-                fontWeight: "600",
-                lineHeight: getFontSize(18 * fontCompress),
-                paddingVertical: getSpacing(3 * spacingCompress),
-              }}
-            >
-              Meeting Scheduled on {data?.meetingDate}
-            </Text>
-          </TouchableOpacity>
-        </LinearGradient>
+        <TouchableOpacity style={styles.meetingInner} onPress={onMeetingPress}>
+            <View style={styles.meetingLeft}>
+              <View style={styles.meetingIconWrap}>
+                <Ionicons name="calendar-outline" size={18} color="#6FD4BE" />
+              </View>
+              <View style={styles.meetingTextCol}>
+                <Text
+                  style={[
+                    styles.meetingLabel,
+                    {
+                      fontSize: getFontSize(12.5 * fontCompress),
+                      lineHeight: getFontSize(16 * fontCompress),
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  Meeting scheduled on
+                </Text>
+                {/* <Text
+                  style={[
+                    styles.meetingDate,
+                    {
+                      fontSize: getFontSize(13.5 * fontCompress),
+                      lineHeight: getFontSize(18 * fontCompress),
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {data?.meetingDate || ""}
+                </Text> */}
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+        </TouchableOpacity>
       )}
       {changeMeetingMode()}
       <ScheduleMeetingBottomSheet
@@ -574,95 +498,172 @@ export default function AssessmentCard({
   );
 }
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.customBlueOne,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.5)",
-    borderRadius: 16,
-    padding: 8,
-    marginBottom: 12,
-  },
-  cardInner: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  thumbnailWrap: {
-    width: 85,
-    height: 85,
-  },
-  thumbnail: {
+  container: {
     width: "100%",
-    height: "100%",
-    borderRadius: 12,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "space-between",
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginVertical: 6,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
     position: "relative",
   },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingRight: 32,
-  },
-  dateTime: {
-    color: "#EAF7FF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  timeHighlight: {
-    color: "#d7f96c",
-    fontWeight: "700",
-  },
-  rightIconsContainer: {
+  menuBtn: {
     position: "absolute",
-    right: 0,
-    top: 0,
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 12,
+    top: 10,
+    right: 10,
+    zIndex: 10,
+    padding: 6,
   },
-  iconButton: {
-    padding: 5,
-  },
-  personRow: {
+  row: {
     flexDirection: "row",
+    alignItems: "flex-start",
+    width: "100%",
+  },
+  leftCol: {
+    width: 128,
     alignItems: "center",
-    gap: 8,
+  },
+  badgeBox: {
+    width: "100%",
+    height: 138,
+    backgroundColor: "#00ABAE",
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.75)",
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  badgeType: {
+    color: "#001B4A",
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  badgeDivider: {
+    height: 1,
+    width: "82%",
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 1,
+    marginTop: -6,
+  },
+  badgeLabel: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+    textAlign: "center",
+    marginTop: 10,
+    maxWidth: "90%",
+  },
+  dueWrap: {
+    width: "100%",
     marginTop: 8,
-    paddingRight: 32,
+    paddingHorizontal: 2,
   },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.5)",
+  dueText: {
+    color: "#EAB308",
+    fontWeight: "800",
   },
-  personName: {
-    color: "#EAF7FF",
-    fontSize: 14,
-    fontWeight: "600",
+  rightCol: {
+    marginLeft: 12,
     flex: 1,
+    paddingRight: 22,
   },
-  modeRow: {
-    marginTop: 6,
-    paddingRight: 32,
+  title: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
-  modeLabel: {
-    color: "#CFE9F3",
-    fontSize: 13,
-  },
-  modeValue: {
-    color: "#EAF7FF",
+  desc: {
+    color: roadmapTheme.textMuted,
     fontWeight: "500",
-    textDecorationLine: "underline",
   },
-  actions: {
+  statusPill: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    maxWidth: "76%",
+  },
+  statusText: {
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  metaLine: {
+    color: "rgba(255,255,255,0.85)",
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  primaryBtn: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryBtnText: {
+    color: "#153C5A",
+    fontWeight: "800",
+  },
+  footerPad: {
+    paddingTop: 8,
+  },
+  secondaryBtn: {
+    alignSelf: "stretch",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(232, 200, 138, 0.28)",
+  },
+  secondaryBtnText: {
+    color: "#0E5A62",
+    fontWeight: "800",
+  },
+  meetingInner: {
+    backgroundColor: "transparent",
+    borderRadius: 10,
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "rgba(111, 212, 190, 0.45)",
+    marginTop: 10,
+  },
+  meetingLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginTop: 8,
+    flex: 1,
+    minWidth: 0,
   },
+  meetingIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(111, 212, 190, 0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  meetingTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  meetingLabel: {
+    color: "rgba(255,255,255,0.70)",
+    fontWeight: "700",
+    letterSpacing: 0.2,
+    textTransform: "uppercase",
+  },
+  meetingDate: {
+    color: "#E8C88A",
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  // (legacy styles kept in file previously; no longer used by this component)
 });
