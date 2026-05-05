@@ -219,9 +219,9 @@ export default function MentorAssessmentsLibrary() {
     <AppGradientBackground style={{ flex: 1 }}>
       <TopBar showUserName notifications={3} role="mentor" />
 
-      <View style={{ paddingHorizontal: 16 }}>
+        <View style={{ paddingHorizontal: 16 }}>
         <View
-          style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
+          style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
         >
           <Pressable
             onPress={() => router.back()}
@@ -264,11 +264,12 @@ export default function MentorAssessmentsLibrary() {
           </View>
         </View>
 
-        <View style={{ marginTop: 14 }}>
+          <View style={{ marginTop: 8 }}>
           <RoadmapSearchField
             value={search}
             onChangeText={setSearch}
             placeholder="Search assessments..."
+            dense
           />
         </View>
 
@@ -277,7 +278,7 @@ export default function MentorAssessmentsLibrary() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
-            paddingVertical: 14,
+            paddingVertical: 10,
             paddingHorizontal: 4,
             gap: 14,
           }}

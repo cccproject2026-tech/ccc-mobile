@@ -288,12 +288,13 @@ export default function Survey() {
               title="Your assessments"
               subtitle="Review assigned assessments and track completion."
               showDivider
+              variant="compact"
               style={{ marginBottom: 0 }}
             />
           </View>
 
           <View style={styles.searchContainer}>
-            <RoadmapSearchField value={search} onChangeText={setSearch} placeholder="Search assessments..." />
+            <RoadmapSearchField value={search} onChangeText={setSearch} placeholder="Search assessments..." dense />
           </View>
 
           <View style={{ marginTop: 10 }}>
@@ -431,21 +432,21 @@ const styles = StyleSheet.create({
   },
   heroHeader: {
     paddingHorizontal: 16,
-    marginTop: 14,
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 6,
   },
   pill: {
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 10,
+    paddingVertical: 7,
     paddingHorizontal: 14,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.10)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.18)",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   pillDots: { flexDirection: "row", alignItems: "center", gap: 6 },
   pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#6FD4BE" },

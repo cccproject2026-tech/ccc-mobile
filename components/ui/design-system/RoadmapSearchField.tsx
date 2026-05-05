@@ -7,11 +7,18 @@ type Props = {
   value: string;
   onChangeText: (t: string) => void;
   placeholder?: string;
+  /** Denser padding/height for compact screens */
+  dense?: boolean;
 };
 
-export function RoadmapSearchField({ value, onChangeText, placeholder = "Search..." }: Props) {
+export function RoadmapSearchField({
+  value,
+  onChangeText,
+  placeholder = "Search...",
+  dense = false,
+}: Props) {
   return (
-    <View style={styles.searchBox}>
+    <View style={[styles.searchBox, dense ? styles.searchBoxDense : null]}>
       <Ionicons name="search" size={18} color="rgba(255,255,255,0.75)" />
       <TextInput
         value={value}
@@ -40,6 +47,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  searchBoxDense: {
+    paddingVertical: 7,
   },
   searchInput: {
     flex: 1,

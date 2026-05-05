@@ -204,7 +204,7 @@ export default function MentorAssessmentsLibrary() {
 
             <View style={{ paddingHorizontal: 16 }}>
                 <View
-                    style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
+                    style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
                 >
                     <Pressable
                         onPress={() => router.back()}
@@ -247,11 +247,12 @@ export default function MentorAssessmentsLibrary() {
                     </View>
                 </View>
 
-                <View style={{ marginTop: 14 }}>
+                <View style={{ marginTop: 8 }}>
                     <RoadmapSearchField
                         value={search}
                         onChangeText={setSearch}
                         placeholder="Search assessments..."
+                        dense
                     />
                 </View>
 
@@ -259,7 +260,7 @@ export default function MentorAssessmentsLibrary() {
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingVertical: 14, gap: 14 }}
+                        contentContainerStyle={{ paddingVertical: 10, gap: 14 }}
                 >
                     {/* Library pill */}
                     <Pressable
