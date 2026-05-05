@@ -1,12 +1,9 @@
 import { NotificationCard } from "@/components/atom/cards";
-import { Header } from "@/components/build-components";
 import TopBar from "@/components/director/TopBar";
-import { Colors } from "@/constants/Colors";
 import { useMarkNotificationAsRead, useNotifications } from "@/hooks/profile/useProfile";
 import { useAuthStore } from "@/stores";
 import { Notification } from "@/types";
 import { formatNotificationDescription, getNotificationRoute } from "@/utils/notifications";
-import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
 import React from "react";
 import {
@@ -14,8 +11,12 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
+    Text,
     View
 } from "react-native";
+import { GradientBackground } from "@/components/ui/design-system/GradientBackground";
+import { SectionHeader } from "@/components/ui/design-system/SectionHeader";
+import { CommonCard } from "@/components/ui/design-system/CommonCard";
 
 export default function NotificationScreen() {
   const { user } = useAuthStore();
@@ -47,14 +48,14 @@ export default function NotificationScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
+      <GradientBackground>
         <TopBar role="pastor" showNotifications={false} />
 
-        <View style={styles.scrollContainer}>
-          <Header title="Notifications" hideSearchBar={true} />
+        <View style={styles.screen}>
+          <SectionHeader
+            title="Notifications"
+            subtitle="Updates, reminders, and activity across your journey."
+          />
 
           {isLoading ? (
             <View style={styles.loaderContainer}>
@@ -62,42 +63,69 @@ export default function NotificationScreen() {
             </View>
           ) : (
             <ScrollView
-              contentContainerStyle={{
-                marginVertical: 10,
-                paddingTop: 20,
-                paddingHorizontal: 10,
-                gap: 10,
-              }}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
             >
-              {notifications.map((item, i: number) => (
-                <React.Fragment key={item._id || `${item.title}-${i}`}>
-                  <Pressable onPress={() => void handleNotificationPress(item)}>
+              {notifications.length === 0 ? (
+                <CommonCard>
+                  <Text style={styles.emptyTitle}>You&apos;re all caught up</Text>
+                  <Text style={styles.emptySubtitle}>
+                    New notifications will appear here as they arrive.
+                  </Text>
+                </CommonCard>
+              ) : (
+                notifications.map((item, i: number) => (
+                  <Pressable
+                    key={item._id || `${item.title}-${i}`}
+                    onPress={() => void handleNotificationPress(item)}
+                    style={({ pressed }) => [
+                      styles.pressable,
+                      pressed && styles.pressablePressed,
+                    ]}
+                  >
                     <NotificationCard data={item} />
                   </Pressable>
-                  {notifications.length - 1 !== i && (
-                    <View style={styles.separator} />
-                  )}
-                </React.Fragment>
-              ))}
+                ))
+              )}
             </ScrollView>
           )}
         </View>
-      </LinearGradient>
+      </GradientBackground>
     </>
   );
 }
 
 
 const styles = StyleSheet.create({
-  scrollContainer: { flex: 1 },
+  screen: { flex: 1 },
   loaderContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  separator: {
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    marginVertical: 8,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 24,
+    gap: 12,
+  },
+  pressable: {
+    borderRadius: 14,
+  },
+  pressablePressed: {
+    opacity: 0.92,
+  },
+  emptyTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
+  emptySubtitle: {
+    marginTop: 6,
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "500",
   },
 });

@@ -1,16 +1,17 @@
 import { NotificationMentorCard } from "@/components/atom/cards"
-import { Header } from "@/components/build-components"
 import { PastorNavigationHeader } from "@/components/pastor/Header"
-import { Colors } from "@/constants/Colors"
-import { LinearGradient } from "expo-linear-gradient"
 import { Stack } from "expo-router"
 import React from "react"
 import {
   ScrollView,
   StyleSheet,
+  Text,
   View
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { GradientBackground } from "@/components/ui/design-system/GradientBackground"
+import { SectionHeader } from "@/components/ui/design-system/SectionHeader"
+import { CommonCard } from "@/components/ui/design-system/CommonCard"
 
 const dummyNotifications = [
   {
@@ -51,11 +52,8 @@ export default function NotificationScreen({
   return (
     <>
       <Stack.Screen options={{ headerShown: false, title: "Notifications" }} />
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1 }}
-      >
-        <SafeAreaView style={styles.scrollContainer}>
+      <GradientBackground>
+        <SafeAreaView style={styles.screen}>
           <PastorNavigationHeader />
           <View
             style={{
@@ -64,56 +62,71 @@ export default function NotificationScreen({
             }}
           >
             {/* Header */}
-            <Header title="Notifications" hideSearchBar={true} showSettings={false} />
-            <View style={{ width: "100%" }}>
-              <View style={styles.separator} />
-            </View>
+            <SectionHeader title="Notifications" subtitle="Updates and reminders." style={{ width: "100%" }} />
             <ScrollView
-              contentContainerStyle={{
-                marginVertical: 10,
-                paddingTop: 20,
-                paddingHorizontal: 10,
-                flexDirection: "column",
-                width: "100%",
-                gap: 5,
-              }}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
             >
-              {dummyNotifications.map((e, i) => (
-                <React.Fragment key={i}>
-                  <NotificationMentorCard data={e} key={i} type="mentor"
-                  iconsStyles={{
-                    padding:0,
-                    alignItems:"flex-start"
-
-                  }}
-                  />
-                  {dummyNotifications.length - 1 !== i && (
-                    <View style={styles.separator} />
-                  )}
-                </React.Fragment>
-              ))}
+              {dummyNotifications.length === 0 ? (
+                <CommonCard>
+                  <Text style={styles.emptyTitle}>No notifications</Text>
+                  <Text style={styles.emptySubtitle}>
+                    When something changes, you&apos;ll see it here.
+                  </Text>
+                </CommonCard>
+              ) : (
+                dummyNotifications.map((e, i) => (
+                  <View key={i} style={styles.itemWrap}>
+                    <NotificationMentorCard
+                      data={e}
+                      // @ts-ignore - legacy prop used elsewhere
+                      type="mentor"
+                      iconsStyles={{
+                        padding: 0,
+                        alignItems: "flex-start",
+                      }}
+                    />
+                  </View>
+                ))
+              )}
             </ScrollView>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </GradientBackground>
     </>
   )
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-    // alignItems: "center",
-  },
+  screen: { flex: 1 },
   text: {
     fontSize: 20,
     fontWeight: "bold",
   },
-  separator: {
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
-    // marginHorizontal: 16,
-    marginVertical: 8,
+  listContent: {
+    width: "100%",
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 24,
+    gap: 12,
+  },
+  itemWrap: {
+    width: "100%",
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  emptyTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
+  emptySubtitle: {
+    marginTop: 6,
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "500",
   },
   container: {
     alignItems: "center",

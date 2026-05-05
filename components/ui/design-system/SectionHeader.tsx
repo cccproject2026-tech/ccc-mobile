@@ -3,7 +3,7 @@ import React from "react";
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { roadmapTheme } from "./roadmapTheme";
 
-type SectionHeaderProps = {
+type Props = {
   title: string;
   subtitle?: string;
   /** Decorative divider row with leaf icon (Pastor Home pattern) */
@@ -11,7 +11,7 @@ type SectionHeaderProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-export function SectionHeader({ title, subtitle, showDivider, style }: SectionHeaderProps) {
+export function SectionHeader({ title, subtitle, showDivider, style }: Props) {
   return (
     <View style={[styles.wrap, style]}>
       <Text style={styles.title}>{title}</Text>
@@ -30,20 +30,22 @@ export function SectionHeader({ title, subtitle, showDivider, style }: SectionHe
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 10,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    marginBottom: 6,
   },
   title: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "900",
-    letterSpacing: -0.2,
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.3,
   },
   subtitle: {
-    marginTop: 4,
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "600",
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 14,
+    marginTop: 8,
+    lineHeight: 20,
+    fontWeight: "500",
   },
   dividerRow: {
     flexDirection: "row",

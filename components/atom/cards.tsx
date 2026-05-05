@@ -1890,25 +1890,25 @@ const styles = StyleSheet.create({
 
   NotificationBox: {
     width: "100%",
-    backgroundColor: "#14517d", // customBlueOne
-    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 14,
     paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "flex-start",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
+    borderColor: "rgba(255,255,255,0.12)",
   },
   notificationIconWrap: {
-    width: 56,
-    minHeight: 72,
+    width: 44,
+    minHeight: 56,
     alignItems: "center",
     justifyContent: "flex-start",
-    paddingTop: 2,
+    paddingTop: 3,
   },
   notificationIcon: {
-    width: 34,
-    height: 40,
+    width: 28,
+    height: 28,
   },
   notificationContent: {
     flex: 1,
@@ -1924,18 +1924,19 @@ const styles = StyleSheet.create({
   notificationTitle: {
     flex: 1,
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-    lineHeight: 22,
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 21,
+    letterSpacing: -0.2,
   },
   notificationDescription: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: "400",
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "500",
   },
   notificationTimeInline: {
-    color: "rgba(255,255,255,0.72)",
+    color: "rgba(255,255,255,0.55)",
     fontSize: 12,
     lineHeight: 16,
     fontWeight: "500",
