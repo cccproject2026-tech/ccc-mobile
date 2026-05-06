@@ -396,18 +396,18 @@ const Appointments = () => {
                             mode={getModeLabel(appointment.platform)}
                             platformIcon={getPlatformIcon(appointment.platform)}
                             meetingJoinUrl={getAppointmentJoinUrl(appointment)}
+                            onViewDetails={() =>
+                              router.push({
+                                pathname: "/appointments/meeting-details",
+                                params: { appointmentId: String(appointment.id) },
+                              })
+                            }
                             menuItems={[
                               {
                                 key: 'reschedule',
                                 title: 'Reschedule Meeting',
                                 icon: { ios: 'calendar.badge.clock', android: 'ic_event_available' },
                                 onSelect: () => handleReschedule(appointment)
-                              },
-                              {
-                                key: 'change_mode',
-                                title: 'Change Mode',
-                                icon: { ios: 'arrow.2.circlepath', android: 'ic_sync' },
-                                onSelect: () => handleChangeMode(appointment)
                               },
                               {
                                 key: 'cancel',
@@ -476,6 +476,12 @@ const Appointments = () => {
                             mode={getModeLabel(appointment.platform)}
                             platformIcon={getPlatformIcon(appointment.platform)}
                             meetingJoinUrl={getAppointmentJoinUrl(appointment)}
+                            onViewDetails={() =>
+                              router.push({
+                                pathname: "/appointments/meeting-details",
+                                params: { appointmentId: String(appointment.id) },
+                              })
+                            }
                             menuItems={[
                               {
                                 key: "reschedule",
@@ -485,15 +491,6 @@ const Appointments = () => {
                                   android: "ic_event_available",
                                 },
                                 onSelect: () => handleReschedule(appointment),
-                              },
-                              {
-                                key: "change_mode",
-                                title: "Change Mode",
-                                icon: {
-                                  ios: "arrow.2.circlepath",
-                                  android: "ic_sync",
-                                },
-                                onSelect: () => handleChangeMode(appointment),
                               },
                               {
                                 key: "cancel",

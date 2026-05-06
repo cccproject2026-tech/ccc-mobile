@@ -561,16 +561,6 @@ const Appointments: React.FC = () => {
                               onSelect: () =>
                                 handleReschedule(appointment.appointment),
                             },
-                            {
-                              key: "change_mode",
-                              title: "Change Mode",
-                              icon: {
-                                ios: "arrow.2.circlepath",
-                                android: "ic_sync",
-                              },
-                              onSelect: () =>
-                                handleChangeMode(appointment.appointment),
-                            },
                           ];
 
                           if (isScheduled) {
@@ -601,6 +591,16 @@ const Appointments: React.FC = () => {
                               meetingJoinUrl={getAppointmentJoinUrl(
                                 appointment.appointment,
                               )}
+                              onViewDetails={() =>
+                                router.push({
+                                  pathname: "/appointments/meeting-details",
+                                  params: {
+                                    appointmentId: String(
+                                      appointment.appointment?.id ?? appointment.id ?? "",
+                                    ),
+                                  },
+                                })
+                              }
                             />
                           );
                         })
@@ -683,15 +683,6 @@ const Appointments: React.FC = () => {
                                 },
                                 onSelect: () => handleReschedule(appointment),
                               },
-                              {
-                                key: "change_mode",
-                                title: "Change Mode",
-                                icon: {
-                                  ios: "arrow.2.circlepath",
-                                  android: "ic_sync",
-                                },
-                                onSelect: () => handleChangeMode(appointment),
-                              },
                             ];
 
                             if (isScheduled) {
@@ -721,6 +712,16 @@ const Appointments: React.FC = () => {
                                 meetingJoinUrl={getAppointmentJoinUrl(
                                 appointment.appointment,
                                 )}
+                                onViewDetails={() =>
+                                  router.push({
+                                    pathname: "/appointments/meeting-details",
+                                    params: {
+                                      appointmentId: String(
+                                        appointment.appointment?.id ?? appointment.id ?? "",
+                                      ),
+                                    },
+                                  })
+                                }
                               />
                             );
                           })

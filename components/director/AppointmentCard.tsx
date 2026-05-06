@@ -1,19 +1,19 @@
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import {
-    Ionicons,
-    MaterialCommunityIcons,
-    MaterialIcons,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import React from "react";
 import {
-    Image,
-    Linking,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  Image,
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import * as DropdownMenu from "zeego/dropdown-menu";
 
@@ -47,6 +47,7 @@ type Props = {
   onCall?: () => void;
   onChat?: () => void;
   onMail?: () => void;
+  onViewDetails?: () => void;
   /** When set, tapping the underlined mode opens this URL (e.g. Zoom join). */
   meetingJoinUrl?: string | null;
 };
@@ -66,142 +67,150 @@ const AppointmentCard: React.FC<Props> = ({
   onCall,
   onChat,
   onMail,
+  onViewDetails,
   meetingJoinUrl,
 }) => {
+  const showActions = Boolean(onCall || onChat || onMail);
+  const showJoin = Boolean(meetingJoinUrl);
+  const showDetails = Boolean(onViewDetails);
+  const joinLabel = mode || "Join";
+
   return (
     <View style={styles.card}>
-      <View style={styles.cardInner}>
-        <View style={styles.thumbnailWrap}>
-          <Image
-            source={platformIcon}
-            resizeMode="cover"
-            style={styles.thumbnail}
-          />
+      <View style={styles.headerRow}>
+        <View style={styles.platformBadge}>
+          <Image source={platformIcon} style={styles.platformBadgeIcon} resizeMode="cover" />
         </View>
 
-        <View style={styles.content}>
-          <View style={styles.topRow}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.dateTime} numberOfLines={1}>
-                {date} <Text style={styles.timeHighlight}>Time</Text> {time} hrs{" "}
-                {tz}
-              </Text>
-            </View>
-          </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.timeText} numberOfLines={1}>
+            {time}
+          </Text>
+          <Text style={styles.metaText} numberOfLines={1}>
+            {date} · {tz}
+          </Text>
+        </View>
 
-          {/* Absolutely positioned right icons */}
-          <View style={styles.rightIconsContainer}>
-            {(onPressMenu || menuItems) &&
-              (menuItems ? (
-                // Use Zeego menu if menuItems provided
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger>
-                    <Pressable hitSlop={12} style={styles.iconButton}>
-                      <Ionicons
-                        name="ellipsis-vertical"
-                        size={20}
-                        color="#EAF7FF"
-                      />
-                    </Pressable>
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Content>
-                    {menuItems.map((item) =>
-                      item.key.startsWith("separator") ? (
-                        <DropdownMenu.Separator key={item.key} />
-                      ) : (
-                        <DropdownMenu.Item
-                          key={item.key}
-                          destructive={item.destructive}
-                          onSelect={item.onSelect}
-                        >
-                          <DropdownMenu.ItemTitle>
-                            {item.title}
-                          </DropdownMenu.ItemTitle>
-                          {item.icon && (
-                            <DropdownMenu.ItemIcon
-                              ios={{
-                                name:
-                                  Platform.OS === "android"
-                                    ? item.icon.android || "ic_menu_view"
-                                    : item.icon.ios || "circle",
-                                destructive: item.destructive,
-                              }}
-                            />
-                          )}
-                        </DropdownMenu.Item>
-                      ),
-                    )}
-                  </DropdownMenu.Content>
-                </DropdownMenu.Root>
-              ) : (
-                // Use regular Pressable if only onPressMenu provided (backward compatible)
-                <Pressable
-                  onPress={onPressMenu}
-                  hitSlop={12}
-                  style={styles.iconButton}
-                >
-                  <Ionicons
-                    name="ellipsis-vertical"
-                    size={20}
-                    color="#EAF7FF"
-                  />
-                </Pressable>
-              ))}
-            {onPressChevron && (
-              <Pressable
-                onPress={onPressChevron}
-                hitSlop={12}
-                style={styles.iconButton}
-              >
-                <Ionicons name="chevron-forward" size={20} color="#EAF7FF" />
+        <View style={styles.rightControls}>
+          {(onPressMenu || menuItems) &&
+            (menuItems ? (
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                  <Pressable hitSlop={12} style={styles.iconButton}>
+                    <Ionicons name="ellipsis-vertical" size={18} color="rgba(234,247,255,0.95)" />
+                  </Pressable>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content>
+                  {menuItems.map((item) =>
+                    item.key.startsWith("separator") ? (
+                      <DropdownMenu.Separator key={item.key} />
+                    ) : (
+                      <DropdownMenu.Item
+                        key={item.key}
+                        destructive={item.destructive}
+                        onSelect={item.onSelect}
+                      >
+                        <DropdownMenu.ItemTitle>{item.title}</DropdownMenu.ItemTitle>
+                        {item.icon && (
+                          <DropdownMenu.ItemIcon
+                            ios={{
+                              name:
+                                Platform.OS === "android"
+                                  ? item.icon.android || "ic_menu_view"
+                                  : item.icon.ios || "circle",
+                              destructive: item.destructive,
+                            }}
+                          />
+                        )}
+                      </DropdownMenu.Item>
+                    ),
+                  )}
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
+            ) : (
+              <Pressable onPress={onPressMenu} hitSlop={12} style={styles.iconButton}>
+                <Ionicons name="ellipsis-vertical" size={18} color="rgba(234,247,255,0.95)" />
               </Pressable>
-            )}
-          </View>
-
-          <View style={styles.personRow}>
-            <Image source={avatar} style={styles.avatar} />
-            <Text style={styles.personName} numberOfLines={1}>
-              {person}
-              {role ? ` - ${role}` : ""}
-            </Text>
-          </View>
-
-          <View style={styles.modeRow}>
-            <View style={styles.modeRowInner}>
-              <Text style={styles.modeLabel}>Mode : </Text>
-              {meetingJoinUrl ? (
-                <Pressable
-                  onPress={() => {
-                    const url = normalizeMeetingUrl(meetingJoinUrl);
-                    Linking.openURL(url).catch(() => {});
-                  }}
-                  hitSlop={8}
-                >
-                  <Text style={styles.modeValue}>{mode}</Text>
-                </Pressable>
-              ) : (
-                <Text style={styles.modeValue}>{mode}</Text>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.actions}>
-            <Pressable onPress={onCall} hitSlop={12}>
-              <Ionicons name="call-outline" size={20} color="#EAF7FF" />
+            ))}
+          {onPressChevron && (
+            <Pressable onPress={onPressChevron} hitSlop={12} style={styles.iconButton}>
+              <Ionicons name="chevron-forward" size={18} color="rgba(234,247,255,0.95)" />
             </Pressable>
-            <Pressable onPress={onChat} hitSlop={12}>
-              <MaterialCommunityIcons
-                name="message-outline"
-                size={20}
-                color="#EAF7FF"
-              />
-            </Pressable>
-            <Pressable onPress={onMail} hitSlop={12}>
-              <MaterialIcons name="mail-outline" size={20} color="#EAF7FF" />
-            </Pressable>
-          </View>
+          )}
         </View>
       </View>
+
+      <View style={styles.personRow}>
+        <Image source={avatar} style={styles.avatar} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.personName} numberOfLines={1}>
+            {person}
+          </Text>
+          {role ? (
+            <Text style={styles.personRole} numberOfLines={1}>
+              {role}
+            </Text>
+          ) : null}
+        </View>
+        <View style={styles.modeChip}>
+          <Text style={styles.modeChipText} numberOfLines={1}>
+            {mode}
+          </Text>
+        </View>
+      </View>
+
+      {(showJoin || showDetails || showActions) && <View style={styles.divider} />}
+
+      {(showJoin || showDetails || showActions) ? (
+        <View style={styles.footerRow}>
+          <View style={styles.footerLeft}>
+            {showJoin ? (
+              <Pressable
+                style={styles.joinBtn}
+                onPress={() => {
+                  const url = normalizeMeetingUrl(String(meetingJoinUrl || ""));
+                  Linking.openURL(url).catch(() => {});
+                }}
+                hitSlop={10}
+              >
+                <Ionicons name="videocam-outline" size={16} color="#0E2A47" />
+                <Text style={styles.joinBtnText} numberOfLines={1}>
+                  Join {joinLabel}
+                </Text>
+              </Pressable>
+            ) : null}
+
+            {showDetails ? (
+              <Pressable style={styles.detailsBtn} onPress={onViewDetails} hitSlop={10}>
+                <Ionicons name="information-circle-outline" size={16} color="#EAF7FF" />
+                <Text style={styles.detailsBtnText} numberOfLines={1}>
+                  View details
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {showActions ? (
+            <View style={styles.actions}>
+              {onCall ? (
+                <Pressable onPress={onCall} hitSlop={12} style={styles.actionIconBtn}>
+                  <Ionicons name="call-outline" size={18} color="#EAF7FF" />
+                </Pressable>
+              ) : null}
+              {onChat ? (
+                <Pressable onPress={onChat} hitSlop={12} style={styles.actionIconBtn}>
+                  <MaterialCommunityIcons name="message-outline" size={18} color="#EAF7FF" />
+                </Pressable>
+              ) : null}
+              {onMail ? (
+                <Pressable onPress={onMail} hitSlop={12} style={styles.actionIconBtn}>
+                  <MaterialIcons name="mail-outline" size={18} color="#EAF7FF" />
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -209,99 +218,109 @@ const AppointmentCard: React.FC<Props> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.customBlueOne,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.5)",
-    borderRadius: 16,
-    padding: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+    borderRadius: 18,
+    padding: 14,
     marginBottom: 12,
   },
-  cardInner: {
+  headerRow: {
     flexDirection: "row",
-    gap: 12,
-  },
-  thumbnailWrap: {
-    width: 85,
-    height: 85,
-  },
-  thumbnail: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 12,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "space-between",
-    position: "relative",
-  },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingRight: 32,
-  },
-  dateTime: {
-    color: "#EAF7FF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  timeHighlight: {
-    color: "#d7f96c",
-    fontWeight: "700",
-  },
-  rightIconsContainer: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    flexDirection: "column",
     alignItems: "center",
     gap: 12,
   },
+  platformBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  platformBadgeIcon: { width: "100%", height: "100%" },
+  timeText: { color: "#FFFFFF", fontSize: 16, fontWeight: "900" },
+  metaText: { marginTop: 2, color: "rgba(234,247,255,0.75)", fontSize: 12, fontWeight: "700" },
+  rightControls: { flexDirection: "row", alignItems: "center", gap: 6 },
   iconButton: {
-    padding: 2,
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
   },
   personRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginTop: 8,
-    paddingRight: 32,
+    marginTop: 12,
   },
   avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.5)",
+    borderColor: "rgba(255,255,255,0.25)",
   },
   personName: {
-    color: "#EAF7FF",
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "600",
-    flex: 1,
+    fontWeight: "900",
   },
-  modeRow: {
-    marginTop: 6,
-    paddingRight: 32,
+  personRole: { marginTop: 2, color: "rgba(234,247,255,0.65)", fontSize: 12, fontWeight: "700" },
+  modeChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
   },
-  modeRowInner: {
+  modeChipText: { color: "#EAF7FF", fontWeight: "900", fontSize: 12 },
+  divider: { height: 1, backgroundColor: "rgba(255,255,255,0.10)", marginTop: 12 },
+  footerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
+  footerLeft: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1 },
+  joinBtn: {
     flexDirection: "row",
-    flexWrap: "wrap",
     alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: "#FFFFFF",
   },
-  modeLabel: {
-    color: "#CFE9F3",
-    fontSize: 13,
+  joinBtnText: { color: "#0E2A47", fontWeight: "900", fontSize: 12 },
+  detailsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
   },
-  modeValue: {
-    color: "#EAF7FF",
-    fontWeight: "500",
-    textDecorationLine: "underline",
-  },
+  detailsBtnText: { color: "#EAF7FF", fontWeight: "900", fontSize: 12 },
   actions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginTop: 8,
+  },
+  actionIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
   },
 });
 

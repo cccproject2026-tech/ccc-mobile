@@ -411,6 +411,18 @@ const Appointments: React.FC = () => {
                           role={appointment.role}
                           mode={appointment.mode}
                           platformIcon={appointment.icon}
+                          onViewDetails={() =>
+                            router.push({
+                              pathname: "/appointments/meeting-details",
+                              params: {
+                                appointmentId: String(
+                                  (appointment as any)?.appointment?.id ??
+                                    (appointment as any)?.id ??
+                                    "",
+                                ),
+                              },
+                            })
+                          }
                           menuItems={[
                             {
                               key: "reschedule",
@@ -420,15 +432,6 @@ const Appointments: React.FC = () => {
                                 android: "ic_event_available",
                               },
                               onSelect: () => handleReschedule(appointment),
-                            },
-                            {
-                              key: "change_mode",
-                              title: "Change Mode",
-                              icon: {
-                                ios: "arrow.2.circlepath",
-                                android: "ic_sync",
-                              },
-                              onSelect: () => handleChangeMode(appointment),
                             },
                             {
                               key: "cancel",
