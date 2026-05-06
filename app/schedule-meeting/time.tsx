@@ -51,7 +51,17 @@ export default function ScheduleMeetingTimeScreen() {
   useEffect(() => {
     // default date
     if (!draft.selectedDayYmd && availableDates.length > 0) {
-      setDay(availableDates[0]);
+      const todayYmd = ymdToday();
+      if (availableDates.includes(todayYmd)) {
+        setDay(todayYmd);
+        return;
+      }
+
+      const nextUpcoming = [...availableDates]
+        .filter((d) => d >= todayYmd)
+        .sort()[0];
+
+      setDay(nextUpcoming || [...availableDates].sort()[0]);
     }
   }, [availableDates, draft.selectedDayYmd, setDay]);
 
@@ -228,7 +238,7 @@ export default function ScheduleMeetingTimeScreen() {
 
           <Text style={styles.sectionTitle}>Platform</Text>
           <View style={styles.platformRow}>
-            {["Zoom", "Google Meet"].map((p) => {
+            {["Zoom"].map((p) => {
               const selected = draft.meetingOptionLabel === p;
               return (
                 <Pressable
