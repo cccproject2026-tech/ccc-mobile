@@ -2,7 +2,7 @@ import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
-import ScheduleMeetingBottomSheet from "@/components/director/ScheduleMeetingBottomSheet";
+// Scheduling now uses full-screen pages under /schedule-meeting
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
@@ -11,12 +11,12 @@ import {
   useAppointments,
   useCancelAppointment,
 } from "@/hooks/appointments/useAppointments";
-import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
 import { useUpdateAppointment } from "@/hooks/appointments/useUpadteAppointment";
 import { Mentor, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { useAuthStore } from "@/stores";
 import { Appointment, AppointmentPlatform } from "@/types/appointment.types";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { getDeviceTimezone } from "@/utils/appointments/timezone";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -31,10 +31,14 @@ const Appointments = () => {
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
+  const deviceTz = useMemo(() => getDeviceTimezone(), []);
 
-  const { openSheet = 'false', assessmentId } = useLocalSearchParams<{
+  const { openSheet = 'false', assessmentId, mentorData, mode, appointmentId } = useLocalSearchParams<{
     openSheet?: string;
     assessmentId?: string;
+    mentorData?: string;
+    mode?: "create" | "reschedule";
+    appointmentId?: string;
   }>();
 
   const { user } = useAuthStore();
@@ -67,34 +71,21 @@ const Appointments = () => {
   // Fetch assigned mentors
   const { mentors: assignedMentors, isLoading: isLoadingMentors } = useAssignedMentors(user.id);
 
-  // Create/Reschedule appointment hook
-  const {
-    createAppointmentAsync,
-    rescheduleAppointmentAsync,
-    isCreating,
-    isRescheduling
-  } = useCreateAppointment({
-    onSuccess: () => {
-      scheduleMeetingBottomSheetRef.current?.dismiss();
-      setRescheduleData(null);
-    },
-    onError: (error) => {
-      Alert.alert('Error', error.message || 'Failed to schedule meeting');
-    },
-  });
-
   // Update appointment (for change mode)
   const { updateAppointmentAsync, isUpdating } = useUpdateAppointment();
   const { mutateAsync: cancelAppointmentAsync } = useCancelAppointment();
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
 
   React.useEffect(() => {
-    if (openSheet === 'true' && scheduleMeetingBottomSheetRef.current) {
-      setTimeout(() => {
-        scheduleMeetingBottomSheetRef.current?.present();
-      }, 200);
+    if (openSheet === "true") {
+      router.replace({
+        pathname: "/schedule-meeting/person",
+        params: { mode: "schedule", personData: mentorData },
+      });
     }
-  }, [openSheet]);
+  }, [mentorData, openSheet, router]);
+
+  // Legacy redirect support: schedule-flow will route into /schedule-meeting directly now.
 
   const mentorsForBottomSheet = useMemo(() => {
     // Combine assigned mentors and mentors found in existing appointments
@@ -119,15 +110,34 @@ const Appointments = () => {
     return Array.from(mentorMap.values());
   }, [assignedMentors, appointments]);
 
-  const formatTimeIST = useCallback((isoString: string) => {
+  const initialPerson = useMemo(() => {
+    if (!openSheet || openSheet !== "true") return null;
+    const raw = mentorData;
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(String(raw));
+      if (!parsed?.id) return null;
+      return {
+        id: parsed.id,
+        name: parsed.name || "Mentor",
+        role: parsed.role || "Mentor",
+        profilePicture: parsed.profilePicture,
+        profileImage: parsed.profileImage,
+      } as any;
+    } catch {
+      return null;
+    }
+  }, [mentorData, openSheet]);
+
+  const formatTimeLocal = useCallback((isoString: string) => {
     const date = new Date(isoString);
-    return date.toLocaleTimeString('en-IN', {
+    return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
-      timeZone: 'Asia/Kolkata'
+      ...(deviceTz.timeZone ? { timeZone: deviceTz.timeZone } : {}),
     });
-  }, []);
+  }, [deviceTz.timeZone]);
 
   const formatDisplayDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -170,8 +180,10 @@ const Appointments = () => {
   // ✅ Removed duplicate declaration (moved to top)
 
   const handleReschedule = (appointment: Appointment) => {
-    setRescheduleData(appointment);
-    scheduleMeetingBottomSheetRef.current?.present();
+    router.push({
+      pathname: "/schedule-meeting/person",
+      params: { mode: "reschedule", appointmentId: String(appointment.id) },
+    });
   };
 
   const handleCancel = (appointment: Appointment) => {
@@ -197,61 +209,10 @@ const Appointments = () => {
   };
 
   const handleNewMeeting = () => {
-    setRescheduleData(null);
-    scheduleMeetingBottomSheetRef.current?.present();
+    router.push({ pathname: "/schedule-meeting/person", params: { mode: "schedule" } });
   };
 
-  const handleScheduleMeeting = async (data: {
-    mentorId: string;
-    meetingDate: string;
-    // startTime/startPeriod are only required when rescheduling; make them optional here
-    startTime?: string;
-    startPeriod?: 'AM' | 'PM' | string;
-    platform: string;
-    meetingLink?: string;
-    notes?: string;
-  }) => {
-    try {
-      if (rescheduleData) {
-        // Reschedule existing appointment - ensure startTime/startPeriod present
-        if (!data.startTime || !data.startPeriod) {
-          Alert.alert('Error', 'Start time or period missing for reschedule');
-          return;
-        }
-
-        await rescheduleAppointmentAsync({
-          appointmentId: rescheduleData.id,
-          newDate: data.meetingDate,
-          startTime: data.startTime,
-          startPeriod: data.startPeriod as 'AM' | 'PM',
-        });
-      } else {
-        // Create new appointment
-        await createAppointmentAsync({
-          userId: user.id,
-          mentorId: data.mentorId,
-          meetingDate: data.meetingDate,
-          platform: data.platform as AppointmentPlatform,
-          meetingLink: data.meetingLink,
-          notes: data.notes,
-        });
-      }
-
-      if (openSheet === 'true') {
-        router.replace({
-          pathname: '/assessments',
-        });
-      }
-    } catch (error) {
-      console.error('Schedule error:', error);
-      // Error already handled by hook
-    }
-  };
-
-  const handleCloseScheduleBottomSheet = () => {
-    scheduleMeetingBottomSheetRef.current?.dismiss();
-    setRescheduleData(null);
-  };
+  const handleCloseScheduleBottomSheet = () => {};
 
   const [changeModeModalVisible, setChangeModeModalVisible] = React.useState(false);
   const [selectedAppointmentForMode, setSelectedAppointmentForMode] = React.useState<Appointment | null>(null);
@@ -428,8 +389,8 @@ const Appointments = () => {
                           <AppointmentCard
                             key={appointment.id}
                             date={appointment.meetingDate.split('T')[0]}
-                            time={`${formatTimeIST(appointment.meetingDate)} - ${formatTimeIST(appointment.endTime)}`}
-                            tz="IST"
+                            time={`${formatTimeLocal(appointment.meetingDate)} - ${formatTimeLocal(appointment.endTime)}`}
+                            tz={deviceTz.badge}
                             person={mentor?.name || 'Unknown Mentor'}
                             role={mentor?.role || 'Mentor'}
                             mode={getModeLabel(appointment.platform)}
@@ -508,8 +469,8 @@ const Appointments = () => {
                           <AppointmentCard
                             key={appointment.id}
                             date={appointment.meetingDate.split("T")[0]}
-                            time={`${formatTimeIST(appointment.meetingDate)} - ${formatTimeIST(appointment.endTime)}`}
-                            tz="IST"
+                            time={`${formatTimeLocal(appointment.meetingDate)} - ${formatTimeLocal(appointment.endTime)}`}
+                            tz={deviceTz.badge}
                             person={mentor?.name || "Unknown Mentor"}
                             role={mentor?.role || "Mentor"}
                             mode={getModeLabel(appointment.platform)}
@@ -554,19 +515,7 @@ const Appointments = () => {
         </>
       </LinearGradient>
 
-      <ScheduleMeetingBottomSheet
-        ref={scheduleMeetingBottomSheetRef}
-        mode={rescheduleData ? 'reschedule' : 'schedule'}
-        existingAppointment={rescheduleData}
-        onClose={handleCloseScheduleBottomSheet}
-        onSchedule={handleScheduleMeeting}
-        colorScheme={{
-          background: Colors.darkBlueGradientOne,
-          text: '#FFFFFF',
-          accent: '#FFC107',
-          cardBackground: 'rgba(255, 255, 255, 0.1)',
-        }}
-      />
+      {/* Scheduling moved to /schedule-meeting pages */}
 
       <Modal
         visible={changeModeModalVisible}

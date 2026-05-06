@@ -1,0 +1,201 @@
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import TopBar from "@/components/director/TopBar";
+import { useAuthStore } from "@/stores/auth.store";
+import { useScheduleMeetingStore, type SchedulePerson } from "@/stores/scheduleMeeting.store";
+import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
+import { useMentees } from "@/hooks/mentees/useMentees";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useMemo, useState } from "react";
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+export default function ScheduleMeetingPersonScreen() {
+  const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const { mode, appointmentId, personData } = useLocalSearchParams<{
+    mode?: "schedule" | "reschedule";
+    appointmentId?: string;
+    personData?: string;
+  }>();
+
+  const {
+    setMode,
+    setAppointmentId,
+    setPerson,
+    reset,
+  } = useScheduleMeetingStore();
+
+  const [search, setSearch] = useState("");
+
+  React.useEffect(() => {
+    reset();
+    setMode((mode as any) || "schedule");
+    setAppointmentId(appointmentId);
+    if (personData) {
+      try {
+        const parsed = JSON.parse(String(personData));
+        if (parsed?.id) {
+          setPerson({
+            id: String(parsed.id),
+            name: String(parsed.name || parsed.firstName || "Person"),
+            role: String(parsed.role || ""),
+            profilePicture: parsed.profilePicture,
+            profileImage: parsed.profileImage,
+          });
+          router.replace({ pathname: "/schedule-meeting/time" });
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [appointmentId, mode, personData, reset, setAppointmentId, setMode, setPerson]);
+
+  const isMentor = String(user?.role || "").toLowerCase() === "mentor";
+
+  const { mentors: assignedMentors, isLoading: isLoadingMentors } = useAssignedMentors(
+    !isMentor ? (user?.id ?? null) : null,
+  );
+
+  const { data: menteesData, isLoading: isLoadingMentees } = useMentees(50, isMentor ? user?.id : undefined);
+
+  const people: SchedulePerson[] = useMemo(() => {
+    if (isMentor) {
+      const mentees = menteesData?.pages?.flatMap((p: any) => p.mentees) ?? [];
+      return mentees.map((m: any) => ({
+        id: String(m.id),
+        name: `${m.firstName || ""} ${m.lastName || ""}`.trim() || "Pastor",
+        role: String(m.role || "pastor"),
+        profilePicture: m.profilePicture,
+      }));
+    }
+    return (assignedMentors ?? []).map((m: any) => ({
+      id: String(m.id),
+      name: String(m.name || "Mentor"),
+      role: String(m.role || "mentor"),
+      profilePicture: m.profilePicture,
+    }));
+  }, [assignedMentors, isMentor, menteesData]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return people;
+    return people.filter((p) => {
+      return (
+        String(p.name).toLowerCase().includes(q) ||
+        String(p.role || "").toLowerCase().includes(q)
+      );
+    });
+  }, [people, search]);
+
+  const loading = isMentor ? isLoadingMentees : isLoadingMentors;
+
+  return (
+    <AppGradientBackground style={{ flex: 1 }}>
+      <TopBar role={String(user?.role || "pastor")} showUserName />
+      <View style={styles.container}>
+        <Text style={styles.title}>Pick person</Text>
+        <Text style={styles.subtitle}>Select who you want to meet with.</Text>
+
+        <View style={styles.searchRow}>
+          <Ionicons name="search" size={18} color="rgba(255,255,255,0.75)" />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search by name"
+            placeholderTextColor="rgba(255,255,255,0.55)"
+            style={styles.searchInput}
+          />
+        </View>
+
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator color="#FFFFFF" />
+            <Text style={styles.subtle}>Loading…</Text>
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={styles.center}>
+            <Text style={styles.subtle}>No people found.</Text>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 12) + 24 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {filtered.map((p) => (
+              <Pressable
+                key={p.id}
+                style={styles.personCard}
+                onPress={() => {
+                  setPerson(p);
+                  router.push({ pathname: "/schedule-meeting/time" });
+                }}
+              >
+                <View style={styles.avatarWrap}>
+                  {p.profilePicture ? (
+                    <Image source={{ uri: p.profilePicture }} style={styles.avatar} />
+                  ) : (
+                    <Ionicons name="person" size={18} color="#FFFFFF" />
+                  )}
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.personName} numberOfLines={1}>{p.name}</Text>
+                  <Text style={styles.personRole} numberOfLines={1}>{p.role}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.8)" />
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+      </View>
+    </AppGradientBackground>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+  title: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
+  subtitle: { marginTop: 6, color: "rgba(255,255,255,0.7)", fontWeight: "600" },
+  subtle: { color: "rgba(255,255,255,0.75)", fontWeight: "600" },
+  center: { paddingTop: 24, alignItems: "center", gap: 10 },
+  searchRow: {
+    marginTop: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  searchInput: { flex: 1, color: "#FFFFFF", fontWeight: "700" },
+  personCard: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+  },
+  avatarWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
+  },
+  avatar: { width: "100%", height: "100%" },
+  personName: { color: "#FFFFFF", fontWeight: "900", fontSize: 15 },
+  personRole: { marginTop: 3, color: "rgba(255,255,255,0.65)", fontWeight: "700", fontSize: 12 },
+});
+

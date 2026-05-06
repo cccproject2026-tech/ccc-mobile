@@ -331,18 +331,19 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: 16,
+    marginBottom: 10,
+    paddingHorizontal: 12,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     color: "#fff",
   },
   container: {
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderWidth: 0,
+    borderColor: "transparent",
   },
   monthHeader: {
     flexDirection: "row",

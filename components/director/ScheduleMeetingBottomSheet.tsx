@@ -1,10 +1,11 @@
 import { useAppointments } from "@/hooks/appointments/useAppointments";
-import { useCreateAppointment } from "@/hooks/appointments/useCreateAppointment";
+import { useMeetingScheduler } from "../../hooks/appointments/useMeetingScheduler";
 import {
     formatTimeSlot,
     useMonthlyAvailability,
     useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
+import { appointmentService } from "@/services/appointments.service";
 import { useUsersByRole } from "@/hooks/useUsersByRole";
 import { useAuthStore } from "@/stores";
 import {
@@ -69,7 +70,11 @@ export interface Mentor {
 
 export interface ScheduleMeetingBottomSheetProps {
   onClose: () => void;
-  onSchedule: (data: {
+  /**
+   * Legacy callback (kept for backward compatibility).
+   * Submission is handled inside this component; use this only for side-effects.
+   */
+  onSchedule?: (data: {
     mentorId: string;
     meetingDate: string;
     platform: string;
@@ -82,6 +87,14 @@ export interface ScheduleMeetingBottomSheetProps {
     selectedDate?: string;
     selectedTime?: TimeSlot;
   }) => void;
+  /** Called after a successful schedule/reschedule. */
+  onCompleted?: (result: { appointmentId: string; mode: "schedule" | "reschedule" }) => void;
+  /** Optional prefill to skip step 1. */
+  initialPerson?: Mentor | null;
+  /** Optional prefill for role tab. */
+  initialRole?: UserRole;
+  /** Optional override to provide the selectable people list (skips role tabs + users-by-role). */
+  peopleOverride?: Mentor[];
   mode?: "schedule" | "reschedule";
   existingAppointment?: Appointment | null;
   colorScheme?: {
@@ -102,6 +115,10 @@ const ScheduleMeetingBottomSheet = forwardRef<
     {
       onClose,
       onSchedule,
+      onCompleted,
+      initialPerson = null,
+      initialRole,
+      peopleOverride,
       mode = "schedule",
       existingAppointment,
       colorScheme = {
@@ -124,11 +141,11 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const currentUserRole = currentUser?.role || "pastor";
 
     // Initialize state
-    const [currentStep, setCurrentStep] = useState<1 | 2>(
-      mode === "reschedule" ? 2 : 1,
+    const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(
+      mode === "reschedule" ? 2 : initialPerson?.id ? 2 : 1,
     );
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+    const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(initialPerson);
     const [selectedDate, setSelectedDate] = useState<string>(
       mode === "reschedule" && existingAppointment
         ? existingAppointment.meetingDate.split("T")[0]
@@ -138,8 +155,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const [meetingOption, setMeetingOption] = useState("Zoom");
     const [showMeetingOptions, setShowMeetingOptions] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const isSubmittingRef = useRef(false);
+    const submitGuardRef = useRef(false);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     // Determine initial role tab based on currentUserRole
@@ -149,7 +165,9 @@ const ScheduleMeetingBottomSheet = forwardRef<
     }, [currentUserRole]);
 
     const [selectedRole, setSelectedRole] =
-      useState<UserRole>(initialSelectedRole);
+      useState<UserRole>(initialRole || initialSelectedRole);
+
+    const shouldUseOverride = Boolean(peopleOverride && peopleOverride.length > 0);
 
     // Fetch users based on selectedRole (single page; no infinite scroll to avoid pagination issues)
     const {
@@ -166,13 +184,14 @@ const ScheduleMeetingBottomSheet = forwardRef<
 
     // Format users for the list
     const formattedUsers: Mentor[] = useMemo(() => {
+      if (shouldUseOverride) return peopleOverride || [];
       return allUsers.map((user) => ({
         id: user.id,
         name: `${user.firstName} ${user.lastName || ""}`.trim(),
         role: user.role,
         profilePicture: user.profilePicture,
       }));
-    }, [allUsers]);
+    }, [allUsers, peopleOverride, shouldUseOverride]);
 
     // Filter users based on search query
     const filteredMentors = useMemo(() => {
@@ -219,6 +238,14 @@ const ScheduleMeetingBottomSheet = forwardRef<
         if (found) setSelectedMentor(found);
       }
     }, [mode, existingAppointment, formattedUsers]);
+
+    // Prefill (schedule mode) - allows redirecting into this flow with a selected person.
+    useEffect(() => {
+      if (mode !== "schedule") return;
+      if (!initialPerson?.id) return;
+      setSelectedMentor(initialPerson);
+      setCurrentStep(2);
+    }, [initialPerson, mode]);
 
     // Get current month and year for availability
     const currentDate = new Date();
@@ -286,8 +313,21 @@ const ScheduleMeetingBottomSheet = forwardRef<
       userId: overlapUserId || undefined,
     });
 
-    const { createAppointmentAsync, rescheduleAppointmentAsync } =
-      useCreateAppointment();
+    const { submit, isSubmitting: isSchedulerSubmitting } = useMeetingScheduler({
+      mode,
+      currentUserId: currentUser?.id,
+      currentUserRole,
+      selectedPerson: selectedMentor
+        ? { id: selectedMentor.id, name: selectedMentor.name, role: selectedMentor.role }
+        : null,
+      existingAppointment,
+      selectedDayYmd: selectedDate,
+      selectedSlot: selectedTime?.apiSlot ?? null,
+      meetingOptionLabel: meetingOption,
+      settings,
+      mentorAppointments,
+      userAppointments,
+    });
 
     // Debug log only after mentorId is available
     useEffect(() => {
@@ -321,6 +361,39 @@ const ScheduleMeetingBottomSheet = forwardRef<
         });
       return dates;
     }, [shouldFetchAvailability, monthlyAvailability]);
+
+    const ymdToday = useMemo(() => {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }, []);
+
+    const ymdTomorrow = useMemo(() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }, []);
+
+    const hasDate = useCallback((ymd: string) => {
+      return availableDates.includes(ymd);
+    }, [availableDates]);
+
+    const pickThisWeek = useCallback(() => {
+      if (!availableDates.length) return null;
+      const start = new Date(`${ymdToday}T00:00:00`);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 7);
+      const best = availableDates.find((ymd) => {
+        const d = new Date(`${ymd}T00:00:00`);
+        return d >= start && d <= end;
+      });
+      return best || null;
+    }, [availableDates, ymdToday]);
 
     // Get days of week that have availability
     const availableDaysOfWeek = useMemo(() => {
@@ -400,110 +473,42 @@ const ScheduleMeetingBottomSheet = forwardRef<
       [disableOutsideClose],
     );
 
-    const handleNext = () => {
-      if (currentStep === 1 && selectedMentor) {
-        setCurrentStep(2);
-      }
-    };
-
     const handleBack = () => {
       if (mode === "reschedule") {
+        // Reschedule is typically invoked from an existing meeting context.
+        // Closing is the simplest mental model.
         handleClose();
-      } else if (currentStep === 2) {
+        return;
+      }
+      if (currentStep === 3) {
+        setCurrentStep(2);
+        return;
+      }
+      if (currentStep === 2) {
         setCurrentStep(1);
       }
     };
 
+    const handleReview = () => {
+      if (!selectedMentor || !selectedDate || !selectedTime) return;
+      setCurrentStep(3);
+    };
+
     const handleSchedule = async () => {
-      if (isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
-      setIsSubmitting(true);
+      if (submitGuardRef.current) return;
+      submitGuardRef.current = true;
       try {
-        if (selectedMentor && selectedDate && selectedTime) {
-          // Build meeting date in ISO format
-          const [year, month, day] = selectedDate.split("-").map(Number);
-          let hour = parseInt(selectedTime.apiSlot.startTime, 10);
-          if (selectedTime.apiSlot.startPeriod === "PM" && hour !== 12) {
-            hour += 12;
-          } else if (selectedTime.apiSlot.startPeriod === "AM" && hour === 12) {
-            hour = 0;
-          }
+        const result = await submit();
 
-          const istDate = new Date(
-            Date.UTC(year, month - 1, day, hour, 0, 0, 0),
-          );
-          const utcTimestamp = istDate.getTime() - 5.5 * 60 * 60 * 1000;
-          const meetingDate = new Date(utcTimestamp).toISOString();
-
-          // --- VALIDATION START ---
-          const now = new Date();
-          const meetingDateTime = new Date(meetingDate);
-
-          // 1. Check Minimum Notice
-          if (settings?.minSchedulingNoticeHours) {
-            const hoursNotice =
-              (meetingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-            if (hoursNotice < settings.minSchedulingNoticeHours) {
-              Alert.alert(
-                "Notice Period Required",
-                `This mentor requires at least ${settings.minSchedulingNoticeHours} hours notice for appointments.`,
-              );
-              return;
-            }
-          }
-
-          // 2. Check Max Bookings per Day
-          if (settings?.maxBookingsPerDay) {
-            const bookingsOnDate = mentorAppointments.filter(
-              (apt) =>
-                apt.meetingDate.split("T")[0] === selectedDate &&
-                !String(apt.status ?? "")
-                  .trim()
-                  .toLowerCase()
-                  .startsWith("cancel"),
-            );
-            if (bookingsOnDate.length >= settings.maxBookingsPerDay) {
-              Alert.alert(
-                "Daily Limit Reached",
-                "This mentor has reached their maximum number of bookings for the selected date.",
-              );
-              return;
-            }
-          }
-
-          // 3. Check for Overlapping Appointments for the User
-          const hasOverlap = userAppointments.some(
-            (apt) =>
-              apt.meetingDate === meetingDate &&
-              !String(apt.status ?? "")
-                .trim()
-                .toLowerCase()
-                .startsWith("cancel"),
-          );
-          if (hasOverlap) {
-            Alert.alert(
-              "Schedule Conflict",
-              "You already have another appointment scheduled at this time.",
-            );
-            return;
-          }
-          // --- VALIDATION END ---
-
-          // Map platform
-          const platformMap: Record<string, string> = {
-            Zoom: "zoom",
-            "Google Meet": "google_meet",
-            "Microsoft Teams": "teams",
-            "Phone Call": "phone",
-            "In-Person Meeting": "in_person",
-          };
-          const platform = platformMap[meetingOption] || "zoom";
-          console.log("Platform:", platform);
-          console.log(selectedMentor, "--------");
+        // Legacy callback (side-effects only)
+        if (onSchedule && selectedMentor && selectedDate && selectedTime) {
           onSchedule({
             mentorId: selectedMentor.id,
-            meetingDate,
-            platform,
+            meetingDate: appointmentService.createMeetingDate(
+              selectedDate,
+              selectedTime.apiSlot,
+            ),
+            platform: meetingOption,
             meetingLink: undefined,
             notes: `Meeting with ${selectedMentor.name}`,
             ...(mode === "reschedule" && {
@@ -514,62 +519,22 @@ const ScheduleMeetingBottomSheet = forwardRef<
             selectedDate,
             selectedTime,
           });
-          console.log("Scheduled meeting with data:", {
-            mentorId: selectedMentor.id,
-            meetingDate,
-            platform,
-            meetingLink: undefined,
-            notes: `Meeting with ${selectedMentor.name}`,
-            ...(mode === "reschedule" && {
-              startTime: selectedTime.apiSlot.startTime,
-              startPeriod: selectedTime.apiSlot.startPeriod,
-            }),
-            selectedMentor,
-            selectedDate,
-            selectedTime,
-          });
-
-          if (mode === "reschedule" && existingAppointment) {
-            await rescheduleAppointmentAsync({
-              appointmentId: existingAppointment.id,
-              newDate: meetingDate,
-              startTime: selectedTime.apiSlot.startTime,
-              startPeriod: selectedTime.apiSlot.startPeriod as "AM" | "PM",
-            });
-          } else {
-            // Correctly assign mentor/user participants depending on who is logged-in.
-            const payloadMentorId =
-              currentUserRole === "mentor"
-                ? (currentUser?.id ?? "")
-                : selectedMentor.id;
-            const payloadUserId =
-              currentUserRole === "mentor"
-                ? selectedMentor.id
-                : (currentUser?.id ?? "");
-            await createAppointmentAsync({
-              userId: payloadUserId,
-              mentorId: payloadMentorId,
-              meetingDate: meetingDate,
-              platform: platform as AppointmentPlatform,
-              meetingLink: undefined,
-              notes: `Meeting with ${selectedMentor.name}`,
-            });
-          }
-
-          if (onScheduleComplete) {
-            onScheduleComplete();
-          }
-
-          setShowSuccessModal(true);
-
-          setTimeout(() => {
-            onClose();
-            resetForm();
-          }, 2000);
         }
+
+        onScheduleComplete?.();
+        onCompleted?.({ appointmentId: result.appointmentId, mode });
+
+        setShowSuccessModal(true);
+        setTimeout(() => {
+          onClose();
+          resetForm();
+        }, 900);
+      } catch (e: any) {
+        const title = e?.title || "Booking failed";
+        const message = e?.message || "Failed to schedule meeting. Please try again.";
+        Alert.alert(title, message);
       } finally {
-        isSubmittingRef.current = false;
-        setIsSubmitting(false);
+        submitGuardRef.current = false;
       }
     };
 
@@ -593,11 +558,20 @@ const ScheduleMeetingBottomSheet = forwardRef<
     }
   };
 
-    const isStep1Valid = selectedMentor !== null;
-    const isStep2Valid = selectedDate && selectedTime;
+    const isStep2Valid = Boolean(selectedDate && selectedTime);
 
     const showMentorSelection = mode === "schedule" && currentStep === 1;
-    const showDateTimeSelection = mode === "reschedule" || currentStep === 2;
+    const showDateTimeSelection = currentStep === 2;
+    const showConfirm = currentStep === 3;
+
+    const progress = useMemo(() => {
+      const steps = [
+        { key: "person", label: "Person", done: mode === "reschedule" ? true : Boolean(selectedMentor?.id) },
+        { key: "time", label: "Time", done: Boolean(selectedDate && selectedTime) },
+        { key: "confirm", label: "Confirm", done: currentStep === 3 },
+      ] as const;
+      return steps;
+    }, [currentStep, mode, selectedDate, selectedMentor?.id, selectedTime]);
 
     return (
       <>
@@ -623,6 +597,32 @@ const ScheduleMeetingBottomSheet = forwardRef<
             }}
           >
             <View style={styles.contentContainer}>
+              <View style={styles.progressWrap}>
+                {progress.map((s, idx) => (
+                  <React.Fragment key={s.key}>
+                    <View style={styles.progressStep}>
+                      <View
+                        style={[
+                          styles.progressDot,
+                          s.done ? styles.progressDotDone : styles.progressDotTodo,
+                        ]}
+                      >
+                        {s.done ? (
+                          <Ionicons name="checkmark" size={14} color="#1E3A6F" />
+                        ) : (
+                          <Text style={styles.progressDotText}>{idx + 1}</Text>
+                        )}
+                      </View>
+                      <Text style={styles.progressLabel} numberOfLines={1}>
+                        {s.label}
+                      </Text>
+                    </View>
+                    {idx !== progress.length - 1 ? (
+                      <View style={styles.progressLine} />
+                    ) : null}
+                  </React.Fragment>
+                ))}
+              </View>
             {showMentorSelection ? (
               // Step 1: Select Mentor
               <View style={{ flex: 1 }}>
@@ -645,31 +645,33 @@ const ScheduleMeetingBottomSheet = forwardRef<
                   </View>
                   </View> */}
 
-                  <View style={styles.roleSelectorContainer}>
-                    {availableRoleTabs.map((tab) => (
-                      <Pressable
-                        key={tab.value}
-                        style={[
-                          styles.roleTab,
-                          selectedRole === tab.value && styles.activeRoleTab,
-                          selectedRole === tab.value
-                            ? styles.activeRoleTab
-                            : styles.inactiveRoleTab,
-                        ]}
-                        onPress={() => setSelectedRole(tab.value)}
-                      >
-                        <Text
+                  {!shouldUseOverride && (
+                    <View style={styles.roleSelectorContainer}>
+                      {availableRoleTabs.map((tab) => (
+                        <Pressable
+                          key={tab.value}
                           style={[
-                            styles.roleTabText,
-                            selectedRole === tab.value &&
-                              styles.activeRoleTabText,
+                            styles.roleTab,
+                            selectedRole === tab.value && styles.activeRoleTab,
+                            selectedRole === tab.value
+                              ? styles.activeRoleTab
+                              : styles.inactiveRoleTab,
                           ]}
+                          onPress={() => setSelectedRole(tab.value)}
                         >
-                          {tab.label}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
+                          <Text
+                            style={[
+                              styles.roleTabText,
+                              selectedRole === tab.value &&
+                                styles.activeRoleTabText,
+                            ]}
+                          >
+                            {tab.label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
 
                   <View style={styles.searchBarContainer}>
                     <SearchBar
@@ -701,7 +703,11 @@ const ScheduleMeetingBottomSheet = forwardRef<
                         <Pressable
                           key={mentor.id}
                           style={styles.mentorItemStep1}
-                          onPress={() => setSelectedMentor(mentor)}
+                          onPress={() => {
+                            setSelectedMentor(mentor);
+                            // Auto-advance to time selection (no extra Next step).
+                            setCurrentStep(2);
+                          }}
                         >
                           <View
                             style={[
@@ -800,34 +806,15 @@ const ScheduleMeetingBottomSheet = forwardRef<
                       </Text>
                     </Pressable>
                   )}
-
-                  <Pressable
-                    style={[
-                      styles.nextButton,
-                      {
-                        backgroundColor: "rgba(30, 54, 111, 1)",
-                        borderWidth: 1,
-                        borderColor: isStep1Valid
-                          ? "#fff"
-                          : "rgba(74, 91, 204, 0.5)",
-                        flex: showCancelButton ? undefined : 1,
-                      },
-                    ]}
-                    onPress={handleNext}
-                    disabled={!isStep1Valid}
-                  >
-                    <Text style={[styles.nextButtonText, { color: "#FFFFFF" }]}>
-                      Next
-                    </Text>
-                  </Pressable>
                 </View>
               </View>
             ) : showDateTimeSelection ? (
-              <BottomSheetScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: bottom + getSpacing(24) }}
-              >
-                <View style={styles.stepContent}>
+              <View style={{ flex: 1 }}>
+                <BottomSheetScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: bottom + getSpacing(120) }}
+                >
+                  <View style={styles.stepContent}>
                   {mode === "reschedule" && selectedMentor && (
                     <View
                       style={[
@@ -854,6 +841,69 @@ const ScheduleMeetingBottomSheet = forwardRef<
                   >
                     Schedule New Meeting
                   </Text>
+
+                  <View style={styles.quickDatesRow}>
+                    <Pressable
+                      style={[
+                        styles.quickDateChip,
+                        hasDate(ymdToday) && selectedDate === ymdToday && styles.quickDateChipActive,
+                        !hasDate(ymdToday) && styles.quickDateChipDisabled,
+                      ]}
+                      onPress={() => hasDate(ymdToday) && setSelectedDate(ymdToday)}
+                      disabled={!hasDate(ymdToday)}
+                    >
+                      <Text
+                        style={[
+                          styles.quickDateChipText,
+                          hasDate(ymdToday) && selectedDate === ymdToday && styles.quickDateChipTextActive,
+                        ]}
+                      >
+                        Today
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[
+                        styles.quickDateChip,
+                        hasDate(ymdTomorrow) && selectedDate === ymdTomorrow && styles.quickDateChipActive,
+                        !hasDate(ymdTomorrow) && styles.quickDateChipDisabled,
+                      ]}
+                      onPress={() => hasDate(ymdTomorrow) && setSelectedDate(ymdTomorrow)}
+                      disabled={!hasDate(ymdTomorrow)}
+                    >
+                      <Text
+                        style={[
+                          styles.quickDateChipText,
+                          hasDate(ymdTomorrow) && selectedDate === ymdTomorrow && styles.quickDateChipTextActive,
+                        ]}
+                      >
+                        Tomorrow
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[
+                        styles.quickDateChip,
+                        styles.quickDateChipGrow,
+                        selectedDate === pickThisWeek() && Boolean(pickThisWeek()) && styles.quickDateChipActive,
+                        !pickThisWeek() && styles.quickDateChipDisabled,
+                      ]}
+                      onPress={() => {
+                        const d = pickThisWeek();
+                        if (d) setSelectedDate(d);
+                      }}
+                      disabled={!pickThisWeek()}
+                    >
+                      <Text
+                        style={[
+                          styles.quickDateChipText,
+                          selectedDate === pickThisWeek() && Boolean(pickThisWeek()) && styles.quickDateChipTextActive,
+                        ]}
+                      >
+                        This week
+                      </Text>
+                    </Pressable>
+                  </View>
 
                   <View style={styles.calendarContainer}>
                     <GradientCalendar
@@ -1026,6 +1076,116 @@ const ScheduleMeetingBottomSheet = forwardRef<
                         </View>
                       )}
 
+                  </View>
+                </BottomSheetScrollView>
+
+                <View style={[styles.stickyFooter, { paddingBottom: bottom + getSpacing(12) }]}>
+                  <Pressable
+                    style={[
+                      styles.cancelButton,
+                      {
+                        borderColor: `${colorScheme.text}80`,
+                        backgroundColor: "#FFFFFF",
+                      },
+                    ]}
+                    onPress={handleBack}
+                    disabled={isSchedulerSubmitting}
+                  >
+                    <Text style={[styles.cancelButtonText, { color: "#4A5BCC" }]}>
+                      {mode === "reschedule" ? "Cancel" : "Back"}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[
+                      styles.scheduleButton,
+                      {
+                        backgroundColor: "rgba(30, 54, 111, 1)",
+                        borderWidth: 1,
+                        borderColor: isStep2Valid ? "#fff" : "rgba(74, 91, 204, 0.5)",
+                        opacity: isSchedulerSubmitting ? 0.7 : 1,
+                      },
+                    ]}
+                    onPress={handleReview}
+                    disabled={!isStep2Valid || isSchedulerSubmitting}
+                  >
+                    <Text style={[styles.scheduleButtonText, { color: "#FFFFFF" }]}>
+                      Review Meeting
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : showConfirm ? (
+              <BottomSheetScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: bottom + getSpacing(24) }}
+              >
+                <View style={styles.stepContent}>
+                  <Text style={[styles.stepTitle, { color: colorScheme.text }]}>
+                    Confirm meeting
+                  </Text>
+
+                  <View style={styles.reviewCard}>
+                    <View style={styles.reviewRow}>
+                      <View style={styles.reviewIcon}>
+                        <Ionicons name="person-outline" size={18} color="#FFFFFF" />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.reviewLabel}>Person</Text>
+                        <Text style={styles.reviewValue} numberOfLines={1}>
+                          {selectedMentor?.name || "Person"}
+                        </Text>
+                        {!!selectedMentor?.role && (
+                          <Text style={styles.reviewSubValue} numberOfLines={1}>
+                            {selectedMentor.role}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+
+                    <View style={styles.reviewDivider} />
+
+                    <View style={styles.reviewRow}>
+                      <View style={styles.reviewIcon}>
+                        <Ionicons name="calendar-outline" size={18} color="#FFFFFF" />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.reviewLabel}>When</Text>
+                        <Text style={styles.reviewValue} numberOfLines={1}>
+                          {selectedDate} · {selectedTime?.label}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.reviewDivider} />
+
+                    <View style={styles.reviewRow}>
+                      <View style={styles.reviewIcon}>
+                        <Ionicons name="videocam-outline" size={18} color="#FFFFFF" />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.reviewLabel}>Platform</Text>
+                        <Text style={styles.reviewValue} numberOfLines={1}>
+                          {meetingOption}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.reviewDivider} />
+
+                    <View style={styles.reviewRow}>
+                      <View style={styles.reviewIcon}>
+                        <Ionicons name="time-outline" size={18} color="#FFFFFF" />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.reviewLabel}>Timezone</Text>
+                        <Text style={styles.reviewValue} numberOfLines={1}>
+                          {Intl.DateTimeFormat().resolvedOptions().timeZone || "Local"}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
                   <View style={styles.step2Footer}>
                     <Pressable
                       style={[
@@ -1036,6 +1196,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
                         },
                       ]}
                       onPress={handleBack}
+                      disabled={isSchedulerSubmitting}
                     >
                       <Text
                         style={[
@@ -1043,7 +1204,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
                           { color: "#4A5BCC" },
                         ]}
                       >
-                        {mode === "reschedule" ? "Cancel" : "Back"}
+                        Back
                       </Text>
                     </Pressable>
 
@@ -1053,21 +1214,15 @@ const ScheduleMeetingBottomSheet = forwardRef<
                         {
                           backgroundColor: "rgba(30, 54, 111, 1)",
                           borderWidth: 1,
-                          borderColor: isStep2Valid
-                            ? "#fff"
-                            : "rgba(74, 91, 204, 0.5)",
+                          borderColor: "#fff",
+                          opacity: isSchedulerSubmitting ? 0.7 : 1,
                         },
                       ]}
                       onPress={handleSchedule}
-                      disabled={!isStep2Valid || isSubmitting}
+                      disabled={isSchedulerSubmitting}
                     >
-                      <Text
-                        style={[
-                          styles.scheduleButtonText,
-                          { color: "#FFFFFF" },
-                        ]}
-                      >
-                        {mode === "reschedule" ? "Reschedule" : "Schedule"}
+                      <Text style={[styles.scheduleButtonText, { color: "#FFFFFF" }]}>
+                        {mode === "reschedule" ? "Reschedule meeting" : "Schedule meeting"}
                       </Text>
                     </Pressable>
                   </View>
@@ -1106,6 +1261,91 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: getSpacing(16),
   },
+  progressWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    paddingHorizontal: 6,
+    paddingBottom: getSpacing(10),
+    marginBottom: getSpacing(6),
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.10)",
+  },
+  progressStep: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  progressDot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  progressDotDone: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(255,255,255,0.6)",
+  },
+  progressDotTodo: {
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+  progressDotText: { color: "rgba(255,255,255,0.85)", fontWeight: "800", fontSize: 12 },
+  progressLabel: { color: "rgba(255,255,255,0.85)", fontWeight: "700", fontSize: 12, maxWidth: 70 },
+  progressLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.12)",
+  },
+  quickDatesRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: getSpacing(12),
+  },
+  quickDateChip: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  quickDateChipGrow: { flex: 1, alignItems: "center" },
+  quickDateChipActive: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(255,255,255,0.8)",
+  },
+  quickDateChipDisabled: { opacity: 0.45 },
+  quickDateChipText: { color: "rgba(255,255,255,0.9)", fontWeight: "800", fontSize: 12 },
+  quickDateChipTextActive: { color: "#1E3A6F" },
+  reviewCard: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    padding: 14,
+    gap: 12,
+  },
+  reviewRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  reviewIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  reviewDivider: { height: 1, backgroundColor: "rgba(255,255,255,0.10)" },
+  reviewLabel: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  reviewValue: { marginTop: 4, color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
+  reviewSubValue: { marginTop: 2, color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "700" },
   header: {
     paddingTop: getSpacing(12),
     paddingBottom: getSpacing(12),
@@ -1339,6 +1579,21 @@ const styles = StyleSheet.create({
     marginTop: getSpacing(isSmallDevice ? 18 : 20),
     width: "100%",
     paddingHorizontal: getSpacing(isSmallDevice ? 6 : 12),
+  },
+  stickyFooter: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: getSpacing(isSmallDevice ? 8 : 12),
+    paddingTop: getSpacing(10),
+    paddingHorizontal: getSpacing(isSmallDevice ? 12 : 16),
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.10)",
+    backgroundColor: "rgba(18, 56, 106, 0.55)",
   },
 
   scheduleButtonText: {

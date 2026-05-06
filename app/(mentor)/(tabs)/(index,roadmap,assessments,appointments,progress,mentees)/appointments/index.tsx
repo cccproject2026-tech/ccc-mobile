@@ -2,8 +2,7 @@ import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import AppointmentCard, { MenuItem } from "@/components/director/AppointmentCard";
-import ScheduleMeetingBottomSheet from "@/components/director/ScheduleMeetingBottomSheet";
-import SearchBar from "@/components/director/SearchBar";
+// Scheduling now uses full-screen pages under /schedule-meeting
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
@@ -15,6 +14,7 @@ import { useMentees } from "@/hooks/mentees/useMentees";
 import { Mentor } from "@/hooks/mentors/useMentors";
 import { useAuthStore } from "@/stores/auth.store";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { getDeviceTimezone } from "@/utils/appointments/timezone";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -44,11 +44,11 @@ interface ResponseModalState {
 const Appointments: React.FC = () => {
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = React.useState<string>(today);
-  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [activeTab, setActiveTab] = React.useState<
     "appointments" | "availability"
   >("appointments");
   const router = useRouter();
+  const deviceTz = useMemo(() => getDeviceTimezone(), []);
 
   // When returning from Availability via router.back(), React state is preserved
   // but we were left on activeTab === "availability" — reset highlight on focus.
@@ -66,6 +66,7 @@ const Appointments: React.FC = () => {
 
   // Bottom sheet ref
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
+  const [rescheduleData, setRescheduleData] = React.useState<any>(null);
   const { openSheet, assessmentId } = useLocalSearchParams();
 
   // Get current user
@@ -144,15 +145,16 @@ const Appointments: React.FC = () => {
     return `${day} ${month} ${year}`;
   }, []);
 
-  // Helper function to format time for display
+  // Helper function to format time for display (device timezone)
   const formatTime = React.useCallback((dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
+      ...(deviceTz.timeZone ? { timeZone: deviceTz.timeZone } : {}),
     });
-  }, []);
+  }, [deviceTz.timeZone]);
 
   // Helper function to get platform icon
   const getPlatformIcon = React.useCallback((platform: string) => {
@@ -209,25 +211,6 @@ const Appointments: React.FC = () => {
     [allMentees],
   );
 
-  const isValidISODate = (value: string) => {
-    const d = new Date(value);
-    return !Number.isNaN(d.getTime());
-  };
-
-  useEffect(() => {
-    if (searchQuery.length !== 10) return;
-
-    const match = searchQuery.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-    if (!match) return;
-
-    const [, dd, mm, yyyy] = match;
-    const iso = `${yyyy}-${mm}-${dd}`;
-
-    const d = new Date(iso);
-    if (!Number.isNaN(d.getTime())) {
-      setSelectedDate(iso); // ✅ YYYY-MM-DD ONLY
-    }
-  }, [searchQuery]);
   // Format appointments for display
   const formattedAppointments = useMemo(() => {
     if (!appointments || !getAppointmentsByDate) return [];
@@ -258,7 +241,7 @@ const Appointments: React.FC = () => {
         id: apt.id,
         date: formatDisplayDate(apt.meetingDate),
         time: `${startTime} - ${endTime}`,
-        tz: "EST",
+        tz: deviceTz.badge,
         person: menteeName,
         role: "Mentee",
         mode: getModeLabel(apt.platform),
@@ -275,7 +258,6 @@ const Appointments: React.FC = () => {
     getModeLabel,
     getPlatformIcon,
     getMenteeName,
-    searchQuery,
   ]);
 
   const selectedDateAppointments = formattedAppointments;
@@ -310,7 +292,7 @@ const Appointments: React.FC = () => {
           id: apt.id,
           date: formatDisplayDate(apt.meetingDate),
           time: `${startTime} - ${endTime}`,
-          tz: "EST",
+          tz: deviceTz.badge,
           person: menteeName,
           role: "Mentee",
           mode: getModeLabel(apt.platform),
@@ -339,8 +321,10 @@ const Appointments: React.FC = () => {
   };
 
   const handleReschedule = (appointment: any) => {
-    console.log("Reschedule appointment", appointment);
-    // Navigate to reschedule screen
+    router.push({
+      pathname: "/schedule-meeting/person",
+      params: { mode: "reschedule", appointmentId: String(appointment.id) },
+    });
   };
 
   const handleCancel = (appointment: any) => {
@@ -386,32 +370,12 @@ const Appointments: React.FC = () => {
 
   // Handle new meeting button press
   const handleNewMeeting = () => {
-    scheduleMeetingBottomSheetRef.current?.present();
-  };
-
-  // Handle schedule meeting
-  const handleScheduleMeeting = (data: any) => {
-    console.log("Scheduling meetingm:", data);
-    setResponseModal({
-      visible: true,
-      message: `Meeting scheduled with ${
-        data.selectedMentor.name
-      } on ${formatDisplayDate(data.selectedDate)} at ${
-        data.selectedTime.label
-      }`,
-      buttonText: "OK",
-    });
-    if (openSheet === "true") {
-      router.push({
-        pathname: "/assessments/survey-guidelines",
-        params: { assessmentId },
-      });
-    }
+    router.push({ pathname: "/schedule-meeting/person", params: { mode: "schedule" } });
   };
 
   // Handle close bottom sheet
   const handleCloseScheduleBottomSheet = () => {
-    scheduleMeetingBottomSheetRef.current?.dismiss();
+    setRescheduleData(null);
   };
 
   const handleTabPress = (tab: "appointments" | "availability") => {
@@ -498,15 +462,6 @@ const Appointments: React.FC = () => {
                   Availability
                 </Text>
               </Pressable>
-            </View>
-
-            <View style={{ paddingHorizontal: 16, marginVertical: 10 }}>
-              <SearchBar
-                backgroundColor="transparent"
-                value={searchQuery}
-                onChangeValue={setSearchQuery}
-                placeholder="Enter a date (dd-mm-yyyy)"
-              />
             </View>
 
             {/* Main content */}
@@ -779,18 +734,7 @@ const Appointments: React.FC = () => {
         </>
       </AppGradientBackground>
 
-      {/* Schedule Meeting Bottom Sheet */}
-      <ScheduleMeetingBottomSheet
-        ref={scheduleMeetingBottomSheetRef}
-        onClose={handleCloseScheduleBottomSheet}
-        onSchedule={handleScheduleMeeting}
-        colorScheme={{
-          background: Colors.darkBlueGradientOne,
-          text: "#FFFFFF",
-          accent: "#FFC107",
-          cardBackground: "rgba(255, 255, 255, 0.1)",
-        }}
-      />
+      {/* Scheduling moved to /schedule-meeting pages */}
 
       {/* Change Meeting Mode Modal */}
       <Modal
