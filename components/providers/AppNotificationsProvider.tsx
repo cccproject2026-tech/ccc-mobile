@@ -8,6 +8,8 @@ import React, { PropsWithChildren, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { setupNotifications } from '@/services/notifications';
 
+const TAG = '[notifications]';
+
 const navigateFromNotification = (
     role: UserRole | string | undefined,
     moduleName?: string | null
@@ -30,6 +32,7 @@ export default function AppNotificationsProvider({
     const bootstrapInFlight = useRef<Promise<void> | null>(null);
     const lastBootstrapAt = useRef<number>(0);
     const BOOTSTRAP_COOLDOWN_MS = 15000;
+    const LOGIN_DELAY_MS = 600;
 
     useEffect(() => {
         if (!isAuthenticated || !user?.id) {
@@ -37,31 +40,35 @@ export default function AppNotificationsProvider({
         }
 
         let isMounted = true;
+        let loginDelayTimer: ReturnType<typeof setTimeout> | null = null;
 
         const invalidateNotifications = async () => {
             try {
+                if (!isMounted) return;
                 await queryClient.invalidateQueries({
                     queryKey: ['notifications', user.id],
                 });
             } catch (error) {
-                console.warn('[notifications] invalidate failed', error);
+                console.warn(`${TAG} invalidate failed`, error);
             }
         };
 
         const bootstrapNotifications = async () => {
             const now = Date.now();
             if (bootstrapInFlight.current) {
-                console.log('[notifications] bootstrap deduped: in-flight');
+                console.log(`${TAG} bootstrap deduped: in-flight`);
                 return bootstrapInFlight.current;
             }
             if (now - lastBootstrapAt.current < BOOTSTRAP_COOLDOWN_MS) {
-                console.log('[notifications] bootstrap throttled: cooldown active');
+                console.log(`${TAG} bootstrap throttled: cooldown active`);
                 return;
             }
             lastBootstrapAt.current = now;
 
             bootstrapInFlight.current = (async () => {
             try {
+                if (!isMounted) return;
+                console.log(`${TAG} bootstrap start`, { userId: user.id, role: user.role });
                 await setupNotifications({ userId: user.id, enabled: !!isAuthenticated });
                 await invalidateNotifications();
 
@@ -69,7 +76,7 @@ export default function AppNotificationsProvider({
                 try {
                     lastResponse = await Notifications.getLastNotificationResponseAsync();
                 } catch (error) {
-                    console.warn('[notifications] getLastNotificationResponseAsync failed', error);
+                    console.warn(`${TAG} getLastNotificationResponseAsync failed`, error);
                 }
 
                 const responseId =
@@ -87,11 +94,11 @@ export default function AppNotificationsProvider({
                     try {
                         navigateFromNotification(user.role, String(moduleName));
                     } catch (error) {
-                        console.warn('[notifications] navigation from last response failed', error);
+                        console.warn(`${TAG} navigation from last response failed`, error);
                     }
                 }
             } catch (error) {
-                console.error('Notification bootstrap failed:', error);
+                console.error(`${TAG} bootstrap failed`, error);
             } finally {
                 bootstrapInFlight.current = null;
             }
@@ -100,38 +107,51 @@ export default function AppNotificationsProvider({
             return bootstrapInFlight.current;
         };
 
-        bootstrapNotifications();
+        // Delay slightly after login to avoid auth/navigation/provider race conditions in dev/preview builds.
+        loginDelayTimer = setTimeout(() => {
+            if (!isMounted) return;
+            void bootstrapNotifications();
+        }, LOGIN_DELAY_MS);
 
         try {
             receivedListener.current = Notifications.addNotificationReceivedListener(
                 async () => {
-                    await invalidateNotifications();
+                    try {
+                        await invalidateNotifications();
+                    } catch (error) {
+                        console.warn(`${TAG} receivedListener handler failed`, error);
+                    }
                 }
             );
         } catch (error) {
-            console.warn('[notifications] addNotificationReceivedListener failed', error);
+            console.warn(`${TAG} addNotificationReceivedListener failed`, error);
         }
 
         try {
             responseListener.current = Notifications.addNotificationResponseReceivedListener(
                 async (response: Notifications.NotificationResponse) => {
-                    await invalidateNotifications();
-                    lastHandledResponseId.current =
-                        response.notification.request.identifier;
-                    const moduleName =
-                        response.notification.request.content.data?.module;
                     try {
-                        navigateFromNotification(
-                            user.role,
-                            String(moduleName || 'notifications')
-                        );
+                        if (!isMounted) return;
+                        await invalidateNotifications();
+                        lastHandledResponseId.current =
+                            response.notification.request.identifier;
+                        const moduleName =
+                            response.notification.request.content.data?.module;
+                        try {
+                            navigateFromNotification(
+                                user.role,
+                                String(moduleName || 'notifications')
+                            );
+                        } catch (error) {
+                            console.warn(`${TAG} navigation from response failed`, error);
+                        }
                     } catch (error) {
-                        console.warn('[notifications] navigation from response failed', error);
+                        console.warn(`${TAG} responseListener handler failed`, error);
                     }
                 }
             );
         } catch (error) {
-            console.warn('[notifications] addNotificationResponseReceivedListener failed', error);
+            console.warn(`${TAG} addNotificationResponseReceivedListener failed`, error);
         }
 
         const appStateSubscription = AppState.addEventListener('change', async (state) => {
@@ -139,13 +159,17 @@ export default function AppNotificationsProvider({
                 try {
                     await bootstrapNotifications();
                 } catch (error) {
-                    console.warn('[notifications] bootstrap on active failed', error);
+                    console.warn(`${TAG} bootstrap on active failed`, error);
                 }
             }
         });
 
         return () => {
             isMounted = false;
+            if (loginDelayTimer) {
+                clearTimeout(loginDelayTimer);
+                loginDelayTimer = null;
+            }
             appStateSubscription.remove();
             receivedListener.current?.remove();
             responseListener.current?.remove();
