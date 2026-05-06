@@ -106,6 +106,7 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest: any = error.config;
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -172,6 +173,24 @@ apiClient.interceptors.response.use(
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
+      }
+    }
+
+    // Retry transient 429/503 for idempotent GETs (helps with nginx 503 + throttling bursts).
+    // Only retry when Axios has a config (i.e., a real request) and we have an HTTP status.
+    const transientStatus = error.response?.status;
+    const methodLower = String(originalRequest?.method ?? "").toLowerCase();
+    const isGet = methodLower === "get";
+    const shouldRetryTransient =
+      isGet && (transientStatus === 429 || transientStatus === 503);
+
+    if (shouldRetryTransient && originalRequest) {
+      const attempt = Number(originalRequest.__transientRetryAttempt ?? 0);
+      if (attempt < 2) {
+        originalRequest.__transientRetryAttempt = attempt + 1;
+        // Backoff + jitter
+        await sleep(400 * (attempt + 1) + Math.floor(Math.random() * 250));
+        return apiClient(originalRequest);
       }
     }
 
@@ -247,19 +266,41 @@ apiClient.interceptors.response.use(
 
     // Handle other errors
     const status = error.response?.status || 500;
+    const url = (error.config as { baseURL?: string; url?: string; method?: string })
+      ? `${(error.config as any).baseURL ?? ""}${(error.config as any).url ?? ""}`
+      : "";
+    const method = (error.config as { method?: string })?.method?.toUpperCase?.() ?? "";
     const apiError = {
-      message: (error.response?.data as any)?.message || "An error occurred",
+      // If backend doesn't send JSON {message}, show a status-appropriate fallback.
+      message:
+        (error.response?.data as any)?.message ||
+        (status === 503
+          ? "Service temporarily unavailable. Please try again."
+          : "An error occurred"),
       statusCode: status,
       errors: (error.response?.data as any)?.errors,
     };
 
     if (__DEV__) {
       // 404 is often handled upstream (e.g. empty comment thread) — avoid red ERROR noise in Metro
-      const url = (error.config as { url?: string })?.url ?? "";
       if (status === 404) {
-        console.log(`📭 404 ${url}`, apiError.message);
+        console.log(`📭 404 ${method} ${url}`, apiError.message);
       } else {
-        console.error("❌ API Error:", apiError);
+        // Try to surface a small response snippet for non-JSON bodies (common for 503 via proxies).
+        const rawData = (error.response as any)?.data;
+        const snippet =
+          typeof rawData === "string"
+            ? rawData.slice(0, 500)
+            : rawData && typeof rawData === "object"
+              ? JSON.stringify(rawData).slice(0, 500)
+              : undefined;
+
+        console.error("❌ API Error:", {
+          ...apiError,
+          method,
+          url,
+          ...(snippet ? { responseSnippet: snippet } : {}),
+        });
       }
     }
 

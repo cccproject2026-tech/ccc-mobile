@@ -13,6 +13,7 @@ import { sessionOrdinalLabel, sessionTopicLine } from "@/constants/sessionTitles
 import { format } from "date-fns";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { mapWithConcurrency } from "@/utils/apiConcurrency";
 
 const MAX_ITEMS_PER_SECTION = 3;
 const MAX_MENTEES_FOR_FOCUS = 5;
@@ -353,68 +354,65 @@ export const useMentorFocusItems = () => {
       const seenSubmissionKeys = new Set<string>();
 
       // Candidate assessments per pastor to keep API calls bounded.
-      await Promise.all(
-        (mentees as any[]).map(async (mentee: any) => {
-          const pastorId = String(mentee.id);
-          const pastorName = menteeNameById.get(pastorId) ?? "Pastor";
+      await mapWithConcurrency(mentees as any[], 2, async (mentee: any) => {
+        const pastorId = String(mentee.id);
+        const pastorName = menteeNameById.get(pastorId) ?? "Pastor";
 
-          const assessmentIds: string[] = (mentee.assignedAssessmentIds ?? []).map((x: any) => String(x));
-          const limitedAssessmentIds = clampByLimit(assessmentIds, MAX_ASSESSMENTS_PER_MENTEE_FOR_SURVEY);
+        const assessmentIds: string[] = (mentee.assignedAssessmentIds ?? []).map((x: any) => String(x));
+        const limitedAssessmentIds = clampByLimit(assessmentIds, MAX_ASSESSMENTS_PER_MENTEE_FOR_SURVEY);
 
-          for (const aid of limitedAssessmentIds) {
-            try {
-              const res = await assessmentService.fetchAnswers(aid, pastorId);
-              if (!res?.success || !res?.data) continue;
+        for (const aid of limitedAssessmentIds) {
+          try {
+            const res = await assessmentService.fetchAnswers(aid, pastorId);
+            if (!res?.success || !res?.data) continue;
 
-              const answers = res.data;
-              const hasSections = Array.isArray(answers.sections) && answers.sections.length > 0;
-              const hasPreSurvey = !!answers.preSurveySubmittedAt;
+            const answers = res.data;
+            const hasSections = Array.isArray(answers.sections) && answers.sections.length > 0;
+            const hasPreSurvey = !!answers.preSurveySubmittedAt;
 
-              if (!hasSections && !hasPreSurvey) continue;
+            if (!hasSections && !hasPreSurvey) continue;
 
-              const submittedAt = answers.preSurveySubmittedAt ?? answers.createdAt;
-              const recommendationsSentByMentor = answers.recommendationsSentByMentor;
+            const submittedAt = answers.preSurveySubmittedAt ?? answers.createdAt;
+            const recommendationsSentByMentor = answers.recommendationsSentByMentor;
 
-              // Mentor should focus on ones that are not yet recommended/sent by mentor.
-              if (recommendationsSentByMentor === true) continue;
+            // Mentor should focus on ones that are not yet recommended/sent by mentor.
+            if (recommendationsSentByMentor === true) continue;
 
-              const key = `${aid}-${pastorId}`;
-              if (seenSubmissionKeys.has(key)) continue;
-              seenSubmissionKeys.add(key);
+            const key = `${aid}-${pastorId}`;
+            if (seenSubmissionKeys.has(key)) continue;
+            seenSubmissionKeys.add(key);
 
-              const assessmentTitle = assessmentNameById.get(aid) ?? "Survey submission";
+            const assessmentTitle = assessmentNameById.get(aid) ?? "Survey submission";
 
-              const preSurveyFlag = answers.preSurveySubmittedAt ? "true" : "false";
+            const preSurveyFlag = answers.preSurveySubmittedAt ? "true" : "false";
 
-              const submittedAtMs = toEpochMs(submittedAt);
+            const submittedAtMs = toEpochMs(submittedAt);
 
-              surveySubmissionTemp.push({
-                item: {
-                  id: `survey-${key}`,
-                  title: assessmentTitle,
-                  description:
-                    "Survey submitted and awaiting your recommendation.",
-                  meta: `${pastorName} • ${formatDateTime(submittedAt)}`,
-                  accentColor: "#A78BFA",
-                  route: {
-                    pathname: "/(mentor)/assessments/answer-questions",
-                    params: {
-                      assessmentId: aid,
-                      viewMode: "true",
-                      targetUserId: pastorId,
-                      hasPreSurvey: preSurveyFlag,
-                      scheduleMeeting: "false",
-                    },
+            surveySubmissionTemp.push({
+              item: {
+                id: `survey-${key}`,
+                title: assessmentTitle,
+                description: "Survey submitted and awaiting your recommendation.",
+                meta: `${pastorName} • ${formatDateTime(submittedAt)}`,
+                accentColor: "#A78BFA",
+                route: {
+                  pathname: "/(mentor)/assessments/answer-questions",
+                  params: {
+                    assessmentId: aid,
+                    viewMode: "true",
+                    targetUserId: pastorId,
+                    hasPreSurvey: preSurveyFlag,
+                    scheduleMeeting: "false",
                   },
                 },
-                sortAtMs: submittedAtMs,
-              });
-            } catch {
-              continue;
-            }
+              },
+              sortAtMs: submittedAtMs,
+            });
+          } catch {
+            continue;
           }
-        }),
-      );
+        }
+      });
 
       // Time order: oldest first (more urgent items first).
       surveySubmissionTemp.sort((a, b) => a.sortAtMs - b.sortAtMs);

@@ -62,12 +62,16 @@ import { ENDPOINTS } from '@/services/api/endpoints';
 import { menteesService } from '@/services/mentees.service';
 import { Mentee } from '@/types/mentee.types';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { mapWithConcurrency, withRetry } from '@/utils/apiConcurrency';
 
 // Query key - include mentorId when filtering by assigned mentor
 const getMenteesKey = (mentorId?: string | null) => (mentorId ? ['mentees', 'assigned', mentorId] as const : ['mentees'] as const);
 
 /** Normalize backend user (may have _id) to have id for progress API */
 const toMenteeWithId = (m: any): Mentee => ({ ...m, id: m.id ?? m._id });
+
+const getWithRetry = <T = unknown>(url: string) =>
+    withRetry(() => apiClient.get<T>(url));
 
 const ROADMAP_STATUS_PRIORITY: Record<string, number> = {
     in_progress: 0,
@@ -109,25 +113,27 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
 
             const backendMentees: Mentee[] = (res.users ?? []).map(toMenteeWithId);
 
-            // Fetch profile + progress in parallel so cards have complete user info.
-            const menteeDetails = await Promise.all(
-                backendMentees.map(async (m) => {
+            // Avoid bursting the backend (429/503). Fetch in a small pool with retry/backoff.
+            const menteeDetails = await mapWithConcurrency(
+                backendMentees,
+                3,
+                async (m) => {
                     const [profileResult, progressResult] = await Promise.allSettled([
-                        apiClient.get(ENDPOINTS.USERS.GET_USER(m.id)),
-                        apiClient.get(ENDPOINTS.USERS.GET_PROGRESS(m.id)),
+                        getWithRetry(ENDPOINTS.USERS.GET_USER(m.id)),
+                        getWithRetry(ENDPOINTS.USERS.GET_PROGRESS(m.id)),
                     ]);
 
                     return {
                         profile:
                             profileResult.status === "fulfilled"
-                                ? profileResult.value.data?.data ?? null
+                                ? (profileResult.value as any).data?.data ?? null
                                 : null,
                         progress:
                             progressResult.status === "fulfilled"
-                                ? progressResult.value.data?.data ?? null
+                                ? (progressResult.value as any).data?.data ?? null
                                 : null,
                     };
-                })
+                },
             );
 
             // merge

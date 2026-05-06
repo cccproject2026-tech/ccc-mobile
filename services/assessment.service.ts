@@ -6,6 +6,7 @@ import {
     SubmitPreSurveyPayload,
     SubmittedAnswersResponse,
 } from "@/types/assessment.types";
+import { withRetry } from "@/utils/apiConcurrency";
 import { apiClient } from "./api/client";
 import { ENDPOINTS } from "./api/endpoints";
 
@@ -137,11 +138,13 @@ export const assessmentService = {
       userId,
     );
 
-    const response = await apiClient.get<{
-      success: boolean;
-      message: string;
-      data: SubmittedAnswersResponse;
-    }>(ENDPOINTS.ASSESSMENTS.FETCH_ANSWERS(assessmentId, userId));
+    const response = await withRetry(() =>
+      apiClient.get<{
+        success: boolean;
+        message: string;
+        data: SubmittedAnswersResponse;
+      }>(ENDPOINTS.ASSESSMENTS.FETCH_ANSWERS(assessmentId, userId)),
+    );
 
     console.log("📥 Answers fetched:", response.data);
     return response.data;

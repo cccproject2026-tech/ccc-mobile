@@ -26,6 +26,7 @@ import {
     parseMentorshipInsightsFromApi,
     parseTranscriptFromApi,
 } from "@/utils/mentorshipSessionExtras";
+import { withRetry } from "@/utils/apiConcurrency";
 
 /** Backend may return a raw array or { success, data } from GET /roadmaps/sessions/:userId */
 function normalizeRoadmapSessionsPayload(responseData: unknown): any[] {
@@ -218,9 +219,11 @@ export const roadmapService = {
             throw new Error("userId is required to fetch mentorship sessions");
         }
 
-        const response = await apiClient.get<
-            MentorshipSessionsApiResponse | MentorshipSession[] | unknown
-        >(ENDPOINTS.ROADMAPS.GET_SESSIONS(userId));
+        const response = await withRetry(() =>
+            apiClient.get<MentorshipSessionsApiResponse | MentorshipSession[] | unknown>(
+                ENDPOINTS.ROADMAPS.GET_SESSIONS(userId),
+            ),
+        );
 
         const raw = normalizeRoadmapSessionsPayload(response.data);
 
