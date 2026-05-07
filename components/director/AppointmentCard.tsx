@@ -74,12 +74,31 @@ const AppointmentCard: React.FC<Props> = ({
   const showJoin = Boolean(meetingJoinUrl);
   const showDetails = Boolean(onViewDetails);
   const joinLabel = mode || "Join";
+  const [platformIconFailed, setPlatformIconFailed] = React.useState(false);
+
+  const platformBadgeIconName = React.useMemo(() => {
+    const key = String(mode || "").toLowerCase();
+    if (key.includes("zoom")) return "videocam-outline" as const;
+    if (key.includes("google")) return "logo-google" as const;
+    if (key.includes("team")) return "people-outline" as const;
+    if (key.includes("phone")) return "call-outline" as const;
+    return "globe-outline" as const;
+  }, [mode]);
 
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.platformBadge}>
-          <Image source={platformIcon} style={styles.platformBadgeIcon} resizeMode="cover" />
+          {platformIcon && !platformIconFailed ? (
+            <Image
+              source={platformIcon}
+              style={styles.platformBadgeIcon}
+              resizeMode="contain"
+              onError={() => setPlatformIconFailed(true)}
+            />
+          ) : (
+            <Ionicons name={platformBadgeIconName} size={20} color="rgba(234,247,255,0.95)" />
+          )}
         </View>
 
         <View style={{ flex: 1, minWidth: 0 }}>
