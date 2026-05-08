@@ -18,6 +18,8 @@ import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
 import { JSX, useEffect, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import { format, isValid, parse } from "date-fns";
 import {
     ActivityIndicator,
     Alert,
@@ -47,8 +49,29 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
     
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [activeDateField, setActiveDateField] = useState<string | null>(null);
 
     const isValidObjectId = (id: string | undefined) => !!id;
+
+    const parseAnyDate = (raw?: string): Date | null => {
+        const v = String(raw ?? "").trim();
+        if (!v) return null;
+
+        // 1) ISO-like: 2026-05-08
+        const iso = parse(v, "yyyy-MM-dd", new Date());
+        if (isValid(iso) && v.length >= 10 && v[4] === "-" && v[7] === "-") return iso;
+
+        // 2) Legacy: DD / MM / YY
+        const legacy = parse(v, "dd / MM / yy", new Date());
+        if (isValid(legacy)) return legacy;
+
+        // 3) Fallback to Date parsing (API may return full ISO)
+        const d = new Date(v);
+        return isValid(d) ? d : null;
+    };
+
+    const formatForApi = (d: Date) => format(d, "yyyy-MM-dd");
+    const formatForUi = (d: Date) => format(d, "dd MMM yyyy");
 
     const ensureUrlScheme = (url: string) => {
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -453,47 +476,48 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                 );
 
             case "DATE_PICKER":
-                // Logic to allow mentor to change date if needed
+                // User-friendly date picker (tap to open native calendar)
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         <View style={styles.fieldRow}>
                             <Text style={[styles.fieldLabel, { marginBottom: 0, flex: 1 }]}>
                                 {extra.name}
                             </Text>
-                            <View style={styles.dateInputContainer}>
-                                <TextInput
-                                    style={styles.dateInput}
-                                    placeholder="DD / MM / YY"
-                                    placeholderTextColor="#9cc2ff"
-                                    value={formData[extra.name] !== undefined ? formData[extra.name] : (extra.date || "")}
-                                    keyboardType="number-pad"
-                                    maxLength={12}
-                                    onChangeText={v => {
-                                        // Simple date formatting
-                                        const raw = v.replace(/\D/g, "");
-                                        let formatted = "";
-                                        if (raw.length > 0) {
-                                            formatted = raw.slice(0, 2);
-                                            if (raw.length > 2) {
-                                                formatted += " / " + raw.slice(2, 4);
-                                                if (raw.length > 4) {
-                                                    formatted += " / " + raw.slice(4, 6);
-                                                }
-                                            }
-                                        }
-                                        handleChange(extra.name, formatted);
-                                    }}
-                                />
-                            </View>
+                            <Pressable
+                                onPress={() => setActiveDateField(extra.name)}
+                                style={styles.dateInputContainer}
+                                hitSlop={8}
+                            >
+                                {(() => {
+                                    const currentRaw = formData[extra.name] !== undefined ? formData[extra.name] : (extra.date || "");
+                                    const parsed = parseAnyDate(currentRaw);
+                                    return (
+                                        <Text style={[styles.dateInput, parsed ? null : styles.datePlaceholder]} numberOfLines={1}>
+                                            {parsed ? formatForUi(parsed) : "Select date"}
+                                        </Text>
+                                    );
+                                })()}
+                            </Pressable>
                         </View>
                         
-                        {/* Change Date Button - always show for mentor as per request */}
-                        <Pressable
-                            style={[styles.button, { marginTop: 8 }]}
-                            onPress={() => handleSubmit()} // Save when "Change Date" is conceptually done? Or just rely on separate save?
-                        >
-                            <Text style={styles.buttonText}>Change Date</Text>
-                        </Pressable>
+                        {activeDateField === extra.name ? (
+                            <DateTimePicker
+                                value={parseAnyDate(formData[extra.name] ?? extra.date) ?? new Date()}
+                                mode="date"
+                                display="default"
+                                onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                                    // Android emits "dismissed" when closing picker without selection.
+                                    if (event.type === "dismissed") {
+                                        setActiveDateField(null);
+                                        return;
+                                    }
+                                    if (selectedDate) {
+                                        handleChange(extra.name, formatForApi(selectedDate));
+                                    }
+                                    setActiveDateField(null);
+                                }}
+                            />
+                        ) : null}
                     </View>
                 );
 
@@ -870,6 +894,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         padding: 0,
         minWidth: 120,
+    },
+    datePlaceholder: {
+        color: "#9cc2ff",
+        fontWeight: "600",
     },
     button: {
         
