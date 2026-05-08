@@ -404,7 +404,9 @@ export const useRoadmapDocuments = (
 
             // Filter by field name ("extraName")
             if (extraName) {
-                return flatFiles.filter((f: any) => f.extraName === extraName);
+                const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+                const wanted = norm(extraName);
+                return flatFiles.filter((f: any) => norm(f.extraName) === wanted);
             }
             console.log("Flattened roadmap documents:----->>>>>>>>>>>>>>", flatFiles);
 

@@ -20,11 +20,13 @@ import { JSX, useEffect, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { format, isValid, parse } from "date-fns";
+import { SignatureModal } from "@/components/forms/SignatureModal";
 import {
     ActivityIndicator,
     Alert,
     Image,
     Linking,
+    Modal,
     Pressable,
     StyleSheet,
     Text,
@@ -50,6 +52,14 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [activeDateField, setActiveDateField] = useState<string | null>(null);
+    const [signaturePreview, setSignaturePreview] = useState<{ visible: boolean; uri: string | null }>({
+        visible: false,
+        uri: null,
+    });
+    const [signatureEditor, setSignatureEditor] = useState<{ visible: boolean; fieldName: string | null }>({
+        visible: false,
+        fieldName: null,
+    });
 
     const isValidObjectId = (id: string | undefined) => !!id;
 
@@ -129,6 +139,8 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
 
     const createExtras = useCreateRoadmapExtras();
     const updateExtras = useUpdateRoadmapExtras();
+    const uploadDocument = useUploadRoadmapDocument();
+    const deleteDocument = useDeleteRoadmapDocument();
     const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
 
     const isUpdateMode = !!existingExtras;
@@ -271,7 +283,7 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
         }
     };
 
-    /** ───────────────────── UPLOAD FIELD (View Only) ───────────────────── */
+    /** ───────────────────── UPLOAD FIELD ───────────────────── */
     const UploadField = ({ extraName }: { extraName: string }) => {
         const { data: docs = [], isLoading } = useRoadmapDocuments(
             roadmapId!,
@@ -286,8 +298,77 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
             extraName.toLowerCase().includes("photo") ||
             extraName.toLowerCase().includes("media");
 
+        // If we're viewing as a mentor (menteeId passed), keep uploads read-only.
+        // For pastor self-view (userId == currentUser.id), allow upload/delete.
+        const isReadOnly = !!userId && currentUser?.id && userId !== currentUser.id;
+
+        const pickAndUpload = async () => {
+            if (isReadOnly) return;
+            if (!currentUser?.id) {
+                Alert.alert("Error", "User not authenticated");
+                return;
+            }
+            const res = await DocumentPicker.getDocumentAsync({
+                type: "*/*",
+                multiple: true,
+            });
+            if (res.canceled) return;
+
+            try {
+                for (const a of res.assets) {
+                    await uploadDocument.mutateAsync({
+                        roadMapId: roadmapId!,
+                        userId: currentUser.id,
+                        nestedRoadMapItemId: itemId!,
+                        extraName,
+                        file: {
+                            uri: a.uri,
+                            name: a.name,
+                            type: a.mimeType || "application/octet-stream",
+                        },
+                    });
+                }
+            } catch (err: any) {
+                Alert.alert("Upload failed", err?.message || "Could not upload file. Please try again.");
+            }
+        };
+
+        const confirmDelete = (doc: any) => {
+            if (isReadOnly) return;
+            Alert.alert(
+                "Delete file",
+                `Delete "${formatFileName(doc.fileName)}"?`,
+                [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () => {
+                            if (!currentUser?.id) return;
+                            deleteDocument.mutate({
+                                roadMapId: roadmapId!,
+                                userId: currentUser.id,
+                                nestedId: itemId!,
+                                fileUrl: doc.fileUrl,
+                                uploadBatchId: doc.uploadBatchId,
+                            });
+                        },
+                    },
+                ],
+            );
+        };
+
         return (
             <View style={{ marginBottom: 20 }}>
+                {!isReadOnly ? (
+                    <Pressable style={[styles.uploadButton, styles.uploadButtonWhite]} onPress={pickAndUpload}>
+                        <Ionicons name="cloud-upload-outline" size={22} color="#2563eb" />
+                        <Text style={styles.uploadButtonText}>
+                            {isMediaUpload ? "Upload media" : "Upload file"}
+                        </Text>
+                    </Pressable>
+                ) : null}
+
                 {isLoading ? (
                     <ActivityIndicator color="#fff" style={{ marginTop: 8 }} />
                 ) : (
@@ -326,6 +407,7 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                     <View key={doc._id} style={styles.fileRow}>
                                         <Pressable
                                             onPress={() => Linking.openURL(doc.fileUrl)}
+                                            onLongPress={() => confirmDelete(doc)}
                                             style={styles.filePress}
                                         >
                                             <View style={styles.fileIcon}>
@@ -348,14 +430,12 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                     )
                 )}
 
-                {/* Download Button */}
-                <Pressable
-                    style={[styles.uploadButton, styles.uploadButtonWhite]}
-                    onPress={async () => {
-                        if (docs.length > 0) {
+                {/* Download button only when server files exist */}
+                {!isLoading && docs.length > 0 ? (
+                    <Pressable
+                        style={[styles.uploadButton, styles.uploadButtonWhite]}
+                        onPress={async () => {
                             try {
-                                // For now, open each file in a new browser window/tab
-                                // In a real app, this might trigger a zip download or sequential downloads
                                 let successCount = 0;
                                 for (const doc of docs) {
                                     if (doc.fileUrl) {
@@ -363,23 +443,18 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                         successCount++;
                                     }
                                 }
-                                
                                 if (successCount === 0) {
                                     Alert.alert("Error", "Could not open any documents.");
                                 }
                             } catch (err: any) {
                                 Alert.alert("Error", "Could not download files: " + err.message);
                             }
-                        } else {
-                            Alert.alert("No Files", "There are no files uploaded yet.");
-                        }
-                    }}
-                >
-                    <Ionicons name="download-outline" size={22} color="#2563eb" />
-                    <Text style={styles.uploadButtonText}>
-                        Download All {extraName}s
-                    </Text>
-                </Pressable>
+                        }}
+                    >
+                        <Ionicons name="download-outline" size={22} color="#2563eb" />
+                        <Text style={styles.uploadButtonText}>Download</Text>
+                    </Pressable>
+                ) : null}
             </View>
         );
     };
@@ -665,33 +740,42 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                         <Pressable
                             style={styles.signaturePlaceholder}
                             onPress={() => {
-                                if (!signatureValue) return;
+                                // If not signed yet, open signature capture.
+                                if (!signatureValue) {
+                                    setSignatureEditor({ visible: true, fieldName: extra.name });
+                                    return;
+                                }
 
-                                Alert.alert(
-                                    "Signature Options",
-                                    "What would you like to do?",
-                                    [
-                                        {
-                                            text: "View",
-                                            onPress: () =>
-                                                Linking.openURL(signatureValue).catch(() =>
-                                                    Alert.alert(
-                                                        "Error",
-                                                        "Could not open signature image."
-                                                    )
-                                                ),
+                                const valueStr = String(signatureValue);
+                                const isDataImage = valueStr.startsWith("data:image");
+
+                                Alert.alert("Signature", "Choose an action", [
+                                    {
+                                        text: "View",
+                                        onPress: () => {
+                                            if (isDataImage) {
+                                                setSignaturePreview({ visible: true, uri: valueStr });
+                                            } else {
+                                                Linking.openURL(valueStr).catch(() =>
+                                                    Alert.alert("Error", "Could not open signature link."),
+                                                );
+                                            }
                                         },
-                                        {
-                                            text: "Download",
-                                            onPress: () => downloadSignature(signatureValue),
-                                        },
-                                        { text: "Cancel", style: "cancel" },
-                                    ]
-                                );
+                                    },
+                                    {
+                                        text: "Edit",
+                                        onPress: () => setSignatureEditor({ visible: true, fieldName: extra.name }),
+                                    },
+                                    {
+                                        text: "Download",
+                                        onPress: () => downloadSignature(valueStr),
+                                    },
+                                    { text: "Cancel", style: "cancel" },
+                                ]);
                             }}
                         >
                             <Text style={styles.tapToSignText}>
-                                {signatureValue ? "Download Signature" : "No signature provided yet"}
+                                {signatureValue ? "Tap to view or edit signature" : "Tap to add signature"}
                             </Text>
                         </Pressable>
                     </View>
@@ -735,6 +819,50 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                     )}
                 </Pressable>
             </View>
+
+            <Modal
+                visible={signaturePreview.visible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setSignaturePreview({ visible: false, uri: null })}
+            >
+                <View style={styles.signatureModalBackdrop}>
+                    <View style={styles.signatureModalCard}>
+                        <Text style={styles.signatureModalTitle}>Signature</Text>
+                        {signaturePreview.uri ? (
+                            <Image source={{ uri: signaturePreview.uri }} style={styles.signatureModalImage} resizeMode="contain" />
+                        ) : null}
+                        <View style={styles.signatureModalActions}>
+                            <Pressable
+                                style={[styles.uploadButton, styles.uploadButtonWhite, { flex: 1 }]}
+                                onPress={() => {
+                                    if (signaturePreview.uri) downloadSignature(signaturePreview.uri);
+                                }}
+                            >
+                                <Ionicons name="download-outline" size={20} color="#2563eb" />
+                                <Text style={styles.uploadButtonText}>Download</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.uploadButton, styles.uploadButtonWhite, { flex: 1 }]}
+                                onPress={() => setSignaturePreview({ visible: false, uri: null })}
+                            >
+                                <Ionicons name="close-outline" size={22} color="#2563eb" />
+                                <Text style={styles.uploadButtonText}>Close</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            <SignatureModal
+                visible={signatureEditor.visible}
+                onClose={() => setSignatureEditor({ visible: false, fieldName: null })}
+                onSave={(signature) => {
+                    const fieldName = signatureEditor.fieldName;
+                    if (!fieldName) return;
+                    handleChange(fieldName, signature);
+                }}
+            />
 
             <SimpleSuccessModal
                 visible={showSuccessModal}
@@ -1013,6 +1141,40 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     tapToSignText: { color: '#9cc2ff', fontSize: 16 },
+    signatureModalBackdrop: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.55)",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+    },
+    signatureModalCard: {
+        width: "100%",
+        maxWidth: 520,
+        borderRadius: 16,
+        padding: 14,
+        backgroundColor: "rgba(18, 34, 64, 0.98)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.18)",
+    },
+    signatureModalTitle: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "900",
+        marginBottom: 10,
+        textAlign: "center",
+    },
+    signatureModalImage: {
+        width: "100%",
+        height: 260,
+        borderRadius: 12,
+        backgroundColor: "rgba(255,255,255,0.06)",
+    },
+    signatureModalActions: {
+        flexDirection: "row",
+        gap: 10,
+        marginTop: 12,
+    },
     centeredLinkButton: {
         borderRadius: 16,
         paddingVertical: 12,
