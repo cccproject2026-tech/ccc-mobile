@@ -7,10 +7,11 @@ type Props = {
   onPress: () => void;
   leftIcon?: React.ReactNode;
   disabled?: boolean;
+  textColor?: string;
   style?: StyleProp<ViewStyle>;
 };
 
-export function PrimaryButton({ label, onPress, leftIcon, disabled, style }: Props) {
+export function PrimaryButton({ label, onPress, leftIcon, disabled, textColor, style }: Props) {
   return (
     <Pressable
       onPress={onPress}
@@ -23,7 +24,7 @@ export function PrimaryButton({ label, onPress, leftIcon, disabled, style }: Pro
       ]}
     >
       {leftIcon ? <View style={styles.icon}>{leftIcon}</View> : null}
-      <Text style={styles.text}>{label}</Text>
+      <Text style={[styles.text, textColor ? { color: textColor } : null]}>{label}</Text>
     </Pressable>
   );
 }
@@ -38,9 +39,15 @@ const styles = StyleSheet.create({
     minHeight: 48,
     paddingHorizontal: 18,
     borderRadius: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(255,255,255,0.92)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.56)",
+    borderColor: "rgba(255,255,255,0.32)",
+    overflow: "hidden",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
   },
   pressed: { opacity: 0.9 },
   disabled: { opacity: 0.55 },

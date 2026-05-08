@@ -17,10 +17,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function MenteeDocumentsScreen() {
-  const { menteeId } = useLocalSearchParams()
+  const { menteeId, menteeName, email } = useLocalSearchParams<{
+    menteeId?: string
+    menteeName?: string
+    email?: string
+  }>()
   const id = typeof menteeId === "string" ? menteeId : undefined
 
-  // Fetch mentee data
+  // Best-effort mentee lookup for display only. Do not block document viewing on this.
   const { data: menteesData, isLoading: isLoadingMentees } = useMentees()
   const mentee = useMemo(() => {
     return menteesData?.mentees?.find((m) => m.id === id)
@@ -88,7 +92,7 @@ export default function MenteeDocumentsScreen() {
     )
   }
 
-  if (!mentee) {
+  if (!id) {
     return (
       <LinearGradient
         colors={["#0D588E", "#0D4578", "#0E3563"]}
@@ -97,13 +101,17 @@ export default function MenteeDocumentsScreen() {
         style={{ flex: 1 }}
       >
         <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ color: "white", fontSize: 18 }}>Mentee not found</Text>
+          <Text style={{ color: "white", fontSize: 18 }}>Missing mentee id</Text>
         </SafeAreaView>
       </LinearGradient>
     )
   }
 
-  const menteeName = `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee"
+  const resolvedMenteeName =
+    (typeof menteeName === "string" && menteeName.trim()) ||
+    `${mentee?.firstName || ""} ${mentee?.lastName || ""}`.trim() ||
+    (typeof email === "string" && email.trim()) ||
+    "Mentee"
 
   return (
     <LinearGradient
@@ -121,7 +129,7 @@ export default function MenteeDocumentsScreen() {
               <Ionicons name="menu" size={26} color="#FFFFFF" />
             </TouchableOpacity>
             <View style={styles.namePill}>
-              <Text style={styles.namePillText}>{menteeName}</Text>
+              <Text style={styles.namePillText}>{resolvedMenteeName}</Text>
             </View>
             <View style={styles.navActions}>
               <View style={styles.notificationBadge}>
@@ -146,7 +154,10 @@ export default function MenteeDocumentsScreen() {
               onPress={() =>
                 router.push({
                   pathname: "/(mentor-tabs)/mentee-profile",
-                  params: { menteeId: mentee.id },
+                  params: {
+                    menteeId: id,
+                    email: typeof email === "string" ? email : undefined,
+                  },
                 })
               }
             >
@@ -155,7 +166,7 @@ export default function MenteeDocumentsScreen() {
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>Documents</Text>
               <Text style={styles.headerBreadcrumb}>
-                My Mentee › {menteeName}
+                My Mentee › {resolvedMenteeName}
               </Text>
             </View>
             <View style={{ width: 24 }} />
@@ -198,7 +209,7 @@ export default function MenteeDocumentsScreen() {
           {/* Document Library Banner */}
           <View style={styles.libraryBanner}>
             <Text style={styles.libraryBannerText}>
-              Document Library • {menteeName}
+              Document Library • {resolvedMenteeName}
             </Text>
           </View>
 

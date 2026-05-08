@@ -2,30 +2,38 @@ import { icons } from "@/constants/images"
 import { useMentees } from "@/hooks/mentees/useMentees"
 import { useDocumentsByUserId } from "@/hooks/profile/useProfile"
 import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack, useLocalSearchParams } from "expo-router"
 import React, { useMemo } from "react"
 import {
   ActivityIndicator,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { CommonCard, GradientBackground, SectionHeader } from "@/components/ui/design-system"
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme"
 
 export default function MenteeDocumentsScreen() {
-  const { menteeId } = useLocalSearchParams()
-  console.log(menteeId, "menteeId");
+  const { menteeId, menteeName, email } = useLocalSearchParams<{
+    menteeId?: string
+    menteeName?: string
+    email?: string
+  }>()
   const id = typeof menteeId === "string" ? menteeId : undefined
 
-  // Fetch mentee data
+  // Best-effort mentee lookup for display only.
+  // Do not block document viewing on this, because `useMentees()` params/data-shape can differ
+  // depending on navigation entry point.
   const { data: menteesData, isLoading: isLoadingMentees } = useMentees()
   const mentee = useMemo(() => {
-    return menteesData?.pages.flatMap((page: any) => page.mentees)?.find((m: any) => m.id === id)
-  }, [menteesData, id])
+    return menteesData?.pages
+      ?.flatMap((page: any) => page.mentees)
+      ?.find((m: any) => m.id === id)
+  }, [menteeId, menteesData, id])
 
   // Fetch documents for the mentee
   const { data: documents, isLoading: isLoadingDocuments } = useDocumentsByUserId(id)
@@ -75,366 +83,248 @@ export default function MenteeDocumentsScreen() {
 
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={["#0D588E", "#0D4578", "#0E3563"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={{ flex: 1 }}
-      >
-        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color="white" />
-          <Text style={{ color: "white", fontSize: 18, marginTop: 16 }}>Loading documents...</Text>
+      <GradientBackground>
+        <SafeAreaView style={styles.safe} edges={["top"]}>
+          <Stack.Screen options={{ headerShown: false }} />
+          <View style={styles.centerState}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.stateTitle}>Loading documents...</Text>
+          </View>
         </SafeAreaView>
-      </LinearGradient>
+      </GradientBackground>
     )
   }
 
-  if (!mentee) {
+  if (!id) {
     return (
-      <LinearGradient
-        colors={["#0D588E", "#0D4578", "#0E3563"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={{ flex: 1 }}
-      >
-        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ color: "white", fontSize: 18 }}>Mentee not found</Text>
+      <GradientBackground>
+        <SafeAreaView style={styles.safe} edges={["top"]}>
+          <Stack.Screen options={{ headerShown: false }} />
+          <View style={styles.centerState}>
+            <Ionicons name="alert-circle-outline" size={40} color="rgba(255,255,255,0.35)" />
+            <Text style={styles.stateTitle}>Missing mentee id</Text>
+          </View>
         </SafeAreaView>
-      </LinearGradient>
+      </GradientBackground>
     )
   }
 
-  const menteeName = `${mentee.firstName || ""} ${mentee.lastName || ""}`.trim() || "Mentee"
+  const resolvedMenteeName =
+    (typeof menteeName === "string" && menteeName.trim()) ||
+    `${mentee?.firstName || ""} ${mentee?.lastName || ""}`.trim() ||
+    (typeof email === "string" && email.trim()) ||
+    "Mentee"
 
   return (
-    <LinearGradient
-      colors={["#0D588E", "#0D4578", "#0E3563"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={{ flex: 1 }}
-    >
+    <GradientBackground>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.contentContainer}>
-          {/* Top Navigation Bar */}
-          <View style={styles.topNav}>
-            <TouchableOpacity activeOpacity={0.8}>
-              <Ionicons name="menu" size={26} color="#FFFFFF" />
-            </TouchableOpacity>
-            <View style={styles.namePill}>
-              <Text style={styles.namePillText}>{menteeName}</Text>
-            </View>
-            <View style={styles.navActions}>
-              <View style={styles.notificationBadge}>
-                <TouchableOpacity activeOpacity={0.8}>
-                  <Ionicons name="notifications" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
-                <View style={styles.notificationDot}>
-                  <Text style={styles.notificationCount}>3</Text>
-                </View>
-              </View>
-              <TouchableOpacity activeOpacity={0.8} style={styles.profileButton}>
-                <Ionicons name="person-circle" size={28} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </View>
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionHeader
+            title="Documents"
+            subtitle={`My Mentee · ${resolvedMenteeName}`}
+            variant="compact"
+          />
 
-          {/* Header with Back Button */}
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.backButton}
+          <View style={styles.topRow}>
+            <Pressable
               onPress={() =>
                 router.push({
                   pathname: "/(mentor)/mentees/mentee-profile" as any,
-                  params: { menteeId: mentee.id },
+                  params: {
+                    menteeId: id,
+                    email: typeof email === "string" ? email : undefined,
+                  },
                 })
               }
+              style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Go back to mentee profile"
             >
-              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>Documents</Text>
-              <Text style={styles.headerBreadcrumb}>
-                My Mentee › {menteeName}
-              </Text>
-            </View>
-            <View style={{ width: 24 }} />
+              <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+              <Text style={styles.backBtnText}>Back</Text>
+            </Pressable>
           </View>
 
-          {/* New Documents Banner */}
-          {formattedDocuments.recentUploads.length > 0 && (
-            <TouchableOpacity activeOpacity={0.9} style={styles.uploadBanner}>
-              <Text style={styles.uploadBannerText}>
-                {formattedDocuments.recentUploads.length} New Documents Uploaded
-              </Text>
-              <Ionicons name="download-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
-
-          {/* Recent Uploads List */}
-          {formattedDocuments.recentUploads.length > 0 && (
-            <View style={styles.recentUploadsSection}>
-              {formattedDocuments.recentUploads.map((doc) => (
-                <View key={doc.id} style={styles.documentRow}>
-                  <View style={styles.documentThumb}>
-                    <Image
-                      source={icons.document}
-                      style={styles.documentThumbImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                  <View style={styles.documentInfo}>
-                    <Text style={styles.documentTitle}>{doc.title}</Text>
-                    <Text style={styles.documentMeta}>{doc.time}</Text>
-                  </View>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Ionicons name="download-outline" size={22} color="#FFFFFF" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Document Library Banner */}
-          <View style={styles.libraryBanner}>
-            <Text style={styles.libraryBannerText}>
-              Document Library • {menteeName}
-            </Text>
-          </View>
-
-          {/* Document Library List */}
-          <View style={styles.librarySection}>
-            {formattedDocuments.library.length > 0 ? (
-              formattedDocuments.library.map((doc) => (
-                <View key={doc.id} style={styles.libraryRow}>
-                  <View style={styles.libraryThumb}>
-                    <Image
-                      source={icons.document}
-                      style={styles.libraryThumbImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                  <View style={styles.libraryInfo}>
-                    <Text style={styles.libraryTitle}>{doc.title}</Text>
-                    <Text style={styles.libraryMeta}>{doc.date}</Text>
-                  </View>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-                  </TouchableOpacity>
-                </View>
-              ))
-            ) : (
-              <View style={{ paddingVertical: 20, alignItems: "center" }}>
-                <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>
-                  No documents available
+          {formattedDocuments.recentUploads.length > 0 ? (
+            <CommonCard style={styles.bannerCard}>
+              <View style={styles.bannerRow}>
+                <Text style={styles.bannerText} numberOfLines={2}>
+                  {formattedDocuments.recentUploads.length} new documents uploaded
                 </Text>
+                <View style={styles.bannerIconWrap}>
+                  <Ionicons name="cloud-download-outline" size={18} color="rgba(255,255,255,0.9)" />
+                </View>
               </View>
-            )}
+            </CommonCard>
+          ) : null}
+
+          {formattedDocuments.recentUploads.length > 0 ? (
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionLabel}>Recent uploads</Text>
+              <CommonCard>
+                <View style={styles.list}>
+                  {formattedDocuments.recentUploads.map((doc, idx) => (
+                    <View
+                      key={doc.id}
+                      style={[styles.row, idx > 0 && styles.rowBorder]}
+                    >
+                      <View style={styles.rowLeft}>
+                        <View style={styles.docThumb}>
+                          <Image source={icons.document} style={styles.docThumbImg} resizeMode="contain" />
+                        </View>
+                        <View style={styles.rowText}>
+                          <Text style={styles.rowTitle} numberOfLines={1}>{doc.title}</Text>
+                          <Text style={styles.rowMeta} numberOfLines={1}>{doc.time}</Text>
+                        </View>
+                      </View>
+                      <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
+                        <Ionicons name="download-outline" size={20} color="rgba(255,255,255,0.9)" />
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              </CommonCard>
+            </View>
+          ) : null}
+
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionLabel}>Document library</Text>
+            <CommonCard>
+              {formattedDocuments.library.length > 0 ? (
+                <View style={styles.list}>
+                  {formattedDocuments.library.map((doc, idx) => (
+                    <View
+                      key={doc.id}
+                      style={[styles.row, idx > 0 && styles.rowBorder]}
+                    >
+                      <View style={styles.rowLeft}>
+                        <View style={styles.docThumb}>
+                          <Image source={icons.document} style={styles.docThumbImg} resizeMode="contain" />
+                        </View>
+                        <View style={styles.rowText}>
+                          <Text style={styles.rowTitle} numberOfLines={1}>{doc.title}</Text>
+                          <Text style={styles.rowMeta} numberOfLines={1}>{doc.date}</Text>
+                        </View>
+                      </View>
+                      <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
+                        <Ionicons name="trash-outline" size={18} color="rgba(255,255,255,0.82)" />
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyBlock}>
+                  <Ionicons name="document-outline" size={26} color="rgba(255,255,255,0.28)" />
+                  <Text style={styles.emptyText}>No documents available</Text>
+                </View>
+              )}
+            </CommonCard>
           </View>
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </GradientBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  contentContainer: {
-    paddingHorizontal: 0,
-    paddingBottom: 60,
-    gap: 0,
-  },
-  topNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  safe: { flex: 1 },
+  scroll: { flex: 1 },
+  scrollContent: {
+    paddingBottom: 36,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#0D588E",
-  },
-  namePill: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(126, 87, 194, 0.6)",
-  },
-  namePillText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  navActions: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: 12,
   },
-  notificationBadge: {
-    position: "relative",
-  },
-  notificationDot: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: "#FFD700",
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+
+  topRow: { marginTop: 2, marginBottom: 4, flexDirection: "row" },
+  backBtn: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
   },
-  notificationCount: {
-    color: "#0D588E",
-    fontSize: 11,
+  backBtnText: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 14,
     fontWeight: "700",
   },
-  profileButton: {
+  pressed: { opacity: 0.88 },
+
+  bannerCard: { padding: 14 },
+  bannerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  bannerText: { color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "700", flex: 1 },
+  bannerIconWrap: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
     alignItems: "center",
     justifyContent: "center",
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 12,
+
+  sectionBlock: { gap: 8 },
+  sectionLabel: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginTop: 6,
+    paddingHorizontal: 2,
   },
-  backButton: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  headerBreadcrumb: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
-    marginTop: 2,
-  },
-  uploadBanner: {
+
+  list: {},
+  row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginHorizontal: 16,
-    marginTop: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.4)",
-    backgroundColor: "transparent",
-  },
-  uploadBannerText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  recentUploadsSection: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-    gap: 16,
-  },
-  documentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
+    gap: 12,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "rgba(13, 63, 105, 0.6)",
-    borderRadius: 12,
   },
-  documentThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 8,
-    backgroundColor: "#E8EFF5",
+  rowBorder: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: roadmapTheme.divider,
+  },
+  rowLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, minWidth: 0 },
+  docThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
   },
-  documentThumbImage: {
-    width: "100%",
-    height: "100%",
-  },
-  documentInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  documentTitle: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  documentMeta: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
-  },
-  libraryBanner: {
-    marginHorizontal: 16,
-    marginTop: 32,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.4)",
-    backgroundColor: "transparent",
-    alignItems: "center",
-  },
-  libraryBannerText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  librarySection: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-    gap: 16,
-  },
-  libraryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "rgba(13, 63, 105, 0.6)",
+  docThumbImg: { width: 22, height: 22, tintColor: "rgba(255,255,255,0.9)" },
+  rowText: { flex: 1, minWidth: 0, gap: 2 },
+  rowTitle: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
+  rowMeta: { color: roadmapTheme.textMuted, fontSize: 12.5, fontWeight: "500" },
+  iconBtn: {
+    width: 40,
+    height: 40,
     borderRadius: 12,
-  },
-  libraryThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 8,
-    backgroundColor: "#E8EFF5",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
   },
-  libraryThumbImage: {
-    width: "100%",
-    height: "100%",
-  },
-  libraryInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  libraryTitle: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  libraryMeta: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
-  },
+
+  emptyBlock: { paddingVertical: 22, alignItems: "center", gap: 8 },
+  emptyText: { color: roadmapTheme.textMuted, fontSize: 13, fontWeight: "600" },
+
+  centerState: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24, gap: 10 },
+  stateTitle: { color: roadmapTheme.textPrimary, fontSize: 15, fontWeight: "700", textAlign: "center" },
 })

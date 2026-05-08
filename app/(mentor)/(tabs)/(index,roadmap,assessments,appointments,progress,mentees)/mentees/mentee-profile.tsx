@@ -1,4 +1,3 @@
-import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { icons } from "@/constants/images"
 import { useMenteeByEmail } from "@/hooks/mentees/useMenteeByEmail"
 import { useMentees } from "@/hooks/mentees/useMentees"
@@ -9,6 +8,7 @@ import React, { useMemo } from "react"
 import {
   ActivityIndicator,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,7 +16,8 @@ import {
   View,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import AppGradientBackground from "@/components/layout/AppGradientBackground"
+import { CommonCard, GradientBackground, PrimaryButton, SectionHeader } from "@/components/ui/design-system"
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme"
 
 export default function MenteeProfileScreen() {
   const { menteeId, email: emailParam } = useLocalSearchParams<{ menteeId?: string; email?: string }>()
@@ -139,303 +140,200 @@ export default function MenteeProfileScreen() {
 
   if (isLoading) {
     return (
-      <AppGradientBackground>
+      <GradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
+        <SafeAreaView style={styles.safe} edges={["top"]}>
+          <View style={styles.centerState}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.stateTitle}>Loading profile...</Text>
+          </View>
         </SafeAreaView>
-      </AppGradientBackground>
+      </GradientBackground>
     )
   }
 
   if (isError || !menteeData) {
     return (
-      <AppGradientBackground>
+      <GradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
-          <Text style={{ color: "#FFFFFF", fontSize: 16, textAlign: "center" }}>
-            Failed to load mentee profile. Please try again.
-          </Text>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={{ marginTop: 20, padding: 12, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 8 }}
-          >
-            <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>Go Back</Text>
-          </TouchableOpacity>
+        <SafeAreaView style={styles.safe} edges={["top"]}>
+          <View style={styles.centerState}>
+            <Ionicons name="cloud-offline-outline" size={40} color="rgba(255,255,255,0.35)" />
+            <Text style={styles.stateTitle}>Failed to load mentee profile.</Text>
+            <Text style={styles.stateSub}>Please try again.</Text>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]}
+            >
+              <Text style={styles.ghostBtnText}>Go Back</Text>
+            </Pressable>
+          </View>
         </SafeAreaView>
-      </AppGradientBackground>
+      </GradientBackground>
     )
   }
 
   return (
-    <AppGradientBackground>
+    <GradientBackground>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.contentContainer}>
-          {/* Top Navigation Bar */}
-          {/* <View style={styles.topNav}>
-            <TouchableOpacity activeOpacity={0.8}>
-              <Ionicons name="menu" size={26} color="#FFFFFF" />
-            </TouchableOpacity>
-            <View style={styles.namePill}>
-              <Text style={styles.namePillText}>{mentee.name}</Text>
-            </View>
-            <View style={styles.navActions}>
-              <View style={styles.notificationBadge}>
-                <TouchableOpacity activeOpacity={0.8}>
-                  <Ionicons name="notifications" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
-                <View style={styles.notificationDot}>
-                  <Text style={styles.notificationCount}>3</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.profileButton}
-              >
-                <Image source={icons.profileTabIcon} style={{ width: 28, height: 28, tintColor: "#FFFFFF" }} />
-              </TouchableOpacity>
-            </View>
-          </View> */}
-        <PastorNavigationHeader showNameTag tagName={mentee.name || ""} />
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionHeader
+            title={mentee.name || "Mentee Profile"}
+            subtitle="My Mentee · Profile"
+            variant="compact"
+          />
 
-          {/* Header with Back Button */}
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.backButton}
+          <View style={styles.topRow}>
+            <Pressable
               onPress={() => router.back()}
+              style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
-              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>{mentee.name}</Text>
-              <Text style={styles.headerBreadcrumb}>My Mentee › Profile</Text>
-            </View>
-            <TouchableOpacity activeOpacity={0.8}>
-              <Ionicons name="ellipsis-vertical" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+              <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+              <Text style={styles.backBtnText}>Back</Text>
+            </Pressable>
           </View>
 
-          {/* Profile Card */}
-          <View style={styles.profileCard}>
+          <CommonCard style={styles.profileCard}>
             <View style={styles.profileHeader}>
-              <View style={styles.avatarContainer}>
+              <View style={styles.avatarRing}>
                 <Image source={mentee.avatar} style={styles.avatar} />
               </View>
               <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{mentee.name}</Text>
+                <Text style={styles.profileName} numberOfLines={1}>
+                  {mentee.name}
+                </Text>
                 <Text style={styles.profileRole}>{mentee.role}</Text>
                 <View style={styles.contactIcons}>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Ionicons name="call" size={18} color="#FFFFFF" />
-                  </TouchableOpacity>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Ionicons name="chatbubble" size={18} color="#FFFFFF" />
-                  </TouchableOpacity>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Ionicons name="mail" size={18} color="#FFFFFF" />
-                  </TouchableOpacity>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" />
-                  </TouchableOpacity>
+                  <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
+                    <Ionicons name="call" size={18} color="rgba(255,255,255,0.9)" />
+                  </Pressable>
+                  <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
+                    <Ionicons name="chatbubble" size={18} color="rgba(255,255,255,0.9)" />
+                  </Pressable>
+                  <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
+                    <Ionicons name="mail" size={18} color="rgba(255,255,255,0.9)" />
+                  </Pressable>
+                  <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
+                    <Ionicons name="logo-whatsapp" size={18} color="rgba(255,255,255,0.9)" />
+                  </Pressable>
                 </View>
               </View>
             </View>
 
-            {/* Progress Bar */}
+            <View style={styles.divider} />
+
             <View style={styles.progressSection}>
               <View style={styles.progressHeader}>
                 <Text style={styles.progressLabel}>Progress</Text>
-                <Text style={styles.progressValue}>
-                  {mentee.progress.percent}%
-                </Text>
+                <Text style={styles.progressValue}>{mentee.progress.percent}%</Text>
               </View>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${mentee.progress.percent}%` },
-                  ]}
-                />
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${mentee.progress.percent}%` }]} />
               </View>
-              {isComplete && (
-                <LinearGradient
-                  colors={["#FFD700", "#4CAF50"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.completeBtn}
-                >
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    style={styles.completeBtnInner}
-                  >
-                    <Text style={styles.completeBtnText}>Mark as Complete</Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color="#0D588E"
-                    />
-                  </TouchableOpacity>
-                </LinearGradient>
-              )}
             </View>
 
-            {/* Documents Button */}
-            <LinearGradient
-              colors={["#2B5A8F", "#1E4068"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.documentsButtonGradient}
-            >
-              <TouchableOpacity
-                activeOpacity={0.85}
-                style={styles.documentsButton}
+            <View style={styles.actions}>
+              {isComplete ? (
+                <PrimaryButton
+                  label="Mark as Complete"
+                  onPress={() => {}}
+                  leftIcon={
+                    <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+                  }
+                  textColor="#FFFFFF"
+                  style={styles.primaryAction}
+                />
+              ) : null}
+
+              <PrimaryButton
+                label="Documents"
                 onPress={() =>
                   router.push({
                     pathname: "/(mentor)/mentees/mentee-documents" as any,
-                    params: { menteeId: mentee.id || menteeId },
+                    params: {
+                      menteeId: mentee.id || menteeId,
+                      menteeName: mentee.name,
+                      email: mentee.email,
+                    },
                   })
                 }
-              >
-                <Image source={icons.documentsIcon} style={{ width: 20, height: 20 }} />
-                <Text style={styles.documentsButtonText}>Documents</Text>
-                <View style={styles.documentsBadge}>
-                  <Text style={styles.documentsBadgeText}>3</Text>
-                </View>
-              </TouchableOpacity>
-            </LinearGradient>
-          </View>
-
-          <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
-            <View style={styles.infoGrid}>
-              {renderInfoPill("First Name", mentee.firstName || "N/A", "personal-first")}
-              {renderInfoPill("Last Name", mentee.lastName || "N/A", "personal-last")}
-              {renderInfoPill("Phone Number", mentee.phone || "N/A", "personal-phone")}
-              {renderInfoPill("Email", mentee.email || "N/A", "personal-email")}
+                leftIcon={
+                  <Ionicons name="document-text-outline" size={18} color="#FFFFFF" />
+                }
+                textColor="#FFFFFF"
+                style={styles.documentsAction}
+              />
             </View>
+          </CommonCard>
+
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionLabel}>Personal information</Text>
+            <CommonCard>
+              <View style={styles.infoGrid}>
+                {renderInfoPill("First Name", mentee.firstName || "N/A", "personal-first")}
+                {renderInfoPill("Last Name", mentee.lastName || "N/A", "personal-last")}
+                {renderInfoPill("Phone Number", mentee.phone || "N/A", "personal-phone")}
+                {renderInfoPill("Email", mentee.email || "N/A", "personal-email")}
+              </View>
+            </CommonCard>
           </View>
 
           {mentee.primaryChurch.name && (
-            <View style={styles.infoSection}>
-              <Text style={styles.sectionTitle}>
-                Current Church - 1 Information
-              </Text>
-              <View style={styles.infoGrid}>
-                {renderInfoPill(
-                  "Current Church",
-                  mentee.primaryChurch.name || "N/A",
-                  "church1-name"
-                )}
-                {renderInfoPill(
-                  "Church Phone",
-                  mentee.primaryChurch.phone || "N/A",
-                  "church1-phone"
-                )}
-                {renderInfoPill(
-                  "Church Website",
-                  mentee.primaryChurch.website || "N/A",
-                  "church1-website"
-                )}
-                {renderInfoPill(
-                  "Church Address",
-                  mentee.primaryChurch.address || "N/A",
-                  "church1-address"
-                )}
-                {renderInfoPill(
-                  "City",
-                  mentee.primaryChurch.city || "N/A",
-                  "church1-city"
-                )}
-                {renderInfoPill(
-                  "State",
-                  mentee.primaryChurch.state || "N/A",
-                  "church1-state"
-                )}
-                {renderInfoPill(
-                  "Zip Code",
-                  mentee.primaryChurch.zipCode || "N/A",
-                  "church1-zip"
-                )}
-                {renderInfoPill(
-                  "Country",
-                  mentee.primaryChurch.country || "N/A",
-                  "church1-country"
-                )}
-              </View>
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionLabel}>Current church · 1</Text>
+              <CommonCard>
+                <View style={styles.infoGrid}>
+                  {renderInfoPill("Current Church", mentee.primaryChurch.name || "N/A", "church1-name")}
+                  {renderInfoPill("Church Phone", mentee.primaryChurch.phone || "N/A", "church1-phone")}
+                  {renderInfoPill("Church Website", mentee.primaryChurch.website || "N/A", "church1-website")}
+                  {renderInfoPill("Church Address", mentee.primaryChurch.address || "N/A", "church1-address")}
+                  {renderInfoPill("City", mentee.primaryChurch.city || "N/A", "church1-city")}
+                  {renderInfoPill("State", mentee.primaryChurch.state || "N/A", "church1-state")}
+                  {renderInfoPill("Zip Code", mentee.primaryChurch.zipCode || "N/A", "church1-zip")}
+                  {renderInfoPill("Country", mentee.primaryChurch.country || "N/A", "church1-country")}
+                </View>
+              </CommonCard>
             </View>
           )}
 
           {mentee.secondaryChurch.name && (
-            <View style={styles.infoSection}>
-              <Text style={styles.sectionTitle}>
-                Current Church - 2 Information
-              </Text>
-              <View style={styles.infoGrid}>
-                {renderInfoPill(
-                  "Current Church",
-                  mentee.secondaryChurch.name || "N/A",
-                  "church2-name"
-                )}
-                {renderInfoPill(
-                  "Church Phone",
-                  mentee.secondaryChurch.phone || "N/A",
-                  "church2-phone"
-                )}
-                {renderInfoPill(
-                  "Church Website",
-                  mentee.secondaryChurch.website || "N/A",
-                  "church2-website"
-                )}
-                {renderInfoPill(
-                  "Church Address",
-                  mentee.secondaryChurch.address || "N/A",
-                  "church2-address"
-                )}
-                {renderInfoPill(
-                  "City",
-                  mentee.secondaryChurch.city || "N/A",
-                  "church2-city"
-                )}
-                {renderInfoPill(
-                  "State",
-                  mentee.secondaryChurch.state || "N/A",
-                  "church2-state"
-                )}
-                {renderInfoPill(
-                  "Zip Code",
-                  mentee.secondaryChurch.zipCode || "N/A",
-                  "church2-zip"
-                )}
-                {renderInfoPill(
-                  "Country",
-                  mentee.secondaryChurch.country || "N/A",
-                  "church2-country"
-                )}
-              </View>
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionLabel}>Current church · 2</Text>
+              <CommonCard>
+                <View style={styles.infoGrid}>
+                  {renderInfoPill("Current Church", mentee.secondaryChurch.name || "N/A", "church2-name")}
+                  {renderInfoPill("Church Phone", mentee.secondaryChurch.phone || "N/A", "church2-phone")}
+                  {renderInfoPill("Church Website", mentee.secondaryChurch.website || "N/A", "church2-website")}
+                  {renderInfoPill("Church Address", mentee.secondaryChurch.address || "N/A", "church2-address")}
+                  {renderInfoPill("City", mentee.secondaryChurch.city || "N/A", "church2-city")}
+                  {renderInfoPill("State", mentee.secondaryChurch.state || "N/A", "church2-state")}
+                  {renderInfoPill("Zip Code", mentee.secondaryChurch.zipCode || "N/A", "church2-zip")}
+                  {renderInfoPill("Country", mentee.secondaryChurch.country || "N/A", "church2-country")}
+                </View>
+              </CommonCard>
             </View>
           )}
 
-          <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>Other Information</Text>
-            <View style={styles.infoGrid}>
-              {renderInfoPill("Title", mentee.otherInfo.title || "N/A", "other-title")}
-              {renderInfoPill(
-                "Years in Ministry",
-                mentee.otherInfo.yearsInMinistry || "N/A",
-                "other-years"
-              )}
-              {renderInfoPill(
-                "Conference",
-                mentee.otherInfo.conference || "N/A",
-                "other-conference"
-              )}
-            </View>
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionLabel}>Other information</Text>
+            <CommonCard>
+              <View style={styles.infoGrid}>
+                {renderInfoPill("Title", mentee.otherInfo.title || "N/A", "other-title")}
+                {renderInfoPill("Years in Ministry", mentee.otherInfo.yearsInMinistry || "N/A", "other-years")}
+                {renderInfoPill("Conference", mentee.otherInfo.conference || "N/A", "other-conference")}
+              </View>
+            </CommonCard>
           </View>
         </ScrollView>
       </SafeAreaView>
-    </AppGradientBackground>
+    </GradientBackground>
   );
 }
 
@@ -449,247 +347,150 @@ function renderInfoPill(label: string, value: string, key?: string) {
 }
 
 const styles = StyleSheet.create({
-  contentContainer: {
-    paddingHorizontal: 0,
-    paddingBottom: 60,
-    gap: 0,
-  },
-  topNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  safe: { flex: 1 },
+  scroll: { flex: 1 },
+  scrollContent: {
+    paddingBottom: 36,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#0D588E",
+    gap: 12,
   },
-  namePill: {
+
+  // Loading / error states
+  centerState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(126, 87, 194, 0.6)",
-  },
-  namePillText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  navActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  notificationBadge: {
-    position: "relative",
-  },
-  notificationDot: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: "#FFD700",
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notificationCount: {
-    color: "#0D588E",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  profileButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 12,
-  },
-  backButton: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  headerBreadcrumb: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
-    marginTop: 2,
-  },
-  profileCard: {
-    backgroundColor: "rgba(13, 63, 105, 0.7)",
-    marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 16,
-    gap: 18,
-  },
-  profileHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    overflow: "hidden",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-  },
-  avatar: {
-    width: "100%",
-    height: "100%",
-  },
-  profileInfo: {
-    flex: 1,
-    gap: 8,
-  },
-  profileName: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  profileRole: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  contactIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  progressSection: {
-    gap: 12,
-  },
-  progressHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  progressLabel: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  progressValue: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  progressBar: {
-    height: 10,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 8,
-    backgroundColor: "#4A90E2",
-  },
-  completeBtn: {
-    alignSelf: "flex-end",
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  completeBtnInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-  },
-  completeBtnText: {
-    color: "#0D588E",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  documentsButtonGradient: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
-    overflow: "hidden",
-  },
-  documentsButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
     gap: 10,
-    paddingVertical: 12,
   },
-  documentsButtonText: {
-    color: "#FFFFFF",
+  stateTitle: {
+    color: roadmapTheme.textPrimary,
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "700",
+    textAlign: "center",
   },
-  documentsBadge: {
-    backgroundColor: "#FFFFFF",
+  stateSub: {
+    color: roadmapTheme.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  ghostBtn: {
+    marginTop: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 12,
-    width: 24,
-    height: 24,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
+  },
+  ghostBtnText: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
+  pressed: { opacity: 0.88 },
+
+  topRow: { marginTop: 2, marginBottom: 4, flexDirection: "row" },
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
+  },
+  backBtnText: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  // Profile header card
+  profileCard: { padding: 16 },
+  profileHeader: { flexDirection: "row", alignItems: "center", gap: 14 },
+  avatarRing: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.22)",
+  },
+  avatar: { width: "100%", height: "100%" },
+  profileInfo: { flex: 1, minWidth: 0, gap: 6 },
+  profileName: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
+  profileRole: { color: "rgba(255,255,255,0.72)", fontSize: 13.5, fontWeight: "600" },
+  contactIcons: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
   },
-  documentsBadgeText: {
-    color: "#2B5A8F",
+
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: roadmapTheme.divider, marginVertical: 14 },
+
+  // Progress
+  progressSection: { gap: 10 },
+  progressHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  progressLabel: { color: "rgba(255,255,255,0.78)", fontSize: 13, fontWeight: "700" },
+  progressValue: { color: roadmapTheme.textPrimary, fontSize: 13, fontWeight: "800" },
+  progressTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    overflow: "hidden",
+  },
+  progressFill: { height: "100%", borderRadius: 999, backgroundColor: "#38BDF8" },
+
+  actions: { marginTop: 14, gap: 10 },
+  primaryAction: {
+    backgroundColor: "#22C55E",
+    borderColor: "rgba(20,83,45,0.35)",
+  },
+  documentsAction: {
+    backgroundColor: "#22C55E",
+    borderColor: "rgba(20,83,45,0.35)",
+  },
+
+  // Sections
+  sectionBlock: { gap: 8 },
+  sectionLabel: {
+    color: "rgba(255,255,255,0.75)",
     fontSize: 12,
     fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginTop: 6,
+    paddingHorizontal: 2,
   },
-  infoSection: {
-    backgroundColor: "rgba(13, 63, 105, 0.5)",
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 16,
-    padding: 16,
-    gap: 14,
-  },
-  sectionTitle: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  infoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
+  infoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   infoPill: {
     width: "48%",
     minWidth: 150,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: "rgba(255,255,255,0.16)",
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
   infoLabel: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 12,
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 11.5,
+    fontWeight: "700",
+    letterSpacing: 0.3,
     marginBottom: 6,
   },
-  infoValue: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "500",
-  },
+  infoValue: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "600" },
 })
