@@ -10,6 +10,7 @@ import {
 import { icons } from "@/constants/images";
 import { useProfile, useUpdateProfile, useUploadProfilePicture } from "@/hooks/profile/useProfile";
 import { ChurchInfo, UpdateProfileData } from "@/types/profile.types";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -17,12 +18,15 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CommonCard, GradientBackground, PrimaryButton, SectionHeader } from "@/components/ui/design-system";
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
 
 const CLEAN_CHURCH_TEMPLATE: ChurchInfo = {
   churchName: '',
@@ -256,18 +260,27 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#176192' }}>
-        <ActivityIndicator size="large" color="#fff" />
-      </View>
+      <GradientBackground>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.centerState}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.stateTitle}>Loading profile...</Text>
+        </View>
+      </GradientBackground>
     );
   }
 
   if (isError || !apiProfileData?.user) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#176192', padding: 20 }}>
-        <Text style={{ color: '#fff', textAlign: 'center', marginBottom: 20 }}>Failed to load profile.</Text>
-        <Button children="Retry" onPress={() => router.back()} buttonClass="mx-auto px-10 rounded-full" />
-      </View>
+      <GradientBackground>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.centerState}>
+          <Text style={styles.stateTitle}>Failed to load profile.</Text>
+          <Pressable style={({ pressed }) => [styles.ghostBtn, pressed && styles.pressed]} onPress={() => router.back()}>
+            <Text style={styles.ghostBtnText}>Go Back</Text>
+          </Pressable>
+        </View>
+      </GradientBackground>
     );
   }
 
@@ -337,24 +350,29 @@ export default function ProfileScreen() {
           )}
 
           {!isEditMode && (
-            <View className="flex flex-row items-center justify-center gap-2 px-5 py-4 mt-2">
-              <TouchableOpacity
-                // onPress={() => router.push("/(mentor)/mentees/mentee-documents" as any, { params: { menteeId: user.id } })}
-                className="flex flex-row w-1/2 justify-around items-center rounded-[10px] px-2.5 py-2.5 bg-[#004B87] border border-white/80"
-                onPress={() => router.push({
-                  pathname: "/(mentor)/(tabs)/profile/documents" as any,
-                })}
-              >
-                <Text className="text-white">Documents</Text>
-                <Image source={icons.attachment} style={styles.icon} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleEditPress}
-                className="flex flex-row justify-around w-1/2 items-center rounded-[10px] px-2.5 py-2.5 bg-[#004B87] border border-white/80"
-              >
-                <Text className="text-white">Edit Profile</Text>
-                <Image source={icons.edit} style={styles.icon} />
-              </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <View style={styles.actionCell}>
+                <PrimaryButton
+                  label="Documents"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(mentor)/(tabs)/profile/documents" as any,
+                    })
+                  }
+                  leftIcon={<Ionicons name="document-text-outline" size={18} color="#FFFFFF" />}
+                  textColor="#FFFFFF"
+                  style={styles.actionPrimary}
+                />
+              </View>
+              <View style={styles.actionCell}>
+                <PrimaryButton
+                  label="Edit Profile"
+                  onPress={handleEditPress}
+                  leftIcon={<Ionicons name="create-outline" size={18} color="#FFFFFF" />}
+                  textColor="#FFFFFF"
+                  style={styles.actionSecondary}
+                />
+              </View>
             </View>
           )}
 
@@ -652,20 +670,26 @@ export default function ProfileScreen() {
           </View>
 
           {isEditMode && (
-            <View className="flex-row items-center justify-center gap-5 my-10">
-              <Button
-                children="Cancel"
-                labelStyle={{ fontSize: 12, color: "#001FC1", fontWeight: "500" }}
-                buttonStyle={{ borderRadius: 10, backgroundColor: "white", width: 87 }}
-                onPress={handleCancel}
-              />
-              <Button
-                children={updateProfile.isPending || uploadProfilePicture.isPending ? "Saving..." : "Save"}
-                disabled={updateProfile.isPending || uploadProfilePicture.isPending}
-                labelStyle={{ fontSize: 12, color: "white", fontWeight: "500" }}
-                buttonStyle={{ borderRadius: 10, width: 87 }}
-                onPress={handleSavePress}
-              />
+            <View style={styles.editActionsRow}>
+              <View style={styles.actionCell}>
+                <PrimaryButton
+                  label="Cancel"
+                  onPress={handleCancel}
+                  disabled={updateProfile.isPending || uploadProfilePicture.isPending}
+                  textColor="#153C5A"
+                  style={styles.editCancelBtn}
+                />
+              </View>
+              <View style={styles.actionCell}>
+                <PrimaryButton
+                  label={updateProfile.isPending || uploadProfilePicture.isPending ? "Saving..." : "Save"}
+                  onPress={handleSavePress}
+                  disabled={updateProfile.isPending || uploadProfilePicture.isPending}
+                  textColor="#FFFFFF"
+                  leftIcon={<Ionicons name="save-outline" size={18} color="#FFFFFF" />}
+                  style={styles.editSaveBtn}
+                />
+              </View>
             </View>
           )}
         </View>
@@ -688,6 +712,31 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  centerState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    gap: 10,
+  },
+  stateTitle: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  ghostBtn: {
+    marginTop: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
+  },
+  ghostBtnText: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
+  pressed: { opacity: 0.88 },
+
   divider: {
     height: 0.5,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -735,6 +784,48 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     marginHorizontal: 16,
+  },
+
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  actionCell: { flex: 1 },
+  actionPrimary: {
+    backgroundColor: "#22C55E",
+    borderColor: "rgba(20,83,45,0.35)",
+    borderRadius: 14,
+  },
+  actionSecondary: {
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderColor: roadmapTheme.frostedBorder,
+    borderRadius: 14,
+  },
+
+  editActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginTop: 10,
+    marginBottom: 22,
+  },
+  editCancelBtn: {
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderColor: "rgba(255,255,255,0.32)",
+    borderRadius: 14,
+  },
+  editSaveBtn: {
+    backgroundColor: "#22C55E",
+    borderColor: "rgba(20,83,45,0.35)",
+    borderRadius: 14,
   },
   rowContainer: {
     flexDirection: "row",

@@ -1,20 +1,21 @@
 import { icons } from "@/constants/images"
 import { useDocuments, useProfile } from "@/hooks/profile/useProfile"
 import { Ionicons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack } from "expo-router"
 import React, { useMemo } from "react"
 import {
     ActivityIndicator,
-    FlatList,
-    Image,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { CommonCard, GradientBackground, SectionHeader } from "@/components/ui/design-system"
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme"
 
 export default function MentorDocumentsScreen() {
   // Fetch profile to get user name
@@ -73,13 +74,15 @@ export default function MentorDocumentsScreen() {
 
   if (isLoading) {
     return (
-      <LinearGradient
-        colors={["#0D588E", "#0D4578", "#0E3563"]}
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-      >
-        <ActivityIndicator size="large" color="white" />
-        <Text style={{ color: "white", fontSize: 18, marginTop: 16 }}>Loading documents...</Text>
-      </LinearGradient>
+      <GradientBackground>
+        <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={styles.safe} edges={["top"]}>
+          <View style={styles.centerState}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.stateTitle}>Loading documents...</Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     )
   }
 
@@ -87,25 +90,34 @@ export default function MentorDocumentsScreen() {
       if (formattedDocuments.recentUploads.length === 0) return null;
       return (
           <View style={styles.recentUploadsSection}>
-              <Text style={styles.sectionHeader}>Recent Uploads</Text>
-              {formattedDocuments.recentUploads.map((doc) => (
-                <View key={doc.id} style={styles.documentRow}>
-                  <View style={styles.documentThumb}>
-                    <Image
-                      source={icons.document}
-                      style={styles.documentThumbImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                  <View style={styles.documentInfo}>
-                    <Text style={styles.documentTitle}>{doc.title}</Text>
-                    <Text style={styles.documentMeta}>{doc.time}</Text>
-                  </View>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Ionicons name="download-outline" size={22} color="#FFFFFF" />
-                  </TouchableOpacity>
+              <Text style={styles.recentTitle}>Recent uploads</Text>
+              <CommonCard style={styles.rowCard}>
+                <View>
+                  {formattedDocuments.recentUploads.map((doc, idx) => (
+                    <View
+                      key={doc.id}
+                      style={[styles.row, idx > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: roadmapTheme.divider } : null]}
+                    >
+                      <View style={styles.rowLeft}>
+                        <View style={styles.docThumb}>
+                          <Image
+                            source={icons.document}
+                            style={styles.docThumbImg}
+                            resizeMode="contain"
+                          />
+                        </View>
+                        <View style={styles.rowText}>
+                          <Text style={styles.rowTitle} numberOfLines={1}>{doc.title}</Text>
+                          <Text style={styles.rowMeta} numberOfLines={1}>{doc.time}</Text>
+                        </View>
+                      </View>
+                      <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
+                        <Ionicons name="download-outline" size={20} color="rgba(255,255,255,0.9)" />
+                      </Pressable>
+                    </View>
+                  ))}
                 </View>
-              ))}
+              </CommonCard>
           </View>
       )
   }
@@ -113,239 +125,176 @@ export default function MentorDocumentsScreen() {
   // Using FlatList for the main library list to be "pagination ready"
   // Header component for FlatList includes top nav, breadcrumbs, recent uploads
   const ListHeader = () => (
-      <View>
-          {/* Top Navigation Bar - simplified compared to mentee screen which had specific mentee actions */}
-           <View style={styles.topNav}>
-            <TouchableOpacity activeOpacity={0.8} onPress={() => router.back()}>
-                <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
-            </TouchableOpacity>
-             <View style={styles.namePill}>
-                 <Text style={styles.namePillText}>{userName}</Text>
-             </View>
-             {/* Placeholder for right side to balance */}
-             <View style={{width: 26}} />
-           </View>
+    <View>
+      <SectionHeader
+        title="My Documents"
+        subtitle={`My Profile · ${userName}`}
+        variant="compact"
+      />
 
-          {/* Header */}
-          <View style={styles.headerRow}>
-             <View style={styles.headerTextContainer}>
-               <Text style={styles.headerTitle}>My Documents</Text>
-               <Text style={styles.headerBreadcrumb}>
-                 My Profile › Documents
-               </Text>
-             </View>
-          </View>
-
-          {/* Recent Uploads */}
-          {renderRecentUploads()}
-          
-          {/* Library Header */}
-           <View style={styles.libraryBanner}>
-            <Text style={styles.libraryBannerText}>
-              Document Library
-            </Text>
-          </View>
-          
+      <View style={styles.topRow}>
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+          <Text style={styles.backBtnText}>Back</Text>
+        </Pressable>
       </View>
+
+      {/* Recent Uploads */}
+      {renderRecentUploads()}
+
+      <View style={styles.sectionBlock}>
+        <Text style={styles.sectionLabel}>Document library</Text>
+      </View>
+    </View>
   )
     
   // Using FlatList for performance and future pagination
   return (
-    <LinearGradient
-      colors={["#0D588E", "#0D4578", "#0E3563"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={{ flex: 1 }}
-    >
+    <GradientBackground>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safe} edges={["top"]}>
         <FlatList
-            data={formattedDocuments.library}
-            keyExtractor={(item) => item.id}
-            ListHeaderComponent={ListHeader}
-            contentContainerStyle={styles.contentContainer}
-            refreshControl={
-                <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor="#fff" />
-            }
-            ListEmptyComponent={
-                <View style={{ paddingVertical: 40, alignItems: "center" }}>
-                    <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>
-                      No documents available
-                    </Text>
-               </View>
-            }
-            renderItem={({ item: doc }) => (
-                <View style={styles.libraryRow}>
-                   <View style={styles.libraryThumb}>
-                     <Image
-                       source={icons.document}
-                       style={styles.libraryThumbImage}
-                       resizeMode="contain"
-                     />
-                   </View>
-                   <View style={styles.libraryInfo}>
-                     <Text style={styles.libraryTitle}>{doc.title}</Text>
-                     <Text style={styles.libraryMeta}>{doc.date}</Text>
-                   </View>
-                   {/* Maybe allow delete here if it's their own doc? The useDeleteDocument hook exists. */}
-                   {/* For now keeping it consistent with mentee screen: Trash icon if they can delete, Download if not? */}
-                   {/* Mentee screen had trash icon in library list. I'll stick with that. */}
-                   <TouchableOpacity activeOpacity={0.8}>
-                     <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-                   </TouchableOpacity>
-                 </View>
-            )}
+          data={formattedDocuments.library}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={ListHeader}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor="#fff" />
+          }
+          ListEmptyComponent={
+            <CommonCard style={styles.emptyCard}>
+              <Ionicons name="document-outline" size={26} color="rgba(255,255,255,0.28)" />
+              <Text style={styles.emptyText}>No documents available</Text>
+            </CommonCard>
+          }
+          renderItem={({ item: doc, index }) => (
+            <CommonCard style={[styles.rowCard, index === 0 ? null : styles.rowCardSpacing]}>
+              <View style={styles.row}>
+                <View style={styles.rowLeft}>
+                  <View style={styles.docThumb}>
+                    <Image
+                      source={icons.document}
+                      style={styles.docThumbImg}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowTitle} numberOfLines={1}>{doc.title}</Text>
+                    <Text style={styles.rowMeta} numberOfLines={1}>{doc.date}</Text>
+                  </View>
+                </View>
+                <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
+                  <Ionicons name="trash-outline" size={18} color="rgba(255,255,255,0.82)" />
+                </Pressable>
+              </View>
+            </CommonCard>
+          )}
         />
       </SafeAreaView>
-    </LinearGradient>
+    </GradientBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  contentContainer: {
-    paddingHorizontal: 0,
-    paddingBottom: 60,
-    gap: 0,
+  safe: { flex: 1 },
+
+  centerState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    gap: 10,
   },
-  topNav: {
+  stateTitle: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+
+  topRow: { paddingHorizontal: 16, marginTop: 2, marginBottom: 10, flexDirection: "row" },
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
+  },
+  backBtnText: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
+  pressed: { opacity: 0.88 },
+
+  listContent: { paddingBottom: 36, paddingHorizontal: 16, gap: 12 },
+
+  sectionBlock: { paddingHorizontal: 16, marginTop: 10, marginBottom: 8 },
+  sectionLabel: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    paddingHorizontal: 2,
+  },
+
+  recentUploadsSection: {
+    marginTop: 10,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  recentTitle: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: 6,
+    paddingHorizontal: 2,
+  },
+
+  rowCard: { padding: 0 },
+  rowCardSpacing: { marginTop: 10 },
+  row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  namePill: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(126, 87, 194, 0.6)",
-  },
-  namePillText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
     gap: 12,
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  headerBreadcrumb: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
-    marginTop: 2,
-  },
-  sectionHeader: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  recentUploadsSection: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-    gap: 16,
-  },
-  documentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "rgba(13, 63, 105, 0.6)",
-    borderRadius: 12,
+    paddingHorizontal: 14,
   },
-  documentThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 8,
-    backgroundColor: "#E8EFF5",
+  rowLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, minWidth: 0 },
+  docThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
   },
-  documentThumbImage: {
-    width: "100%",
-    height: "100%",
-  },
-  documentInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  documentTitle: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  documentMeta: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
-  },
-  libraryBanner: {
-    marginHorizontal: 16,
-    marginTop: 32,
-    marginBottom: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.4)",
-    backgroundColor: "transparent",
-    alignItems: "center",
-  },
-  libraryBannerText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  libraryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: "rgba(13, 63, 105, 0.6)",
+  docThumbImg: { width: 22, height: 22, tintColor: "rgba(255,255,255,0.9)" },
+  rowText: { flex: 1, minWidth: 0, gap: 2 },
+  rowTitle: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
+  rowMeta: { color: roadmapTheme.textMuted, fontSize: 12.5, fontWeight: "500" },
+  iconBtn: {
+    width: 40,
+    height: 40,
     borderRadius: 12,
-  },
-  libraryThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 8,
-    backgroundColor: "#E8EFF5",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
   },
-  libraryThumbImage: {
-    width: "100%",
-    height: "100%",
-  },
-  libraryInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  libraryTitle: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  libraryMeta: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
-  },
+
+  emptyCard: { marginTop: 12, paddingVertical: 22, alignItems: "center", gap: 8 },
+  emptyText: { color: roadmapTheme.textMuted, fontSize: 13, fontWeight: "600" },
 })
