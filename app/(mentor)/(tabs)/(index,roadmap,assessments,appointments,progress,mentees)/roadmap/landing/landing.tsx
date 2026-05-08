@@ -27,7 +27,6 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -262,13 +261,14 @@ export default function Landing() {
       const cardData = getRoadmapCard(item.data);
       const isLibrary = mainTab === "ROADMAP_LIBRARY";
       return (
-        <Pressable onPress={() => handleRoadmapPress(item.data)} style={styles.cardPress}>
+        <View style={styles.cardPress}>
           <RoadmapCard
             data={cardData}
+            onPress={() => handleRoadmapPress(item.data)}
             showMenu={isLibrary}
             onMenuPress={isLibrary ? () => handleRoadmapMenuPress(item.data) : undefined}
           />
-        </Pressable>
+        </View>
       );
     },
     [handleRoadmapPress, mainTab, handleRoadmapMenuPress],

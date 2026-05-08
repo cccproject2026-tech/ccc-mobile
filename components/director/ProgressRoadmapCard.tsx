@@ -137,7 +137,14 @@ export const RoadmapCard: React.FC<Props> = ({
                 )}
                 {showMenu && onMenuPress && !selectionMode && (
                     <TouchableOpacity
-                        onPress={onMenuPress}
+                        onPress={(e) => {
+                            // Prevent the card wrapper onPress from firing when tapping the menu button.
+                            // This avoids accidental navigation instead of opening the action sheet.
+                            // (Same pattern used in other card components.)
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (e as any)?.stopPropagation?.();
+                            onMenuPress();
+                        }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                         <Ionicons

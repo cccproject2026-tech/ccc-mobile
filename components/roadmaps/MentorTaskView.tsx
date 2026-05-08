@@ -24,7 +24,6 @@ import {
     Image,
     Linking,
     Pressable,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -380,9 +379,10 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                     <View key={id} style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>{extra.name}</Text>
                         <TextInput
-                            style={[styles.textInput, styles.textInputDisabled]}
+                            style={styles.textInput}
                             value={formData[extra.name] || ""}
-                            editable={false}
+                            editable
+                            onChangeText={(v) => handleChange(extra.name, v)}
                             placeholder={extra.placeHolder}
                             placeholderTextColor="#9cc2ff"
                         />
@@ -394,11 +394,12 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                     <View key={id} style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>{extra.name}</Text>
                         <TextInput
-                            style={[styles.textInput, styles.textArea, styles.textInputDisabled]}
+                            style={[styles.textInput, styles.textArea]}
                             multiline
                             numberOfLines={4}
                             value={formData[extra.name] || ""}
-                            editable={false}
+                            editable
+                            onChangeText={(v) => handleChange(extra.name, v)}
                             placeholder={extra.placeHolder}
                             placeholderTextColor="#9cc2ff"
                         />
@@ -415,36 +416,34 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
             case "CHECKBOX":
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <View style={styles.checkboxRow}>
-                            <View style={[
-                                styles.checkbox,
-                                formData[extra.name] && styles.checkboxChecked,
-                                styles.checkboxDisabled
-                            ]}>
+                        <Pressable
+                            onPress={() => handleChange(extra.name, !formData[extra.name])}
+                            style={styles.checkboxRow}
+                            hitSlop={8}
+                        >
+                            <View style={[styles.checkbox, formData[extra.name] && styles.checkboxChecked]}>
                                 {formData[extra.name] && <Text style={styles.checkmark}>✓</Text>}
                             </View>
                             <Text style={styles.checkboxLabel}>{extra.name}</Text>
-                        </View>
+                        </Pressable>
                         {/* Sub-checkboxes (Read Only) */}
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginLeft: 36, marginTop: 8 }}>
                                 {extra.checkboxes.map((checkbox) => {
                                     const cbId = `${extra.name}-cb-${checkbox.name}`;
-                                    console.log('cbId----->>>>>>>>>>>>>>', cbId);
                                     const isChecked = !!formData[cbId];
-                                    console.log('isChecked----->>>>>>>>>>>>>>', isChecked);
                                     return (
                                         <View key={cbId} style={{ marginBottom: 6 }}>
-                                            <View style={styles.checkboxRow}>
-                                                <View style={[
-                                                    styles.checkbox,
-                                                    isChecked && styles.checkboxChecked,
-                                                    styles.checkboxDisabled
-                                                ]}>
+                                            <Pressable
+                                                onPress={() => handleChange(cbId, !isChecked)}
+                                                style={styles.checkboxRow}
+                                                hitSlop={8}
+                                            >
+                                                <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
                                                     {isChecked && <Text style={styles.checkmark}>✓</Text>}
                                                 </View>
                                                 <Text style={styles.checkboxLabel}>{checkbox.name}</Text>
-                                            </View>
+                                            </Pressable>
                                         </View>
                                     );
                                 })}
@@ -687,7 +686,7 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
 
     return (
         <>
-            <ScrollView style={styles.container}>
+            <View style={styles.container}>
                 {task.status === 'completed' && (
                     <View style={styles.completedBanner}>
                         <Text style={styles.completedLabel}>Task Completed</Text>
@@ -697,12 +696,21 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
 
                 {task.extras.map((extra, index) => renderExtra(extra, index))}
 
-                {/* Show Save Button only if there are changes (simplified logic: always show if needed or rely on 'Change Date' button) */}
-                {/* 
-                   In mentor view, we usually just view. But if they change date, they need to save. 
-                   The 'Change Date' button inside DATE_PICKER calls handleSubmit.
-                */}
-            </ScrollView>
+                <Pressable
+                    style={[styles.saveButton, isSaving ? styles.saveButtonDisabled : null]}
+                    onPress={handleSubmit}
+                    disabled={isSaving}
+                >
+                    {isSaving ? (
+                        <ActivityIndicator color="#2563eb" />
+                    ) : (
+                        <>
+                            <Ionicons name="save-outline" size={20} color="#2563eb" />
+                            <Text style={styles.saveButtonText}>Save Progress</Text>
+                        </>
+                    )}
+                </Pressable>
+            </View>
 
             <SimpleSuccessModal
                 visible={showSuccessModal}
@@ -726,10 +734,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 15,
     },
-    textInputDisabled: {
-        opacity: 0.8,
-        color: '#ccc',
-    },
     textArea: { height: 100, textAlignVertical: 'top' },
     checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16, gap: 12 },
     checkbox: {
@@ -744,9 +748,27 @@ const styles = StyleSheet.create({
     checkboxChecked: { backgroundColor: 'white' },
     checkmark: { color: '#1e40af', fontSize: 18, fontWeight: 'bold' },
     checkboxLabel: { flex: 1, color: 'white', fontSize: 16, lineHeight: 24 },
-    checkboxDisabled: {
-        opacity: 0.6,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    saveButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        gap: 10,
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.18)",
+        marginBottom: 8,
+    },
+    saveButtonDisabled: {
+        opacity: 0.7,
+    },
+    saveButtonText: {
+        color: "#2563eb",
+        fontSize: 17,
+        fontWeight: "700",
+        letterSpacing: 0.2,
     },
     uploadButton: {
         display: 'flex',

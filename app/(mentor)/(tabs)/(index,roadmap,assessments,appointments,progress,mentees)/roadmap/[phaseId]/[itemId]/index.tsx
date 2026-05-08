@@ -311,7 +311,7 @@ export default function ItemDetail() {
             </View>
 
             {/* Content */}
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
                 {/* Cover Image */}
                 <View style={styles.coverImageContainer}>
                     {task.imageUrl ? (
@@ -372,7 +372,7 @@ export default function ItemDetail() {
 
                 {/* Dynamic Form - Render extras */}
                 {task.extras && task.extras.length > 0 && (
-                    <MentorTaskView task={task} phaseId={phaseId} itemId={itemId} userId={menteeId} />
+                    <MentorTaskView task={task} phaseId={phaseId} itemId={itemId} userId={targetUserId} />
                 )}
             </ScrollView>
 
