@@ -44,16 +44,16 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
       {/* Shared Appointments pages*/}
       <Stack.Screen
         name="appointments/index"
-        getId={({ params }) => String(Date.now())}
+        dangerouslySingular={() => String(Date.now())}
       />
-      {/* Shared Progress pages - Add getId */}
+      {/* Shared Progress pages */}
       <Stack.Screen
         name="progress/index"
-        getId={({ params }) => String(Date.now())}
+        dangerouslySingular={() => String(Date.now())}
       />
       <Stack.Screen
         name="progress/report"
-        getId={({ params }) => String(Date.now())}
+        dangerouslySingular={() => String(Date.now())}
       />
     </Stack>
   );

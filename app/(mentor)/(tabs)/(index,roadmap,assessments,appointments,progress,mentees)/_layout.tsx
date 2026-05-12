@@ -73,17 +73,17 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
       {/* Appointments routes */}
       <Stack.Screen
         name="appointments/index"
-        getId={({ params }) => String(Date.now())}
+        dangerouslySingular={() => String(Date.now())}
       />
 
       {/* Progress routes */}
       <Stack.Screen
         name="progress/progress"
-        getId={({ params }) => String(Date.now())}
+        dangerouslySingular={() => String(Date.now())}
       />
       <Stack.Screen
         name="progress/report"
-        getId={({ params }) => String(Date.now())}
+        dangerouslySingular={() => String(Date.now())}
       />
 
       {/* Mentees routes */}
