@@ -9,10 +9,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
+import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -46,6 +48,13 @@ const EXPLORE_TILES = [
     route: "/(mentor)/mentees/progress-tracker",
   },
 ] as const;
+
+/** Android Google Maps crashes the process if MapView mounts without a valid API key in app config. */
+function canMountGoogleMapOnThisPlatform(): boolean {
+  if (Platform.OS !== "android") return true;
+  const key = Constants.expoConfig?.android?.config?.googleMaps?.apiKey;
+  return typeof key === "string" && key.trim().length > 0;
+}
 
 export default function MentorDashboardHome() {
   const router = useRouter();
@@ -293,24 +302,33 @@ export default function MentorDashboardHome() {
 
 
             <Animated.View entering={FadeInUp.delay(140).springify()} style={styles.mapCard}>
-              <MapView
-                style={{ width: "100%", height: "100%" }}
-                region={mapRegion}
-                showsUserLocation={false}
-                showsMyLocationButton={false}
-                showsCompass={true}
-                showsScale={true}
-                showsBuildings={true}
-                showsIndoors={true}
-                mapType="standard"
-              >
-                <Marker
-                  coordinate={{
-                    latitude: mapRegion.latitude,
-                    longitude: mapRegion.longitude,
-                  }}
-                />
-              </MapView>
+              {canMountGoogleMapOnThisPlatform() ? (
+                <MapView
+                  style={{ width: "100%", height: "100%" }}
+                  region={mapRegion}
+                  showsUserLocation={false}
+                  showsMyLocationButton={false}
+                  showsCompass={true}
+                  showsScale={true}
+                  showsBuildings={true}
+                  showsIndoors={true}
+                  mapType="standard"
+                >
+                  <Marker
+                    coordinate={{
+                      latitude: mapRegion.latitude,
+                      longitude: mapRegion.longitude,
+                    }}
+                  />
+                </MapView>
+              ) : (
+                <View style={styles.mapUnavailable}>
+                  <Ionicons name="map-outline" size={32} color="rgba(255,255,255,0.35)" />
+                  <Text style={styles.mapUnavailableText}>
+                    Map is turned off on this Android build until a Google Maps API key is configured for the app.
+                  </Text>
+                </View>
+              )}
             </Animated.View>
 
           </Animated.View>
@@ -485,6 +503,20 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.12)",
     backgroundColor: "rgba(255,255,255,0.06)",
     height: 410,
+  },
+  mapUnavailable: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  mapUnavailableText: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 18,
   },
 
   exploreCard: {
