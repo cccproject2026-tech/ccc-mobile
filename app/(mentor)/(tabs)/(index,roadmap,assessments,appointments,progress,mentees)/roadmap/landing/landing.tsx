@@ -171,7 +171,7 @@ export default function Landing() {
       let filtered = mentees.map((mentee) => ({
         type: "MENTEE" as const,
         data: (() => {
-          const assignedIds = mentee.assignedRoadmapIds ?? [];
+          const assignedIds: string[] = mentee.assignedRoadmapIds ?? [];
           const firstAssignedRoadmap = assignedIds.length
             ? assignedIds.map((id) => roadmaps?.find((r) => r._id === id)).find((r) => Boolean(r?.phase))
             : undefined;
