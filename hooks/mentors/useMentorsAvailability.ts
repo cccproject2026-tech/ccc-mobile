@@ -336,6 +336,8 @@ interface UseMonthlyAvailabilityOptions {
    * "fake" availability that the backend will reject.
    */
   allowDefaultForMentee?: boolean;
+  /** Override React Query staleTime for this query (e.g. scheduling UI month paging). */
+  staleTimeMs?: number;
 }
 
 export const useMonthlyAvailability = (
@@ -366,7 +368,7 @@ export const useMonthlyAvailability = (
       }
       return data;
     },
-    staleTime: 2000, // 2 seconds
+    staleTime: options?.staleTimeMs ?? 2000,
     retry: 2,
     enabled: Boolean(mentorId) && options?.enabled !== false,
   });
@@ -375,6 +377,8 @@ export const useMonthlyAvailability = (
     ...query,
     availability: query.data,
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isPending: query.isPending,
     isError: query.isError,
     error: query.error,
   };

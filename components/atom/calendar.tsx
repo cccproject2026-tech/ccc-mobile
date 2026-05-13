@@ -61,6 +61,19 @@ const formatDate = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+/** Local calendar day string — avoids UTC pitfalls of parsing ISO dates for Y-M-D. */
+const parseLocalYmdToDate = (ymd: string): Date => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
+  if (!m) return new Date();
+  const y = parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10) - 1;
+  const d = parseInt(m[3], 10);
+  const dt = new Date(y, mo, d);
+  return isValidDate(dt) ? dt : new Date();
+};
+
+const YMD_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 /* ============================= */
 
 const GradientCalendar: React.FC<GradientCalendarProps> = ({
@@ -82,18 +95,25 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
 }) => {
   /* ✅ FIXED INITIAL STATE */
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    safeParseDate(selected),
+    selected && YMD_PATTERN.test(selected.trim())
+      ? parseLocalYmdToDate(selected.trim())
+      : new Date(),
   );
 
   /* ✅ FIXED TODAY (no timezone bug) */
   const today = formatDate(new Date());
 
   /* ============================= */
-  /* Sync month when selected changes */
+  /* Sync visible month when user selects a day — NOT when selection is cleared */
   /* ============================= */
+  /* Clearing selected (e.g. "") used safeParseDate → today and jumped the grid back */
+  /* to the current month while the user had already navigated forward — looked like */
+  /* “next goes to May” and every day disabled. Only react to real YYYY-MM-DD picks. */
 
   useEffect(() => {
-    setCurrentMonth(safeParseDate(selected));
+    const ymd = typeof selected === "string" ? selected.trim() : "";
+    if (!ymd || !YMD_PATTERN.test(ymd)) return;
+    setCurrentMonth(parseLocalYmdToDate(ymd));
   }, [selected]);
 
   /* ============================= */
@@ -180,10 +200,18 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
 
     const safeMonth = safeParseDate(currentMonth);
     const year = safeMonth.getFullYear();
+    /** 0–11, same as JS Date */
     const month = safeMonth.getMonth();
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month + 2, 0);
+    // Full visible grid for this month: Sunday before/on the 1st → Saturday after last day.
+    // (Previous code used `month - 1` for the start day, which shifted marking one month early
+    // and broke January / month boundaries — availability dots looked wrong after changing month.)
+    const firstOfMonth = new Date(year, month, 1);
+    const lastOfMonth = new Date(year, month + 1, 0);
+    const startDate = new Date(firstOfMonth);
+    startDate.setDate(firstOfMonth.getDate() - firstOfMonth.getDay());
+    const endDate = new Date(lastOfMonth);
+    endDate.setDate(lastOfMonth.getDate() + (6 - lastOfMonth.getDay()));
 
     const currentDate = new Date(startDate);
 
@@ -255,6 +283,9 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     markToday,
   ]);
 
+  /** Local calendar day — never use toISOString() here (UTC shifts can show the wrong month). */
+  const calendarDayString = formatDate(safeParseDate(currentMonth));
+
   return (
     <View style={containerStyle}>
       {showHeader && (
@@ -289,8 +320,8 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
 
         <View style={styles.calendarWrapper}>
           <Calendar
-            key={currentMonth.toISOString()}
-            current={currentMonth.toISOString().split("T")[0]}
+            key={calendarDayString}
+            current={calendarDayString}
             onDayPress={handleDayPress}
             renderHeader={() => <View style={styles.hiddenMonthHeader} />}
             markingType="custom"

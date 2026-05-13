@@ -2,6 +2,7 @@ import GradientCalendar from "@/components/atom/calendar";
 import TopBar from "@/components/director/TopBar";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import {
+  calendarYearMonthFromYmd,
   formatTimeSlot,
   mergeMonthlyAvailabilityWithWeeklySlotDates,
   normalizeAvailabilityDateString,
@@ -62,7 +63,11 @@ export default function ScheduleMeetingTimeScreen() {
 
   // Monthly availability (source of truth for which dates are selectable this month).
   // This endpoint also applies backend constraints (min notice / max bookings per day).
-  const { availability: monthlyAvailability, isLoading: isLoadingMonthly, isError: isMonthlyError } = useMonthlyAvailability(
+  const {
+    availability: monthlyAvailability,
+    isFetching: isFetchingMonthly,
+    isError: isMonthlyError,
+  } = useMonthlyAvailability(
     {
       mentorId: availabilityOwnerId || null,
       month: currentMonth,
@@ -74,6 +79,8 @@ export default function ScheduleMeetingTimeScreen() {
       enabled: Boolean(availabilityOwnerId),
       // IMPORTANT: never show generated/fake availability in scheduling flow.
       allowDefaultForMentee: false,
+      // Month paging: avoid treating cached months as instantly stale (reduces flicker when navigating).
+      staleTimeMs: 60_000,
     },
   );
 
@@ -127,6 +134,19 @@ export default function ScheduleMeetingTimeScreen() {
     setSlot(null);
   }, [draft.selectedDayYmd, setSlot]);
 
+  useEffect(() => {
+    // Calendar shows one month; if the stored day is in another month, clear it so
+    // timeslots never show for the wrong month after paging.
+    const sel = draft.selectedDayYmd;
+    if (!sel) return;
+    const cal = calendarYearMonthFromYmd(sel);
+    if (!cal) return;
+    if (cal.month !== currentMonth || cal.year !== currentYear) {
+      setSlot(null);
+      setDay("");
+    }
+  }, [currentMonth, currentYear, draft.selectedDayYmd, setDay, setSlot]);
+
   const getTimeSlotsForDate = useCallback(
     (dateString: string) => {
       if (!mergedAvailability?.length) {
@@ -172,12 +192,19 @@ export default function ScheduleMeetingTimeScreen() {
     });
   }, [availableDates, today]);
 
+  const visibleMonthLabel = useMemo(() => {
+    const d = new Date(currentYear, currentMonth - 1, 1);
+    return d.toLocaleString("en-US", { month: "long", year: "numeric" });
+  }, [currentMonth, currentYear]);
+
   if (!hasPerson) return null;
 
-  const isLoading = isLoadingWeekly || isLoadingMonthly;
-  const isError = isWeeklyError || isMonthlyError;
+  // Only block the whole screen until weekly settings exist — monthly refetches on month change
+  // must NOT replace the UI (that caused “loading same month” and missing next-month dates).
+  const showBlockingLoader = isLoadingWeekly;
+  const weeklyFatalError = isWeeklyError;
 
-  if (isLoading) {
+  if (showBlockingLoader) {
     return (
       <AppGradientBackground style={{ flex: 1 }}>
         <TopBar role={String(user?.role || "pastor")} showUserName />
@@ -189,7 +216,7 @@ export default function ScheduleMeetingTimeScreen() {
     );
   }
 
-  if (isError) {
+  if (weeklyFatalError) {
     return (
       <AppGradientBackground style={{ flex: 1 }}>
         <TopBar role={String(user?.role || "pastor")} showUserName />
@@ -274,7 +301,19 @@ export default function ScheduleMeetingTimeScreen() {
               disablePastDates={true}
               markToday={true}
             />
+            {isFetchingMonthly ? (
+              <View style={styles.calendarLoadingOverlay} pointerEvents="none">
+                <ActivityIndicator color="#FFFFFF" />
+                <Text style={styles.calendarLoadingText}>Loading {visibleMonthLabel}…</Text>
+              </View>
+            ) : null}
           </View>
+
+          {isMonthlyError ? (
+            <Text style={styles.monthlyWarning}>
+              Could not refresh this month from the server; showing saved weekly slots only.
+            </Text>
+          ) : null}
 
           <Text style={styles.sectionTitle}>Available times</Text>
           {timeSlots.length === 0 ? (
@@ -356,7 +395,32 @@ const styles = StyleSheet.create({
   chipText: { color: "#FFFFFF", fontWeight: "900", fontSize: 12 },
   chipSelected: { backgroundColor: "#FFFFFF", borderColor: "#FFFFFF" },
   chipTextSelected: { color: "#1E3A6F" },
-  calendarCard: { borderRadius: 16, overflow: "hidden", borderWidth: 0, borderColor: "transparent",  },
+  calendarCard: {
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 0,
+    borderColor: "transparent",
+    position: "relative",
+  },
+  calendarLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(13, 51, 81, 0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  calendarLoadingText: {
+    color: "rgba(255,255,255,0.92)",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  monthlyWarning: {
+    marginTop: 8,
+    color: "rgba(255, 209, 102, 0.95)",
+    fontWeight: "600",
+    fontSize: 12,
+    paddingHorizontal: 4,
+  },
   sectionTitle: { marginTop: 14, color: "#FFFFFF", fontWeight: "900" },
   slotGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 },
   slot: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.25)", backgroundColor: "rgba(255,255,255,0.06)" },
