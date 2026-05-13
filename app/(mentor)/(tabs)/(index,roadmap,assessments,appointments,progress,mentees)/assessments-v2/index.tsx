@@ -12,8 +12,8 @@ import { Assessment } from "@/lib/assessments/types";
 import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -32,9 +32,12 @@ import { MentorLibraryStripHint } from "@/components/mentor/MentorSurveyContextH
 export default function MentorAssessmentsLibrary() {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
+  const { menteeId } = useLocalSearchParams<{ menteeId?: string }>();
 
   const [search, setSearch] = useState("");
-  const [selectedMentee, setSelectedMentee] = useState<string | null>(null);
+  const [selectedMentee, setSelectedMentee] = useState<string | null>(
+    menteeId ? String(menteeId) : null,
+  );
   const [tabs, setTabs] = useState("All");
   const [selectedAssessment, setSelectedAssessment] =
     useState<Assessment | null>(null);
@@ -47,6 +50,12 @@ export default function MentorAssessmentsLibrary() {
 
   // Get current user for TopBar
   const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (menteeId) {
+      setSelectedMentee(String(menteeId));
+    }
+  }, [menteeId]);
 
   // Fetch only mentees assigned to this mentor
   const { data: menteesData } = useMentees(100, user?.id);

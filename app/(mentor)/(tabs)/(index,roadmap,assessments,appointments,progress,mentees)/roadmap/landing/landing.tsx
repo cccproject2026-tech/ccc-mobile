@@ -22,8 +22,8 @@ import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { router, Stack } from "expo-router";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -52,6 +52,7 @@ const STATUS_TABS: { key: StatusTabKey; label: string }[] = [
 ];
 
 export default function Landing() {
+  const { menteeId } = useLocalSearchParams<{ menteeId?: string; menteeName?: string }>();
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [selectedRoadmapForMenu, setSelectedRoadmapForMenu] = useState<Roadmap | null>(null);
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] = useState(false);
@@ -84,6 +85,15 @@ export default function Landing() {
     isFetchingNextPage,
   } = useMentees(10, user?.id);
   const mentees = useMemo(() => menteesData?.pages.flatMap((page) => page.mentees) || [], [menteesData]);
+
+  useEffect(() => {
+    if (!menteeId || selectedPastor?.id === menteeId) return;
+    const routePastor = mentees.find((mentee) => mentee.id === menteeId);
+    if (routePastor) {
+      setSelectedPastor(routePastor);
+      setMainTab("PASTOR_ROADMAPS");
+    }
+  }, [menteeId, mentees, selectedPastor?.id]);
 
   const { data: pastorProgress, isLoading: isLoadingProgress } = useProgressByUserId(selectedPastor?.id);
 

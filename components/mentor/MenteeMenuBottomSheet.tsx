@@ -1,4 +1,5 @@
 import { icons } from "@/constants/images"
+import { roadmapTheme } from "@/components/ui/design-system"
 import { Mentee } from "@/types/mentee.types"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -10,7 +11,6 @@ import { LinearGradient } from "expo-linear-gradient"
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react"
 import {
   Image,
-  ImageSourcePropType,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -43,7 +43,7 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
     const bottomSheetRef = useRef<BottomSheetModal>(null)
     const { bottom } = useSafeAreaInsets()
 
-    const snapPoints = useMemo(() => ["85%"], [])
+    const snapPoints = useMemo(() => ["78%"], [])
 
     useImperativeHandle(ref, () => ({
       present: () => bottomSheetRef.current?.present(),
@@ -78,44 +78,26 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
       {
         id: "revitalization-roadmap",
         label: "Revitalization Roadmap",
-        icon: "clipboard",
+        icon: "map-outline",
         onPress: () => handleAction("revitalization-roadmap"),
-      },
-      {
-        id: "mentor-notes",
-        label: "Mentor Notes",
-        icon: "create",
-        onPress: () => handleAction("mentor-notes"),
       },
       {
         id: "assessments",
         label: "Assessments",
-        icon: "checkmark-done",
+        icon: "document-text-outline",
         onPress: () => handleAction("assessments"),
-      },
-      {
-        id: "assignments",
-        label: "Assignments",
-        icon: "book",
-        onPress: () => handleAction("assignments"),
       },
       {
         id: "track-progress",
         label: "Track Progress",
-        icon: "stats-chart",
+        icon: "stats-chart-outline",
         onPress: () => handleAction("track-progress"),
       },
       {
         id: "schedule-meeting",
         label: "Schedule Meeting",
-        icon: "calendar",
+        icon: "calendar-outline",
         onPress: () => handleAction("schedule-meeting"),
-      },
-      {
-        id: "mark-complete",
-        label: "Mark Programme as Completed",
-        icon: "checkmark-circle",
-        onPress: () => handleAction("mark-complete"),
       },
     ]
 
@@ -130,7 +112,7 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
         onDismiss={handleDismiss}
       >
         <LinearGradient
-          colors={["#1A3A6B", "#2B4E7E"]}
+          colors={["#0F3B5C", "#1A4F7A", "#2389C2"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={[styles.menuGradient, { paddingBottom: bottom }]}
@@ -157,7 +139,7 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
                 onPress={() => bottomSheetRef.current?.dismiss()}
                 style={styles.closeButton}
               >
-                <Ionicons name="close" size={28} color="#FFFFFF" />
+                <Ionicons name="close" size={22} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
 
@@ -173,11 +155,16 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
                   <View style={styles.menuIconWrapper}>
                     <Ionicons
                       name={action.icon as any}
-                      size={24}
+                      size={21}
                       color="#FFFFFF"
                     />
                   </View>
                   <Text style={styles.menuItemText}>{action.label}</Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color="rgba(255,255,255,0.5)"
+                  />
                 </TouchableOpacity>
               ))}
             </View>
@@ -192,74 +179,89 @@ export default MenteeMenuBottomSheet
 
 const styles = StyleSheet.create({
   handleIndicator: {
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(255, 255, 255, 0.35)",
     width: 40,
     height: 4,
   },
   menuGradient: {
     flex: 1,
-    paddingTop: 20,
+    paddingTop: 18,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   menuHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 24,
-    paddingHorizontal: 8,
+    marginBottom: 18,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
   },
   menuHeaderContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 14,
     flex: 1,
   },
   menuAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.4)",
+    borderColor: "rgba(255,255,255,0.22)",
   },
   menuHeaderName: {
-    color: "#FFFFFF",
+    color: roadmapTheme.textPrimary,
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     flex: 1,
+    letterSpacing: -0.2,
   },
   closeButton: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
   },
   menuItems: {
-    gap: 4,
+    gap: 12,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    gap: 16,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    marginBottom: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    gap: 14,
+    borderRadius: 16,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
   },
   menuIconWrapper: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
   },
   menuItemText: {
-    color: "#FFFFFF",
+    color: roadmapTheme.textPrimary,
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "800",
     flex: 1,
+    letterSpacing: -0.1,
   },
 })
 

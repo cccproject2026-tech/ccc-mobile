@@ -1,4 +1,3 @@
-import ConfirmModal from "@/components/atom/ConfirmModal"
 import {
   MentorDetailedCard,
   MentorShortCard,
@@ -38,7 +37,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import AppGradientBackground from "@/components/layout/AppGradientBackground"
 
 const MENTEE_PROGRESS_ROUTE =
-  "/(mentor)/(tabs)/(index,roadmap,assessments,appointments,progress,mentees)/mentees/mentee-progress"
+  "/(mentor)/mentees/mentee-progress"
 
 export default function MyMentees() {
   const [listToggle, setListToggle] = useState(false)
@@ -60,7 +59,6 @@ export default function MyMentees() {
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [selectedConference, setSelectedConference] = useState<string | null>(null)
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null)
-  const [showMarkCompleteModal, setShowMarkCompleteModal] = useState(false)
   const { user } = useAuthStore()
   // Only show mentees assigned to this mentor (not all pastors)
   const {
@@ -134,22 +132,21 @@ export default function MyMentees() {
     setTimeout(() => {
       switch (action) {
         case "revitalization-roadmap":
-          router.push("/(mentor)/roadmap/landing/landing" as any)
-          break
-        case "mentor-notes":
           router.push({
-            pathname: "/(mentor)/(tabs)/profile/notes" as any,
+            pathname: "/(mentor)/roadmap/landing/landing" as any,
             params: {
               menteeId: mentee?.id,
-              menteeName: menteeName,
+              menteeName,
             },
           })
           break
         case "assessments":
-          router.push("/(mentor)/assessments-v2" as any)
-          break
-        case "assignments":
-          router.push("/(mentor)/profile/my-assignment/assignment" as any)
+          router.push({
+            pathname: "/(mentor)/assessments-v2" as any,
+            params: {
+              menteeId: mentee?.id,
+            },
+          })
           break
         case "track-progress":
           router.push({
@@ -160,19 +157,10 @@ export default function MyMentees() {
         case "schedule-meeting":
           scheduleMeetingRef.current?.present()
           break
-        case "mark-complete":
-          setShowMarkCompleteModal(true)
-          break
         default:
           break
       }
     }, 300)
-  }
-
-  const handleMarkComplete = () => {
-    console.log(`Marking mentee ${selectedMentee?.firstName} as complete`)
-    // TODO: Implement API call to mark as complete
-    setShowMarkCompleteModal(false)
   }
 
   const handleScheduleMeeting = async (data: {
@@ -683,14 +671,6 @@ export default function MyMentees() {
           }
         />
 
-        {/* Mark Complete Confirmation Modal */}
-        <ConfirmModal
-          visible={showMarkCompleteModal}
-          title={`Are you sure you want to mark the programme for ${selectedMentee?.firstName} ${selectedMentee?.lastName} as completed?`}
-          confirmText="Confirm"
-          onConfirm={handleMarkComplete}
-          onCancel={() => setShowMarkCompleteModal(false)}
-        />
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
   )
