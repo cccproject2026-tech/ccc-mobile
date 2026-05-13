@@ -427,7 +427,7 @@ export default function MentorDashboard() {
                     title={item.title}
                     onPress={() => {
                       if (item.title === "Track Progress") {
-                        router.push("/(mentor-tabs)/progress-tracker");
+                        router.push("/(mentor)/mentees/progress-tracker");
                       } else if (item.title === "Assessment") {
                         router.push("/(mentor-tabs)/assessments-v2");
                       } else if (item.title === "Revitalization Roadmap") {

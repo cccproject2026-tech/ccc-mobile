@@ -827,7 +827,7 @@ export const MentorMenuItems: MenuItem[] = [
     label: "Track Progress",
     icon: icons.progress,
     iconType: "image",
-    route: "/(mentor)/progress/progress",
+    route: "/(mentor)/mentees/progress-tracker",
   },
   {
     id: "schedule",

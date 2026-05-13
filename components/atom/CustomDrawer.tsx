@@ -157,7 +157,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
     {
       name: "Track Progress",
       iconKey: "progress",
-      navigateLocation: "/(mentor)/progress/progress",
+      navigateLocation: "/(mentor)/mentees/progress-tracker",
     },
     {
       name: "Schedule",

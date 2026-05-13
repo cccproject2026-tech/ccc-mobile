@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleProp, StyleSheet, TextInput, View, ViewStyle } from "react-native";
 import { roadmapTheme } from "./roadmapTheme";
 
 type Props = {
@@ -9,6 +9,7 @@ type Props = {
   placeholder?: string;
   /** Denser padding/height for compact screens */
   dense?: boolean;
+  style?: StyleProp<ViewStyle>;
 };
 
 export function RoadmapSearchField({
@@ -16,9 +17,10 @@ export function RoadmapSearchField({
   onChangeText,
   placeholder = "Search...",
   dense = false,
+  style,
 }: Props) {
   return (
-    <View style={[styles.searchBox, dense ? styles.searchBoxDense : null]}>
+    <View style={[styles.searchBox, dense ? styles.searchBoxDense : null, style]}>
       <Ionicons name="search" size={18} color="rgba(255,255,255,0.75)" />
       <TextInput
         value={value}
