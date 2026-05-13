@@ -45,6 +45,11 @@ function RootLayoutNav() {
   const isDirector = isAuthenticated && user?.role === 'director';
   const showIndex = !isAuthenticated && !user;
   const isUnauthenticated = !isAuthenticated;
+  /** Full-screen scheduler lives at app/schedule-meeting — must be registered on the root Stack */
+  const canUseScheduleMeeting =
+    isAuthenticated &&
+    !!user &&
+    (user.role === 'pastor' || user.role === 'mentor' || user.role === 'director');
 
   return (
     <Stack
@@ -76,6 +81,10 @@ function RootLayoutNav() {
       {/* Director Routes - protected so logout from mentor doesn't land here as "Guest User" */}
       <Stack.Protected guard={isDirector}>
         <Stack.Screen name="(director)" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={canUseScheduleMeeting}>
+        <Stack.Screen name="schedule-meeting" />
       </Stack.Protected>
 
       <Stack.Screen name="+not-found" />

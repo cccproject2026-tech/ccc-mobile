@@ -1,13 +1,20 @@
 import GradientCalendar from "@/components/atom/calendar";
 import TopBar from "@/components/director/TopBar";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
-import { formatTimeSlot, normalizeAvailabilityDateString, slotsFromWeeklyOrMonthlyDay, useWeeklyAvailability } from "@/hooks/mentors/useMentorsAvailability";
+import {
+  formatTimeSlot,
+  mergeMonthlyAvailabilityWithWeeklySlotDates,
+  normalizeAvailabilityDateString,
+  slotsFromWeeklyOrMonthlyDay,
+  useMonthlyAvailability,
+  useWeeklyAvailability,
+} from "@/hooks/mentors/useMentorsAvailability";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import type { TimeSlot as APITimeSlot } from "@/types/appointment.types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -24,6 +31,13 @@ export default function ScheduleMeetingTimeScreen() {
   const { draft, setDay, setSlot, setPlatformLabel } = useScheduleMeetingStore();
   const insets = useSafeAreaInsets();
 
+  const hasPerson = Boolean(draft.person?.id);
+
+  useEffect(() => {
+    if (hasPerson) return;
+    router.replace("/schedule-meeting/person");
+  }, [hasPerson]);
+
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
 
   // Availability owner:
@@ -31,8 +45,36 @@ export default function ScheduleMeetingTimeScreen() {
   // - else pastor scheduling with mentor -> availability belongs to selected person (mentor)
   const availabilityOwnerId = isMentor ? user?.id : draft.person?.id;
 
-  const { availability: weeklyAvailability, isLoading, isError } = useWeeklyAvailability(
+  // Track the visible calendar month, so monthly availability stays in sync with UI.
+  const now = new Date();
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
+  const [currentYear, setCurrentYear] = useState(now.getFullYear());
+
+  // Weekly settings / saved slots (source of truth for meeting settings + raw saved blocks).
+  const { availability: weeklyAvailability, isLoading: isLoadingWeekly, isError: isWeeklyError } = useWeeklyAvailability(
     availabilityOwnerId || null,
+    {
+      enabled: Boolean(availabilityOwnerId),
+      // IMPORTANT: availability belongs to mentor participant; avoid "pastor" defaults.
+      role: "mentor",
+    },
+  );
+
+  // Monthly availability (source of truth for which dates are selectable this month).
+  // This endpoint also applies backend constraints (min notice / max bookings per day).
+  const { availability: monthlyAvailability, isLoading: isLoadingMonthly, isError: isMonthlyError } = useMonthlyAvailability(
+    {
+      mentorId: availabilityOwnerId || null,
+      month: currentMonth,
+      year: currentYear,
+      // IMPORTANT: availability belongs to mentor participant; avoid "pastor" defaults.
+      role: "mentor",
+    },
+    {
+      enabled: Boolean(availabilityOwnerId),
+      // IMPORTANT: never show generated/fake availability in scheduling flow.
+      allowDefaultForMentee: false,
+    },
   );
 
   const settings = weeklyAvailability;
@@ -40,13 +82,28 @@ export default function ScheduleMeetingTimeScreen() {
 
   const toDateString = (value: string) => normalizeAvailabilityDateString(value);
 
+  const mergedAvailability = useMemo(() => {
+    // Merge the backend month view with the saved weekly slots.
+    // We prefer the "richer" representation (more segments) per day.
+    return mergeMonthlyAvailabilityWithWeeklySlotDates(
+      currentMonth,
+      currentYear,
+      monthlyAvailability,
+      weeklySlots,
+    );
+  }, [currentMonth, currentYear, monthlyAvailability, weeklySlots]);
+
   const availableDates = useMemo(() => {
-    if (!weeklySlots) return [];
-    return weeklySlots
-      .filter((day: any) => slotsFromWeeklyOrMonthlyDay(day).length > 0)
-      .map((day: any) => toDateString(day.date))
-      .filter((d: string) => d.length >= 10);
-  }, [weeklySlots]);
+    if (!mergedAvailability?.length) return [];
+    const set = new Set<string>();
+    for (const day of mergedAvailability as any[]) {
+      const key = toDateString(String(day?.date ?? ""));
+      if (!key) continue;
+      const slots = slotsFromWeeklyOrMonthlyDay(day);
+      if (slots.length > 0) set.add(key);
+    }
+    return Array.from(set).sort();
+  }, [mergedAvailability]);
 
   useEffect(() => {
     // default date
@@ -72,8 +129,12 @@ export default function ScheduleMeetingTimeScreen() {
 
   const getTimeSlotsForDate = useCallback(
     (dateString: string) => {
-      if (!weeklySlots) return [] as { id: string; label: string; apiSlot: APITimeSlot }[];
-      const dayData = weeklySlots.find((day: any) => toDateString(day.date) === dateString) as any;
+      if (!mergedAvailability?.length) {
+        return [] as { id: string; label: string; apiSlot: APITimeSlot }[];
+      }
+      const dayData = (mergedAvailability as any[]).find(
+        (d) => toDateString(String(d?.date ?? "")) === dateString,
+      ) as any;
       const slots: APITimeSlot[] = dayData ? slotsFromWeeklyOrMonthlyDay(dayData) : [];
       return slots.map((slot: APITimeSlot, idx: number) => ({
         id: slot._id || `${dateString}-${idx}`,
@@ -81,7 +142,7 @@ export default function ScheduleMeetingTimeScreen() {
         apiSlot: slot,
       }));
     },
-    [weeklySlots],
+    [mergedAvailability],
   );
 
   const timeSlots = useMemo(
@@ -111,13 +172,10 @@ export default function ScheduleMeetingTimeScreen() {
     });
   }, [availableDates, today]);
 
-  if (!draft.person?.id) {
-    // no person selected
-    useEffect(() => {
-      router.replace("/schedule-meeting/person");
-    }, []);
-    return null;
-  }
+  if (!hasPerson) return null;
+
+  const isLoading = isLoadingWeekly || isLoadingMonthly;
+  const isError = isWeeklyError || isMonthlyError;
 
   if (isLoading) {
     return (
@@ -208,6 +266,10 @@ export default function ScheduleMeetingTimeScreen() {
               selected={draft.selectedDayYmd}
               setSelected={(ymd: string) => setDay(ymd)}
               availableDates={availableDates}
+              onMonthChange={(m, y) => {
+                setCurrentMonth(m);
+                setCurrentYear(y);
+              }}
               showHeader={true}
               disablePastDates={true}
               markToday={true}

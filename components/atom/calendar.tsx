@@ -151,23 +151,19 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
   /* ============================= */
 
   const handlePrevMonth = () => {
-    setCurrentMonth((prev) => {
-      const safePrev = safeParseDate(prev);
-      const newDate = new Date(safePrev);
-      newDate.setMonth(newDate.getMonth() - 1);
-      onMonthChange?.(newDate.getMonth() + 1, newDate.getFullYear());
-      return newDate;
-    });
+    const safePrev = safeParseDate(currentMonth);
+    const newDate = new Date(safePrev);
+    newDate.setMonth(newDate.getMonth() - 1);
+    setCurrentMonth(newDate);
+    onMonthChange?.(newDate.getMonth() + 1, newDate.getFullYear());
   };
 
   const handleNextMonth = () => {
-    setCurrentMonth((prev) => {
-      const safePrev = safeParseDate(prev);
-      const newDate = new Date(safePrev);
-      newDate.setMonth(newDate.getMonth() + 1);
-      onMonthChange?.(newDate.getMonth() + 1, newDate.getFullYear());
-      return newDate;
-    });
+    const safePrev = safeParseDate(currentMonth);
+    const newDate = new Date(safePrev);
+    newDate.setMonth(newDate.getMonth() + 1);
+    setCurrentMonth(newDate);
+    onMonthChange?.(newDate.getMonth() + 1, newDate.getFullYear());
   };
 
   let monthYearString = currentMonth.toLocaleString("en-US", {

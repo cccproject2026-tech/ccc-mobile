@@ -6,10 +6,20 @@ import { useMeetingScheduler } from "@/hooks/appointments/useMeetingScheduler";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+function appointmentsRouteForRole(role: string | undefined): string {
+  const r = String(role || "").toLowerCase();
+  if (r === "mentor") {
+    return "/(mentor)/(tabs)/(index,roadmap,assessments,appointments,progress,mentees)/appointments";
+  }
+  if (r === "director") return "/(director)/(tabs)/appointments";
+  return "/(pastor)/(tabs)/appointments";
+}
 
 export default function ScheduleMeetingConfirmScreen() {
   const { user } = useAuthStore();
@@ -17,6 +27,13 @@ export default function ScheduleMeetingConfirmScreen() {
   const { draft, reset } = useScheduleMeetingStore();
   const [isDone, setIsDone] = useState(false);
   const insets = useSafeAreaInsets();
+
+  const canSubmit = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
+
+  useEffect(() => {
+    if (canSubmit) return;
+    router.replace("/schedule-meeting/person");
+  }, [canSubmit]);
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
   const availabilityOwnerId = isMentor ? user?.id : draft.person?.id;
@@ -49,14 +66,7 @@ export default function ScheduleMeetingConfirmScreen() {
     userAppointments,
   });
 
-  const canSubmit = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
-
-  if (!canSubmit) {
-    React.useEffect(() => {
-      router.replace("/schedule-meeting/person");
-    }, []);
-    return null;
-  }
+  if (!canSubmit) return null;
 
   return (
     <AppGradientBackground style={{ flex: 1 }}>
@@ -99,10 +109,32 @@ export default function ScheduleMeetingConfirmScreen() {
                 try {
                   await submit();
                   setIsDone(true);
+                  const title =
+                    draft.mode === "reschedule" ? "Meeting rescheduled" : "Meeting scheduled";
+                  Toast.show({
+                    type: "floating",
+                    text1: title,
+                    text2: "Returning to your appointments…",
+                  });
                   reset();
-                  router.replace(isMentor ? "/appointments" : "/appointments");
+                  const dest = appointmentsRouteForRole(user?.role);
+                  setTimeout(() => {
+                    router.replace(dest as any);
+                  }, 650);
                 } catch (e: any) {
-                  Alert.alert(e?.title || "Booking failed", e?.message || "Please try again.");
+                  const msg =
+                    typeof e?.message === "string"
+                      ? e.message
+                      : e?.response?.data?.message != null
+                        ? String(e.response.data.message)
+                        : "Please try again.";
+                  const errTitle = e?.title || "Booking failed";
+                  Toast.show({
+                    type: "floating",
+                    text1: errTitle,
+                    text2: msg,
+                  });
+                  Alert.alert(errTitle, msg);
                 }
               }}
             >

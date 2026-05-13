@@ -119,7 +119,7 @@ export default function PastorTabLayout() {
         'profile/note-detail','profile/certificates','profile/grant',
         'profile/upload',    '(index)',          '(assessments)',
         '(roadmap)',         '(appointments)',   'mentors',
-        '(progress)',        'my-mentors',       'schedule-meeting',
+        '(progress)',        'my-mentors',
         'support/contact-information', 'support/call-mentor',
     ];
 

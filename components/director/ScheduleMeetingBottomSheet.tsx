@@ -273,6 +273,20 @@ const ScheduleMeetingBottomSheet = forwardRef<
 
     const shouldFetchAvailability = Boolean(mentorIdForAvailability) && isSheetOpen;
 
+    /**
+     * IMPORTANT: availability is modeled under the *mentor* participant.
+     * The hook uses `role` only to decide whether to generate default slots for
+     * pastors/mentees. When the availability owner is a mentor (common case),
+     * we must pass "mentor" here — NOT the currently selected role tab.
+     */
+    const availabilityOwnerRole = useMemo<UserRole>(() => {
+      if (mode === "reschedule") return "mentor";
+      if (currentUserRole === "mentor") return "mentor";
+      // For pastor/director scheduling, availability belongs to the selected mentor/director tab's user.
+      // Prefer the selected person's role when present, otherwise fall back to the selected tab.
+      return (selectedMentor?.role as UserRole) || selectedRole;
+    }, [mode, currentUserRole, selectedMentor?.role, selectedRole]);
+
     // Fetch availability for selected mentor (only when mentorId is defined)
     const {
       availability: monthlyAvailability,
@@ -284,7 +298,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
           : null,
         month: currentMonth,
         year: currentYear,
-        role: selectedRole,
+        role: availabilityOwnerRole,
       },
       {
         enabled: shouldFetchAvailability,
@@ -295,7 +309,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
     // Fetch mentor settings from weekly availability (only when mentorId is defined)
     const { availability: settings } = useWeeklyAvailability(
       mentorIdForAvailability,
-      { role: selectedRole, enabled: shouldFetchAvailability },
+      { role: availabilityOwnerRole, enabled: shouldFetchAvailability },
     );
 
     // Fetch mentor appointments to check max bookings (availability owner)
@@ -444,7 +458,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
           apiSlot: slot,
         }));
       },
-      [monthlyAvailability],
+      [monthlyAvailability, shouldFetchAvailability],
     );
 
     const timeSlots = useMemo(
