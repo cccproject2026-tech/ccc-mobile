@@ -205,6 +205,20 @@ export default function ProgressScreen() {
     });
   }, []);
 
+  const handleAssessmentCdpPress = useCallback((assessment: any) => {
+    const assessmentId = assessment?.id || assessment?.assessmentId || assessment?._id;
+    if (!assessmentId) return;
+
+    router.push({
+      pathname: "/assessments/answer-questions",
+      params: {
+        assessmentId: String(assessmentId),
+        viewMode: "true",
+        openCdp: "true",
+      },
+    });
+  }, []);
+
   const isLoading = isProgressLoading || isRoadmapsLoading;
 
   // Loading screen
@@ -412,7 +426,7 @@ export default function ProgressScreen() {
                   <View key={`assessment-${i}`} style={[styles.cardWrapper, { paddingTop: i === 0 ? 15 : 0 }]}>
                     <ProgressAssessmentCard
                       onPress={() => handleAssessmentPress(a)}
-                      onDevelopmentPlanPress={openPMPSheet}
+                      onDevelopmentPlanPress={() => handleAssessmentCdpPress(a)}
                       data={a as any}
                     />
                   </View>
