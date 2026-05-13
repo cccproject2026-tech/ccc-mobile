@@ -5,7 +5,7 @@ import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import { useMeetingScheduler } from "@/hooks/appointments/useMeetingScheduler";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
@@ -23,17 +23,25 @@ function appointmentsRouteForRole(role: string | undefined): string {
 
 export default function ScheduleMeetingConfirmScreen() {
   const { user } = useAuthStore();
+  const { drawerContext } = useLocalSearchParams<{ drawerContext?: string }>();
   const deviceTz = useMemo(() => getDeviceTimezone(), []);
   const { draft, reset } = useScheduleMeetingStore();
   const [isDone, setIsDone] = useState(false);
   const insets = useSafeAreaInsets();
+  const scheduleBase =
+    drawerContext === "mentor"
+      ? "/(mentor)/schedule-meeting"
+      : "/schedule-meeting";
 
   const canSubmit = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
 
   useEffect(() => {
     if (canSubmit) return;
-    router.replace("/schedule-meeting/person");
-  }, [canSubmit]);
+    router.replace({
+      pathname: `${scheduleBase}/person` as any,
+      params: { drawerContext },
+    });
+  }, [canSubmit, drawerContext, scheduleBase]);
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
   const availabilityOwnerId = isMentor ? user?.id : draft.person?.id;

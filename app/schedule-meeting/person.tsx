@@ -18,6 +18,11 @@ export default function ScheduleMeetingPersonScreen() {
     appointmentId?: string;
     personData?: string;
   }>();
+  const params = useLocalSearchParams<{ drawerContext?: string }>();
+  const scheduleBase =
+    params.drawerContext === "mentor"
+      ? "/(mentor)/schedule-meeting"
+      : "/schedule-meeting";
 
   const {
     setMode,
@@ -43,13 +48,16 @@ export default function ScheduleMeetingPersonScreen() {
             profilePicture: parsed.profilePicture,
             profileImage: parsed.profileImage,
           });
-          router.replace({ pathname: "/schedule-meeting/time" });
+          router.replace({
+            pathname: `${scheduleBase}/time` as any,
+            params: { drawerContext: params.drawerContext },
+          });
         }
       } catch {
         // ignore
       }
     }
-  }, [appointmentId, mode, personData, reset, setAppointmentId, setMode, setPerson]);
+  }, [appointmentId, mode, params.drawerContext, personData, reset, scheduleBase, setAppointmentId, setMode, setPerson]);
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
 
@@ -128,7 +136,10 @@ export default function ScheduleMeetingPersonScreen() {
                 style={styles.personCard}
                 onPress={() => {
                   setPerson(p);
-                  router.push({ pathname: "/schedule-meeting/time" });
+                  router.push({
+                    pathname: `${scheduleBase}/time` as any,
+                    params: { drawerContext: params.drawerContext },
+                  });
                 }}
               >
                 <View style={styles.avatarWrap}>

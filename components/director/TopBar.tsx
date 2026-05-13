@@ -54,7 +54,27 @@ const TopBar: React.FC<Props> = ({
     const showSearchIcon = !!isAuthenticated && showSearch;
     const notificationCount =
         notificationItems?.filter((item) => !item.read).length ?? notifications ?? 0;
-    const onMenuPress = () => navigation.dispatch(DrawerActions.openDrawer());
+    const getHomeRoute = () => {
+        const normalizedRole = String(role || user?.role || "").toLowerCase();
+        if (normalizedRole === "mentor") return "/(mentor)/(tabs)";
+        if (normalizedRole === "director") return "/(director)/(tabs)";
+        return "/(pastor)/(tabs)";
+    };
+
+    const onMenuPress = () => {
+        let currentNavigation: any = navigation;
+
+        while (currentNavigation) {
+            const state = currentNavigation.getState?.();
+            if (state?.type === "drawer") {
+                currentNavigation.dispatch(DrawerActions.openDrawer());
+                return;
+            }
+            currentNavigation = currentNavigation.getParent?.();
+        }
+
+        router.push(getHomeRoute() as any);
+    };
     const handleNotificationsPress = () => {
         router.push(getRoleNotificationRoute(role || user?.role) as any);
     }

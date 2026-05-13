@@ -14,7 +14,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import type { TimeSlot as APITimeSlot } from "@/types/appointment.types";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,15 +29,23 @@ function ymdToday() {
 
 export default function ScheduleMeetingTimeScreen() {
   const { user } = useAuthStore();
+  const { drawerContext } = useLocalSearchParams<{ drawerContext?: string }>();
   const { draft, setDay, setSlot, setPlatformLabel } = useScheduleMeetingStore();
   const insets = useSafeAreaInsets();
+  const scheduleBase =
+    drawerContext === "mentor"
+      ? "/(mentor)/schedule-meeting"
+      : "/schedule-meeting";
 
   const hasPerson = Boolean(draft.person?.id);
 
   useEffect(() => {
     if (hasPerson) return;
-    router.replace("/schedule-meeting/person");
-  }, [hasPerson]);
+    router.replace({
+      pathname: `${scheduleBase}/person` as any,
+      params: { drawerContext },
+    });
+  }, [drawerContext, hasPerson, scheduleBase]);
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
 
@@ -369,7 +377,12 @@ export default function ScheduleMeetingTimeScreen() {
             <Pressable
               style={[styles.primaryBtn, !canContinue && styles.primaryBtnDisabled]}
               disabled={!canContinue}
-              onPress={() => router.push("/schedule-meeting/confirm")}
+              onPress={() =>
+                router.push({
+                  pathname: `${scheduleBase}/confirm` as any,
+                  params: { drawerContext },
+                })
+              }
             >
               <Text style={styles.primaryBtnText}>Review meeting</Text>
             </Pressable>
