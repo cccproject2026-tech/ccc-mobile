@@ -46,14 +46,22 @@ export interface GetAssignedMenteesApiResponse {
 
 export interface MenteeDetail {
     id: string;
+    userId?: string;
     firstName: string;
     lastName: string;
     email: string;
     username: string;
     role: string;
+    profilePicture?: string;
+    phoneNumber?: string;
+    title?: string;
+    yearsInMinistry?: string;
     profileInfo: string;
     churchDetails: any[];
     conference: string;
+    currentCommunityProjects?: string;
+    interests?: string[];
+    comments?: string;
 }
 
 export interface GetMenteeByEmailApiResponse {

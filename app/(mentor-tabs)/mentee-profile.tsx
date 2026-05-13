@@ -94,7 +94,7 @@ export default function MenteeProfileScreen() {
       lastName,
       role: menteeData.role || "Pastor",
       email: menteeData.email || email || "",
-      phone: "", // API doesn't provide phone
+      phone: menteeData.phoneNumber || "",
       avatar: menteeData.profilePicture ? { uri: menteeData.profilePicture } : icons.myProfile,
       progress: {
         percent: 0, // Will be updated from progress API if available
@@ -102,28 +102,28 @@ export default function MenteeProfileScreen() {
         updatedOn: "",
       },
       primaryChurch: {
-        name: primaryChurch.name || "",
-        phone: primaryChurch.phone || "",
-        website: primaryChurch.website || "",
-        address: primaryChurch.address || "",
+        name: primaryChurch.churchName || primaryChurch.name || "",
+        phone: primaryChurch.churchPhone || primaryChurch.phone || "",
+        website: primaryChurch.churchWebsite || primaryChurch.website || "",
+        address: primaryChurch.churchAddress || primaryChurch.address || "",
         city: primaryChurch.city || "",
         state: primaryChurch.state || "",
         zipCode: primaryChurch.zip || primaryChurch.zipCode || "",
         country: primaryChurch.country || "",
       },
       secondaryChurch: {
-        name: secondaryChurch.name || "",
-        phone: secondaryChurch.phone || "",
-        website: secondaryChurch.website || "",
-        address: secondaryChurch.address || "",
+        name: secondaryChurch.churchName || secondaryChurch.name || "",
+        phone: secondaryChurch.churchPhone || secondaryChurch.phone || "",
+        website: secondaryChurch.churchWebsite || secondaryChurch.website || "",
+        address: secondaryChurch.churchAddress || secondaryChurch.address || "",
         city: secondaryChurch.city || "",
         state: secondaryChurch.state || "",
         zipCode: secondaryChurch.zip || secondaryChurch.zipCode || "",
         country: secondaryChurch.country || "",
       },
       otherInfo: {
-        title: "", // API doesn't provide title
-        yearsInMinistry: "", // API doesn't provide yearsInMinistry
+        title: menteeData.title || "",
+        yearsInMinistry: menteeData.yearsInMinistry || "",
         conference: menteeData.conference || "",
       },
     }

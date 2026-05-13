@@ -1,12 +1,10 @@
 import ConfirmModal from '@/components/atom/ConfirmModal';
 import SuccessModal from '@/components/atom/SuccessModal';
 import {
-  Button,
-  Header,
-  ScreenLayout,
   TextArea,
   TextInput as TextInputField
 } from "@/components/build-components";
+import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
 import { useProfile, useUpdateProfile, useUploadProfilePicture } from "@/hooks/profile/useProfile";
 import { ChurchInfo, UpdateProfileData } from "@/types/profile.types";
@@ -19,6 +17,7 @@ import {
   Alert,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -289,20 +288,30 @@ export default function ProfileScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScreenLayout
-        showNameTag
-        tagName={`${user.firstName} ${user.lastName}`}
-        enableScrollView={true}
-        paddingX={0}
-      >
-        <View className="w-full">
-          <Header title="Profile" showSettings={false} hideSearchBar />
-          <View className="relative items-center flex-1 py-5">
-            <View className="w-[70px] h-[70px] rounded-full justify-center items-center bg-white/12 relative mb-4">
+      <GradientBackground decorativeOrbs>
+        <TopBar role="mentor" showUserName />
+        <SectionHeader
+          title={isEditMode ? "Edit Profile" : "Profile"}
+          subtitle={isEditMode ? "Update your mentor profile details." : "Manage your profile, documents, and ministry details."}
+          showBackButton
+          alwaysShowBack
+          showDivider
+          variant="compact"
+          onBackPress={() => (isEditMode ? handleCancel() : router.back())}
+          style={styles.pageHeader}
+        />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 28 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <CommonCard style={styles.heroCard}>
+            <View style={styles.avatarWrap}>
               <Image
                 source={profileImage ? { uri: profileImage } : icons.myProfile}
                 resizeMode="cover"
-                className="w-[75px] h-[75px] rounded-full"
+                style={styles.avatarImage}
               />
               {isEditMode && (
                 <TouchableOpacity
@@ -317,37 +326,23 @@ export default function ProfileScreen() {
               )}
             </View>
             {!isEditMode && (
-              <View className="flex items-center gap-2">
-                <Text className="font-[AlbertSans-SemiBold] text-[14px] text-white font-semibold">
+              <View style={styles.heroTextBlock}>
+                <Text style={styles.heroGreeting}>
                   {greeting} {user.firstName} {user.lastName}
                 </Text>
-                <Text className="font-[AlbertSans-Medium] text-[14px] text-white font-semibold">
+                <Text style={styles.heroRole}>
                   {interest?.title || "Mentor"}
                 </Text>
+                <View style={styles.progressRow}>
+                  <Text style={styles.progressLabel}>Progress</Text>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
+                  </View>
+                  <Text style={styles.progressValue}>{progressPercentage}%</Text>
+                </View>
               </View>
             )}
-          </View>
-          {!isEditMode && (
-            <>
-              <View style={styles.divider} />
-              {/* <View
-                style={{
-                  ...styles.progressContainer,
-                  marginTop: 20,
-                  maxWidth: 220,
-                  marginHorizontal: "auto",
-                }}
-              >
-                <Text className="text-base leading-[22px] font-medium text-white">
-                  Progress
-                </Text>
-                <View className="flex-1 bg-[#182c5b] h-2 rounded-[4px] mt-1">
-                  <View className="bg-white h-2 rounded-[4px]" style={{ width: `${progressPercentage}%` }} />
-                </View>
-                <Text className="text-xs font-bold text-white ">{progressPercentage}%</Text>
-              </View> */}
-            </>
-          )}
+          </CommonCard>
 
           {!isEditMode && (
             <View style={styles.actionRow}>
@@ -376,13 +371,9 @@ export default function ProfileScreen() {
             </View>
           )}
 
-          <View className="px-[10px] flex-1 gap-4">
-            <View>
-              <Text className="font-[AlbertRegular] text-white text-[14px]">
-                Profile Information
-              </Text>
-            </View>
-            <View className="relative">
+          <View style={styles.contentStack}>
+            <CommonCard style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>Profile Information</Text>
               {isEditMode ? (
                 <TextArea
                   label="Profile Info"
@@ -398,17 +389,12 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               )}
-            </View>
+            </CommonCard>
 
             {/* Detailed Personal Info */}
-            <View
-              className="gap-4 p-2 pb-10 mt-4 rounded-md"
-              style={isEditMode ? styles.personalInfoContainerEdit : styles.personalInfoContainerView}
-            >
-              <View className="gap-6 mt-2">
-                <Text className="font-[AlbertRegular] text-white text-[14px]">
-                  Personal Information
-                </Text>
+            <CommonCard style={styles.sectionCard}>
+              <View style={styles.sectionGroup}>
+                <Text style={styles.sectionTitle}>Personal Information</Text>
                 {isEditMode ? (
                   <>
                     <View style={styles.rowContainer}>
@@ -464,20 +450,20 @@ export default function ProfileScreen() {
                 const churchArray = Array.isArray(churches) ? churches : [];
                 
                 return churchArray.map((church, idx) => (
-                  <View key={church?.id || `church-${idx}`} className="flex-1 gap-3">
-                    <View className="flex-row items-center justify-between gap-12">
-                      <Text className="font-[AlbertRegular] text-white text-[14px]">
+                  <View key={church?.id || `church-${idx}`} style={styles.churchGroup}>
+                    <View style={styles.churchHeader}>
+                      <Text style={styles.sectionTitle}>
                         Church - {idx + 1} Information
                       </Text>
                       {isEditMode && (formData.churches?.length || 0) > 1 && (
-                        <TouchableOpacity onPress={() => removeChurch(idx)}>
-                          <Text className="text-red-400">Remove</Text>
+                        <TouchableOpacity style={styles.removePill} onPress={() => removeChurch(idx)}>
+                          <Text style={styles.removePillText}>Remove</Text>
                         </TouchableOpacity>
                       )}
                     </View>
 
                     {isEditMode ? (
-                      <View className="gap-6 mt-4">
+                      <View style={styles.editStack}>
                         <TextInputField
                           label="Church Name *"
                           value={church?.churchName || ""}
@@ -570,29 +556,27 @@ export default function ProfileScreen() {
                       </View>
                     )}
                     {idx < churchArray.length - 1 && (
-                      <View style={styles.divider} className="my-4" />
+                      <View style={styles.divider} />
                     )}
                   </View>
                 ));
               })()}
 
               {isEditMode && (
-                <Button
-                  children="Add Church"
-                  buttonClass="mx-auto px-10 rounded-full"
+                <PrimaryButton
+                  label="Add Church"
                   onPress={addChurch}
+                  textColor="#FFFFFF"
+                  leftIcon={<Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />}
+                  style={styles.addChurchButton}
                 />
               )}
 
               <View style={styles.divider} />
               {/* Other Information */}
-              <View className="my-2">
-                <Text className="font-[AlbertRegular] text-white text-[14px]">
-                  Other Information
-                </Text>
-              </View>
+              <Text style={styles.sectionTitle}>Other Information</Text>
 
-              <View className="gap-6">
+              <View style={styles.editStack}>
                 {isEditMode ? (
                   <>
                     <View style={styles.rowContainer}>
@@ -666,7 +650,7 @@ export default function ProfileScreen() {
                   </View>
                 )}
               </View>
-            </View>
+            </CommonCard>
           </View>
 
           {isEditMode && (
@@ -676,7 +660,8 @@ export default function ProfileScreen() {
                   label="Cancel"
                   onPress={handleCancel}
                   disabled={updateProfile.isPending || uploadProfilePicture.isPending}
-                  textColor="#153C5A"
+                  textColor="#FFFFFF"
+                  leftIcon={<Ionicons name="close-outline" size={18} color="#FFFFFF" />}
                   style={styles.editCancelBtn}
                 />
               </View>
@@ -692,8 +677,8 @@ export default function ProfileScreen() {
               </View>
             </View>
           )}
-        </View>
-      </ScreenLayout>
+        </ScrollView>
+      </GradientBackground>
 
       <ConfirmModal
         visible={showConfirmModal}
@@ -736,33 +721,155 @@ const styles = StyleSheet.create({
   },
   ghostBtnText: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
   pressed: { opacity: 0.88 },
-
-  divider: {
-    height: 0.5,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    marginHorizontal: 50,
+  pageHeader: {
+    marginBottom: 2,
   },
-  readOnlyBox: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.06)",
+  scrollView: {
+    flex: 1,
   },
-  readOnlyStack: {
+  scrollContent: {
+    paddingHorizontal: 16,
+    gap: 14,
+  },
+  heroCard: {
+    alignItems: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+  },
+  avatarWrap: {
+    position: "relative",
+    marginBottom: 14,
+  },
+  avatarImage: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.22)",
+  },
+  heroTextBlock: {
+    width: "100%",
+    alignItems: "center",
+    gap: 5,
+  },
+  heroGreeting: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center",
+    letterSpacing: -0.2,
+  },
+  heroRole: {
+    color: roadmapTheme.textMuted,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  progressRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 14,
+  },
+  progressLabel: {
+    color: roadmapTheme.textMuted,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  progressTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: 999,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.18)",
+  },
+  progressFill: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: roadmapTheme.accentMint,
+  },
+  progressValue: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  contentStack: {
+    gap: 14,
+  },
+  sectionCard: {
+    padding: 16,
+  },
+  sectionGroup: {
     gap: 12,
   },
+  sectionTitle: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 12,
+    letterSpacing: -0.1,
+  },
+  churchGroup: {
+    gap: 12,
+  },
+  churchHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  editStack: {
+    gap: 14,
+  },
+  removePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(248,113,113,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(248,113,113,0.28)",
+  },
+  removePillText: {
+    color: "#FECACA",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: roadmapTheme.divider,
+    marginVertical: 16,
+  },
+  readOnlyBox: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
+  },
+  readOnlyStack: {
+    gap: 10,
+  },
   readOnlyField: {
-    gap: 4,
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
   },
   readOnlyLabel: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.75)",
-    fontWeight: "500",
+    fontSize: 12.5,
+    color: roadmapTheme.textSubtle,
+    fontWeight: "800",
   },
   readOnlyValue: {
-    color: "#fff",
+    color: roadmapTheme.textPrimary,
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
+    lineHeight: 20,
   },
   personalInfoContainerEdit: {
     borderWidth: 1,
@@ -790,21 +897,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: 4,
+    gap: 10,
   },
   actionCell: { flex: 1 },
   actionPrimary: {
-    backgroundColor: "#22C55E",
-    borderColor: "rgba(20,83,45,0.35)",
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderColor: roadmapTheme.frostedBorderStrong,
     borderRadius: 14,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   actionSecondary: {
-    backgroundColor: roadmapTheme.frostedSurface,
-    borderColor: roadmapTheme.frostedBorder,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderColor: roadmapTheme.frostedBorderStrong,
     borderRadius: 14,
+    elevation: 0,
+    shadowOpacity: 0,
   },
 
   editActionsRow: {
@@ -812,40 +920,49 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginTop: 10,
-    marginBottom: 22,
+    padding: 12,
+    marginTop: 2,
+    marginBottom: 18,
+    borderRadius: 16,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
   },
   editCancelBtn: {
-    backgroundColor: "rgba(255,255,255,0.92)",
-    borderColor: "rgba(255,255,255,0.32)",
+    minHeight: 48,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: roadmapTheme.frostedBorderStrong,
     borderRadius: 14,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   editSaveBtn: {
-    backgroundColor: "#22C55E",
-    borderColor: "rgba(20,83,45,0.35)",
+    minHeight: 48,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderColor: roadmapTheme.frostedBorderStrong,
     borderRadius: 14,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   rowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     gap: 12,
-    marginVertical: 8,
+    marginVertical: 0,
   },
   profileEditIcon: {
     position: "absolute",
-    bottom: -10,
-    right: -30,
-    backgroundColor: "rgba(0, 75, 135, 0.8)",
-    borderRadius: 9,
-    width: 42,
-    height: 32,
+    bottom: 0,
+    right: -2,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderRadius: 12,
+    width: 34,
+    height: 34,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#233A6F",
+    borderColor: roadmapTheme.frostedBorderStrong,
   },
   profileInformationIcon: {
     position: "absolute",
@@ -859,5 +976,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#233A6F",
+  },
+  addChurchButton: {
+    alignSelf: "center",
+    width: 190,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderColor: roadmapTheme.frostedBorderStrong,
+    borderRadius: 14,
+    elevation: 0,
+    shadowOpacity: 0,
   },
 });

@@ -120,11 +120,11 @@ export default function MenteeProfile() {
         return {
             firstName: menteeDataFromApi.firstName || '',
             lastName: menteeDataFromApi.lastName || '',
-            phone: '', // API doesn't provide phone
+            phone: menteeDataFromApi.phoneNumber || '',
             email: menteeDataFromApi.email || email || '',
             role: menteeDataFromApi.role || 'Pastor',
-            title: '', // API doesn't provide title
-            yearsInMinistry: '', // API doesn't provide yearsInMinistry
+            title: menteeDataFromApi.title || '',
+            yearsInMinistry: menteeDataFromApi.yearsInMinistry || '',
             conference: menteeDataFromApi.conference || '',
             profileInfo: menteeDataFromApi.profileInfo || '',
             phase: undefined, // API doesn't provide phase
@@ -138,13 +138,13 @@ export default function MenteeProfile() {
             totalMentors: 0, // API doesn't provide totalMentors
             lastContacted: undefined, // API doesn't provide lastContacted
             churches: menteeDataFromApi.churchDetails?.map((church: any) => ({
-                name: church.name || '',
-                phone: church.phone || '',
-                website: church.website || '',
-                address: church.address || '',
+                name: church.churchName || church.name || '',
+                phone: church.churchPhone || church.phone || '',
+                website: church.churchWebsite || church.website || '',
+                address: church.churchAddress || church.address || '',
                 city: church.city || '',
                 state: church.state || '',
-                zip: church.zip || '',
+                zip: church.zip || church.zipCode || '',
                 country: church.country || '',
             })) || [],
         };

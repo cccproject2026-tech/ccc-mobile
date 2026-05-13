@@ -3,18 +3,23 @@ import SuccessModal from '@/components/atom/SuccessModal';
 import { ChurchInfoSection, OtherInfoSection, PersonalInfoSection, ProfileInfoSection } from '@/components/director/ProfileSection';
 
 import TopBar from '@/components/director/TopBar';
-import { Colors } from '@/constants/Colors';
+import {
+  CommonCard,
+  GradientBackground,
+  PrimaryButton,
+  SectionHeader,
+  roadmapTheme,
+} from '@/components/ui/design-system';
 import { icons } from '@/constants/images';
 import { useProfile, useUpdateProfile, useUploadProfilePicture } from '@/hooks/profile/useProfile';
 import { UpdateProfileData } from '@/types';
 import { ChurchInfo } from '@/types/profile.types';
-import { getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -373,15 +378,16 @@ export default function ProfileScreen() {
   );
 
   const renderHeader = () => (
-    <TouchableOpacity
-      onPress={() => (isEditing ? handleCancel() : router.back())}
+    <SectionHeader
+      title={isEditing ? 'Edit Profile' : 'My Profile'}
+      subtitle={isEditing ? 'Update your profile and ministry details.' : 'Manage your profile, documents, and notes.'}
+      showBackButton
+      alwaysShowBack
+      showDivider
+      variant="compact"
+      onBackPress={() => (isEditing ? handleCancel() : router.back())}
       style={styles.headerContainer}
-    >
-      <Ionicons name="chevron-back" size={28} color="#fff" />
-      <Text style={styles.headerTitle}>
-        {isEditing ? 'Edit Profile' : 'My Profile'}
-      </Text>
-    </TouchableOpacity>
+    />
   );
 
   const renderProgressBar = () => (
@@ -396,86 +402,88 @@ export default function ProfileScreen() {
 
   const renderActionButtons = () => (
     <View style={styles.actionButtons}>
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() => router.push('/(pastor)/(tabs)/profile/documents' as any)}
-      >
-        <Text style={styles.actionButtonText}>Documents</Text>
-        <Image source={icons.attachment} style={styles.smallIcon} />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() => router.push('/(pastor)/(tabs)/profile/notes' as any)}
-      >
-        <Text style={styles.actionButtonText}>Notes</Text>
-        <Image source={icons.edit} style={styles.smallIcon} />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={handleEditPress}
-      >
-        <Text style={styles.actionButtonText}>Edit Profile</Text>
-        <Image source={icons.edit} style={styles.smallIcon} />
-      </TouchableOpacity>
+      <View style={styles.actionButtonCell}>
+        <PrimaryButton
+          label="Documents"
+          style={styles.actionButton}
+          onPress={() => router.push('/(pastor)/(tabs)/profile/documents' as any)}
+          textColor="#FFFFFF"
+          leftIcon={<Ionicons name="document-text-outline" size={18} color="#FFFFFF" />}
+        />
+      </View>
+      <View style={styles.actionButtonCell}>
+        <PrimaryButton
+          label="Notes"
+          style={styles.actionButton}
+          onPress={() => router.push('/(pastor)/(tabs)/profile/notes' as any)}
+          textColor="#FFFFFF"
+          leftIcon={<Ionicons name="create-outline" size={18} color="#FFFFFF" />}
+        />
+      </View>
+      <View style={styles.actionButtonCell}>
+        <PrimaryButton
+          label="Edit"
+          style={styles.actionButton}
+          onPress={handleEditPress}
+          textColor="#FFFFFF"
+          leftIcon={<Ionicons name="person-circle-outline" size={18} color="#FFFFFF" />}
+        />
+      </View>
     </View>
   );
 
   const renderEditActions = () => (
     <View style={styles.editActions}>
-      <TouchableOpacity
-        style={[styles.actionButton2, styles.cancelButton]}
+      <PrimaryButton
+        label="Cancel"
+        style={styles.cancelButton}
         onPress={handleCancel}
         disabled={updateProfile.isPending || uploadProfilePicture.isPending}
-      >
-        <Text style={styles.cancelButtonText}>Cancel</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.actionButton2, styles.saveButton]}
+        textColor="#FFFFFF"
+        leftIcon={<Ionicons name="close-outline" size={18} color="#FFFFFF" />}
+      />
+      <PrimaryButton
+        label={
+          uploadProfilePicture.isPending || updateProfile.isPending
+            ? 'Saving...'
+            : 'Save'
+        }
+        style={styles.saveButton}
         onPress={handleSavePress}
         disabled={updateProfile.isPending || uploadProfilePicture.isPending}
-      >
-        <Text style={styles.saveButtonText}>
-          {uploadProfilePicture.isPending || updateProfile.isPending
-            ? 'Saving...'
-            : 'Save'}
-        </Text>
-      </TouchableOpacity>
+        textColor="#FFFFFF"
+        leftIcon={<Ionicons name="save-outline" size={18} color="#FFFFFF" />}
+      />
     </View>
   );
 
   // ============= LOADING & ERROR STATES =============
   if (isLoading) {
     return (
-      <AppGradientBackground style={styles.container}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: '#fff', fontSize: 16 }}>Loading profile...</Text>
+      <GradientBackground decorativeOrbs style={styles.container}>
+        <View style={styles.centerState}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.centerStateText}>Loading profile...</Text>
         </View>
-      </AppGradientBackground>
+      </GradientBackground>
     );
   }
 
   if (isError || !profileData?.user) {
     return (
-      <AppGradientBackground style={styles.container}>
-        <View
-          style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}
-        >
-          <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center' }}>
+      <GradientBackground decorativeOrbs style={styles.container}>
+        <View style={styles.centerState}>
+          <Ionicons name="cloud-offline-outline" size={40} color="rgba(255,255,255,0.45)" />
+          <Text style={styles.centerStateText}>
             Failed to load profile data. Please try again.
           </Text>
-          <TouchableOpacity
+          <PrimaryButton
+            label="Go Back"
             onPress={() => router.back()}
-            style={{
-              marginTop: 20,
-              padding: 12,
-              backgroundColor: Colors.customBlueOne,
-              borderRadius: 8,
-            }}
-          >
-            <Text style={{ color: '#fff' }}>Go Back</Text>
-          </TouchableOpacity>
+            style={styles.centerStateButton}
+          />
         </View>
-      </AppGradientBackground>
+      </GradientBackground>
     );
   }
 
@@ -484,7 +492,7 @@ export default function ProfileScreen() {
   console.log('📝 Profile Image:', profileImage);
   // ============= MAIN RENDER =============
   return (
-    <AppGradientBackground style={styles.container}>
+    <GradientBackground decorativeOrbs style={styles.container}>
       <TopBar role="pastor" />
       {renderHeader()}
 
@@ -501,7 +509,7 @@ export default function ProfileScreen() {
         {/* VIEW MODE */}
         {!isEditing && (
           <>
-            <View style={styles.profileHeader}>
+            <CommonCard style={styles.profileHeader}>
               {renderAvatar()}
               <Text style={styles.greeting}>
                 {greeting} {profileData.user.firstName}{' '}
@@ -510,12 +518,14 @@ export default function ProfileScreen() {
               <Text style={styles.role}>
                 {profileData.interest?.title || 'Pastor'}
               </Text>
-            </View>
 
-            {renderProgressBar()}
-            {renderActionButtons()}
+              {renderProgressBar()}
+            </CommonCard>
+            <CommonCard style={styles.actionCard}>
+              {renderActionButtons()}
+            </CommonCard>
 
-            <View style={styles.mainContentBox}>
+            <CommonCard style={styles.mainContentBox}>
               <ProfileInfoSection
                 isEditing={false}
                 profileData={profileData}
@@ -575,16 +585,16 @@ export default function ProfileScreen() {
                 onPickImage={pickImage}
                 profileImage={profileImage}
               />
-            </View>
+            </CommonCard>
           </>
         )}
 
         {/* EDIT MODE */}
         {isEditing && (
           <>
-            <View style={styles.editProfileHeader}>{renderAvatar()}</View>
+            <CommonCard style={styles.editProfileHeader}>{renderAvatar()}</CommonCard>
 
-            <View style={styles.mainContentBox}>
+            <CommonCard style={styles.mainContentBox}>
               <ProfileInfoSection
                 isEditing={true}
                 profileData={profileData}
@@ -644,7 +654,7 @@ export default function ProfileScreen() {
                 onPickImage={pickImage}
                 profileImage={profileImage}
               />
-            </View>
+            </CommonCard>
 
             {renderEditActions()}
           </>
@@ -665,7 +675,7 @@ export default function ProfileScreen() {
         message="Profile Updated Successfully"
         onClose={handleSuccessModalClose}
       />
-    </AppGradientBackground>
+    </GradientBackground>
   );
 }
 
@@ -674,54 +684,60 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  centerState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  centerStateText: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  centerStateButton: {
+    marginTop: 8,
+    width: 180,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 40,
+    gap: 14,
   },
 
   // Header
   headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  headerTitle: {
-    marginLeft: 8,
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
+    marginBottom: 2,
   },
 
   // Profile Header
   profileHeader: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 24,
-    borderBottomColor: '#ccc',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomStartRadius: 50,
-    borderBottomEndRadius: 50,
-    paddingBottom: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    marginTop: 2,
   },
   editProfileHeader: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 24,
+    paddingVertical: 20,
+    marginTop: 2,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   avatarImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.22)',
   },
   editAvatarBadge: {
     position: 'absolute',
@@ -729,22 +745,25 @@ const styles = StyleSheet.create({
     right: 0,
     width: 32,
     height: 32,
-    borderRadius: 5,
-    backgroundColor: '#233A6F82',
+    borderRadius: 12,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
     borderWidth: 1,
-    borderColor: '#233A6F',
+    borderColor: roadmapTheme.frostedBorderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
   greeting: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: '800',
+    color: roadmapTheme.textPrimary,
+    marginBottom: 5,
+    textAlign: 'center',
+    letterSpacing: -0.2,
   },
   role: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
+    color: roadmapTheme.textMuted,
+    fontWeight: '600',
   },
 
   // Progress Bar
@@ -752,99 +771,91 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
-    marginTop: 8,
-    marginHorizontal: 72,
-    marginBottom: 16,
+    width: '100%',
+    marginTop: 18,
   },
   progressLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#fff',
+    fontSize: 13,
+    fontWeight: '800',
+    color: roadmapTheme.textMuted,
   },
   progressBarContainer: {
     flex: 1,
-    backgroundColor: '#182c5b',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     height: 8,
-    borderRadius: 4,
+    borderRadius: 999,
+    overflow: 'hidden',
   },
   progressBar: {
-    backgroundColor: '#fff',
+    backgroundColor: roadmapTheme.accentMint,
     height: 8,
-    borderRadius: 4,
+    borderRadius: 999,
   },
   progressText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 13,
+    fontWeight: '800',
+    color: roadmapTheme.textPrimary,
   },
 
   // Action Buttons
   actionButtons: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
+    gap: 10,
+    alignItems: 'center',
+  },
+  actionCard: {
+    padding: 10,
+  },
+  actionButtonCell: {
+    flex: 1,
+    minWidth: 0,
   },
   actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#14517D',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
+    minHeight: 46,
+    paddingHorizontal: 6,
+    borderRadius: 14,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderColor: roadmapTheme.frostedBorderStrong,
+    elevation: 0,
+    shadowOpacity: 0,
   },
 
   // Sections
 
   mainContentBox: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#fff',
     padding: 16,
-    borderRadius: 12,
   },
 
   // Edit Actions
   editActions: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: getSpacing(24),
+    marginTop: 8,
     marginBottom: 24,
-    maxWidth: '50%',
-    alignSelf: 'center',
-  },
-  actionButton2: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
+    width: '100%',
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
   },
   cancelButton: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-  },
-  cancelButtonText: {
-    color: '#1a5b77',
-    fontSize: 16,
-    fontWeight: '600',
+    flex: 1,
+    minHeight: 48,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderColor: roadmapTheme.frostedBorderStrong,
+    borderRadius: 14,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   saveButton: {
-    backgroundColor: 'rgba(30, 54, 111, 1)',
-    borderWidth: 2,
-    borderColor: '#fff',
-    borderRadius: 10,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    flex: 1,
+    minHeight: 48,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderColor: roadmapTheme.frostedBorderStrong,
+    borderRadius: 14,
+    elevation: 0,
+    shadowOpacity: 0,
   },
 
   // Icons

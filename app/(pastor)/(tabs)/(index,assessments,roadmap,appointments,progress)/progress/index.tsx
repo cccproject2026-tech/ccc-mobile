@@ -1,4 +1,3 @@
-import PMPBottomSheet from "@/components/director/PMPBottomSheet";
 import { ProgressAssessmentCard } from "@/components/director/ProgressAssessmentCard";
 import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarChart";
 import { ProgressPieChart } from "@/components/director/ProgressPieChart";
@@ -12,12 +11,10 @@ import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessmen
 import { useProgress } from '@/hooks/progress/useProgress';
 import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
 import { getRoadmapCard } from '@/lib/roadmap/mappers';
-import { sharePdfFromHtml } from "@/utils/pdf";
 import { Ionicons } from "@expo/vector-icons";
-import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { RefreshControl, ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -54,7 +51,6 @@ function getAssessmentActivityEpochMs(a: any): number {
 export default function ProgressScreen() {
   const [roadmapTabs, setRoadmapTabs] = useState<TabKey>("All");
   const [assessmentTabs, setAssessmentTabs] = useState<TabKey>("All");
-  const pmpSheetRef = useRef<BottomSheetModal>(null);
   const { bottom } = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
 
@@ -76,63 +72,6 @@ export default function ProgressScreen() {
   console.log("OverallProgress:", overallProgress);
   console.log("ProgressData:", progressData);
   console.log("========================================");
-  // Handle PMP sheet
-  const closePMPSheet = useCallback(() => pmpSheetRef.current?.dismiss(), []);
-  const openPMPSheet = useCallback(() => pmpSheetRef.current?.present(), []);
-  const handleNext = () => {
-    closePMPSheet();
-    router.push({
-      pathname: "/progress/report",
-      params: {
-        userName: "John Ross",
-        completedDate: new Date().toLocaleDateString("en-GB"),
-        assessmentTitle: "Recommendations",
-      },
-    });
-  };
-
-  const handleDownload = async () => {
-    closePMPSheet();
-
-    const plans = [
-      "Schedule 1-on-1 with a mentor",
-      "Take trauma survey (via Claritysoft)",
-      "Identify areas of stress/anxiety",
-      "Family Wellbeing survey",
-      "Collaborate on a healing plan",
-      "Collaborate on a physical Exercise plan",
-      "Establish a prayer covenant/partnership",
-      "Finalize a growth plan",
-    ];
-
-    const listHtml = plans.map((t) => `<li>${t}</li>`).join("");
-
-    const html = `
-      <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <style>
-            body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial; padding: 24px; color: #0f172a; }
-            h1 { font-size: 18px; margin: 0 0 10px; color: #1e3a8a; }
-            h2 { font-size: 16px; margin: 18px 0 10px; border-bottom: 2px solid #1e3a8a; padding-bottom: 6px; color: #1e3a8a; }
-            ul { margin: 0; padding-left: 18px; }
-            li { margin: 0 0 8px; line-height: 1.35; }
-          </style>
-        </head>
-        <body>
-          <h1>Recommendations</h1>
-          <h2>Section 1 - Personal Well-Being</h2>
-          <ul>${listHtml}</ul>
-        </body>
-      </html>
-    `;
-
-    await sharePdfFromHtml({
-      html,
-      fileName: "Recommendations_Report.pdf",
-    });
-  };
-
   const availableTabs = [{ tab: "All" }, { tab: "Completed" }, { tab: "Remaining" }];
 
   // Filter Roadmaps
@@ -306,12 +245,6 @@ export default function ProgressScreen() {
               />
               <Text style={styles.heroTitle}>Overall progress</Text>
             </View>
-            <SquircleIconButton
-              icon="ellipsis-horizontal"
-              onPress={openPMPSheet}
-              iconSize={20}
-              accessibilityLabel="More options"
-            />
           </View>
           <Text style={styles.heroSubtitle}>
             Track your roadmap phases and assessments in one place.
@@ -445,13 +378,6 @@ export default function ProgressScreen() {
           </View>
         </ScrollView>
 
-        {/* Bottom Sheet */}
-        <PMPBottomSheet
-          ref={pmpSheetRef}
-          onClose={closePMPSheet}
-          onNext={handleNext}
-          onDownload={handleDownload}
-        />
       </View>
     </AppGradientBackground>
   );
