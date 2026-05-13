@@ -1,7 +1,10 @@
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React from "react";
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { roadmapTheme } from "./roadmapTheme";
+import { SquircleIconButton } from "./SquircleIconButton";
 
 type Props = {
   title: string;
@@ -11,6 +14,18 @@ type Props = {
   /** Compact variant for tighter screens */
   variant?: "default" | "compact";
   style?: StyleProp<ViewStyle>;
+  /**
+   * When true, shows a squircle back control to the left of the title when navigation can go back.
+   */
+  showBackButton?: boolean;
+  /**
+   * Show back whenever `showBackButton` is true, even with no stack history (e.g. tab hero).
+   * Pair with `onBackPress` so navigation is always defined.
+   */
+  alwaysShowBack?: boolean;
+  onBackPress?: () => void;
+  /** Optional trailing control (e.g. menu), aligned with the title row */
+  headerRight?: React.ReactNode;
 };
 
 export function SectionHeader({
@@ -19,14 +34,52 @@ export function SectionHeader({
   showDivider,
   variant = "default",
   style,
+  showBackButton,
+  alwaysShowBack,
+  onBackPress,
+  headerRight,
 }: Props) {
+  const navigation = useNavigation();
   const isCompact = variant === "compact";
-  return (
-    <View style={[styles.wrap, isCompact ? styles.wrapCompact : null, style]}>
+  const canGoBack = navigation.canGoBack();
+  const showBack = !!showBackButton && (!!alwaysShowBack || canGoBack);
+  const hasTopRow = showBack || !!headerRight;
+
+  const handleBack = () => {
+    if (onBackPress) {
+      onBackPress();
+      return;
+    }
+    if (navigation.canGoBack()) router.back();
+  };
+
+  const titleBlock = (
+    <>
       <Text style={[styles.title, isCompact ? styles.titleCompact : null]}>{title}</Text>
       {subtitle ? (
         <Text style={[styles.subtitle, isCompact ? styles.subtitleCompact : null]}>{subtitle}</Text>
       ) : null}
+    </>
+  );
+
+  return (
+    <View style={[styles.wrap, isCompact ? styles.wrapCompact : null, style]}>
+      {hasTopRow ? (
+        <View style={styles.titleRow}>
+          {showBack ? (
+            <SquircleIconButton
+              icon="chevron-back"
+              onPress={handleBack}
+              accessibilityLabel="Go back"
+              prominent
+            />
+          ) : null}
+          <View style={styles.titleColumn}>{titleBlock}</View>
+          {headerRight ? <View style={styles.rightSlot}>{headerRight}</View> : null}
+        </View>
+      ) : (
+        titleBlock
+      )}
 
       {showDivider ? (
         <View style={[styles.dividerRow, isCompact ? styles.dividerRowCompact : null]} pointerEvents="none">
@@ -48,6 +101,21 @@ const styles = StyleSheet.create({
   wrapCompact: {
     paddingTop: 6,
     marginBottom: 2,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    minHeight: 44,
+  },
+  titleColumn: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
+  },
+  rightSlot: {
+    marginLeft: 4,
+    justifyContent: "center",
   },
   title: {
     color: "#FFFFFF",
@@ -85,4 +153,3 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.12)",
   },
 });
-

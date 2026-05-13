@@ -5,6 +5,7 @@ import { ProgressPieChart } from "@/components/director/ProgressPieChart";
 import { RoadmapCard } from "@/components/director/ProgressRoadmapCard";
 import TopBar from "@/components/director/TopBar";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
@@ -284,14 +285,19 @@ export default function ProgressScreen() {
 
           <View style={styles.heroTitleRow}>
             <View style={styles.heroLeftRow}>
-              <Pressable onPress={() => router.back()} hitSlop={10} style={styles.heroBackBtn}>
-                <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.92)" />
-              </Pressable>
+              <SquircleIconButton
+                icon="chevron-back"
+                onPress={() => router.back()}
+                accessibilityLabel="Go back"
+              />
               <Text style={styles.heroTitle}>Overall progress</Text>
             </View>
-            <Pressable onPress={openPMPSheet} hitSlop={10} style={styles.heroMenuBtn}>
-              <Ionicons name="ellipsis-horizontal" size={20} color="rgba(255,255,255,0.9)" />
-            </Pressable>
+            <SquircleIconButton
+              icon="ellipsis-horizontal"
+              onPress={openPMPSheet}
+              iconSize={20}
+              accessibilityLabel="More options"
+            />
           </View>
           <Text style={styles.heroSubtitle}>
             Track your roadmap phases and assessments in one place.
@@ -486,28 +492,8 @@ const styles = StyleSheet.create({
   pillText: { color: "rgba(255,255,255,0.95)", fontSize: 12, fontWeight: "700" },
   heroTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
   heroLeftRow: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, minWidth: 0 },
-  heroBackBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-  },
   heroTitle: { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: -0.2 },
   heroSubtitle: { color: "rgba(255,255,255,0.72)", marginTop: 4, fontSize: 13, lineHeight: 18 },
-  heroMenuBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-  },
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 0 },
   dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.12)" },
   searchContainer: { marginHorizontal: 16, marginTop: 10 },

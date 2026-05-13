@@ -1,7 +1,7 @@
 import { icons } from "@/constants/images"
 import { useDocuments, useProfile } from "@/hooks/profile/useProfile"
 import { Ionicons } from "@expo/vector-icons"
-import { router, Stack } from "expo-router"
+import { Stack } from "expo-router"
 import React, { useMemo } from "react"
 import {
     ActivityIndicator,
@@ -130,19 +130,8 @@ export default function MentorDocumentsScreen() {
         title="My Documents"
         subtitle={`My Profile · ${userName}`}
         variant="compact"
+        showBackButton
       />
-
-      <View style={styles.topRow}>
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
-          <Text style={styles.backBtnText}>Back</Text>
-        </Pressable>
-      </View>
 
       {/* Recent Uploads */}
       {renderRecentUploads()}
@@ -217,19 +206,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  topRow: { paddingHorizontal: 16, marginTop: 2, marginBottom: 10, flexDirection: "row" },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: roadmapTheme.frostedSurface,
-    borderWidth: 1,
-    borderColor: roadmapTheme.frostedBorder,
-  },
-  backBtnText: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
   pressed: { opacity: 0.88 },
 
   listContent: { paddingBottom: 36, paddingHorizontal: 16, gap: 12 },

@@ -21,6 +21,7 @@ import {
 } from "@/constants/sessionTitles";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import React, {
@@ -50,6 +51,7 @@ import {
 import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton";
 
 const UNKNOWN_PASTOR_KEY = "__unknown_pastor__";
 
@@ -460,6 +462,7 @@ const PastorTabBar = React.memo(function PastorTabBar({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function SessionsScreen() {
   const router     = useRouter();
+  const navigation = useNavigation();
   const { user }   = useAuthStore();
   const tabBarHeight = useBottomTabBarHeight();
   const insets       = useSafeAreaInsets();
@@ -615,10 +618,21 @@ export default function SessionsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTopRow}>
-            <View style={styles.headerTitleRow}>
-              <Text style={styles.heading}>Mentorship</Text>
-              <View style={styles.headerAccentPill}>
-                <Text style={styles.headerAccentText}>Sessions</Text>
+            <View style={styles.headerLeadingRow}>
+              <SquircleIconButton
+                icon="chevron-back"
+                accessibilityLabel="Go back"
+                prominent
+                onPress={() => {
+                  if (navigation.canGoBack()) router.back();
+                  else router.replace("/(mentor)/(tabs)" as any);
+                }}
+              />
+              <View style={styles.headerTitleRow}>
+                <Text style={styles.heading}>Mentorship</Text>
+                <View style={styles.headerAccentPill}>
+                  <Text style={styles.headerAccentText}>Sessions</Text>
+                </View>
               </View>
             </View>
             <Pressable
@@ -722,6 +736,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
     marginBottom: 6,
+  },
+  headerLeadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+    minWidth: 0,
   },
   headerTitleRow: {
     flexDirection: "row",

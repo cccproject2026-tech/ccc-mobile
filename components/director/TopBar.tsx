@@ -1,3 +1,4 @@
+import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton";
 import { useNotifications } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores';
 import { getRoleNotificationRoute } from '@/utils/notifications';
@@ -87,13 +88,12 @@ const TopBar: React.FC<Props> = ({
                                 <Text style={styles.backButtonTextStyle}>Back</Text>
                             </Pressable>
                         ) : (
-                            <Pressable
-                                hitSlop={10}
+                            <SquircleIconButton
+                                icon="chevron-back"
                                 onPress={handleBackPress}
-                                style={styles.backButtonBox}
-                            >
-                                <Ionicons name="arrow-back" size={size - 8} color={color} />
-                            </Pressable>
+                                accessibilityLabel="Go back"
+                                prominent
+                            />
                         )}
                     </>
                 )}

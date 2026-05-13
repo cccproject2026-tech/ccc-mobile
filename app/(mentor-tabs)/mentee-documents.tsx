@@ -1,4 +1,4 @@
-import { icons } from "@/constants/images"
+import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton"
 import { useMentees } from "@/hooks/mentees/useMentees"
 import { useDocumentsByUserId } from "@/hooks/profile/useProfile"
 import { Ionicons } from "@expo/vector-icons"
@@ -148,9 +148,9 @@ export default function MenteeDocumentsScreen() {
 
           {/* Header with Back Button */}
           <View style={styles.headerRow}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.backButton}
+            <SquircleIconButton
+              icon="chevron-back"
+              accessibilityLabel="Back to mentee profile"
               onPress={() =>
                 router.push({
                   pathname: "/(mentor-tabs)/mentee-profile",
@@ -160,9 +160,7 @@ export default function MenteeDocumentsScreen() {
                   },
                 })
               }
-            >
-              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+            />
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>Documents</Text>
               <Text style={styles.headerBreadcrumb}>
@@ -313,12 +311,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     gap: 12,
-  },
-  backButton: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
   },
   headerTextContainer: {
     flex: 1,

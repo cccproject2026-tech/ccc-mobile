@@ -54,6 +54,7 @@ export default function NotificationScreen() {
           <SectionHeader
             title="Notifications"
             subtitle="Updates, reminders, and activity across your mentees."
+            showBackButton
           />
 
           {isLoading ? (

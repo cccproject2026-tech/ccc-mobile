@@ -441,9 +441,14 @@ export default function AnswerQuestionPage() {
   return (
     <AppGradientBackground style={styles.container}>
       {showPreSurvey ? (
-        <TopBar showUserName={true} showNotifications={true} />
+        <TopBar role="pastor" showUserName showNotifications />
       ) : (
-        <TopBar showDrawer={false} showNotifications={false} />
+        <TopBar
+          role="pastor"
+          showDrawer={false}
+          showBackButton
+          showNotifications={false}
+        />
       )}
 
       {showPreSurvey ? (

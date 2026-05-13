@@ -10,6 +10,7 @@ import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessmen
 import type { Assessment } from "@/types/assessment.types";
 import { getFontSize } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { router, Stack } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -23,6 +24,7 @@ import { RefreshControl } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Survey() {
+  const navigation = useNavigation();
   const {
     data: assessments,
     isLoading,
@@ -131,6 +133,13 @@ export default function Survey() {
             title="Your assessments"
             subtitle="Review assigned assessments and track completion."
             showDivider
+            variant="compact"
+            showBackButton
+            alwaysShowBack
+            onBackPress={() => {
+              if (navigation.canGoBack()) router.back();
+              else router.replace("/(mentor)/(tabs)" as any);
+            }}
             style={{ marginBottom: 0 }}
           />
         </View>

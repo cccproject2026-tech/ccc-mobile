@@ -1,9 +1,11 @@
 import { icons } from "@/constants/images";
+import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Search } from "../atom/Search";
 import { Button } from "../atom/buttons";
 
@@ -28,7 +30,9 @@ export default function Header({
     React.useState(false);
   const [searchText, setSearchText] = React.useState("");
   const [tabs, setTabs] = React.useState("All");
- 
+  const navigation = useNavigation();
+  const canGoBack = navigation.canGoBack();
+
   return (
     <>
       <View
@@ -41,37 +45,35 @@ export default function Header({
           alignItems: "center",
         }}
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <Image
-              source={icons.forward}
-              style={{
-                width: 18,
-                height: 18,
-                transform: [{ scaleX: -1 }],
-              }}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          {canGoBack ? (
+            <SquircleIconButton
+              icon="chevron-back"
+              onPress={() => router.back()}
+              accessibilityLabel="Go back"
+              prominent
             />
-            <View>
-              <Text
-                style={{ color: "white" }}
-                className="text-white font-semibold text-[17px]"
-              >
-                {title}
-              </Text>
-              {subTitle && (
-                <Text className="text-[#F4F2F2B5] font-semibold ">
-                  {subTitle}
-                </Text>
-              )}
-            </View>
+          ) : null}
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              style={{ color: "white" }}
+              className="text-white font-semibold text-[17px]"
+            >
+              {title}
+            </Text>
+            {subTitle ? (
+              <Text className="text-[#F4F2F2B5] font-semibold ">{subTitle}</Text>
+            ) : null}
           </View>
-        </TouchableOpacity>
+        </View>
 
         {showSettings && (
           <TouchableOpacity onPress={() => {onMenuPress && onMenuPress(); setIsRoadmapModalVisible(true)}}>

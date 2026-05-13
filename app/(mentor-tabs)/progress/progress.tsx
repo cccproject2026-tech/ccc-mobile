@@ -2,8 +2,8 @@ import { ProgressCard } from "@/components/atom/cards";
 import CustomBarChart from "@/components/atom/CustomBarChart";
 import CustomPieChart from "@/components/atom/CustomPieChart";
 import { Tab } from "@/components/atom/tab";
-import { Header } from "@/components/build-components";
 import { PastorNavigationHeader } from "@/components/pastor/Header";
+import { SectionHeader } from "@/components/ui/design-system";
 import { icons } from "@/constants/images";
 import { useAssessments } from "@/hooks/assessments/useAssessments";
 import { useProgress } from "@/hooks/progress/useProgress";
@@ -195,25 +195,12 @@ export default function ProgressScreen() {
             }}
           >
             <PastorNavigationHeader showNameTag={true} />
-            {/* Header Section */}
-            <Header title="My Progress" showSettings={false} hideSearchBar={true} />
+            <SectionHeader
+              title="My Progress"
+              subtitle="Overall Progress — Roadmap & Assessments"
+              showBackButton
+            />
 
-            <View
-              style={{
-                width: "100%",
-                flexDirection: "row",
-                justifyContent: "flex-start",
-                alignItems: "center",
-                // paddingVertical: 10,
-                paddingBottom: 10,
-                marginHorizontal: 15,
-                marginVertical: 10
-              }}
-            >
-              <Text style={{ color: "white", fontSize: 17, fontWeight: "500" }}>
-                Overall Progress - Roadmap & Assessments
-              </Text>
-            </View>
             <View
               style={{
                 width: "95%",

@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { roadmapTheme } from "./roadmapTheme";
+import { SquircleIconButton } from "./SquircleIconButton";
 
 type Props = {
   onBack: () => void;
@@ -13,9 +14,12 @@ type Props = {
 export function RoadmapNavRow({ onBack, pillLabel, rightSlot }: Props) {
   return (
     <View style={styles.row}>
-      <Pressable onPress={onBack} hitSlop={10} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.80)" />
-      </Pressable>
+      <SquircleIconButton
+        icon="chevron-back"
+        onPress={onBack}
+        accessibilityLabel="Go back"
+        prominent
+      />
 
       <View style={styles.pillWrap}>
         <View style={styles.pill}>
@@ -40,16 +44,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
     marginBottom: 8,
-  },
-  backBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: roadmapTheme.frostedSurfaceStrong,
-    borderWidth: 1,
-    borderColor: roadmapTheme.frostedBorderStrong,
   },
   pillWrap: {
     flex: 1,

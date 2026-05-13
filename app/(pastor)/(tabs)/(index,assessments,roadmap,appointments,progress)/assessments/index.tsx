@@ -13,6 +13,7 @@ import { sharePdfFromHtml } from "@/utils/pdf";
 import { getFontSize, getIconSize, getSpacing } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -28,6 +29,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const meetingModes = ["Zoom", "Google Meet", "Teams", "Whatsapp", "Phone call"];
 export default function Survey() {
+  const navigation = useNavigation();
   // CHANGED: Use assigned assessments instead of all assessments
   const {
     data: assessments,
@@ -289,6 +291,12 @@ export default function Survey() {
               subtitle="Review assigned assessments and track completion."
               showDivider
               variant="compact"
+              showBackButton
+              alwaysShowBack
+              onBackPress={() => {
+                if (navigation.canGoBack()) router.back();
+                else router.replace("/(pastor)/(tabs)" as any);
+              }}
               style={{ marginBottom: 0 }}
             />
           </View>

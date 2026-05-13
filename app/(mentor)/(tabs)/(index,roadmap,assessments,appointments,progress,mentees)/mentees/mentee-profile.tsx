@@ -186,19 +186,8 @@ export default function MenteeProfileScreen() {
             title={mentee.name || "Mentee Profile"}
             subtitle="My Mentee · Profile"
             variant="compact"
+            showBackButton
           />
-
-          <View style={styles.topRow}>
-            <Pressable
-              onPress={() => router.back()}
-              style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
-              <Text style={styles.backBtnText}>Back</Text>
-            </Pressable>
-          </View>
 
           <CommonCard style={styles.profileCard}>
             <View style={styles.profileHeader}>
@@ -386,24 +375,6 @@ const styles = StyleSheet.create({
   },
   ghostBtnText: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
   pressed: { opacity: 0.88 },
-
-  topRow: { marginTop: 2, marginBottom: 4, flexDirection: "row" },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: roadmapTheme.frostedSurface,
-    borderWidth: 1,
-    borderColor: roadmapTheme.frostedBorder,
-  },
-  backBtnText: {
-    color: roadmapTheme.textPrimary,
-    fontSize: 14,
-    fontWeight: "700",
-  },
 
   // Profile header card
   profileCard: { padding: 16 },

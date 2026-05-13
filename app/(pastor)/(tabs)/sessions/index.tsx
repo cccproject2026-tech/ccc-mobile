@@ -7,6 +7,7 @@ import {
   SessionProgressHeader,
   SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
+import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton";
 import { Colors } from "@/constants/Colors";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
@@ -21,6 +22,7 @@ import {
 } from "@/constants/sessionTitles";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
@@ -47,6 +49,7 @@ type EnrichedSession = MentorshipSession & {
 
 export default function PastorSessionsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { user } = useAuthStore();
   const pastorId = user?.id;
   const tabBarHeight = useBottomTabBarHeight();
@@ -128,10 +131,23 @@ export default function PastorSessionsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={[...sessionGradientColors]} style={styles.gradient}>
         <View style={styles.header}>
-          <Text style={styles.heading}>Mentorship Sessions</Text>
-          <Text style={styles.sub}>
-            Track your journey, join meetings, and see what is next.
-          </Text>
+          <View style={styles.headerTitleRow}>
+            <SquircleIconButton
+              icon="chevron-back"
+              accessibilityLabel="Go back"
+              prominent
+              onPress={() => {
+                if (navigation.canGoBack()) router.back();
+                else router.replace("/(pastor)/(tabs)" as any);
+              }}
+            />
+            <View style={styles.headerTextBlock}>
+              <Text style={styles.heading}>Mentorship Sessions</Text>
+              <Text style={styles.sub}>
+                Track your journey, join meetings, and see what is next.
+              </Text>
+            </View>
+          </View>
         </View>
 
         {isLoading ? (
@@ -271,6 +287,12 @@ const styles = StyleSheet.create({
   listFlex: { flex: 1 },
   gradientBare: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: { marginBottom: 4 },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  headerTextBlock: { flex: 1, minWidth: 0 },
   heading: {
     color: "#FFFFFF",
     fontSize: 24,

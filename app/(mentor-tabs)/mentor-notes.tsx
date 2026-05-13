@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useFocusEffect } from "expo-router"
 import { useAuthStore } from "@/stores/auth.store"
 import AppGradientBackground from "@/components/layout/AppGradientBackground"
+import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton"
 
 export default function MentorNotes() {
   const { user } = useAuthStore()
@@ -97,13 +98,12 @@ export default function MentorNotes() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <TouchableOpacity
-              activeOpacity={0.7}
+            <SquircleIconButton
+              icon="chevron-back"
+              accessibilityLabel="Go back"
+              prominent
               onPress={() => router.back()}
-              style={styles.backButton}
-            >
-              <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
-            </TouchableOpacity>
+            />
             
             <View style={styles.headerCenter}>
               <View style={styles.profileBadge}>
@@ -130,11 +130,11 @@ export default function MentorNotes() {
             </View>
           </View>
 
-          <View style={styles.titleSection}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-            <Text style={styles.title}>Notes</Text>
+          <View style={styles.contextRow}>
+            <Text style={styles.contextHint} numberOfLines={1}>
+              Notes
+            </Text>
           </View>
-          <Text style={styles.subtitle}>{menteeName}</Text>
         </View>
 
         {/* Tab Buttons */}
@@ -235,13 +235,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 10,
   },
-  backButton: {
-    width: 40,
-    height: 40,
+  contextRow: {
     alignItems: "center",
-    justifyContent: "center",
+    paddingTop: 2,
+    paddingBottom: 2,
+  },
+  contextHint: {
+    color: "rgba(255, 255, 255, 0.58)",
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.3,
   },
   headerCenter: {
     flex: 1,
@@ -288,22 +293,6 @@ const styles = StyleSheet.create({
     color: "#1A3A6B",
     fontSize: 12,
     fontWeight: "700",
-  },
-  titleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  subtitle: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 14,
-    fontWeight: "500",
   },
   tabContainer: {
     flexDirection: "row",

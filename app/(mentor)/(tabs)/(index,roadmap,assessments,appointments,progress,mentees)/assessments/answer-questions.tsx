@@ -410,7 +410,7 @@ export default function AnswerQuestionPage() {
       {showPreSurvey ? (
         <TopBar role="mentor" showUserName showNotifications />
       ) : (
-        <TopBar role="mentor" showDrawer={false} showNotifications={false} />
+        <TopBar role="mentor" showDrawer={false} showBackButton showNotifications={false} />
       )}
 
       {showPreSurvey ? (

@@ -128,6 +128,7 @@ export default function MenteeDocumentsScreen() {
             title="Documents"
             subtitle={`My Mentee · ${resolvedMenteeName}`}
             variant="compact"
+            showBackButton
           />
 
           <View style={styles.topRow}>
