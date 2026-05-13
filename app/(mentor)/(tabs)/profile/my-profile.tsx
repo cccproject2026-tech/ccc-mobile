@@ -20,6 +20,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -37,6 +38,36 @@ const CLEAN_CHURCH_TEMPLATE: ChurchInfo = {
   country: '',
   churchWebsite: '',
 };
+
+type PersonalInfoFieldProps = {
+  label: string;
+  value?: string;
+  editable?: boolean;
+  keyboardType?: "default" | "phone-pad" | "email-address";
+  onChangeText?: (text: string) => void;
+};
+
+function PersonalInfoField({
+  label,
+  value,
+  editable = true,
+  keyboardType = "default",
+  onChangeText,
+}: PersonalInfoFieldProps) {
+  return (
+    <View style={styles.personalField}>
+      <Text style={styles.personalLabel}>{label}</Text>
+      <TextInput
+        value={value}
+        editable={editable}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        placeholderTextColor="rgba(255,255,255,0.5)"
+        style={[styles.personalInput, !editable && styles.personalInputDisabled]}
+      />
+    </View>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -396,31 +427,35 @@ export default function ProfileScreen() {
               <View style={styles.sectionGroup}>
                 <Text style={styles.sectionTitle}>Personal Information</Text>
                 {isEditMode ? (
-                  <>
+                  <View style={styles.personalEditStack}>
                     <View style={styles.rowContainer}>
-                      <TextInputField
+                      <PersonalInfoField
                         label="First Name"
                         value={formData.firstName}
                         editable={true}
                         onChangeText={(text) => handleInputChange("firstName", text)}
                       />
-                      <TextInputField
+                      <PersonalInfoField
                         label="Last Name"
                         value={formData.lastName}
                         editable={true}
                         onChangeText={(text) => handleInputChange("lastName", text)}
                       />
                     </View>
-                    <View style={styles.rowContainer}>
-                      <TextInputField
-                        label="Phone Number"
-                        value={formData.phoneNumber}
-                        editable={true}
-                        onChangeText={(text) => handleInputChange("phoneNumber", text)}
-                      />
-                      <TextInputField label="Email" value={user.email} editable={false} />
-                    </View>
-                  </>
+                    <PersonalInfoField
+                      label="Phone Number"
+                      value={formData.phoneNumber}
+                      editable={true}
+                      keyboardType="phone-pad"
+                      onChangeText={(text) => handleInputChange("phoneNumber", text)}
+                    />
+                    <PersonalInfoField
+                      label="Email"
+                      value={user.email}
+                      editable={false}
+                      keyboardType="email-address"
+                    />
+                  </View>
                 ) : (
                   <View style={styles.readOnlyStack}>
                     <View style={styles.readOnlyField}>
@@ -820,6 +855,36 @@ const styles = StyleSheet.create({
   },
   editStack: {
     gap: 14,
+  },
+  personalEditStack: {
+    gap: 12,
+  },
+  personalField: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
+  },
+  personalLabel: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 12,
+    fontWeight: "700",
+    paddingHorizontal: 2,
+  },
+  personalInput: {
+    minHeight: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.55)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    color: roadmapTheme.textPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  personalInputDisabled: {
+    opacity: 0.82,
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
   removePill: {
     paddingHorizontal: 12,

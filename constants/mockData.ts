@@ -802,13 +802,6 @@ export const MentorMenuItems: MenuItem[] = [
     route: "/(mentor)/(tabs)/sessions/insights",
   },
   {
-    id: "courses",
-    label: "Courses",
-    icon: icons.Revitalization,
-    iconType: "image",
-    route: "/(mentor)/roadmap/landing/landing",
-  },
-  {
     id: "revitalizationRoadmap",
     label: "Revitalization RoadMap",
     icon: icons.Revitalization,

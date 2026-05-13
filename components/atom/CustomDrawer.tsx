@@ -140,11 +140,6 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
       navigateLocation: "/(mentor-tabs)/my-mentors",
     },
     {
-      name: "Courses",
-      iconKey: "Assessments",
-      navigateLocation: "Home",
-    },
-    {
       name: "Revitalization RoadMap",
       iconKey: "Revitalization",
       navigateLocation: "/(mentor)/roadmap/landing/landing",
