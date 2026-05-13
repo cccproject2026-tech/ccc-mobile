@@ -4,6 +4,7 @@ import AssessmentMenuBottomSheet from "@/components/build-components/AssessmentM
 import DeleteConfirmationModal from "@/components/build-components/DeleteConfirmationModal";
 import { AssessmentCard, GuidelinesPoints } from "@/components/build-components";
 import AssessmentFlowHeader from "@/components/mentor";
+import { MentorSurveyContextHint } from "@/components/mentor/MentorSurveyContextHint";
 import { useAssessment, useDeleteAssessment } from "@/hooks/assessments";
 import { ApiAssessment, Assessment } from "@/lib/assessments/types";
 import { useAuthStore } from "@/stores";
@@ -185,6 +186,12 @@ export default function PmpSurvey() {
             />
 
             <GuidelinesPoints guidelines={assessment.instructions} />
+
+            <MentorSurveyContextHint
+              isMentor={isMentor}
+              menteeId={menteeId}
+              assessmentStatus={assessmentStatus}
+            />
 
             {!isMentor && (
               <Button

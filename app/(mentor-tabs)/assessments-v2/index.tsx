@@ -18,6 +18,7 @@ import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Tex
 import { RefreshControl } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { MentorLibraryStripHint } from "@/components/mentor/MentorSurveyContextHint";
 
 export default function MentorAssessmentsLibrary() {
     const { bottom } = useSafeAreaInsets();
@@ -110,15 +111,20 @@ export default function MentorAssessmentsLibrary() {
     }, [searchedAssessments, tabs]);
 
     const handleOpenAssessment = (assessment: Assessment) => {
+        const params: Record<string, string> = { assessmentId: assessment.id };
+        if (selectedMentee) {
+            params.menteeId = selectedMentee;
+            params.assessmentStatus = assessment.status;
+        }
         if (assessment.type === "CMA") {
             router.push({
                 pathname: "/(mentor-tabs)/assessments/cma-survey-page",
-                params: { assessmentId: assessment.id },
+                params,
             });
         } else {
             router.push({
                 pathname: "/(mentor-tabs)/assessments/(pmp)/pmp-survey-page",
-                params: { assessmentId: assessment.id },
+                params,
             });
         }
     };
@@ -319,6 +325,10 @@ export default function MentorAssessmentsLibrary() {
                         </Pressable>
                     ))}
                 </ScrollView>
+
+                <MentorLibraryStripHint
+                    visible={!selectedMentee && mentees.length > 0}
+                />
             </View>
 
             {/* Status Tabs - Only show when a mentee is selected */}

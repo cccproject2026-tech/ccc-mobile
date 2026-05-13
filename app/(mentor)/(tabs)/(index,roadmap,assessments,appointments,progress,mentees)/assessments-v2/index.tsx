@@ -27,6 +27,7 @@ import {
 import { RefreshControl } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { MentorLibraryStripHint } from "@/components/mentor/MentorSurveyContextHint";
 
 export default function MentorAssessmentsLibrary() {
   const { bottom } = useSafeAreaInsets();
@@ -329,6 +330,10 @@ export default function MentorAssessmentsLibrary() {
             </Pressable>
           ))}
         </ScrollView>
+
+        <MentorLibraryStripHint
+          visible={!selectedMentee && mentees.length > 0}
+        />
       </View>
 
       {/* Status Tabs - Only show when a mentee is selected */}

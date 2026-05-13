@@ -429,8 +429,8 @@ export default function AssessmentCard({
           </View>
         )}
       </TouchableOpacity>
-      {/* data?.status === "Submitted" && data?.meetingDate */}
-      {1 == 1 && (
+      {/* Mentors use the assessment library without meeting CTAs on each card. */}
+      {user?.role !== "mentor" && (
         <TouchableOpacity style={styles.meetingInner} onPress={onMeetingPress}>
             <View style={styles.meetingLeft}>
               <View style={styles.meetingIconWrap}>

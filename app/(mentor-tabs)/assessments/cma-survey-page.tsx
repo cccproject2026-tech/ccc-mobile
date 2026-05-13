@@ -4,6 +4,7 @@ import AssessmentMenuBottomSheet from "@/components/build-components/AssessmentM
 import DeleteConfirmationModal from "@/components/build-components/DeleteConfirmationModal";
 import { AssessmentMainCard, GuidelinesPoints } from "@/components/build-components";
 import AssessmentFlowHeader from "@/components/mentor";
+import { MentorSurveyContextHint } from "@/components/mentor/MentorSurveyContextHint";
 import { useDeleteAssessment, useAssessment } from "@/hooks/assessments";
 import { Assessment } from "@/lib/assessments/types";
 import { useAuthStore } from "@/stores";
@@ -165,6 +166,12 @@ export default function CmaSurvey() {
             />
 
             <GuidelinesPoints guidelines={assessment.instructions} />
+
+            <MentorSurveyContextHint
+              isMentor={isMentor}
+              menteeId={menteeId}
+              assessmentStatus={assessmentStatus}
+            />
 
             {!isMentor && (
               <Button
