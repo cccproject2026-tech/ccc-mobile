@@ -97,11 +97,6 @@ export const RoadmapCard: React.FC<Props> = ({
     const showCompletionTimeInBody = !!(data.completionTime && data.status && featuredInShell);
     const CardWrapper = onPress ? TouchableOpacity : View;
 
-    const accentBorderColor = useMemo(() => {
-        if (statusConfig?.accent) return statusConfig.accent;
-        return 'rgba(255,255,255,0.14)';
-    }, [statusConfig]);
-
     const iconTintColor = useMemo(() => {
         // Keep icons mostly neutral (cleaner, more consistent with session cards)
         return 'rgba(255,255,255,0.65)';
@@ -262,13 +257,15 @@ export const RoadmapCard: React.FC<Props> = ({
             const label = journeyGuidance.bannerText ?? 'Journey Completed';
             return (
                 <View style={styles.journeyIntegrated}>
-                    <View style={styles.journeyCompleteBanner}>
-                        <Ionicons
-                            name="checkmark-done-circle"
-                            size={JOURNEY_ICON_BADGE}
-                            color="rgba(186, 250, 220, 0.95)"
-                        />
-                        <Text style={styles.journeyCompleteBannerText}>{label}</Text>
+                    <View style={[styles.journeyPanel, styles.journeyPanelCompleted]}>
+                        <View style={styles.journeyCompleteBanner}>
+                            <Ionicons
+                                name="checkmark-done-circle"
+                                size={JOURNEY_ICON_BADGE}
+                                color="rgba(186, 250, 220, 0.95)"
+                            />
+                            <Text style={styles.journeyCompleteBannerText}>{label}</Text>
+                        </View>
                     </View>
                 </View>
             );
@@ -277,60 +274,58 @@ export const RoadmapCard: React.FC<Props> = ({
         const isStart = journeyGuidance.ctaPhase === 'start';
         const ctaLabel = isStart ? 'Start Journey' : 'Continue Journey';
         const a11yLabel = isStart ? 'Start journey: open first task' : 'Continue journey: open next incomplete task';
+        const ctaIconColor = '#153C5A';
 
         return (
             <View style={styles.journeyIntegrated}>
-                <View style={styles.nextStepHeaderRow}>
-                    <Ionicons
-                        name="compass-outline"
-                        size={JOURNEY_ICON_COMPASS}
-                        color={roadmapTheme.accentGold}
-                    />
-                    <Text style={styles.nextStepHeading}>Next step</Text>
+                <View style={styles.journeyPanel}>
+                    <View style={styles.nextStepHeaderRow}>
+                        <View style={styles.journeyStepIconWrap}>
+                            <Ionicons
+                                name="compass-outline"
+                                size={JOURNEY_ICON_COMPASS}
+                                color={roadmapTheme.accentMint}
+                            />
+                        </View>
+                        <Text style={styles.nextStepHeading}>Next step</Text>
+                    </View>
+                    <Text
+                        style={styles.nextStepTitle}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                    >
+                        {journeyGuidance.nextStepTitle}
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.journeyCtaBtn}
+                        onPress={journeyGuidance.onContinuePress}
+                        activeOpacity={0.88}
+                        accessibilityRole="button"
+                        accessibilityLabel={a11yLabel}
+                    >
+                        {isStart ? (
+                            <Ionicons
+                                name="play-circle-outline"
+                                size={JOURNEY_ICON_CTA}
+                                color={ctaIconColor}
+                            />
+                        ) : (
+                            <Ionicons
+                                name="arrow-forward-circle-outline"
+                                size={JOURNEY_ICON_CTA}
+                                color={ctaIconColor}
+                            />
+                        )}
+                        <Text style={styles.journeyCtaBtnText}>{ctaLabel}</Text>
+                    </TouchableOpacity>
                 </View>
-                <Text
-                    style={styles.nextStepTitle}
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                >
-                    {journeyGuidance.nextStepTitle}
-                </Text>
-                <TouchableOpacity
-                    style={[
-                        styles.journeyCtaBtn,
-                        featuredInShell && styles.journeyCtaBtnFeatured,
-                    ]}
-                    onPress={journeyGuidance.onContinuePress}
-                    activeOpacity={0.88}
-                    accessibilityRole="button"
-                    accessibilityLabel={a11yLabel}
-                >
-                    {isStart ? (
-                        <Ionicons
-                            name="play-circle-outline"
-                            size={JOURNEY_ICON_CTA}
-                            color={roadmapTheme.tealDeep}
-                        />
-                    ) : (
-                        <Ionicons
-                            name="arrow-forward-circle-outline"
-                            size={JOURNEY_ICON_CTA}
-                            color={roadmapTheme.tealDeep}
-                        />
-                    )}
-                    <Text style={styles.journeyCtaBtnText}>{ctaLabel}</Text>
-                </TouchableOpacity>
             </View>
         );
     };
 
     return (
         <CardWrapper
-            style={[
-                styles.card,
-                featuredInShell && styles.cardFeaturedInShell,
-                { borderLeftColor: accentBorderColor },
-            ]}
+            style={[styles.card, featuredInShell && styles.cardFeaturedInShell]}
             onPress={onPress}
             activeOpacity={0.7}
         >
@@ -443,29 +438,21 @@ export const RoadmapCard: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: 'rgba(255,255,255,0.10)',
+        backgroundColor: roadmapTheme.frostedSurfaceStrong,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.16)',
+        borderColor: roadmapTheme.frostedBorder,
         overflow: 'hidden',
-        borderLeftWidth: 3,
-        padding: getSpacing(16),
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.18,
-        shadowRadius: 14,
-        elevation: 10,
+        paddingVertical: 14,
+        paddingHorizontal: 14,
     },
     cardFeaturedInShell: {
         borderTopLeftRadius: 0,
         borderTopRightRadius: 0,
         borderBottomLeftRadius: 16,
         borderBottomRightRadius: 16,
-        borderTopWidth: 0,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
-        elevation: 4,
+        borderWidth: 0,
+        backgroundColor: roadmapTheme.frostedSurfaceStrong,
     },
     cardBody: {
         width: '100%',
@@ -473,28 +460,46 @@ const styles = StyleSheet.create({
     },
     journeyIntegrated: {
         width: '100%',
-        marginTop: getSpacing(14),
-        paddingTop: getSpacing(16),
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: roadmapTheme.divider,
+        marginTop: 12,
+    },
+    journeyPanel: {
+        backgroundColor: 'transparent',
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(111, 212, 190, 0.45)',
+    },
+    journeyPanelCompleted: {
+        borderColor: 'rgba(34, 197, 94, 0.45)',
+    },
+    journeyStepIconWrap: {
+        width: 34,
+        height: 34,
+        borderRadius: 10,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: 'rgba(111, 212, 190, 0.45)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     nextStepHeaderRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: getSpacing(8),
+        gap: 10,
         marginBottom: getSpacing(6),
     },
     nextStepHeading: {
-        fontSize: getFontSize(12),
-        fontWeight: '800',
-        letterSpacing: 0.35,
+        fontSize: getFontSize(12.5),
+        fontWeight: '700',
+        letterSpacing: 0.2,
         textTransform: 'uppercase',
-        color: 'rgba(255,255,255,0.78)',
+        color: 'rgba(255,255,255,0.70)',
     },
     nextStepTitle: {
         fontSize: getFontSize(isSmallDevice ? 15 : 16),
         fontWeight: '600',
-        color: 'rgba(255,255,255,0.96)',
+        color: roadmapTheme.textPrimary,
         lineHeight: getFontSize(isSmallDevice ? 21 : 22),
         marginBottom: getSpacing(12),
     },
@@ -503,34 +508,26 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        paddingVertical: 13,
+        paddingVertical: 11,
         paddingHorizontal: 16,
         borderRadius: 12,
-        backgroundColor: 'rgba(111, 212, 190, 0.38)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.22)',
+        backgroundColor: '#FFFFFF',
+        alignSelf: 'stretch',
     },
     journeyCtaBtnText: {
-        color: roadmapTheme.tealDeep,
+        color: '#153C5A',
         fontSize: 15,
         fontWeight: '800',
-        letterSpacing: 0.2,
-    },
-    journeyCtaBtnFeatured: {
-        backgroundColor: 'rgba(111, 212, 190, 0.32)',
-        borderColor: 'rgba(255,255,255,0.18)',
+        letterSpacing: 0.15,
     },
     journeyCompleteBanner: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-        borderRadius: 12,
-        backgroundColor: 'rgba(34, 197, 94, 0.11)',
-        borderWidth: 1,
-        borderColor: 'rgba(34, 197, 94, 0.22)',
+        paddingVertical: 4,
+        paddingHorizontal: 4,
+        backgroundColor: 'transparent',
     },
     journeyCompleteBannerText: {
         color: 'rgba(255,255,255,0.94)',
@@ -549,24 +546,29 @@ const styles = StyleSheet.create({
         // No changes needed, flexDirection remains 'row'
     },
     left: {
-        marginRight: getSpacing(16),
+        marginRight: 12,
         alignItems: 'flex-start',
         flexShrink: 0,
     },
-    // ✅ When no actions, left section takes 30% width
+    // ✅ When no actions, left section matches assessment thumbnail column width
     leftNoActions: {
-        width: '30%',
-        maxWidth: 140,
+        width: 128,
+        maxWidth: 128,
     },
     imageContainer: {
         position: 'relative',
-        width: getSpacing(100),
-        height: getSpacing(100),
+        width: 128,
+        height: 138,
+        borderRadius: 14,
+        borderWidth: 3,
+        borderColor: 'rgba(255,255,255,0.75)',
+        overflow: 'hidden',
+        backgroundColor: '#00ABAE',
     },
     image: {
         width: '100%',
         height: '100%',
-        borderRadius: 12,
+        borderRadius: 0,
         backgroundColor: '#2A5080',
     },
     phaseBadge: {
@@ -617,7 +619,7 @@ const styles = StyleSheet.create({
     // ✅ When no actions, right section takes remaining 70%
     rightNoActions: {
         flex: 1,
-        paddingRight: 0,
+        paddingRight: 22,
     },
     titleRow: {
         flexDirection: 'row',
@@ -629,8 +631,9 @@ const styles = StyleSheet.create({
     title: {
         flex: 1,
         fontSize: getFontSize(isSmallDevice ? 15 : 17),
-        fontWeight: '700',
-        color: '#FFFFFF',
+        fontWeight: '800',
+        letterSpacing: -0.2,
+        color: roadmapTheme.textPrimary,
         lineHeight: getFontSize(isSmallDevice ? 20 : 23),
         paddingRight: getSpacing(40),
         minWidth: 0,
@@ -665,8 +668,8 @@ const styles = StyleSheet.create({
     },
     description: {
         fontSize: getFontSize(isSmallDevice ? 12.5 : 13.5),
-        fontWeight: '400',
-        color: 'rgba(255, 255, 255, 0.75)',
+        fontWeight: '500',
+        color: roadmapTheme.textMuted,
         marginBottom: getSpacing(10),
         lineHeight: getFontSize(18),
         paddingRight: getSpacing(40),
@@ -715,11 +718,12 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
         backgroundColor: 'rgba(255,255,255,0.08)',
         flexShrink: 1,
+        maxWidth: '76%',
     },
     statusPillText: {
-        color: '#FFFFFF',
+        color: roadmapTheme.textPrimary,
         fontSize: getFontSize(13),
-        fontWeight: '600',
+        fontWeight: '700',
     },
     progressSection: {
         marginTop: getSpacing(12),
@@ -770,10 +774,10 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     completedDate: {
-        color: 'rgba(255,255,255,0.8)',
+        color: 'rgba(255,255,255,0.85)',
         marginTop: getSpacing(10),
         fontSize: getFontSize(13),
-        fontWeight: '400',
+        fontWeight: '600',
         paddingRight: getSpacing(40),
         minWidth: 0,
     },

@@ -278,8 +278,10 @@ export default function PastorRoadmapIndex() {
                 style={styles.catchUpGradient}
               >
                 <View style={styles.catchUpInner}>
-                  <Ionicons name="sparkles" size={26} color={roadmapTheme.accentGold} />
-                  <Text style={styles.catchUpTitle}>🎉 You're all caught up!</Text>
+                  <View style={styles.catchUpTitleRow}>
+                    <Ionicons name="trophy" size={28} color={roadmapTheme.accentGold} />
+                    <Text style={styles.catchUpTitle}>You're all caught up!</Text>
+                  </View>
                   <Text style={styles.catchUpSubtitle}>Every journey here is complete. Celebrate the progress.</Text>
                 </View>
               </LinearGradient>
@@ -374,11 +376,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+  catchUpTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    flexWrap: "wrap",
+    paddingHorizontal: 8,
+  },
   catchUpTitle: {
     color: roadmapTheme.textPrimary,
     fontSize: 18,
     fontWeight: "800",
     textAlign: "center",
+    flexShrink: 1,
   },
   catchUpSubtitle: {
     color: roadmapTheme.textMuted,
@@ -393,8 +404,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(232, 200, 138, 0.28)",
-    backgroundColor: "rgba(255,255,255,0.07)",
+    borderColor: roadmapTheme.frostedBorder,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.16,
@@ -404,9 +415,9 @@ const styles = StyleSheet.create({
   focusTopRail: {
     paddingVertical: 10,
     paddingHorizontal: 14,
-    backgroundColor: "rgba(255,255,255,0.09)",
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.14)",
+    borderBottomColor: roadmapTheme.divider,
   },
   focusRibbonText: {
     color: roadmapTheme.accentGold,
