@@ -1,10 +1,25 @@
 // components/director/ProgressRoadmapCard.tsx
 import { RoadmapCardData } from '@/lib/roadmap/types';
 import { icons } from '@/constants/images';
+import { roadmapTheme } from '@/components/ui/design-system/roadmapTheme';
 import { getFontSize, getSpacing, isSmallDevice } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const JOURNEY_ICON_CTA = 20;
+const JOURNEY_ICON_COMPASS = 16;
+const JOURNEY_ICON_BADGE = 21;
+
+/** Optional pastor roadmap list: in-card journey CTA / completion strip. Omit everywhere else. */
+export type RoadmapCardJourneyGuidance =
+  | {
+      kind: 'active';
+      ctaPhase: 'start' | 'continue';
+      nextStepTitle: string;
+      onContinuePress: () => void;
+    }
+  | { kind: 'completed'; bannerText?: string };
 
 interface Props {
   data: RoadmapCardData & { phaseNumber?: number };
@@ -14,6 +29,14 @@ interface Props {
   selectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelection?: () => void;
+  /**
+   * When set (e.g. pastor list), always shows nested-task progress bar, counts, and % —
+   * including completed phases where `data.taskProgress` is omitted by the mapper.
+   * Default: omit for identical behavior everywhere else.
+   */
+  journeyProgress?: { completed: number; total: number };
+  /** In-card journey CTA / completion (pastor list). Parent keeps navigation logic. */
+  journeyGuidance?: RoadmapCardJourneyGuidance;
 }
 
 export const RoadmapCard: React.FC<Props> = ({
@@ -24,6 +47,8 @@ export const RoadmapCard: React.FC<Props> = ({
     selectionMode,
     isSelected,
     onToggleSelection,
+    journeyProgress,
+    journeyGuidance,
 }) => {
     const isCompleted = data.status === 'completed';
     const hasProgress = data.taskProgress && !isCompleted;
@@ -165,7 +190,45 @@ export const RoadmapCard: React.FC<Props> = ({
         );
     };
 
+    const journeyProgressPercentage = useMemo(() => {
+        if (!journeyProgress || journeyProgress.total <= 0) return 0;
+        return Math.min(100, Math.round((journeyProgress.completed / journeyProgress.total) * 100));
+    }, [journeyProgress]);
+
+    const renderJourneyProgressSection = () => {
+        if (!journeyProgress || journeyProgress.total <= 0) return null;
+        const { completed, total } = journeyProgress;
+
+        return (
+            <View style={styles.progressSection}>
+                <View style={styles.progressRow}>
+                    <View style={styles.progressTrack}>
+                        <View
+                            style={[
+                                styles.progressFill,
+                                {
+                                    width: `${journeyProgressPercentage}%`,
+                                    backgroundColor: progressFillColor,
+                                },
+                            ]}
+                        />
+                    </View>
+                    <Text style={[styles.progressPercent, { color: secondaryTextColor }]}>
+                        {journeyProgressPercentage}%
+                    </Text>
+                </View>
+                <Text style={[styles.progressCounts, { color: secondaryTextColor }]}>
+                    {completed} / {total} tasks · {journeyProgressPercentage}% complete
+                </Text>
+            </View>
+        );
+    };
+
     const renderProgressSection = () => {
+        if (journeyProgress && journeyProgress.total > 0) {
+            return renderJourneyProgressSection();
+        }
+
         if (!hasProgress || !data.taskProgress) return null;
 
         return (
@@ -188,104 +251,174 @@ export const RoadmapCard: React.FC<Props> = ({
         );
     };
 
+    const renderJourneyGuidanceSection = () => {
+        if (!journeyGuidance) return null;
+
+        if (journeyGuidance.kind === 'completed') {
+            const label = journeyGuidance.bannerText ?? 'Journey Completed';
+            return (
+                <View style={styles.journeyIntegrated}>
+                    <View style={styles.journeyCompleteBanner}>
+                        <Ionicons
+                            name="checkmark-done-circle"
+                            size={JOURNEY_ICON_BADGE}
+                            color="rgba(186, 250, 220, 0.95)"
+                        />
+                        <Text style={styles.journeyCompleteBannerText}>{label}</Text>
+                    </View>
+                </View>
+            );
+        }
+
+        const isStart = journeyGuidance.ctaPhase === 'start';
+        const ctaLabel = isStart ? 'Start Journey' : 'Continue Journey';
+        const a11yLabel = isStart ? 'Start journey: open first task' : 'Continue journey: open next incomplete task';
+
+        return (
+            <View style={styles.journeyIntegrated}>
+                <View style={styles.nextStepHeaderRow}>
+                    <Ionicons
+                        name="compass-outline"
+                        size={JOURNEY_ICON_COMPASS}
+                        color={roadmapTheme.accentGold}
+                    />
+                    <Text style={styles.nextStepHeading}>Next step</Text>
+                </View>
+                <Text
+                    style={styles.nextStepTitle}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                >
+                    {journeyGuidance.nextStepTitle}
+                </Text>
+                <TouchableOpacity
+                    style={styles.journeyCtaBtn}
+                    onPress={journeyGuidance.onContinuePress}
+                    activeOpacity={0.88}
+                    accessibilityRole="button"
+                    accessibilityLabel={a11yLabel}
+                >
+                    {isStart ? (
+                        <Ionicons
+                            name="play-circle-outline"
+                            size={JOURNEY_ICON_CTA}
+                            color={roadmapTheme.tealDeep}
+                        />
+                    ) : (
+                        <Ionicons
+                            name="arrow-forward-circle-outline"
+                            size={JOURNEY_ICON_CTA}
+                            color={roadmapTheme.tealDeep}
+                        />
+                    )}
+                    <Text style={styles.journeyCtaBtnText}>{ctaLabel}</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    };
+
     return (
         <CardWrapper
             style={[styles.card, { borderLeftColor: accentBorderColor }]}
             onPress={onPress}
             activeOpacity={0.7}
         >
-            {/* ✅ Use dynamic flex ratios based on hasActions */}
-            <View style={[
-                styles.inner,
-                !hasActions && styles.innerNoActions
-            ]}>
+            <View style={styles.cardBody}>
+                {/* ✅ Use dynamic flex ratios based on hasActions */}
                 <View style={[
-                    styles.left,
-                    !hasActions && styles.leftNoActions
+                    styles.inner,
+                    !hasActions && styles.innerNoActions
                 ]}>
-                    {renderImage()}
-                    {showCompletionTimeOnLeft && (
-                        <Text style={styles.completionTime}>
-                            {data.completionTime}
-                        </Text>
-                    )}
-                </View>
-
-                <View style={[
-                    styles.right,
-                    !hasActions && styles.rightNoActions
-                ]}>
-                    <View style={styles.titleRow}>
-                        <Text
-                            style={[
-                                styles.title,
-                                !hasActions && styles.titleNoActions
-                            ]}
-                            numberOfLines={2}
-                        >
-                            {data.title}
-                        </Text>
-                        {renderActions()}
+                    <View style={[
+                        styles.left,
+                        !hasActions && styles.leftNoActions
+                    ]}>
+                        {renderImage()}
+                        {showCompletionTimeOnLeft && (
+                            <Text style={styles.completionTime}>
+                                {data.completionTime}
+                            </Text>
+                        )}
                     </View>
 
-                    {data.description && (
-                        <Text
-                            style={[
-                                styles.description,
-                                !hasActions && styles.descriptionNoActions
-                            ]}
-                            numberOfLines={2}
-                        >
-                            {data.description}
-                        </Text>
-                    )}
-
-                    {!!data.phaseLabel && (
-                        <View style={[styles.phasePill, !hasActions && styles.phasePillNoActions]}>
-                            <Text style={styles.phasePillText} numberOfLines={1}>
-                                Phase : {data.phaseLabel}
-                            </Text>
-                        </View>
-                    )}
-
-                    {data.completionTime && !data.status && (
-                        <Text style={[
-                            styles.completionTimeText,
-                            !hasActions && styles.completionTimeTextNoActions
-                        ]}>
-                            {data.completionTime}
-                        </Text>
-                    )}
-
-                    {statusConfig && (
-                        <View style={[
-                            styles.statusRow,
-                            !hasActions && styles.statusRowNoActions
-                        ]}>
-                            <View
+                    <View style={[
+                        styles.right,
+                        !hasActions && styles.rightNoActions
+                    ]}>
+                        <View style={styles.titleRow}>
+                            <Text
                                 style={[
-                                    styles.statusPill,
-                                    { backgroundColor: statusConfig.bg, borderColor: statusConfig.accent },
+                                    styles.title,
+                                    !hasActions && styles.titleNoActions
                                 ]}
+                                numberOfLines={2}
                             >
-                                <Text style={styles.statusPillText}>
-                                    Status  •  {statusConfig.text}
+                                {data.title}
+                            </Text>
+                            {renderActions()}
+                        </View>
+
+                        {data.description && (
+                            <Text
+                                style={[
+                                    styles.description,
+                                    !hasActions && styles.descriptionNoActions
+                                ]}
+                                numberOfLines={2}
+                            >
+                                {data.description}
+                            </Text>
+                        )}
+
+                        {!!data.phaseLabel && (
+                            <View style={[styles.phasePill, !hasActions && styles.phasePillNoActions]}>
+                                <Text style={styles.phasePillText} numberOfLines={1}>
+                                    Phase : {data.phaseLabel}
                                 </Text>
                             </View>
-                        </View>
-                    )}
+                        )}
 
-                    {renderProgressSection()}
+                        {data.completionTime && !data.status && (
+                            <Text style={[
+                                styles.completionTimeText,
+                                !hasActions && styles.completionTimeTextNoActions
+                            ]}>
+                                {data.completionTime}
+                            </Text>
+                        )}
 
-                    {isCompleted && data.completedDate && (
-                        <Text style={[
-                            styles.completedDate,
-                            !hasActions && styles.completedDateNoActions
-                        ]}>
-                            Completed on : {data.completedDate}
-                        </Text>
-                    )}
+                        {statusConfig && (
+                            <View style={[
+                                styles.statusRow,
+                                !hasActions && styles.statusRowNoActions
+                            ]}>
+                                <View
+                                    style={[
+                                        styles.statusPill,
+                                        { backgroundColor: statusConfig.bg, borderColor: statusConfig.accent },
+                                    ]}
+                                >
+                                    <Text style={styles.statusPillText}>
+                                        Status  •  {statusConfig.text}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+
+                        {renderProgressSection()}
+
+                        {isCompleted && data.completedDate && (
+                            <Text style={[
+                                styles.completedDate,
+                                !hasActions && styles.completedDateNoActions
+                            ]}>
+                                Completed on : {data.completedDate}
+                            </Text>
+                        )}
+                    </View>
                 </View>
+
+                {renderJourneyGuidanceSection()}
             </View>
         </CardWrapper>
     );
@@ -305,6 +438,74 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.18,
         shadowRadius: 14,
         elevation: 10,
+    },
+    cardBody: {
+        width: '100%',
+        minWidth: 0,
+    },
+    journeyIntegrated: {
+        width: '100%',
+        marginTop: getSpacing(14),
+        paddingTop: getSpacing(16),
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: roadmapTheme.divider,
+    },
+    nextStepHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: getSpacing(8),
+        marginBottom: getSpacing(6),
+    },
+    nextStepHeading: {
+        fontSize: getFontSize(12),
+        fontWeight: '800',
+        letterSpacing: 0.35,
+        textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.78)',
+    },
+    nextStepTitle: {
+        fontSize: getFontSize(isSmallDevice ? 15 : 16),
+        fontWeight: '600',
+        color: 'rgba(255,255,255,0.96)',
+        lineHeight: getFontSize(isSmallDevice ? 21 : 22),
+        marginBottom: getSpacing(12),
+    },
+    journeyCtaBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        paddingVertical: 13,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        backgroundColor: 'rgba(111, 212, 190, 0.38)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+    },
+    journeyCtaBtnText: {
+        color: roadmapTheme.tealDeep,
+        fontSize: 15,
+        fontWeight: '800',
+        letterSpacing: 0.2,
+    },
+    journeyCompleteBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderRadius: 12,
+        backgroundColor: 'rgba(34, 197, 94, 0.11)',
+        borderWidth: 1,
+        borderColor: 'rgba(34, 197, 94, 0.22)',
+    },
+    journeyCompleteBannerText: {
+        color: 'rgba(255,255,255,0.94)',
+        fontSize: 14,
+        fontWeight: '700',
+        letterSpacing: 0.15,
+        flexShrink: 1,
     },
     inner: {
         flexDirection: 'row',
@@ -510,6 +711,18 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         flexShrink: 0,
         minWidth: 40,
+    },
+    progressPercent: {
+        fontSize: getFontSize(14),
+        fontWeight: '700',
+        flexShrink: 0,
+        minWidth: 38,
+        textAlign: 'right',
+    },
+    progressCounts: {
+        fontSize: getFontSize(13),
+        fontWeight: '600',
+        marginTop: getSpacing(6),
     },
     progressLabel: {
         color: 'rgba(255,255,255,0.7)',
