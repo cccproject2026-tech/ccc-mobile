@@ -1,30 +1,31 @@
-import TopBar from "@/components/director/TopBar";
 import { RoadmapCard } from "@/components/director/ProgressRoadmapCard";
+import TopBar from "@/components/director/TopBar";
 import {
-  CommonCard,
-  GradientBackground,
-  RoadmapNavRow,
-  RoadmapSearchField,
-  RoadmapTabStrip,
-  SectionHeader,
-  roadmapTheme,
+    CommonCard,
+    GradientBackground,
+    RoadmapNavRow,
+    RoadmapSearchField,
+    RoadmapTabStrip,
+    roadmapTheme,
+    SectionHeader,
 } from "@/components/ui/design-system/index";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { getCompletionStats, getTasks } from "@/lib/roadmap/helpers";
-import type { Roadmap } from "@/lib/roadmap/types";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
+import type { Roadmap } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    ActivityIndicator,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -90,6 +91,27 @@ function getNestedTaskTitleById(roadmap: Roadmap | undefined | null, taskId: str
   return name && name.length > 0 ? name : "Next task";
 }
 
+/** Same journey CTA rules as list `RoadmapCard`s; keeps labels/handlers in one place. */
+function buildPastorRowJourneyGuidance(
+  roadmap: any,
+  journey: ReturnType<typeof computePastorJourneyMeta>,
+  continueNav: (r: any, nextTaskId: string) => void,
+) {
+  const nextId = journey.nextIncompleteTaskId;
+  const showContinue = journey.hasTasks && !journey.allComplete && !!nextId;
+  const showJourneyComplete = journey.hasTasks && journey.allComplete;
+  if (showContinue && nextId) {
+    return {
+      kind: "active" as const,
+      ctaPhase: journey.completed === 0 ? ("start" as const) : ("continue" as const),
+      nextStepTitle: getNestedTaskTitleById(roadmap as Roadmap, nextId),
+      onContinuePress: () => continueNav(roadmap, nextId),
+    };
+  }
+  if (showJourneyComplete) return { kind: "completed" as const };
+  return undefined;
+}
+
 /** Sort bucket for pastor list only: 0 = in progress, 1 = not started / no tasks, 2 = completed. */
 function pastorRoadmapListSortGroup(roadmap: Roadmap): 0 | 1 | 2 {
   const m = computePastorJourneyMeta(roadmap);
@@ -146,16 +168,20 @@ export default function PastorRoadmapIndex() {
     });
   }, [search, sortedRoadmaps, tab]);
 
-  const roadmapRows = useMemo(
-    () =>
-      filtered.map((r: any) => ({
-        key: String(r?._id ?? r?.id),
-        roadmap: r,
-        card: getRoadmapCard(r),
-        journey: computePastorJourneyMeta(r as Roadmap),
-      })),
-    [filtered],
-  );
+  const listBundle = useMemo(() => {
+    const rows = filtered.map((r: any) => ({
+      key: String(r?._id ?? r?.id),
+      roadmap: r,
+      card: getRoadmapCard(r),
+      journey: computePastorJourneyMeta(r as Roadmap),
+    }));
+    if (rows.length === 0) {
+      return { rows, allCaughtUp: false, focusRow: null as (typeof rows)[0] | null };
+    }
+    const allCaughtUp = !rows.some((row) => row.journey.hasTasks && !row.journey.allComplete);
+    const focusRow = allCaughtUp ? null : rows[0];
+    return { rows, allCaughtUp, focusRow };
+  }, [filtered]);
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -237,6 +263,60 @@ export default function PastorRoadmapIndex() {
           </View>
         ) : null}
 
+        {filtered.length > 0 ? (
+          <View style={styles.todaySection}>
+            <SectionHeader
+              title="Today's focus"
+              subtitle="One guided next step from your current roadmaps."
+              showDivider
+            />
+            {listBundle.allCaughtUp ? (
+              <LinearGradient
+                colors={["rgba(34, 197, 94, 0.22)", "rgba(111, 212, 190, 0.14)", "rgba(255,255,255,0.08)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.catchUpGradient}
+              >
+                <View style={styles.catchUpInner}>
+                  <Ionicons name="sparkles" size={26} color={roadmapTheme.accentGold} />
+                  <Text style={styles.catchUpTitle}>🎉 You're all caught up!</Text>
+                  <Text style={styles.catchUpSubtitle}>Every journey here is complete. Celebrate the progress.</Text>
+                </View>
+              </LinearGradient>
+            ) : listBundle.focusRow ? (
+              <View style={styles.focusShell}>
+                <View style={styles.focusTopRail}>
+                  <Text style={styles.focusRibbonText}>Recommended for today</Text>
+                </View>
+                <Pressable
+                  onPress={() => handleOpen(listBundle.focusRow!.roadmap)}
+                  style={styles.focusCardPress}
+                >
+                  <RoadmapCard
+                    featuredInShell
+                    data={listBundle.focusRow!.card as any}
+                    journeyProgress={
+                      listBundle.focusRow!.journey.hasTasks
+                        ? {
+                            completed: listBundle.focusRow!.journey.completed,
+                            total: listBundle.focusRow!.journey.total,
+                          }
+                        : undefined
+                    }
+                    journeyGuidance={buildPastorRowJourneyGuidance(
+                      listBundle.focusRow!.roadmap,
+                      listBundle.focusRow!.journey,
+                      handleContinueJourney,
+                    )}
+                  />
+                </Pressable>
+              </View>
+            ) : null}
+
+            <SectionHeader title="All journeys" subtitle="Every phase in your revitalization plan." showDivider />
+          </View>
+        ) : null}
+
         <View style={styles.list}>
           {filtered.length === 0 ? (
             <CommonCard style={styles.emptyCard}>
@@ -245,25 +325,12 @@ export default function PastorRoadmapIndex() {
               <Text style={styles.emptySubtitle}>Try a different filter or search.</Text>
             </CommonCard>
           ) : (
-            roadmapRows.map(({ key, roadmap: r, card, journey }) => {
+            listBundle.rows.map(({ key, roadmap: r, card, journey }) => {
               const journeyProgress =
                 journey.hasTasks
                   ? { completed: journey.completed, total: journey.total }
                   : undefined;
-              const nextId = journey.nextIncompleteTaskId;
-              const showContinue = journey.hasTasks && !journey.allComplete && !!nextId;
-              const showJourneyComplete = journey.hasTasks && journey.allComplete;
-
-              const journeyGuidance = showContinue && nextId
-                ? {
-                    kind: "active" as const,
-                    ctaPhase: journey.completed === 0 ? ("start" as const) : ("continue" as const),
-                    nextStepTitle: getNestedTaskTitleById(r as Roadmap, nextId),
-                    onContinuePress: () => handleContinueJourney(r, nextId),
-                  }
-                : showJourneyComplete
-                  ? { kind: "completed" as const }
-                  : undefined;
+              const journeyGuidance = buildPastorRowJourneyGuidance(r, journey, handleContinueJourney);
 
               return (
                 <Pressable key={key} onPress={() => handleOpen(r)} style={styles.cardPress}>
@@ -290,6 +357,67 @@ const styles = StyleSheet.create({
   },
   centerFill: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   loadingText: { color: "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: "600" },
+
+  todaySection: {
+    marginBottom: 6,
+  },
+  catchUpGradient: {
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  catchUpInner: {
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    gap: 10,
+  },
+  catchUpTitle: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 18,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  catchUpSubtitle: {
+    color: roadmapTheme.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 18,
+    maxWidth: 320,
+  },
+  focusShell: {
+    marginBottom: 18,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(232, 200, 138, 0.28)",
+    backgroundColor: "rgba(255,255,255,0.07)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  focusTopRail: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: "rgba(255,255,255,0.09)",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.14)",
+  },
+  focusRibbonText: {
+    color: roadmapTheme.accentGold,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  focusCardPress: {
+    backgroundColor: "transparent",
+  },
 
   list: { gap: 12, paddingBottom: 10 },
   cardPress: { borderRadius: 14, overflow: "hidden" },

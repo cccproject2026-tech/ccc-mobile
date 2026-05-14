@@ -37,6 +37,8 @@ interface Props {
   journeyProgress?: { completed: number; total: number };
   /** In-card journey CTA / completion (pastor list). Parent keeps navigation logic. */
   journeyGuidance?: RoadmapCardJourneyGuidance;
+  /** When true, card stacks under a parent “Today’s focus” rail (no top radius, lighter chrome). */
+  featuredInShell?: boolean;
 }
 
 export const RoadmapCard: React.FC<Props> = ({
@@ -49,6 +51,7 @@ export const RoadmapCard: React.FC<Props> = ({
     onToggleSelection,
     journeyProgress,
     journeyGuidance,
+    featuredInShell = false,
 }) => {
     const isCompleted = data.status === 'completed';
     const hasProgress = data.taskProgress && !isCompleted;
@@ -90,7 +93,8 @@ export const RoadmapCard: React.FC<Props> = ({
         return data.status ? configs[data.status as keyof typeof configs] : null;
     }, [data.status]);
 
-    const showCompletionTimeOnLeft = data.completionTime && data.status;
+    const showCompletionTimeOnLeft = !!(data.completionTime && data.status && !featuredInShell);
+    const showCompletionTimeInBody = !!(data.completionTime && data.status && featuredInShell);
     const CardWrapper = onPress ? TouchableOpacity : View;
 
     const accentBorderColor = useMemo(() => {
@@ -292,7 +296,10 @@ export const RoadmapCard: React.FC<Props> = ({
                     {journeyGuidance.nextStepTitle}
                 </Text>
                 <TouchableOpacity
-                    style={styles.journeyCtaBtn}
+                    style={[
+                        styles.journeyCtaBtn,
+                        featuredInShell && styles.journeyCtaBtnFeatured,
+                    ]}
                     onPress={journeyGuidance.onContinuePress}
                     activeOpacity={0.88}
                     accessibilityRole="button"
@@ -319,7 +326,11 @@ export const RoadmapCard: React.FC<Props> = ({
 
     return (
         <CardWrapper
-            style={[styles.card, { borderLeftColor: accentBorderColor }]}
+            style={[
+                styles.card,
+                featuredInShell && styles.cardFeaturedInShell,
+                { borderLeftColor: accentBorderColor },
+            ]}
             onPress={onPress}
             activeOpacity={0.7}
         >
@@ -355,10 +366,16 @@ export const RoadmapCard: React.FC<Props> = ({
                             >
                                 {data.title}
                             </Text>
-                            {renderActions()}
-                        </View>
+                        {renderActions()}
+                    </View>
 
-                        {data.description && (
+                    {showCompletionTimeInBody && !!data.completionTime && (
+                        <Text style={styles.completionTimeInline} numberOfLines={2}>
+                            {data.completionTime}
+                        </Text>
+                    )}
+
+                    {data.description && (
                             <Text
                                 style={[
                                     styles.description,
@@ -439,6 +456,17 @@ const styles = StyleSheet.create({
         shadowRadius: 14,
         elevation: 10,
     },
+    cardFeaturedInShell: {
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
+        borderTopWidth: 0,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 4,
+    },
     cardBody: {
         width: '100%',
         minWidth: 0,
@@ -487,6 +515,10 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '800',
         letterSpacing: 0.2,
+    },
+    journeyCtaBtnFeatured: {
+        backgroundColor: 'rgba(111, 212, 190, 0.32)',
+        borderColor: 'rgba(255,255,255,0.18)',
     },
     journeyCompleteBanner: {
         flexDirection: 'row',
@@ -569,6 +601,14 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         lineHeight: 16,
         marginTop: 12,
+    },
+    completionTimeInline: {
+        color: 'rgba(255,255,255,0.72)',
+        fontSize: getFontSize(12),
+        fontWeight: '500',
+        lineHeight: getFontSize(16),
+        marginTop: getSpacing(4),
+        marginBottom: getSpacing(4),
     },
     right: {
         flex: 1,
