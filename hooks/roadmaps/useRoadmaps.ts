@@ -11,6 +11,7 @@ import {
 } from "@/lib/roadmap/types";
 import { apiClient } from "@/services/api/client";
 import { ENDPOINTS } from "@/services/api/endpoints";
+import { resolveRoadmapDocumentUrl } from '@/lib/roadmap/helpers';
 import { roadmapService } from '@/services/roadmap.service';
 import { useAuthStore } from "@/stores";
 import { UserRole } from "@/types";
@@ -420,11 +421,27 @@ export const useRoadmapDocuments = (
 
             // Flatten into single array of files and attach batch info
             const flatFiles = allBatches.flatMap((batch: any) =>
-                batch.files.map((f: any) => ({
-                    ...f,
-                    extraName: batch.name,
-                    uploadBatchId: batch.uploadBatchId
-                }))
+                (batch.files ?? []).map((f: any, fileIndex: number) => {
+                    const rawUrl =
+                        f.fileUrl ?? f.url ?? f.path ?? f.location ?? f.secureUrl ?? '';
+                    return {
+                        ...f,
+                        _id: String(
+                            f._id ??
+                                f.id ??
+                                `${batch.uploadBatchId ?? batch._id ?? 'batch'}-${fileIndex}-${f.fileName ?? f.name ?? 'file'}`,
+                        ),
+                        fileName: f.fileName ?? f.name ?? 'File',
+                        fileUrl: resolveRoadmapDocumentUrl(rawUrl),
+                        fileType: f.fileType ?? f.mimeType ?? f.type ?? '',
+                        extraName: batch.name,
+                        uploadBatchId:
+                            batch.uploadBatchId ??
+                            batch._id ??
+                            batch.id ??
+                            f.uploadBatchId,
+                    };
+                }),
             );
 
             console.log("Fetched and flattened roadmap documents:", flatFiles);
@@ -474,14 +491,9 @@ export const useDeleteRoadmapDocument = () => {
 
         onSuccess: (_data, vars) => {
             queryClient.invalidateQueries({
-                queryKey: [
-                    "roadmap-documents",
-                    vars.roadMapId,
-                    vars.nestedId,
-                    vars.userId
-                ]
+                queryKey: ["roadmap-documents", vars.roadMapId],
             });
-        }
+        },
     });
 };
 

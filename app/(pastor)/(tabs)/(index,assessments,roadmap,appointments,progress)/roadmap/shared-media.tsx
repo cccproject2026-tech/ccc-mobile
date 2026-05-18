@@ -7,15 +7,19 @@ import {
     useRoadmap,
     useRoadmapDocuments
 } from '@/hooks/roadmaps/useRoadmaps';
-import { getTasks } from '@/lib/roadmap/helpers';
+import {
+    formatRoadmapUploadFieldLabel,
+    getTasks,
+    resolveRoadmapDocumentUrl,
+} from '@/lib/roadmap/helpers';
 import { useAuthStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
     Alert,
     Dimensions,
-    Image,
     ScrollView,
     StyleSheet,
     Text,
@@ -42,6 +46,55 @@ type RoadmapMedia = {
     uploadBatchId?: string;
 };
 
+function isImageMedia(file: RoadmapMedia): boolean {
+    const type = String(file.fileType ?? '').toLowerCase();
+    const name = String(file.fileName ?? '').toLowerCase();
+    return (
+        type.startsWith('image/') ||
+        type === 'image' ||
+        /\.(jpe?g|png|gif|webp|heic|bmp)$/i.test(name)
+    );
+}
+
+function isVideoMedia(file: RoadmapMedia): boolean {
+    const type = String(file.fileType ?? '').toLowerCase();
+    const name = String(file.fileName ?? '').toLowerCase();
+    return (
+        type.startsWith('video/') ||
+        type === 'video' ||
+        /\.(mp4|mov|m4v|webm|avi)$/i.test(name)
+    );
+}
+
+function resolveUploadBatchId(file: RoadmapMedia): string | null {
+    const id = file.uploadBatchId;
+    if (id != null && String(id).trim() !== '') return String(id);
+    return null;
+}
+
+function MediaThumbnail({ uri, width }: { uri: string; width: number }) {
+    const [failed, setFailed] = useState(false);
+    const resolved = resolveRoadmapDocumentUrl(uri);
+
+    if (!resolved || failed) {
+        return (
+            <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { width }]}>
+                <Ionicons name="image-outline" size={26} color="rgba(255,255,255,0.45)" />
+            </View>
+        );
+    }
+
+    return (
+        <Image
+            source={{ uri: resolved }}
+            style={[styles.thumbnail, { width }]}
+            contentFit="cover"
+            transition={150}
+            onError={() => setFailed(true)}
+        />
+    );
+}
+
 export default function ShareMedia() {
     const { user } = useAuthStore();
 
@@ -53,6 +106,8 @@ export default function ShareMedia() {
             nestedId?: string;
         }>();
 
+    const resolvedNestedId = String(nestedId || taskId || '').trim();
+
     const deleteDocument = useDeleteRoadmapDocument();
 
     // Fetch roadmap data to get task title
@@ -61,33 +116,43 @@ export default function ShareMedia() {
     // Fetch all documents for this roadmap item + extraName
     const { data: docs = [] } = useRoadmapDocuments(
         roadMapId,
-        nestedId,
+        resolvedNestedId || undefined,
         user?.id,
         extraName
     ) as { data: RoadmapMedia[] | undefined } as any;
 
-    interface RoadmapMedia {
-        _id: string;
-        fileName: string;
-        fileUrl: string;
-        fileType: string;
-        fileSize: number;
-        uploadedAt?: string;
-        extraName?: string;
-        uploadBatchId?: string;
-    }
-
-    const photos: RoadmapMedia[] = (docs || []).filter((f: RoadmapMedia) => f.fileType?.startsWith('image/'));
-    const videos: RoadmapMedia[] = (docs || []).filter((f: RoadmapMedia) => f.fileType?.startsWith('video/'));
+    const allDocs: RoadmapMedia[] = docs || [];
+    const photos: RoadmapMedia[] = allDocs.filter(isImageMedia);
+    const videos: RoadmapMedia[] = allDocs.filter(isVideoMedia);
+    const otherFiles: RoadmapMedia[] = allDocs.filter(
+        (f) => !isImageMedia(f) && !isVideoMedia(f),
+    );
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
     const [selectedOutcome, setSelectedOutcome] = useState('');
-    const [activeTab, setActiveTab] = useState<'photos' | 'videos'>('photos');
+    const [activeTab, setActiveTab] = useState<'photos' | 'videos' | 'files'>('photos');
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    const currentMedia: RoadmapMedia[] = activeTab === 'photos' ? photos : videos;
+    const currentMedia: RoadmapMedia[] =
+        activeTab === 'photos' ? photos : activeTab === 'videos' ? videos : otherFiles;
+
+    const availableTabs = useMemo(() => {
+        const tabs: Array<'photos' | 'videos' | 'files'> = [];
+        if (photos.length > 0) tabs.push('photos');
+        if (videos.length > 0) tabs.push('videos');
+        if (otherFiles.length > 0) tabs.push('files');
+        return tabs;
+    }, [photos.length, videos.length, otherFiles.length]);
+
+    React.useEffect(() => {
+        if (availableTabs.length === 0) return;
+        if (!availableTabs.includes(activeTab)) {
+            setActiveTab(availableTabs[0]);
+        }
+    }, [activeTab, availableTabs]);
 
     const taskTitle = useMemo(() => {
         // If no roadmap or taskId/nestedId, return default
@@ -98,14 +163,78 @@ export default function ShareMedia() {
             const tasks = getTasks(roadmap);
             
             // Find the task by taskId or nestedId
-            const taskIdToFind = taskId || nestedId;
-            const task = tasks.find(t => t._id === taskIdToFind);
+            const taskIdToFind = resolvedNestedId || taskId || nestedId;
+            const task = tasks.find(t => String(t._id) === String(taskIdToFind));
             
             return task?.name || 'Shared Media';
         } catch {
             return 'Shared Media';
         }
-    }, [roadmap, taskId, nestedId]);
+    }, [roadmap, taskId, nestedId, resolvedNestedId]);
+
+    const deleteFiles = useCallback(
+        async (files: RoadmapMedia[]) => {
+            if (!roadMapId || !resolvedNestedId || !user?.id) {
+                Alert.alert(
+                    'Cannot delete',
+                    'Missing roadmap information. Go back and open shared media from the task again.',
+                );
+                return;
+            }
+
+            const missingBatch = files.filter((f) => !resolveUploadBatchId(f));
+            if (missingBatch.length > 0) {
+                Alert.alert(
+                    'Cannot delete',
+                    'This file is missing upload metadata. Try refreshing the task, or contact support if it persists.',
+                );
+                return;
+            }
+
+            setIsDeleting(true);
+            try {
+                await Promise.all(
+                    files.map((file) =>
+                        deleteDocument.mutateAsync({
+                            roadMapId: String(roadMapId),
+                            userId: user.id,
+                            nestedId: resolvedNestedId,
+                            fileUrl: file.fileUrl,
+                            uploadBatchId: resolveUploadBatchId(file)!,
+                        }),
+                    ),
+                );
+                setSelectionMode(false);
+                setSelectedItems(new Set());
+            } catch (err: any) {
+                Alert.alert(
+                    'Delete failed',
+                    err?.message || 'Could not remove the selected file(s). Please try again.',
+                );
+            } finally {
+                setIsDeleting(false);
+            }
+        },
+        [roadMapId, resolvedNestedId, user?.id, deleteDocument],
+    );
+
+    const confirmDeleteSingle = useCallback(
+        (file: RoadmapMedia) => {
+            Alert.alert(
+                'Delete file',
+                `Remove "${file.fileName || 'this file'}"?`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: () => deleteFiles([file]),
+                    },
+                ],
+            );
+        },
+        [deleteFiles],
+    );
 
     // ---------------- OUTCOME MENU + DATA (restored) ----------------
     const outcomeMenuItems = useCallback((): MenuItem[] => [
@@ -182,35 +311,25 @@ export default function ShareMedia() {
     }, [currentMedia]);
 
     const deleteSelected = useCallback(() => {
-        if (!roadMapId || !nestedId || !user?.id) return;
+        const toDelete = currentMedia.filter((m) => selectedItems.has(m._id));
+        if (toDelete.length === 0) {
+            Alert.alert('Nothing selected', 'Tap items to select them, then delete.');
+            return;
+        }
 
         Alert.alert(
-            'Delete Items',
-            'Are you sure you want to delete the selected items?',
+            'Delete items',
+            `Remove ${toDelete.length} selected item${toDelete.length === 1 ? '' : 's'}?`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () => {
-                        currentMedia.forEach(m => {
-                            if (selectedItems.has(m._id)) {
-                                deleteDocument.mutate({
-                                    roadMapId,
-                                    nestedId,
-                                    userId: user.id,
-                                    fileUrl: m.fileUrl,
-                                    uploadBatchId: m.uploadBatchId as string,
-                                });
-                            }
-                        });
-                        setSelectionMode(false);
-                        setSelectedItems(new Set());
-                    },
+                    onPress: () => deleteFiles(toDelete),
                 },
-            ]
+            ],
         );
-    }, [selectedItems, currentMedia, deleteDocument, roadMapId, nestedId, user?.id, extraName]);
+    }, [selectedItems, currentMedia, deleteFiles]);
 
     // ---------------- RENDER MEDIA ITEM ----------------
 
@@ -218,10 +337,14 @@ export default function ShareMedia() {
         ({ item, index }: { item: RoadmapMedia; index: number }) => {
             const isSelected = selectedItems.has(item._id);
             const isRightColumn = index % 2 === 1;
+            const showAsImage = isImageMedia(item);
+            const showAsVideo = !showAsImage && isVideoMedia(item);
 
             return (
                 <TouchableOpacity
-                    onPress={() => selectionMode && toggleItemSelection(item._id)}
+                    onPress={() => {
+                        if (selectionMode) toggleItemSelection(item._id);
+                    }}
                     onLongPress={() => {
                         if (!selectionMode) {
                             setSelectionMode(true);
@@ -231,16 +354,11 @@ export default function ShareMedia() {
                     style={{ width: imageWidth, marginLeft: isRightColumn ? GAP : 0 }}
                 >
                     <View style={styles.mediaItemWrapper}>
-                        {/* IMAGE thumbnail */}
-                        {item.fileType.startsWith('image/') && (
-                            <Image
-                                source={{ uri: item.fileUrl }}
-                                style={[styles.thumbnail, { width: imageWidth }]}
-                            />
-                        )}
+                        {showAsImage ? (
+                            <MediaThumbnail uri={item.fileUrl} width={imageWidth} />
+                        ) : null}
 
-                        {/* VIDEO thumbnail (gray box + play icon only, no actual player) */}
-                        {item.fileType.startsWith('video/') && (
+                        {showAsVideo && (
                             <View style={[styles.thumbnail, { width: imageWidth }]}>
                                 <View style={styles.playIconWrapper}>
                                     <View style={styles.playIconCircle}>
@@ -264,6 +382,17 @@ export default function ShareMedia() {
                                 </View>
                             </View>
                         )}
+
+                        {!selectionMode && !isDeleting ? (
+                            <TouchableOpacity
+                                onPress={() => confirmDeleteSingle(item)}
+                                style={styles.itemDeleteButton}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                accessibilityLabel="Delete file"
+                            >
+                                <Ionicons name="trash-outline" size={18} color="#fff" />
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
 
                     <Text style={styles.mediaDate}>
@@ -274,7 +403,67 @@ export default function ShareMedia() {
                 </TouchableOpacity>
             );
         },
-        [selectionMode, selectedItems, toggleItemSelection]
+        [selectionMode, selectedItems, toggleItemSelection, confirmDeleteSingle, isDeleting],
+    );
+
+    const renderFileRow = useCallback(
+        (item: RoadmapMedia) => {
+            const isSelected = selectedItems.has(item._id);
+            return (
+                <View key={item._id} style={styles.fileRow}>
+                    <TouchableOpacity
+                        style={styles.fileRowMain}
+                        onPress={() => {
+                            if (selectionMode) {
+                                toggleItemSelection(item._id);
+                                return;
+                            }
+                        }}
+                        onLongPress={() => {
+                            if (!selectionMode) {
+                                setSelectionMode(true);
+                                toggleItemSelection(item._id);
+                            }
+                        }}
+                    >
+                        {selectionMode ? (
+                            <View
+                                style={[
+                                    styles.checkbox,
+                                    isSelected ? styles.checkboxSelected : styles.checkboxUnselected,
+                                    styles.fileRowCheckbox,
+                                ]}
+                            >
+                                {isSelected ? (
+                                    <Ionicons name="checkmark" size={16} color="#1D548D" />
+                                ) : null}
+                            </View>
+                        ) : null}
+                        <Ionicons name="document-outline" size={22} color="#fff" />
+                        <View style={styles.fileRowText}>
+                            <Text style={styles.fileRowName} numberOfLines={2}>
+                                {item.fileName || 'Uploaded file'}
+                            </Text>
+                            {item.uploadedAt ? (
+                                <Text style={styles.fileRowDate}>
+                                    {new Date(item.uploadedAt).toLocaleDateString()}
+                                </Text>
+                            ) : null}
+                        </View>
+                    </TouchableOpacity>
+                    {!selectionMode && !isDeleting ? (
+                        <TouchableOpacity
+                            onPress={() => confirmDeleteSingle(item)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            style={styles.fileRowDelete}
+                        >
+                            <Ionicons name="trash-outline" size={22} color="#f87171" />
+                        </TouchableOpacity>
+                    ) : null}
+                </View>
+            );
+        },
+        [selectionMode, selectedItems, toggleItemSelection, confirmDeleteSingle, isDeleting],
     );
 
     return (
@@ -296,8 +485,12 @@ export default function ShareMedia() {
                         </TouchableOpacity>
 
                         <View style={styles.headerTextContainer}>
-                            <Text style={styles.headerTitle}>{taskTitle}</Text>
-                            <Text style={styles.headerSubtitle}>Shared Media</Text>
+                            <Text style={styles.headerTitle} numberOfLines={2} maxFontSizeMultiplier={1.15}>
+                                {taskTitle}
+                            </Text>
+                            <Text style={styles.headerSubtitle} maxFontSizeMultiplier={1.15}>
+                                Shared Media
+                            </Text>
                         </View>
                     </View>
 
@@ -308,39 +501,50 @@ export default function ShareMedia() {
 
                 {/* Tabs */}
                 <View style={styles.section}>
-                    <View style={styles.sharedMediaBox}>
-                        <Text style={styles.sharedMediaTitle}>{extraName}</Text>
+                    <View style={styles.fieldLabelRow}>
+                        <Text style={styles.fieldLabelCaption} maxFontSizeMultiplier={1.1}>
+                            Media field
+                        </Text>
+                        <Text style={styles.fieldLabelValue} numberOfLines={2} maxFontSizeMultiplier={1.1}>
+                            {formatRoadmapUploadFieldLabel(extraName)}
+                        </Text>
                     </View>
 
-                    <View style={styles.tabRow}>
-                        {(['photos', 'videos'] as const).map(tab => (
-                            <TouchableOpacity
-                                key={tab}
-                                onPress={() => {
-                                    setActiveTab(tab);
-                                    setSelectionMode(false);
-                                    setSelectedItems(new Set());
-                                }}
-                                style={[
-                                    styles.tabButton,
-                                    activeTab === tab
-                                        ? styles.tabButtonActive
-                                        : styles.tabButtonInactive,
-                                ]}
-                            >
-                                <Text
+                    {availableTabs.length > 1 ? (
+                        <View style={styles.tabRow}>
+                            {availableTabs.map((tab) => (
+                                <TouchableOpacity
+                                    key={tab}
+                                    onPress={() => {
+                                        setActiveTab(tab);
+                                        setSelectionMode(false);
+                                        setSelectedItems(new Set());
+                                    }}
                                     style={[
-                                        styles.tabButtonText,
+                                        styles.tabButton,
                                         activeTab === tab
-                                            ? styles.tabTextActive
-                                            : styles.tabTextInactive,
+                                            ? styles.tabButtonActive
+                                            : styles.tabButtonInactive,
                                     ]}
                                 >
-                                    {tab === 'photos' ? 'Photos' : 'Videos'}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                                    <Text
+                                        style={[
+                                            styles.tabButtonText,
+                                            activeTab === tab
+                                                ? styles.tabTextActive
+                                                : styles.tabTextInactive,
+                                        ]}
+                                    >
+                                        {tab === 'photos'
+                                            ? 'Photos'
+                                            : tab === 'videos'
+                                              ? 'Videos'
+                                              : 'Files'}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    ) : null}
                 </View>
 
                 {/* Media Grid */}
@@ -371,11 +575,17 @@ export default function ShareMedia() {
 
                                     <View style={styles.selectionHeaderRight}>
                                         <TouchableOpacity
-                                            onPress={deleteSelected}>
+                                            onPress={deleteSelected}
+                                            disabled={isDeleting || selectedItems.size === 0}
+                                        >
                                             <Ionicons
                                                 name="trash-outline"
                                                 size={24}
-                                                color="#fff"
+                                                color={
+                                                    isDeleting || selectedItems.size === 0
+                                                        ? 'rgba(255,255,255,0.35)'
+                                                        : '#fff'
+                                                }
                                             />
                                         </TouchableOpacity>
                                     </View>
@@ -391,7 +601,7 @@ export default function ShareMedia() {
                         )}
 
                         {/* Empty state */}
-                        {currentMedia.length === 0 && (
+                        {allDocs.length === 0 && (
                             <Text
                                 style={{
                                     color: '#fff',
@@ -399,12 +609,30 @@ export default function ShareMedia() {
                                     marginTop: 20,
                                 }}
                             >
-                                No {activeTab} uploaded yet.
+                                No media uploaded yet.
                             </Text>
                         )}
 
+                        {allDocs.length > 0 && currentMedia.length === 0 && (
+                            <Text
+                                style={{
+                                    color: '#fff',
+                                    textAlign: 'center',
+                                    marginTop: 20,
+                                }}
+                            >
+                                No items in this tab.
+                            </Text>
+                        )}
+
+                        {activeTab === 'files' && currentMedia.length > 0 ? (
+                            <View style={styles.filesList}>
+                                {currentMedia.map((item) => renderFileRow(item))}
+                            </View>
+                        ) : null}
+
                         {/* Media Grid */}
-                        {currentMedia.length > 0 &&
+                        {activeTab !== 'files' && currentMedia.length > 0 &&
                             currentMedia
                                 .reduce<RoadmapMedia[][]>((rows, item, index) => {
                                     if (index % 2 === 0) rows.push([item]);
@@ -428,13 +656,14 @@ export default function ShareMedia() {
                                 ))}
                     </View>
 
-                    {!selectionMode && currentMedia.length > 0 && (
+                    {!selectionMode && allDocs.length > 0 && (
                         <View style={styles.selectionToggleWrapper}>
                             <TouchableOpacity
                                 onPress={toggleSelectionMode}
                                 style={styles.selectionToggleButton}
                             >
-                                <Ionicons name="checkmark" size={20} color="#1D548D" />
+                                <Ionicons name="checkbox-outline" size={18} color="#1D548D" />
+                                <Text style={styles.selectionToggleText}>Select</Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -480,18 +709,32 @@ const styles = StyleSheet.create({
     },
     headerRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
     headerTextContainer: { flex: 1, marginLeft: 8 },
-    headerTitle: { color: '#fff', fontWeight: '700', fontSize: 20 },
-    headerSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 2 },
-    section: { paddingHorizontal: PADDING, paddingTop: 16 },
-    sharedMediaBox: {
-        padding: 16,
-        marginBottom: 16,
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+    headerTitle: { color: '#fff', fontWeight: '700', fontSize: 17, lineHeight: 22 },
+    headerSubtitle: { color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 2 },
+    section: { paddingHorizontal: PADDING, paddingTop: 12 },
+    fieldLabelRow: {
+        marginBottom: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderRadius: 10,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(255,255,255,0.14)',
     },
-    sharedMediaTitle: { color: '#fff', textAlign: 'center', fontSize: 18, fontWeight: '600' },
+    fieldLabelCaption: {
+        color: 'rgba(255,255,255,0.55)',
+        fontSize: 11,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: 0.4,
+        marginBottom: 4,
+    },
+    fieldLabelValue: {
+        color: 'rgba(255,255,255,0.9)',
+        fontSize: 14,
+        fontWeight: '600',
+        lineHeight: 18,
+    },
     tabRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
     tabButton: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
     tabButtonActive: { backgroundColor: '#fff' },
@@ -500,7 +743,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.3)',
     },
-    tabButtonText: { fontWeight: '600', fontSize: 16 },
+    tabButtonText: { fontWeight: '600', fontSize: 14 },
     tabTextActive: { color: '#1D548D' },
     tabTextInactive: { color: '#fff' },
     mediaContainer: { paddingHorizontal: PADDING, position: 'relative' },
@@ -519,7 +762,7 @@ const styles = StyleSheet.create({
     },
     selectionHeaderLeft: { flexDirection: 'row', alignItems: 'center' },
     closeIcon: { marginRight: 8 },
-    selectionText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+    selectionText: { color: '#fff', fontSize: 14, fontWeight: '600' },
     selectionHeaderRight: { flexDirection: 'row', gap: 16 },
     selectAllButton: {
         backgroundColor: '#2666A0',
@@ -534,9 +777,14 @@ const styles = StyleSheet.create({
     thumbnail: {
         aspectRatio: 1,
         borderRadius: 10,
-        backgroundColor: '#999',
+        backgroundColor: 'rgba(255,255,255,0.12)',
         overflow: 'hidden',
         marginBottom: 8,
+    },
+    thumbnailPlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.1)',
     },
     playIconWrapper: {
         ...StyleSheet.absoluteFillObject,
@@ -560,15 +808,56 @@ const styles = StyleSheet.create({
     checkboxUnselected: { backgroundColor: 'transparent', borderColor: '#fff' },
     checkboxSelected: { backgroundColor: '#fff', borderColor: '#fff' },
     mediaDate: { color: '#fff', fontSize: 13 },
-    selectionToggleWrapper: { position: 'absolute', top: 8, right: 28, zIndex: 1000 },
+    selectionToggleWrapper: { position: 'absolute', top: 8, right: 20, zIndex: 1000 },
     selectionToggleButton: {
-        width: 28,
-        height: 28,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
         backgroundColor: '#fff',
-        borderRadius: 6,
-        borderWidth: 2,
+        borderRadius: 8,
+        borderWidth: 1,
         borderColor: '#1D548D',
+    },
+    selectionToggleText: {
+        color: '#1D548D',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    itemDeleteButton: {
+        position: 'absolute',
+        bottom: 14,
+        left: 6,
+        zIndex: 11,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(239, 68, 68, 0.92)',
         alignItems: 'center',
         justifyContent: 'center',
     },
+    filesList: { gap: 10 },
+    fileRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderRadius: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.15)',
+    },
+    fileRowMain: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        minWidth: 0,
+    },
+    fileRowCheckbox: { marginRight: 2 },
+    fileRowText: { flex: 1, minWidth: 0, gap: 2 },
+    fileRowName: { color: '#fff', fontSize: 14, fontWeight: '600' },
+    fileRowDate: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
+    fileRowDelete: { paddingLeft: 8 },
 });

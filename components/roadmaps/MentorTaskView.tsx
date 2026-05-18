@@ -463,7 +463,7 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                                     </Pressable>
                                     {!isReadOnly ? (
                                         <Text style={styles.mediaDeleteHint}>
-                                            Open shared media and use Select to remove items
+                                            Open shared media — tap the trash icon on a file, or use Select for multiple
                                         </Text>
                                     ) : null}
                                 </View>

@@ -1,4 +1,5 @@
 // lib/roadmap/helpers.ts
+import { API_CONFIG } from '@/constants/config/api';
 import { Extra, NestedRoadmap, Roadmap, RoadmapCardStatus } from './types';
 
 const FORM_EXTRA_TYPES = new Set<Extra['type']>([
@@ -388,4 +389,22 @@ export function formatDate(dateString: string): string {
         month: 'short',
         day: 'numeric'
     });
+}
+
+/** Absolute URL for roadmap upload files (API often returns relative paths). */
+export function resolveRoadmapDocumentUrl(fileUrl?: string | null): string {
+    const raw = String(fileUrl ?? '').trim();
+    if (!raw) return '';
+    if (/^https?:\/\//i.test(raw)) return raw;
+    const origin = API_CONFIG.BASE_URL.replace(/\/api\/v1\/?$/i, '');
+    if (raw.startsWith('/')) return `${origin}${raw}`;
+    return `${origin}/${raw}`;
+}
+
+/** Display label for upload field names on shared media (avoid huge raw form keys). */
+export function formatRoadmapUploadFieldLabel(extraName?: string | null): string {
+    const trimmed = String(extraName ?? '').trim();
+    if (!trimmed) return 'Uploaded media';
+    if (/^upload\s*media$/i.test(trimmed)) return 'Uploaded media';
+    return trimmed.replace(/_/g, ' ');
 }
