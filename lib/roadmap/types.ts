@@ -292,6 +292,10 @@ export interface RoadmapCardData {
     showArrow?: boolean;
     showCheckmark?: boolean;
     phaseNumber?: number;
+    /** Pill prefix before phaseLabel (default "Phase"). */
+    phaseContextPrefix?: string;
+    /** When "plain", completed line omits the "Completed on :" prefix. */
+    completedDateDisplay?: 'labeled' | 'plain';
 }
 
 // ============= EXTRAS TYPES =============

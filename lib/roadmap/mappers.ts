@@ -57,11 +57,13 @@
 // lib/roadmap/mappers.ts
 import {
     formatDate,
+    formatPastorCompletedRelativeLabel,
     getCardStatus,
     getCompletionStats,
     getPhaseNumber,
     isSingleTask,
-    parseDurationMonths
+    parseDurationMonths,
+    type PastorCompletedTaskItem,
 } from './helpers';
 import { NestedRoadmap, Roadmap, RoadmapCardData } from './types';
 
@@ -123,6 +125,27 @@ export function getTaskCard(task: NestedRoadmap): RoadmapCardData {
         completedDate: task.completedOn ? formatDate(task.completedOn) : undefined,
         showArrow: true,
         showCheckmark: isCompleted,
+    };
+}
+
+/** Completed-task row using the same card UI as phase lists, with parent journey context. */
+export function getPastorCompletedTaskCardData(
+    item: Pick<PastorCompletedTaskItem, 'phaseTitle' | 'completedOnMs'>,
+    task: NestedRoadmap,
+): RoadmapCardData {
+    const base = getTaskCard(task);
+    const relative = formatPastorCompletedRelativeLabel(item.completedOnMs);
+
+    return {
+        ...base,
+        status: 'completed',
+        showArrow: true,
+        showCheckmark: true,
+        phaseLabel: item.phaseTitle,
+        phaseContextPrefix: 'Roadmap',
+        completedDate: relative ?? base.completedDate,
+        completedDateDisplay: relative ? 'plain' : 'labeled',
+        completionTime: base.completionTime,
     };
 }
 

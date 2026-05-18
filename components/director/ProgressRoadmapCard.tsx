@@ -373,7 +373,7 @@ export const RoadmapCard: React.FC<Props> = ({
                         {!!data.phaseLabel && (
                             <View style={[styles.phasePill, !hasActions && styles.phasePillNoActions]}>
                                 <Text style={styles.phasePillText} numberOfLines={1}>
-                                    Phase : {data.phaseLabel}
+                                    {data.phaseContextPrefix ?? "Phase"} : {data.phaseLabel}
                                 </Text>
                             </View>
                         )}
@@ -418,7 +418,9 @@ export const RoadmapCard: React.FC<Props> = ({
                                 styles.completedDate,
                                 !hasActions && styles.completedDateNoActions
                             ]}>
-                                Completed on : {data.completedDate}
+                                {data.completedDateDisplay === 'plain'
+                                    ? data.completedDate
+                                    : `Completed on : ${data.completedDate}`}
                             </Text>
                         )}
                     </View>

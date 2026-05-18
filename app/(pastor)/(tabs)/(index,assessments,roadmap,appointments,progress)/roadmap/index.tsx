@@ -1,4 +1,5 @@
 import { RoadmapCard } from "@/components/director/ProgressRoadmapCard";
+import { PastorCompletedTasksSection } from "@/components/roadmaps/PastorCompletedTasksSection";
 import TopBar from "@/components/director/TopBar";
 import {
     CommonCard,
@@ -11,18 +12,20 @@ import {
 } from "@/components/ui/design-system/index";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import {
+  buildPastorCompletedJourneyTabs,
   comparePastorPhasesForFocus,
+  flattenPastorCompletedTasks,
   getCompletionStats,
   getNestedTaskTitleById,
   getNextIncompleteNestedTaskId,
-  getTasks,
+  type PastorCompletedTaskItem,
 } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import type { Roadmap } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Pressable,
@@ -36,6 +39,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabKey = "All" | "Completed" | "Remaining";
+type ScreenView = "phases" | "completed-tasks";
 
 const filterTabs: { key: TabKey; label: string }[] = [
   { key: "All", label: "All" },
@@ -93,7 +97,9 @@ function buildPastorRowJourneyGuidance(
 export default function PastorRoadmapIndex() {
   const { bottom } = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const [screenView, setScreenView] = useState<ScreenView>("phases");
   const [tab, setTab] = useState<TabKey>("All");
+  const [completedJourneyTab, setCompletedJourneyTab] = useState("all");
   const [search, setSearch] = useState("");
 
   const horizontalPadding = useMemo(() => {
@@ -115,6 +121,61 @@ export default function PastorRoadmapIndex() {
     list.sort((a, b) => comparePastorPhasesForFocus(a as Roadmap, b as Roadmap));
     return list;
   }, [roadmaps]);
+
+  const completedTasks = useMemo(
+    () => flattenPastorCompletedTasks(sortedRoadmaps as Roadmap[]),
+    [sortedRoadmaps],
+  );
+
+  const completedJourneyTabs = useMemo(
+    () => buildPastorCompletedJourneyTabs(completedTasks, sortedRoadmaps as Roadmap[]),
+    [completedTasks, sortedRoadmaps],
+  );
+
+  const completedJourneyTabStrip = useMemo(
+    () =>
+      completedJourneyTabs.map((t) => ({
+        key: t.key,
+        label: t.label,
+        badge: t.count > 0 ? t.count : undefined,
+      })),
+    [completedJourneyTabs],
+  );
+
+  useEffect(() => {
+    if (screenView !== "completed-tasks") return;
+    const validKeys = new Set(completedJourneyTabs.map((t) => t.key));
+    if (!validKeys.has(completedJourneyTab)) {
+      setCompletedJourneyTab("all");
+    }
+  }, [screenView, completedJourneyTabs, completedJourneyTab]);
+
+  const completedByJourney = useMemo(() => {
+    if (completedJourneyTab === "all") return completedTasks;
+    return completedTasks.filter((item) => item.phaseId === completedJourneyTab);
+  }, [completedTasks, completedJourneyTab]);
+
+  const screenTabs = useMemo(
+    () => [
+      { key: "phases" as const, label: "Phases" },
+      {
+        key: "completed-tasks" as const,
+        label: "Completed Tasks",
+        badge: completedTasks.length > 0 ? completedTasks.length : undefined,
+      },
+    ],
+    [completedTasks.length],
+  );
+
+  const filteredCompletedTasks = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return completedByJourney;
+    return completedByJourney.filter((item) => {
+      const title = item.taskTitle.toLowerCase();
+      const phase = item.phaseTitle.toLowerCase();
+      return title.includes(q) || phase.includes(q);
+    });
+  }, [completedByJourney, search]);
 
   const filtered = useMemo(() => {
     let list = sortedRoadmaps;
@@ -168,6 +229,11 @@ export default function PastorRoadmapIndex() {
     router.push(`/roadmap/${roadmapId}/${nextTaskId}` as any);
   }, []);
 
+  const handleOpenCompletedTask = useCallback((item: PastorCompletedTaskItem) => {
+    if (!item.phaseId || !item.taskId) return;
+    router.push(`/roadmap/${item.phaseId}/${item.taskId}` as any);
+  }, []);
+
   if (isLoading) {
     return (
       <GradientBackground>
@@ -205,18 +271,50 @@ export default function PastorRoadmapIndex() {
         <RoadmapNavRow onBack={() => router.back()} pillLabel="Revitalization Roadmap" />
 
         <SectionHeader
-          title="Your roadmap phases"
-          subtitle="Track phases, tasks, and next steps."
+          title={screenView === "completed-tasks" ? "Completed tasks" : "Your roadmap phases"}
+          subtitle={
+            screenView === "completed-tasks"
+              ? "Review finished tasks across your revitalization journey."
+              : "Track phases, tasks, and next steps."
+          }
           showDivider
         />
 
-        <RoadmapSearchField
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search phases..."
+        <RoadmapTabStrip
+          tabs={screenTabs}
+          activeKey={screenView}
+          onChange={(k: string) => setScreenView(k as ScreenView)}
+          scrollable
         />
 
-        <RoadmapTabStrip tabs={filterTabs} activeKey={tab} onChange={(k: string) => setTab(k as TabKey)} />
+        <View
+          style={
+            screenView === "completed-tasks" ? styles.completedSearchWrap : undefined
+          }
+        >
+          <RoadmapSearchField
+            value={search}
+            onChangeText={setSearch}
+            placeholder={
+              screenView === "completed-tasks"
+                ? "Search completed tasks..."
+                : "Search phases..."
+            }
+          />
+        </View>
+
+        {screenView === "phases" ? (
+          <RoadmapTabStrip tabs={filterTabs} activeKey={tab} onChange={(k: string) => setTab(k as TabKey)} />
+        ) : null}
+
+        {screenView === "completed-tasks" && completedJourneyTabStrip.length > 1 ? (
+          <RoadmapTabStrip
+            tabs={completedJourneyTabStrip}
+            activeKey={completedJourneyTab}
+            onChange={setCompletedJourneyTab}
+            scrollable
+          />
+        ) : null}
 
         {!!error ? (
           <View style={styles.errorCard}>
@@ -225,7 +323,33 @@ export default function PastorRoadmapIndex() {
           </View>
         ) : null}
 
-        {filtered.length > 0 ? (
+        {screenView === "completed-tasks" ? (
+          <View style={styles.completedListWrap}>
+            {completedTasks.length > 0 &&
+            filteredCompletedTasks.length === 0 &&
+            search.trim() ? (
+              <CommonCard style={styles.emptyCard}>
+                <Ionicons name="search-outline" size={28} color="rgba(255,255,255,0.7)" />
+                <Text style={styles.emptyTitle}>No matching completed tasks</Text>
+                <Text style={styles.emptySubtitle}>Try a different search term.</Text>
+              </CommonCard>
+            ) : completedByJourney.length === 0 && completedJourneyTab !== "all" ? (
+              <CommonCard style={styles.emptyCard}>
+                <Ionicons name="checkbox-outline" size={28} color="rgba(255,255,255,0.7)" />
+                <Text style={styles.emptyTitle}>No completed tasks in this roadmap</Text>
+                <Text style={styles.emptySubtitle}>Try another journey tab or view All.</Text>
+              </CommonCard>
+            ) : (
+              <PastorCompletedTasksSection
+                items={filteredCompletedTasks}
+                onOpenTask={handleOpenCompletedTask}
+                showHeader={false}
+              />
+            )}
+          </View>
+        ) : null}
+
+        {screenView === "phases" && filtered.length > 0 ? (
           <View style={styles.todaySection}>
             <SectionHeader
               title="Today's focus"
@@ -278,33 +402,35 @@ export default function PastorRoadmapIndex() {
           </View>
         ) : null}
 
-        <View style={styles.list}>
-          {filtered.length === 0 ? (
-            <CommonCard style={styles.emptyCard}>
-              <Ionicons name="map-outline" size={28} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.emptyTitle}>No phases found</Text>
-              <Text style={styles.emptySubtitle}>Try a different filter or search.</Text>
-            </CommonCard>
-          ) : (
-            listBundle.rows.map(({ key, roadmap: r, card, journey }) => {
-              const journeyProgress =
-                journey.hasTasks
-                  ? { completed: journey.completed, total: journey.total }
-                  : undefined;
-              const journeyGuidance = buildPastorRowJourneyGuidance(r, journey, handleContinueJourney);
+        {screenView === "phases" ? (
+          <View style={styles.list}>
+            {filtered.length === 0 ? (
+              <CommonCard style={styles.emptyCard}>
+                <Ionicons name="map-outline" size={28} color="rgba(255,255,255,0.7)" />
+                <Text style={styles.emptyTitle}>No phases found</Text>
+                <Text style={styles.emptySubtitle}>Try a different filter or search.</Text>
+              </CommonCard>
+            ) : (
+              listBundle.rows.map(({ key, roadmap: r, card, journey }) => {
+                const journeyProgress =
+                  journey.hasTasks
+                    ? { completed: journey.completed, total: journey.total }
+                    : undefined;
+                const journeyGuidance = buildPastorRowJourneyGuidance(r, journey, handleContinueJourney);
 
-              return (
-                <Pressable key={key} onPress={() => handleOpen(r)} style={styles.cardPress}>
-                  <RoadmapCard
-                    data={card as any}
-                    journeyProgress={journeyProgress}
-                    journeyGuidance={journeyGuidance}
-                  />
-                </Pressable>
-              );
-            })
-          )}
-        </View>
+                return (
+                  <Pressable key={key} onPress={() => handleOpen(r)} style={styles.cardPress}>
+                    <RoadmapCard
+                      data={card as any}
+                      journeyProgress={journeyProgress}
+                      journeyGuidance={journeyGuidance}
+                    />
+                  </Pressable>
+                );
+              })
+            )}
+          </View>
+        ) : null}
       </ScrollView>
     </GradientBackground>
   );
@@ -391,4 +517,11 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { color: roadmapTheme.textPrimary, fontSize: 15, fontWeight: "800" },
   emptySubtitle: { color: roadmapTheme.textSubtle, fontSize: 12, textAlign: "center" },
+
+  completedSearchWrap: {
+    marginBottom: 14,
+  },
+  completedListWrap: {
+    marginTop: 4,
+  },
 });

@@ -1,5 +1,6 @@
 // lib/roadmap/helpers.ts
 import { API_CONFIG } from '@/constants/config/api';
+import { differenceInCalendarDays, startOfDay } from 'date-fns';
 import { Extra, NestedRoadmap, Roadmap, RoadmapCardStatus } from './types';
 
 const FORM_EXTRA_TYPES = new Set<Extra['type']>([
@@ -407,4 +408,144 @@ export function formatRoadmapUploadFieldLabel(extraName?: string | null): string
     if (!trimmed) return 'Uploaded media';
     if (/^upload\s*media$/i.test(trimmed)) return 'Uploaded media';
     return trimmed.replace(/_/g, ' ');
+}
+
+/** Flattened completed nested task for pastor review lists (frontend-only). */
+export type PastorCompletedTaskItem = {
+    id: string;
+    taskId: string;
+    phaseId: string;
+    taskTitle: string;
+    phaseTitle: string;
+    completedOnMs: number;
+    duration?: string;
+    /** Source nested task for shared RoadmapCard UI. */
+    task: NestedRoadmap;
+};
+
+export function parseRoadmapTimestampMs(value: unknown): number {
+    if (value == null || value === '') return 0;
+    const ms = new Date(String(value)).getTime();
+    return Number.isFinite(ms) ? ms : 0;
+}
+
+/**
+ * All completed nested tasks across pastor roadmaps, newest first.
+ * Uses task completedOn, then task/phase updatedAt fallbacks — no API changes.
+ */
+export function flattenPastorCompletedTasks(
+    roadmaps: Roadmap[] | undefined | null,
+): PastorCompletedTaskItem[] {
+    if (!roadmaps?.length) return [];
+
+    const items: PastorCompletedTaskItem[] = [];
+
+    for (const roadmap of roadmaps) {
+        const phaseId = String(roadmap._id ?? '').trim();
+        if (!phaseId) continue;
+
+        const phaseTitle =
+            String(roadmap.name ?? roadmap.phase ?? '').trim() || 'Roadmap phase';
+        const phaseFallbackMs =
+            parseRoadmapTimestampMs(roadmap.updatedAt) ||
+            parseRoadmapTimestampMs(roadmap.completedOn) ||
+            parseRoadmapTimestampMs(roadmap.createdAt);
+
+        for (const task of getTasks(roadmap)) {
+            if (!task || normalizeNestedTaskStatus(task.status) !== 'completed') continue;
+
+            const taskId = String(task._id ?? '').trim();
+            if (!taskId) continue;
+
+            const taskTitle =
+                String(task.name ?? task.roadMapDetails ?? '').trim() || 'Completed task';
+            const taskUpdated = (task as NestedRoadmap & { updatedAt?: string }).updatedAt;
+            const completedOnMs =
+                parseRoadmapTimestampMs(task.completedOn) ||
+                parseRoadmapTimestampMs(taskUpdated) ||
+                phaseFallbackMs;
+
+            items.push({
+                id: `${phaseId}:${taskId}`,
+                taskId,
+                phaseId,
+                taskTitle,
+                phaseTitle,
+                completedOnMs,
+                duration: task.duration ? String(task.duration) : undefined,
+                task,
+            });
+        }
+    }
+
+    items.sort((a, b) => {
+        if (b.completedOnMs !== a.completedOnMs) return b.completedOnMs - a.completedOnMs;
+        return a.taskTitle.localeCompare(b.taskTitle);
+    });
+
+    return items;
+}
+
+export type PastorCompletedJourneyTab = {
+    key: string;
+    label: string;
+    count: number;
+};
+
+/** Tabs for filtering completed tasks by parent roadmap (All + each journey with completions). */
+export function buildPastorCompletedJourneyTabs(
+    items: PastorCompletedTaskItem[],
+    roadmaps: Roadmap[] | undefined | null,
+): PastorCompletedJourneyTab[] {
+    const tabs: PastorCompletedJourneyTab[] = [
+        { key: 'all', label: 'All', count: items.length },
+    ];
+    if (!items.length) return tabs;
+
+    const countByPhase = new Map<string, number>();
+    for (const item of items) {
+        countByPhase.set(item.phaseId, (countByPhase.get(item.phaseId) ?? 0) + 1);
+    }
+
+    const roadmapById = new Map<string, Roadmap>();
+    for (const roadmap of roadmaps ?? []) {
+        const id = String(roadmap._id ?? '').trim();
+        if (id) roadmapById.set(id, roadmap);
+    }
+
+    const phaseIds = [...countByPhase.keys()];
+    phaseIds.sort((a, b) => {
+        const ra = roadmapById.get(a);
+        const rb = roadmapById.get(b);
+        if (ra && rb) return comparePastorPhasesForFocus(ra, rb);
+        return a.localeCompare(b);
+    });
+
+    for (const phaseId of phaseIds) {
+        const count = countByPhase.get(phaseId) ?? 0;
+        if (count <= 0) continue;
+
+        const roadmap = roadmapById.get(phaseId);
+        const rawName = String(roadmap?.name ?? roadmap?.phase ?? '').trim();
+        const label =
+            rawName.replace(/\s+Phase$/i, '').trim() || rawName || 'Roadmap';
+
+        tabs.push({ key: phaseId, label, count });
+    }
+
+    return tabs;
+}
+
+/** Friendly relative label for completed-task review cards; omit when no date. */
+export function formatPastorCompletedRelativeLabel(completedOnMs: number): string | null {
+    if (!completedOnMs) return null;
+
+    const completedDay = startOfDay(new Date(completedOnMs));
+    const today = startOfDay(new Date());
+    const days = differenceInCalendarDays(today, completedDay);
+    if (days < 0) return null;
+    if (days === 0) return 'Completed today';
+    if (days === 1) return 'Completed yesterday';
+    if (days <= 14) return `Completed ${days} days ago`;
+    return `Completed ${formatDate(new Date(completedOnMs).toISOString())}`;
 }
