@@ -286,16 +286,13 @@ export default function PastorRoadmapIndex() {
                 </View>
               </LinearGradient>
             ) : listBundle.focusRow ? (
-              <View style={styles.focusShell}>
-                <View style={styles.focusTopRail}>
-                  <Text style={styles.focusRibbonText}>Recommended for today</Text>
-                </View>
+              <View style={styles.todayFocusPick}>
+                <Text style={styles.focusRibbonStandalone}>Recommended for today</Text>
                 <Pressable
                   onPress={() => handleOpen(listBundle.focusRow!.roadmap)}
-                  style={styles.focusCardPress}
+                  style={styles.cardPress}
                 >
                   <RoadmapCard
-                    featuredInShell
                     data={listBundle.focusRow!.card as any}
                     journeyProgress={
                       listBundle.focusRow!.journey.hasTasks
@@ -399,35 +396,17 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     maxWidth: 320,
   },
-  focusShell: {
-    marginBottom: 18,
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: roadmapTheme.frostedBorder,
-    backgroundColor: roadmapTheme.frostedSurfaceStrong,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.16,
-    shadowRadius: 10,
-    elevation: 6,
+  todayFocusPick: {
+    marginBottom: 14,
   },
-  focusTopRail: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: roadmapTheme.divider,
-  },
-  focusRibbonText: {
+  focusRibbonStandalone: {
     color: roadmapTheme.accentGold,
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 0.8,
     textTransform: "uppercase",
-  },
-  focusCardPress: {
-    backgroundColor: "transparent",
+    marginBottom: 8,
+    paddingHorizontal: 2,
   },
 
   list: { gap: 12, paddingBottom: 10 },
