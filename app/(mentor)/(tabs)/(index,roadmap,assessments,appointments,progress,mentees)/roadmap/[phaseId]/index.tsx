@@ -5,7 +5,7 @@ import SearchBar from '@/components/director/SearchBar';
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from '@/components/director/TopBar';
 import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
-import { getTasks, getTasksByDivision } from '@/lib/roadmap/helpers';
+import { getTasks } from '@/lib/roadmap/helpers';
 import { getTaskCard } from '@/lib/roadmap/mappers';
 import { NestedRoadmap } from '@/lib/roadmap/types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
@@ -25,8 +25,7 @@ import {
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type StatusTabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
-type TabKey = StatusTabKey | string;
+type TabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
 
 export default function RoadmapDetail() {
     const { phaseId, menteeId, menteeName } = useLocalSearchParams<{ phaseId: string, menteeId?: string, menteeName?: string }>();
@@ -55,35 +54,7 @@ export default function RoadmapDetail() {
         return match ? parseInt(match[0], 10) : null;
     }, [roadmap]);
 
-    // Check if roadmap has divisions
-    const hasDivisions = useMemo(() => {
-        return roadmap?.divisions && roadmap.divisions.length > 0;
-    }, [roadmap]);
-
-    // Get divisions
-    const divisions = useMemo(() => {
-        if (!roadmap || !hasDivisions) return [];
-        return roadmap.divisions;
-    }, [roadmap, hasDivisions]);
-
-    // Initialize activeTab - first division if exists, otherwise 'ALL'
-    const [activeTab, setActiveTab] = useState<TabKey>(() => {
-        if (hasDivisions && divisions.length > 0) {
-            return divisions[0];
-        }
-        return 'ALL';
-    });
-
-    // Update active tab when divisions change
-    useMemo(() => {
-        const statusKeys = ['ALL', 'DUE', 'NOT_STARTED', 'COMPLETED'];
-        if (hasDivisions &&
-            divisions.length > 0 &&
-            !divisions.includes(activeTab as string) &&
-            !statusKeys.includes(activeTab as string)) {
-            setActiveTab(divisions[0]);
-        }
-    }, [hasDivisions, divisions, activeTab]);
+    const [activeTab, setActiveTab] = useState<TabKey>('ALL');
 
     const outcomeMenuItems = useCallback((): MenuItem[] => [
         {
@@ -133,90 +104,52 @@ export default function RoadmapDetail() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
-    // Generate tabs based on whether divisions exist
-    const tabs = useMemo(() => {
-        if (hasDivisions && divisions.length > 0) {
-            const divisionTabs = divisions.map(division => ({
-                key: division,
-                label: division.charAt(0).toUpperCase() + division.slice(1),
-            }));
-
-            const statusTabs = [
-                { key: 'DUE', label: 'Due' },
-                { key: 'NOT_STARTED', label: 'Not Started' },
-                { key: 'COMPLETED', label: 'Completed' },
-            ];
-
-            return [...divisionTabs, ...statusTabs];
-        } else {
-            return [
-                { key: 'ALL', label: 'All' },
-                { key: 'DUE', label: 'Due' },
-                { key: 'NOT_STARTED', label: 'Not Started' },
-                { key: 'COMPLETED', label: 'Completed' },
-            ];
-        }
-    }, [hasDivisions, divisions]);
-
-    // Check if activeTab is a division
-    const isDivisionTab = useMemo(() => {
-        return hasDivisions && divisions.includes(activeTab as string);
-    }, [hasDivisions, divisions, activeTab]);
+    const tabs = useMemo(
+        () => [
+            { key: 'ALL', label: 'All' },
+            { key: 'DUE', label: 'Due' },
+            { key: 'NOT_STARTED', label: 'Not Started' },
+            { key: 'COMPLETED', label: 'Completed' },
+        ],
+        [],
+    );
 
     // Get all tasks
     const allTasks = useMemo(() => {
         return roadmap ? getTasks(roadmap) : [];
     }, [roadmap]);
 
-    // Filter tasks based on active tab
     const filteredTasks = useMemo(() => {
         if (!roadmap) return [];
 
-        let tasksToFilter: NestedRoadmap[] = [];
+        let list = allTasks;
 
-        if (isDivisionTab) {
-            const groupedTasks = getTasksByDivision(roadmap);
-            const exactMatch = groupedTasks[activeTab as string];
-
-            if (exactMatch) {
-                tasksToFilter = exactMatch;
-            } else {
-                const matchingKey = Object.keys(groupedTasks).find(
-                    key => key.toLowerCase() === (activeTab as string).toLowerCase()
-                );
-                tasksToFilter = matchingKey ? groupedTasks[matchingKey] : [];
-            }
-        } else if (activeTab === 'ALL') {
-            tasksToFilter = allTasks;
-        } else {
-            tasksToFilter = allTasks.filter(task => {
-                const status = task.status ? task.status.toLowerCase() : '';
-
-                if (activeTab === 'DUE') {
-                    if (!task.endDate) return false;
-                    const today = new Date().toISOString().slice(0, 10);
-                    return task.endDate <= today && status !== 'completed';
-                }
-
-                if (activeTab === 'NOT_STARTED') return status === 'not started';
-                if (activeTab === 'COMPLETED') return status === 'completed';
-
-                return false;
+        if (activeTab === 'COMPLETED') {
+            list = list.filter((task) => String(task.status || '').toLowerCase() === 'completed');
+        }
+        if (activeTab === 'NOT_STARTED') {
+            list = list.filter((task) => String(task.status || '').toLowerCase() === 'not started');
+        }
+        if (activeTab === 'DUE') {
+            const today = new Date().toISOString().slice(0, 10);
+            list = list.filter((task) => {
+                const status = String(task.status || '').toLowerCase();
+                if (status === 'completed') return false;
+                if (!task.endDate) return false;
+                return String(task.endDate) <= today;
             });
         }
 
-        // Apply search filter
-        if (search.trim()) {
-            const searchLower = search.toLowerCase();
-            tasksToFilter = tasksToFilter.filter(task =>
-                (task.name && task.name.toLowerCase().includes(searchLower)) ||
-                (task.roadMapDetails && task.roadMapDetails.toLowerCase().includes(searchLower)) ||
-                (task.description && task.description.toLowerCase().includes(searchLower))
-            );
-        }
+        const q = search.trim().toLowerCase();
+        if (!q) return list;
 
-        return tasksToFilter;
-    }, [roadmap, isDivisionTab, activeTab, allTasks, search]);
+        return list.filter((task) => {
+            const title = String(task.name ?? '').toLowerCase();
+            const details = String(task.roadMapDetails ?? '').toLowerCase();
+            const desc = String(task.description ?? '').toLowerCase();
+            return title.includes(q) || details.includes(q) || desc.includes(q);
+        });
+    }, [roadmap, activeTab, allTasks, search]);
 
     // Loading state
     if (isLoading) {
