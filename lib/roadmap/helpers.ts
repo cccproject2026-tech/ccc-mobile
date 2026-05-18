@@ -194,16 +194,92 @@ export function getTasksByDivision(roadmap: Roadmap): Record<string, NestedRoadm
     return grouped;
 }
 
+/** API / merge may send status variants; use for counts and pastor focus lists. */
+export function normalizeNestedTaskStatus(
+    status: string | undefined | null,
+): NestedRoadmap['status'] {
+    const raw = String(status ?? '')
+        .toLowerCase()
+        .replace(/_/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (raw === 'in-progress' || raw === 'in progress') return 'in-progress';
+    if (raw === 'not-started' || raw === 'not started' || raw === 'pending')
+        return 'not started';
+    if (raw === 'completed' || raw === 'complete' || raw === 'done')
+        return 'completed';
+    if (raw === 'blocked') return 'blocked';
+    return 'not started';
+}
+
 /**
- * Calculate completion stats
- * Uses the actual status from progress data
+ * Calculate completion stats (uses normalized task status from merged progress).
  */
 export function getCompletionStats(roadmap: Roadmap): { completed: number; total: number } {
     const tasks = getTasks(roadmap);
     const total = tasks.length;
-    const completed = tasks.filter(task => task && task.status === 'completed').length;
-    console.log("completed:----->>>>>>>>>>>>>>getCompletionStats", completed, total);
+    const completed = tasks.filter(
+        (task) => task && normalizeNestedTaskStatus(task.status) === 'completed',
+    ).length;
     return { completed, total };
+}
+
+/** First incomplete nested task in roadmap order (matches pastor roadmap tab). */
+export function getNextIncompleteNestedTaskId(
+    roadmap: Roadmap | undefined | null,
+): string | null {
+    if (!roadmap) return null;
+    for (const t of getTasks(roadmap)) {
+        if (!t) continue;
+        if (normalizeNestedTaskStatus(t.status) !== 'completed') {
+            return String(t._id);
+        }
+    }
+    return null;
+}
+
+export function getNestedTaskTitleById(
+    roadmap: Roadmap | undefined | null,
+    taskId: string | null,
+): string {
+    if (!roadmap || !taskId) return 'Next task';
+    const found = getTasks(roadmap).find((t) => t && String(t._id) === String(taskId));
+    const name = found?.name?.trim();
+    return name && name.length > 0 ? name : 'Next task';
+}
+
+/** Sort bucket: 0 = in progress, 1 = not started / no tasks, 2 = completed. */
+export function getPastorPhaseSortGroup(roadmap: Roadmap): 0 | 1 | 2 {
+    const { completed, total } = getCompletionStats(roadmap);
+    const hasTasks = total > 0;
+    if (!hasTasks) return 1;
+    if (completed === total) return 2;
+    if (completed > 0) return 0;
+    const hasActiveWork = getTasks(roadmap).some((t) => {
+        const s = normalizeNestedTaskStatus(t?.status);
+        return s === 'in-progress' || s === 'blocked';
+    });
+    return hasActiveWork ? 0 : 1;
+}
+
+/** Phases that belong in pastor home "In Progress Roadmaps" (same rules as roadmap tab focus). */
+export function isPastorPhaseInFocus(roadmap: Roadmap): boolean {
+    return getPastorPhaseSortGroup(roadmap) === 0;
+}
+
+function toEpochMsForSort(dateString?: string): number {
+    if (!dateString) return 0;
+    const parsed = Date.parse(dateString);
+    return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+export function comparePastorPhasesForFocus(a: Roadmap, b: Roadmap): number {
+    const ga = getPastorPhaseSortGroup(a);
+    const gb = getPastorPhaseSortGroup(b);
+    if (ga !== gb) return ga - gb;
+    const timeDelta = toEpochMsForSort(b.updatedAt) - toEpochMsForSort(a.updatedAt);
+    if (timeDelta !== 0) return timeDelta;
+    return String(a?._id ?? '').localeCompare(String(b?._id ?? ''));
 }
 
 /**

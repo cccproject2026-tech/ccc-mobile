@@ -10,7 +10,13 @@ import {
     SectionHeader,
 } from "@/components/ui/design-system/index";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
-import { getCompletionStats, getTasks } from "@/lib/roadmap/helpers";
+import {
+  comparePastorPhasesForFocus,
+  getCompletionStats,
+  getNestedTaskTitleById,
+  getNextIncompleteNestedTaskId,
+  getTasks,
+} from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import type { Roadmap } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,30 +37,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabKey = "All" | "Completed" | "Remaining";
 
-function toEpochMs(dateString?: string): number {
-  if (!dateString) return 0;
-  const parsed = Date.parse(dateString);
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
 const filterTabs: { key: TabKey; label: string }[] = [
   { key: "All", label: "All" },
   { key: "Completed", label: "Completed" },
   { key: "Remaining", label: "Remaining" },
 ];
-
-/** Frontend-only: next actionable nested task; order matches `getTasks` / roadmap.roadmaps. */
-function getNextIncompleteNestedTaskId(roadmap: Roadmap | undefined | null): string | null {
-  if (!roadmap) return null;
-  const tasks = getTasks(roadmap);
-  for (const t of tasks) {
-    if (!t) continue;
-    if (t.status !== "completed") {
-      return String(t._id);
-    }
-  }
-  return null;
-}
 
 function computePastorJourneyMeta(roadmap: Roadmap | undefined | null) {
   if (!roadmap) {
@@ -82,15 +69,6 @@ function computePastorJourneyMeta(roadmap: Roadmap | undefined | null) {
   };
 }
 
-/** Display label for the next incomplete nested task (read-only; uses same task order as `getTasks`). */
-function getNestedTaskTitleById(roadmap: Roadmap | undefined | null, taskId: string | null): string {
-  if (!roadmap || !taskId) return "Next task";
-  const tasks = getTasks(roadmap);
-  const found = tasks.find((t) => t && String(t._id) === String(taskId));
-  const name = found?.name?.trim();
-  return name && name.length > 0 ? name : "Next task";
-}
-
 /** Same journey CTA rules as list `RoadmapCard`s; keeps labels/handlers in one place. */
 function buildPastorRowJourneyGuidance(
   roadmap: any,
@@ -110,15 +88,6 @@ function buildPastorRowJourneyGuidance(
   }
   if (showJourneyComplete) return { kind: "completed" as const };
   return undefined;
-}
-
-/** Sort bucket for pastor list only: 0 = in progress, 1 = not started / no tasks, 2 = completed. */
-function pastorRoadmapListSortGroup(roadmap: Roadmap): 0 | 1 | 2 {
-  const m = computePastorJourneyMeta(roadmap);
-  if (!m.hasTasks) return 1;
-  if (m.allComplete) return 2;
-  if (m.completed === 0) return 1;
-  return 0;
 }
 
 export default function PastorRoadmapIndex() {
@@ -143,14 +112,7 @@ export default function PastorRoadmapIndex() {
 
   const sortedRoadmaps = useMemo(() => {
     const list = [...(roadmaps ?? [])];
-    list.sort((a: any, b: any) => {
-      const ga = pastorRoadmapListSortGroup(a as Roadmap);
-      const gb = pastorRoadmapListSortGroup(b as Roadmap);
-      if (ga !== gb) return ga - gb;
-      const timeDelta = toEpochMs(b.updatedAt) - toEpochMs(a.updatedAt);
-      if (timeDelta !== 0) return timeDelta;
-      return String(a?._id ?? "").localeCompare(String(b?._id ?? ""));
-    });
+    list.sort((a, b) => comparePastorPhasesForFocus(a as Roadmap, b as Roadmap));
     return list;
   }, [roadmaps]);
 

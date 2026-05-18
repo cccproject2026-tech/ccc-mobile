@@ -10,8 +10,16 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useMemo } from "react";
 import {
+  comparePastorPhasesForFocus,
+  getCompletionStats,
+  getNestedTaskTitleById,
+  getNextIncompleteNestedTaskId,
+  getTasks,
+  isPastorPhaseInFocus,
+  normalizeNestedTaskStatus,
+} from "@/lib/roadmap/helpers";
+import {
   MentorInfo,
-  NestedRoadmap,
   Roadmap,
   RoadmapComment,
   RoadmapCommentAuthor,
@@ -25,11 +33,6 @@ import type {
 const UPCOMING_MEETING_WINDOW_HOURS = 24;
 const UPCOMING_DUE_WINDOW_DAYS = 7;
 const MAX_ITEMS_PER_SECTION = 3;
-
-type TaskWithRoadmap = NestedRoadmap & {
-  roadmapId: string;
-  roadmapName: string;
-};
 
 const toTimestamp = (value?: string | null) => {
   if (!value) return Number.POSITIVE_INFINITY;
@@ -60,44 +63,6 @@ const isWithinDays = (value: string | undefined, days: number) => {
   const now = Date.now();
   return timestamp >= now && timestamp <= now + days * 24 * 60 * 60 * 1000;
 };
-
-/** API / merge may send variants; dashboard filter must match real progress states. */
-function normalizeNestedTaskStatus(
-  status: string | undefined | null,
-): NestedRoadmap["status"] {
-  const raw = String(status ?? "")
-    .toLowerCase()
-    .replace(/_/g, "-")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (raw === "in-progress" || raw === "in progress") return "in-progress";
-  if (raw === "not-started" || raw === "not started" || raw === "pending")
-    return "not started";
-  if (raw === "completed" || raw === "complete" || raw === "done")
-    return "completed";
-  if (raw === "blocked") return "blocked";
-  return "not started";
-}
-
-const ROADMAP_FOCUS_STATUS_ORDER: Record<NestedRoadmap["status"], number> = {
-  "in-progress": 0,
-  blocked: 1,
-  "not started": 2,
-  completed: 3,
-};
-
-const compareRoadmapTasksForFocus = (a: TaskWithRoadmap, b: TaskWithRoadmap) => {
-  const sa = normalizeNestedTaskStatus(a.status);
-  const sb = normalizeNestedTaskStatus(b.status);
-  const ra = ROADMAP_FOCUS_STATUS_ORDER[sa] ?? 99;
-  const rb = ROADMAP_FOCUS_STATUS_ORDER[sb] ?? 99;
-  if (ra !== rb) return ra - rb;
-  return toTimestamp(a.endDate) - toTimestamp(b.endDate);
-};
-
-/** Incomplete phases for the pastor; "In Progress Roadmaps" should list real work, not only due-in-7-days. */
-const isRoadmapTaskInFocus = (task: NestedRoadmap) =>
-  normalizeNestedTaskStatus(task.status) !== "completed";
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return "";
@@ -281,37 +246,40 @@ export const usePastorFocusItems = () => {
       (mentors || []).map((mentor) => [mentor.id, mentor.name]),
     );
 
-    const flattenedTasks: TaskWithRoadmap[] = roadmaps.flatMap((roadmap: Roadmap) =>
-      (roadmap.roadmaps || []).map((task) => ({
-        ...task,
-        roadmapId: roadmap._id,
-        roadmapName: roadmap.name,
-      })),
-    );
-
-    const roadmapItems: PastorFocusItem[] = flattenedTasks
-      .filter((task) => isRoadmapTaskInFocus(task))
-      .sort(compareRoadmapTasksForFocus)
+    const roadmapItems: PastorFocusItem[] = roadmaps
+      .filter((roadmap) => isPastorPhaseInFocus(roadmap))
+      .sort(comparePastorPhasesForFocus)
       .slice(0, MAX_ITEMS_PER_SECTION)
-      .map((task) => {
-        const st = normalizeNestedTaskStatus(task.status);
+      .map((roadmap) => {
+        const { completed, total } = getCompletionStats(roadmap);
+        const nextTaskId = getNextIncompleteNestedTaskId(roadmap);
+        const nextTaskName = getNestedTaskTitleById(roadmap, nextTaskId);
+        const nextTask = getTasks(roadmap).find(
+          (t) => nextTaskId && String(t._id) === String(nextTaskId),
+        );
+        const nextStatus = normalizeNestedTaskStatus(nextTask?.status);
         const meta =
-          st === "in-progress"
-            ? "In progress"
-            : st === "blocked"
-              ? "Blocked"
-              : isWithinDays(task.endDate, UPCOMING_DUE_WINDOW_DAYS)
-                ? "Due soon"
-                : "Upcoming";
+          nextStatus === "blocked"
+            ? "Blocked"
+            : nextTask?.endDate && isWithinDays(nextTask.endDate, UPCOMING_DUE_WINDOW_DAYS)
+              ? `Due soon • ${completed} of ${total} tasks`
+              : `In progress • ${completed} of ${total} tasks`;
+
         return {
-          id: `roadmap-${task.roadmapId}-${task._id}`,
-          title: task.name,
-          description: `${task.roadmapName} needs attention${task.endDate ? ` by ${formatDateTime(task.endDate)}` : ""}.`,
+          id: `roadmap-phase-${roadmap._id}`,
+          title: roadmap.name || "Roadmap phase",
+          description: nextTaskName
+            ? `Next: ${nextTaskName}`
+            : "Continue your revitalization journey.",
           meta,
           accentColor: "#22C55E",
-          route: {
-            pathname: `/roadmap/${task.roadmapId}/${task._id}`,
-          },
+          route: nextTaskId
+            ? {
+                pathname: `/roadmap/${roadmap._id}/${nextTaskId}`,
+              }
+            : {
+                pathname: `/roadmap/${roadmap._id}`,
+              },
         };
       });
 
@@ -445,8 +413,8 @@ export const usePastorFocusItems = () => {
     return [
       {
         id: "roadmaps",
-        title: "Incomplete roadmap tasks",
-        emptyMessage: "No roadmap tasks in progress right now.",
+        title: "Roadmap phases in progress",
+        emptyMessage: "No roadmap phases in progress right now.",
         items: roadmapItems,
       },
       {
