@@ -45,12 +45,22 @@ interface Props {
     userId?: string; // Target user (mentee)
 }
 
-export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId, userId }: Props) {
+export function MentorTaskView({
+    task,
+    parentRoadmap,
+    phaseId: roadmapId,
+    itemId,
+    userId,
+}: Props) {
     const router = useRouter();
     const { user: currentUser } = useAuthStore();
-    
-    // We are in mentor view, so targetUserId is the mentee
+
     const targetUserId = userId;
+
+    /** Mentor reviewing a pastor's work — single source of truth for read-only UX. */
+    const isViewingPastor = Boolean(
+        userId && currentUser?.id && String(userId) !== String(currentUser.id),
+    );
 
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, { id: string; uri: string; name: string; type: string }[]>>({});
@@ -170,8 +180,21 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
     }, [existingExtras, effectiveExtras]);
 
     const handleChange = (fieldName: string, value: any) => {
+        if (isViewingPastor) return;
         setFormData(prev => ({ ...prev, [fieldName]: value }));
     };
+
+    const formatReadOnlyText = (value: unknown): string => {
+        if (value === null || value === undefined || value === "") {
+            return "No response provided";
+        }
+        if (typeof value === "boolean") return value ? "Yes" : "No";
+        return String(value);
+    };
+
+    const renderFieldLabel = (name: string) => (
+        <Text style={styles.fieldLabel}>{name}</Text>
+    );
 
     const validateForm = () =>
         Object.keys(formData).length > 0 ||
@@ -241,6 +264,7 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
     };
     /** Save progress */
     const handleSubmit = async () => {
+        if (isViewingPastor) return;
         if (!validateForm()) return;
         if (!currentUser?.id) {
             Alert.alert("Error", "User not authenticated");
@@ -313,12 +337,8 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
             extraName.toLowerCase().includes("photo") ||
             extraName.toLowerCase().includes("media");
 
-        // If we're viewing as a mentor (menteeId passed), keep uploads read-only.
-        // For pastor self-view (userId == currentUser.id), allow upload/delete.
-        const isReadOnly = !!userId && currentUser?.id && userId !== currentUser.id;
-
         const pickFile = async () => {
-            if (isReadOnly) return;
+            if (isViewingPastor) return;
             const res = await DocumentPicker.getDocumentAsync({
                 type: "*/*",
                 multiple: true,
@@ -340,7 +360,7 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
         };
 
         const deletePendingLocal = (fileId: string) => {
-            if (isReadOnly) return;
+            if (isViewingPastor) return;
             setPendingFiles((prev) => {
                 const updated = prev[extraName]?.filter((f) => f.id !== fileId) || [];
                 if (updated.length === 0 && docs.length === 0) {
@@ -351,7 +371,7 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
         };
 
         const confirmDelete = (doc: any) => {
-            if (isReadOnly) return;
+            if (isViewingPastor) return;
             Alert.alert(
                 "Delete file",
                 `Delete "${formatFileName(doc.fileName)}"?`,
@@ -402,7 +422,7 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
 
         return (
             <View style={{ marginBottom: 20 }}>
-                {!isReadOnly ? (
+                {!isViewingPastor ? (
                     <Pressable style={[styles.uploadButton, styles.uploadButtonWhite]} onPress={pickFile}>
                         <Ionicons name="cloud-upload-outline" size={22} color="#2563eb" />
                         <Text style={styles.uploadButtonText}>{uploadButtonLabel}</Text>
@@ -415,7 +435,7 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                             <Text style={styles.pendingFileName} numberOfLines={1}>
                                 {f.name} (not saved yet)
                             </Text>
-                            {!isReadOnly ? (
+                            {!isViewingPastor ? (
                                 <Pressable
                                     onPress={() => deletePendingLocal(f.id)}
                                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -461,7 +481,7 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                                             View Shared Media ({docs.length})
                                         </Text>
                                     </Pressable>
-                                    {!isReadOnly ? (
+                                    {!isViewingPastor ? (
                                         <Text style={styles.mediaDeleteHint}>
                                             Open shared media — tap the trash icon on a file, or use Select for multiple
                                         </Text>
@@ -487,7 +507,7 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                                             </View>
                                             <Ionicons name="open-outline" size={18} color="rgba(255,255,255,0.82)" />
                                         </Pressable>
-                                        {!isReadOnly ? (
+                                        {!isViewingPastor ? (
                                             <Pressable
                                                 onPress={() => confirmDelete(doc)}
                                                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -548,32 +568,48 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
             case "TEXT_FIELD":
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <Text style={styles.fieldLabel}>{extra.name}</Text>
-                        <TextInput
-                            style={styles.textInput}
-                            value={formData[extra.name] || ""}
-                            editable
-                            onChangeText={(v) => handleChange(extra.name, v)}
-                            placeholder={extra.placeHolder}
-                            placeholderTextColor="#9cc2ff"
-                        />
+                        {renderFieldLabel(extra.name)}
+                        {isViewingPastor ? (
+                            <View style={styles.readOnlyValue}>
+                                <Text style={styles.readOnlyValueText}>
+                                    {formatReadOnlyText(formData[extra.name])}
+                                </Text>
+                            </View>
+                        ) : (
+                            <TextInput
+                                style={styles.textInput}
+                                value={formData[extra.name] || ""}
+                                editable
+                                onChangeText={(v) => handleChange(extra.name, v)}
+                                placeholder={extra.placeHolder}
+                                placeholderTextColor="#9cc2ff"
+                            />
+                        )}
                     </View>
                 );
 
             case "TEXT_AREA":
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <Text style={styles.fieldLabel}>{extra.name}</Text>
-                        <TextInput
-                            style={[styles.textInput, styles.textArea]}
-                            multiline
-                            numberOfLines={4}
-                            value={formData[extra.name] || ""}
-                            editable
-                            onChangeText={(v) => handleChange(extra.name, v)}
-                            placeholder={extra.placeHolder}
-                            placeholderTextColor="#9cc2ff"
-                        />
+                        {renderFieldLabel(extra.name)}
+                        {isViewingPastor ? (
+                            <View style={[styles.readOnlyValue, styles.readOnlyValueMultiline]}>
+                                <Text style={styles.readOnlyValueText}>
+                                    {formatReadOnlyText(formData[extra.name])}
+                                </Text>
+                            </View>
+                        ) : (
+                            <TextInput
+                                style={[styles.textInput, styles.textArea]}
+                                multiline
+                                numberOfLines={4}
+                                value={formData[extra.name] || ""}
+                                editable
+                                onChangeText={(v) => handleChange(extra.name, v)}
+                                placeholder={extra.placeHolder}
+                                placeholderTextColor="#9cc2ff"
+                            />
+                        )}
                     </View>
                 );
 
@@ -590,14 +626,27 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                         <Pressable
                             onPress={() => handleChange(extra.name, !formData[extra.name])}
                             style={styles.checkboxRow}
-                            hitSlop={8}
+                            hitSlop={isViewingPastor ? 0 : 8}
+                            disabled={isViewingPastor}
                         >
-                            <View style={[styles.checkbox, formData[extra.name] && styles.checkboxChecked]}>
+                            <View
+                                style={[
+                                    styles.checkbox,
+                                    formData[extra.name] && styles.checkboxChecked,
+                                    isViewingPastor && styles.checkboxReadOnly,
+                                ]}
+                            >
                                 {formData[extra.name] && <Text style={styles.checkmark}>✓</Text>}
                             </View>
-                            <Text style={styles.checkboxLabel}>{extra.name}</Text>
+                            <Text
+                                style={[
+                                    styles.checkboxLabel,
+                                    isViewingPastor && styles.checkboxLabelReadOnly,
+                                ]}
+                            >
+                                {extra.name}
+                            </Text>
                         </Pressable>
-                        {/* Sub-checkboxes (Read Only) */}
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginLeft: 36, marginTop: 8 }}>
                                 {extra.checkboxes.map((checkbox) => {
@@ -608,12 +657,26 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                                             <Pressable
                                                 onPress={() => handleChange(cbId, !isChecked)}
                                                 style={styles.checkboxRow}
-                                                hitSlop={8}
+                                                hitSlop={isViewingPastor ? 0 : 8}
+                                                disabled={isViewingPastor}
                                             >
-                                                <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
+                                                <View
+                                                    style={[
+                                                        styles.checkbox,
+                                                        isChecked && styles.checkboxChecked,
+                                                        isViewingPastor && styles.checkboxReadOnly,
+                                                    ]}
+                                                >
                                                     {isChecked && <Text style={styles.checkmark}>✓</Text>}
                                                 </View>
-                                                <Text style={styles.checkboxLabel}>{checkbox.name}</Text>
+                                                <Text
+                                                    style={[
+                                                        styles.checkboxLabel,
+                                                        isViewingPastor && styles.checkboxLabelReadOnly,
+                                                    ]}
+                                                >
+                                                    {checkbox.name}
+                                                </Text>
                                             </Pressable>
                                         </View>
                                     );
@@ -624,37 +687,55 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                 );
 
             case "DATE_PICKER":
-                // User-friendly date picker (tap to open native calendar)
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <View style={styles.fieldRow}>
-                            <Text style={[styles.fieldLabel, { marginBottom: 0, flex: 1 }]}>
-                                {extra.name}
-                            </Text>
+                        {renderFieldLabel(extra.name)}
+                        {isViewingPastor ? (
+                            <View style={styles.readOnlyValue}>
+                                <Text style={styles.readOnlyValueText}>
+                                    {(() => {
+                                        const currentRaw =
+                                            formData[extra.name] !== undefined
+                                                ? formData[extra.name]
+                                                : extra.date || "";
+                                        const parsed = parseAnyDate(currentRaw);
+                                        return parsed ? formatForUi(parsed) : "No date provided";
+                                    })()}
+                                </Text>
+                            </View>
+                        ) : (
                             <Pressable
                                 onPress={() => setActiveDateField(extra.name)}
                                 style={styles.dateInputContainer}
                                 hitSlop={8}
                             >
                                 {(() => {
-                                    const currentRaw = formData[extra.name] !== undefined ? formData[extra.name] : (extra.date || "");
+                                    const currentRaw =
+                                        formData[extra.name] !== undefined
+                                            ? formData[extra.name]
+                                            : extra.date || "";
                                     const parsed = parseAnyDate(currentRaw);
                                     return (
-                                        <Text style={[styles.dateInput, parsed ? null : styles.datePlaceholder]} numberOfLines={1}>
+                                        <Text
+                                            style={[
+                                                styles.dateInput,
+                                                parsed ? null : styles.datePlaceholder,
+                                            ]}
+                                            numberOfLines={1}
+                                        >
                                             {parsed ? formatForUi(parsed) : "Select date"}
                                         </Text>
                                     );
                                 })()}
                             </Pressable>
-                        </View>
-                        
-                        {activeDateField === extra.name ? (
+                        )}
+
+                        {!isViewingPastor && activeDateField === extra.name ? (
                             <DateTimePicker
                                 value={parseAnyDate(formData[extra.name] ?? extra.date) ?? new Date()}
                                 mode="date"
                                 display="default"
                                 onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
-                                    // Android emits "dismissed" when closing picker without selection.
                                     if (event.type === "dismissed") {
                                         setActiveDateField(null);
                                         return;
@@ -671,7 +752,10 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
 
             case "SECTION":
                 return (
-                    <View key={id} style={styles.sectionBox}>
+                    <View
+                        key={id}
+                        style={[styles.sectionBox, isViewingPastor && styles.sectionBoxReview]}
+                    >
                         <Text style={styles.sectionBoxTitle}>{extra.name}</Text>
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginTop: 8 }}>
@@ -681,13 +765,23 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                                     return (
                                         <View key={cbId} style={{ marginBottom: 6 }}>
                                             <View style={styles.checkboxRow}>
-                                                <View style={[
-                                                    styles.checkbox,
-                                                    checked && styles.checkboxChecked,
-                                                ]}>
+                                                <View
+                                                    style={[
+                                                        styles.checkbox,
+                                                        checked && styles.checkboxChecked,
+                                                        isViewingPastor && styles.checkboxReadOnly,
+                                                    ]}
+                                                >
                                                     {checked && <Text style={styles.checkmark}>✓</Text>}
                                                 </View>
-                                                <Text style={styles.checkboxLabel}>{checkbox.name}</Text>
+                                                <Text
+                                                    style={[
+                                                        styles.checkboxLabel,
+                                                        isViewingPastor && styles.checkboxLabelReadOnly,
+                                                    ]}
+                                                >
+                                                    {checkbox.name}
+                                                </Text>
                                             </View>
                                         </View>
                                     );
@@ -707,19 +801,29 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
             case "BUTTON":
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <Pressable
-                            style={styles.button}
-                            onPress={() => {
-                                if (extra.linkUrl) {
-                                    const fullUrl = ensureUrlScheme(extra.linkUrl);
-                                    Linking.openURL(fullUrl).catch(err =>
-                                        Alert.alert("Error", "Could not open link: " + fullUrl)
-                                    );
-                                }
-                            }}
-                        >
-                            <Text style={styles.buttonText}>{extra.name || "Action Button"}</Text>
-                        </Pressable>
+                        {isViewingPastor ? (
+                            <View style={styles.readOnlyValue}>
+                                <Text style={styles.readOnlyValueText}>
+                                    {extra.linkUrl
+                                        ? `Resource link: ${extra.linkUrl}`
+                                        : extra.name || "Reference"}
+                                </Text>
+                            </View>
+                        ) : (
+                            <Pressable
+                                style={styles.button}
+                                onPress={() => {
+                                    if (extra.linkUrl) {
+                                        const fullUrl = ensureUrlScheme(extra.linkUrl);
+                                        Linking.openURL(fullUrl).catch(() =>
+                                            Alert.alert("Error", "Could not open link: " + fullUrl),
+                                        );
+                                    }
+                                }}
+                            >
+                                <Text style={styles.buttonText}>{extra.name || "Action Button"}</Text>
+                            </Pressable>
+                        )}
                     </View>
                 );
 
@@ -809,18 +913,46 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                 const signatureValue = formData[extra.name] || null;
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <Text style={styles.fieldLabel}>{extra.name}</Text>
+                        {renderFieldLabel(extra.name)}
                         <Pressable
-                            style={styles.signaturePlaceholder}
+                            style={[
+                                styles.signaturePlaceholder,
+                                isViewingPastor && styles.signaturePlaceholderReadOnly,
+                            ]}
                             onPress={() => {
-                                // If not signed yet, open signature capture.
                                 if (!signatureValue) {
-                                    setSignatureEditor({ visible: true, fieldName: extra.name });
+                                    if (!isViewingPastor) {
+                                        setSignatureEditor({ visible: true, fieldName: extra.name });
+                                    }
                                     return;
                                 }
 
                                 const valueStr = String(signatureValue);
                                 const isDataImage = valueStr.startsWith("data:image");
+
+                                if (isViewingPastor) {
+                                    const actions: { text: string; onPress?: () => void; style?: "cancel" }[] = [
+                                        {
+                                            text: "View",
+                                            onPress: () => {
+                                                if (isDataImage) {
+                                                    setSignaturePreview({ visible: true, uri: valueStr });
+                                                } else {
+                                                    Linking.openURL(valueStr).catch(() =>
+                                                        Alert.alert("Error", "Could not open signature."),
+                                                    );
+                                                }
+                                            },
+                                        },
+                                        {
+                                            text: "Download",
+                                            onPress: () => downloadSignature(valueStr),
+                                        },
+                                        { text: "Close", style: "cancel" },
+                                    ];
+                                    Alert.alert("Pastor signature", undefined, actions);
+                                    return;
+                                }
 
                                 Alert.alert("Signature", "Choose an action", [
                                     {
@@ -837,7 +969,8 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                                     },
                                     {
                                         text: "Edit",
-                                        onPress: () => setSignatureEditor({ visible: true, fieldName: extra.name }),
+                                        onPress: () =>
+                                            setSignatureEditor({ visible: true, fieldName: extra.name }),
                                     },
                                     {
                                         text: "Download",
@@ -846,9 +979,16 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                                     { text: "Cancel", style: "cancel" },
                                 ]);
                             }}
+                            disabled={isViewingPastor && !signatureValue}
                         >
                             <Text style={styles.tapToSignText}>
-                                {signatureValue ? "Tap to view or edit signature" : "Tap to add signature"}
+                                {signatureValue
+                                    ? isViewingPastor
+                                        ? "Tap to view pastor signature"
+                                        : "Tap to view or edit signature"
+                                    : isViewingPastor
+                                      ? "No signature on file"
+                                      : "Tap to add signature"}
                             </Text>
                         </Pressable>
                     </View>
@@ -888,20 +1028,22 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
 
                 {effectiveExtras.map((extra, index) => renderExtra(extra, index))}
 
-                <Pressable
-                    style={[styles.saveButton, isSaving ? styles.saveButtonDisabled : null]}
-                    onPress={handleSubmit}
-                    disabled={isSaving}
-                >
-                    {isSaving ? (
-                        <ActivityIndicator color="#2563eb" />
-                    ) : (
-                        <>
-                            <Ionicons name="save-outline" size={20} color="#2563eb" />
-                            <Text style={styles.saveButtonText}>Save Progress</Text>
-                        </>
-                    )}
-                </Pressable>
+                {!isViewingPastor ? (
+                    <Pressable
+                        style={[styles.saveButton, isSaving ? styles.saveButtonDisabled : null]}
+                        onPress={handleSubmit}
+                        disabled={isSaving}
+                    >
+                        {isSaving ? (
+                            <ActivityIndicator color="#2563eb" />
+                        ) : (
+                            <>
+                                <Ionicons name="save-outline" size={20} color="#2563eb" />
+                                <Text style={styles.saveButtonText}>Save Progress</Text>
+                            </>
+                        )}
+                    </Pressable>
+                ) : null}
             </View>
 
             <Modal
@@ -938,21 +1080,25 @@ export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId
                 </View>
             </Modal>
 
-            <SignatureModal
-                visible={signatureEditor.visible}
-                onClose={() => setSignatureEditor({ visible: false, fieldName: null })}
-                onSave={(signature) => {
-                    const fieldName = signatureEditor.fieldName;
-                    if (!fieldName) return;
-                    handleChange(fieldName, signature);
-                }}
-            />
+            {!isViewingPastor ? (
+                <SignatureModal
+                    visible={signatureEditor.visible}
+                    onClose={() => setSignatureEditor({ visible: false, fieldName: null })}
+                    onSave={(signature) => {
+                        const fieldName = signatureEditor.fieldName;
+                        if (!fieldName) return;
+                        handleChange(fieldName, signature);
+                    }}
+                />
+            ) : null}
 
-            <SimpleSuccessModal
-                visible={showSuccessModal}
-                onClose={() => setShowSuccessModal(false)}
-                title="Progress Saved!"
-            />
+            {!isViewingPastor ? (
+                <SimpleSuccessModal
+                    visible={showSuccessModal}
+                    onClose={() => setShowSuccessModal(false)}
+                    title="Progress Saved!"
+                />
+            ) : null}
         </>
     );
 }
@@ -963,6 +1109,37 @@ const styles = StyleSheet.create({
         paddingTop: 6,
         paddingBottom: 14,
         gap: 14,
+    },
+    readOnlyValue: {
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.12)",
+        backgroundColor: "rgba(0,0,0,0.12)",
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+    },
+    readOnlyValueMultiline: {
+        minHeight: 72,
+    },
+    readOnlyValueText: {
+        color: "rgba(255,255,255,0.88)",
+        fontSize: 14,
+        fontWeight: "600",
+        lineHeight: 20,
+    },
+    checkboxReadOnly: {
+        opacity: 0.95,
+    },
+    checkboxLabelReadOnly: {
+        opacity: 0.92,
+    },
+    signaturePlaceholderReadOnly: {
+        backgroundColor: "rgba(0,0,0,0.1)",
+        borderColor: "rgba(255,255,255,0.14)",
+    },
+    sectionBoxReview: {
+        backgroundColor: "rgba(0,0,0,0.08)",
+        borderColor: "rgba(255,255,255,0.12)",
     },
     fieldContainer: { marginBottom: 10 },
     fieldLabel: {

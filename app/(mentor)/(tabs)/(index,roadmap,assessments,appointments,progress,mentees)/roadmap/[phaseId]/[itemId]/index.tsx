@@ -369,7 +369,6 @@ export default function ItemDetail() {
                     </Text>
                 </View>
 
-                {/* Dynamic Form - Render extras */}
                 <MentorTaskView
                     task={task}
                     parentRoadmap={roadmap}
