@@ -50,6 +50,7 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
     const targetUserId = userId; 
     
     const [formData, setFormData] = useState<Record<string, any>>({});
+    const [pendingFiles, setPendingFiles] = useState<Record<string, { id: string; uri: string; name: string; type: string }[]>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [activeDateField, setActiveDateField] = useState<string | null>(null);
     const [signaturePreview, setSignaturePreview] = useState<{ visible: boolean; uri: string | null }>({
@@ -173,7 +174,9 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
         setFormData(prev => ({ ...prev, [fieldName]: value }));
     };
 
-    const validateForm = () => Object.keys(formData).length > 0;
+    const validateForm = () =>
+        Object.keys(formData).length > 0 ||
+        Object.values(pendingFiles).some((files) => files.length > 0);
 
     const downloadSignature = async (signatureValue: string) => {
         try {
@@ -272,6 +275,19 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                 });
             }
 
+            for (const [extraName, files] of Object.entries(pendingFiles)) {
+                for (const file of files) {
+                    await uploadDocument.mutateAsync({
+                        roadMapId: roadmapId!,
+                        userId: currentUser.id,
+                        nestedRoadMapItemId: itemId!,
+                        extraName,
+                        file,
+                    });
+                }
+            }
+            setPendingFiles({});
+
             setShowSuccessModal(true);
             setTimeout(() => {
                 setShowSuccessModal(false);
@@ -302,35 +318,37 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
         // For pastor self-view (userId == currentUser.id), allow upload/delete.
         const isReadOnly = !!userId && currentUser?.id && userId !== currentUser.id;
 
-        const pickAndUpload = async () => {
+        const pickFile = async () => {
             if (isReadOnly) return;
-            if (!currentUser?.id) {
-                Alert.alert("Error", "User not authenticated");
-                return;
-            }
             const res = await DocumentPicker.getDocumentAsync({
                 type: "*/*",
                 multiple: true,
             });
             if (res.canceled) return;
 
-            try {
-                for (const a of res.assets) {
-                    await uploadDocument.mutateAsync({
-                        roadMapId: roadmapId!,
-                        userId: currentUser.id,
-                        nestedRoadMapItemId: itemId!,
-                        extraName,
-                        file: {
-                            uri: a.uri,
-                            name: a.name,
-                            type: a.mimeType || "application/octet-stream",
-                        },
-                    });
+            const newFiles = res.assets.map((a) => ({
+                id: `${a.name}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                uri: a.uri,
+                name: a.name,
+                type: a.mimeType || "application/octet-stream",
+            }));
+
+            setPendingFiles((prev) => ({
+                ...prev,
+                [extraName]: [...(prev[extraName] || []), ...newFiles],
+            }));
+            handleChange(extraName, true);
+        };
+
+        const deletePendingLocal = (fileId: string) => {
+            if (isReadOnly) return;
+            setPendingFiles((prev) => {
+                const updated = prev[extraName]?.filter((f) => f.id !== fileId) || [];
+                if (updated.length === 0 && docs.length === 0) {
+                    handleChange(extraName, false);
                 }
-            } catch (err: any) {
-                Alert.alert("Upload failed", err?.message || "Could not upload file. Please try again.");
-            }
+                return { ...prev, [extraName]: updated };
+            });
         };
 
         const confirmDelete = (doc: any) => {
@@ -345,70 +363,117 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                         style: "destructive",
                         onPress: () => {
                             if (!currentUser?.id) return;
-                            deleteDocument.mutate({
-                                roadMapId: roadmapId!,
-                                userId: currentUser.id,
-                                nestedId: itemId!,
-                                fileUrl: doc.fileUrl,
-                                uploadBatchId: doc.uploadBatchId,
-                            });
+                            deleteDocument.mutate(
+                                {
+                                    roadMapId: roadmapId!,
+                                    userId: currentUser.id,
+                                    nestedId: itemId!,
+                                    fileUrl: doc.fileUrl,
+                                    uploadBatchId: doc.uploadBatchId,
+                                },
+                                {
+                                    onSuccess: () => {
+                                        if (docs.length <= 1 && !hasPendingFiles) {
+                                            handleChange(extraName, false);
+                                        }
+                                    },
+                                    onError: (err: any) => {
+                                        Alert.alert(
+                                            "Delete failed",
+                                            err?.message || "Could not remove this file. Please try again.",
+                                        );
+                                    },
+                                },
+                            );
                         },
                     },
                 ],
             );
         };
 
+        const hasPendingFiles = (pendingFiles[extraName]?.length ?? 0) > 0;
+        const hasServerFiles = docs.length > 0;
+        const uploadButtonLabel = isMediaUpload
+            ? hasServerFiles || hasPendingFiles
+                ? "Add more media"
+                : "Upload media"
+            : hasServerFiles || hasPendingFiles
+                ? "Upload another file"
+                : "Upload file";
+
         return (
             <View style={{ marginBottom: 20 }}>
                 {!isReadOnly ? (
-                    <Pressable style={[styles.uploadButton, styles.uploadButtonWhite]} onPress={pickAndUpload}>
+                    <Pressable style={[styles.uploadButton, styles.uploadButtonWhite]} onPress={pickFile}>
                         <Ionicons name="cloud-upload-outline" size={22} color="#2563eb" />
-                        <Text style={styles.uploadButtonText}>
-                            {isMediaUpload ? "Upload media" : "Upload file"}
-                        </Text>
+                        <Text style={styles.uploadButtonText}>{uploadButtonLabel}</Text>
                     </Pressable>
                 ) : null}
+
+                {hasPendingFiles &&
+                    pendingFiles[extraName]?.map((f) => (
+                        <View key={f.id} style={styles.pendingFileRow}>
+                            <Text style={styles.pendingFileName} numberOfLines={1}>
+                                {f.name} (not saved yet)
+                            </Text>
+                            {!isReadOnly ? (
+                                <Pressable
+                                    onPress={() => deletePendingLocal(f.id)}
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    style={styles.removeIconWrapper}
+                                >
+                                    <Ionicons name="close-circle" size={22} color="#ef4444" />
+                                </Pressable>
+                            ) : null}
+                        </View>
+                    ))}
 
                 {isLoading ? (
                     <ActivityIndicator color="#fff" style={{ marginTop: 8 }} />
                 ) : (
-                    docs.length > 0 && (
+                    hasServerFiles && (
                         <View style={[styles.uploadedFilesContainer]}>
                             {!isMediaUpload && (
                                 <Text style={styles.uploadedFilesLabel}>Uploaded :</Text>
                             )}
                             {isMediaUpload ? (
-                                <Pressable
-                                    onPress={() =>
-                                        router.push({
-                                            pathname: "/roadmap/shared-media",
-                                            params: {
-                                                taskId: task._id,
-                                                extraName: extraName,
-                                                roadMapId: roadmapId!,
-                                                nestedId: itemId,
-                                                userId: targetUserId,
-                                            },
-                                        })
-                                    }
-                                    style={{ alignItems: "center", width: "100%", paddingVertical: 6 }}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.fileName,
-                                            { textDecorationLine: "underline", textAlign: "center" },
-                                        ]}
+                                <View style={styles.mediaUploadedBlock}>
+                                    <Pressable
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "/roadmap/shared-media",
+                                                params: {
+                                                    taskId: task._id,
+                                                    extraName: extraName,
+                                                    roadMapId: roadmapId!,
+                                                    nestedId: itemId,
+                                                    userId: targetUserId,
+                                                },
+                                            })
+                                        }
+                                        style={{ alignItems: "center", width: "100%", paddingVertical: 6 }}
                                     >
-                                        View Shared Media
-                                    </Text>
-                                </Pressable>
+                                        <Text
+                                            style={[
+                                                styles.fileName,
+                                                { textDecorationLine: "underline", textAlign: "center" },
+                                            ]}
+                                        >
+                                            View Shared Media ({docs.length})
+                                        </Text>
+                                    </Pressable>
+                                    {!isReadOnly ? (
+                                        <Text style={styles.mediaDeleteHint}>
+                                            Open shared media and use Select to remove items
+                                        </Text>
+                                    ) : null}
+                                </View>
                             ) : (
                                 docs.map((doc: any) => (
                                     <View key={doc._id} style={styles.fileRow}>
                                         <Pressable
                                             onPress={() => Linking.openURL(doc.fileUrl)}
-                                            onLongPress={() => confirmDelete(doc)}
-                                            style={styles.filePress}
+                                            style={[styles.filePress, { flex: 1 }]}
                                         >
                                             <View style={styles.fileIcon}>
                                                 <Ionicons name="document-attach-outline" size={18} color="#FFFFFF" />
@@ -423,6 +488,15 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                                             </View>
                                             <Ionicons name="open-outline" size={18} color="rgba(255,255,255,0.82)" />
                                         </Pressable>
+                                        {!isReadOnly ? (
+                                            <Pressable
+                                                onPress={() => confirmDelete(doc)}
+                                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                style={styles.removeIconWrapper}
+                                            >
+                                                <Ionicons name="trash-outline" size={22} color="#ef4444" />
+                                            </Pressable>
+                                        ) : null}
                                     </View>
                                 ))
                             )}
@@ -971,7 +1045,36 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     fileRow: {
+        flexDirection: "row",
+        alignItems: "center",
         marginBottom: 10,
+        gap: 8,
+    },
+    pendingFileRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 8,
+        marginBottom: 4,
+        gap: 8,
+    },
+    pendingFileName: {
+        color: "rgba(255,255,255,0.92)",
+        flex: 1,
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    removeIconWrapper: {
+        padding: 4,
+    },
+    mediaUploadedBlock: {
+        width: "100%",
+    },
+    mediaDeleteHint: {
+        color: "rgba(255,255,255,0.62)",
+        fontSize: 12,
+        fontWeight: "600",
+        textAlign: "center",
+        marginTop: 6,
     },
     filePress: {
         flexDirection: "row",
