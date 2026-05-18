@@ -131,7 +131,11 @@ export const RoadmapCard: React.FC<Props> = ({
 
             {isCompleted && (
                 <View style={styles.checkmarkOverlay}>
-                    <Ionicons name="checkmark" size={isSmallDevice ? 32 : 40} color="#fff" />
+                    <Ionicons
+                        name="checkmark"
+                        size={isSmallDevice ? 22 : 26}
+                        color="#FFFFFF"
+                    />
                 </View>
             )}
         </View>
@@ -394,8 +398,14 @@ export const RoadmapCard: React.FC<Props> = ({
                                         { backgroundColor: statusConfig.bg, borderColor: statusConfig.accent },
                                     ]}
                                 >
-                                    <Text style={styles.statusPillText}>
-                                        Status  •  {statusConfig.text}
+                                    <Text style={styles.statusPillLabel}>Status</Text>
+                                    <Text style={styles.statusPillDot}>•</Text>
+                                    <Text
+                                        style={styles.statusPillValue}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                    >
+                                        {statusConfig.text}
                                     </Text>
                                 </View>
                             </View>
@@ -546,12 +556,19 @@ const styles = StyleSheet.create({
         position: 'absolute',
         right: 8,
         top: 8,
-        width: isSmallDevice ? 36 : 44,
-        height: isSmallDevice ? 36 : 44,
-        borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        width: isSmallDevice ? 34 : 38,
+        height: isSmallDevice ? 34 : 38,
+        borderRadius: isSmallDevice ? 17 : 19,
+        backgroundColor: '#22C55E',
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.92)',
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#052E16',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.35,
+        shadowRadius: 4,
+        elevation: 4,
     },
     completionTime: {
         color: 'rgba(255,255,255,0.8)',
@@ -658,20 +675,37 @@ const styles = StyleSheet.create({
         paddingRight: 0,
     },
     statusPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'nowrap',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.16)',
-        paddingHorizontal: getSpacing(12),
-        paddingVertical: getSpacing(7),
+        paddingHorizontal: getSpacing(10),
+        paddingVertical: getSpacing(6),
         borderRadius: 12,
         alignSelf: 'flex-start',
         backgroundColor: 'rgba(255,255,255,0.08)',
-        flexShrink: 1,
-        maxWidth: '76%',
+        flexShrink: 0,
+        maxWidth: '100%',
+        gap: 5,
     },
-    statusPillText: {
-        color: roadmapTheme.textPrimary,
-        fontSize: getFontSize(13),
+    statusPillLabel: {
+        color: 'rgba(255,255,255,0.82)',
+        fontSize: getFontSize(12.5),
+        fontWeight: '600',
+        flexShrink: 0,
+    },
+    statusPillDot: {
+        color: 'rgba(255,255,255,0.55)',
+        fontSize: getFontSize(12.5),
         fontWeight: '700',
+        flexShrink: 0,
+    },
+    statusPillValue: {
+        color: roadmapTheme.textPrimary,
+        fontSize: getFontSize(12.5),
+        fontWeight: '800',
+        flexShrink: 1,
     },
     progressSection: {
         marginTop: getSpacing(12),
