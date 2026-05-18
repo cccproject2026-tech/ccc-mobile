@@ -5,7 +5,7 @@ import { MentorTaskView } from "@/components/roadmaps/MentorTaskView";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Colors } from "@/constants/Colors";
 import { useRoadmap, useRoadmapComments, useRoadmapQueries } from "@/hooks/roadmaps/useRoadmaps";
-import { getTasks } from "@/lib/roadmap/helpers";
+import { resolveRoadmapDetailTask } from "@/lib/roadmap/helpers";
 import type { NestedRoadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
@@ -43,11 +43,10 @@ export default function PastorRoadmapItemDetail() {
   const { data: comments } = useRoadmapComments(phaseId, targetUserId);
   const { data: queries } = useRoadmapQueries(phaseId, targetUserId);
 
-  const task = useMemo<NestedRoadmap | undefined>(() => {
-    if (!roadmap) return undefined;
-    const all = getTasks(roadmap) as NestedRoadmap[];
-    return all.find((t) => String(t._id) === String(itemId));
-  }, [itemId, roadmap]);
+  const task = useMemo<NestedRoadmap | undefined>(
+    () => resolveRoadmapDetailTask(roadmap, itemId),
+    [itemId, roadmap],
+  );
 
   const [activeTab, setActiveTab] = useState<"overview" | "comments" | "queries">("overview");
 
@@ -319,9 +318,13 @@ export default function PastorRoadmapItemDetail() {
               <Text style={styles.sectionText}>{String((task as any).description || "No description provided")}</Text>
             </View>
 
-            {(task as any).extras && Array.isArray((task as any).extras) && (task as any).extras.length > 0 ? (
-              <MentorTaskView task={task} phaseId={String(phaseId)} itemId={String(itemId)} userId={targetUserId} />
-            ) : null}
+            <MentorTaskView
+              task={task}
+              parentRoadmap={roadmap}
+              phaseId={String(phaseId)}
+              itemId={String(itemId)}
+              userId={targetUserId}
+            />
           </>
         )}
       </ScrollView>

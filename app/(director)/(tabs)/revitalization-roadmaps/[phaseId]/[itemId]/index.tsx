@@ -343,7 +343,7 @@ export default function ItemDetail() {
                     </Text>
                 </View>
 
-                <DynamicFormTask task={task} phaseId={phaseId} itemId={itemId} />
+                <DynamicFormTask task={task} parentRoadmap={roadmap} phaseId={phaseId} itemId={itemId} />
             </ScrollView>
 
             {/* Modals */}

@@ -254,10 +254,37 @@ export function useRoadmap(roadmapId: string | undefined, userId?: string, inclu
 /**
  * Hook for fetching roadmap extras/saved form data
  */
+/**
+ * Loads saved extras for a nested task; if empty, falls back to roadmap-level extras (Jumpstart).
+ */
+export function useRoadmapExtrasWithFallback(
+    roadmapId: string | undefined,
+    nestedRoadMapItemId?: string,
+    userId?: string,
+) {
+    const nested = useRoadmapExtras(roadmapId, nestedRoadMapItemId, userId);
+    const hasNestedValues =
+        Array.isArray(nested.data?.extras) && nested.data.extras.length > 0;
+    const root = useRoadmapExtras(
+        roadmapId,
+        undefined,
+        userId,
+        { enabled: nested.isSuccess && !hasNestedValues },
+    );
+
+    const data = hasNestedValues ? nested.data : root.data;
+    const isLoading = nested.isLoading || (!hasNestedValues && root.isLoading);
+    const isFetching = nested.isFetching || (!hasNestedValues && root.isFetching);
+    const error = nested.error ?? root.error;
+
+    return { data, isLoading, isFetching, error, hasNestedValues };
+}
+
 export function useRoadmapExtras(
     roadmapId: string | undefined,
     nestedRoadMapItemId?: string,
-    userId?: string
+    userId?: string,
+    options?: { enabled?: boolean },
 ) {
     console.log('useRoadmapExtras----->>>>>>>>>>>>>>', { roadmapId, nestedRoadMapItemId, userId });
     // Validate that roadmapId is a valid truthy string
@@ -297,7 +324,7 @@ export function useRoadmapExtras(
                 finalUserId
             );
         },
-        enabled: isValidRoadmapId === true,
+        enabled: isValidRoadmapId === true && (options?.enabled ?? true),
         staleTime: 0,
         // gcTime: 1000 ,
     });

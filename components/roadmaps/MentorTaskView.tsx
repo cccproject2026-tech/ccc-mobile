@@ -3,20 +3,21 @@ import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
     useRoadmapDocuments,
-    useRoadmapExtras,
+    useRoadmapExtrasWithFallback,
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
+import { getEffectiveTaskExtras, savedExtrasToFormValues } from "@/lib/roadmap/helpers";
 import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
-import { Extra, NestedRoadmap } from "@/lib/roadmap/types";
+import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import RNFS from "react-native-fs";
 import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
-import { JSX, useEffect, useState } from "react";
+import { JSX, useEffect, useMemo, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { format, isValid, parse } from "date-fns";
@@ -37,18 +38,20 @@ import {
 
 interface Props {
     task: NestedRoadmap;
+    /** Parent roadmap — used when form fields are defined at phase level (e.g. Jumpstart). */
+    parentRoadmap?: Roadmap | null;
     phaseId?: string;
     itemId?: string;
     userId?: string; // Target user (mentee)
 }
 
-export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Props) {
+export function MentorTaskView({ task, parentRoadmap, phaseId: roadmapId, itemId, userId }: Props) {
     const router = useRouter();
     const { user: currentUser } = useAuthStore();
     
     // We are in mentor view, so targetUserId is the mentee
-    const targetUserId = userId; 
-    
+    const targetUserId = userId;
+
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, { id: string; uri: string; name: string; type: string }[]>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -132,10 +135,16 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
     };
 
     /** Load existing extras from API */
-    const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } = useRoadmapExtras(
-        isValidObjectId(roadmapId) ? roadmapId : undefined,
-        isValidObjectId(itemId) ? itemId : undefined,
-        isValidObjectId(targetUserId) ? targetUserId : undefined
+    const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } =
+        useRoadmapExtrasWithFallback(
+            isValidObjectId(roadmapId) ? roadmapId : undefined,
+            isValidObjectId(itemId) ? itemId : undefined,
+            isValidObjectId(targetUserId) ? targetUserId : undefined,
+        );
+
+    const effectiveExtras = useMemo(
+        () => getEffectiveTaskExtras(task, parentRoadmap, existingExtras?.extras),
+        [task, parentRoadmap, existingExtras?.extras],
     );
 
     const createExtras = useCreateRoadmapExtras();
@@ -151,24 +160,14 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
         const init: Record<string, any> = {};
         
         // 1. Load defaults from task definition
-        task.extras?.forEach(extra => {
+        effectiveExtras.forEach((extra) => {
             if (extra.date) init[extra.name] = extra.date;
         });
 
-        // 2. Override with existing extras from API (SIGNATURE uses signatureData)
-        if (existingExtras?.extras && Array.isArray(existingExtras.extras)) {
-            existingExtras.extras.forEach((item: any) => {
-                if (!item.name) return;
-                if (item.type === "SIGNATURE" && item.signatureData != null) {
-                    init[item.name] = item.signatureData;
-                } else if (item.value !== undefined) {
-                    init[item.name] = item.value;
-                }
-            });
-        }
+        Object.assign(init, savedExtrasToFormValues(existingExtras?.extras));
         
         setFormData(init);
-    }, [existingExtras, task]);
+    }, [existingExtras, effectiveExtras]);
 
     const handleChange = (fieldName: string, value: any) => {
         setFormData(prev => ({ ...prev, [fieldName]: value }));
@@ -225,7 +224,7 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
 
     /** Infer extra type – used when building payload */
     const getExtraType = (fieldName: string, value: any): string => {
-        const extraDef = task.extras?.find(e => e.name === fieldName);
+        const extraDef = effectiveExtras.find((e) => e.name === fieldName);
         if (extraDef) return extraDef.type;
 
         if (typeof value === "boolean") return "CHECKBOX";
@@ -861,8 +860,19 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
         }
     };
 
-    if (!task.extras || task.extras.length === 0) return null;
-    
+    if (isLoadingExtras && effectiveExtras.length === 0) {
+        return (
+            <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                <ActivityIndicator color="#fff" />
+                <Text style={{ color: 'rgba(255,255,255,0.75)', marginTop: 8, fontSize: 13 }}>
+                    Loading saved fields…
+                </Text>
+            </View>
+        );
+    }
+
+    if (effectiveExtras.length === 0) return null;
+
     // For date changes, we might want a global save button if multiple fields are edited
     const isSaving = createExtras.isPending || updateExtras.isPending;
 
@@ -876,7 +886,7 @@ export function MentorTaskView({ task, phaseId: roadmapId, itemId, userId }: Pro
                     </View>
                 )}
 
-                {task.extras.map((extra, index) => renderExtra(extra, index))}
+                {effectiveExtras.map((extra, index) => renderExtra(extra, index))}
 
                 <Pressable
                     style={[styles.saveButton, isSaving ? styles.saveButtonDisabled : null]}

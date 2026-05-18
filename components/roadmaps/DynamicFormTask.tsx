@@ -1092,21 +1092,22 @@ import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
     useRoadmapDocuments,
-    useRoadmapExtras,
+    useRoadmapExtrasWithFallback,
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
 import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
-import { Extra, NestedRoadmap } from "@/lib/roadmap/types";
+import { getEffectiveTaskExtras, savedExtrasToFormValues } from "@/lib/roadmap/helpers";
+import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import RNFS from "react-native-fs";
 import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
-import { JSX, useEffect, useRef, useState } from "react";
+import { JSX, useEffect, useMemo, useRef, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import {
     ActivityIndicator,
@@ -1124,19 +1125,21 @@ import {
 
 interface Props {
     task: NestedRoadmap;
+    /** Parent roadmap — form fields may be defined here (e.g. Jumpstart). */
+    parentRoadmap?: Roadmap | null;
     phaseId?: string;
     itemId?: string;
     userId?: string; // Add optional userId for mentor view
 }
 
-export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Props) {
+export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemId, userId }: Props) {
     const router = useRouter();
     const { user: currentUser } = useAuthStore();
     
     // Determine target user and if we are in read-only (mentor) mode
     const targetUserId = userId || currentUser?.id;
     const isMentorView = !!userId && userId !== currentUser?.id;
-    
+
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string | undefined>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, any[]>>({});
@@ -1204,10 +1207,16 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
     };
 
     /** Load existing extras from API */
-    const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } = useRoadmapExtras(
-        isMongoObjectId(roadmapId) ? roadmapId : undefined,
-        isMongoObjectId(itemId) ? itemId : undefined,
-        isMongoObjectId(targetUserId) ? targetUserId : undefined
+    const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } =
+        useRoadmapExtrasWithFallback(
+            isMongoObjectId(roadmapId) ? roadmapId : undefined,
+            isMongoObjectId(itemId) ? itemId : undefined,
+            isMongoObjectId(targetUserId) ? targetUserId : undefined,
+        );
+
+    const effectiveExtras = useMemo(
+        () => getEffectiveTaskExtras(task, parentRoadmap, existingExtras?.extras),
+        [task, parentRoadmap, existingExtras?.extras],
     );
 
     const createExtras = useCreateRoadmapExtras();
@@ -1229,26 +1238,15 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
         const init: Record<string, any> = {};
         
         // 1. Load defaults from task definition
-        task.extras?.forEach(extra => {
+        effectiveExtras.forEach((extra) => {
             if (extra.date) init[extra.name] = extra.date;
-            // Also load sub-checkboxes if they exist in definitions (though usually they come from extras)
         });
 
-        // 2. Override with existing extras from API (SIGNATURE uses signatureData)
-        if (existingExtras?.extras && Array.isArray(existingExtras.extras)) {
-            existingExtras.extras.forEach((item: any) => {
-                if (!item.name) return;
-                if (item.type === "SIGNATURE" && item.signatureData != null) {
-                    init[item.name] = item.signatureData;
-                } else if (item.value !== undefined) {
-                    init[item.name] = item.value;
-                }
-            });
-        }
+        Object.assign(init, savedExtrasToFormValues(existingExtras?.extras));
         
         setFormData(init);
         setErrors({});
-    }, [existingExtras, task]);
+    }, [existingExtras, effectiveExtras]);
 
     const handleChange = (fieldName: string, value: any) => {
         setFormData(prev => ({ ...prev, [fieldName]: value }));
@@ -1259,7 +1257,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
 
     /** Infer extra type – used when building payload */
     const getExtraType = (fieldName: string, value: any): string => {
-        const extraDef = task.extras?.find(e => e.name === fieldName);
+        const extraDef = effectiveExtras.find((e) => e.name === fieldName);
         if (extraDef) return extraDef.type;
 
         if (typeof value === "boolean") return "CHECKBOX";
@@ -1340,7 +1338,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
         console.log('formData', formData);
         console.log("----------------------------------------------")
         console.log("----------------------------------------------")
-        const signatureErrors = collectSignatureErrors(task.extras);
+        const signatureErrors = collectSignatureErrors(effectiveExtras);
         if (Object.keys(signatureErrors).length > 0) {
             setErrors(prev => ({ ...prev, ...signatureErrors }));
             Alert.alert("Missing Signature", "Signature is required.");
@@ -2208,9 +2206,9 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
         }
     };
 
-    if (!task.extras || task.extras.length === 0) return null;
+    if (effectiveExtras.length === 0) return null;
 
-    const hasOnlyAssessments = task.extras.every((extra: any) => extra.type === 'ASSESSMENT');
+    const hasOnlyAssessments = effectiveExtras.every((extra: any) => extra.type === 'ASSESSMENT');
 
     const isSaving =
         createExtras.isPending ||
@@ -2253,7 +2251,7 @@ export function DynamicFormTask({ task, phaseId: roadmapId, itemId, userId }: Pr
                     </View>
                 )}
 
-                {task.extras.map((extra, index) => renderExtra(extra, index))}
+                {effectiveExtras.map((extra, index) => renderExtra(extra, index))}
 
                 {!isMentorView && !hasOnlyAssessments && (
                     <Pressable

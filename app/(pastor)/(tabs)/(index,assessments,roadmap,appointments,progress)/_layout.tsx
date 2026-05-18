@@ -31,6 +31,7 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
       {/* Roadmap routes - ALL inside shared group */}
       <Stack.Screen name="roadmap/index" /> {/* Roadmap list */}
       <Stack.Screen name="roadmap/[phaseId]/index" /> {/* Phase details */}
+      <Stack.Screen name="roadmap/[phaseId]/[itemId]/index" /> {/* Task details + form */}
       <Stack.Screen name="roadmap/[phaseId]/comments" />
       <Stack.Screen name="roadmap/[phaseId]/queries" />
       <Stack.Screen name="roadmap/[phaseId]/shared-media" />

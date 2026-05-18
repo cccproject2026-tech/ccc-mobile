@@ -1,5 +1,146 @@
 // lib/roadmap/helpers.ts
-import { NestedRoadmap, Roadmap, RoadmapCardStatus } from './types';
+import { Extra, NestedRoadmap, Roadmap, RoadmapCardStatus } from './types';
+
+const FORM_EXTRA_TYPES = new Set<Extra['type']>([
+    'TEXT_AREA',
+    'TEXT_DISPLAY',
+    'CHECKBOX',
+    'TEXT_FIELD',
+    'DATE_PICKER',
+    'SECTION',
+    'UPLOAD',
+    'BUTTON',
+    'ASSESSMENT',
+    'SIGNATURE',
+]);
+
+function extraNameKey(name: unknown): string {
+    return String(name ?? '').trim().toLowerCase();
+}
+
+function dedupeExtrasByName(extras: Extra[]): Extra[] {
+    const seen = new Set<string>();
+    const out: Extra[] = [];
+    for (const extra of extras) {
+        const key = extraNameKey(extra?.name);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        out.push(extra);
+    }
+    return out;
+}
+
+/** Build form field definitions from a prior save when the roadmap payload omits extras. */
+export function extrasFromSavedItems(savedItems?: any[] | null): Extra[] {
+    if (!Array.isArray(savedItems)) return [];
+
+    const out: Extra[] = [];
+    for (const item of savedItems) {
+        if (!item?.name || item.type === 'JUMPSTART_COMPLETE') continue;
+        const type = String(item.type ?? 'TEXT_FIELD') as Extra['type'];
+        if (!FORM_EXTRA_TYPES.has(type)) continue;
+        out.push({
+            type,
+            name: item.name,
+            placeHolder: item.placeHolder,
+            buttonName: item.buttonName,
+            haveButton: item.haveButton,
+            date: item.date,
+            checkboxes: item.checkboxes,
+            sections: item.sections,
+            assessmentId: item.assessmentId,
+            linkUrl: item.linkUrl,
+            editable: item.editable !== false,
+        });
+    }
+    return dedupeExtrasByName(out);
+}
+
+/**
+ * Field templates for the active task only — not every sibling nested roadmap.
+ */
+export function collectDefinitionExtras(
+    task?: NestedRoadmap | null,
+    roadmap?: Roadmap | null,
+): Extra[] {
+    if (Array.isArray(task?.extras) && task.extras.length > 0) {
+        return dedupeExtrasByName(task.extras);
+    }
+    if (Array.isArray(roadmap?.extras) && roadmap.extras.length > 0) {
+        return dedupeExtrasByName(roadmap.extras);
+    }
+    const firstNested = roadmap?.roadmaps?.[0];
+    if (firstNested?.extras?.length) {
+        return dedupeExtrasByName(firstNested.extras);
+    }
+    return [];
+}
+
+/**
+ * Form definitions may live on the nested task, parent roadmap, any sibling nested task,
+ * or only in previously saved extras (common for Jumpstart).
+ */
+export function getEffectiveTaskExtras(
+    task: NestedRoadmap | undefined | null,
+    roadmap?: Roadmap | null,
+    savedItems?: any[] | null,
+): Extra[] {
+    const fromDefinitions = collectDefinitionExtras(task, roadmap);
+    if (fromDefinitions.length > 0) return fromDefinitions;
+    return extrasFromSavedItems(savedItems);
+}
+
+/** Last saved value per field name (ignores duplicate rows from repeated saves). */
+export function savedExtrasToFormValues(savedItems?: any[] | null): Record<string, any> {
+    const values: Record<string, any> = {};
+    if (!Array.isArray(savedItems)) return values;
+
+    for (const item of savedItems) {
+        if (!item?.name || item.type === 'JUMPSTART_COMPLETE') continue;
+        const key = extraNameKey(item.name);
+        if (!key) continue;
+        if (item.type === 'SIGNATURE' && item.signatureData != null) {
+            values[item.name] = item.signatureData;
+        } else if (item.value !== undefined) {
+            values[item.name] = item.value;
+        }
+    }
+    return values;
+}
+
+/** Resolve the task row for the detail screen (handles single-roadmap / missing nested edge cases). */
+export function resolveRoadmapDetailTask(
+    roadmap: Roadmap | undefined | null,
+    itemId?: string,
+): NestedRoadmap | undefined {
+    if (!roadmap) return undefined;
+
+    const nested = (roadmap.roadmaps ?? []).filter(Boolean);
+    if (itemId) {
+        const match = nested.find((t) => String(t._id) === String(itemId));
+        if (match) return match;
+    }
+    if (nested.length === 1) return nested[0];
+    if (nested.length === 0 && collectDefinitionExtras(undefined, roadmap).length > 0) {
+        return {
+            _id: String(itemId || roadmap._id),
+            name: roadmap.name,
+            roadMapDetails: roadmap.roadMapDetails,
+            description: roadmap.description,
+            status: roadmap.status,
+            duration: roadmap.duration,
+            imageUrl: roadmap.imageUrl,
+            meetings: roadmap.meetings ?? [],
+            startDate: roadmap.startDate,
+            endDate: roadmap.endDate,
+            completedOn: roadmap.completedOn,
+            phase: roadmap.phase,
+            totalSteps: roadmap.totalSteps,
+            extras: roadmap.extras ?? [],
+        };
+    }
+    return undefined;
+}
 
 /**
  * Get status for card display

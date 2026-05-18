@@ -3,7 +3,7 @@ import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import TopBar from '@/components/director/TopBar';
 import { DynamicFormTask } from '@/components/roadmaps/DynamicFormTask';
 import { useRoadmap, useRoadmapComments, useRoadmapQueries } from '@/hooks/roadmaps/useRoadmaps';
-import { getTasks } from '@/lib/roadmap/helpers';
+import { getEffectiveTaskExtras, getTasks } from '@/lib/roadmap/helpers';
 import { NestedRoadmap } from '@/lib/roadmap/types';
 import { useAuthStore } from '@/stores';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
@@ -35,6 +35,11 @@ export default function ItemDetail() {
         const allTasks = getTasks(roadmap);
         return allTasks.find(r => r._id === itemId);
     }, [roadmap, itemId]);
+
+    const taskFormExtras = useMemo(
+        () => getEffectiveTaskExtras(task, roadmap),
+        [task, roadmap],
+    );
 
     // Get phase number
     const phaseNumber = useMemo(() => {
@@ -373,8 +378,13 @@ export default function ItemDetail() {
                 </View>
 
                 {/* Dynamic Form - Render extras */}
-                {task.extras && task.extras.length > 0 && (
-                    <DynamicFormTask task={task} phaseId={phaseId} itemId={itemId} />
+                {taskFormExtras.length > 0 && (
+                    <DynamicFormTask
+                        task={task}
+                        parentRoadmap={roadmap}
+                        phaseId={phaseId}
+                        itemId={itemId}
+                    />
                 )}
             </ScrollView>
 
