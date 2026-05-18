@@ -7,7 +7,7 @@ import TopBar from "@/components/director/TopBar";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Colors } from "@/constants/Colors";
 import { useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
-import { getTasks, getTasksByDivision } from "@/lib/roadmap/helpers";
+import { getTasks } from "@/lib/roadmap/helpers";
 import { getTaskCard } from "@/lib/roadmap/mappers";
 import type { NestedRoadmap } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,8 +25,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type StatusTabKey = "ALL" | "DUE" | "NOT_STARTED" | "COMPLETED";
-type TabKey = StatusTabKey | string;
+type TabKey = "ALL" | "DUE" | "NOT_STARTED" | "COMPLETED";
 
 const accent = {
   gold: "#E8C88A",
@@ -113,60 +112,25 @@ export default function PastorRoadmapDetail() {
     [],
   );
 
-  const hasDivisions = useMemo(() => {
-    return Array.isArray((roadmap as any)?.divisions) && (roadmap as any).divisions.length > 0;
-  }, [roadmap]);
+  const [activeTab, setActiveTab] = useState<TabKey>("ALL");
 
-  const divisions = useMemo<string[]>(() => {
-    if (!hasDivisions || !roadmap) return [];
-    return (roadmap as any).divisions as string[];
-  }, [hasDivisions, roadmap]);
-
-  const [activeTab, setActiveTab] = useState<TabKey>(() => {
-    if (divisions.length > 0) return divisions[0];
-    return "ALL";
-  });
-
-  const tabs = useMemo(() => {
-    const base = [
+  const tabs = useMemo(
+    () => [
       { key: "ALL", label: "All" },
       { key: "DUE", label: "Due" },
       { key: "NOT_STARTED", label: "Not Started" },
       { key: "COMPLETED", label: "Completed" },
-    ];
-    if (!hasDivisions || divisions.length === 0) return base;
-    const divisionTabs = divisions.map((d) => ({ key: d, label: d }));
-    return [...divisionTabs, ...base];
-  }, [divisions, hasDivisions]);
+    ],
+    [],
+  );
 
   const allTasks = useMemo<NestedRoadmap[]>(() => {
     if (!roadmap) return [];
     return getTasks(roadmap) as NestedRoadmap[];
   }, [roadmap]);
 
-  const tasksForTab = useMemo<NestedRoadmap[]>(() => {
-    if (!roadmap) return [];
-
-    const statusKeys: StatusTabKey[] = ["ALL", "DUE", "NOT_STARTED", "COMPLETED"];
-    if (
-      hasDivisions &&
-      divisions.includes(activeTab as string) &&
-      !statusKeys.includes(activeTab as StatusTabKey)
-    ) {
-      const grouped = getTasksByDivision(roadmap);
-      const exactMatch = grouped[activeTab as string];
-      if (exactMatch) return exactMatch;
-
-      const matchingKey = Object.keys(grouped).find(
-        (key) => key.toLowerCase() === String(activeTab).toLowerCase(),
-      );
-      return matchingKey ? grouped[matchingKey] : [];
-    }
-    return allTasks;
-  }, [activeTab, allTasks, divisions, hasDivisions, roadmap]);
-
   const filtered = useMemo(() => {
-    let list = tasksForTab;
+    let list = allTasks;
 
     if (activeTab === "COMPLETED") {
       list = list.filter((t) => String(t.status || "").toLowerCase() === "completed");
@@ -191,7 +155,7 @@ export default function PastorRoadmapDetail() {
       const desc = String((t as any).description ?? "").toLowerCase();
       return title.includes(q) || desc.includes(q);
     });
-  }, [activeTab, search, tasksForTab]);
+  }, [activeTab, search, allTasks]);
 
   const handleOpenTask = useCallback(
     (taskId: string) => {
@@ -278,7 +242,7 @@ export default function PastorRoadmapDetail() {
         </View>
 
         <View style={styles.tabsWrap}>
-          <TabSwitcher tabs={tabs} activeTab={String(activeTab)} onChange={(k) => setActiveTab(k as TabKey)} />
+          <TabSwitcher tabs={tabs} activeTab={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
         </View>
 
         <View style={styles.list}>
