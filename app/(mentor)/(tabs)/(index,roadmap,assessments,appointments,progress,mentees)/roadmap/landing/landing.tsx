@@ -3,7 +3,9 @@ import ActionBottomSheet from "@/components/sheets/ActionBottomSheet";
 import MenteeCard from "@/components/director/MenteeCard";
 import RoadmapCard from "@/components/director/ProgressRoadmapCard";
 import TopBar from "@/components/director/TopBar";
+import { PastorCompletedTasksSection } from "@/components/roadmaps/PastorCompletedTasksSection";
 import {
+  CommonCard,
   GradientBackground,
   RoadmapNavRow,
   RoadmapSearchField,
@@ -15,7 +17,13 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { useProgressByUserId } from "@/hooks/progress/useProgress";
 import { mergeRoadmapWithProgress, useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
-import { getCardStatus, getPhaseNumber } from "@/lib/roadmap/helpers";
+import {
+  buildPastorCompletedJourneyTabs,
+  flattenPastorCompletedTasks,
+  getCardStatus,
+  getPhaseNumber,
+  type PastorCompletedTaskItem,
+} from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Mentee } from "@/types/mentee.types";
@@ -28,6 +36,7 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -37,6 +46,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type MainTabKey = "PASTOR_ROADMAPS" | "ROADMAP_LIBRARY";
 type StatusTabKey = "ALL" | "DUE" | "IN_PROGRESS" | "NOT_STARTED" | "COMPLETED";
+type MentorPastorRoadmapView = "phases" | "completed-tasks";
 
 const MAIN_TABS = [
   { key: "PASTOR_ROADMAPS" as const, label: "Pastor's Roadmaps" },
@@ -61,6 +71,10 @@ export default function Landing() {
   const [pastorSearch, setPastorSearch] = useState("");
   const [librarySearch, setLibrarySearch] = useState("");
   const [selectedPastorRoadmapSearch, setSelectedPastorRoadmapSearch] = useState("");
+  const [mentorCompletedSearch, setMentorCompletedSearch] = useState("");
+  const [mentorPastorRoadmapView, setMentorPastorRoadmapView] =
+    useState<MentorPastorRoadmapView>("phases");
+  const [mentorCompletedJourneyTab, setMentorCompletedJourneyTab] = useState("all");
   const [selectedPastor, setSelectedPastor] = useState<Mentee | null>(null);
 
   const { user } = useAuthStore();
@@ -91,11 +105,94 @@ export default function Landing() {
     const routePastor = mentees.find((mentee) => mentee.id === menteeId);
     if (routePastor) {
       setSelectedPastor(routePastor);
+      setMentorPastorRoadmapView("phases");
+      setMentorCompletedJourneyTab("all");
+      setMentorCompletedSearch("");
       setMainTab("PASTOR_ROADMAPS");
     }
   }, [menteeId, mentees, selectedPastor?.id]);
 
   const { data: pastorProgress, isLoading: isLoadingProgress } = useProgressByUserId(selectedPastor?.id);
+
+  const pastorMergedRoadmaps = useMemo((): Roadmap[] => {
+    if (!selectedPastor || !pastorProgress || !roadmaps) return [];
+    const assignedRoadmapIds = pastorProgress.roadmaps.items.map((item) => item.roadMapId) || [];
+    const assignedRoadmaps = roadmaps.filter((roadmap) => assignedRoadmapIds.includes(roadmap._id));
+    return assignedRoadmaps.map((roadmap) => {
+      const progressItem = pastorProgress.roadmaps.items.find((p) => p.roadMapId === roadmap._id);
+      return mergeRoadmapWithProgress(roadmap, progressItem);
+    });
+  }, [selectedPastor, pastorProgress, roadmaps]);
+
+  const mentorCompletedTasks = useMemo(
+    () => flattenPastorCompletedTasks(pastorMergedRoadmaps),
+    [pastorMergedRoadmaps],
+  );
+
+  const mentorCompletedJourneyTabs = useMemo(
+    () => buildPastorCompletedJourneyTabs(mentorCompletedTasks, pastorMergedRoadmaps),
+    [mentorCompletedTasks, pastorMergedRoadmaps],
+  );
+
+  const mentorCompletedJourneyTabStrip = useMemo(
+    () =>
+      mentorCompletedJourneyTabs.map((t) => ({
+        key: t.key,
+        label: t.label,
+        badge: t.count > 0 ? t.count : undefined,
+      })),
+    [mentorCompletedJourneyTabs],
+  );
+
+  useEffect(() => {
+    if (mentorPastorRoadmapView !== "completed-tasks") return;
+    const valid = new Set(mentorCompletedJourneyTabs.map((t) => t.key));
+    if (!valid.has(mentorCompletedJourneyTab)) setMentorCompletedJourneyTab("all");
+  }, [mentorPastorRoadmapView, mentorCompletedJourneyTabs, mentorCompletedJourneyTab]);
+
+  const mentorCompletedByJourney = useMemo(() => {
+    if (mentorCompletedJourneyTab === "all") return mentorCompletedTasks;
+    return mentorCompletedTasks.filter((item) => item.phaseId === mentorCompletedJourneyTab);
+  }, [mentorCompletedTasks, mentorCompletedJourneyTab]);
+
+  const mentorFilteredCompletedTasks = useMemo(() => {
+    const q = mentorCompletedSearch.trim().toLowerCase();
+    if (!q) return mentorCompletedByJourney;
+    return mentorCompletedByJourney.filter((item) => {
+      const title = item.taskTitle.toLowerCase();
+      const phase = item.phaseTitle.toLowerCase();
+      return title.includes(q) || phase.includes(q);
+    });
+  }, [mentorCompletedByJourney, mentorCompletedSearch]);
+
+  const selectPastor = useCallback((mentee: Mentee) => {
+    setSelectedPastor(mentee);
+    setMentorPastorRoadmapView("phases");
+    setMentorCompletedJourneyTab("all");
+    setMentorCompletedSearch("");
+  }, []);
+
+  const clearPastor = useCallback(() => {
+    setSelectedPastor(null);
+    setMentorPastorRoadmapView("phases");
+    setMentorCompletedJourneyTab("all");
+    setMentorCompletedSearch("");
+  }, []);
+
+  const handleOpenMentorCompletedTask = useCallback(
+    (item: PastorCompletedTaskItem) => {
+      if (!item.phaseId || !item.taskId || !selectedPastor?.id) return;
+      const menteeName = [selectedPastor.firstName, selectedPastor.lastName].filter(Boolean).join(" ").trim();
+      router.push({
+        pathname: `/(mentor)/roadmap/${item.phaseId}/${item.taskId}` as any,
+        params: {
+          menteeId: selectedPastor.id,
+          menteeName: menteeName || undefined,
+        },
+      });
+    },
+    [selectedPastor],
+  );
 
   const handleRoadmapMenuPress = useCallback((roadmap: Roadmap) => {
     setSelectedRoadmapForMenu(roadmap);
@@ -265,7 +362,7 @@ export default function Landing() {
           <MenteeCard
             variant="roadmap"
             data={item.data}
-            onPress={() => setSelectedPastor(item.data)}
+            onPress={() => selectPastor(item.data)}
           />
         );
       }
@@ -282,7 +379,7 @@ export default function Landing() {
         </View>
       );
     },
-    [handleRoadmapPress, mainTab, handleRoadmapMenuPress],
+    [handleRoadmapPress, mainTab, handleRoadmapMenuPress, selectPastor],
   );
 
   const listEmptyComponent = useCallback(() => {
@@ -295,11 +392,14 @@ export default function Landing() {
       );
     }
 
-    const currentSearch = selectedPastor
-      ? selectedPastorRoadmapSearch
-      : mainTab === "PASTOR_ROADMAPS"
-        ? pastorSearch
-        : librarySearch;
+    const currentSearch =
+      selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+        ? mentorCompletedSearch
+        : selectedPastor
+          ? selectedPastorRoadmapSearch
+          : mainTab === "PASTOR_ROADMAPS"
+            ? pastorSearch
+            : librarySearch;
 
     return (
       <View style={styles.emptyContainer}>
@@ -318,6 +418,8 @@ export default function Landing() {
     pastorSearch,
     librarySearch,
     selectedPastorRoadmapSearch,
+    mentorCompletedSearch,
+    mentorPastorRoadmapView,
     mainTab,
     selectedPastor,
   ]);
@@ -337,35 +439,175 @@ export default function Landing() {
     }
   }, [hasNextPage, isFetchingNextPage, mainTab, selectedPastor, fetchNextPage]);
 
-  const searchValue = selectedPastor
-    ? selectedPastorRoadmapSearch
-    : mainTab === "PASTOR_ROADMAPS"
-      ? pastorSearch
-      : librarySearch;
+  const searchValue =
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+      ? mentorCompletedSearch
+      : selectedPastor
+        ? selectedPastorRoadmapSearch
+        : mainTab === "PASTOR_ROADMAPS"
+          ? pastorSearch
+          : librarySearch;
 
-  const setSearchValue = selectedPastor
-    ? setSelectedPastorRoadmapSearch
-    : mainTab === "PASTOR_ROADMAPS"
-      ? setPastorSearch
-      : setLibrarySearch;
+  const setSearchValue =
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+      ? setMentorCompletedSearch
+      : selectedPastor
+        ? setSelectedPastorRoadmapSearch
+        : mainTab === "PASTOR_ROADMAPS"
+          ? setPastorSearch
+          : setLibrarySearch;
 
-  const searchPlaceholder = selectedPastor
-    ? "Search roadmaps..."
-    : mainTab === "PASTOR_ROADMAPS"
-      ? "Search pastors..."
-      : "Search library...";
+  const searchPlaceholder =
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+      ? "Search completed tasks..."
+      : selectedPastor
+        ? "Search roadmaps..."
+        : mainTab === "PASTOR_ROADMAPS"
+          ? "Search pastors..."
+          : "Search library...";
 
-  const sectionTitle = selectedPastor
-    ? `${selectedPastor.firstName}'s roadmaps`
-    : mainTab === "ROADMAP_LIBRARY"
-      ? "Roadmap library"
-      : "Pastor roadmaps";
+  const sectionTitle =
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+      ? `${selectedPastor.firstName}'s completed tasks`
+      : selectedPastor
+        ? `${selectedPastor.firstName}'s roadmaps`
+        : mainTab === "ROADMAP_LIBRARY"
+          ? "Roadmap library"
+          : "Pastor roadmaps";
 
-  const sectionSubtitle = selectedPastor
-    ? "Track phases, tasks, and next steps."
-    : mainTab === "ROADMAP_LIBRARY"
-      ? "Browse templates and assign to pastors."
-      : "Select a mentee to view their revitalization roadmaps.";
+  const sectionSubtitle =
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+      ? "Review this mentee's finished roadmap tasks."
+      : selectedPastor
+        ? "Track phases, tasks, and next steps."
+        : mainTab === "ROADMAP_LIBRARY"
+          ? "Browse templates and assign to pastors."
+          : "Select a mentee to view their revitalization roadmaps.";
+
+  const mentorPastorLayerTabs = useMemo(
+    () => [
+      { key: "phases" as const, label: "Phases" },
+      {
+        key: "completed-tasks" as const,
+        label: "Completed Tasks",
+        badge: mentorCompletedTasks.length > 0 ? mentorCompletedTasks.length : undefined,
+      },
+    ],
+    [mentorCompletedTasks.length],
+  );
+
+  const showMentorPastorCompleted =
+    !!selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks";
+
+  const listHeader = (
+    <View style={styles.headerBlock}>
+      <RoadmapNavRow
+        onBack={() => {
+          if (selectedPastor) clearPastor();
+          else router.back();
+        }}
+        pillLabel="Revitalization Roadmap"
+        rightSlot={
+          <Pressable onPress={() => setIsRoadmapModalVisible(true)} hitSlop={10} style={styles.iconGhost}>
+            <Ionicons name="ellipsis-vertical" size={20} color="rgba(255,255,255,0.92)" />
+          </Pressable>
+        }
+      />
+
+      <SectionHeader title={sectionTitle} subtitle={sectionSubtitle} showDivider />
+
+      {selectedPastor ? (
+        <View style={styles.breadcrumb}>
+          <Text style={styles.breadcrumbText} numberOfLines={1}>
+            My mentee · {selectedPastor.firstName} {selectedPastor.lastName}
+          </Text>
+        </View>
+      ) : null}
+
+      {mainTab === "PASTOR_ROADMAPS" && selectedPastor ? (
+        <RoadmapTabStrip
+          tabs={mentorPastorLayerTabs}
+          activeKey={mentorPastorRoadmapView}
+          onChange={(k) => setMentorPastorRoadmapView(k as MentorPastorRoadmapView)}
+          scrollable
+        />
+      ) : null}
+
+      <View
+        style={
+          selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+            ? styles.completedSearchWrap
+            : undefined
+        }
+      >
+        <RoadmapSearchField
+          value={searchValue}
+          onChangeText={setSearchValue}
+          placeholder={searchPlaceholder}
+        />
+      </View>
+
+      <RoadmapTabStrip
+        tabs={MAIN_TABS}
+        activeKey={mainTab}
+        onChange={(k) => {
+          setMainTab(k as MainTabKey);
+          clearPastor();
+        }}
+      />
+
+      {mainTab === "PASTOR_ROADMAPS" && selectedPastor && mentorPastorRoadmapView === "phases" ? (
+        <RoadmapTabStrip
+          tabs={STATUS_TABS}
+          activeKey={statusTab}
+          onChange={(k) => setStatusTab(k as StatusTabKey)}
+          scrollable
+        />
+      ) : null}
+
+      {mainTab === "PASTOR_ROADMAPS" &&
+      selectedPastor &&
+      mentorPastorRoadmapView === "completed-tasks" &&
+      mentorCompletedJourneyTabStrip.length > 1 ? (
+        <RoadmapTabStrip
+          tabs={mentorCompletedJourneyTabStrip}
+          activeKey={mentorCompletedJourneyTab}
+          onChange={setMentorCompletedJourneyTab}
+          scrollable
+        />
+      ) : null}
+    </View>
+  );
+
+  const completedScrollBody =
+    isLoadingRoadmaps || isLoadingProgress ? (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#fff" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    ) : mentorCompletedTasks.length > 0 &&
+      mentorFilteredCompletedTasks.length === 0 &&
+      mentorCompletedSearch.trim() ? (
+      <CommonCard style={styles.emptySearchCard}>
+        <Ionicons name="search-outline" size={28} color="rgba(255,255,255,0.7)" />
+        <Text style={styles.emptySearchTitle}>No matching completed tasks</Text>
+        <Text style={styles.emptySearchSubtitle}>Try a different search term.</Text>
+      </CommonCard>
+    ) : mentorCompletedByJourney.length === 0 && mentorCompletedJourneyTab !== "all" ? (
+      <CommonCard style={styles.emptySearchCard}>
+        <Ionicons name="checkbox-outline" size={28} color="rgba(255,255,255,0.7)" />
+        <Text style={styles.emptySearchTitle}>No completed tasks in this roadmap</Text>
+        <Text style={styles.emptySearchSubtitle}>Try another journey tab or view All.</Text>
+      </CommonCard>
+    ) : (
+      <View style={styles.completedSectionWrap}>
+        <PastorCompletedTasksSection
+          items={mentorFilteredCompletedTasks}
+          onOpenTask={handleOpenMentorCompletedTask}
+          showHeader={false}
+        />
+      </View>
+    );
 
   return (
     <GradientBackground decorativeOrbs style={styles.root}>
@@ -373,76 +615,39 @@ export default function Landing() {
 
       <TopBar role="mentor" showUserName />
 
-      <FlatList
-        data={displayData}
-        keyExtractor={(item) => (item.type === "MENTEE" ? item.data.id : item.data._id)}
-        renderItem={renderItem}
-        ListEmptyComponent={listEmptyComponent}
-        ListFooterComponent={renderFooter}
-        onEndReached={loadMoreMentees}
-        onEndReachedThreshold={0.5}
-        contentContainerStyle={[
-          styles.scrollContent,
-          displayData.length === 0 && styles.scrollContentFlex,
-          { paddingBottom: listBottomPad, paddingHorizontal: horizontalPadding },
-        ]}
-        showsVerticalScrollIndicator={false}
-        style={styles.flatList}
-        keyboardShouldPersistTaps="handled"
-        ListHeaderComponent={
-          <View style={styles.headerBlock}>
-            <RoadmapNavRow
-              onBack={() => {
-                if (selectedPastor) {
-                  setSelectedPastor(null);
-                } else {
-                  router.back();
-                }
-              }}
-              pillLabel="Revitalization Roadmap"
-              rightSlot={
-                <Pressable onPress={() => setIsRoadmapModalVisible(true)} hitSlop={10} style={styles.iconGhost}>
-                  <Ionicons name="ellipsis-vertical" size={20} color="rgba(255,255,255,0.92)" />
-                </Pressable>
-              }
-            />
-
-            <SectionHeader title={sectionTitle} subtitle={sectionSubtitle} showDivider />
-
-            {selectedPastor ? (
-              <View style={styles.breadcrumb}>
-                <Text style={styles.breadcrumbText} numberOfLines={1}>
-                  My mentee · {selectedPastor.firstName} {selectedPastor.lastName}
-                </Text>
-              </View>
-            ) : null}
-
-            <RoadmapSearchField
-              value={searchValue}
-              onChangeText={setSearchValue}
-              placeholder={searchPlaceholder}
-            />
-
-            <RoadmapTabStrip
-              tabs={MAIN_TABS}
-              activeKey={mainTab}
-              onChange={(k) => {
-                setMainTab(k as MainTabKey);
-                setSelectedPastor(null);
-              }}
-            />
-
-            {mainTab === "PASTOR_ROADMAPS" && selectedPastor ? (
-              <RoadmapTabStrip
-                tabs={STATUS_TABS}
-                activeKey={statusTab}
-                onChange={(k) => setStatusTab(k as StatusTabKey)}
-                scrollable
-              />
-            ) : null}
-          </View>
-        }
-      />
+      {showMentorPastorCompleted ? (
+        <ScrollView
+          style={styles.flatList}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: listBottomPad, paddingHorizontal: horizontalPadding },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {listHeader}
+          {completedScrollBody}
+        </ScrollView>
+      ) : (
+        <FlatList
+          data={displayData}
+          keyExtractor={(item) => (item.type === "MENTEE" ? item.data.id : item.data._id)}
+          renderItem={renderItem}
+          ListEmptyComponent={listEmptyComponent}
+          ListFooterComponent={renderFooter}
+          onEndReached={loadMoreMentees}
+          onEndReachedThreshold={0.5}
+          contentContainerStyle={[
+            styles.scrollContent,
+            displayData.length === 0 && styles.scrollContentFlex,
+            { paddingBottom: listBottomPad, paddingHorizontal: horizontalPadding },
+          ]}
+          showsVerticalScrollIndicator={false}
+          style={styles.flatList}
+          keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={listHeader}
+        />
+      )}
 
       <RoadMapOutcomeModal
         isMenuVisible={isRoadmapModalVisible}
@@ -524,5 +729,29 @@ const styles = StyleSheet.create({
   footerLoader: {
     paddingVertical: 20,
     alignItems: "center",
+  },
+  completedSearchWrap: {
+    marginBottom: 14,
+  },
+  completedSectionWrap: {
+    marginTop: 4,
+  },
+  emptySearchCard: {
+    marginTop: 12,
+    paddingVertical: 20,
+    alignItems: "center",
+    gap: 8,
+  },
+  emptySearchTitle: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  emptySearchSubtitle: {
+    color: roadmapTheme.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+    maxWidth: 280,
   },
 });
