@@ -10,7 +10,9 @@ import {
     roadmapTheme,
     SectionHeader,
 } from "@/components/ui/design-system/index";
+import { useTaskCompletionTimestamps } from "@/hooks/roadmap/useTaskCompletionTimestamps";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { useAuthStore } from "@/stores";
 import {
   buildPastorCompletedJourneyTabs,
   comparePastorPhasesForFocus,
@@ -24,7 +26,7 @@ import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import type { Roadmap } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
@@ -108,6 +110,7 @@ export default function PastorRoadmapIndex() {
   }, [width]);
   const maxWidth = useMemo(() => (width >= 520 ? 520 : undefined), [width]);
 
+  const { user } = useAuthStore();
   const {
     data: roadmaps,
     isLoading,
@@ -122,9 +125,18 @@ export default function PastorRoadmapIndex() {
     return list;
   }, [roadmaps]);
 
+  const { timestamps: completionTimestamps, reloadTimestamps } =
+    useTaskCompletionTimestamps(user?.id, sortedRoadmaps as Roadmap[]);
+
+  useFocusEffect(
+    useCallback(() => {
+      reloadTimestamps();
+    }, [reloadTimestamps]),
+  );
+
   const completedTasks = useMemo(
-    () => flattenPastorCompletedTasks(sortedRoadmaps as Roadmap[]),
-    [sortedRoadmaps],
+    () => flattenPastorCompletedTasks(sortedRoadmaps as Roadmap[], completionTimestamps),
+    [sortedRoadmaps, completionTimestamps],
   );
 
   const completedJourneyTabs = useMemo(

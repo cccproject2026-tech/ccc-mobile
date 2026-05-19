@@ -7,7 +7,17 @@ import {
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
-import { getEffectiveTaskExtras, savedExtrasToFormValues } from "@/lib/roadmap/helpers";
+import {
+    getEffectiveTaskExtras,
+    normalizeNestedTaskStatus,
+    parseRoadmapTimestampMs,
+    savedExtrasToFormValues,
+} from "@/lib/roadmap/helpers";
+import {
+    readTaskCompletionTimestamps,
+    recordTaskCompletionTimestamp,
+    taskCompletionMapKey,
+} from "@/lib/roadmap/taskCompletionTimestamps";
 import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
 import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
@@ -179,6 +189,24 @@ export function MentorTaskView({
         setFormData(init);
     }, [existingExtras, effectiveExtras]);
 
+    /** Seed completion time from last save when task is already completed (fixes list dates). */
+    useEffect(() => {
+        if (!roadmapId || !itemId || !targetUserId) return;
+        if (normalizeNestedTaskStatus(task.status) !== "completed") return;
+
+        const extrasUpdatedMs = parseRoadmapTimestampMs(
+            (existingExtras as { updatedAt?: string | Date } | undefined)?.updatedAt,
+        );
+        if (extrasUpdatedMs <= 0) return;
+
+        (async () => {
+            const stored = await readTaskCompletionTimestamps(targetUserId);
+            const key = taskCompletionMapKey(roadmapId, itemId);
+            if (stored[key]) return;
+            await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, extrasUpdatedMs);
+        })();
+    }, [existingExtras, task.status, roadmapId, itemId, targetUserId]);
+
     const handleChange = (fieldName: string, value: any) => {
         if (isViewingPastor) return;
         setFormData(prev => ({ ...prev, [fieldName]: value }));
@@ -310,6 +338,10 @@ export function MentorTaskView({
                 }
             }
             setPendingFiles({});
+
+            if (roadmapId && itemId && targetUserId) {
+                await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, Date.now());
+            }
 
             setShowSuccessModal(true);
             setTimeout(() => {

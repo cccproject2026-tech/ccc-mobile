@@ -16,6 +16,7 @@ import {
 import { useAuthStore } from "@/stores/auth.store";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { useProgressByUserId } from "@/hooks/progress/useProgress";
+import { useTaskCompletionTimestamps } from "@/hooks/roadmap/useTaskCompletionTimestamps";
 import { mergeRoadmapWithProgress, useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import {
   buildPastorCompletedJourneyTabs,
@@ -30,7 +31,7 @@ import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -124,9 +125,18 @@ export default function Landing() {
     });
   }, [selectedPastor, pastorProgress, roadmaps]);
 
+  const { timestamps: mentorCompletionTimestamps, reloadTimestamps } =
+    useTaskCompletionTimestamps(selectedPastor?.id, pastorMergedRoadmaps);
+
+  useFocusEffect(
+    useCallback(() => {
+      reloadTimestamps();
+    }, [reloadTimestamps]),
+  );
+
   const mentorCompletedTasks = useMemo(
-    () => flattenPastorCompletedTasks(pastorMergedRoadmaps),
-    [pastorMergedRoadmaps],
+    () => flattenPastorCompletedTasks(pastorMergedRoadmaps, mentorCompletionTimestamps),
+    [pastorMergedRoadmaps, mentorCompletionTimestamps],
   );
 
   const mentorCompletedJourneyTabs = useMemo(

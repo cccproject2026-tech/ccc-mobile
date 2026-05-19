@@ -1,5 +1,6 @@
 // lib/roadmap/helpers.ts
 import { API_CONFIG } from '@/constants/config/api';
+import { taskCompletionMapKey } from '@/lib/roadmap/taskCompletionTimestamps';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
 import { Extra, NestedRoadmap, Roadmap, RoadmapCardStatus } from './types';
 
@@ -429,12 +430,47 @@ export function parseRoadmapTimestampMs(value: unknown): number {
     return Number.isFinite(ms) ? ms : 0;
 }
 
+/** Ignore template/parent dates that are not real task completion times. */
+function resolveCompletedTaskTimestampMs(
+    task: NestedRoadmap,
+    phaseId: string,
+    roadmap: Roadmap,
+    localCompletionMs?: Record<string, number>,
+): number {
+    const mapKey = taskCompletionMapKey(phaseId, String(task._id ?? ''));
+    const localMs = localCompletionMs?.[mapKey];
+    if (localMs && localMs > 0) return localMs;
+
+    const parentUpdatedMs = parseRoadmapTimestampMs(roadmap.updatedAt);
+    const parentCreatedMs = parseRoadmapTimestampMs(roadmap.createdAt);
+
+    const taskCompletedMs = parseRoadmapTimestampMs(task.completedOn);
+    if (taskCompletedMs > 0) {
+        const differsFromParent =
+            (parentUpdatedMs > 0 && Math.abs(taskCompletedMs - parentUpdatedMs) > 60_000) &&
+            (parentCreatedMs <= 0 || Math.abs(taskCompletedMs - parentCreatedMs) > 60_000);
+        if (differsFromParent || parentUpdatedMs <= 0) {
+            return taskCompletedMs;
+        }
+    }
+
+    const taskUpdatedMs = parseRoadmapTimestampMs(
+        (task as NestedRoadmap & { updatedAt?: string }).updatedAt,
+    );
+    if (taskUpdatedMs > 0 && parentUpdatedMs > 0 && Math.abs(taskUpdatedMs - parentUpdatedMs) > 60_000) {
+        return taskUpdatedMs;
+    }
+
+    return 0;
+}
+
 /**
  * All completed nested tasks across pastor roadmaps, newest first.
- * Uses task completedOn, then task/phase updatedAt fallbacks — no API changes.
+ * Prefer locally recorded completion time (save / status transition), not parent roadmap updatedAt.
  */
 export function flattenPastorCompletedTasks(
     roadmaps: Roadmap[] | undefined | null,
+    localCompletionMs?: Record<string, number>,
 ): PastorCompletedTaskItem[] {
     if (!roadmaps?.length) return [];
 
@@ -446,10 +482,6 @@ export function flattenPastorCompletedTasks(
 
         const phaseTitle =
             String(roadmap.name ?? roadmap.phase ?? '').trim() || 'Roadmap phase';
-        const phaseFallbackMs =
-            parseRoadmapTimestampMs(roadmap.updatedAt) ||
-            parseRoadmapTimestampMs(roadmap.completedOn) ||
-            parseRoadmapTimestampMs(roadmap.createdAt);
 
         for (const task of getTasks(roadmap)) {
             if (!task || normalizeNestedTaskStatus(task.status) !== 'completed') continue;
@@ -459,11 +491,12 @@ export function flattenPastorCompletedTasks(
 
             const taskTitle =
                 String(task.name ?? task.roadMapDetails ?? '').trim() || 'Completed task';
-            const taskUpdated = (task as NestedRoadmap & { updatedAt?: string }).updatedAt;
-            const completedOnMs =
-                parseRoadmapTimestampMs(task.completedOn) ||
-                parseRoadmapTimestampMs(taskUpdated) ||
-                phaseFallbackMs;
+            const completedOnMs = resolveCompletedTaskTimestampMs(
+                task,
+                phaseId,
+                roadmap,
+                localCompletionMs,
+            );
 
             items.push({
                 id: `${phaseId}:${taskId}`,

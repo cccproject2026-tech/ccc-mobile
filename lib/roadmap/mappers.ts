@@ -143,8 +143,8 @@ export function getPastorCompletedTaskCardData(
         showCheckmark: true,
         phaseLabel: item.phaseTitle,
         phaseContextPrefix: 'Roadmap',
-        completedDate: relative ?? base.completedDate,
-        completedDateDisplay: relative ? 'plain' : 'labeled',
+        completedDate: relative ?? undefined,
+        completedDateDisplay: relative ? 'plain' : undefined,
         completionTime: base.completionTime,
     };
 }
