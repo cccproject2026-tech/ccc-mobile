@@ -35,7 +35,7 @@ const accent = {
 export default function LoginScreen() {
     const { bottom } = useSafeAreaInsets();
     const { width: windowWidth } = useWindowDimensions();
-    const { interestStatus, userId, interestData, applicationId, setInterestStatus } =
+    const { interestStatus, userId, email, interestData, applicationId, setInterestStatus } =
         useOnboardingStore();
     const { user } = useAuthStore();
     const { role: roleParam } = useLocalSearchParams<{ role?: string }>();
@@ -46,7 +46,7 @@ export default function LoginScreen() {
     const isPending =
         interestStatus === 'pending' || interestStatus === 'new';
     const hasSubmittedApplication =
-        !!userId && (!!applicationId || !!interestData);
+        !!(userId || applicationId || interestData || email);
 
     const mentorshipRole =
         (interestData?.title || '').trim() ||

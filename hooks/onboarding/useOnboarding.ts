@@ -1,8 +1,13 @@
 // hooks/useOnboarding.ts
 import { authService } from "@/services/auth.service";
 import { onboardingService } from "@/services/onboarding.service";
+import { profileService } from "@/services/profile.service";
 import { useOnboardingStore } from "@/stores/onboarding.store";
-import { CheckOnboardingStatusData, InterestFormData } from "@/types";
+import {
+    ApprovalStatusResponse,
+    CheckOnboardingStatusData,
+    InterestFormData,
+} from "@/types";
 import { navigateByOnboardingStep } from "@/utils/onboarding-navigation";
 import { markOnboardingTutorialSeen } from "@/utils/onboarding-tutorial";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -29,6 +34,72 @@ function persistOnboardingStatus(data: CheckOnboardingStatusData) {
   setInterestStatus(data.interestStatus);
   setEmailVerified(data.isEmailVerified);
   setPasswordSet(data.isPasswordSet);
+  void hydrateApplicationIdsFromEmail(data.email);
+}
+
+/** Hydrate userId/applicationId after web submit or Continue Application (email-only). */
+async function hydrateApplicationIdsFromEmail(email: string): Promise<string | null> {
+  const {
+    setUserId,
+    setApplicationId,
+    setInterestData,
+    interestData,
+  } = useOnboardingStore.getState();
+
+  try {
+    const interest = await profileService.getInterestDetails(
+      email.trim().toLowerCase()
+    );
+    if (interest.userId) setUserId(interest.userId);
+    if (interest.id) setApplicationId(interest.id);
+    if (interest.email || interest.status) {
+      setInterestData({ ...interestData, ...interest });
+    }
+    return interest.userId || interest.id || null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchApprovalStatus(): Promise<ApprovalStatusResponse> {
+  const state = useOnboardingStore.getState();
+  let checkId = state.userId || state.applicationId || null;
+
+  if (!checkId) {
+    const email = state.email || state.interestData?.email;
+    if (email) {
+      checkId = await hydrateApplicationIdsFromEmail(email);
+    }
+  }
+
+  if (checkId) {
+    return onboardingService.checkApprovalStatus(checkId);
+  }
+
+  const email = state.email || state.interestData?.email;
+  if (!email) {
+    throw new Error(
+      "Unable to check status. Please use Continue Application with your email."
+    );
+  }
+
+  const response = await authService.checkOnboardingStatus({
+    email: email.trim().toLowerCase(),
+  });
+  if (!response.success || !response.data) {
+    throw new Error("Unable to check your application status. Please try again.");
+  }
+
+  persistOnboardingStatus(response.data);
+
+  return {
+    success: true,
+    message: "OK",
+    data: {
+      email: response.data.email,
+      status: response.data.interestStatus,
+    },
+  };
 }
 
 export const useCheckOnboardingStatus = () => {
@@ -86,25 +157,30 @@ export const useSubmitInterest = () => {
 
 // Check approval status query
 export const useCheckApprovalStatus = (enabled: boolean = false) => {
-  const { userId, interestStatus } = useOnboardingStore();
+  const { userId, email, interestData, interestStatus, applicationId } =
+    useOnboardingStore();
   const { setInterestStatus } = useOnboardingStore();
 
+  const statusKey = userId || applicationId || email || interestData?.email || "";
+
+  const canCheckStatus =
+    interestStatus === "pending" || interestStatus === "new";
+  const hasCheckIdentifier =
+    !!userId ||
+    !!applicationId ||
+    !!email ||
+    !!interestData?.email;
+
   const queryResult = useQuery({
-    queryKey: onboardingKeys.status(userId || ""),
-    queryFn: async () => {
-      if (!userId) throw new Error("User ID not found");
-      return onboardingService.checkApprovalStatus(userId);
-    },
-    enabled:
-      enabled &&
-      !!userId &&
-      (interestStatus === "pending" || interestStatus === "new"),
-    staleTime: 2000, // 2 seconds (was 1 second)
-    refetchInterval: 1000 * 60 * 2, // Poll every 2 minutes
-    refetchIntervalInBackground: false, // Don't poll in background
+    queryKey: onboardingKeys.status(statusKey),
+    queryFn: fetchApprovalStatus,
+    enabled: enabled && canCheckStatus && hasCheckIdentifier,
+    staleTime: 2000,
+    refetchInterval: 1000 * 60 * 2,
+    refetchIntervalInBackground: false,
+    retry: 1,
   });
 
-  // Handle side effects in useEffect
   useEffect(() => {
     if (queryResult.isSuccess) {
       const newStatus = queryResult.data?.data?.status;
@@ -115,16 +191,8 @@ export const useCheckApprovalStatus = (enabled: boolean = false) => {
         console.log("📊 Status updated from", interestStatus, "to", newStatus);
       }
     }
-    if (queryResult.isError) {
-      // @ts-ignore
-      console.error(
-        "❌ Check approval status failed:",
-        queryResult.error?.message,
-      );
-    }
   }, [
     queryResult.isSuccess,
-    queryResult.isError,
     queryResult.data,
     interestStatus,
     setInterestStatus,
