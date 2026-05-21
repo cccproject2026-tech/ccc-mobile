@@ -2,6 +2,10 @@ import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
 import { useLogin } from "@/hooks/auth/useAuth";
 import { useOnboardingStore } from "@/stores";
+import {
+    getLoginErrorMessage,
+    isEmailNotVerifiedError,
+} from "@/utils/login-errors";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
@@ -32,26 +36,31 @@ export default function LoginFormScreen() {
     const { interestData } = useOnboardingStore();
     const { mutate: login, isPending: isLoading, error } = useLogin();
 
-    const [email,        setEmail]        = useState(interestData?.email || (__DEV__ ? 'hipyvide@forexzig.com' : ''));
+    const [email,        setEmail]        = useState(interestData?.email ?? "");
     const [password,     setPassword]     = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
+    const loginErrorMessage = error ? getLoginErrorMessage(error) : null;
+
     useEffect(() => {
-        if (!error) return;
-        const status  = error?.statusCode;
-        const message = error?.message?.toLowerCase() || "";
-        if (status === 400 && (message.includes("email not verified") || message.includes("verify email") || message.includes("unverified"))) {
-            Alert.alert("Email Not Verified", "Please verify your email to continue.", [{
-                text: "Verify Now",
-                onPress: () => router.push({ pathname: "/(unauthenticated)/set-password", params: { email } }),
-            }]);
-        }
-    }, [error]);
+        if (!error || !isEmailNotVerifiedError(error)) return;
+        Alert.alert("Email Not Verified", "Please verify your email to continue.", [{
+            text: "Verify Now",
+            onPress: () =>
+                router.push({
+                    pathname: "/(unauthenticated)/set-password",
+                    params: { email: email.trim() },
+                }),
+        }]);
+    }, [error, email, router]);
 
     const handleLogin = useCallback(() => {
-        if (!email.trim())    { Alert.alert('Error', 'Please enter your email');    return; }
-        if (!password.trim()) { Alert.alert('Error', 'Please enter your password'); return; }
-        login({ email: email.trim(), password });
+        const trimmedEmail = email.trim();
+        const trimmedPassword = password.trim();
+
+        if (!trimmedEmail)    { Alert.alert("Error", "Please enter your email");    return; }
+        if (!trimmedPassword) { Alert.alert("Error", "Please enter your password"); return; }
+        login({ email: trimmedEmail, password: trimmedPassword });
     }, [email, password, login]);
 
     const handleForgotPassword = useCallback(() => router.push('/(unauthenticated)/forgot-password'), [router]);
@@ -132,12 +141,10 @@ export default function LoginFormScreen() {
                         </View>
 
                         {/* Error */}
-                        {error && (
+                        {loginErrorMessage && (
                             <View style={styles.errorBox}>
                                 <Ionicons name="alert-circle" size={16} color="#FCA5A5" />
-                                <Text style={styles.errorText}>
-                                    {error?.response?.data?.message || error?.message || "Something went wrong"}
-                                </Text>
+                                <Text style={styles.errorText}>{loginErrorMessage}</Text>
                             </View>
                         )}
 
