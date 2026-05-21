@@ -3,8 +3,8 @@ import { icons } from "@/constants/images";
 import { useResetPassword, useSendOtp } from "@/hooks/auth/useAuth";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack } from "expo-router";
-import React, { useRef, useState } from "react";
+import { Stack, useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -15,44 +15,47 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { OtpInput } from "react-native-otp-entry";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const accent = {
+    gold: "#E8C88A",
+    mint: "#6FD4BE",
+    mintSoft: "rgba(111, 212, 190, 0.28)",
+    tealDeep: "#0E5A62",
+};
+
 export default function ForgotPasswordScreen() {
     const { bottom } = useSafeAreaInsets();
+    const router = useRouter();
 
     const sendOtp = useSendOtp();
     const resetPasswordMutation = useResetPassword();
 
-    // Step 1 → Email input, Step 2 → OTP + New pw
     const [step, setStep] = useState<1 | 2>(1);
-    const [email, setEmail] = useState('');
-
-    // ⭐ Updated to 6-digit OTP
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
-
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [email, setEmail] = useState("");
+    const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const otpRefs = useRef<Array<TextInput | null>>([]);
-
     const isBusy = sendOtp.isPending || resetPasswordMutation.isPending;
+    const stepLabel = step === 1 ? "Step 1 of 2" : "Step 2 of 2";
 
-    // STEP 1: SEND OTP
     const handleVerifyEmail = () => {
-        if (!email) {
+        if (!email.trim()) {
             return Alert.alert("Error", "Please enter your email");
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+        if (!emailRegex.test(email.trim())) {
             return Alert.alert("Error", "Enter a valid email address");
         }
 
         sendOtp.mutate(
-            { email, purpose: "password_reset" },
+            { email: email.trim(), purpose: "password_reset" },
             {
                 onSuccess: () => {
                     Alert.alert("OTP Sent", "A 6-digit OTP has been sent to your email.");
@@ -60,26 +63,11 @@ export default function ForgotPasswordScreen() {
                 },
                 onError: (error: any) => {
                     Alert.alert("Error", error?.message || "Failed to send OTP");
-                }
+                },
             }
         );
     };
 
-    // HANDLE 6-digit OTP input
-    const handleOTPChange = (value: string, index: number) => {
-        if (value.length > 1) return;
-
-        const newArr = [...otp];
-        newArr[index] = value;
-        setOtp(newArr);
-
-        // Auto move to next (index < 5)
-        if (value && index < 5) {
-            otpRefs.current[index + 1]?.focus();
-        }
-    };
-
-    // STEP 2: RESET PASSWORD
     const handleResetPassword = () => {
         const otpValue = otp.join("");
 
@@ -98,7 +86,7 @@ export default function ForgotPasswordScreen() {
 
         resetPasswordMutation.mutate(
             {
-                email,
+                email: email.trim(),
                 otp: otpValue,
                 newPassword,
                 confirmPassword,
@@ -115,60 +103,80 @@ export default function ForgotPasswordScreen() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <LinearGradient
-                colors={["#176192", "#1D548D", "#264387"]}
-                style={styles.container}
+                colors={["#0D3B6E", "#0A5C8A", "#0B84B0"]}
+                locations={[0, 0.5, 1]}
+                style={styles.gradient}
             >
+                <TopBar showNotifications={false} showDrawer={false} />
+
                 <KeyboardAwareScrollView
-                    contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 20 }]}
+                    contentContainerStyle={[styles.scroll, { paddingBottom: bottom + 16 }]}
                     showsVerticalScrollIndicator={false}
                 >
-                    <TopBar showNotifications={false} showDrawer={false} />
-
-                    {/* Logo */}
-                    <View style={styles.logoContainer}>
-                        <Image source={icons.communityImage} style={styles.logo} resizeMode="contain" />
+                    <View style={styles.headingBlock}>
+                        <Text style={styles.headingTitle}>Reset password</Text>
+                        <Text style={styles.headingSubtitle}>
+                            {step === 1
+                                ? "Enter your email and we'll send you a verification code."
+                                : "Enter the OTP and choose a new password."}
+                        </Text>
+                        <View style={styles.stepPill}>
+                            <Text style={styles.stepPillText}>{stepLabel}</Text>
+                        </View>
                     </View>
 
-                    <View style={styles.formContainer}>
-                        {/* STEP 1 */}
+                    <View style={styles.form}>
                         {step === 1 && (
                             <>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Enter your email"
-                                    placeholderTextColor="rgba(255,255,255,0.6)"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    editable={!isBusy}
-                                />
+                                <View style={styles.fieldWrap}>
+                                    <Text style={styles.fieldLabel}>Email</Text>
+                                    <View style={styles.inputRow}>
+                                        <Ionicons
+                                            name="mail-outline"
+                                            size={18}
+                                            color={accent.mint}
+                                            style={styles.inputIcon}
+                                        />
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Enter your email"
+                                            placeholderTextColor="rgba(111, 212, 190, 0.35)"
+                                            value={email}
+                                            onChangeText={setEmail}
+                                            keyboardType="email-address"
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                            editable={!isBusy}
+                                        />
+                                    </View>
+                                </View>
 
                                 <TouchableOpacity
-                                    style={styles.verifyButton}
+                                    style={[styles.primaryBtn, isBusy && styles.primaryBtnDisabled]}
                                     onPress={handleVerifyEmail}
                                     disabled={isBusy}
+                                    activeOpacity={0.88}
                                 >
-                                    <LinearGradient
-                                        colors={["#7C3AED", "#3B82F6"]}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                        style={styles.gradientButton}
-                                    >
-                                        {sendOtp.isPending ? (
-                                            <ActivityIndicator color="#fff" />
-                                        ) : (
-                                            <Text style={styles.buttonText}>Verify Email ID</Text>
-                                        )}
-                                    </LinearGradient>
+                                    {sendOtp.isPending ? (
+                                        <ActivityIndicator color={accent.tealDeep} />
+                                    ) : (
+                                        <>
+                                            <Text style={styles.primaryBtnText}>Send verification code</Text>
+                                            <View style={styles.primaryBtnArrow}>
+                                                <Ionicons name="arrow-forward" size={16} color={accent.tealDeep} />
+                                            </View>
+                                        </>
+                                    )}
                                 </TouchableOpacity>
                             </>
                         )}
 
-                        {/* STEP 2 */}
                         {step === 2 && (
                             <>
-                                <Text style={styles.otpLabel}>Enter the OTP sent to your email</Text>
+                                <Text style={styles.otpLabel}>
+                                    A 6-digit OTP has been sent to {email}.{"\n"}
+                                    Enter it below along with your new password.
+                                </Text>
 
                                 <OtpInput
                                     numberOfDigits={6}
@@ -176,9 +184,8 @@ export default function ForgotPasswordScreen() {
                                     onFilled={(value) => setOtp(value.split(""))}
                                     theme={{
                                         containerStyle: {
-                                            width: "85%",
-                                            alignSelf: "center",
-                                            marginBottom: 24,
+                                            width: "100%",
+                                            marginBottom: 20,
                                         },
                                         inputsContainerStyle: {
                                             justifyContent: "space-between",
@@ -187,9 +194,9 @@ export default function ForgotPasswordScreen() {
                                             width: 48,
                                             height: 56,
                                             borderRadius: 10,
-                                            borderWidth: 2,
-                                            backgroundColor: "rgba(255,255,255,0.15)",
-                                            borderColor: "rgba(255,255,255,0.3)",
+                                            borderWidth: 1,
+                                            backgroundColor: "rgba(255,255,255,0.08)",
+                                            borderColor: "rgba(111, 212, 190, 0.35)",
                                         },
                                         pinCodeTextStyle: {
                                             color: "#fff",
@@ -199,73 +206,124 @@ export default function ForgotPasswordScreen() {
                                     }}
                                 />
 
-                                {/* PASSWORD */}
-                                <View style={styles.passwordContainer}>
-                                    <TextInput
-                                        style={styles.passwordInput}
-                                        placeholder="Enter New Password"
-                                        placeholderTextColor="rgba(255,255,255,0.6)"
-                                        value={newPassword}
-                                        onChangeText={setNewPassword}
-                                        secureTextEntry={!showNewPassword}
-                                        autoCapitalize="none"
-                                        editable={!isBusy}
-                                    />
-                                    <TouchableOpacity
-                                        onPress={() => setShowNewPassword(!showNewPassword)}
-                                        style={styles.eyeIcon}
-                                    >
+                                <View style={styles.fieldWrap}>
+                                    <Text style={styles.fieldLabel}>New password</Text>
+                                    <View style={styles.inputRow}>
                                         <Ionicons
-                                            name={showNewPassword ? "eye-off-outline" : "eye-outline"}
-                                            size={24}
-                                            color="rgba(255,255,255,0.6)"
+                                            name="lock-closed-outline"
+                                            size={18}
+                                            color={accent.mint}
+                                            style={styles.inputIcon}
                                         />
-                                    </TouchableOpacity>
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Enter new password"
+                                            placeholderTextColor="rgba(111, 212, 190, 0.35)"
+                                            value={newPassword}
+                                            onChangeText={setNewPassword}
+                                            secureTextEntry={!showNewPassword}
+                                            autoCapitalize="none"
+                                            editable={!isBusy}
+                                        />
+                                        <TouchableOpacity
+                                            onPress={() => setShowNewPassword(!showNewPassword)}
+                                            disabled={isBusy}
+                                            style={styles.eyeBtn}
+                                        >
+                                            <Ionicons
+                                                name={showNewPassword ? "eye-off-outline" : "eye-outline"}
+                                                size={18}
+                                                color={accent.mint}
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
 
-                                {/* CONFIRM PASSWORD */}
-                                <View style={styles.passwordContainer}>
-                                    <TextInput
-                                        style={styles.passwordInput}
-                                        placeholder="Confirm New Password"
-                                        placeholderTextColor="rgba(255,255,255,0.6)"
-                                        value={confirmPassword}
-                                        onChangeText={setConfirmPassword}
-                                        secureTextEntry={!showConfirmPassword}
-                                        autoCapitalize="none"
-                                        editable={!isBusy}
-                                    />
-                                    <TouchableOpacity
-                                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        style={styles.eyeIcon}
-                                    >
+                                <View style={styles.fieldWrap}>
+                                    <Text style={styles.fieldLabel}>Confirm password</Text>
+                                    <View style={styles.inputRow}>
                                         <Ionicons
-                                            name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                                            size={24}
-                                            color="rgba(255,255,255,0.6)"
+                                            name="lock-closed-outline"
+                                            size={18}
+                                            color={accent.mint}
+                                            style={styles.inputIcon}
                                         />
-                                    </TouchableOpacity>
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Confirm new password"
+                                            placeholderTextColor="rgba(111, 212, 190, 0.35)"
+                                            value={confirmPassword}
+                                            onChangeText={setConfirmPassword}
+                                            secureTextEntry={!showConfirmPassword}
+                                            autoCapitalize="none"
+                                            editable={!isBusy}
+                                        />
+                                        <TouchableOpacity
+                                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            disabled={isBusy}
+                                            style={styles.eyeBtn}
+                                        >
+                                            <Ionicons
+                                                name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                                                size={18}
+                                                color={accent.mint}
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
 
-                                {/* RESET PASSWORD */}
                                 <TouchableOpacity
-                                    style={styles.resetButton}
+                                    style={[styles.primaryBtn, isBusy && styles.primaryBtnDisabled]}
                                     onPress={handleResetPassword}
                                     disabled={isBusy}
+                                    activeOpacity={0.88}
                                 >
                                     {resetPasswordMutation.isPending ? (
-                                        <ActivityIndicator color="#1A5490" />
+                                        <ActivityIndicator color={accent.tealDeep} />
                                     ) : (
-                                        <Text style={styles.resetButtonText}>Reset Password</Text>
+                                        <>
+                                            <Text style={styles.primaryBtnText}>Reset password</Text>
+                                            <View style={styles.primaryBtnArrow}>
+                                                <Ionicons name="arrow-forward" size={16} color={accent.tealDeep} />
+                                            </View>
+                                        </>
                                     )}
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={() => setStep(1)}
+                                    disabled={isBusy}
+                                    style={styles.backLink}
+                                >
+                                    <Ionicons name="chevron-back" size={14} color={accent.mint} />
+                                    <Text style={styles.backLinkText}>Use a different email</Text>
                                 </TouchableOpacity>
                             </>
                         )}
                     </View>
 
-                    {/* Bottom Logo */}
-                    <View style={styles.universityLogoContainer}>
-                        <Image source={icons.universityIcon} style={styles.universityLogo} resizeMode="contain" />
+                    <View style={styles.orRow}>
+                        <View style={styles.orLine} />
+                        <Text style={styles.orText}>Remember your password?</Text>
+                        <View style={styles.orLine} />
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.secondaryBtn}
+                        onPress={() => router.replace("/(unauthenticated)/login-form")}
+                        disabled={isBusy}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.secondaryBtnText}>Back to log in</Text>
+                        <Ionicons name="chevron-forward" size={14} color={accent.mint} />
+                    </TouchableOpacity>
+
+                    <View style={styles.universityWrap}>
+                        <Image
+                            source={icons.universityIcon}
+                            style={styles.universityLogo}
+                            resizeMode="contain"
+                        />
                     </View>
                 </KeyboardAwareScrollView>
             </LinearGradient>
@@ -273,125 +331,101 @@ export default function ForgotPasswordScreen() {
     );
 }
 
-
-
-
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
+    gradient: { flex: 1 },
+    scroll: { flexGrow: 1, paddingHorizontal: 24 },
+
+    headingBlock: { marginBottom: 18, gap: 5, marginTop: 100 },
+    headingTitle: { fontSize: 22, fontWeight: "700", color: "#fff", letterSpacing: -0.3 },
+    headingSubtitle: { fontSize: 13, fontWeight: "400", color: "rgba(255,255,255,0.5)" },
+    stepPill: {
+        alignSelf: "flex-start",
+        marginTop: 8,
+        backgroundColor: "rgba(255,255,255,0.1)",
+        borderWidth: 1,
+        borderColor: "rgba(232, 200, 138, 0.45)",
+        paddingVertical: 6,
+        paddingHorizontal: 14,
+        borderRadius: 999,
     },
-    scrollContent: {
-        flexGrow: 1,
-    },
-    logoContainer: {
-        alignItems: "center",
-        marginTop: 40,
-        marginBottom: 40,
-        backgroundColor: "#fff",
-        marginHorizontal: 35,
-        paddingVertical: 35,
-        paddingHorizontal: 20,
-        borderRadius: 6,
-    },
-    logo: {
-        width: "100%",
-        height: 90,
-    },
-    formContainer: {
-        paddingHorizontal: 35,
-        marginBottom: 60,
-    },
-    input: {
-        backgroundColor: "transparent",
-        borderWidth: 2,
-        borderColor: "rgba(255,255,255,0.8)",
-        borderRadius: 10,
-        padding: 16,
-        fontSize: 16,
-        color: "#fff",
-        marginBottom: 24,
-    },
-    verifyButton: {
-        marginTop: 20,
-    },
-    gradientButton: {
-        padding: 18,
-        borderRadius: 30,
-        alignItems: "center",
-    },
-    buttonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "600",
-    },
-    otpLabel: {
-        color: "#fff",
-        fontSize: 14,
-        textAlign: "center",
-        marginBottom: 30,
-        lineHeight: 20,
-    },
-    otpContainer: {
+    stepPillText: { color: accent.gold, fontSize: 12, fontWeight: "700", letterSpacing: 0.3 },
+
+    form: { gap: 14, marginBottom: 18 },
+
+    fieldWrap: { gap: 6 },
+    fieldLabel: { color: "rgba(255,255,255,0.65)", fontSize: 12, fontWeight: "600", letterSpacing: 0.3 },
+    inputRow: {
         flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderWidth: 1,
+        borderColor: "rgba(111, 212, 190, 0.22)",
+        borderRadius: 10,
+        paddingHorizontal: 14,
+    },
+    inputIcon: { marginRight: 10 },
+    input: { flex: 1, paddingVertical: 12, fontSize: 15, color: "#fff" },
+    eyeBtn: { paddingLeft: 10, paddingVertical: 14 },
+
+    otpLabel: {
+        color: "rgba(255,255,255,0.65)",
+        fontSize: 12,
+        lineHeight: 18,
+        marginBottom: 4,
+    },
+
+    primaryBtn: {
+        flexDirection: "row",
+        alignItems: "center",
         justifyContent: "space-between",
-        alignSelf: "center",
-        width: "85%",
-        marginBottom: 24,
-    },
-
-    otpInput: {
-        width: 48,
-        height: 56,
-        backgroundColor: "rgba(255,255,255,0.15)",
-        borderWidth: 2,
-        borderColor: "rgba(255,255,255,0.3)",
-        borderRadius: 10,
-        textAlign: "center",
-        fontSize: 22,
-        color: "#fff",
-        fontWeight: "600",
-    },
-
-    otpInputFilled: {
-        borderColor: "#FFD700",
-    },
-    passwordContainer: {
-        position: "relative",
-        marginBottom: 20,
-    },
-    passwordInput: {
-        backgroundColor: "transparent",
-        borderWidth: 2,
-        borderColor: "rgba(255,255,255,0.8)",
-        borderRadius: 10,
-        padding: 16,
-        paddingRight: 50,
-        fontSize: 16,
-        color: "#fff",
-    },
-    eyeIcon: {
-        position: "absolute",
-        right: 14,
-        top: 16,
-    },
-    resetButton: {
         backgroundColor: "#fff",
-        padding: 18,
-        borderRadius: 30,
+        borderRadius: 10,
+        paddingVertical: 14,
+        paddingHorizontal: 18,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 10,
+        elevation: 6,
+    },
+    primaryBtnDisabled: { opacity: 0.6 },
+    primaryBtnText: { color: accent.tealDeep, fontSize: 16, fontWeight: "700" },
+    primaryBtnArrow: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: "rgba(232, 200, 138, 0.35)",
         alignItems: "center",
-        marginTop: 20,
+        justifyContent: "center",
     },
-    resetButtonText: {
-        color: "#1A5490",
-        fontSize: 16,
-        fontWeight: "600",
-    },
-    universityLogoContainer: {
+
+    backLink: {
+        flexDirection: "row",
         alignItems: "center",
-        marginBottom: 30,
+        justifyContent: "center",
+        gap: 4,
+        marginTop: 4,
     },
-    universityLogo: {
-        width: 220,
-        height: 50,
+    backLinkText: { color: accent.mint, fontSize: 12, fontWeight: "600" },
+
+    orRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
+    orLine: { flex: 1, height: 1, backgroundColor: "rgba(111, 212, 190, 0.22)" },
+    orText: { color: "rgba(232, 200, 138, 0.95)", fontSize: 12, fontWeight: "600" },
+
+    secondaryBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderWidth: 1,
+        borderColor: "rgba(111, 212, 190, 0.35)",
+        borderRadius: 10,
+        paddingVertical: 15,
+        paddingHorizontal: 18,
+        marginBottom: 28,
     },
+    secondaryBtnText: { color: "#fff", fontSize: 15, fontWeight: "600" },
+
+    universityWrap: { alignItems: "center", marginBottom: 6 },
+    universityLogo: { width: 200, height: 44, opacity: 0.65 },
 });
