@@ -9,6 +9,7 @@ import {
     SetPasswordRequest,
     VerifyOtpRequest,
 } from "@/types/auth.types";
+import { markOnboardingTutorialSeen } from "@/utils/onboarding-tutorial";
 import { markPastorMentorIntroStart } from "@/utils/pastorMentorIntro";
 import { storage } from "@/utils/storage";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -40,6 +41,7 @@ export const useLogin = () => {
       authService.login(credentials),
     onSuccess: async (response) => {
       console.log("✅ Login successful");
+      markOnboardingTutorialSeen();
 
       try {
         // Extract user and tokens from response.data

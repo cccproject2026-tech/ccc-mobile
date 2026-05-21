@@ -5,7 +5,9 @@ import React, { useCallback, useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useOnboardingTutorialScreenGuard } from "@/hooks/onboarding/useOnboardingTutorialGuard";
 import { useAuthStore } from "@/stores";
+import { markOnboardingTutorialSeen } from "@/utils/onboarding-tutorial";
 import { markPastorMentorIntroStart } from "@/utils/pastorMentorIntro";
 
 type PastorRole = "pastor" | "layleader" | "seminarian";
@@ -31,6 +33,8 @@ export default function PastorJourneyStep3Screen() {
     const { top, bottom } = useSafeAreaInsets();
     const { role } = useLocalSearchParams<{ role?: PastorRole }>();
 
+    useOnboardingTutorialScreenGuard(role || "pastor");
+
     const { user, isAuthenticated } = useAuthStore();
     const roleLabel = useMemo(() => mapRoleToLabel(role), [role]);
     const isLoggedInPastor = isAuthenticated && user?.role === "pastor";
@@ -40,6 +44,7 @@ export default function PastorJourneyStep3Screen() {
     }, [router]);
 
     const handleSkip = useCallback(() => {
+        markOnboardingTutorialSeen();
         router.push({
             pathname: "/(unauthenticated)/interest-form",
             params: role ? { role } : undefined,
@@ -47,6 +52,7 @@ export default function PastorJourneyStep3Screen() {
     }, [router, role]);
 
     const handleStart = useCallback(async () => {
+        markOnboardingTutorialSeen();
         if (isLoggedInPastor) {
             if (user?.id) {
                 try {

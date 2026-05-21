@@ -2,6 +2,12 @@ import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
 import { useCheckApprovalStatus } from "@/hooks/onboarding/useOnboarding";
 import { useAuthStore, useOnboardingStore } from "@/stores";
+import {
+    getOnboardingTutorialState,
+    getSkipTutorialDestination,
+    shouldShowOnboardingTutorial,
+} from "@/utils/onboarding-tutorial";
+import { storage } from "@/utils/storage";
 import { Ionicons } from "@expo/vector-icons";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { LinearGradient } from "expo-linear-gradient";
@@ -109,8 +115,15 @@ export default function LoginScreen() {
         router.push('/(unauthenticated)/interest-form');
     }, []);
 
-    // Navigate to mentor onboarding (3-step journey)
-    const handleMentorJourneyPress = useCallback(() => {
+    // Navigate to mentor onboarding (3-step journey) — first-time only
+    const handleMentorJourneyPress = useCallback(async () => {
+        const accessToken = await storage.getAccessToken();
+        const tutorialState = getOnboardingTutorialState(!!accessToken);
+        if (!shouldShowOnboardingTutorial(tutorialState)) {
+            const dest = getSkipTutorialDestination("mentor", tutorialState);
+            router.push(dest as never);
+            return;
+        }
         router.push({
             pathname: "/(unauthenticated)/mentor-start-journey/[role]",
             params: { role: "mentor" },

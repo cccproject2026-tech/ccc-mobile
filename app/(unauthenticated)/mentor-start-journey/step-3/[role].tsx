@@ -5,7 +5,9 @@ import React, { useCallback, useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useOnboardingTutorialScreenGuard } from "@/hooks/onboarding/useOnboardingTutorialGuard";
 import { useAuthStore } from "@/stores";
+import { markOnboardingTutorialSeen } from "@/utils/onboarding-tutorial";
 
 type MentorRole = "mentor";
 
@@ -30,6 +32,8 @@ export default function MentorJourneyStep3Screen() {
     const { top, bottom } = useSafeAreaInsets();
     const { role } = useLocalSearchParams<{ role?: MentorRole }>();
 
+    useOnboardingTutorialScreenGuard("mentor");
+
     const { user, isAuthenticated } = useAuthStore();
     const roleLabel = useMemo(() => mapRoleToLabel(role), [role]);
     const isLoggedInMentor = isAuthenticated && user?.role === "mentor";
@@ -43,6 +47,7 @@ export default function MentorJourneyStep3Screen() {
     }, [router]);
 
     const handleSkip = useCallback(() => {
+        markOnboardingTutorialSeen();
         router.push({
             pathname: "/(unauthenticated)/interest-form",
             params: role ? { role } : undefined,
@@ -50,6 +55,7 @@ export default function MentorJourneyStep3Screen() {
     }, [router, role]);
 
     const handleStart = useCallback(() => {
+        markOnboardingTutorialSeen();
         if (isLoggedInMentor) {
             router.replace("/(mentor)/(tabs)");
             return;

@@ -1,3 +1,5 @@
+import { useOnboardingTutorialScreenGuard } from "@/hooks/onboarding/useOnboardingTutorialGuard";
+import { markOnboardingTutorialSeen } from "@/utils/onboarding-tutorial";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -52,11 +54,14 @@ export default function PastorStartJourneyScreen() {
     const roleLabel = useMemo(() => mapRoleToLabel(role), [role]);
     const [activeStep, setActiveStep] = useState(0);
 
+    useOnboardingTutorialScreenGuard(role || "pastor");
+
     const handleBack = useCallback(() => {
         try { router.back(); } catch { router.replace("/"); }
     }, [router]);
 
     const handleSkip = useCallback(() => {
+        markOnboardingTutorialSeen();
         router.push({ pathname: "/(unauthenticated)/interest-form", params: role ? { role } : undefined });
     }, [router, role]);
 

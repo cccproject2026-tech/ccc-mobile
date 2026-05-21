@@ -1,10 +1,17 @@
 import { useOnboardingStore } from '@/stores';
 import { useAuthStore } from '@/stores/auth.store';
+import {
+    getOnboardingTutorialState,
+    getSkipTutorialDestination,
+    markOnboardingTutorialSeen,
+    shouldShowOnboardingTutorial,
+} from '@/utils/onboarding-tutorial';
+import { storage } from '@/utils/storage';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
     Alert,
     Pressable,
@@ -40,7 +47,34 @@ export default function RoleSelectionScreen() {
         setInterestStatus,
         isEmailVerified,
         isPasswordSet,
+        hasSeenOnboardingTutorial,
+        setHasSeenOnboardingTutorial,
     } = useOnboardingStore();
+
+    useEffect(() => {
+        const tutorialState = getOnboardingTutorialState();
+        if (
+            !tutorialState.hasSeenOnboardingTutorial &&
+            (tutorialState.interestStatus ||
+                tutorialState.email ||
+                tutorialState.userId ||
+                tutorialState.applicationId ||
+                tutorialState.interestData ||
+                tutorialState.isEmailVerified ||
+                tutorialState.isPasswordSet)
+        ) {
+            setHasSeenOnboardingTutorial(true);
+        }
+    }, [
+        hasSeenOnboardingTutorial,
+        setHasSeenOnboardingTutorial,
+        interestStatus,
+        isEmailVerified,
+        isPasswordSet,
+        userId,
+        applicationId,
+        interestData,
+    ]);
 
     const hasSubmittedApplication = !!userId && (!!applicationId || !!interestData);
     const showApplicationStatusButton =
@@ -79,29 +113,34 @@ export default function RoleSelectionScreen() {
         ]);
     }, []);
 
-    const handleRolePress = useCallback((role: RoleOption) => {
-        if (role === "pastor") {
-            if (isAuthenticated && user?.role === "pastor") {
-                router.push("/(pastor)/(tabs)");
-            } else {
-                router.push({
-                    pathname: "/(unauthenticated)/role-landing/[role]",
-                    params: { role: "pastor" },
-                });
+    const handleRolePress = useCallback(
+        async (role: RoleOption) => {
+            if (role === "pastor") {
+                if (isAuthenticated && user?.role === "pastor") {
+                    router.push("/(pastor)/(tabs)");
+                    return;
+                }
+            } else if (isAuthenticated && user?.role === "mentor") {
+                router.push("/(mentor)/(tabs)");
+                return;
             }
-            return;
-        }
 
-        // mentor
-        if (isAuthenticated && user?.role === "mentor") {
-            router.push("/(mentor)/(tabs)");
-        } else {
+            const accessToken = await storage.getAccessToken();
+            const tutorialState = getOnboardingTutorialState(!!accessToken);
+
+            if (!shouldShowOnboardingTutorial(tutorialState)) {
+                const dest = getSkipTutorialDestination(role, tutorialState);
+                router.push(dest as never);
+                return;
+            }
+
             router.push({
                 pathname: "/(unauthenticated)/role-landing/[role]",
-                params: { role: "mentor" },
+                params: { role },
             });
-        }
-    }, [isAuthenticated, router, user?.role]);
+        },
+        [isAuthenticated, router, user?.role]
+    );
 
     const handleViewApplicationStatus = useCallback(() => {
         // If already accepted, continue the verify-email / set-password flow directly.
@@ -234,9 +273,10 @@ export default function RoleSelectionScreen() {
                         </Text>
                         <Pressable
                             style={styles.continueButton}
-                            onPress={() =>
-                                router.push("/(unauthenticated)/continue-application")
-                            }
+                            onPress={() => {
+                                markOnboardingTutorialSeen();
+                                router.push("/(unauthenticated)/continue-application");
+                            }}
                         >
                             <Text style={styles.continueButtonText}>
                                 Continue Here

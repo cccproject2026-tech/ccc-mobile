@@ -48,7 +48,7 @@ export const useAuthStore = create<AuthStore>()(
                     await storage.clearAll();
 
                     try {
-                        useOnboardingStore.getState().reset();
+                        useOnboardingStore.getState().resetOnLogout();
                         console.log('🔄 Onboarding store reset');
                     } catch (err) {
                         console.warn('⚠️ Failed to reset onboarding store:', err);
