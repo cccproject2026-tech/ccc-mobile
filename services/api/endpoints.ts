@@ -11,6 +11,7 @@ export const ENDPOINTS = {
     RESET_PASSWORD: "/auth/reset-password",
     REFRESH_TOKEN: "/auth/refresh-token",
     LOGOUT: "/auth/logout",
+    CHECK_ONBOARDING_STATUS: "/auth/check-onboarding-status",
   },
 
   // Users

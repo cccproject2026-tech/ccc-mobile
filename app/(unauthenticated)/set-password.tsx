@@ -61,17 +61,18 @@ export default function VerifyEmailScreen() {
 
     // Resume-safe onboarding: if app is closed mid-flow, restore the right step.
     useEffect(() => {
-        // If password already set, send them to login.
         if (isPasswordSet) {
             router.replace("/(unauthenticated)/login-form");
             return;
         }
-        // If email already verified, skip directly to create password.
         if (isEmailVerified) {
             setIsOtpVerified(true);
             setStep(3);
         }
     }, [isEmailVerified, isPasswordSet, router]);
+
+    const isPasswordStep = step === 3 && isOtpVerified;
+    const stepLabel = isPasswordStep ? "Step 3 of 3" : `Step ${step} of 3`;
 
     const handleVerifyEmail = () => {
         if (!userEmail) {
@@ -197,10 +198,12 @@ export default function VerifyEmailScreen() {
                         </View>
                         <Text style={styles.welcomeTitle}>Your Application Is Approved</Text>
                         <Text style={styles.welcomeSubtitle}>
-                            {"Please verify your email to secure your account\nand continue to login."}
+                            {isPasswordStep
+                                ? "Create your password to finish setting up your account."
+                                : "Please verify your email to secure your account\nand continue to login."}
                         </Text>
                         <View style={styles.stepPill}>
-                            <Text style={styles.stepPillText}>Step {step} of 3</Text>
+                            <Text style={styles.stepPillText}>{stepLabel}</Text>
                         </View>
                     </View>
 

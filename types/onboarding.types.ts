@@ -52,3 +52,27 @@ export interface ApprovalStatusResponse {
     message: string;
     data: InterestFormData
 }
+
+export type OnboardingNextStep =
+    | 'pending'
+    | 'verify-email'
+    | 'set-password'
+    | 'login'
+    | 'rejected';
+
+export interface CheckOnboardingStatusRequest {
+    email: string;
+}
+
+export interface CheckOnboardingStatusData {
+    email: string;
+    interestStatus: InterestStatus;
+    isEmailVerified: boolean;
+    isPasswordSet: boolean;
+    nextStep: OnboardingNextStep;
+}
+
+export interface CheckOnboardingStatusResponse {
+    success: boolean;
+    data: CheckOnboardingStatusData;
+}

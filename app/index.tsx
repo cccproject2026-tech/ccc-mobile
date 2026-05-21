@@ -227,6 +227,29 @@ export default function RoleSelectionScreen() {
 
                 </View>
 
+                {!isAuthenticated && (
+                    <View style={styles.continueSection}>
+                        <Text style={styles.continueHint}>
+                            Already submitted an application?
+                        </Text>
+                        <Pressable
+                            style={styles.continueButton}
+                            onPress={() =>
+                                router.push("/(unauthenticated)/continue-application")
+                            }
+                        >
+                            <Text style={styles.continueButtonText}>
+                                Continue Here
+                            </Text>
+                            <Ionicons
+                                name="chevron-forward"
+                                size={16}
+                                color={accent.mint}
+                            />
+                        </Pressable>
+                    </View>
+                )}
+
                 {showApplicationStatusButton && (
                     <Pressable
                         style={styles.statusPill}
@@ -439,6 +462,36 @@ const styles = StyleSheet.create({
     mentorArrow: {
         backgroundColor: accent.mintSoft,
     },
+    continueSection: {
+        width: "100%",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: 16,
+    },
+    continueHint: {
+        color: "rgba(255,255,255,0.75)",
+        fontSize: 13,
+        textAlign: "center",
+    },
+    continueButton: {
+        width: "100%",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "rgba(111, 212, 190, 0.45)",
+        backgroundColor: "rgba(255,255,255,0.08)",
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+    },
+    continueButtonText: {
+        color: accent.mint,
+        fontSize: 15,
+        fontWeight: "600",
+    },
+
     // Application status quick entry
     statusPill: {
         width: "100%",

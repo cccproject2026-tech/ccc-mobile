@@ -11,6 +11,10 @@ import {
     VerifyOtpRequest,
     VerifyOtpResponse,
 } from '@/types/auth.types';
+import {
+    CheckOnboardingStatusRequest,
+    CheckOnboardingStatusResponse,
+} from '@/types/onboarding.types';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
@@ -132,6 +136,17 @@ export const authService = {
     ): Promise<{ message: string }> => {
         console.log('📤 Resetting password');
         const response = await apiClient.post(ENDPOINTS.AUTH.RESET_PASSWORD, data);
+        return response.data;
+    },
+
+    checkOnboardingStatus: async (
+        data: CheckOnboardingStatusRequest
+    ): Promise<CheckOnboardingStatusResponse> => {
+        console.log('📤 Checking onboarding status for:', data.email);
+        const response = await apiClient.post<CheckOnboardingStatusResponse>(
+            ENDPOINTS.AUTH.CHECK_ONBOARDING_STATUS,
+            data
+        );
         return response.data;
     },
 };

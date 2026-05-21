@@ -1,7 +1,9 @@
 // hooks/useOnboarding.ts
+import { authService } from "@/services/auth.service";
 import { onboardingService } from "@/services/onboarding.service";
 import { useOnboardingStore } from "@/stores/onboarding.store";
-import { InterestFormData } from "@/types";
+import { CheckOnboardingStatusData, InterestFormData } from "@/types";
+import { navigateByOnboardingStep } from "@/utils/onboarding-navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -10,6 +12,38 @@ export const onboardingKeys = {
   all: ["onboarding"] as const,
   status: (userId: string) =>
     [...onboardingKeys.all, "status", userId] as const,
+  checkStatus: (email: string) =>
+    [...onboardingKeys.all, "check-status", email] as const,
+};
+
+function persistOnboardingStatus(data: CheckOnboardingStatusData) {
+  const {
+    setEmail,
+    setInterestStatus,
+    setEmailVerified,
+    setPasswordSet,
+  } = useOnboardingStore.getState();
+
+  setEmail(data.email);
+  setInterestStatus(data.interestStatus);
+  setEmailVerified(data.isEmailVerified);
+  setPasswordSet(data.isPasswordSet);
+}
+
+export const useCheckOnboardingStatus = () => {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (email: string) =>
+      authService.checkOnboardingStatus({ email: email.trim().toLowerCase() }),
+    onSuccess: (response) => {
+      if (!response.success || !response.data) {
+        throw new Error("Unable to check your application status. Please try again.");
+      }
+      persistOnboardingStatus(response.data);
+      navigateByOnboardingStep(router, response.data.nextStep);
+    },
+  });
 };
 
 // Submit interest mutation
