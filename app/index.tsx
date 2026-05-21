@@ -1,607 +1,508 @@
-import { useOnboardingStore } from '@/stores';
-import { useAuthStore } from '@/stores/auth.store';
-import {
-    getOnboardingTutorialState,
-    getSkipTutorialDestination,
-    markOnboardingTutorialSeen,
-    shouldShowOnboardingTutorial,
-} from '@/utils/onboarding-tutorial';
-import { storage } from '@/utils/storage';
+    import { icons } from '@/constants/images';
+import { markOnboardingTutorialSeen } from '@/utils/onboarding-tutorial';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
-    Alert,
-    Pressable,
+    Image,
+    Platform,
+    ScrollView,
     StyleSheet,
     Text,
-    View
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+    SafeAreaView,
+    useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
-type PastorRole = 'pastor';
-type MentorRole = 'mentor';
-type RoleOption = PastorRole | MentorRole;
+    const accent = {
+        gold: '#E8C88A',
+        mint: '#6FD4BE',
+        mintSoft: 'rgba(111, 212, 190, 0.28)',
+        tealDeep: '#0E5A62',
+    };
 
-const accent = {
-    gold: '#E8C88A',
-    mint: '#6FD4BE',
-    mintSoft: 'rgba(111, 212, 190, 0.28)',
-    tealDeep: '#0E5A62',
-};
+    type WelcomeOptionProps = {
+        icon: keyof typeof Ionicons.glyphMap;
+        title: string;
+        description: string;
+        onPress: () => void;
+        variant?: 'primary' | 'secondary' | 'track';
+        isCompact: boolean;
+    };
 
-export default function RoleSelectionScreen() {
-    const router = useRouter();
-    const { top, bottom } = useSafeAreaInsets();
-    const [isClearing, setIsClearing] = useState(false);
-
-    const { user, isAuthenticated, logout } = useAuthStore();
-    const {
-        reset: resetOnboarding,
-        userId,
-        applicationId,
-        interestData,
-        interestStatus,
-        setInterestStatus,
-        isEmailVerified,
-        isPasswordSet,
-        hasSeenOnboardingTutorial,
-        setHasSeenOnboardingTutorial,
-    } = useOnboardingStore();
-
-    useEffect(() => {
-        const tutorialState = getOnboardingTutorialState();
-        if (
-            !tutorialState.hasSeenOnboardingTutorial &&
-            (tutorialState.interestStatus ||
-                tutorialState.email ||
-                tutorialState.userId ||
-                tutorialState.applicationId ||
-                tutorialState.interestData ||
-                tutorialState.isEmailVerified ||
-                tutorialState.isPasswordSet)
-        ) {
-            setHasSeenOnboardingTutorial(true);
-        }
-    }, [
-        hasSeenOnboardingTutorial,
-        setHasSeenOnboardingTutorial,
-        interestStatus,
-        isEmailVerified,
-        isPasswordSet,
-        userId,
-        applicationId,
-        interestData,
-    ]);
-
-    const hasSubmittedApplication = !!userId && (!!applicationId || !!interestData);
-    const showApplicationStatusButton =
-        !isAuthenticated &&
-        !isPasswordSet &&
-        hasSubmittedApplication &&
-        (interestStatus === "pending" || interestStatus === "new" || interestStatus === "accepted");
-
-    const applicationStatusHint =
-        interestStatus === "accepted"
-            ? isEmailVerified
-                ? "Next: Create password (resumes after reopen)"
-                : "Next: Verify email & create password"
-            : "Track your application progress (tap anytime)";
-
-    const handleClearStorage = useCallback(async () => {
-        Alert.alert('Clear All Data', 'This will log you out and clear all stored data. Continue?', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Clear', style: 'destructive',
-                onPress: async () => {
-                    setIsClearing(true);
-                    try {
-                        await logout();
-                        resetOnboarding();
-                        await AsyncStorage.clear();
-                        Alert.alert('Success', 'All data cleared.');
-                    } catch (e) {
-                        console.error(e);
-                        Alert.alert('Error', 'Failed to clear data');
-                    } finally {
-                        setIsClearing(false);
-                    }
-                },
-            },
-        ]);
-    }, []);
-
-    const handleRolePress = useCallback(
-        async (role: RoleOption) => {
-            if (role === "pastor") {
-                if (isAuthenticated && user?.role === "pastor") {
-                    router.push("/(pastor)/(tabs)");
-                    return;
-                }
-            } else if (isAuthenticated && user?.role === "mentor") {
-                router.push("/(mentor)/(tabs)");
-                return;
-            }
-
-            const accessToken = await storage.getAccessToken();
-            const tutorialState = getOnboardingTutorialState(!!accessToken);
-
-            if (!shouldShowOnboardingTutorial(tutorialState)) {
-                const dest = getSkipTutorialDestination(role, tutorialState);
-                router.push(dest as never);
-                return;
-            }
-
-            router.push({
-                pathname: "/(unauthenticated)/role-landing/[role]",
-                params: { role },
-            });
-        },
-        [isAuthenticated, router, user?.role]
-    );
-
-    const handleViewApplicationStatus = useCallback(() => {
-        // If already accepted, continue the verify-email / set-password flow directly.
-        if (interestStatus === "accepted") {
-            router.push("/(unauthenticated)/set-password");
-            return;
-        }
-
-        // If status is missing but we have a stored submission, default to pending to show the status flow.
-        if (!interestStatus && hasSubmittedApplication) {
-            setInterestStatus("pending");
-        }
-        router.push("/(unauthenticated)");
-    }, [hasSubmittedApplication, interestStatus, router, setInterestStatus]);
+    function WelcomeOption({
+        icon,
+        title,
+        description,
+        onPress,
+        variant = 'track',
+        isCompact,
+    }: WelcomeOptionProps) {
+    const isPrimary = variant === 'primary';
+    const isSecondary = variant === 'secondary';
+    const isTrack = variant === 'track';
 
     return (
-        <LinearGradient
-            colors={["#0D3B6E", "#0A5C8A", "#0B84B0"]}
-            locations={[0, 0.5, 1]}
-            style={[styles.gradient, { paddingTop: top || 44, paddingBottom: bottom || 24 }]}
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.88}
+            accessibilityRole="button"
+            style={[
+                styles.optionCardShell,
+                isCompact && styles.optionCardShellCompact,
+                isPrimary && styles.optionCardHighlight,
+                isSecondary && styles.optionCardSecondary,
+                isTrack && styles.optionCardTrack,
+            ]}
         >
-            <View style={styles.bgCircleTop} />
-            <View style={styles.bgCircleBottom} />
-
-            {/* DEV — Clear data */}
-            {/* {__DEV__ && (
-                <Pressable
-                    style={[styles.clearBtn, { top: (top || 44) + 8 }]}
-                    onPress={handleClearStorage}
-                    disabled={isClearing}
+                <View
+                    style={[
+                        styles.optionRow,
+                        isCompact && styles.optionRowCompact,
+                    ]}
                 >
-                    {isClearing
-                        ? <ActivityIndicator color="#fff" size="small" />
-                        : <>
-                            <Ionicons name="trash-outline" size={16} color="#fff" />
-                            <Text style={styles.clearBtnText}>Clear Data</Text>
-                          </>
-                    }
-                </Pressable>
-            )} */}
-
-            <View style={styles.content}>
-
-                {/* Brand mark */}
-                <View style={styles.brandMark}>
-                    <View style={styles.brandOuter}>
-                        <View style={styles.brandInner}>
-                            <Ionicons name="people-outline" size={26} color="#fff" />
-                        </View>
+                    <View
+                        style={[
+                            styles.optionIconWrap,
+                            isCompact && styles.optionIconWrapCompact,
+                    isPrimary && styles.optionIconWrapHighlight,
+                    isSecondary && styles.optionIconWrapSecondary,
+                    isTrack && styles.optionIconWrapTrack,
+                ]}
+                    >
+                        <Ionicons
+                            name={icon}
+                            size={20}
+                            color={
+                                isPrimary
+                                    ? accent.gold
+                                    : isSecondary
+                                      ? '#A8E6CF'
+                                      : '#7DD4F8'
+                            }
+                        />
                     </View>
-                </View>
-
-                {/* Heading */}
-                <View style={styles.headingBlock}>
-                    <Text style={styles.eyebrow}>Center for Community Change</Text>
-                    <Text style={styles.title}>
-                        Who are <Text style={styles.titleAccent}>you</Text>?
-                    </Text>
-                    <Text style={styles.subtitle}>
-                        Choose your role to <Text style={styles.subtitleAccent}>get started</Text>.
-                    </Text>
-                </View>
-
-                {/* Divider */}
-                <View style={styles.dividerRow}>
-                    <View style={styles.dividerLine} />
-                    <Ionicons name="leaf-outline" size={14} color={accent.mint} />
-                    <View style={styles.dividerLine} />
-                </View>
-
-                {/* Role cards */}
-                <View style={styles.cards}>
-
-                    <Pressable
-                        style={[
-                            styles.roleCard,
-                            styles.pastorCard,
-                        ]}
-                        onPress={() => handleRolePress("pastor")}
-                    >
-                        <View style={styles.roleCardLeft}>
-                            <View style={[styles.roleIconWrap, { backgroundColor: 'rgba(125,212,248,0.15)' }]}>
-                                <Ionicons name="book-outline" size={20} color="#7DD4F8" />
-                            </View>
-                            <View style={styles.roleCardText}>
-                                <Text style={styles.roleTitle}>Pastor</Text>
-                                <Text style={styles.roleDesc}>Guide your church in meaningful community impact.</Text>
-                            </View>
-                        </View>
-                        <View style={[styles.roleArrow, styles.pastorArrow]}>
-                            <Ionicons
-                                name={'chevron-forward'}
-                                size={16}
-                                color={accent.tealDeep}
-                            />
-                        </View>
-                    </Pressable>
-
-                    <Pressable
-                        style={[
-                            styles.roleCard,
-                            styles.mentorCard,
-                        ]}
-                        onPress={() => handleRolePress("mentor")}
-                    >
-                        <View style={styles.roleCardLeft}>
-                            <View style={[styles.roleIconWrap, { backgroundColor: 'rgba(168,230,207,0.15)' }]}>
-                                <Ionicons name="person-outline" size={20} color="#A8E6CF" />
-                            </View>
-                            <View style={styles.roleCardText}>
-                                <Text style={styles.roleTitle}>Mentor</Text>
-                                <Text style={styles.roleDesc}>Coach and support leaders as they grow.</Text>
-                            </View>
-                        </View>
-                        <View style={[styles.roleArrow, styles.mentorArrow]}>
-                            <Ionicons
-                                name={'chevron-forward'}
-                                size={16}
-                                color={accent.mint}
-                            />
-                        </View>
-                    </Pressable>
-
-                </View>
-
-                {!isAuthenticated && (
-                    <View style={styles.continueSection}>
-                        <Text style={styles.continueHint}>
-                            Already submitted an application?
-                        </Text>
-                        <Pressable
-                            style={styles.continueButton}
-                            onPress={() => {
-                                markOnboardingTutorialSeen();
-                                router.push("/(unauthenticated)/continue-application");
-                            }}
+                    <View style={styles.optionTextWrap}>
+                        <Text
+                            style={[
+                                styles.optionTitle,
+                                isCompact && styles.optionTitleCompact,
+                            ]}
+                            numberOfLines={2}
                         >
-                            <Text style={styles.continueButtonText}>
-                                Continue Here
-                            </Text>
-                            <Ionicons
-                                name="chevron-forward"
-                                size={16}
-                                color={accent.mint}
-                            />
-                        </Pressable>
+                            {title}
+                        </Text>
+                        <Text
+                            style={[
+                                styles.optionDesc,
+                                isCompact && styles.optionDescCompact,
+                            ]}
+                            numberOfLines={2}
+                        >
+                            {description}
+                        </Text>
                     </View>
-                )}
+                <View
+                    style={[
+                        styles.optionChevronWrap,
+                        isPrimary && styles.optionChevronWrapHighlight,
+                        isSecondary && styles.optionChevronWrapSecondary,
+                        isTrack && styles.optionChevronWrapTrack,
+                    ]}
+                >
+                    <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color={isPrimary ? accent.tealDeep : accent.mint}
+                    />
+                </View>
+                </View>
+            </TouchableOpacity>
+        );
+    }
 
-                {showApplicationStatusButton && (
-                    <Pressable
-                        style={styles.statusPill}
-                        onPress={handleViewApplicationStatus}
+    export default function WelcomeScreen() {
+        const router = useRouter();
+        const { bottom } = useSafeAreaInsets();
+        const { width, height } = useWindowDimensions();
+
+        const layout = useMemo(() => {
+            const isNarrow = width < 360;
+            const isCompactHeight = height < 700;
+            const isVeryCompact = height < 620;
+            return {
+                horizontalPad: isNarrow ? 16 : width >= 430 ? 28 : 20,
+                contentMaxWidth: Math.min(width - 32, 440),
+                isCompact: isCompactHeight,
+                isVeryCompact,
+                titleSize: isVeryCompact ? 24 : isCompactHeight ? 26 : 28,
+                brandSize: isVeryCompact ? 76 : 90,
+                logoWidth: Math.min(200, width * 0.52),
+            };
+        }, [width, height]);
+
+        const handleGetStarted = () => {
+            router.push('/get-started');
+        };
+
+        const handleLogin = () => {
+            markOnboardingTutorialSeen();
+            router.push('/(unauthenticated)/login-form');
+        };
+
+        const handleTrackApplication = () => {
+            markOnboardingTutorialSeen();
+            router.push('/(unauthenticated)/continue-application');
+        };
+
+        return (
+            <LinearGradient
+                colors={['#0D3B6E', '#0A5C8A', '#0B84B0']}
+                locations={[0, 0.5, 1]}
+                style={styles.gradient}
+            >
+                <View style={styles.bgCircleTop} pointerEvents="none" />
+                <View style={styles.bgCircleBottom} pointerEvents="none" />
+
+                <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+                    <ScrollView
+                        style={styles.scroll}
+                        contentContainerStyle={[
+                            styles.scrollContent,
+                            {
+                                paddingHorizontal: layout.horizontalPad,
+                                paddingBottom: Math.max(bottom, 16) + 8,
+                            },
+                        ]}
+                        showsVerticalScrollIndicator={false}
+                        bounces={false}
+                        keyboardShouldPersistTaps="handled"
                     >
-                        <View style={styles.statusPillLeft}>
-                            <View style={styles.statusIconWrap}>
-                                <Ionicons name="time-outline" size={18} color="#fff" />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <View style={styles.statusTitleRow}>
-                                    <Text style={styles.statusTitle}>Application status</Text>
+                        <View
+                            style={[
+                                styles.page,
+                                { maxWidth: layout.contentMaxWidth },
+                            ]}
+                        >
+                            <View
+                                style={[
+                                    styles.brandMark,
+                                    layout.isVeryCompact && styles.brandMarkCompact,
+                                ]}
+                            >
+                                <View
+                                    style={[
+                                        styles.brandOuter,
+                                        {
+                                            width: layout.brandSize,
+                                            height: layout.brandSize,
+                                            borderRadius: layout.brandSize / 2,
+                                        },
+                                    ]}
+                                >
+                                    <View style={styles.brandInner}>
+                                        <Ionicons
+                                            name="leaf-outline"
+                                            size={layout.isVeryCompact ? 24 : 28}
+                                            color={accent.mint}
+                                        />
+                                    </View>
                                 </View>
-                                <Text style={styles.statusHint} numberOfLines={2}>
-                                    {applicationStatusHint}
+                            </View>
+
+                            <View style={styles.headingBlock}>
+                                <Text style={styles.eyebrow}>
+                                    Center for Community Change
+                                </Text>
+                            <Text style={styles.title}>
+                                    Welcome to the{' '}
+                                    <Text style={styles.titleAccent}>Center</Text>
+                                </Text>
+                                <Text style={styles.subtitle}>
+                                    How would you like to continue today?
                                 </Text>
                             </View>
+
+                        <View style={styles.dividerRow}>
+                            <View style={styles.dividerLine} />
+                            <Ionicons name="leaf-outline" size={14} color={accent.mint} />
+                            <View style={styles.dividerLine} />
                         </View>
-                        <View style={styles.statusArrowCircle}>
-                            <Ionicons name="chevron-forward" size={16} color={accent.tealDeep} />
+
+                            <View style={styles.options}>
+                                <WelcomeOption
+                                    icon="rocket-outline"
+                                    title="Get started"
+                                    description="New here? Submit your interest and start onboarding."
+                                    onPress={handleGetStarted}
+                                    variant="primary"
+                                    isCompact={layout.isCompact}
+                                />
+                                <WelcomeOption
+                                    icon="log-in-outline"
+                                    title="Already logged in"
+                                    description="Sign in with your email and password."
+                                    onPress={handleLogin}
+                                    variant="secondary"
+                                    isCompact={layout.isCompact}
+                                />
+                                <WelcomeOption
+                                    icon="document-text-outline"
+                                    title="Track your application"
+                                    description="Already submitted? Continue where you left off."
+                                    onPress={handleTrackApplication}
+                                    variant="track"
+                                    isCompact={layout.isCompact}
+                                />
+                            </View>
+
+                            <View style={styles.logoContainer}>
+                                <Image
+                                    source={icons.universityIcon}
+                                    style={[
+                                        styles.logo,
+                                        { width: layout.logoWidth },
+                                    ]}
+                                    resizeMode="contain"
+                                />
+                            </View>
                         </View>
-                    </Pressable>
-                )}
+                    </ScrollView>
+                </SafeAreaView>
+            </LinearGradient>
+        );
+    }
 
-            </View>
-        </LinearGradient>
-    );
-}
-
-const styles = StyleSheet.create({
-    gradient: {
-        flex: 1,
-        paddingHorizontal: 24,
-        overflow: 'hidden',
-    },
-    bgCircleTop: {
-        position: 'absolute',
-        top: -130,
-        right: -100,
-        width: 280,
-        height: 280,
-        borderRadius: 140,
-        backgroundColor: 'rgba(255,255,255,0.04)',
-    },
-    bgCircleBottom: {
-        position: 'absolute',
-        bottom: -90,
-        left: -80,
-        width: 240,
-        height: 240,
-        borderRadius: 120,
-        backgroundColor: 'rgba(255,255,255,0.04)',
-    },
-
-    // DEV button
-    clearBtn: {
-        position: 'absolute',
-        right: 18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'rgba(220,50,40,0.85)',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-        zIndex: 20,
-    },
-    clearBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-
-    // Layout
-    content: {
-        flex: 1,
-        justifyContent: 'center',
-    },
-
-    // Brand mark
-    brandMark: {
-        alignItems: 'center',
-        marginBottom: 28,
-    },
-    brandOuter: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        backgroundColor: 'rgba(255,255,255,0.06)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(111, 212, 190, 0.35)',
-    },
-    brandInner: {
-        width: 62,
-        height: 62,
-        borderRadius: 31,
-        backgroundColor: accent.mintSoft,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(232, 200, 138, 0.35)',
-    },
-
-    // Heading
-    headingBlock: {
-        alignItems: 'center',
-        marginBottom: 24,
-        gap: 6,
-    },
-    eyebrow: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: accent.mint,
-        letterSpacing: 1.5,
-        textTransform: 'uppercase',
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: '700',
-        color: '#fff',
-        letterSpacing: -0.4,
-    },
-    titleAccent: {
-        color: accent.gold,
-    },
-    subtitle: {
-        fontSize: 13,
-        fontWeight: '400',
-        color: 'rgba(255,255,255,0.55)',
-    },
-    subtitleAccent: {
-        color: accent.gold,
-        fontWeight: '600',
-    },
-
-    // Divider
-    dividerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        marginBottom: 24,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: 'rgba(255,255,255,0.12)',
-    },
-
-    // Role cards
-    cards: {
-        gap: 12,
+    const styles = StyleSheet.create({
+        gradient: {
+            flex: 1,
+        },
+        safeArea: {
+            flex: 1,
+            width: '100%',
+        },
+        scroll: {
+            flex: 1,
+            width: '100%',
+        },
+        scrollContent: {
+            flexGrow: 1,
+            alignItems: 'center',
+            paddingTop: 8,
+        },
+        page: {
+            width: '100%',
+            alignSelf: 'center',
+        },
+        bgCircleTop: {
+            position: 'absolute',
+            top: -130,
+            right: -100,
+            width: 280,
+            height: 280,
+            borderRadius: 140,
+            backgroundColor: 'rgba(255,255,255,0.04)',
+        },
+        bgCircleBottom: {
+            position: 'absolute',
+            bottom: -90,
+            left: -80,
+            width: 240,
+            height: 240,
+            borderRadius: 120,
+            backgroundColor: 'rgba(255,255,255,0.04)',
+        },
+        brandMark: {
+            alignItems: 'center',
+            marginBottom: 20,
+        },
+        brandMarkCompact: {
+            marginBottom: 14,
+        },
+        brandOuter: {
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            borderWidth: 1,
+            borderColor: 'rgba(111, 212, 190, 0.35)',
+        },
+        brandInner: {
+            width: 62,
+            height: 62,
+            borderRadius: 31,
+            backgroundColor: accent.mintSoft,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: 'rgba(232, 200, 138, 0.35)',
+        },
+        headingBlock: {
+            alignItems: 'center',
+            marginBottom: 24,
+            gap: 6,
+        },
+        eyebrow: {
+            fontSize: 11,
+            fontWeight: '600',
+            color: accent.mint,
+            letterSpacing: 1.5,
+            textTransform: 'uppercase',
+        },
+        title: {
+            fontSize: 28,
+            fontWeight: '700',
+            color: '#fff',
+            textAlign: 'center',
+            letterSpacing: -0.4,
+        },
+        titleAccent: {
+            color: accent.gold,
+        },
+        subtitle: {
+            fontSize: 13,
+            fontWeight: '400',
+            color: 'rgba(255,255,255,0.55)',
+            textAlign: 'center',
+        },
+        dividerRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 24,
+            width: '100%',
+        },
+        dividerLine: {
+            flex: 1,
+            height: 1,
+            backgroundColor: 'rgba(255,255,255,0.12)',
+        },
+    options: {
+        width: '100%',
+        alignSelf: 'stretch',
         marginBottom: 20,
     },
-    roleCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+    optionCardShell: {
+        width: '100%',
+        alignSelf: 'stretch',
+        marginBottom: 12,
         backgroundColor: 'rgba(255,255,255,0.08)',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.14)',
         borderRadius: 14,
+        borderLeftWidth: 3,
+        borderLeftColor: accent.mint,
+        overflow: 'hidden',
+    },
+    optionCardShellCompact: {
+        marginBottom: 10,
+    },
+    optionRow: {
+        flexDirection: 'row',
+        flexWrap: 'nowrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
         paddingVertical: 16,
         paddingHorizontal: 16,
-        borderLeftWidth: 3,
+        ...(Platform.OS === 'web'
+            ? { display: 'flex' as const, flexDirection: 'row' as const }
+            : {}),
     },
-    pastorCard: {
+    optionRowCompact: {
+        paddingVertical: 14,
+    },
+    optionCardHighlight: {
         borderLeftColor: accent.gold,
     },
-    mentorCard: {
+    optionCardSecondary: {
         borderLeftColor: accent.mint,
     },
-    roleCardLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
-        flex: 1,
+    optionCardTrack: {
+        borderLeftColor: '#7DD4F8',
     },
-    roleIconWrap: {
+    optionIconWrap: {
         width: 44,
         height: 44,
         borderRadius: 22,
+        flexShrink: 0,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.08)',
+        marginRight: 14,
     },
-    roleCardText: {
+    optionIconWrapCompact: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
+    },
+    optionIconWrapHighlight: {
+        backgroundColor: 'rgba(232, 200, 138, 0.22)',
+    },
+    optionIconWrapSecondary: {
+        backgroundColor: 'rgba(168, 230, 207, 0.15)',
+    },
+    optionIconWrapTrack: {
+        backgroundColor: 'rgba(125, 212, 248, 0.15)',
+    },
+    optionTextWrap: {
         flex: 1,
+        flexShrink: 1,
+        flexGrow: 1,
+        minWidth: 0,
         gap: 3,
+        marginRight: 10,
     },
-    roleTitle: {
+    optionTitle: {
         color: '#fff',
         fontSize: 15,
         fontWeight: '700',
     },
-    roleDesc: {
+    optionTitleCompact: {
+        fontSize: 15,
+    },
+    optionDesc: {
         color: 'rgba(255,255,255,0.5)',
         fontSize: 12,
         lineHeight: 17,
+        fontWeight: '400',
     },
-    roleArrow: {
+    optionDescCompact: {
+        fontSize: 12,
+        lineHeight: 17,
+    },
+    optionChevronWrap: {
         width: 28,
         height: 28,
         borderRadius: 14,
+        flexShrink: 0,
         backgroundColor: 'rgba(255,255,255,0.08)',
         alignItems: 'center',
         justifyContent: 'center',
     },
-    pastorArrow: {
+    optionChevronWrapHighlight: {
         backgroundColor: 'rgba(232, 200, 138, 0.35)',
     },
-    mentorArrow: {
+    optionChevronWrapSecondary: {
         backgroundColor: accent.mintSoft,
     },
-    continueSection: {
-        width: "100%",
-        alignItems: "center",
-        gap: 10,
-        marginBottom: 16,
+    optionChevronWrapTrack: {
+        backgroundColor: 'rgba(125, 212, 248, 0.2)',
     },
-    continueHint: {
-        color: "rgba(255,255,255,0.75)",
-        fontSize: 13,
-        textAlign: "center",
-    },
-    continueButton: {
-        width: "100%",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "rgba(111, 212, 190, 0.45)",
-        backgroundColor: "rgba(255,255,255,0.08)",
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-    },
-    continueButtonText: {
-        color: accent.mint,
-        fontSize: 15,
-        fontWeight: "600",
-    },
-
-    // Application status quick entry
-    statusPill: {
-        width: "100%",
-        borderRadius: 16,
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-        backgroundColor: "rgba(255,255,255,0.10)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.18)",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 14,
-        borderLeftWidth: 3,
-        borderLeftColor: accent.mint,
-    },
-    statusPillLeft: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-        flex: 1,
-        paddingRight: 8,
-    },
-    statusIconWrap: {
-        width: 36,
-        height: 36,
-        borderRadius: 12,
-        backgroundColor: "rgba(255,255,255,0.12)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.16)",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    statusTitle: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "800",
-    },
-    statusTitleRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 10,
-    },
-    statusHint: {
-        marginTop: 3,
-        color: "rgba(255,255,255,0.62)",
-        fontSize: 11,
-        lineHeight: 15,
-        fontWeight: "600",
-    },
-    statusSubtitle: {
-        color: "rgba(255,255,255,0.6)",
-        fontSize: 11,
-        marginTop: 2,
-    },
-    statusArrowCircle: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: "rgba(232, 200, 138, 0.35)",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-
-    // Footer
-    footerNote: {
-        color: 'rgba(255,255,255,0.28)',
-        fontSize: 11,
-        textAlign: 'center',
-        lineHeight: 16,
-    },
-});
+        logoContainer: {
+            alignItems: 'center',
+            marginTop: 20,
+            marginBottom: 8,
+            width: '100%',
+        },
+        logo: {
+            height: 44,
+            maxWidth: '100%',
+        },
+    });

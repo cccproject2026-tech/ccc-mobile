@@ -61,6 +61,7 @@ function RootLayoutNav() {
       {/* ✅ ADDED: Root index - Always accessible for role selection */}
       <Stack.Protected guard={showIndex}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="get-started" />
       </Stack.Protected>
 
       {/* Unauthenticated Routes */}
