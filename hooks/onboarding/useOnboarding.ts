@@ -9,7 +9,6 @@ import {
     InterestFormData,
 } from "@/types";
 import { navigateByOnboardingStep } from "@/utils/onboarding-navigation";
-import { markOnboardingTutorialSeen } from "@/utils/onboarding-tutorial";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -108,15 +107,11 @@ export const useCheckOnboardingStatus = () => {
   return useMutation({
     mutationFn: (email: string) =>
       authService.checkOnboardingStatus({ email: email.trim().toLowerCase() }),
-    onMutate: () => {
-      markOnboardingTutorialSeen();
-    },
     onSuccess: (response) => {
       if (!response.success || !response.data) {
         throw new Error("Unable to check your application status. Please try again.");
       }
       persistOnboardingStatus(response.data);
-      markOnboardingTutorialSeen();
       navigateByOnboardingStep(router, response.data.nextStep);
     },
   });
@@ -135,7 +130,6 @@ export const useSubmitInterest = () => {
 
     onSuccess: (response, variables) => {
       console.log("✅ Interest form submitted successfully");
-      markOnboardingTutorialSeen();
 
       const userId = response.data?.userId;
       const applicationId = response.data?.id;

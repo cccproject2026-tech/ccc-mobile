@@ -19,9 +19,6 @@ interface OnboardingState {
     // Profile completion
     hasProfilePicture: boolean;
 
-    /** First-time tutorial / start-journey shown once per install (until dev reset). */
-    hasSeenOnboardingTutorial: boolean;
-
     // UI flow state (temporary, not persisted)
     currentStep:
     | 'form'
@@ -41,7 +38,6 @@ interface OnboardingActions {
     setEmailVerified: (verified: boolean) => void;
     setPasswordSet: (set: boolean) => void;
     setHasProfilePicture: (has: boolean) => void;
-    setHasSeenOnboardingTutorial: (seen: boolean) => void;
     setCurrentStep: (step: OnboardingState['currentStep']) => void;
     reset: () => void;
     /** Clears onboarding progress but keeps tutorial dismissed (e.g. logout). */
@@ -59,7 +55,6 @@ const initialState: OnboardingState = {
     isEmailVerified: false,
     isPasswordSet: false,
     hasProfilePicture: false,
-    hasSeenOnboardingTutorial: false,
     currentStep: 'form',
 };
 
@@ -109,11 +104,6 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 console.log('📷 Has profile picture:', has);
             },
 
-            setHasSeenOnboardingTutorial: (seen) => {
-                set({ hasSeenOnboardingTutorial: seen });
-                console.log('📖 Onboarding tutorial seen:', seen);
-            },
-
             setCurrentStep: (step) => {
                 set({ currentStep: step });
                 console.log('📍 Current step:', step);
@@ -126,10 +116,17 @@ export const useOnboardingStore = create<OnboardingStore>()(
 
             resetOnLogout: () => {
                 set({
-                    ...initialState,
-                    hasSeenOnboardingTutorial: true,
+                    interestData: null,
+                    interestStatus: null,
+                    userId: null,
+                    applicationId: null,
+                    email: null,
+                    isEmailVerified: false,
+                    isPasswordSet: false,
+                    hasProfilePicture: false,
+                    currentStep: 'form',
                 });
-                console.log('🔄 Onboarding progress cleared (tutorial stays dismissed)');
+                console.log('🔄 Onboarding progress cleared on logout');
             },
         }),
         {
@@ -144,23 +141,8 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 isEmailVerified: state.isEmailVerified,
                 isPasswordSet: state.isPasswordSet,
                 hasProfilePicture: state.hasProfilePicture,
-                hasSeenOnboardingTutorial: state.hasSeenOnboardingTutorial,
                 // Don't persist currentStep (UI state only)
             }),
-            onRehydrateStorage: () => (state) => {
-                if (!state) return;
-                const hasProgress =
-                    !!state.interestStatus ||
-                    !!state.email ||
-                    !!state.userId ||
-                    !!state.applicationId ||
-                    !!state.interestData ||
-                    state.isEmailVerified ||
-                    state.isPasswordSet;
-                if (hasProgress && !state.hasSeenOnboardingTutorial) {
-                    useOnboardingStore.setState({ hasSeenOnboardingTutorial: true });
-                }
-            },
         }
     )
 );

@@ -1,4 +1,3 @@
-import { useOnboardingTutorialScreenGuard } from "@/hooks/onboarding/useOnboardingTutorialGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -50,8 +49,6 @@ export default function PastorJourneyStep2Screen() {
     const { top, bottom } = useSafeAreaInsets();
     const { role } = useLocalSearchParams<{ role?: PastorRole }>();
     const roleLabel = useMemo(() => mapRoleToLabel(role), [role]);
-
-    useOnboardingTutorialScreenGuard(role || "pastor");
 
     const handleBack = useCallback(() => {
         try { router.back(); } catch { router.replace("/"); }

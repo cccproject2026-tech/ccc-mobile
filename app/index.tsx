@@ -1,5 +1,4 @@
-    import { icons } from '@/constants/images';
-import { markOnboardingTutorialSeen } from '@/utils/onboarding-tutorial';
+import { icons } from '@/constants/images';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -151,12 +150,10 @@ import {
         };
 
         const handleLogin = () => {
-            markOnboardingTutorialSeen();
             router.push('/(unauthenticated)/login-form');
         };
 
         const handleTrackApplication = () => {
-            markOnboardingTutorialSeen();
             router.push('/(unauthenticated)/continue-application');
         };
 
@@ -245,7 +242,7 @@ import {
                                 />
                                 <WelcomeOption
                                     icon="log-in-outline"
-                                    title="Already logged in"
+                                    title="Already signed up "
                                     description="Sign in with your email and password."
                                     onPress={handleLogin}
                                     variant="secondary"

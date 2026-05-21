@@ -1,15 +1,8 @@
-import { useOnboardingStore } from '@/stores';
 import { useAuthStore } from '@/stores/auth.store';
-import {
-    getOnboardingTutorialState,
-    getSkipTutorialDestination,
-    shouldShowOnboardingTutorial,
-} from '@/utils/onboarding-tutorial';
-import { storage } from '@/utils/storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,65 +22,20 @@ export default function GetStartedScreen() {
     const { top, bottom } = useSafeAreaInsets();
 
     const { user, isAuthenticated } = useAuthStore();
-    const {
-        userId,
-        applicationId,
-        interestData,
-        interestStatus,
-        isEmailVerified,
-        isPasswordSet,
-        hasSeenOnboardingTutorial,
-        setHasSeenOnboardingTutorial,
-    } = useOnboardingStore();
-
-    useEffect(() => {
-        const tutorialState = getOnboardingTutorialState();
-        if (
-            !tutorialState.hasSeenOnboardingTutorial &&
-            (tutorialState.interestStatus ||
-                tutorialState.email ||
-                tutorialState.userId ||
-                tutorialState.applicationId ||
-                tutorialState.interestData ||
-                tutorialState.isEmailVerified ||
-                tutorialState.isPasswordSet)
-        ) {
-            setHasSeenOnboardingTutorial(true);
-        }
-    }, [
-        hasSeenOnboardingTutorial,
-        setHasSeenOnboardingTutorial,
-        interestStatus,
-        isEmailVerified,
-        isPasswordSet,
-        userId,
-        applicationId,
-        interestData,
-    ]);
 
     const handleRolePress = useCallback(
-        async (role: RoleOption) => {
-            if (role === "pastor") {
-                if (isAuthenticated && user?.role === "pastor") {
-                    router.push("/(pastor)/(tabs)");
-                    return;
-                }
-            } else if (isAuthenticated && user?.role === "mentor") {
-                router.push("/(mentor)/(tabs)");
+        (role: RoleOption) => {
+            if (role === 'pastor' && isAuthenticated && user?.role === 'pastor') {
+                router.push('/(pastor)/(tabs)');
                 return;
             }
-
-            const accessToken = await storage.getAccessToken();
-            const tutorialState = getOnboardingTutorialState(!!accessToken);
-
-            if (!shouldShowOnboardingTutorial(tutorialState)) {
-                const dest = getSkipTutorialDestination(role, tutorialState);
-                router.push(dest as never);
+            if (role === 'mentor' && isAuthenticated && user?.role === 'mentor') {
+                router.push('/(mentor)/(tabs)');
                 return;
             }
 
             router.push({
-                pathname: "/(unauthenticated)/role-landing/[role]",
+                pathname: '/(unauthenticated)/role-landing/[role]',
                 params: { role },
             });
         },
@@ -96,7 +44,7 @@ export default function GetStartedScreen() {
 
     return (
         <LinearGradient
-            colors={["#0D3B6E", "#0A5C8A", "#0B84B0"]}
+            colors={['#0D3B6E', '#0A5C8A', '#0B84B0']}
             locations={[0, 0.5, 1]}
             style={[styles.gradient, { paddingTop: top || 44, paddingBottom: bottom || 24 }]}
         >
@@ -104,7 +52,7 @@ export default function GetStartedScreen() {
             <View style={styles.bgCircleBottom} />
 
             <Pressable
-                onPress={() => router.replace("/")}
+                onPress={() => router.replace('/')}
                 style={[styles.backButton, { top: (top || 44) + 8 }]}
                 hitSlop={12}
             >
@@ -148,7 +96,7 @@ export default function GetStartedScreen() {
                             styles.roleCard,
                             styles.pastorCard,
                         ]}
-                        onPress={() => handleRolePress("pastor")}
+                        onPress={() => handleRolePress('pastor')}
                     >
                         <View style={styles.roleCardLeft}>
                             <View style={[styles.roleIconWrap, { backgroundColor: 'rgba(125,212,248,0.15)' }]}>
@@ -173,7 +121,7 @@ export default function GetStartedScreen() {
                             styles.roleCard,
                             styles.mentorCard,
                         ]}
-                        onPress={() => handleRolePress("mentor")}
+                        onPress={() => handleRolePress('mentor')}
                     >
                         <View style={styles.roleCardLeft}>
                             <View style={[styles.roleIconWrap, { backgroundColor: 'rgba(168,230,207,0.15)' }]}>
@@ -237,29 +185,10 @@ const styles = StyleSheet.create({
         borderRadius: 120,
         backgroundColor: 'rgba(255,255,255,0.04)',
     },
-
-    // DEV button
-    clearBtn: {
-        position: 'absolute',
-        right: 18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'rgba(220,50,40,0.85)',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-        zIndex: 20,
-    },
-    clearBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-
-    // Layout
     content: {
         flex: 1,
         justifyContent: 'center',
     },
-
-    // Brand mark
     brandMark: {
         alignItems: 'center',
         marginBottom: 28,
@@ -284,8 +213,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(232, 200, 138, 0.35)',
     },
-
-    // Heading
     headingBlock: {
         alignItems: 'center',
         marginBottom: 24,
@@ -316,8 +243,6 @@ const styles = StyleSheet.create({
         color: accent.gold,
         fontWeight: '600',
     },
-
-    // Divider
     dividerRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -329,8 +254,6 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: 'rgba(255,255,255,0.12)',
     },
-
-    // Role cards
     cards: {
         gap: 12,
         marginBottom: 20,
@@ -395,107 +318,5 @@ const styles = StyleSheet.create({
     },
     mentorArrow: {
         backgroundColor: accent.mintSoft,
-    },
-    continueSection: {
-        width: "100%",
-        alignItems: "center",
-        gap: 10,
-        marginBottom: 16,
-    },
-    continueHint: {
-        color: "rgba(255,255,255,0.75)",
-        fontSize: 13,
-        textAlign: "center",
-    },
-    continueButton: {
-        width: "100%",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "rgba(111, 212, 190, 0.45)",
-        backgroundColor: "rgba(255,255,255,0.08)",
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-    },
-    continueButtonText: {
-        color: accent.mint,
-        fontSize: 15,
-        fontWeight: "600",
-    },
-
-    // Application status quick entry
-    statusPill: {
-        width: "100%",
-        borderRadius: 16,
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-        backgroundColor: "rgba(255,255,255,0.10)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.18)",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 14,
-        borderLeftWidth: 3,
-        borderLeftColor: accent.mint,
-    },
-    statusPillLeft: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-        flex: 1,
-        paddingRight: 8,
-    },
-    statusIconWrap: {
-        width: 36,
-        height: 36,
-        borderRadius: 12,
-        backgroundColor: "rgba(255,255,255,0.12)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.16)",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    statusTitle: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "800",
-    },
-    statusTitleRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 10,
-    },
-    statusHint: {
-        marginTop: 3,
-        color: "rgba(255,255,255,0.62)",
-        fontSize: 11,
-        lineHeight: 15,
-        fontWeight: "600",
-    },
-    statusSubtitle: {
-        color: "rgba(255,255,255,0.6)",
-        fontSize: 11,
-        marginTop: 2,
-    },
-    statusArrowCircle: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: "rgba(232, 200, 138, 0.35)",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-
-    // Footer
-    footerNote: {
-        color: 'rgba(255,255,255,0.28)',
-        fontSize: 11,
-        textAlign: 'center',
-        lineHeight: 16,
     },
 });

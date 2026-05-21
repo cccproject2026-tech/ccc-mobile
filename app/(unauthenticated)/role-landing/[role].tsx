@@ -1,15 +1,8 @@
 import { icons } from "@/constants/images";
-import {
-    getOnboardingTutorialState,
-    getSkipTutorialDestination,
-    markOnboardingTutorialSeen,
-    shouldShowOnboardingTutorial,
-} from "@/utils/onboarding-tutorial";
-import { storage } from "@/utils/storage";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -63,24 +56,8 @@ export default function RoleLandingScreen() {
     };
 
     const handleSkipToLogin = () => {
-        markOnboardingTutorialSeen();
         router.replace("/(unauthenticated)/login-form");
     };
-
-    useEffect(() => {
-        const guard = async () => {
-            const accessToken = await storage.getAccessToken();
-            const tutorialState = getOnboardingTutorialState(!!accessToken);
-            if (!shouldShowOnboardingTutorial(tutorialState)) {
-                const dest = getSkipTutorialDestination(
-                    role === "mentor" ? "mentor" : (role || "pastor"),
-                    tutorialState
-                );
-                router.replace(dest as never);
-            }
-        };
-        guard();
-    }, [role, router]);
 
     const handleStartJourney = () => {
         if (role === "mentor") {

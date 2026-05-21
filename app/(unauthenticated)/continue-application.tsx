@@ -2,7 +2,6 @@ import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
 import { useCheckOnboardingStatus } from "@/hooks/onboarding/useOnboarding";
 import { getCheckOnboardingStatusErrorMessage } from "@/utils/onboarding-navigation";
-import { markOnboardingTutorialSeen } from "@/utils/onboarding-tutorial";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
@@ -46,10 +45,7 @@ export default function ContinueApplicationScreen() {
         if (!EMAIL_REGEX.test(trimmed)) {
             setErrorMessage("Please enter a valid email address.");
             return;
-        }
-
-        markOnboardingTutorialSeen();
-        checkStatus(trimmed, {
+        }        checkStatus(trimmed, {
             onError: (error: { statusCode?: number; message?: string }) => {
                 setErrorMessage(getCheckOnboardingStatusErrorMessage(error));
             },

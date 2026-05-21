@@ -66,6 +66,14 @@ export default function LoginFormScreen() {
     const handleForgotPassword = useCallback(() => router.push('/(unauthenticated)/forgot-password'), [router]);
     const handleNewUser        = useCallback(() => router.push('/(unauthenticated)/interest-form'),   [router]);
 
+    const handleBack = useCallback(() => {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/');
+        }
+    }, [router]);
+
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
@@ -74,7 +82,12 @@ export default function LoginFormScreen() {
                 locations={[0, 0.5, 1]}
                 style={styles.gradient}
             >
-                <TopBar showNotifications={false} showDrawer={false} />
+                <TopBar
+                    showNotifications={false}
+                    showDrawer={false}
+                    showBackButton
+                    onPressBack={handleBack}
+                />
 
                 <KeyboardAwareScrollView
                     contentContainerStyle={[styles.scroll, { paddingBottom: bottom + 16 }]}
