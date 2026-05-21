@@ -142,10 +142,10 @@ export default function QueriesScreen() {
             </View>
 
             <KeyboardAvoidingView
-                style={{ flex: 1 }}
+                style={styles.keyboardAvoid}
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
-            <View style={{ width: "100%", maxWidth: maxWidth ?? undefined, alignSelf: "center" }}>
+            <View style={[styles.content, { maxWidth: maxWidth ?? undefined }]}>
             <View style={{ paddingHorizontal: horizontalPadding, width: "100%" }}>
                 <RoadmapNavRow onBack={() => router.back()} pillLabel="Queries" />
                 <SectionHeader
@@ -182,6 +182,7 @@ export default function QueriesScreen() {
             {/* CONTENT */}
             {selectedTab === 'NEW' ? (
                 <ScrollView
+                    style={styles.scrollArea}
                     contentContainerStyle={{
                         flexGrow: 1,
                         paddingHorizontal: horizontalPadding,
@@ -226,10 +227,12 @@ export default function QueriesScreen() {
                 </ScrollView>
             ) : (
                 <FlatList
+                    style={styles.scrollArea}
                     keyboardShouldPersistTaps="handled"
                     data={displayQueries}
                     renderItem={renderQuery}
                     keyExtractor={item => item._id}
+                    showsVerticalScrollIndicator={false}
                     contentContainerStyle={[
                         styles.listContainer,
                         {
@@ -257,6 +260,17 @@ export default function QueriesScreen() {
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+    },
+    keyboardAvoid: {
+        flex: 1,
+    },
+    content: {
+        flex: 1,
+        width: "100%",
+        alignSelf: "center",
+    },
+    scrollArea: {
         flex: 1,
     },
     header: {
