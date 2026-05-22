@@ -58,7 +58,6 @@ export default function PastorDrawerLayout() {
                     drawerItemStyle: { display: 'none' },
                 }}
             />
-
             <Drawer.Screen
                 name="profile-upload"
                 options={{

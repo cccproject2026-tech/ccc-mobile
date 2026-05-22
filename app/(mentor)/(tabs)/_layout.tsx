@@ -144,6 +144,7 @@ export default function MentorTabLayout() {
                     <Tabs.Screen name="resources" options={{ href: null }} />
                     <Tabs.Screen name="support/contact-information" options={{ href: null }} />
                     <Tabs.Screen name="new-roadmap" options={{ href: null }} />
+                    <Tabs.Screen name="search" options={{ href: null }} />
                 </Tabs>
             </AssessmentProvider>
         </RoadmapProgressProvider>

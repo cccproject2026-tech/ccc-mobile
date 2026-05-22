@@ -69,6 +69,7 @@ export default function DirectorTabLayout() {
 
       // Detail pages with dynamic IDs
       /\/revitalization-roadmaps\/[^\/]+$/,
+      /\/search$/,
 
       // Sub-routes of new-interests (but not the main page)
       /^\/new-interests\/.+/,
@@ -214,6 +215,14 @@ export default function DirectorTabLayout() {
 
       <Tabs.Screen
         name="appointments"
+        options={{
+          title: "",
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="search"
         options={{
           title: "",
           href: null,

@@ -111,13 +111,13 @@ export default function PastorTabLayout() {
     const tabBarConfig = getTabBarConfig();
 
     useEffect(() => {
-        setTabBarVisible(![/\/report$/].some((p) => p.test(pathname)));
+        setTabBarVisible(!/\/report$/.test(pathname));
     }, [pathname]);
 
     const HIDDEN_ROUTES = [
         'profile/documents', 'profile/notes',   'profile/new-note',
         'profile/note-detail','profile/certificates','profile/grant',
-        'profile/upload',    '(index)',          '(assessments)',
+        '(index)',          '(assessments)',
         '(roadmap)',         '(appointments)',   'mentors',
         '(progress)',        'my-mentors',
         'support/contact-information', 'support/call-mentor',

@@ -27,7 +27,6 @@ export default function DirectorDrawerLayout() {
                         drawerItemStyle: { display: 'none' },
                     }}
                 />
-
             </Drawer>
         </PhaseCreationProvider>
     );

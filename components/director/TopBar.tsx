@@ -1,3 +1,4 @@
+import { getGlobalSearchRoute } from "@/lib/search/globalSearchNavigation";
 import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton";
 import { useNotifications } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores';
@@ -144,7 +145,10 @@ const TopBar: React.FC<Props> = ({
             {/* Right */}
             <View style={styles.rightIconBox}>
                 {showSearchIcon && (
-                    <Pressable onPress={() => router.push('/search')} hitSlop={10}>
+                    <Pressable
+                        onPress={() => router.push(getGlobalSearchRoute(role || user?.role) as never)}
+                        hitSlop={10}
+                    >
                         <Ionicons name="search" size={size - 6} color={color} />
                     </Pressable>
                 )}

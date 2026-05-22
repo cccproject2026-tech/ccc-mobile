@@ -3,11 +3,21 @@ import TopBar from "@/components/director/TopBar";
 import { RoadmapSearchField } from "@/components/ui/design-system/RoadmapSearchField";
 import { SectionHeader } from "@/components/ui/design-system/SectionHeader";
 import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
+import { useAllRoadmaps, useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import {
+  getInterestDisplayTitle,
+  getRoadmapDisplaySubtitle,
+  getRoadmapDisplayTitle,
+  isSearchInterestItem,
+  isSearchRoadmapItem,
+  navigateToSearchInterest,
+  navigateToSearchRoadmap,
+} from "@/lib/search/globalSearchNavigation";
 import { apiClient } from "@/services/api/client";
 import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -18,9 +28,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function SearchScreen() {
+export default function GlobalSearchScreen() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { data: assignedRoadmaps } = useRoadmaps(user?.role, user?.id);
+  const { data: allRoadmaps } = useAllRoadmaps();
+  const roadmapsForNavigation = useMemo(() => {
+    if (allRoadmaps?.length) return allRoadmaps;
+    return assignedRoadmaps ?? [];
+  }, [allRoadmaps, assignedRoadmaps]);
   const [query, setQuery] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -63,9 +79,18 @@ export default function SearchScreen() {
           let roadmapsGroup: any[] = [];
           let interestsGroup: any[] = [];
 
-          if (payload && typeof payload === "object" && payload.results && typeof payload.results === "object") {
-            roadmapsGroup = Array.isArray(payload.results.roadmaps) ? payload.results.roadmaps : [];
-            interestsGroup = Array.isArray(payload.results.interests) ? payload.results.interests : [];
+          if (
+            payload &&
+            typeof payload === "object" &&
+            payload.results &&
+            typeof payload.results === "object"
+          ) {
+            roadmapsGroup = Array.isArray(payload.results.roadmaps)
+              ? payload.results.roadmaps
+              : [];
+            interestsGroup = Array.isArray(payload.results.interests)
+              ? payload.results.interests
+              : [];
           } else {
             let items: any[] = [];
             if (Array.isArray(payload)) {
@@ -90,31 +115,10 @@ export default function SearchScreen() {
             const othersGroup: any[] = [];
 
             for (const it of items) {
-              const lowerKeys = (Object.keys(it || {}).join(" ") || "").toLowerCase();
-              const typeHint =
-                String(it.type ?? it.module ?? it.resource ?? it.module ?? "").toLowerCase() ||
-                "";
-
-              const looksLikeRoadmap =
-                typeHint.includes("roadmap") ||
-                lowerKeys.includes("roadmap") ||
-                "roadMapDetails" in (it?.metadata ?? it) ||
-                "roadmaps" in (it || {}) ||
-                !!(it.roadmapId ?? it._id ?? it.id) && (it.title || it.name || it.phase);
-
-              const looksLikeInterest =
-                typeHint.includes("interest") ||
-                lowerKeys.includes("interest") ||
-                "firstName" in (it || {}) ||
-                "churchDetails" in (it || {}) ||
-                it.email ||
-                it.phoneNumber ||
-                (it.metadata && typeof it.metadata === "object" && ("title" in it.metadata || "conference" in it.metadata));
-
-              if (looksLikeRoadmap) {
-                roadmapsGroup.push(it);
-              } else if (looksLikeInterest) {
+              if (isSearchInterestItem(it)) {
                 interestsGroup.push(it);
+              } else if (isSearchRoadmapItem(it)) {
+                roadmapsGroup.push(it);
               } else {
                 othersGroup.push(it);
               }
@@ -150,27 +154,12 @@ export default function SearchScreen() {
     };
   }, [query]);
 
-  const handleRoadmapPress = (r: any) => {
-    const roadmapId = r._id ?? r.id;
-    if (!roadmapId) return;
-
-    const nested = Array.isArray(r.roadmaps) && r.roadmaps.length === 1 ? r.roadmaps[0] : null;
-    const nestedId = nested ? nested._id ?? nested.id : null;
-
-    if (nestedId && !r.haveNextedRoadMaps) {
-      router.push(`/roadmap/${roadmapId}/${nestedId}`);
-    } else {
-      router.push(`/roadmap/${roadmapId}`);
-    }
+  const handleRoadmapPress = (r: unknown) => {
+    navigateToSearchRoadmap(router, user?.role, r, roadmapsForNavigation);
   };
 
-  const handleInterestPress = (it: any) => {
-    const interestId = it._id ?? it.id;
-    if (!interestId) return;
-    router.push({
-      pathname: "/(director)/(tabs)/new-interests/interest-details",
-      params: { interestId },
-    } as any);
+  const handleInterestPress = (it: unknown) => {
+    navigateToSearchInterest(router, user?.role, it);
   };
 
   const hasQuery = query.trim().length >= 2;
@@ -228,16 +217,13 @@ export default function SearchScreen() {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>{`Roadmaps (${roadmaps.length})`}</Text>
                   {roadmaps.map((r, idx) => {
-                    const title = r.title ?? r.name ?? "Untitled Roadmap";
-                    const subtitle =
-                      r.description ??
-                      r.metadata?.roadMapDetails ??
-                      r.metadata?.roadmapDetails ??
-                      "";
-                    const status = r.metadata?.status ?? r.status ?? r.state ?? null;
+                    const title = getRoadmapDisplayTitle(r);
+                    const subtitle = getRoadmapDisplaySubtitle(r);
+                    const record = r as Record<string, unknown>;
+                    const status = record.metadata?.status ?? record.status ?? record.state ?? null;
                     return (
                       <Pressable
-                        key={r.id ?? r._id ?? idx}
+                        key={String(record.id ?? record._id ?? idx)}
                         onPress={() => handleRoadmapPress(r)}
                         android_ripple={{ color: "rgba(255,255,255,0.08)" }}
                         style={styles.resultCard}
@@ -274,17 +260,23 @@ export default function SearchScreen() {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>{`Interests (${interests.length})`}</Text>
                   {interests.map((it, idx) => {
-                    const title = it.title ?? it.name ?? "Interest";
-                    const subtitle =
-                      it.description ??
-                      it.metadata?.conference ??
-                      it.email ??
-                      it.metadata?.phoneNumber ??
-                      "";
-                    const status = it.metadata?.status ?? it.status ?? it.state ?? null;
+                    const title = getInterestDisplayTitle(it);
+                    const record = it as Record<string, unknown>;
+                    const metadata =
+                      record.metadata && typeof record.metadata === "object"
+                        ? (record.metadata as Record<string, unknown>)
+                        : undefined;
+                    const subtitle = String(
+                      record.description ??
+                        metadata?.conference ??
+                        record.email ??
+                        metadata?.phoneNumber ??
+                        "",
+                    );
+                    const status = record.metadata?.status ?? record.status ?? record.state ?? null;
                     return (
                       <Pressable
-                        key={it.id ?? it._id ?? idx}
+                        key={String(record.id ?? record._id ?? idx)}
                         onPress={() => handleInterestPress(it)}
                         android_ripple={{ color: "rgba(255,255,255,0.08)" }}
                         style={styles.resultCard}

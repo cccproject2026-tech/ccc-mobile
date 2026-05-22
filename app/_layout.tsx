@@ -50,7 +50,6 @@ function RootLayoutNav() {
     isAuthenticated &&
     !!user &&
     (user.role === 'pastor' || user.role === 'mentor' || user.role === 'director');
-
   return (
     <Stack
       screenOptions={{

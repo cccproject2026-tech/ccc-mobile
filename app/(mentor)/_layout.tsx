@@ -60,7 +60,6 @@ export default function MentorDrawerLayout() {
                     drawerItemStyle: { display: 'none' },
                 }}
             />
-
             <Drawer.Screen
                 name="profile-setup"
                 options={{

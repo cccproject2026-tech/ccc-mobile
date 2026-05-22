@@ -29,6 +29,7 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }}>
       {/* Roadmap routes - ALL inside shared group */}
+      <Stack.Screen name="search" />
       <Stack.Screen name="roadmap/index" /> {/* Roadmap list */}
       <Stack.Screen name="roadmap/[phaseId]/index" /> {/* Phase details */}
       <Stack.Screen name="roadmap/[phaseId]/[itemId]/index" /> {/* Task details + form */}
