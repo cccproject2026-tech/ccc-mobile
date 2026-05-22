@@ -4,6 +4,7 @@ import WelcomeCard from "@/components/director/WelcomeCard";
 import { PastorFocusBottomSheet, type PastorFocusItem } from "@/components/sheets/PastorFocusBottomSheet";
 import { icons } from "@/constants/images";
 import { useMentorFocusItems } from "@/hooks/mentors/useMentorFocusItems";
+import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -59,6 +60,7 @@ function canMountGoogleMapOnThisPlatform(): boolean {
 export default function MentorDashboardHome() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const userAvatar = useCurrentUserAvatar();
 
   const [greetingPeriod, setGreetingPeriod] = useState<"morning" | "afternoon" | "evening">("morning");
   const [focusSheetSectionId, setFocusSheetSectionId] = useState<string | null>(null);
@@ -211,7 +213,7 @@ export default function MentorDashboardHome() {
               compact
               onClick={() => router.push("/(mentor)/(tabs)/profile")}
               onProgressPress={() => router.push("/(mentor)/(tabs)/progress" as any)}
-              avatar={icons.myProfile}
+              avatar={userAvatar}
               message={`Welcome back, ${mentorName}!`}
               bg="rgba(255,255,255,0.12)"
               borderColor="rgba(255,255,255,0.25)"

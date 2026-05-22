@@ -1,4 +1,5 @@
 import { icons } from "@/constants/images"
+import { getAvatarSource } from "@/utils/avatarSource"
 import { roadmapTheme } from "@/components/ui/design-system"
 import { Mentee } from "@/types/mentee.types"
 import { Ionicons } from "@expo/vector-icons"
@@ -122,11 +123,7 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
             <View style={styles.menuHeader}>
               <View style={styles.menuHeaderContent}>
                 <Image
-                  source={
-                    mentee?.profilePicture
-                      ? { uri: mentee.profilePicture }
-                      : icons.myProfile
-                  }
+                  source={getAvatarSource(mentee)}
                   style={styles.menuAvatar}
                   resizeMode="cover"
                 />

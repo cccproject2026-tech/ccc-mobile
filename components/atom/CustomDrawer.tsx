@@ -10,6 +10,8 @@ import {
     View,
 } from "react-native";
 import { icons } from "../../constants/images";
+import { useAuthStore } from "@/stores/auth.store";
+import { getAvatarSource } from "@/utils/avatarSource";
 import { useDrawerStore } from "./DrawerStore";
 const image = require("@/assets/logos/CCClogo.png");
 
@@ -47,6 +49,10 @@ interface CustomDrawerContentProps {
 }
 
 export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
+  const { user } = useAuthStore();
+  const displayName = user
+    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.email
+    : "Guest";
   const { currentScreen } = useData();
   const { closeDrawer } = useDrawerStore();
 
@@ -314,9 +320,9 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           }}
         >
           <Image
-            source={icons.myProfile} // Replace with actual user profile image URL
-            style={{ width: 50, height: "100%" }}
-            resizeMode="contain"
+            source={getAvatarSource(user)}
+            style={{ width: 50, height: 50, borderRadius: 25 }}
+            resizeMode="cover"
           />
           <Text
             style={{
@@ -326,7 +332,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
               fontWeight: 500,
             }}
           >
-            John Ross
+            {displayName}
           </Text>
         </View>
         <View

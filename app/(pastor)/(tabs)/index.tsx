@@ -11,6 +11,7 @@ import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { Mentor } from "@/hooks/mentors/useMentors";
 import { usePastorFocusItems } from "@/hooks/pastor/usePastorFocusItems";
+import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
 import { useProfile } from "@/hooks/profile/useProfile";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { usePastorNewAssignmentsHome } from "@/hooks/pastor/usePastorNewAssignmentsHome";
@@ -93,6 +94,7 @@ export default function PastorDashboard() {
 
   const { user } = useAuthStore();
 
+  const userAvatar = useCurrentUserAvatar();
   const { data, isLoading, isError, error, progressQuery } = useProfile();
   const { mentors, isEmpty } = useAssignedMentors(user?.id as string);
   const { sections: focusSections, isLoading: isFocusLoading } =
@@ -470,7 +472,7 @@ export default function PastorDashboard() {
               onProgressPress={() =>
                 router.push("/(pastor)/(tabs)/progress" as any)
               }
-              avatar={icons.myProfile}
+              avatar={userAvatar}
               message={
                 isFirstDashboardVisit
                   ? `Welcome aboard, ${displayName}!`

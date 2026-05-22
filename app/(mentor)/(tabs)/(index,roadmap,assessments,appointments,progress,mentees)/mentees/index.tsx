@@ -8,6 +8,7 @@ import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
 import { useMentees } from "@/hooks/mentees/useMentees"
+import { getAvatarSource } from "@/utils/avatarSource"
 import { useAuthStore } from "@/stores"
 import { Mentee } from "@/types/mentee.types"
 import { Feather, Ionicons } from "@expo/vector-icons"
@@ -283,7 +284,7 @@ export default function MyMentees() {
                     }}
                   >
                     <Image
-                      source={icons.myProfile}
+                      source={getAvatarSource(mentee)}
                       style={{
                         width: "100%",
                         height: "100%",

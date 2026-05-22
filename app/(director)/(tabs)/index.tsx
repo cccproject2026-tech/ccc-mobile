@@ -13,7 +13,9 @@ import WelcomeCard from "@/components/director/WelcomeCard";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { appointments, exploreItems, stats } from "@/constants/mockData";
+import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
 import { useInterests } from "@/hooks/interests/useInterests";
+import { useAuthStore } from "@/stores/auth.store";
 import { mapInterestItemToInterest } from "@/utils/interests";
 import { LinearGradient } from "expo-linear-gradient";
 import { Route, useRouter } from "expo-router";
@@ -37,6 +39,8 @@ const HEADER_HEIGHT = 280;
 export default function DirectorDashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user } = useAuthStore();
+  const userAvatar = useCurrentUserAvatar();
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
@@ -122,8 +126,12 @@ export default function DirectorDashboard() {
               </Text>
               <WelcomeCard
                 onClick={handleWelcomRoute}
-                avatar={icons.myProfile}
-                message="David Roe, Welcome !"
+                avatar={userAvatar}
+                message={
+                  user?.firstName
+                    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}, Welcome !`
+                    : "Welcome !"
+                }
               />
             </View>
 

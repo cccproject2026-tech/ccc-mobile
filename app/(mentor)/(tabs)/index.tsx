@@ -15,6 +15,7 @@ import { mentorExploreItems } from "@/constants/mockData";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useMentors } from "@/hooks/mentors/useMentors";
 import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
 import { useAuthStore } from "@/stores/auth.store";
 import { Appointment } from "@/types/appointment.types";
 import { LinearGradient } from "expo-linear-gradient";
@@ -99,8 +100,8 @@ export default function MentorDashboard() {
     return "Good Evening";
   }, [greetingPeriod]);
 
-  // Get current user
   const { user } = useAuthStore();
+  const userAvatar = useCurrentUserAvatar();
 
   // Fetch appointments for mentor
   const {
@@ -243,7 +244,7 @@ export default function MentorDashboard() {
               </Text>
               <WelcomeCard
                 onClick={() => {}}
-                avatar={icons.myProfile}
+                avatar={userAvatar}
                 message={user?.firstName + ", Welcome !"}
               />
             </View>

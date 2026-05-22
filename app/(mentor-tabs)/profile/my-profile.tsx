@@ -9,6 +9,7 @@ import {
   TextInput as TextInputField,
 } from "@/components/build-components";
 import { icons } from "@/constants/images";
+import { getAvatarSource } from "@/utils/avatarSource";
 import { useProfile, useUpdateProfile, useUploadProfilePicture } from "@/hooks/profile/useProfile";
 import { ChurchInfo, UpdateProfileData } from "@/types/profile.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -267,7 +268,11 @@ export default function ProfileScreen() {
           <View className="relative items-center flex-1 py-5">
             <View className="w-[70px] h-[70px] rounded-full justify-center items-center bg-white/12 relative mb-4">
               <Image
-                source={profileImage ? { uri: profileImage } : icons.myProfile}
+                source={
+                  profileImage
+                    ? { uri: profileImage }
+                    : getAvatarSource(profileData?.user)
+                }
                 resizeMode="cover"
                 className="w-[75px] h-[75px] rounded-full"
               />

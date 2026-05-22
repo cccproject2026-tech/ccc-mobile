@@ -6,6 +6,7 @@ import {
 } from "@/components/build-components";
 import TopBar from "@/components/director/TopBar";
 import { icons } from "@/constants/images";
+import { getAvatarSource } from "@/utils/avatarSource";
 import { useProfile, useUpdateProfile, useUploadProfilePicture } from "@/hooks/profile/useProfile";
 import { ChurchInfo, UpdateProfileData } from "@/types/profile.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -340,7 +341,11 @@ export default function ProfileScreen() {
           <CommonCard style={styles.heroCard}>
             <View style={styles.avatarWrap}>
               <Image
-                source={profileImage ? { uri: profileImage } : icons.myProfile}
+                source={
+                  profileImage
+                    ? { uri: profileImage }
+                    : getAvatarSource(profileData?.user)
+                }
                 resizeMode="cover"
                 style={styles.avatarImage}
               />

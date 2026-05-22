@@ -5,6 +5,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { CombinedProfile, Notification, UpdateProfileData } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getNotificationId } from "@/utils/notifications";
+import { syncAuthUserProfile } from "@/utils/syncAuthUserProfile";
 import { useProgress } from "../progress/useProgress";
 
 // Query Keys Factory - centralized management
@@ -194,10 +195,15 @@ export const useUpdateProfile = () => {
         interest: interestRes.status === "fulfilled" ? interestRes.value : null,
       };
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       console.log("✅ Mutation succeeded, invalidating profile queries...");
 
-      // Invalidate all profile-related queries (user and interest)
+      const picture =
+        result?.user?.profilePicture ?? result?.user?.profileImage;
+      if (picture) {
+        await syncAuthUserProfile({ profilePicture: picture });
+      }
+
       await queryClient.invalidateQueries({
         queryKey: profileKeys.all,
       });
@@ -241,7 +247,12 @@ export const useUploadProfilePicture = () => {
     onSuccess: async (updatedUser) => {
       console.log("✅ Profile picture uploaded, invalidating cache...");
 
-      // Invalidate all profile queries to refetch with new picture
+      if (updatedUser?.profilePicture) {
+        await syncAuthUserProfile({
+          profilePicture: updatedUser.profilePicture,
+        });
+      }
+
       await queryClient.invalidateQueries({
         queryKey: profileKeys.all,
       });

@@ -11,6 +11,7 @@ import {
   roadmapTheme,
 } from '@/components/ui/design-system';
 import { icons } from '@/constants/images';
+import { getAvatarSource } from '@/utils/avatarSource';
 import { useProfile, useUpdateProfile, useUploadProfilePicture } from '@/hooks/profile/useProfile';
 import { UpdateProfileData } from '@/types';
 import { ChurchInfo } from '@/types/profile.types';
@@ -359,7 +360,7 @@ export default function ProfileScreen() {
             ? { uri: profileImage }
             : profileData?.user?.profilePicture
               ? { uri: profileData.user.profilePicture }
-              : icons.myProfile
+              : getAvatarSource(profileData?.user)
         }
         style={styles.avatarImage}
       />

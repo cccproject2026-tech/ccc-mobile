@@ -8,6 +8,7 @@ import ScheduleMeetingBottomSheet, { ScheduleMeetingBottomSheetRef } from "@/com
 import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
+import { getAvatarSource } from "@/utils/avatarSource"
 import { useMentees } from "@/hooks/mentees/useMentees"
 import { Mentee } from "@/types/mentee.types"
 import { Feather, Ionicons } from "@expo/vector-icons"
@@ -312,7 +313,7 @@ export default function MyMentees() {
                               }}
                             >
                               <Image
-                                source={icons.myProfile}
+                                source={getAvatarSource(mentee)}
                                 style={{
                                   width: "100%",
                                   height: "100%",

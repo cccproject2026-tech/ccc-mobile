@@ -1,6 +1,7 @@
 import { AssessmentProgress } from '@/constants/mockData';
 import { icons } from '@/constants/images';
 import { useAuthStore } from '@/stores/auth.store';
+import { getAvatarSource } from '@/utils/avatarSource';
 import type { Assessment } from '@/types/assessment.types';
 import React from 'react';
 import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -35,9 +36,7 @@ export const ProgressAssessmentCard: React.FC<Props> = ({ data, onDevelopmentPla
             if (typeof maybeImage === 'object' && (maybeImage as any).uri) return maybeImage;
         }
 
-        // Fallback for API-backed assessments (no image field).
-        if (user?.profilePicture) return { uri: user.profilePicture };
-        return icons.myProfile;
+        return getAvatarSource(user);
     })();
 
     const dateLabel = (() => {
