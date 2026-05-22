@@ -1,384 +1,439 @@
-import { icons } from '@/constants/images';
-import { MenuItem } from '@/constants/mockData';
-import { useAuthStore } from '@/stores';
-import { Ionicons } from '@expo/vector-icons';
-import { DrawerContentComponentProps } from '@react-navigation/drawer';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Image, InteractionManager, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { homeLayout, roadmapTheme } from "@/components/ui/design-system";
+import { Colors } from "@/constants/Colors";
+import { MenuItem } from "@/constants/mockData";
+import { useAuthStore } from "@/stores";
+import { Ionicons } from "@expo/vector-icons";
+import { DrawerContentComponentProps } from "@react-navigation/drawer";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  Alert,
+  Image,
+  InteractionManager,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface CustomDrawerProps extends DrawerContentComponentProps {
-    menuItems: MenuItem[];
-    expandAllByDefault?: boolean;
-    userRole?: 'director' | 'pastor' | 'mentor';
+  menuItems: MenuItem[];
+  expandAllByDefault?: boolean;
+  userRole?: "director" | "pastor" | "mentor";
 }
+
+const BRAND = Colors.appBgGradient[1];
+
 export default function CustomDrawerContent(props: CustomDrawerProps) {
-    const router = useRouter();
-    const { bottom } = useSafeAreaInsets();
-    const { user } = useAuthStore();
-    // ✅ UPDATED: Use auth store directly
-    const { logout } = useAuthStore();
-    const initializeExpandedItems = (items: MenuItem[], expandAll: boolean) => {
-        const result: { [key: string]: boolean } = {};
+  const router = useRouter();
+  const { top, bottom } = useSafeAreaInsets();
+  const { user, logout } = useAuthStore();
 
-        const traverse = (menuItems: MenuItem[]) => {
-            menuItems.forEach(item => {
-                if (item.children && item.children.length > 0) {
-                    result[item.id] = expandAll;
-                    traverse(item.children);
-                }
-            });
-        };
+  const currentUserRole = (user?.role ?? props.userRole ?? "") as string;
 
-        traverse(items);
-        return result;
-    };
-
-    const [expandedItems, setExpandedItems] = useState(() =>
-        initializeExpandedItems(props.menuItems || [], !!props.expandAllByDefault)
-    );
-
-    const toggleExpand = (id: string) => {
-        setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
-    };
-
-    const handleLogoPress = () => {
-        props.navigation.closeDrawer();
-
-        switch (props.userRole) {
-            case 'director':
-                router.push('/(director)/(tabs)');
-                break;
-            case 'pastor':
-                router.push('/(pastor)/(tabs)');
-                break;
-            case 'mentor':
-                router.push('/(mentor)');
-                break;
-            default:
-                router.push('/');
+  const initExpanded = (items: MenuItem[], expandAll: boolean) => {
+    const result: Record<string, boolean> = {};
+    const traverse = (menuItems: MenuItem[]) =>
+      menuItems.forEach((item) => {
+        if (item.children?.length) {
+          result[item.id] = expandAll;
+          traverse(item.children);
         }
-    };
+      });
+    traverse(items);
+    return result;
+  };
 
-    // ✅ SIMPLIFIED: Logout function
-    const handleLogout = async () => {
-        Alert.alert(
-            'Log Out',
-            'Are you sure you want to log out?',
-            [
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Log Out',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            console.log('🔓 Logging out...');
+  const filteredMenuItems = useMemo(() => {
+    const filterItems = (items: MenuItem[]): MenuItem[] =>
+      items.reduce((acc: MenuItem[], item) => {
+        const roles = (item as MenuItem & { roles?: string[] }).roles;
+        const isAllowed =
+          !roles || roles.includes(currentUserRole as "director" | "super admin");
+        if (isAllowed) {
+          const newItem: MenuItem = { ...item };
+          if (item.children?.length) {
+            newItem.children = filterItems(item.children);
+          }
+          if (newItem.children?.length || !item.children?.length) {
+            acc.push(newItem);
+          }
+        }
+        return acc;
+      }, []);
+    return filterItems(props.menuItems ?? []);
+  }, [props.menuItems, currentUserRole]);
 
-                            // Close drawer first
-                            props.navigation.closeDrawer();
+  const [expandedItems, setExpandedItems] = useState(() =>
+    initExpanded(filteredMenuItems, !!props.expandAllByDefault),
+  );
 
-                            // Logout sets state first so root Stack.Protected redirects; then we navigate to ensure we land on index
-                            await logout();
+  const toggleExpand = useCallback(
+    (id: string) => setExpandedItems((prev) => ({ ...prev, [id]: !prev[id] })),
+    [],
+  );
 
-                            console.log('✅ Logged out successfully');
+  const handleLogout = useCallback(() => {
+    Alert.alert("Log Out", "Are you sure you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            props.navigation.closeDrawer();
+            await logout();
+            InteractionManager.runAfterInteractions(() => {
+              router.replace("/");
+            });
+          } catch {
+            Alert.alert("Error", "Failed to log out. Please try again.");
+          }
+        },
+      },
+    ]);
+  }, [props.navigation, logout, router]);
 
-                            // Run after root layout has re-rendered with new auth state so navigation applies correctly
-                            InteractionManager.runAfterInteractions(() => {
-                                router.replace('/');
-                            });
-
-                        } catch (error) {
-                            console.error('❌ Logout failed:', error);
-                            Alert.alert('Error', 'Failed to log out. Please try again.');
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
-    // ✅ UPDATED: Simplified menu item rendering
-    const renderMenuItem = (
-        item: MenuItem,
-        isNested = false,
-        index: number,
-        totalItems: number
-    ) => {
-        const hasChildren = item.children && item.children.length > 0;
-        const isExpanded = expandedItems[item.id];
-        const isLastItem = index === totalItems - 1;
-
-        return (
-            <View key={item.id}>
-                <TouchableOpacity
-                    style={[styles.drawerItem, isNested && styles.nestedItem]}
-                    onPress={() => {
-                        // ✅ Handle logout
-                        if (item.id === 'logout') {
-                            handleLogout();
-                            return;
-                        }
-
-                        // Handle expandable items
-                        if (hasChildren) {
-                            toggleExpand(item.id);
-                            return;
-                        }
-
-                        // Navigate to route
-                        if (item.route) {
-                            props.navigation.closeDrawer();
-                            router.push(item.route as any);
-                        }
-                    }}
-                >
-                    <View style={styles.drawerItemLeft}>
-                        <View style={styles.iconContainer}>
-                            {item.iconType === 'image' ? (
-                                <Image source={item.icon} style={styles.itemIcon} />
-                            ) : (
-                                <Ionicons
-                                    name={item.icon as any}
-                                    size={Platform.OS === 'android' ? 20 : 22}
-                                    color="#0A5A8A"
-                                />
-                            )}
-                        </View>
-                        <Text style={styles.drawerLabel}>{item.label}</Text>
-                        {item.badge !== undefined && item.badge > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>{item.badge}</Text>
-                            </View>
-                        )}
-                    </View>
-                    {item.showChevron && !hasChildren && (
-                        <Ionicons
-                            name="chevron-forward"
-                            size={Platform.OS === 'android' ? 16 : 18}
-                            color="#999"
-                        />
-                    )}
-                    {hasChildren && (
-                        <Ionicons
-                            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                            size={Platform.OS === 'android' ? 18 : 20}
-                            color="#0A5A8A"
-                        />
-                    )}
-                </TouchableOpacity>
-
-                {!isLastItem && <View style={styles.divider} />}
-
-                {hasChildren && isExpanded && (
-                    <>
-                        {item.children?.map((child, childIndex) => (
-                            <View key={child.id}>
-                                {renderMenuItem(child, true, childIndex, item.children!.length)}
-                            </View>
-                        ))}
-                    </>
-                )}
-            </View>
-        );
-    };
+  const renderMenuItem = (
+    item: MenuItem,
+    isNested = false,
+    index: number,
+    total: number,
+  ) => {
+    const hasChildren = (item.children?.length ?? 0) > 0;
+    const expanded = expandedItems[item.id];
+    const isLast = index === total - 1;
+    const isLogout = item.id === "logout";
 
     return (
-        <View style={styles.container}>
-            {/* Header Section */}
-            <View style={styles.header}>
-                <View style={styles.avatarContainer}>
-                    <Image source={icons.myProfile} style={styles.avatar} />
-                </View>
-                <Text style={styles.userName}>
-                    {user ? `${user.firstName} ${user.lastName}` : 'Guest User'}
-                </Text>
-                <TouchableOpacity style={styles.logoButton} onPress={handleLogoPress}>
-                    <Image
-                        source={require('@/assets/logos/CCClogo.png')}
-                        style={styles.logoImage}
-                    />
-                </TouchableOpacity>
-            </View>
+      <View key={item.id}>
+        <TouchableOpacity
+          style={[styles.menuItem, isNested && styles.menuItemNested]}
+          activeOpacity={0.7}
+          onPress={() => {
+            if (isLogout) {
+              handleLogout();
+              return;
+            }
+            if (hasChildren) {
+              toggleExpand(item.id);
+              return;
+            }
+            if (item.route) {
+              props.navigation.closeDrawer();
+              router.push(item.route as any);
+            }
+          }}
+        >
+          <View style={[styles.iconWrap, isLogout && styles.iconWrapLogout]}>
+            {item.iconType === "image" ? (
+              <Image
+                source={item.icon}
+                style={styles.itemIconImage}
+                resizeMode="contain"
+              />
+            ) : (
+              <Ionicons
+                name={item.icon as keyof typeof Ionicons.glyphMap}
+                size={18}
+                color={isLogout ? "#EF4444" : BRAND}
+              />
+            )}
+          </View>
 
-            {/* Drawer Items */}
-            <ScrollView
-                style={styles.drawerItemsContainer}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-            >
-                {props.menuItems && Array.isArray(props.menuItems) ? props.menuItems.map((item, index) =>
-                    renderMenuItem(item, false, index, props.menuItems.length)
-                ) : null}
-            </ScrollView>
+          <Text style={[styles.menuLabel, isLogout && styles.menuLabelLogout]}>
+            {item.label}
+          </Text>
 
-            {/* Footer - Contact Information */}
-            <View style={[styles.footer, {
-                paddingBottom: Math.max(bottom, Platform.OS === 'android' ? 16 : 20),
-            }]}>
-                <Text style={styles.footerTitle}>Contact Information</Text>
-                <View style={styles.contactRow}>
-                    <Ionicons
-                        name="call"
-                        size={Platform.OS === 'android' ? 14 : 16}
-                        color="#FFFFFF"
-                    />
-                    <Text style={styles.contactText}>: 269-471-0159</Text>
-                </View>
-                <View style={styles.contactRow}>
-                    <Ionicons
-                        name="mail"
-                        size={Platform.OS === 'android' ? 14 : 16}
-                        color="#FFFFFF"
-                    />
-                    <Text style={styles.contactText}>: communitychange@andrews.edu</Text>
-                </View>
-                <View style={styles.footerLogo}>
-                    <Image
-                        source={require('@/assets/icons/footerIcon.png')}
-                        style={styles.footerLogoImage}
-                        resizeMode='contain'
-                    />
-                </View>
+          {item.badge != null && item.badge > 0 ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{item.badge}</Text>
             </View>
-        </View>
+          ) : null}
+
+          {hasChildren ? (
+            <Ionicons
+              name={expanded ? "chevron-up" : "chevron-down"}
+              size={16}
+              color="#94A3B8"
+            />
+          ) : item.showChevron ? (
+            <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+          ) : null}
+        </TouchableOpacity>
+
+        {!isLast && <View style={styles.divider} />}
+
+        {hasChildren && expanded
+          ? item.children!.map((child, i) =>
+              renderMenuItem(child, true, i, item.children!.length),
+            )
+          : null}
+      </View>
     );
+  };
+
+  const displayName = user
+    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
+    : "Guest User";
+
+  const roleLabel = props.userRole ?? user?.role ?? "";
+
+  return (
+    <View style={styles.root}>
+      <LinearGradient
+        colors={[...Colors.appBgGradient]}
+        style={[styles.header, { paddingTop: top + 16 }]}
+      >
+        <View style={styles.avatarWrap}>
+          {user?.profilePicture ? (
+            <Image
+              source={{ uri: user.profilePicture }}
+              style={styles.avatarImage}
+            />
+          ) : (
+            <Ionicons
+              name="person-outline"
+              size={26}
+              color={roadmapTheme.accentMint}
+            />
+          )}
+        </View>
+
+        <View style={styles.headerInfo}>
+          <Text style={styles.userName} numberOfLines={1}>
+            {displayName}
+          </Text>
+          {roleLabel ? (
+            <View style={styles.rolePill}>
+              <Text style={styles.roleText}>{roleLabel}</Text>
+            </View>
+          ) : null}
+        </View>
+
+        <TouchableOpacity
+          style={styles.closeBtn}
+          onPress={() => props.navigation.closeDrawer()}
+          hitSlop={8}
+        >
+          <Ionicons name="close" size={20} color={roadmapTheme.textPrimary} />
+        </TouchableOpacity>
+      </LinearGradient>
+
+      <ScrollView
+        style={styles.menuScroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.menuContent}
+      >
+        {filteredMenuItems.map((item, index) =>
+          renderMenuItem(item, false, index, filteredMenuItems.length),
+        )}
+      </ScrollView>
+
+      <LinearGradient
+        colors={[...Colors.appBgGradient]}
+        style={[styles.footer, { paddingBottom: bottom + 12 }]}
+      >
+        <Text style={styles.footerTitle}>Contact Information</Text>
+
+        <View style={styles.contactRow}>
+          <View style={styles.contactIconWrap}>
+            <Ionicons
+              name="call-outline"
+              size={13}
+              color={roadmapTheme.accentMint}
+            />
+          </View>
+          <Text style={styles.contactText}>269-471-0159</Text>
+        </View>
+
+        <View style={styles.contactRow}>
+          <View style={styles.contactIconWrap}>
+            <Ionicons
+              name="mail-outline"
+              size={13}
+              color={roadmapTheme.accentMint}
+            />
+          </View>
+          <Text style={styles.contactText}>communitychange@andrews.edu</Text>
+        </View>
+
+        <View style={styles.footerLogoRow}>
+          <Image
+            source={require("@/assets/icons/footerIcon.png")}
+            style={styles.footerLogo}
+            resizeMode="contain"
+          />
+          <Image
+            source={require("@/assets/logos/CCClogo.png")}
+            style={styles.footerCCCLogo}
+            resizeMode="contain"
+          />
+        </View>
+      </LinearGradient>
+    </View>
+  );
 }
 
-
-
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-    },
-    header: {
-        backgroundColor: '#14517D',
-        paddingTop: Platform.OS === 'android' ? 45 : 50,
-        paddingBottom: Platform.OS === 'android' ? 12 : 16,
-        paddingHorizontal: Platform.OS === 'android' ? 12 : 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    avatarContainer: {
-        marginRight: Platform.OS === 'android' ? 10 : 12,
-    },
-    avatar: {
-        width: Platform.OS === 'android' ? 44 : 50,
-        height: Platform.OS === 'android' ? 44 : 50,
-        borderRadius: Platform.OS === 'android' ? 22 : 25,
-        backgroundColor: '#E5E5E5',
-    },
-    userName: {
-        flex: 1,
-        fontSize: Platform.OS === 'android' ? 16 : 18,
-        fontWeight: '600',
-        color: '#FFFFFF',
-    },
-    logoButton: {
-        width: Platform.OS === 'android' ? 32 : 36,
-        height: Platform.OS === 'android' ? 32 : 36,
-        borderRadius: Platform.OS === 'android' ? 16 : 18,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    logoImage: {
-        width: Platform.OS === 'android' ? 24 : 28,
-        height: Platform.OS === 'android' ? 24 : 28,
-    },
-    drawerItemsContainer: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingVertical: Platform.OS === 'android' ? 6 : 8,
-    },
-    drawerItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: Platform.OS === 'android' ? 12 : 14,
-        paddingHorizontal: Platform.OS === 'android' ? 16 : 20,
-    },
-    nestedItem: {
-        paddingLeft: Platform.OS === 'android' ? 44 : 52,
-    },
-    drawerItemLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    iconContainer: {
-        width: Platform.OS === 'android' ? 28 : 30,
-        height: Platform.OS === 'android' ? 28 : 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    itemIcon: {
-        width: Platform.OS === 'android' ? 22 : 24,
-        height: Platform.OS === 'android' ? 22 : 24,
-        alignSelf: 'center',
-        // borderRadius: Platform.OS === 'android' ? 10 : 5,
-    },
-    drawerLabel: {
-        fontSize: Platform.OS === 'android' ? 14 : 15,
-        marginLeft: Platform.OS === 'android' ? 12 : 14,
-        color: '#0A5A8A',
-        fontWeight: '500',
-        flex: 1,
-    },
-    badge: {
-        backgroundColor: '#0A5A8A',
-        borderRadius: Platform.OS === 'android' ? 10 : 12,
-        minWidth: Platform.OS === 'android' ? 20 : 24,
-        height: Platform.OS === 'android' ? 20 : 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: Platform.OS === 'android' ? 6 : 8,
-        marginLeft: Platform.OS === 'android' ? 6 : 8,
-    },
-    badgeText: {
-        fontSize: Platform.OS === 'android' ? 11 : 12,
-        fontWeight: '700',
-        color: '#FFFFFF',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#E5E5E5',
-        marginHorizontal: Platform.OS === 'android' ? 16 : 20,
-    },
-    footer: {
-        backgroundColor: '#14517D',
-        padding: Platform.OS === 'android' ? 16 : 20,
-        paddingBottom: Platform.OS === 'android' ? 16 : 20,
-    },
-    footerTitle: {
-        fontSize: Platform.OS === 'android' ? 14 : 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
-        marginBottom: Platform.OS === 'android' ? 10 : 12,
-    },
-    contactRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: Platform.OS === 'android' ? 6 : 8,
-    },
-    contactText: {
-        fontSize: Platform.OS === 'android' ? 12 : 13,
-        color: '#FFFFFF',
-        marginLeft: 4,
-    },
-    footerLogo: {
-        alignItems: 'center',
-        marginTop: Platform.OS === 'android' ? 18 : 24,
-        paddingBottom: Platform.OS === 'android' ? 8 : 10,
-    },
-    footerLogoImage: {
-        width: Platform.OS === 'android' ? 26 : 30,
-        height: Platform.OS === 'android' ? 26 : 30,
-        tintColor: '#FFFFFF',
-    },
+  root: { flex: 1, backgroundColor: "#fff" },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: homeLayout.screenPaddingH,
+    paddingBottom: 18,
+    gap: 12,
+  },
+  avatarWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(111,212,190,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(111,212,190,0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    flexShrink: 0,
+  },
+  avatarImage: { width: "100%", height: "100%", borderRadius: 26 },
+  headerInfo: { flex: 1, minWidth: 0, gap: 4 },
+  userName: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: -0.2,
+  },
+  rolePill: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  roleText: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+
+  menuScroll: { flex: 1, backgroundColor: "#fff" },
+  menuContent: { paddingVertical: 6 },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: homeLayout.screenPaddingH,
+    gap: 12,
+  },
+  menuItemNested: {
+    paddingLeft: homeLayout.screenPaddingH + 42,
+  },
+  iconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    backgroundColor: "#EAF3FB",
+    borderWidth: 1,
+    borderColor: "#C8DFF0",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  iconWrapLogout: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+  },
+  itemIconImage: { width: 20, height: 20 },
+  menuLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1A3A5C",
+  },
+  menuLabelLogout: { color: "#EF4444" },
+  badge: {
+    backgroundColor: BRAND,
+    borderRadius: 999,
+    minWidth: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+  },
+  badgeText: { fontSize: 11, fontWeight: "800", color: "#fff" },
+  divider: {
+    height: 1,
+    backgroundColor: "#EEF2F7",
+    marginHorizontal: homeLayout.screenPaddingH,
+  },
+
+  footer: {
+    paddingHorizontal: homeLayout.screenPaddingH,
+    paddingTop: 16,
+  },
+  footerTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.6)",
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+    marginBottom: 10,
+  },
+  contactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  contactIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 7,
+    backgroundColor: "rgba(111,212,190,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(111,212,190,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contactText: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
+    fontWeight: "500",
+    flex: 1,
+  },
+  footerLogoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 14,
+  },
+  footerLogo: {
+    width: 32,
+    height: 32,
+    tintColor: "rgba(255,255,255,0.35)",
+  },
+  footerCCCLogo: {
+    width: 48,
+    height: 28,
+    tintColor: "rgba(255,255,255,0.55)",
+  },
 });

@@ -1,4 +1,4 @@
-﻿import { Button } from "@/components/atom/buttons";
+import { Button } from "@/components/atom/buttons";
 import AssessmentDeletedSuccessModal from "@/components/build-components/AssessmentDeletedSuccessModal";
 import AssessmentMenuBottomSheet from "@/components/build-components/AssessmentMenuBottomSheet";
 import DeleteConfirmationModal from "@/components/build-components/DeleteConfirmationModal";

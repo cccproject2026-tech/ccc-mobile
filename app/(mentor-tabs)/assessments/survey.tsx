@@ -1,4 +1,4 @@
-﻿import { AssessmentCard } from "@/components/build-components";
+import { AssessmentCard } from "@/components/build-components";
 import TopBar from "@/components/director/TopBar";
 import {
   GradientBackground,

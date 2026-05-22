@@ -5,6 +5,7 @@ export { CommonCard } from "./CommonCard";
 export { PrimaryButton } from "./PrimaryButton";
 export { RoadmapNavRow } from "./RoadmapNavRow";
 export { roadmapTheme } from "./roadmapTheme";
+export { homeLayout } from "./homeLayout";
 export { SquircleIconButton } from "./SquircleIconButton";
 export { RoadmapSearchField } from "./RoadmapSearchField";
 export { RoadmapTabStrip } from "./RoadmapTabStrip";

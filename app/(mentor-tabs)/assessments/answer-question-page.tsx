@@ -1,4 +1,4 @@
-﻿import { QuestionFields } from "@/components/build-components";
+import { QuestionFields } from "@/components/build-components";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import AssessmentFlowHeader from "@/components/mentor";
 import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
