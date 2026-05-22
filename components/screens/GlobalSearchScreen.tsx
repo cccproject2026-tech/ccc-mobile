@@ -5,11 +5,16 @@ import { SectionHeader } from "@/components/ui/design-system/SectionHeader";
 import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
 import { useAllRoadmaps, useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import {
+  getAssessmentDisplaySubtitle,
+  getAssessmentDisplayTitle,
   getInterestDisplayTitle,
   getRoadmapDisplaySubtitle,
   getRoadmapDisplayTitle,
+  isSearchAssessmentItem,
   isSearchInterestItem,
   isSearchRoadmapItem,
+  formatSearchStatusLabel,
+  navigateToSearchAssessment,
   navigateToSearchInterest,
   navigateToSearchRoadmap,
 } from "@/lib/search/globalSearchNavigation";
@@ -42,6 +47,7 @@ export default function GlobalSearchScreen() {
   const [loading, setLoading] = useState(false);
   const [roadmaps, setRoadmaps] = useState<any[]>([]);
   const [interests, setInterests] = useState<any[]>([]);
+  const [assessments, setAssessments] = useState<any[]>([]);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const activeRequestRef = useRef<number>(0);
 
@@ -60,6 +66,7 @@ export default function GlobalSearchScreen() {
     if (!query || query.trim().length < 2) {
       setRoadmaps([]);
       setInterests([]);
+      setAssessments([]);
       setLoading(false);
       return;
     }
@@ -78,6 +85,7 @@ export default function GlobalSearchScreen() {
 
           let roadmapsGroup: any[] = [];
           let interestsGroup: any[] = [];
+          let assessmentsGroup: any[] = [];
 
           if (
             payload &&
@@ -90,6 +98,9 @@ export default function GlobalSearchScreen() {
               : [];
             interestsGroup = Array.isArray(payload.results.interests)
               ? payload.results.interests
+              : [];
+            assessmentsGroup = Array.isArray(payload.results.assessments)
+              ? payload.results.assessments
               : [];
           } else {
             let items: any[] = [];
@@ -104,9 +115,15 @@ export default function GlobalSearchScreen() {
             } else {
               const foundRoadmaps = payload.roadmaps ?? payload.roadmap ?? [];
               const foundInterests = payload.interests ?? payload.interest ?? [];
-              if (Array.isArray(foundRoadmaps) || Array.isArray(foundInterests)) {
+              const foundAssessments = payload.assessments ?? payload.assessment ?? [];
+              if (
+                Array.isArray(foundRoadmaps) ||
+                Array.isArray(foundInterests) ||
+                Array.isArray(foundAssessments)
+              ) {
                 if (Array.isArray(foundRoadmaps)) items = items.concat(foundRoadmaps);
                 if (Array.isArray(foundInterests)) items = items.concat(foundInterests);
+                if (Array.isArray(foundAssessments)) items = items.concat(foundAssessments);
               } else if (payload && typeof payload === "object") {
                 items = [payload];
               }
@@ -117,6 +134,8 @@ export default function GlobalSearchScreen() {
             for (const it of items) {
               if (isSearchInterestItem(it)) {
                 interestsGroup.push(it);
+              } else if (isSearchAssessmentItem(it)) {
+                assessmentsGroup.push(it);
               } else if (isSearchRoadmapItem(it)) {
                 roadmapsGroup.push(it);
               } else {
@@ -124,20 +143,26 @@ export default function GlobalSearchScreen() {
               }
             }
 
-            if (interestsGroup.length === 0 && othersGroup.length > 0) {
-              interestsGroup.push(...othersGroup);
+            if (interestsGroup.length === 0 && assessmentsGroup.length === 0 && othersGroup.length > 0) {
+              for (const it of othersGroup) {
+                if (isSearchAssessmentItem(it)) assessmentsGroup.push(it);
+                else if (isSearchRoadmapItem(it)) roadmapsGroup.push(it);
+                else interestsGroup.push(it);
+              }
             }
           }
 
           if (requestId === activeRequestRef.current) {
             setRoadmaps(roadmapsGroup);
             setInterests(interestsGroup);
+            setAssessments(assessmentsGroup);
           }
         } catch (err) {
           console.warn("Search error:", err);
           if (requestId === activeRequestRef.current) {
             setRoadmaps([]);
             setInterests([]);
+            setAssessments([]);
           }
         } finally {
           if (requestId === activeRequestRef.current) {
@@ -158,12 +183,21 @@ export default function GlobalSearchScreen() {
     navigateToSearchRoadmap(router, user?.role, r, roadmapsForNavigation);
   };
 
+  const handleAssessmentPress = (a: unknown) => {
+    navigateToSearchAssessment(router, user?.role, a);
+  };
+
   const handleInterestPress = (it: unknown) => {
     navigateToSearchInterest(router, user?.role, it);
   };
 
   const hasQuery = query.trim().length >= 2;
-  const showEmpty = !loading && roadmaps.length === 0 && interests.length === 0 && hasQuery;
+  const showEmpty =
+    !loading &&
+    roadmaps.length === 0 &&
+    interests.length === 0 &&
+    assessments.length === 0 &&
+    hasQuery;
 
   return (
     <AppGradientBackground>
@@ -173,7 +207,7 @@ export default function GlobalSearchScreen() {
         <View style={styles.container}>
           <SectionHeader
             title="Search"
-            subtitle="Find roadmaps and interests across CCC"
+            subtitle="Find roadmaps, assessments, and interests across CCC"
             showDivider
             variant="compact"
             style={styles.sectionHeader}
@@ -220,7 +254,9 @@ export default function GlobalSearchScreen() {
                     const title = getRoadmapDisplayTitle(r);
                     const subtitle = getRoadmapDisplaySubtitle(r);
                     const record = r as Record<string, unknown>;
-                    const status = record.metadata?.status ?? record.status ?? record.state ?? null;
+                    const statusLabel = formatSearchStatusLabel(
+                      record.metadata?.status ?? record.status ?? record.state,
+                    );
                     return (
                       <Pressable
                         key={String(record.id ?? record._id ?? idx)}
@@ -236,15 +272,59 @@ export default function GlobalSearchScreen() {
                             <Text style={styles.itemTitle} numberOfLines={1}>
                               {title}
                             </Text>
-                            {subtitle ? (
+                            {subtitle.length > 0 ? (
                               <Text style={styles.itemSubtitle} numberOfLines={1}>
                                 {subtitle}
                               </Text>
                             ) : null}
                           </View>
-                          {status ? (
+                          {statusLabel != null ? (
                             <View style={styles.badge}>
-                              <Text style={styles.badgeText}>{String(status)}</Text>
+                              <Text style={styles.badgeText}>{statusLabel}</Text>
+                            </View>
+                          ) : (
+                            <Ionicons name="chevron-forward" size={18} color={roadmapTheme.accentMint} />
+                          )}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+
+
+              {assessments.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>{`Assessments (${assessments.length})`}</Text>
+                  {assessments.map((a, idx) => {
+                    const title = getAssessmentDisplayTitle(a);
+                    const subtitle = getAssessmentDisplaySubtitle(a);
+                    const record = a as Record<string, unknown>;
+                    const statusLabel = formatSearchStatusLabel(record.status ?? record.state);
+                    return (
+                      <Pressable
+                        key={String(record.id ?? record._id ?? idx)}
+                        onPress={() => handleAssessmentPress(a)}
+                        android_ripple={{ color: "rgba(255,255,255,0.08)" }}
+                        style={styles.resultCard}
+                      >
+                        <View style={styles.row}>
+                          <View style={styles.iconCircle}>
+                            <Ionicons name="clipboard-outline" size={18} color={roadmapTheme.accentMint} />
+                          </View>
+                          <View style={styles.textBlock}>
+                            <Text style={styles.itemTitle} numberOfLines={1}>
+                              {title}
+                            </Text>
+                            {subtitle.length > 0 ? (
+                              <Text style={styles.itemSubtitle} numberOfLines={1}>
+                                {subtitle}
+                              </Text>
+                            ) : null}
+                          </View>
+                          {statusLabel != null ? (
+                            <View style={styles.badge}>
+                              <Text style={styles.badgeText}>{statusLabel}</Text>
                             </View>
                           ) : (
                             <Ionicons name="chevron-forward" size={18} color={roadmapTheme.accentMint} />
@@ -273,7 +353,9 @@ export default function GlobalSearchScreen() {
                         metadata?.phoneNumber ??
                         "",
                     );
-                    const status = record.metadata?.status ?? record.status ?? record.state ?? null;
+                    const statusLabel = formatSearchStatusLabel(
+                      record.metadata?.status ?? record.status ?? record.state,
+                    );
                     return (
                       <Pressable
                         key={String(record.id ?? record._id ?? idx)}
@@ -289,15 +371,15 @@ export default function GlobalSearchScreen() {
                             <Text style={styles.itemTitle} numberOfLines={1}>
                               {title}
                             </Text>
-                            {subtitle ? (
+                            {subtitle.length > 0 ? (
                               <Text style={styles.itemSubtitle} numberOfLines={1}>
                                 {subtitle}
                               </Text>
                             ) : null}
                           </View>
-                          {status ? (
+                          {statusLabel != null ? (
                             <View style={styles.badge}>
-                              <Text style={styles.badgeText}>{String(status)}</Text>
+                              <Text style={styles.badgeText}>{statusLabel}</Text>
                             </View>
                           ) : (
                             <Ionicons name="chevron-forward" size={18} color={roadmapTheme.accentMint} />

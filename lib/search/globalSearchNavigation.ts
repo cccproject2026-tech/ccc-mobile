@@ -18,6 +18,7 @@ export function resolveSearchEntityId(item: unknown): string | undefined {
     record.id,
     record.roadmapId,
     record.interestId,
+    record.assessmentId,
     metadata?._id,
     metadata?.id,
     data?._id,
@@ -48,9 +49,32 @@ export function isSearchInterestItem(item: unknown): boolean {
   );
 }
 
-export function isSearchRoadmapItem(item: unknown): boolean {
+export function isSearchAssessmentItem(item: unknown): boolean {
   if (!item || typeof item !== "object") return false;
   if (isSearchInterestItem(item)) return false;
+
+  const it = item as Record<string, unknown>;
+  const lowerKeys = (Object.keys(it).join(" ") || "").toLowerCase();
+  const typeHint = String(it.type ?? it.module ?? it.resource ?? "").toLowerCase();
+  const assessmentType = String(it.assessmentType ?? "").toUpperCase();
+
+  return (
+    typeHint.includes("assessment") ||
+    lowerKeys.includes("assessment") ||
+    assessmentType === "CMA" ||
+    assessmentType === "PMP" ||
+    it.type === "CMA" ||
+    it.type === "PMP" ||
+    Array.isArray(it.sections) ||
+    Array.isArray(it.guidelines) ||
+    Array.isArray(it.preSurvey) ||
+    "preSurvey" in it
+  );
+}
+
+export function isSearchRoadmapItem(item: unknown): boolean {
+  if (!item || typeof item !== "object") return false;
+  if (isSearchInterestItem(item) || isSearchAssessmentItem(item)) return false;
 
   const it = item as Record<string, unknown>;
   const metadata =
@@ -102,6 +126,43 @@ export function getRoadmapDisplaySubtitle(item: unknown): string {
   );
 }
 
+
+function toSearchFieldText(value: unknown): string {
+  if (value == null || value === "") return "";
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) {
+    return value.map(toSearchFieldText).filter(Boolean).join(", ");
+  }
+  if (typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    for (const key of ["label", "name", "text", "status", "title"]) {
+      const part = toSearchFieldText(o[key]);
+      if (part) return part;
+    }
+  }
+  return "";
+}
+
+export function formatSearchStatusLabel(value: unknown): string | null {
+  const label = toSearchFieldText(value);
+  return label.length > 0 ? label : null;
+}
+export function getAssessmentDisplayTitle(item: unknown): string {
+  if (!item || typeof item !== "object") return "Assessment";
+  const it = item as Record<string, unknown>;
+  return String(it.title ?? it.name ?? it.assessmentName ?? "Assessment");
+}
+
+export function getAssessmentDisplaySubtitle(item: unknown): string {
+  if (!item || typeof item !== "object") return "";
+  const it = item as Record<string, unknown>;
+  const typeLabel = toSearchFieldText(it.type ?? it.assessmentType);
+  const description = toSearchFieldText(it.description ?? it.instructions);
+  const parts = [typeLabel, description].filter((p) => p.length > 0);
+  return parts.join(" | ");
+}
+
 export type RoadmapNavTarget = {
   phaseId: string;
   itemId?: string;
@@ -122,7 +183,6 @@ export function findParentPhaseIdForNested(
   return undefined;
 }
 
-/** Same rules as revitalization-roadmaps/index handlePhasePress. */
 export function resolveRoadmapNavigationTarget(
   item: unknown,
   allRoadmaps?: Roadmap[],
@@ -188,7 +248,6 @@ export function navigateToSearchRoadmap(
   }
 
   if (normalizedRole === "pastor") {
-    // Relative paths — same as pastor roadmap/index (search lives in shared stack)
     if (itemId) {
       router.push(`/roadmap/${phaseId}/${itemId}` as never);
     } else {
@@ -209,6 +268,55 @@ export function navigateToSearchRoadmap(
   console.warn("[search] unsupported role for roadmap navigation:", role);
 }
 
+export function navigateToSearchAssessment(
+  router: Router,
+  role: string | undefined,
+  item: unknown,
+): void {
+  const assessmentId = resolveSearchEntityId(item);
+  if (!assessmentId) {
+    console.warn("[search] assessment result missing id", item);
+    return;
+  }
+
+  const record = (item ?? {}) as Record<string, unknown>;
+  const normalizedRole = String(role ?? "").toLowerCase();
+  const assessmentType = String(record.type ?? record.assessmentType ?? "").toUpperCase();
+
+  if (normalizedRole === "pastor") {
+    router.push({
+      pathname: "/assessments/survey-guidelines",
+      params: { assessmentId },
+    } as never);
+    return;
+  }
+
+  if (normalizedRole === "mentor") {
+    if (assessmentType === "CMA") {
+      router.push({
+        pathname: "/(mentor)/assessments/cma-survey-page",
+        params: { assessmentId },
+      } as never);
+    } else {
+      router.push({
+        pathname: "/(mentor)/assessments/(pmp)/pmp-survey-page",
+        params: { assessmentId },
+      } as never);
+    }
+    return;
+  }
+
+  if (normalizedRole === "director") {
+    router.push({
+      pathname: "/(director)/(tabs)/assessments/assign-mentee",
+      params: { assessmentId },
+    } as never);
+    return;
+  }
+
+  console.warn("[search] unsupported role for assessment navigation:", role);
+}
+
 export function navigateToSearchInterest(
   router: Router,
   role: string | undefined,
@@ -226,9 +334,10 @@ export function navigateToSearchInterest(
     return;
   }
 
-  router.push(
-    `/(director)/(tabs)/new-interests/interest-details?interestId=${encodeURIComponent(interestId)}` as never,
-  );
+  router.push({
+    pathname: "/(director)/(tabs)/new-interests/interest-details",
+    params: { interestId },
+  } as never);
 }
 
 export function getGlobalSearchRoute(role: string | undefined): string {
