@@ -270,6 +270,19 @@ export function isPastorPhaseInFocus(roadmap: Roadmap): boolean {
     return getPastorPhaseSortGroup(roadmap) === 0;
 }
 
+/** Assigned phases the pastor has not started yet (0% progress, no active tasks). */
+export function isPastorPhaseNewlyAssigned(roadmap: Roadmap): boolean {
+    return getPastorPhaseSortGroup(roadmap) === 1;
+}
+
+/** Prioritize newly assigned phases, then in-progress, then completed. */
+export function comparePastorPhasesForHome(a: Roadmap, b: Roadmap): number {
+    const aNew = isPastorPhaseNewlyAssigned(a) ? 0 : 1;
+    const bNew = isPastorPhaseNewlyAssigned(b) ? 0 : 1;
+    if (aNew !== bNew) return aNew - bNew;
+    return comparePastorPhasesForFocus(a, b);
+}
+
 function toEpochMsForSort(dateString?: string): number {
     if (!dateString) return 0;
     const parsed = Date.parse(dateString);

@@ -6,12 +6,19 @@ import {
   PastorFocusItem,
 } from "@/components/sheets/PastorFocusBottomSheet";
 import { icons } from "@/constants/images";
+import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { Mentor } from "@/hooks/mentors/useMentors";
 import { usePastorFocusItems } from "@/hooks/pastor/usePastorFocusItems";
 import { useProfile } from "@/hooks/profile/useProfile";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { isNewlyAssignedAssessment } from "@/lib/pastor/newAssignments";
+import {
+  comparePastorPhasesForHome,
+  getNextIncompleteNestedTaskId,
+  isPastorPhaseNewlyAssigned,
+} from "@/lib/roadmap/helpers";
 import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores";
 import { AppointmentPlatform } from "@/types/appointment.types";
@@ -144,6 +151,24 @@ export default function PastorDashboard() {
 
   const { data: roadmaps, isLoading: isRoadmapsLoading } =
     useRoadmaps("pastor");
+  const { data: assessments = [] } = useAssignedAssessments(user?.id);
+
+  const newlyAssignedRoadmaps = useMemo(
+    () =>
+      (roadmaps ?? [])
+        .filter(isPastorPhaseNewlyAssigned)
+        .sort(comparePastorPhasesForHome)
+        .slice(0, 2),
+    [roadmaps],
+  );
+
+  const newlyAssignedAssessments = useMemo(
+    () => assessments.filter(isNewlyAssignedAssessment).slice(0, 2),
+    [assessments],
+  );
+
+  const hasNewAssignments =
+    newlyAssignedRoadmaps.length > 0 || newlyAssignedAssessments.length > 0;
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
@@ -302,16 +327,16 @@ export default function PastorDashboard() {
       },
       {
         icon: "layers-outline" as const,
-        line1: "In Progress",
-        line2: "Roadmaps",
+        line1: "Roadmap",
+        line2: "Phases",
         sheetTitle: "Roadmap Phases",
         sectionId: "roadmaps",
       },
       {
         icon: "document-text-outline" as const,
-        line1: "In Progress",
+        line1: "Your",
         line2: "Assessments",
-        sheetTitle: "In Progress Assessments",
+        sheetTitle: "Assessments",
         sectionId: "assessments",
       },
       {
@@ -362,6 +387,36 @@ export default function PastorDashboard() {
       router.push("/(pastor)/(tabs)/appointments" as any);
     }, 220);
   }, [router]);
+
+  const handleOpenNewRoadmap = useCallback(
+    (roadmap: { _id?: string; id?: string; roadmaps?: { _id?: string; id?: string }[] }) => {
+      const roadmapId = roadmap?._id ?? roadmap?.id;
+      if (!roadmapId) return;
+      const nextTaskId = getNextIncompleteNestedTaskId(roadmap as any);
+      if (nextTaskId) {
+        router.push(`/roadmap/${roadmapId}/${nextTaskId}` as any);
+        return;
+      }
+      const nested = Array.isArray(roadmap?.roadmaps) ? roadmap.roadmaps : [];
+      const firstNestedId = nested?.[0]?._id ?? nested?.[0]?.id;
+      if (nested.length === 1 && firstNestedId) {
+        router.push(`/roadmap/${roadmapId}/${firstNestedId}` as any);
+        return;
+      }
+      router.push(`/roadmap/${roadmapId}` as any);
+    },
+    [router],
+  );
+
+  const handleOpenNewAssessment = useCallback(
+    (assessmentId: string) => {
+      router.push({
+        pathname: "/assessments/survey-guidelines",
+        params: { assessmentId },
+      } as any);
+    },
+    [router],
+  );
 
   // ─── Loading / Error states ───────────────────────────────────────────────
   if (isLoading) {
@@ -446,7 +501,7 @@ export default function PastorDashboard() {
           </HeaderHero>
 
           <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.scrollBodyStack}>
-          {!showProgressInWelcome && (
+          {!showProgressInWelcome && !hasNewAssignments && (
             <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.infoCard}>
               <View style={styles.infoCardRow}>
                 <LinearGradient
@@ -462,6 +517,63 @@ export default function PastorDashboard() {
                   </Text>
                 </View>
               </View>
+            </Animated.View>
+          )}
+
+          {hasNewAssignments && (
+            <Animated.View entering={FadeInUp.delay(175).springify()} style={styles.newAssignmentCard}>
+              <LinearGradient
+                colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0.06)"]}
+                style={styles.newAssignmentGradient}
+              >
+                <View style={styles.newAssignmentHeader}>
+                  <View style={styles.newAssignmentIconWrap}>
+                    <Ionicons name="sparkles-outline" size={20} color="#FBBF24" />
+                  </View>
+                  <Text style={styles.newAssignmentTitle}>New assignments</Text>
+                </View>
+                <Text style={styles.newAssignmentMessage}>
+                  You have new items to review. Tap below to get started.
+                </Text>
+                {newlyAssignedRoadmaps.map((roadmap) => (
+                  <TouchableOpacity
+                    key={roadmap._id}
+                    activeOpacity={0.85}
+                    style={styles.newAssignmentRow}
+                    onPress={() => handleOpenNewRoadmap(roadmap)}
+                  >
+                    <View style={styles.newAssignmentRowIcon}>
+                      <Ionicons name="layers-outline" size={16} color="#FFB347" />
+                    </View>
+                    <View style={styles.newAssignmentRowText}>
+                      <Text style={styles.newAssignmentRowLabel}>Roadmap</Text>
+                      <Text style={styles.newAssignmentRowName} numberOfLines={1}>
+                        {roadmap.name || "Roadmap phase"}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+                  </TouchableOpacity>
+                ))}
+                {newlyAssignedAssessments.map((assessment) => (
+                  <TouchableOpacity
+                    key={assessment.id}
+                    activeOpacity={0.85}
+                    style={styles.newAssignmentRow}
+                    onPress={() => handleOpenNewAssessment(assessment.id)}
+                  >
+                    <View style={styles.newAssignmentRowIcon}>
+                      <Ionicons name="document-text-outline" size={16} color="#A78BFA" />
+                    </View>
+                    <View style={styles.newAssignmentRowText}>
+                      <Text style={styles.newAssignmentRowLabel}>Assessment</Text>
+                      <Text style={styles.newAssignmentRowName} numberOfLines={1}>
+                        {assessment.title}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+                  </TouchableOpacity>
+                ))}
+              </LinearGradient>
             </Animated.View>
           )}
 
@@ -932,6 +1044,78 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.68)",
     fontSize: 12,
     lineHeight: 18,
+  },
+
+  newAssignmentCard: {
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  newAssignmentGradient: {
+    padding: 12,
+    gap: 8,
+  },
+  newAssignmentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  newAssignmentIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(251, 191, 36, 0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(251, 191, 36, 0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newAssignmentTitle: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  newAssignmentMessage: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  newAssignmentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  newAssignmentRowIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newAssignmentRowText: {
+    flex: 1,
+    gap: 2,
+  },
+  newAssignmentRowLabel: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  newAssignmentRowName: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
   },
 
   // ── Generic card styles ───────────────────────────────────────────────────
