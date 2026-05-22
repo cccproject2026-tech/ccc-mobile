@@ -1,20 +1,22 @@
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import TopBar from "@/components/director/TopBar";
+import { RoadmapSearchField } from "@/components/ui/design-system/RoadmapSearchField";
+import { SectionHeader } from "@/components/ui/design-system/SectionHeader";
+import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
+import { apiClient } from "@/services/api/client";
+import { useAuthStore } from "@/stores/auth.store";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Platform,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  TextInput,
-  View,
-  ScrollView,
-  Text,
   ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import TopBar from "@/components/director/TopBar";
-import { useRouter } from "expo-router";
-import { useAuthStore } from "@/stores/auth.store";
-import { apiClient } from "@/services/api/client";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -29,14 +31,10 @@ export default function SearchScreen() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      // Redirect unauthenticated users to home
       router.replace("/");
     }
   }, [isAuthenticated, router]);
 
-  const clear = () => setQuery("");
-
-  // Debounced search effect
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -56,14 +54,12 @@ export default function SearchScreen() {
       const run = async () => {
         setLoading(true);
         try {
-          // Include both common query param names to be compatible with different backends
           const resp = await apiClient.get("/search/global", {
             params: { query: query.trim(), q: query.trim() },
           });
 
           const payload = resp?.data?.data ?? resp?.data ?? {};
 
-          // If backend returns grouped results object (common shape: data.results.{roadmaps,interests})
           let roadmapsGroup: any[] = [];
           let interestsGroup: any[] = [];
 
@@ -71,7 +67,6 @@ export default function SearchScreen() {
             roadmapsGroup = Array.isArray(payload.results.roadmaps) ? payload.results.roadmaps : [];
             interestsGroup = Array.isArray(payload.results.interests) ? payload.results.interests : [];
           } else {
-            // Normalize possible shapes into a flat array of items
             let items: any[] = [];
             if (Array.isArray(payload)) {
               items = payload;
@@ -82,21 +77,16 @@ export default function SearchScreen() {
             } else if (Array.isArray(payload.data)) {
               items = payload.data;
             } else {
-              // Fallback: look for explicit roadmaps/interests keys
               const foundRoadmaps = payload.roadmaps ?? payload.roadmap ?? [];
               const foundInterests = payload.interests ?? payload.interest ?? [];
               if (Array.isArray(foundRoadmaps) || Array.isArray(foundInterests)) {
                 if (Array.isArray(foundRoadmaps)) items = items.concat(foundRoadmaps);
                 if (Array.isArray(foundInterests)) items = items.concat(foundInterests);
-              } else {
-                // If payload has top-level properties that look like a single item, include it
-                if (payload && typeof payload === "object") {
-                  items = [payload];
-                }
+              } else if (payload && typeof payload === "object") {
+                items = [payload];
               }
             }
 
-            // Group items into roadmaps and interests using heuristics
             const othersGroup: any[] = [];
 
             for (const it of items) {
@@ -130,7 +120,6 @@ export default function SearchScreen() {
               }
             }
 
-            // If we found others but no interests, append them to interests to avoid empty UI
             if (interestsGroup.length === 0 && othersGroup.length > 0) {
               interestsGroup.push(...othersGroup);
             }
@@ -165,7 +154,6 @@ export default function SearchScreen() {
     const roadmapId = r._id ?? r.id;
     if (!roadmapId) return;
 
-    // If roadmap has a single nested roadmap (task), navigate directly to the task
     const nested = Array.isArray(r.roadmaps) && r.roadmaps.length === 1 ? r.roadmaps[0] : null;
     const nestedId = nested ? nested._id ?? nested.id : null;
 
@@ -180,267 +168,277 @@ export default function SearchScreen() {
     const interestId = it._id ?? it.id;
     if (!interestId) return;
     router.push({
-      pathname: '/(director)/(tabs)/new-interests/interest-details',
+      pathname: "/(director)/(tabs)/new-interests/interest-details",
       params: { interestId },
     } as any);
   };
 
+  const hasQuery = query.trim().length >= 2;
+  const showEmpty = !loading && roadmaps.length === 0 && interests.length === 0 && hasQuery;
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <TopBar showBackButton={true} showDrawer={false} showSearch={false} />
-      <View style={styles.container}>
-        <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
-            <Ionicons name="search" size={Platform.OS === "android" ? 18 : 20} color="rgba(255,255,255,0.6)" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search CCC"
-              placeholderTextColor="rgba(255,255,255,0.7)"
-              value={query}
-              onChangeText={setQuery}
-              returnKeyType="search"
-            />
-            {query.length > 0 && (
-              <Pressable onPress={clear} hitSlop={8} style={styles.clearButton}>
-                <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.9)" />
-              </Pressable>
+    <AppGradientBackground>
+      <SafeAreaView style={styles.safe} edges={["bottom"]}>
+        <TopBar showBackButton showDrawer={false} showSearch={false} />
+
+        <View style={styles.container}>
+          <SectionHeader
+            title="Search"
+            subtitle="Find roadmaps and interests across CCC"
+            showDivider
+            variant="compact"
+            style={styles.sectionHeader}
+          />
+
+          <RoadmapSearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search CCC"
+          />
+
+          <View style={styles.resultsArea}>
+            {loading && (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator size="small" color={roadmapTheme.accentMint} />
+                <Text style={styles.loadingText}>Searching...</Text>
+              </View>
             )}
+
+            {!loading && !hasQuery && (
+              <View style={styles.hintState}>
+                <Ionicons name="search-outline" size={48} color="rgba(255,255,255,0.25)" />
+                <Text style={styles.hintText}>Type at least 2 characters to search</Text>
+              </View>
+            )}
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.resultsContainer}
+              keyboardShouldPersistTaps="handled"
+            >
+              {showEmpty && (
+                <View style={styles.emptyState}>
+                  <Ionicons name="document-text-outline" size={48} color="rgba(255,255,255,0.3)" />
+                  <Text style={styles.emptyText}>No results found</Text>
+                  <Text style={styles.emptySubtext}>Try a different keyword</Text>
+                </View>
+              )}
+
+              {roadmaps.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>{`Roadmaps (${roadmaps.length})`}</Text>
+                  {roadmaps.map((r, idx) => {
+                    const title = r.title ?? r.name ?? "Untitled Roadmap";
+                    const subtitle =
+                      r.description ??
+                      r.metadata?.roadMapDetails ??
+                      r.metadata?.roadmapDetails ??
+                      "";
+                    const status = r.metadata?.status ?? r.status ?? r.state ?? null;
+                    return (
+                      <Pressable
+                        key={r.id ?? r._id ?? idx}
+                        onPress={() => handleRoadmapPress(r)}
+                        android_ripple={{ color: "rgba(255,255,255,0.08)" }}
+                        style={styles.resultCard}
+                      >
+                        <View style={styles.row}>
+                          <View style={styles.iconCircle}>
+                            <Ionicons name="book-outline" size={18} color={roadmapTheme.accentMint} />
+                          </View>
+                          <View style={styles.textBlock}>
+                            <Text style={styles.itemTitle} numberOfLines={1}>
+                              {title}
+                            </Text>
+                            {subtitle ? (
+                              <Text style={styles.itemSubtitle} numberOfLines={1}>
+                                {subtitle}
+                              </Text>
+                            ) : null}
+                          </View>
+                          {status ? (
+                            <View style={styles.badge}>
+                              <Text style={styles.badgeText}>{String(status)}</Text>
+                            </View>
+                          ) : (
+                            <Ionicons name="chevron-forward" size={18} color={roadmapTheme.accentMint} />
+                          )}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+
+              {interests.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>{`Interests (${interests.length})`}</Text>
+                  {interests.map((it, idx) => {
+                    const title = it.title ?? it.name ?? "Interest";
+                    const subtitle =
+                      it.description ??
+                      it.metadata?.conference ??
+                      it.email ??
+                      it.metadata?.phoneNumber ??
+                      "";
+                    const status = it.metadata?.status ?? it.status ?? it.state ?? null;
+                    return (
+                      <Pressable
+                        key={it.id ?? it._id ?? idx}
+                        onPress={() => handleInterestPress(it)}
+                        android_ripple={{ color: "rgba(255,255,255,0.08)" }}
+                        style={styles.resultCard}
+                      >
+                        <View style={styles.row}>
+                          <View style={styles.iconCircle}>
+                            <Ionicons name="person-outline" size={18} color={roadmapTheme.accentGold} />
+                          </View>
+                          <View style={styles.textBlock}>
+                            <Text style={styles.itemTitle} numberOfLines={1}>
+                              {title}
+                            </Text>
+                            {subtitle ? (
+                              <Text style={styles.itemSubtitle} numberOfLines={1}>
+                                {subtitle}
+                              </Text>
+                            ) : null}
+                          </View>
+                          {status ? (
+                            <View style={styles.badge}>
+                              <Text style={styles.badgeText}>{String(status)}</Text>
+                            </View>
+                          ) : (
+                            <Ionicons name="chevron-forward" size={18} color={roadmapTheme.accentMint} />
+                          )}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+            </ScrollView>
           </View>
         </View>
-
-        <View style={styles.emptyArea}>
-          {loading && (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator size="small" color="#fff" />
-              <Text style={styles.loadingText}>Searching...</Text>
-            </View>
-          )}
-
-          <ScrollView contentContainerStyle={styles.resultsContainer}>
-            {!loading && roadmaps.length === 0 && interests.length === 0 && query.trim().length >= 2 ? (
-              <View style={styles.noResults}>
-                <Text style={styles.noResultsText}>No results found. Try a different keyword.</Text>
-              </View>
-            ) : null}
-
-            {roadmaps.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{`Roadmaps (${roadmaps.length})`}</Text>
-                {roadmaps.map((r, idx) => {
-                  const title = r.title ?? r.name ?? "Untitled Roadmap";
-                  const subtitle =
-                    r.description ??
-                    r.metadata?.roadMapDetails ??
-                    r.metadata?.roadMapDetails ??
-                    r.metadata?.roadmapDetails ??
-                    "";
-                  const status = r.metadata?.status ?? r.status ?? r.state ?? null;
-                  return (
-                    <Pressable
-                      key={r.id ?? r._id ?? idx}
-                      onPress={() => handleRoadmapPress(r)}
-                      android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
-                      style={[styles.item, styles.card]}
-                      hitSlop={8}
-                    >
-                      <View style={styles.row}>
-                        <View style={styles.iconCircle}>
-                          <Ionicons name="book-outline" size={18} color="#EAF7FF" />
-                        </View>
-                        <View style={styles.textBlock}>
-                          <Text style={styles.itemTitleBold} numberOfLines={1}>
-                            {title}
-                          </Text>
-                          {subtitle ? (
-                            <Text style={styles.itemSubtitle} numberOfLines={1}>
-                              {subtitle}
-                            </Text>
-                          ) : null}
-                        </View>
-
-                        {status ? (
-                          <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{String(status)}</Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
-
-            {interests.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{`Interests (${interests.length})`}</Text>
-                {interests.map((it, idx) => {
-                  const title = it.title ?? it.name ?? "Interest";
-                  const subtitle =
-                    it.description ??
-                    it.metadata?.conference ??
-                    it.email ??
-                    it.metadata?.phoneNumber ??
-                    "";
-                  const status = it.metadata?.status ?? it.status ?? it.state ?? null;
-                  return (
-                    <Pressable
-                      key={it.id ?? it._id ?? idx}
-                      onPress={() => handleInterestPress(it)}
-                      android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
-                      style={[styles.item, styles.card]}
-                      hitSlop={8}
-                    >
-                      <View style={styles.row}>
-                        <View style={styles.iconCircle}>
-                          <Ionicons name="person-outline" size={18} color="#EAF7FF" />
-                        </View>
-                        <View style={styles.textBlock}>
-                          <Text style={styles.itemTitleBold} numberOfLines={1}>
-                            {title}
-                          </Text>
-                          {subtitle ? (
-                            <Text style={styles.itemSubtitle} numberOfLines={1}>
-                              {subtitle}
-                            </Text>
-                          ) : null}
-                        </View>
-
-                        {status ? (
-                          <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{String(status)}</Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
-          </ScrollView>
-        </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </AppGradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#0B2540",
   },
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 4,
+    gap: 14,
   },
-  searchRow: {
-    marginBottom: 16,
+  sectionHeader: {
+    marginBottom: 0,
   },
-  searchBox: {
-    backgroundColor: "#14517D",
-    borderRadius: Platform.OS === "android" ? 8 : 10,
-    height: Platform.OS === "android" ? 44 : 50,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Platform.OS === "android" ? 12 : 14,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-  },
-  searchInput: {
-    flex: 1,
-    color: "white",
-    fontSize: Platform.OS === "android" ? 14 : 16,
-    fontWeight: "400",
-    marginLeft: 10,
-  },
-  clearButton: {
-    marginLeft: 8,
-  },
-  emptyArea: {
+  resultsArea: {
     flex: 1,
   },
   loadingRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 8,
+    gap: 8,
   },
   loadingText: {
-    color: "rgba(255,255,255,0.9)",
-    marginLeft: 8,
+    color: roadmapTheme.textMuted,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  hintState: {
+    alignItems: "center",
+    paddingVertical: 32,
+    gap: 12,
+  },
+  hintText: {
+    color: roadmapTheme.textSubtle,
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
   resultsContainer: {
     paddingBottom: 32,
+    flexGrow: 1,
   },
   section: {
-    marginTop: 12,
+    marginTop: 8,
+    gap: 8,
   },
   sectionTitle: {
-    color: "white",
-    fontWeight: "600",
-    marginBottom: 8,
+    color: roadmapTheme.textPrimary,
+    fontWeight: "700",
+    fontSize: 15,
+    letterSpacing: -0.2,
   },
-  item: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.04)",
-  },
-  itemTitle: {
-    color: "white",
-  },
-  noResults: {
-    paddingVertical: 20,
-    alignItems: "center",
-  },
-  noResultsText: {
-    color: "rgba(255,255,255,0.8)",
-  },
-  // New styles for improved result UI
-  card: {
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 10,
-    marginBottom: 10,
+  resultCard: {
+    backgroundColor: roadmapTheme.frostedSurface,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
+    borderRadius: 14,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
   },
   iconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(26,91,119,0.6)",
+    borderRadius: 12,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorder,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
   },
   textBlock: {
     flex: 1,
     minWidth: 0,
   },
-  itemTitleBold: {
-    color: "white",
+  itemTitle: {
+    color: roadmapTheme.textPrimary,
     fontWeight: "700",
-    fontSize: Platform.OS === "android" ? 14 : 16,
+    fontSize: 15,
   },
   itemSubtitle: {
-    color: "rgba(255,255,255,0.7)",
+    color: roadmapTheme.textMuted,
     marginTop: 2,
-    fontSize: Platform.OS === "android" ? 12 : 13,
+    fontSize: 13,
+    fontWeight: "500",
   },
   badge: {
-    marginLeft: 8,
-    backgroundColor: "#F7E35F",
+    backgroundColor: roadmapTheme.accentGold,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: "flex-start",
+    borderRadius: 999,
+    maxWidth: 100,
   },
   badgeText: {
-    color: "#1D1D1D",
+    color: roadmapTheme.tealDeep,
     fontWeight: "700",
-    fontSize: 12,
+    fontSize: 11,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 40,
+    gap: 8,
+  },
+  emptyText: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  emptySubtext: {
+    color: roadmapTheme.textMuted,
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
-
