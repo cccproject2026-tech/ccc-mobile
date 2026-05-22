@@ -13,12 +13,8 @@ import { Mentor } from "@/hooks/mentors/useMentors";
 import { usePastorFocusItems } from "@/hooks/pastor/usePastorFocusItems";
 import { useProfile } from "@/hooks/profile/useProfile";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
-import { isNewlyAssignedAssessment } from "@/lib/pastor/newAssignments";
-import {
-  comparePastorPhasesForHome,
-  getNextIncompleteNestedTaskId,
-  isPastorPhaseNewlyAssigned,
-} from "@/lib/roadmap/helpers";
+import { usePastorNewAssignmentsHome } from "@/hooks/pastor/usePastorNewAssignmentsHome";
+import { getNextIncompleteNestedTaskId } from "@/lib/roadmap/helpers";
 import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores";
 import { AppointmentPlatform } from "@/types/appointment.types";
@@ -153,22 +149,8 @@ export default function PastorDashboard() {
     useRoadmaps("pastor");
   const { data: assessments = [] } = useAssignedAssessments(user?.id);
 
-  const newlyAssignedRoadmaps = useMemo(
-    () =>
-      (roadmaps ?? [])
-        .filter(isPastorPhaseNewlyAssigned)
-        .sort(comparePastorPhasesForHome)
-        .slice(0, 2),
-    [roadmaps],
-  );
-
-  const newlyAssignedAssessments = useMemo(
-    () => assessments.filter(isNewlyAssignedAssessment).slice(0, 2),
-    [assessments],
-  );
-
-  const hasNewAssignments =
-    newlyAssignedRoadmaps.length > 0 || newlyAssignedAssessments.length > 0;
+  const { visibleItems: newAssignmentItems, hasNewAssignments } =
+    usePastorNewAssignmentsHome(user?.id, roadmaps, assessments);
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
@@ -533,41 +515,42 @@ export default function PastorDashboard() {
                   <Text style={styles.newAssignmentTitle}>New assignments</Text>
                 </View>
                 <Text style={styles.newAssignmentMessage}>
-                  You have new items to review. Tap below to get started.
+                  Sorted by assignment date. This section hides from home 24 hours
+                  after you first see it here.
                 </Text>
-                {newlyAssignedRoadmaps.map((roadmap) => (
+                {newAssignmentItems.map((item) => (
                   <TouchableOpacity
-                    key={roadmap._id}
+                    key={`${item.kind}-${item.id}`}
                     activeOpacity={0.85}
                     style={styles.newAssignmentRow}
-                    onPress={() => handleOpenNewRoadmap(roadmap)}
+                    onPress={() => {
+                      if (item.kind === "roadmap" && item.roadmap) {
+                        handleOpenNewRoadmap(item.roadmap);
+                        return;
+                      }
+                      if (item.kind === "assessment") {
+                        handleOpenNewAssessment(item.id);
+                      }
+                    }}
                   >
                     <View style={styles.newAssignmentRowIcon}>
-                      <Ionicons name="layers-outline" size={16} color="#FFB347" />
+                      <Ionicons
+                        name={
+                          item.kind === "roadmap"
+                            ? "layers-outline"
+                            : "document-text-outline"
+                        }
+                        size={16}
+                        color={item.kind === "roadmap" ? "#FFB347" : "#A78BFA"}
+                      />
                     </View>
                     <View style={styles.newAssignmentRowText}>
-                      <Text style={styles.newAssignmentRowLabel}>Roadmap</Text>
-                      <Text style={styles.newAssignmentRowName} numberOfLines={1}>
-                        {roadmap.name || "Roadmap phase"}
+                      <Text style={styles.newAssignmentRowLabel}>
+                        {item.kind === "roadmap" ? "Roadmap" : "Assessment"}
+                        {item.assignedLabel ? ` • ${item.assignedLabel}` : ""}
                       </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
-                  </TouchableOpacity>
-                ))}
-                {newlyAssignedAssessments.map((assessment) => (
-                  <TouchableOpacity
-                    key={assessment.id}
-                    activeOpacity={0.85}
-                    style={styles.newAssignmentRow}
-                    onPress={() => handleOpenNewAssessment(assessment.id)}
-                  >
-                    <View style={styles.newAssignmentRowIcon}>
-                      <Ionicons name="document-text-outline" size={16} color="#A78BFA" />
-                    </View>
-                    <View style={styles.newAssignmentRowText}>
-                      <Text style={styles.newAssignmentRowLabel}>Assessment</Text>
                       <Text style={styles.newAssignmentRowName} numberOfLines={1}>
-                        {assessment.title}
+                        {item.title}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
@@ -1109,8 +1092,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.55)",
     fontSize: 10,
     fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.2,
   },
   newAssignmentRowName: {
     color: "#fff",

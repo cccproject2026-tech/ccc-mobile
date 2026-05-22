@@ -5,6 +5,9 @@ export interface Assessment {
     title: string;
     description: string;
     status: 'Due' | 'Not Started' | 'Submitted' | 'Completed';
+    /** When this user was assigned the assessment (from API assignments). */
+    assignedAt?: string;
+    updatedAt?: string;
     dueDate?: string;
     completionDate?: string;
     meetingDate?: string;

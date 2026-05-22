@@ -8,6 +8,8 @@ import { useAssessments } from "./useAssessments";
  * Hook to get only assessments assigned to the current user with progress status
  */
 export const useAssignedAssessments = (userId?: string) => {
+  const targetUserId = userId;
+
   // Fetch all assessments
   const {
     data: allAssessments,
@@ -63,20 +65,28 @@ export const useAssignedAssessments = (userId?: string) => {
     return filtered.map((apiAssessment) => {
       const frontendAssessment = mapApiToFrontend(apiAssessment);
       const progress = progressMap.get(apiAssessment._id);
+      const userAssignment = targetUserId
+        ? apiAssessment.assignments?.find((a) => a.userId === targetUserId)
+        : apiAssessment.assignments?.[0];
+      const assignedAt = userAssignment?.assignedAt;
+      const withDates = {
+        ...frontendAssessment,
+        assignedAt: assignedAt ?? frontendAssessment.assignedAt,
+        updatedAt: apiAssessment.updatedAt,
+      };
 
       // Override status with progress data
       if (progress) {
         return {
-          ...frontendAssessment,
+          ...withDates,
           status: mapProgressToStatus(progress.status),
-          // You can also add progress percentage if needed
           progressPercentage: progress.progressPercentage,
           completedSections: progress.completedSections,
           totalSections: progress.totalSections,
         };
       }
 
-      return frontendAssessment;
+      return withDates;
     });
   }, [allAssessments, assignedAssessmentIds, progressMap]);
 
