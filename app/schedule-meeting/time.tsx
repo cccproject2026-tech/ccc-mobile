@@ -10,6 +10,7 @@ import {
   useMonthlyAvailability,
   useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
+import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import type { TimeSlot as APITimeSlot } from "@/types/appointment.types";
@@ -32,10 +33,7 @@ export default function ScheduleMeetingTimeScreen() {
   const { drawerContext } = useLocalSearchParams<{ drawerContext?: string }>();
   const { draft, setDay, setSlot, setPlatformLabel } = useScheduleMeetingStore();
   const insets = useSafeAreaInsets();
-  const scheduleBase =
-    drawerContext === "mentor"
-      ? "/(mentor)/schedule-meeting"
-      : "/schedule-meeting";
+  const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
 
   const hasPerson = Boolean(draft.person?.id);
 

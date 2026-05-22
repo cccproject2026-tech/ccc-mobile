@@ -65,6 +65,27 @@ export default function PastorDrawerLayout() {
                     drawerItemStyle: { display: 'none' },
                 }}
             />
+            <Drawer.Screen
+                name="schedule-meeting/person"
+                options={{
+                    headerShown: false,
+                    drawerItemStyle: { display: 'none' },
+                }}
+            />
+            <Drawer.Screen
+                name="schedule-meeting/time"
+                options={{
+                    headerShown: false,
+                    drawerItemStyle: { display: 'none' },
+                }}
+            />
+            <Drawer.Screen
+                name="schedule-meeting/confirm"
+                options={{
+                    headerShown: false,
+                    drawerItemStyle: { display: 'none' },
+                }}
+            />
         </Drawer>
     );
 }

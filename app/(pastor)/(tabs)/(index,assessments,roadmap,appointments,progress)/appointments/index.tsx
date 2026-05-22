@@ -16,6 +16,7 @@ import { Mentor, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentor
 import { useAuthStore } from "@/stores";
 import { Appointment, AppointmentPlatform } from "@/types/appointment.types";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -78,12 +79,12 @@ const Appointments = () => {
 
   React.useEffect(() => {
     if (openSheet === "true") {
-      router.replace({
-        pathname: "/schedule-meeting/person",
-        params: { mode: "schedule", personData: mentorData },
+      openScheduleMeeting(router, user?.role, {
+        mode: "schedule",
+        personData: mentorData ? String(mentorData) : undefined,
       });
     }
-  }, [mentorData, openSheet, router]);
+  }, [mentorData, openSheet, router, user?.role]);
 
   // Legacy redirect support: schedule-flow will route into /schedule-meeting directly now.
 
@@ -180,9 +181,9 @@ const Appointments = () => {
   // ✅ Removed duplicate declaration (moved to top)
 
   const handleReschedule = (appointment: Appointment) => {
-    router.push({
-      pathname: "/schedule-meeting/person",
-      params: { mode: "reschedule", appointmentId: String(appointment.id) },
+    openScheduleMeeting(router, user?.role, {
+      mode: "reschedule",
+      appointmentId: String(appointment.id),
     });
   };
 
@@ -209,7 +210,7 @@ const Appointments = () => {
   };
 
   const handleNewMeeting = () => {
-    router.push({ pathname: "/schedule-meeting/person", params: { mode: "schedule" } });
+    openScheduleMeeting(router, user?.role, { mode: "schedule" });
   };
 
   const handleCloseScheduleBottomSheet = () => {};

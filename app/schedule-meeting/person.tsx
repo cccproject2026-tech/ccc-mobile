@@ -3,6 +3,7 @@ import TopBar from "@/components/director/TopBar";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore, type SchedulePerson } from "@/stores/scheduleMeeting.store";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
+import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -19,10 +20,7 @@ export default function ScheduleMeetingPersonScreen() {
     personData?: string;
   }>();
   const params = useLocalSearchParams<{ drawerContext?: string }>();
-  const scheduleBase =
-    params.drawerContext === "mentor"
-      ? "/(mentor)/schedule-meeting"
-      : "/schedule-meeting";
+  const scheduleBase = getScheduleMeetingBase(params.drawerContext, user?.role);
 
   const {
     setMode,

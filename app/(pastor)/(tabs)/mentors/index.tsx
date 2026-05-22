@@ -5,6 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { Mentor, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { Mentor as MentorData } from "@/hooks/mentors/useMentors";
+import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -62,9 +63,9 @@ export default function MyMentorsScreen() {
     const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
 
     const handleCardPress = (mentor: MentorData) => {
-        router.push({
-            pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
-            params: { mentorData: JSON.stringify(mentor) },
+        openScheduleMeeting(router, user?.role, {
+            mode: "schedule",
+            personData: JSON.stringify(mentor),
         });
     };
 
@@ -133,10 +134,9 @@ export default function MyMentorsScreen() {
     };
 
     const handleScheduleAppointment = (mentor: MentorData) => {
-        console.log("Schedule appointment with", mentor.name);
-        router.push({
-            pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
-            params: { mentorData: JSON.stringify(mentor) },
+        openScheduleMeeting(router, user?.role, {
+            mode: "schedule",
+            personData: JSON.stringify(mentor),
         });
     };
 

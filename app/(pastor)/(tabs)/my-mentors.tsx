@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores";
 
 const SPACING = {
@@ -49,9 +50,9 @@ export default function MyMentorsScreen() {
   }, [mentors, searchText]);
 
   const handleCardPress = (mentor: Mentor) => {
-    router.push({
-      pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
-      params: { mentorData: JSON.stringify(mentor as unknown as MentorPayload) },
+    openScheduleMeeting(router, user?.role, {
+      mode: "schedule",
+      personData: JSON.stringify(mentor as unknown as MentorPayload),
     });
   };
 

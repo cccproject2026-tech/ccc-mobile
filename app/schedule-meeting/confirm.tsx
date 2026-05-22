@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import { useMeetingScheduler } from "@/hooks/appointments/useMeetingScheduler";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
+import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -28,10 +29,7 @@ export default function ScheduleMeetingConfirmScreen() {
   const { draft, reset } = useScheduleMeetingStore();
   const [isDone, setIsDone] = useState(false);
   const insets = useSafeAreaInsets();
-  const scheduleBase =
-    drawerContext === "mentor"
-      ? "/(mentor)/schedule-meeting"
-      : "/schedule-meeting";
+  const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
 
   const canSubmit = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
 

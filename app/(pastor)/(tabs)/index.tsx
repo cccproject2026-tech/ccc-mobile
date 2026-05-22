@@ -12,6 +12,7 @@ import { Mentor } from "@/hooks/mentors/useMentors";
 import { usePastorFocusItems } from "@/hooks/pastor/usePastorFocusItems";
 import { useProfile } from "@/hooks/profile/useProfile";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores";
 import { AppointmentPlatform } from "@/types/appointment.types";
 import { isPastorMentorIntroActive } from "@/utils/pastorMentorIntro";
@@ -153,9 +154,9 @@ export default function PastorDashboard() {
   );
 
   const handleScheduleAppointment = (mentor: any) => {
-    router.push({
-      pathname: "/(pastor)/(tabs)/mentors/schedule-meeting",
-      params: { mentorData: JSON.stringify(mentor) },
+    openScheduleMeeting(router, user?.role, {
+      mode: "schedule",
+      personData: JSON.stringify(mentor),
     });
   };
 
