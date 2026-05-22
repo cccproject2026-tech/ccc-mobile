@@ -317,6 +317,10 @@ export function navigateToSearchAssessment(
   console.warn("[search] unsupported role for assessment navigation:", role);
 }
 
+export function canViewSearchInterests(role: string | undefined): boolean {
+  return String(role ?? "").toLowerCase() === "director";
+}
+
 export function navigateToSearchInterest(
   router: Router,
   role: string | undefined,
@@ -329,10 +333,7 @@ export function navigateToSearchInterest(
   }
 
   const normalizedRole = String(role ?? "").toLowerCase();
-  if (normalizedRole !== "director") {
-    console.warn("[search] interest details are only available for directors");
-    return;
-  }
+  if (!canViewSearchInterests(role)) return;
 
   router.push({
     pathname: "/(director)/(tabs)/new-interests/interest-details",

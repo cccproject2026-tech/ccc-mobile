@@ -13,6 +13,7 @@ import {
   isSearchAssessmentItem,
   isSearchInterestItem,
   isSearchRoadmapItem,
+  canViewSearchInterests,
   formatSearchStatusLabel,
   navigateToSearchAssessment,
   navigateToSearchInterest,
@@ -38,6 +39,11 @@ export default function GlobalSearchScreen() {
   const { isAuthenticated, user } = useAuthStore();
   const { data: assignedRoadmaps } = useRoadmaps(user?.role, user?.id);
   const { data: allRoadmaps } = useAllRoadmaps();
+  const showInterests = canViewSearchInterests(user?.role);
+  const searchSubtitle = showInterests
+    ? "Find roadmaps, assessments, and interests across CCC"
+    : "Find roadmaps and assessments across CCC";
+
   const roadmapsForNavigation = useMemo(() => {
     if (allRoadmaps?.length) return allRoadmaps;
     return assignedRoadmaps ?? [];
@@ -96,9 +102,11 @@ export default function GlobalSearchScreen() {
             roadmapsGroup = Array.isArray(payload.results.roadmaps)
               ? payload.results.roadmaps
               : [];
-            interestsGroup = Array.isArray(payload.results.interests)
-              ? payload.results.interests
-              : [];
+            if (showInterests) {
+              interestsGroup = Array.isArray(payload.results.interests)
+                ? payload.results.interests
+                : [];
+            }
             assessmentsGroup = Array.isArray(payload.results.assessments)
               ? payload.results.assessments
               : [];
@@ -114,15 +122,19 @@ export default function GlobalSearchScreen() {
               items = payload.data;
             } else {
               const foundRoadmaps = payload.roadmaps ?? payload.roadmap ?? [];
-              const foundInterests = payload.interests ?? payload.interest ?? [];
+              const foundInterests = showInterests
+                ? payload.interests ?? payload.interest ?? []
+                : [];
               const foundAssessments = payload.assessments ?? payload.assessment ?? [];
               if (
                 Array.isArray(foundRoadmaps) ||
-                Array.isArray(foundInterests) ||
+                (showInterests && Array.isArray(foundInterests)) ||
                 Array.isArray(foundAssessments)
               ) {
                 if (Array.isArray(foundRoadmaps)) items = items.concat(foundRoadmaps);
-                if (Array.isArray(foundInterests)) items = items.concat(foundInterests);
+                if (showInterests && Array.isArray(foundInterests)) {
+                  items = items.concat(foundInterests);
+                }
                 if (Array.isArray(foundAssessments)) items = items.concat(foundAssessments);
               } else if (payload && typeof payload === "object") {
                 items = [payload];
@@ -132,7 +144,7 @@ export default function GlobalSearchScreen() {
             const othersGroup: any[] = [];
 
             for (const it of items) {
-              if (isSearchInterestItem(it)) {
+              if (showInterests && isSearchInterestItem(it)) {
                 interestsGroup.push(it);
               } else if (isSearchAssessmentItem(it)) {
                 assessmentsGroup.push(it);
@@ -143,11 +155,15 @@ export default function GlobalSearchScreen() {
               }
             }
 
-            if (interestsGroup.length === 0 && assessmentsGroup.length === 0 && othersGroup.length > 0) {
+            if (
+              (showInterests ? interestsGroup.length === 0 : true) &&
+              assessmentsGroup.length === 0 &&
+              othersGroup.length > 0
+            ) {
               for (const it of othersGroup) {
                 if (isSearchAssessmentItem(it)) assessmentsGroup.push(it);
                 else if (isSearchRoadmapItem(it)) roadmapsGroup.push(it);
-                else interestsGroup.push(it);
+                else if (showInterests) interestsGroup.push(it);
               }
             }
           }
@@ -177,7 +193,7 @@ export default function GlobalSearchScreen() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query]);
+  }, [query, showInterests]);
 
   const handleRoadmapPress = (r: unknown) => {
     navigateToSearchRoadmap(router, user?.role, r, roadmapsForNavigation);
@@ -207,7 +223,7 @@ export default function GlobalSearchScreen() {
         <View style={styles.container}>
           <SectionHeader
             title="Search"
-            subtitle="Find roadmaps, assessments, and interests across CCC"
+            subtitle={searchSubtitle}
             showDivider
             variant="compact"
             style={styles.sectionHeader}
@@ -336,7 +352,7 @@ export default function GlobalSearchScreen() {
                 </View>
               )}
 
-              {interests.length > 0 && (
+              {showInterests && interests.length > 0 && (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>{`Interests (${interests.length})`}</Text>
                   {interests.map((it, idx) => {
