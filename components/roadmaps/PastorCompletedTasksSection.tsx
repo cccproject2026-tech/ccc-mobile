@@ -38,18 +38,19 @@ export function PastorCompletedTasksSection({
       <View style={styles.wrap}>
         {showHeader ? (
           <SectionHeader
-            title="Completed tasks"
-            subtitle="Review tasks you've finished across your roadmap phases."
+            title="Your history"
+            subtitle="Tasks you have already finished across your journey."
             showDivider
           />
         ) : null}
         <CommonCard style={styles.emptyCard}>
           <View style={styles.emptyIconWrap}>
-            <Ionicons name="checkmark-circle-outline" size={32} color="rgba(74, 222, 128, 0.65)" />
+            <Ionicons name="time-outline" size={32} color="rgba(111, 212, 190, 0.75)" />
           </View>
-          <Text style={styles.emptyTitle}>No completed tasks yet</Text>
+          <Text style={styles.emptyTitle}>Nothing in your history yet</Text>
           <Text style={styles.emptySubtitle}>
-            Finished tasks will appear here so you can review your progress anytime.
+            When you finish tasks on your journey, they will show up here so you can review them
+            anytime.
           </Text>
         </CommonCard>
       </View>
@@ -60,8 +61,8 @@ export function PastorCompletedTasksSection({
     <View style={styles.wrap}>
       {showHeader ? (
         <SectionHeader
-          title="Completed tasks"
-          subtitle="Review finished tasks across your roadmap phases."
+          title="Your history"
+          subtitle="Review finished tasks from your journey."
           showDivider
         />
       ) : null}
