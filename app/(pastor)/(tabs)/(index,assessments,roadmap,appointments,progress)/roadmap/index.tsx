@@ -310,6 +310,7 @@ export default function PastorRoadmapIndex() {
           <RoadmapSearchField
             value={search}
             onChangeText={setSearch}
+            dense
             placeholder={
               screenView === "history" ? "Search your finished work..." : "Search phases..."
             }
@@ -424,7 +425,7 @@ const styles = StyleSheet.create({
   container: { width: "100%", alignSelf: "center" },
   centerFill: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   loadingText: { color: "rgba(255,255,255,0.75)", fontSize: 15, fontWeight: "600" },
-  searchWrap: { marginBottom: 4 },
+  searchWrap: { marginBottom: 16 },
   list: { gap: 14, paddingBottom: 12, marginTop: 4 },
   cardPress: { borderRadius: 16, overflow: "hidden" },
   errorCard: {

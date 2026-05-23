@@ -16,16 +16,19 @@ type Props = {
   onPressStep: (step: JourneyFlowStep) => void;
 };
 
-const NODE_SIZE = 44;
+const NODE_SIZE = 52;
+const CONNECTOR_W = 32;
 
 function StepNode({
   step,
   index,
   onPress,
+  isLast,
 }: {
   step: JourneyFlowStep;
   index: number;
   onPress: () => void;
+  isLast: boolean;
 }) {
   const isLocked = step.state === "locked";
   const isCurrent = step.state === "current";
@@ -33,119 +36,127 @@ function StepNode({
   const canOpen = !isLocked && !!step.roadmap;
 
   return (
-    <Pressable
-      onPress={() => canOpen && onPress()}
-      disabled={!canOpen}
-      style={({ pressed }) => [
-        styles.nodeCol,
-        pressed && canOpen ? styles.nodePressed : null,
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={`${step.title}, step ${index + 1}, ${step.state}`}
-      accessibilityState={{ disabled: !canOpen }}
-    >
-      {isCurrent ? (
-        <View style={styles.currentRing}>
+    <View style={styles.stepSlot}>
+      {/* ── Node column ── */}
+      <Pressable
+        onPress={() => canOpen && onPress()}
+        disabled={!canOpen}
+        style={({ pressed }) => [styles.nodeCol, pressed && canOpen && styles.nodePressed]}
+        accessibilityRole="button"
+        accessibilityLabel={`${step.title}, step ${index + 1}, ${step.state}`}
+        accessibilityState={{ disabled: !canOpen }}
+      >
+        {/* Circle */}
+        {isCurrent ? (
           <LinearGradient
             colors={["#6FD4BE", "#34D399"]}
-            style={styles.nodeCircleCurrent}
+            style={[styles.circle, styles.circleCurrent]}
           >
-            <Text style={styles.nodeStepNum}>{index + 1}</Text>
+            <Text style={styles.circleNum}>{index + 1}</Text>
           </LinearGradient>
-        </View>
-      ) : isCompleted ? (
-        <View style={[styles.nodeCircle, styles.nodeCircleCompleted]}>
-          <Ionicons name="checkmark" size={20} color="#fff" />
-        </View>
-      ) : (
-        <View style={[styles.nodeCircle, styles.nodeCircleLocked]}>
-          <Ionicons name="lock-closed" size={16} color="rgba(255,255,255,0.45)" />
+        ) : isCompleted ? (
+          <View style={[styles.circle, styles.circleCompleted]}>
+            <Ionicons name="checkmark" size={22} color="#fff" />
+          </View>
+        ) : (
+          <View style={[styles.circle, styles.circleLocked]}>
+            <Ionicons name="lock-closed" size={16} color="rgba(255,255,255,0.30)" />
+          </View>
+        )}
+
+        {/* Label */}
+        <Text
+          style={[
+            styles.label,
+            isCurrent && styles.labelCurrent,
+            isCompleted && styles.labelCompleted,
+            isLocked && styles.labelLocked,
+          ]}
+          numberOfLines={2}
+        >
+          {step.title}
+        </Text>
+
+        {/* Status badge */}
+        {isCurrent ? (
+          <View style={styles.hereBadge}>
+            <Text style={styles.hereBadgeText}>YOU ARE HERE</Text>
+          </View>
+        ) : isCompleted ? (
+          <View style={styles.doneBadge}>
+            <Ionicons name="checkmark-circle" size={10} color="rgba(74,222,128,0.9)" style={{ marginRight: 3 }} />
+            <Text style={styles.doneText}>Done</Text>
+          </View>
+        ) : (
+          <Text style={styles.lockedText}>Coming next</Text>
+        )}
+      </Pressable>
+
+      {/* ── Connector ── */}
+      {!isLast && (
+        <View style={styles.connectorWrap}>
+          <View
+            style={[
+              styles.connectorLine,
+              isCompleted && styles.connectorActive,
+            ]}
+          />
+          {isCompleted && <View style={styles.connectorArrow} />}
         </View>
       )}
-
-      <Text
-        style={[
-          styles.nodeLabel,
-          isCurrent && styles.nodeLabelCurrent,
-          isLocked && styles.nodeLabelLocked,
-          isCompleted && styles.nodeLabelCompleted,
-        ]}
-        numberOfLines={2}
-      >
-        {step.title}
-      </Text>
-
-      {isCurrent ? (
-        <View style={styles.hereBadge}>
-          <Text style={styles.hereBadgeText}>You are here</Text>
-        </View>
-      ) : isLocked ? (
-        <Text style={styles.comingHint}>Coming next</Text>
-      ) : isCompleted ? (
-        <Text style={styles.doneHint}>Done</Text>
-      ) : null}
-    </Pressable>
+    </View>
   );
 }
 
-/** Timeline-style journey path with progress track and clear step nodes. */
 export function PastorJourneyFlowStrip({ steps, onPressStep }: Props) {
   const progressMeta = useMemo(() => {
     const total = steps.length;
-    let currentIndex = steps.findIndex((s) => s.state === "current");
-    if (currentIndex < 0) {
-      const allDone = steps.every((s) => s.state === "completed");
-      currentIndex = allDone ? total : 0;
-    }
     const completedCount = steps.filter((s) => s.state === "completed").length;
     const fillPct =
       total <= 1 ? (completedCount > 0 ? 100 : 0) : (completedCount / (total - 1)) * 100;
-    return { total, currentIndex, completedCount, fillPct };
+    return { total, completedCount, fillPct };
   }, [steps]);
 
   return (
     <View style={styles.panel}>
-      <View style={styles.panelHeader}>
-        <View style={styles.headerTextWrap}>
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <View style={{ flex: 1, gap: 3 }}>
           <Text style={styles.heading}>Your journey path</Text>
-          <Text style={styles.hint}>Complete each phase to unlock the next</Text>
+          <Text style={styles.subheading}>Complete each phase to unlock the next</Text>
         </View>
-        <View style={styles.stepCounter}>
-          <Text style={styles.stepCounterText}>
+        <View style={styles.phaseBadge}>
+          <Text style={styles.phaseBadgeNum}>
             {progressMeta.completedCount}/{progressMeta.total}
           </Text>
-          <Text style={styles.stepCounterLabel}>phases</Text>
+          <Text style={styles.phaseBadgeLabel}>PHASES</Text>
         </View>
       </View>
 
-      <View style={styles.trackWrap}>
-        <View style={styles.trackBg} />
-        <View style={[styles.trackFill, { width: `${Math.min(100, progressMeta.fillPct)}%` }]} />
+      {/* ── Progress bar ── */}
+      <View style={styles.trackBg}>
+        <LinearGradient
+          colors={["#6FD4BE", "#34D399"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.trackFill, { width: `${Math.min(100, progressMeta.fillPct)}%` }]}
+        />
       </View>
 
+      {/* ── Steps (horizontal scroll) ── */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {steps.map((step, index) => (
-          <View key={step.id} style={styles.stepSlot}>
-            <StepNode
-              step={step}
-              index={index}
-              onPress={() => onPressStep(step)}
-            />
-            {index < steps.length - 1 ? (
-              <View style={styles.connector}>
-                <View
-                  style={[
-                    styles.connectorLine,
-                    step.state === "completed" && styles.connectorLineActive,
-                  ]}
-                />
-              </View>
-            ) : null}
-          </View>
+          <StepNode
+            key={step.id}
+            step={step}
+            index={index}
+            onPress={() => onPressStep(step)}
+            isLast={index === steps.length - 1}
+          />
         ))}
       </ScrollView>
     </View>
@@ -154,183 +165,203 @@ export function PastorJourneyFlowStrip({ steps, onPressStep }: Props) {
 
 const styles = StyleSheet.create({
   panel: {
-    marginBottom: 22,
-    padding: 16,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    marginBottom: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.07)",
     borderWidth: 1,
     borderColor: roadmapTheme.frostedBorderStrong,
     gap: 14,
   },
-  panelHeader: {
+
+  // ── Header ────────────────────────────────────────────
+  header: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: 12,
-  },
-  headerTextWrap: {
-    flex: 1,
-    gap: 4,
+    gap: 10,
   },
   heading: {
     color: roadmapTheme.textPrimary,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "900",
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
-  hint: {
+  subheading: {
     color: roadmapTheme.textSubtle,
-    fontSize: 13,
-    fontWeight: "600",
-    lineHeight: 18,
+    fontSize: 11,
+    fontWeight: "500",
+    lineHeight: 15,
   },
-  stepCounter: {
+  phaseBadge: {
     alignItems: "center",
-    justifyContent: "center",
-    minWidth: 52,
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     borderRadius: 14,
-    backgroundColor: "rgba(111, 212, 190, 0.14)",
+    backgroundColor: "rgba(111,212,190,0.12)",
     borderWidth: 1,
-    borderColor: "rgba(111, 212, 190, 0.28)",
+    borderColor: "rgba(111,212,190,0.28)",
   },
-  stepCounterText: {
+  phaseBadgeNum: {
     color: roadmapTheme.accentMint,
     fontSize: 16,
     fontWeight: "900",
+    lineHeight: 19,
   },
-  stepCounterLabel: {
+  phaseBadgeLabel: {
     color: roadmapTheme.textSubtle,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
   },
-  trackWrap: {
-    height: 6,
-    borderRadius: 999,
-    overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-  },
+
+  // ── Progress track ────────────────────────────────────
   trackBg: {
-    ...StyleSheet.absoluteFillObject,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.09)",
+    overflow: "hidden",
   },
   trackFill: {
     height: "100%",
     borderRadius: 999,
-    backgroundColor: roadmapTheme.accentMint,
   },
+
+  // ── Scroll row ────────────────────────────────────────
   scrollContent: {
-    paddingVertical: 6,
     paddingHorizontal: 2,
+    paddingVertical: 4,
     alignItems: "flex-start",
   },
   stepSlot: {
     flexDirection: "row",
     alignItems: "flex-start",
   },
+
+  // ── Node column ───────────────────────────────────────
   nodeCol: {
-    width: 108,
+    width: 88,
     alignItems: "center",
     gap: 8,
   },
-  nodePressed: {
-    opacity: 0.88,
+  nodePressed: { opacity: 0.80 },
+
+  circle: {
+    width: NODE_SIZE,
+    height: NODE_SIZE,
+    borderRadius: NODE_SIZE / 2,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
   },
-  currentRing: {
-    padding: 3,
-    borderRadius: NODE_SIZE,
-    borderWidth: 2,
+  circleCurrent: {
+    borderWidth: 2.5,
     borderColor: roadmapTheme.accentGold,
-    backgroundColor: "rgba(232, 200, 138, 0.15)",
+    shadowColor: "#6FD4BE",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  nodeCircle: {
-    width: NODE_SIZE,
-    height: NODE_SIZE,
-    borderRadius: NODE_SIZE / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
+  circleCompleted: {
+    backgroundColor: "rgba(34,197,94,0.88)",
+    borderWidth: 1.5,
+    borderColor: "rgba(74,222,128,0.45)",
   },
-  nodeCircleCurrent: {
-    width: NODE_SIZE,
-    height: NODE_SIZE,
-    borderRadius: NODE_SIZE / 2,
-    alignItems: "center",
-    justifyContent: "center",
+  circleLocked: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.11)",
   },
-  nodeCircleCompleted: {
-    backgroundColor: "rgba(34, 197, 94, 0.9)",
-    borderColor: "rgba(74, 222, 128, 0.55)",
-  },
-  nodeCircleLocked: {
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderColor: "rgba(255,255,255,0.14)",
-  },
-  nodeStepNum: {
+  circleNum: {
     color: roadmapTheme.tealDeep,
     fontSize: 18,
     fontWeight: "900",
   },
-  nodeLabel: {
+
+  label: {
+    marginTop: 10,
     color: roadmapTheme.textPrimary,
+    fontSize: 11,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 14,
+    minHeight: 28,
+  },
+  labelCurrent: {
+    color: "#fff",
     fontSize: 12,
     fontWeight: "800",
-    textAlign: "center",
-    lineHeight: 16,
-    minHeight: 32,
   },
-  nodeLabelCurrent: {
-    color: "#fff",
-    fontSize: 13,
+  labelCompleted: {
+    color: "rgba(255,255,255,0.75)",
   },
-  nodeLabelCompleted: {
-    color: "rgba(255,255,255,0.88)",
-  },
-  nodeLabelLocked: {
+  labelLocked: {
     color: roadmapTheme.textSubtle,
-    fontWeight: "700",
+    fontWeight: "600",
   },
+
   hereBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: "rgba(232, 200, 138, 0.22)",
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "rgba(232, 200, 138, 0.35)",
+    borderColor: "rgba(232,200,138,0.36)",
   },
   hereBadgeText: {
-    fontSize: 9,
-    fontWeight: "800",
+    fontSize: 8,
+    fontWeight: "900",
     color: roadmapTheme.accentGold,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   },
-  comingHint: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.38)",
-  },
-  doneHint: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "rgba(74, 222, 128, 0.85)",
-  },
-  connector: {
-    width: 28,
-    paddingTop: NODE_SIZE / 2 - 1,
+
+  doneBadge: {
+    flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(34,197,94,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(74,222,128,0.22)",
+  },
+  doneText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "rgba(74,222,128,0.90)",
+  },
+
+  lockedText: {
+    fontSize: 9,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.28)",
+  },
+
+  // ── Connector ─────────────────────────────────────────
+  connectorWrap: {
+    width: CONNECTOR_W,
+    height: NODE_SIZE,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
   },
   connectorLine: {
-    width: "100%",
-    height: 3,
+    flex: 1,
+    height: 2.5,
     borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.10)",
   },
-  connectorLineActive: {
-    backgroundColor: "rgba(111, 212, 190, 0.65)",
+  connectorActive: {
+    backgroundColor: "rgba(111,212,190,0.55)",
+  },
+  connectorArrow: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(111,212,190,0.75)",
+    marginLeft: -1,
   },
 });
