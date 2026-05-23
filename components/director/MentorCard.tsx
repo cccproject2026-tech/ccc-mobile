@@ -36,6 +36,8 @@ interface MentorCardProps {
     isSelected?: boolean;
     onToggleSelect?: () => void;
     onPress?: () => void;
+    /** Tap on mentor name opens profile (e.g. pastor My Mentors). */
+    onNamePress?: () => void;
 }
 
 // Reusable ContactIcons component
@@ -46,6 +48,32 @@ interface ContactIconsProps {
     onMail?: () => void;
     onWhatsApp?: () => void;
 }
+
+const MentorNameText: React.FC<{
+    name: string;
+    style: object;
+    onNamePress?: () => void;
+}> = ({ name, style, onNamePress }) => {
+    if (onNamePress) {
+        return (
+            <Pressable
+                onPress={(e) => {
+                    e.stopPropagation();
+                    onNamePress();
+                }}
+            >
+                <Text style={[style, styles.nameLink]} numberOfLines={1}>
+                    {name}
+                </Text>
+            </Pressable>
+        );
+    }
+    return (
+        <Text style={style} numberOfLines={1}>
+            {name}
+        </Text>
+    );
+};
 
 const ContactIcons: React.FC<ContactIconsProps> = ({ layout, onCall, onChat, onMail, onWhatsApp }) => {
     const isCardLayout = layout === 'card';
@@ -153,7 +181,8 @@ export default function MentorCard({
     selectable = false,
     isSelected = false,
     onToggleSelect,
-    onPress
+    onPress,
+    onNamePress,
 }: MentorCardProps) {
     const isSelectionMode = onToggleSelect !== undefined;
     const imageSize = getCardImageSize() * 0.8; // Make image 20% smaller
@@ -183,9 +212,11 @@ export default function MentorCard({
 
 
                     <View style={styles.listInfoSection}>
-                        <Text style={styles.listName} numberOfLines={1}>
-                            {mentor.name}
-                        </Text>
+                        <MentorNameText
+                            name={mentor.name}
+                            style={styles.listName}
+                            onNamePress={onNamePress}
+                        />
                         {mentor.menteesCount !== undefined && mentor.menteesCount > 0 && (
                             <View style={styles.listMenteesContainer}>
                                 <View style={styles.menteeDot} />
@@ -243,9 +274,11 @@ export default function MentorCard({
 
 
                 <View style={styles.listInfoSection}>
-                    <Text style={styles.listName} numberOfLines={1}>
-                        {mentor.name}
-                    </Text>
+                    <MentorNameText
+                        name={mentor.name}
+                        style={styles.listName}
+                        onNamePress={onNamePress}
+                    />
                     {mentor.menteesCount !== undefined && mentor.menteesCount > 0 && (
                         <View style={styles.listMenteesContainer}>
                             <View style={styles.menteeDot} />
@@ -319,9 +352,11 @@ export default function MentorCard({
 
                     <View style={styles.infoSection}>
                         <View style={styles.headerRow}>
-                            <Text style={styles.mentorName} numberOfLines={1}>
-                                {mentor.name}
-                            </Text>
+                            <MentorNameText
+                                name={mentor.name}
+                                style={styles.mentorName}
+                                onNamePress={onNamePress}
+                            />
                             {mentor.menteesCount !== undefined && mentor.menteesCount > 0 && (
                                 <View style={styles.menteesContainer}>
                                     <View style={styles.menteeDot} />
@@ -390,9 +425,11 @@ export default function MentorCard({
 
                 <View style={styles.infoSection}>
                     <View style={styles.headerRow}>
-                        <Text style={styles.mentorName} numberOfLines={1}>
-                            {mentor.name}
-                        </Text>
+                        <MentorNameText
+                            name={mentor.name}
+                            style={styles.mentorName}
+                            onNamePress={onNamePress}
+                        />
                         {mentor.menteesCount !== undefined && mentor.menteesCount > 0 && (
                             <View style={styles.menteesContainer}>
                                 <View style={styles.menteeDot} />
@@ -569,6 +606,9 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#fff',
         marginBottom: getSpacing(4),
+    },
+    nameLink: {
+        textDecorationLine: 'underline',
     },
     listMenteesContainer: {
         flexDirection: 'row',

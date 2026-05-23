@@ -62,11 +62,14 @@ export default function MyMentorsScreen() {
 
     const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
 
-    const handleCardPress = (mentor: MentorData) => {
-        openScheduleMeeting(router, user?.role, {
-            mode: "schedule",
-            personData: JSON.stringify(mentor),
-        });
+    const handleMentorProfilePress = (mentor: Mentor | MentorData) => {
+        router.push({
+            pathname: "/(pastor)/(tabs)/mentors/[id]",
+            params: {
+                id: mentor.id,
+                ...(mentor.email ? { email: mentor.email } : {}),
+            },
+        } as never);
     };
 
     const handleCall = (mentor: MentorData) => {
@@ -246,7 +249,9 @@ export default function MyMentorsScreen() {
                             <View style={styles.quickAccessContainer}>
                                 <MentorProfileSwiper
                                     mentors={mentors}
-                                // onMentorPress={handleCardPress}
+                                    onMentorPress={(m) =>
+                                        handleMentorProfilePress(m as Mentor)
+                                    }
                                 />
                             </View>
 
@@ -279,7 +284,10 @@ export default function MyMentorsScreen() {
                                                     onChat={() => handleChat(mentor as MentorData)}
                                                     onMail={() => handleMail(mentor as MentorData)}
                                                     onWhatsApp={() => handleWhatsApp(mentor as MentorData)}
-                                                    onPress={() => handleCardPress(mentor as MentorData)}
+                                                    onNamePress={() =>
+                                                        handleMentorProfilePress(mentor)
+                                                    }
+                                                    onPress={() => handleMentorProfilePress(mentor)}
                                                     menuItems={[
                                                         {
                                                             key: 'schedule',
@@ -313,6 +321,10 @@ export default function MyMentorsScreen() {
                                                     key={mentor.id}
                                                     mentor={mentor as MentorData}
                                                     layout={listToggle ? 'list' : 'card'}
+                                                    onNamePress={() =>
+                                                        handleMentorProfilePress(mentor)
+                                                    }
+                                                    onPress={() => handleMentorProfilePress(mentor)}
                                                     onCall={() => handleCall(mentor as MentorData)}
                                                     onChat={() => handleChat(mentor as MentorData)}
                                                     onMail={() => handleMail(mentor as MentorData)}

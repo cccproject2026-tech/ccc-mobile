@@ -49,7 +49,17 @@ export default function MyMentorsScreen() {
     );
   }, [mentors, searchText]);
 
-  const handleCardPress = (mentor: Mentor) => {
+  const handleMentorProfilePress = (mentor: Mentor) => {
+    router.push({
+      pathname: "/(pastor)/(tabs)/mentors/[id]",
+      params: {
+        id: mentor.id,
+        ...(mentor.email ? { email: mentor.email } : {}),
+      },
+    } as never);
+  };
+
+  const handleScheduleAppointment = (mentor: Mentor) => {
     openScheduleMeeting(router, user?.role, {
       mode: "schedule",
       personData: JSON.stringify(mentor as unknown as MentorPayload),
@@ -160,7 +170,7 @@ export default function MyMentorsScreen() {
             <View style={styles.quickAccessWrap}>
               <MentorProfileSwiper
                 mentors={filteredMentors.slice(0, 8)}
-                onMentorPress={(m) => handleCardPress(m as Mentor)}
+                onMentorPress={(m) => handleMentorProfilePress(m as Mentor)}
               />
             </View>
 
@@ -178,7 +188,16 @@ export default function MyMentorsScreen() {
                     onChat={() => handleChat(mentor)}
                     onMail={() => handleMail(mentor)}
                     onWhatsApp={() => handleWhatsApp(mentor)}
-                    onPress={() => handleCardPress(mentor)}
+                    onNamePress={() => handleMentorProfilePress(mentor)}
+                    onPress={() => handleMentorProfilePress(mentor)}
+                    menuItems={[
+                      {
+                        key: "schedule",
+                        title: "Schedule Appointment",
+                        icon: { ios: "calendar", android: "ic_menu_today" },
+                        onSelect: () => handleScheduleAppointment(mentor),
+                      },
+                    ]}
                   />
                 ))}
               </View>
