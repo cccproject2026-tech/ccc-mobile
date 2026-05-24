@@ -13,6 +13,7 @@ import { Mentor } from "@/hooks/mentors/useMentors";
 import { usePastorFocusItems } from "@/hooks/pastor/usePastorFocusItems";
 import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
 import { useProfile } from "@/hooks/profile/useProfile";
+import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { usePastorNewAssignmentsHome } from "@/hooks/pastor/usePastorNewAssignmentsHome";
 import { getNextIncompleteNestedTaskId } from "@/lib/roadmap/helpers";
@@ -100,6 +101,7 @@ export default function PastorDashboard() {
   const { mentors, isEmpty } = useAssignedMentors(user?.id as string);
   const { sections: focusSections, isLoading: isFocusLoading } =
     usePastorFocusItems();
+  const { data: mentorshipSessions = [] } = usePastorSessions(user?.id);
   const [focusSheetSectionId, setFocusSheetSectionId] = useState<string | null>(null);
   const [focusSheetTitle, setFocusSheetTitle] = useState<string | undefined>(undefined);
 
@@ -306,45 +308,72 @@ export default function PastorDashboard() {
     return "You can schedule a meeting with your mentor anytime.";
   }, [hasUpcomingAppointments, showMentorIntroForNewPastor]);
 
+  const nextMentorshipWhenLabel = useMemo(() => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const scheduled = mentorshipSessions
+      .filter((s) => String(s.status).toUpperCase() === "SCHEDULED")
+      .filter((s) => {
+        const t = new Date(s.scheduledDate).getTime();
+        return !Number.isNaN(t) && t >= startOfToday.getTime();
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.scheduledDate).getTime() -
+          new Date(b.scheduledDate).getTime(),
+      );
+    const next = scheduled[0];
+    if (!next?.scheduledDate) return "No session scheduled";
+    const d = new Date(next.scheduledDate);
+    if (Number.isNaN(d.getTime())) return "No session scheduled";
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }, [mentorshipSessions]);
+
   const focusTiles = useMemo(
     () => [
       {
         icon: "people-outline" as const,
-        line1: "Mentorship",
-        line2: "Session",
-        sheetTitle: "Mentorship Session",
+        line1: "Attend Mentorship",
+        line2: nextMentorshipWhenLabel,
+        sheetTitle: "Attend Mentorship Session",
         sectionId: "mentorship-sessions",
       },
       {
         icon: "calendar-outline" as const,
-        line1: "Other",
-        line2: "Meeting",
+        line1: "Other Meetings",
+        line2: "With your mentor",
         sheetTitle: "Other Meetings",
         sectionId: "other-meetings",
       },
       {
         icon: "layers-outline" as const,
-        line1: "Roadmap",
-        line2: "Phases",
-        sheetTitle: "Roadmap Phases",
+        line1: "Work on your",
+        line2: "Roadmap",
+        sheetTitle: "Work on Your Roadmap",
         sectionId: "roadmaps",
       },
       {
         icon: "document-text-outline" as const,
-        line1: "Your",
+        line1: "Complete",
         line2: "Assessments",
-        sheetTitle: "Assessments",
+        sheetTitle: "Complete Assessments",
         sectionId: "assessments",
       },
       {
         icon: "chatbubble-outline" as const,
-        line1: "Mentor",
-        line2: "Comments",
-        sheetTitle: "Mentor Comments",
+        line1: "Respond to",
+        line2: "Mentor Comment",
+        sheetTitle: "Respond to Mentor Comments",
         sectionId: "mentor-feedback",
       },
     ],
-    [],
+    [nextMentorshipWhenLabel],
   );
 
   const openThingsToFocusSheet = useCallback(
@@ -364,15 +393,6 @@ export default function PastorDashboard() {
     (item: PastorFocusItem) => {
       pastorFocusSheetRef.current?.dismiss();
       setTimeout(() => {
-        if (item.joinUrl) {
-          const url = /^https?:\/\//i.test(item.joinUrl.trim())
-            ? item.joinUrl.trim()
-            : `https://${item.joinUrl.trim()}`;
-          Linking.openURL(url).catch(() => {
-            Alert.alert("Unable to open link", "Please try again from the session details.");
-          });
-          return;
-        }
         const { pathname, params } = item.route;
         const rid = params?.roadmapId;
         if (pathname === "/roadmap/comments" && rid) {
@@ -1272,7 +1292,7 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   focusTile: {
-    width: 88,
+    width: 96,
     flex: undefined,
     flexBasis: undefined,
     minWidth: undefined,

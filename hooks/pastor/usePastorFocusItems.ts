@@ -37,7 +37,7 @@ import type {
   PastorFocusItem,
   PastorFocusSection,
 } from "@/components/sheets/PastorFocusBottomSheet";
-import { getAppointmentJoinUrl, truncateMiddle } from "@/utils/meetingLinkDetails";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 
 const UPCOMING_DUE_WINDOW_DAYS = 7;
 const MAX_ITEMS_PER_SECTION = 3;
@@ -291,23 +291,23 @@ export const usePastorFocusItems = () => {
       const when = formatDateTime(session.scheduledDate);
 
       return {
-        id: joinUrl
-          ? `mentorship-link-${session.id}`
-          : `mentorship-session-${session.id}`,
+        id: `mentorship-session-${session.id}`,
         title: sessionTopicLine(session.sessionNumber),
-        description: joinUrl
-          ? truncateMiddle(joinUrl, 52)
-          : when
-            ? `Scheduled ${when}`
-            : "Scheduled mentorship session",
+        description: when
+          ? `Starts ${when}`
+          : "Scheduled mentorship session",
         meta: joinUrl
-          ? `${sessionOrdinalLabel(session.sessionNumber)} • ${when}`
+          ? `${sessionOrdinalLabel(session.sessionNumber)} • Join link ready`
           : `${sessionOrdinalLabel(session.sessionNumber)} • Link pending`,
         accentColor: "#38BDF8",
-        ...(joinUrl ? { joinUrl } : {}),
-        route: {
-          pathname: `/(pastor)/(tabs)/sessions/${session.id}`,
-        },
+        route: session.appointmentId
+          ? {
+              pathname: "/appointments/meeting-details",
+              params: { appointmentId: String(session.appointmentId) },
+            }
+          : {
+              pathname: `/(pastor)/(tabs)/sessions/${session.id}`,
+            },
       };
     };
 
@@ -400,7 +400,6 @@ export const usePastorFocusItems = () => {
       .map((appointment: Appointment) => {
         const scheduler = getSchedulerLabel(appointment, user?.id, mentorNameById);
         const withWhom = getWithWhomLabel(appointment, mentorNameById);
-        const joinUrl = getAppointmentJoinUrl(appointment);
         const mentorName = mentorNameById.get(appointment.mentorId);
         return {
           id: `other-meeting-${appointment.id}`,
@@ -408,7 +407,6 @@ export const usePastorFocusItems = () => {
           description: `Starts ${formatDateTime(appointment.meetingDate)}.`,
           meta: `${scheduler} • ${withWhom}`,
           accentColor: "#22C55E",
-          ...(joinUrl ? { joinUrl } : {}),
           route: {
             pathname: "/appointments/meeting-details",
             params: { appointmentId: String(appointment.id) },
@@ -506,19 +504,19 @@ export const usePastorFocusItems = () => {
     return [
       {
         id: "roadmaps",
-        title: "Roadmap phases",
+        title: "Work on your roadmap",
         emptyMessage: "No roadmap phases assigned right now.",
         items: roadmapItems,
       },
       {
         id: "mentorship-sessions",
-        title: "Today",
+        title: "Today's session",
         emptyMessage: "No mentorship sessions scheduled for today.",
         items: mentorshipTodayItems,
       },
       {
         id: "mentorship-sessions-upcoming",
-        title: "Upcoming",
+        title: "Upcoming sessions",
         emptyMessage: "No upcoming mentorship sessions.",
         items: mentorshipUpcomingItems,
       },
@@ -531,15 +529,15 @@ export const usePastorFocusItems = () => {
       },
       {
         id: "assessments",
-        title: "Assessments",
-        emptyMessage: "No assessments need your attention right now.",
+        title: "Complete assessments",
+        emptyMessage: "You're all caught up on assessments.",
         items: assessmentItems,
       },
       {
         id: "mentor-feedback",
-        title: "Comments and query replies from Mentor",
+        title: "Respond to mentor comments",
         emptyMessage:
-          "No mentor comments yet. This list shows your mentor's roadmap comments (not your own). When your mentor comments, it will appear here.",
+          "No new mentor comments right now. When your mentor comments on your roadmap, it will appear here.",
         items: mentorFeedbackItems,
       },
     ];

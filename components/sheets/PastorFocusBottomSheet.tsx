@@ -156,9 +156,7 @@ const PastorFocusBottomSheet = forwardRef<
                           {item.title}
                         </Text>
                         <View style={styles.openBadge}>
-                          <Text style={styles.openText}>
-                            {item.joinUrl ? "Join" : "Open"}
-                          </Text>
+                          <Text style={styles.openText}>Open</Text>
                         </View>
                       </View>
 
