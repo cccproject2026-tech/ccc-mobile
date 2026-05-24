@@ -82,7 +82,9 @@ const ExploreCard: React.FC<Props> = ({
                     styles.title,
                     isFrosted ? (compact ? styles.titleFrostedCompact : styles.titleFrosted) : undefined,
                 ]}
-                numberOfLines={2}
+                numberOfLines={compact && isFrosted ? 3 : 2}
+                adjustsFontSizeToFit={compact && isFrosted}
+                minimumFontScale={0.82}
             >
                 {title}
             </Text>
@@ -158,8 +160,8 @@ const styles = StyleSheet.create({
     },
     cardFrostedCompact: {
         paddingVertical: isSmallDevice ? 7 : 8,
-        paddingHorizontal: 5,
-        minHeight: isSmallDevice ? 52 : 56,
+        paddingHorizontal: 4,
+        minHeight: isSmallDevice ? 58 : 62,
     },
     icon: {
         width: isSmallDevice ? 32 : 36,

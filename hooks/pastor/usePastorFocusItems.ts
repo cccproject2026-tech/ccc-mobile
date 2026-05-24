@@ -5,6 +5,7 @@ import {
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
+import { usePastorNewAssignmentsHome } from "@/hooks/pastor/usePastorNewAssignmentsHome";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { appointmentService } from "@/services/appointments.service";
@@ -197,6 +198,11 @@ export const usePastorFocusItems = () => {
   );
   const { data: assessments = [], isLoading: isAssessmentsLoading } =
     useAssignedAssessments(user?.id);
+  const { visibleItems: newAssignmentHomeItems } = usePastorNewAssignmentsHome(
+    user?.id,
+    roadmaps,
+    assessments,
+  );
 
   const feedbackQuery = useQuery({
     queryKey: [PASTOR_FOCUS_FEEDBACK_QUERY_KEY, user?.id, roadmaps.map((r) => r._id).join(",")],
@@ -341,6 +347,45 @@ export const usePastorFocusItems = () => {
       )
       .map(toMentorshipSessionItem)
       .slice(0, MAX_ITEMS_PER_SECTION);
+
+    const newAssignmentItems: PastorFocusItem[] = newAssignmentHomeItems.map(
+      (item) => {
+        if (item.kind === "roadmap" && item.roadmap) {
+          const roadmap = item.roadmap;
+          const nextTaskId = getNextIncompleteNestedTaskId(roadmap);
+          return {
+            id: `new-assignment-roadmap-${item.id}`,
+            title: item.title,
+            description: "A new roadmap phase has been assigned to you.",
+            meta: item.assignedLabel
+              ? `Assigned ${item.assignedLabel}`
+              : "Newly assigned",
+            accentColor: "#FBBF24",
+            route: nextTaskId
+              ? {
+                  pathname: `/roadmap/${roadmap._id}/${nextTaskId}`,
+                }
+              : {
+                  pathname: `/roadmap/${roadmap._id}`,
+                },
+          };
+        }
+
+        return {
+          id: `new-assignment-assessment-${item.id}`,
+          title: item.title,
+          description: "A new assessment has been assigned to you.",
+          meta: item.assignedLabel
+            ? `Assigned ${item.assignedLabel}`
+            : "Newly assigned",
+          accentColor: "#A78BFA",
+          route: {
+            pathname: "/assessments/survey-guidelines",
+            params: { assessmentId: item.id },
+          },
+        };
+      },
+    );
 
     const roadmapItems: PastorFocusItem[] = roadmaps
       .filter(
@@ -503,6 +548,13 @@ export const usePastorFocusItems = () => {
 
     return [
       {
+        id: "new-assignments",
+        title: "New assignments",
+        emptyMessage:
+          "No new assignments right now. New roadmaps and assessments will appear here when assigned.",
+        items: newAssignmentItems,
+      },
+      {
         id: "roadmaps",
         title: "Work on your roadmap",
         emptyMessage: "No roadmap phases assigned right now.",
@@ -549,6 +601,7 @@ export const usePastorFocusItems = () => {
     isMentorshipAppointment,
     mentorshipSessions,
     mentors,
+    newAssignmentHomeItems,
     roadmaps,
     startOfTodayLocal,
     user?.id,

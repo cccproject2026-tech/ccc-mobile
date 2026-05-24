@@ -6,16 +6,16 @@ import {
   PastorFocusItem,
 } from "@/components/sheets/PastorFocusBottomSheet";
 import { icons } from "@/constants/images";
-import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
+import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { Mentor } from "@/hooks/mentors/useMentors";
 import { usePastorFocusItems } from "@/hooks/pastor/usePastorFocusItems";
-import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
+import { usePastorNewAssignmentsHome } from "@/hooks/pastor/usePastorNewAssignmentsHome";
 import { useProfile } from "@/hooks/profile/useProfile";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
-import { usePastorNewAssignmentsHome } from "@/hooks/pastor/usePastorNewAssignmentsHome";
+import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
 import { getNextIncompleteNestedTaskId } from "@/lib/roadmap/helpers";
 import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores";
@@ -33,7 +33,6 @@ import {
   Alert,
   Linking,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -335,26 +334,41 @@ export default function PastorDashboard() {
     });
   }, [mentorshipSessions]);
 
+  const newAssignmentsTileLabel = useMemo(() => {
+    const count = newAssignmentItems.length;
+    if (count === 0) return "All caught up";
+    if (count === 1) return "1 new item";
+    return `${count} new items`;
+  }, [newAssignmentItems.length]);
+
   const focusTiles = useMemo(
     () => [
       {
+        icon: "sparkles-outline" as const,
+        line1: "New",
+        line2: "Assignments",
+        sheetTitle: "New Assignments",
+        sectionId: "new-assignments",
+      },
+      {
         icon: "people-outline" as const,
         line1: "Attend Mentorship",
-        line2: nextMentorshipWhenLabel,
+        line2: "Sessions",
+        // line3: nextMentorshipWhenLabel,
         sheetTitle: "Attend Mentorship Session",
         sectionId: "mentorship-sessions",
       },
       {
         icon: "calendar-outline" as const,
-        line1: "Other Meetings",
-        line2: "With your mentor",
+        line1: "Other",
+        line2: "Meetings",
         sheetTitle: "Other Meetings",
         sectionId: "other-meetings",
       },
       {
         icon: "layers-outline" as const,
-        line1: "Work on your",
-        line2: "Roadmap",
+        line1: "Work on",
+        line2: "your Roadmap",
         sheetTitle: "Work on Your Roadmap",
         sectionId: "roadmaps",
       },
@@ -374,6 +388,30 @@ export default function PastorDashboard() {
       },
     ],
     [nextMentorshipWhenLabel],
+  );
+
+  const formatFocusTileTitle = useCallback(
+    (tile: { line1: string; line2: string; line3?: string }) =>
+      tile.line3
+        ? `${tile.line1}\n${tile.line2}\n${tile.line3}`
+        : `${tile.line1}\n${tile.line2}`,
+    [],
+  );
+
+  const focusTilesWithLabels = useMemo(
+    () =>
+      focusTiles.map((tile) =>
+        tile.sectionId === "new-assignments"
+          ? {
+              ...tile,
+              line2:
+                newAssignmentsTileLabel === "All caught up"
+                  ? "Assignments"
+                  : newAssignmentsTileLabel,
+            }
+          : tile,
+      ),
+    [focusTiles, newAssignmentsTileLabel],
   );
 
   const openThingsToFocusSheet = useCallback(
@@ -694,29 +732,44 @@ export default function PastorDashboard() {
                   </Text>
                 </View>
               </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.focusTilesScroll}
-                nestedScrollEnabled
-              >
-                {focusTiles.map((tile, i) => (
-                  <ExploreCard
-                    key={i}
-                    ionicon={tile.icon}
-                    title={`${tile.line1}\n${tile.line2}`}
-                    appearance="frosted"
-                    compact
-                    wrapperStyle={styles.focusTile}
-                    onPress={() =>
-                      openThingsToFocusSheet({
-                        sectionId: tile.sectionId,
-                        title: tile.sheetTitle,
-                      })
-                    }
-                  />
-                ))}
-              </ScrollView>
+              <View style={styles.focusTilesGrid}>
+                <View style={styles.focusTilesRow}>
+                  {focusTilesWithLabels.slice(0, 3).map((tile) => (
+                    <ExploreCard
+                      key={tile.sectionId}
+                      ionicon={tile.icon}
+                      title={formatFocusTileTitle(tile)}
+                      appearance="frosted"
+                      compact
+                      wrapperStyle={styles.focusTile}
+                      onPress={() =>
+                        openThingsToFocusSheet({
+                          sectionId: tile.sectionId,
+                          title: tile.sheetTitle,
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+                <View style={styles.focusTilesRow}>
+                  {focusTilesWithLabels.slice(3, 6).map((tile) => (
+                    <ExploreCard
+                      key={tile.sectionId}
+                      ionicon={tile.icon}
+                      title={formatFocusTileTitle(tile)}
+                      appearance="frosted"
+                      compact
+                      wrapperStyle={styles.focusTile}
+                      onPress={() =>
+                        openThingsToFocusSheet({
+                          sectionId: tile.sectionId,
+                          title: tile.sheetTitle,
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+              </View>
             </Animated.View>
 
             <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.howToCard}>
@@ -1286,16 +1339,22 @@ const styles = StyleSheet.create({
     marginTop: 2,
     paddingBottom: 2,
   },
-  focusTilesScroll: {
+  focusTilesGrid: {
     gap: 8,
     paddingVertical: 2,
-    paddingRight: 4,
+  },
+  focusTilesRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 8,
+  },
+  focusTilesRowSpacer: {
+    flex: 0.5,
+    minWidth: 0,
   },
   focusTile: {
-    width: 96,
-    flex: undefined,
-    flexBasis: undefined,
-    minWidth: undefined,
+    flex: 1,
+    minWidth: 0,
   },
   helpButtonCompact: {
     flexDirection: "row",
