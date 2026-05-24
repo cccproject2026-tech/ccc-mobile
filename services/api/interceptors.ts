@@ -282,9 +282,14 @@ apiClient.interceptors.response.use(
     };
 
     if (__DEV__) {
-      // 404 is often handled upstream (e.g. empty comment thread) — avoid red ERROR noise in Metro
-      if (status === 404) {
-        console.log(`📭 404 ${method} ${url}`, apiError.message);
+      const isExpectedTranscriptSummaryGap =
+        url.includes("transcript-summary") &&
+        status === 400 &&
+        /missing|too short/i.test(String(apiError.message ?? ""));
+
+      // 404 / expected transcript gaps are handled upstream — avoid red ERROR noise in Metro
+      if (status === 404 || isExpectedTranscriptSummaryGap) {
+        console.log(`📭 ${status} ${method} ${url}`, apiError.message);
       } else {
         // Try to surface a small response snippet for non-JSON bodies (common for 503 via proxies).
         const rawData = (error.response as any)?.data;

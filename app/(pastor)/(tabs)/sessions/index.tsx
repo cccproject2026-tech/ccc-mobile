@@ -78,7 +78,8 @@ export default function PastorSessionsScreen() {
       return {
         ...s,
         mentorName,
-        meetingLink: getAppointmentJoinUrl(apt) ?? undefined,
+        meetingLink:
+          getAppointmentJoinUrl(apt) ?? s.meetingLink ?? undefined,
         phase: phaseLabelForSessionNumber(s.sessionNumber),
       };
     });

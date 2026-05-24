@@ -25,6 +25,8 @@ export interface MentorshipSession {
   mentorNote?: string;
   pastorNote?: string;
   appointmentId?: string;
+  /** Join URL when API embeds it on the session or nested appointment. */
+  meetingLink?: string;
   /** Set when sessions are aggregated for a mentor (pastor / mentee user id) */
   pastorId?: string;
   /** Display name for mentor UI when aggregating multiple pastors */

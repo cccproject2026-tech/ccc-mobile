@@ -32,6 +32,7 @@ import {
   Alert,
   Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -104,9 +105,16 @@ export default function PastorDashboard() {
 
   const displayedFocusSections = useMemo(() => {
     if (!focusSheetSectionId) return focusSections;
-    if (focusSheetSectionId === "meetings") {
+    if (focusSheetSectionId === "mentorship-sessions") {
       return focusSections.filter(
-        (s) => s.id === "meetings" || s.id === "meetings-month",
+        (s) =>
+          s.id === "mentorship-sessions" ||
+          s.id === "mentorship-sessions-upcoming",
+      );
+    }
+    if (focusSheetSectionId === "other-meetings") {
+      return focusSections.filter(
+        (s) => s.id === "other-meetings" || s.id === "other-meetings-month",
       );
     }
     return focusSections.filter((s) => s.id === focusSheetSectionId);
@@ -303,11 +311,18 @@ export default function PastorDashboard() {
   const focusTiles = useMemo(
     () => [
       {
+        icon: "people-outline" as const,
+        line1: "Mentorship",
+        line2: "Session",
+        sheetTitle: "Mentorship Session",
+        sectionId: "mentorship-sessions",
+      },
+      {
         icon: "calendar-outline" as const,
-        line1: "Today's",
-        line2: "Meetings",
-        sheetTitle: "Today's Meetings",
-        sectionId: "meetings",
+        line1: "Other",
+        line2: "Meeting",
+        sheetTitle: "Other Meetings",
+        sectionId: "other-meetings",
       },
       {
         icon: "layers-outline" as const,
@@ -351,6 +366,15 @@ export default function PastorDashboard() {
     (item: PastorFocusItem) => {
       pastorFocusSheetRef.current?.dismiss();
       setTimeout(() => {
+        if (item.joinUrl) {
+          const url = /^https?:\/\//i.test(item.joinUrl.trim())
+            ? item.joinUrl.trim()
+            : `https://${item.joinUrl.trim()}`;
+          Linking.openURL(url).catch(() => {
+            Alert.alert("Unable to open link", "Please try again from the session details.");
+          });
+          return;
+        }
         const { pathname, params } = item.route;
         const rid = params?.roadmapId;
         if (pathname === "/roadmap/comments" && rid) {
@@ -652,7 +676,12 @@ export default function PastorDashboard() {
                   </Text>
                 </View>
               </View>
-              <View style={styles.exploreRow}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.focusTilesScroll}
+                nestedScrollEnabled
+              >
                 {focusTiles.map((tile, i) => (
                   <ExploreCard
                     key={i}
@@ -660,6 +689,7 @@ export default function PastorDashboard() {
                     title={`${tile.line1}\n${tile.line2}`}
                     appearance="frosted"
                     compact
+                    wrapperStyle={styles.focusTile}
                     onPress={() =>
                       openThingsToFocusSheet({
                         sectionId: tile.sectionId,
@@ -668,7 +698,7 @@ export default function PastorDashboard() {
                     }
                   />
                 ))}
-              </View>
+              </ScrollView>
             </Animated.View>
 
             <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.howToCard}>
@@ -740,7 +770,11 @@ export default function PastorDashboard() {
         sections={displayedFocusSections}
         title={focusSheetTitle}
         isLoading={isLoading || isFocusLoading}
-        onNewMeeting={focusSheetSectionId === "meetings" ? handleNewMeetingPress : undefined}
+        onNewMeeting={
+          focusSheetSectionId === "other-meetings"
+            ? handleNewMeetingPress
+            : undefined
+        }
         onSelectItem={handleFocusItemPress}
       />
     </LinearGradient>
@@ -1233,6 +1267,17 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 2,
     paddingBottom: 2,
+  },
+  focusTilesScroll: {
+    gap: 8,
+    paddingVertical: 2,
+    paddingRight: 4,
+  },
+  focusTile: {
+    width: 88,
+    flex: undefined,
+    flexBasis: undefined,
+    minWidth: undefined,
   },
   helpButtonCompact: {
     flexDirection: "row",

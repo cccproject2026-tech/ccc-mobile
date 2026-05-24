@@ -21,6 +21,8 @@ export interface PastorFocusItem {
   description: string;
   meta?: string;
   accentColor?: string;
+  /** When set, home focus opens this URL directly (e.g. mentorship join link). */
+  joinUrl?: string;
   route: PastorFocusRoute;
 }
 
@@ -154,7 +156,9 @@ const PastorFocusBottomSheet = forwardRef<
                           {item.title}
                         </Text>
                         <View style={styles.openBadge}>
-                          <Text style={styles.openText}>Open</Text>
+                          <Text style={styles.openText}>
+                            {item.joinUrl ? "Join" : "Open"}
+                          </Text>
                         </View>
                       </View>
 

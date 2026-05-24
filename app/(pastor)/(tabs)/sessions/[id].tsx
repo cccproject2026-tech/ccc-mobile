@@ -136,6 +136,35 @@ type TranscriptSummaryApiResponse = {
   };
 };
 
+const MIN_TRANSCRIPT_CHARS = 20;
+
+const getAppointmentTranscriptText = (apt: unknown): string => {
+  if (!apt || typeof apt !== "object") return "";
+  const raw = (apt as { transcript?: unknown }).transcript;
+  if (typeof raw === "string") return raw.trim();
+  if (Array.isArray(raw)) {
+    return raw
+      .map((line) =>
+        typeof line === "object" && line && "text" in line
+          ? String((line as { text?: string }).text ?? "")
+          : "",
+      )
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+  }
+  return "";
+};
+
+const isTranscriptSummaryUnavailableMessage = (message: string) => {
+  const lower = String(message).toLowerCase();
+  return (
+    lower.includes("too short") ||
+    lower.includes("missing") ||
+    lower.includes("not found")
+  );
+};
+
 const parseTranscriptStringToLines = (
   transcript: string,
   opts?: { mentorName?: string; pastorName?: string },
@@ -713,7 +742,19 @@ export default function PastorSessionDetailScreen() {
     setLoadingTranscriptSummary(true);
     setTranscriptSummaryError(null);
     try {
-      const fallbackTranscript = (appointment as any)?.transcript || "";
+      const fallbackTranscript = getAppointmentTranscriptText(appointment);
+      if (
+        !refresh &&
+        (!fallbackTranscript || fallbackTranscript.length < MIN_TRANSCRIPT_CHARS)
+      ) {
+        setTranscript(fallbackTranscript);
+        setSummary(null);
+        setTranscriptSummaryError(
+          fallbackTranscript ? "SHORT_TRANSCRIPT" : "NO_TRANSCRIPT",
+        );
+        return;
+      }
+
       const cleanId = String(id).replace(/%27/g, "").replace(/['"]/g, "").trim();
       const response = await apiClient.post<TranscriptSummaryApiResponse>(
         `/appointments/pastor/${cleanId}/transcript-summary`,
@@ -724,65 +765,70 @@ export default function PastorSessionDetailScreen() {
       setTranscript(result?.data?.transcript || fallbackTranscript || "");
       setSummary(result?.data?.summary || null);
     } catch (e) {
-      const error = e as any;
-      const status = error?.response?.status;
+      const error = e as {
+        response?: { status?: number; data?: { message?: string } };
+        statusCode?: number;
+        message?: string;
+      };
+      const status = error?.response?.status ?? error?.statusCode;
       const message =
         error?.response?.data?.message ||
         error?.message ||
         "Something went wrong";
-      const lower = String(message).toLowerCase();
-      const isNotFound =
-        status === 404 ||
-        lower.includes("not found") ||
-        lower.includes("appointment with id") && lower.includes("not found");
+      const fallbackTranscript = getAppointmentTranscriptText(appointment);
 
-      if (isNotFound) {
-        // Appointment/transcript isn't available (yet). Treat as "no transcript" to avoid noisy errors + polling.
-        setTranscript("");
+      if (
+        status === 404 ||
+        status === 400 ||
+        isTranscriptSummaryUnavailableMessage(message)
+      ) {
+        setTranscript(fallbackTranscript);
         setSummary(null);
-        setTranscriptSummaryError("NO_TRANSCRIPT");
+        setTranscriptSummaryError(
+          fallbackTranscript.length >= MIN_TRANSCRIPT_CHARS
+            ? "SHORT_TRANSCRIPT"
+            : "NO_TRANSCRIPT",
+        );
         return;
       }
 
-      console.error("Transcript Summary API Error:", message);
-
-      setTranscript((appointment as any)?.transcript || "");
-      setSummary(null);
-
-      if (lower.includes("too short") || lower.includes("missing")) {
-        setTranscriptSummaryError("SHORT_TRANSCRIPT");
-      } else {
-        setTranscriptSummaryError("GENERAL_ERROR");
+      if (__DEV__) {
+        console.warn("Transcript summary unavailable:", message);
       }
+
+      setTranscript(fallbackTranscript);
+      setSummary(null);
+      setTranscriptSummaryError("GENERAL_ERROR");
     } finally {
       setLoadingTranscriptSummary(false);
     }
   };
 
   useEffect(() => {
-    const fallbackTranscript = (appointment as any)?.transcript || "";
-
-    // If we already determined there's no transcript, skip re-calling.
-    if (
-      appointmentId &&
-      transcriptSummaryError === "NO_TRANSCRIPT" &&
-      (!fallbackTranscript || String(fallbackTranscript).trim().length < 20)
-    ) {
-      setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : "");
-      setSummary(null);
-      return;
-    }
+    const fallbackTranscript = getAppointmentTranscriptText(appointment);
 
     if (!appointmentId) {
-      setTranscript(typeof fallbackTranscript === "string" ? fallbackTranscript : "");
+      lastFetchedAppointmentIdRef.current = null;
+      setTranscript(fallbackTranscript);
       setSummary(null);
+      setTranscriptSummaryError(null);
       return;
     }
 
-    if (lastFetchedAppointmentIdRef.current === appointmentId) return;
+    if (fallbackTranscript.length >= MIN_TRANSCRIPT_CHARS) {
+      if (lastFetchedAppointmentIdRef.current === appointmentId) return;
+      lastFetchedAppointmentIdRef.current = appointmentId;
+      getTranscriptSummary(appointmentId, false);
+      return;
+    }
+
     lastFetchedAppointmentIdRef.current = appointmentId;
-    getTranscriptSummary(appointmentId, false);
-  }, [appointmentId, (appointment as any)?.transcript]);
+    setTranscript(fallbackTranscript);
+    setSummary(null);
+    setTranscriptSummaryError(
+      fallbackTranscript ? "SHORT_TRANSCRIPT" : "NO_TRANSCRIPT",
+    );
+  }, [appointmentId, appointment]);
 
   useEffect(() => {
     const fallbackTranscript = (appointment as any)?.transcript;
@@ -793,7 +839,12 @@ export default function PastorSessionDetailScreen() {
 
   useEffect(() => {
     if (!appointmentId) return;
-    if (transcriptSummaryError === "NO_TRANSCRIPT") return;
+    if (
+      transcriptSummaryError === "NO_TRANSCRIPT" ||
+      transcriptSummaryError === "SHORT_TRANSCRIPT"
+    ) {
+      return;
+    }
 
     const hasStringTranscript =
       typeof (appointment as any)?.transcript === "string" &&
@@ -817,6 +868,7 @@ export default function PastorSessionDetailScreen() {
     appointmentId,
     transcript,
     summary,
+    transcriptSummaryError,
     (appointment as any)?.transcript,
     loadingTranscriptSummary,
     refetchAppointments,
@@ -846,7 +898,8 @@ export default function PastorSessionDetailScreen() {
     return mentorMap.get(String(appointment.mentorId));
   }, [appointment?.mentorId, mentorMap]);
 
-  const meetingLink = getAppointmentJoinUrl(appointment);
+  const meetingLink =
+    getAppointmentJoinUrl(appointment) ?? currentSession?.meetingLink ?? null;
   const hasStringTranscript =
     typeof (appointment as any)?.transcript === "string" &&
     (appointment as any).transcript.trim().length > 0;

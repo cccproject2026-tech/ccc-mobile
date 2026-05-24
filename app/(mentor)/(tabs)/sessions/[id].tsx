@@ -716,35 +716,43 @@ export default function SessionDetailsScreen() {
       setTranscript(result?.data?.transcript || fallbackTranscript || "");
       setSummary(result?.data?.summary || null);
     } catch (e) {
-      const error = e as any;
-      const status = error?.response?.status;
+      const error = e as {
+        response?: { status?: number; data?: { message?: string } };
+        statusCode?: number;
+        message?: string;
+      };
+      const status = error?.response?.status ?? error?.statusCode;
       const message =
         error?.response?.data?.message ||
         error?.message ||
         "Something went wrong";
       const lower = String(message).toLowerCase();
-      const isNotFound =
+      const isUnavailable =
         status === 404 ||
+        status === 400 ||
         lower.includes("not found") ||
-        lower.includes("appointment with id") && lower.includes("not found");
+        lower.includes("too short") ||
+        lower.includes("missing");
 
-      if (isNotFound) {
-        setTranscript("");
+      if (isUnavailable) {
+        const fallback = (appointment as any)?.transcript || "";
+        setTranscript(typeof fallback === "string" ? fallback : "");
         setSummary(null);
-        setTranscriptSummaryError("NO_TRANSCRIPT");
+        setTranscriptSummaryError(
+          typeof fallback === "string" && fallback.trim().length >= 20
+            ? "SHORT_TRANSCRIPT"
+            : "NO_TRANSCRIPT",
+        );
         return;
       }
 
-      console.error("Transcript Summary API Error:", message);
+      if (__DEV__) {
+        console.warn("Transcript summary unavailable:", message);
+      }
 
       setTranscript((appointment as any)?.transcript || "");
       setSummary(null);
-
-      if (lower.includes("too short") || lower.includes("missing")) {
-        setTranscriptSummaryError("SHORT_TRANSCRIPT");
-      } else {
-        setTranscriptSummaryError("GENERAL_ERROR");
-      }
+      setTranscriptSummaryError("GENERAL_ERROR");
     } finally {
       setLoadingTranscriptSummary(false);
     }
@@ -780,7 +788,12 @@ export default function SessionDetailsScreen() {
 
   useEffect(() => {
     if (!appointmentId) return;
-    if (transcriptSummaryError === "NO_TRANSCRIPT") return;
+    if (
+      transcriptSummaryError === "NO_TRANSCRIPT" ||
+      transcriptSummaryError === "SHORT_TRANSCRIPT"
+    ) {
+      return;
+    }
 
     const hasStringTranscript =
       typeof (appointment as any)?.transcript === "string" &&

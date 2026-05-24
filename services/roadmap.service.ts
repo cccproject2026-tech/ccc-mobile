@@ -21,6 +21,8 @@ import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 import { menteesService } from './mentees.service';
 import { MentorshipSession, MentorshipSessionsApiResponse } from "@/types/session.types";
+import type { Appointment } from "@/types/appointment.types";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import {
     parseAiSummaryFromApi,
     parseMentorshipInsightsFromApi,
@@ -250,11 +252,25 @@ export const roadmapService = {
             const status = statusRaw === "COMPLETED" ? "COMPLETED" : "SCHEDULED";
             const mentorNote = item?.mentorNote ? String(item.mentorNote) : undefined;
             const pastorNote = item?.pastorNote ? String(item.pastorNote) : undefined;
+            const embeddedAppointment =
+                item?.appointment && typeof item.appointment === "object"
+                    ? (item.appointment as Appointment)
+                    : undefined;
             const appointmentId = item?.appointmentId
                 ? String(item.appointmentId)
-                : item?.appointment?._id
-                  ? String(item.appointment._id)
-                  : undefined;
+                : embeddedAppointment?._id
+                  ? String(embeddedAppointment._id)
+                  : embeddedAppointment?.id
+                    ? String(embeddedAppointment.id)
+                    : undefined;
+
+            const meetingLink =
+                getAppointmentJoinUrl(embeddedAppointment) ??
+                (typeof item?.meetingLink === "string"
+                    ? item.meetingLink.trim() || undefined
+                    : typeof item?.meeting_link === "string"
+                      ? item.meeting_link.trim() || undefined
+                      : undefined);
 
             const transcript = parseTranscriptFromApi(item?.transcript);
             const aiSummary = parseAiSummaryFromApi(item?.aiSummary);
@@ -270,6 +286,7 @@ export const roadmapService = {
                 mentorNote,
                 pastorNote,
                 appointmentId,
+                ...(meetingLink ? { meetingLink } : {}),
                 ...(transcript ? { transcript } : {}),
                 ...(aiSummary ? { aiSummary } : {}),
                 ...(mentorshipInsights ? { mentorshipInsights } : {}),
