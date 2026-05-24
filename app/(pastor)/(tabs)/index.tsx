@@ -1,4 +1,8 @@
 import ExploreCard from "@/components/director/ExploreCard";
+import {
+  PastorFocusTilesGrid,
+  type PastorFocusGridTile,
+} from "@/components/pastor/PastorFocusTilesGrid";
 import HeaderHero from "@/components/director/HeroHeader";
 import WelcomeCard from "@/components/director/WelcomeCard";
 import {
@@ -11,6 +15,7 @@ import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessmen
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { Mentor } from "@/hooks/mentors/useMentors";
 import { usePastorFocusItems } from "@/hooks/pastor/usePastorFocusItems";
+import { usePastorFocusTileStatuses } from "@/hooks/pastor/usePastorFocusTileStatuses";
 import { usePastorNewAssignmentsHome } from "@/hooks/pastor/usePastorNewAssignmentsHome";
 import { useProfile } from "@/hooks/profile/useProfile";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
@@ -100,6 +105,7 @@ export default function PastorDashboard() {
   const { mentors, isEmpty } = useAssignedMentors(user?.id as string);
   const { sections: focusSections, isLoading: isFocusLoading } =
     usePastorFocusItems();
+  const focusTileStatuses = usePastorFocusTileStatuses(focusSections);
   const { data: mentorshipSessions = [] } = usePastorSessions(user?.id);
   const [focusSheetSectionId, setFocusSheetSectionId] = useState<string | null>(null);
   const [focusSheetTitle, setFocusSheetTitle] = useState<string | undefined>(undefined);
@@ -352,7 +358,7 @@ export default function PastorDashboard() {
       },
       {
         icon: "people-outline" as const,
-        line1: "Attend Mentorship",
+        line1: "Mentorship",
         line2: "Sessions",
         // line3: nextMentorshipWhenLabel,
         sheetTitle: "Attend Mentorship Session",
@@ -390,14 +396,6 @@ export default function PastorDashboard() {
     [nextMentorshipWhenLabel],
   );
 
-  const formatFocusTileTitle = useCallback(
-    (tile: { line1: string; line2: string; line3?: string }) =>
-      tile.line3
-        ? `${tile.line1}\n${tile.line2}\n${tile.line3}`
-        : `${tile.line1}\n${tile.line2}`,
-    [],
-  );
-
   const focusTilesWithLabels = useMemo(
     () =>
       focusTiles.map((tile) =>
@@ -421,6 +419,16 @@ export default function PastorDashboard() {
       requestAnimationFrame(() => pastorFocusSheetRef.current?.present());
     },
     [],
+  );
+
+  const handleFocusGridTilePress = useCallback(
+    (tile: PastorFocusGridTile) => {
+      openThingsToFocusSheet({
+        sectionId: tile.sectionId,
+        title: tile.sheetTitle,
+      });
+    },
+    [openThingsToFocusSheet],
   );
 
   const setPastorFocusSheetRef = useCallback((instance: BottomSheetModal | null) => {
@@ -732,44 +740,11 @@ export default function PastorDashboard() {
                   </Text>
                 </View>
               </View>
-              <View style={styles.focusTilesGrid}>
-                <View style={styles.focusTilesRow}>
-                  {focusTilesWithLabels.slice(0, 3).map((tile) => (
-                    <ExploreCard
-                      key={tile.sectionId}
-                      ionicon={tile.icon}
-                      title={formatFocusTileTitle(tile)}
-                      appearance="frosted"
-                      compact
-                      wrapperStyle={styles.focusTile}
-                      onPress={() =>
-                        openThingsToFocusSheet({
-                          sectionId: tile.sectionId,
-                          title: tile.sheetTitle,
-                        })
-                      }
-                    />
-                  ))}
-                </View>
-                <View style={styles.focusTilesRow}>
-                  {focusTilesWithLabels.slice(3, 6).map((tile) => (
-                    <ExploreCard
-                      key={tile.sectionId}
-                      ionicon={tile.icon}
-                      title={formatFocusTileTitle(tile)}
-                      appearance="frosted"
-                      compact
-                      wrapperStyle={styles.focusTile}
-                      onPress={() =>
-                        openThingsToFocusSheet({
-                          sectionId: tile.sectionId,
-                          title: tile.sheetTitle,
-                        })
-                      }
-                    />
-                  ))}
-                </View>
-              </View>
+              <PastorFocusTilesGrid
+                tiles={focusTilesWithLabels}
+                statuses={focusTileStatuses}
+                onTilePress={handleFocusGridTilePress}
+              />
             </Animated.View>
 
             <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.howToCard}>
@@ -1338,23 +1313,6 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 2,
     paddingBottom: 2,
-  },
-  focusTilesGrid: {
-    gap: 8,
-    paddingVertical: 2,
-  },
-  focusTilesRow: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    gap: 8,
-  },
-  focusTilesRowSpacer: {
-    flex: 0.5,
-    minWidth: 0,
-  },
-  focusTile: {
-    flex: 1,
-    minWidth: 0,
   },
   helpButtonCompact: {
     flexDirection: "row",

@@ -135,6 +135,7 @@ const styles = StyleSheet.create({
         flex: 1,
         flexBasis: 0,
         minWidth: 0,
+        maxWidth: '25%',
     },
     card: {
         backgroundColor: '#1E366F',
@@ -156,11 +157,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 6,
         alignItems: 'center',
         justifyContent: 'center',
+        height: isSmallDevice ? 72 : 80,
         minHeight: isSmallDevice ? 72 : 80,
     },
     cardFrostedCompact: {
         paddingVertical: isSmallDevice ? 7 : 8,
         paddingHorizontal: 4,
+        height: isSmallDevice ? 58 : 62,
         minHeight: isSmallDevice ? 58 : 62,
     },
     icon: {

@@ -3,7 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
+    "start": "node ./scripts/fix-encoding.js && expo start",
     "prestart": "node ./scripts/fix-encoding.js",
     "preandroid": "node ./scripts/fix-encoding.js",
     "preios": "node ./scripts/fix-encoding.js",
