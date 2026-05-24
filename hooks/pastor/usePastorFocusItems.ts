@@ -7,6 +7,7 @@ import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessmen
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { appointmentService } from "@/services/appointments.service";
 import { roadmapService } from "@/services/roadmap.service";
 import { useAuthStore } from "@/stores";
 import { Assessment } from "@/types/assessment.types";
@@ -38,32 +39,22 @@ import type {
 } from "@/components/sheets/PastorFocusBottomSheet";
 import { getAppointmentJoinUrl, truncateMiddle } from "@/utils/meetingLinkDetails";
 
-const UPCOMING_MEETING_WINDOW_HOURS = 24;
 const UPCOMING_DUE_WINDOW_DAYS = 7;
 const MAX_ITEMS_PER_SECTION = 3;
+
+const isCancelledAppointment = (appointment: Appointment) => {
+  const status = String(appointment.status ?? "").trim().toLowerCase();
+  return (
+    status === "cancelled" ||
+    status === "canceled" ||
+    status.startsWith("cancel")
+  );
+};
 
 const toTimestamp = (value?: string | null) => {
   if (!value) return Number.POSITIVE_INFINITY;
   const timestamp = new Date(value).getTime();
   return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp;
-};
-
-const isWithinHours = (value: string | undefined, hours: number) => {
-  const timestamp = toTimestamp(value);
-  const now = Date.now();
-  return timestamp >= now && timestamp <= now + hours * 60 * 60 * 1000;
-};
-
-const isUpcomingInCurrentMonth = (value: string | undefined) => {
-  const timestamp = toTimestamp(value);
-  if (!Number.isFinite(timestamp)) return false;
-  const now = new Date();
-  const target = new Date(timestamp);
-  if (target.getTime() < now.getTime()) return false;
-  return (
-    target.getFullYear() === now.getFullYear() &&
-    target.getMonth() === now.getMonth()
-  );
 };
 
 const isWithinDays = (value: string | undefined, days: number) => {
@@ -189,8 +180,13 @@ const getWithWhomLabel = (
 export const usePastorFocusItems = () => {
   const { user } = useAuthStore();
   const pastorId = user?.id;
-  const { appointments, isLoading: isAppointmentsLoading } = useAppointments({
+  const {
+    appointments,
+    isLoading: isAppointmentsLoading,
+    getUpcomingAppointments,
+  } = useAppointments({
     userId: pastorId,
+    futureOnly: false,
   });
   const { data: mentorshipSessions = [], isLoading: isSessionsLoading } =
     usePastorSessions(pastorId);
@@ -260,7 +256,10 @@ export const usePastorFocusItems = () => {
   const mentorshipAppointmentIds = useMemo(() => {
     const ids = new Set<string>();
     for (const session of mentorshipSessions) {
-      if (session.appointmentId) {
+      if (
+        session.appointmentId &&
+        String(session.status).toUpperCase() === "SCHEDULED"
+      ) {
         ids.add(String(session.appointmentId));
       }
     }
@@ -282,22 +281,30 @@ export const usePastorFocusItems = () => {
       (appointments || []).map((apt) => [String(apt.id), apt]),
     );
 
-    const toMentorshipLinkItem = (
+    const toMentorshipSessionItem = (
       session: (typeof mentorshipSessions)[number],
-    ): PastorFocusItem | null => {
+    ): PastorFocusItem => {
       const apt = session.appointmentId
         ? appointmentById.get(String(session.appointmentId))
         : undefined;
       const joinUrl = getAppointmentJoinUrl(apt) ?? session.meetingLink ?? null;
-      if (!joinUrl) return null;
+      const when = formatDateTime(session.scheduledDate);
 
       return {
-        id: `mentorship-link-${session.id}`,
+        id: joinUrl
+          ? `mentorship-link-${session.id}`
+          : `mentorship-session-${session.id}`,
         title: sessionTopicLine(session.sessionNumber),
-        description: truncateMiddle(joinUrl, 52),
-        meta: `${sessionOrdinalLabel(session.sessionNumber)} • ${formatDateTime(session.scheduledDate)}`,
+        description: joinUrl
+          ? truncateMiddle(joinUrl, 52)
+          : when
+            ? `Scheduled ${when}`
+            : "Scheduled mentorship session",
+        meta: joinUrl
+          ? `${sessionOrdinalLabel(session.sessionNumber)} • ${when}`
+          : `${sessionOrdinalLabel(session.sessionNumber)} • Link pending`,
         accentColor: "#38BDF8",
-        joinUrl,
+        ...(joinUrl ? { joinUrl } : {}),
         route: {
           pathname: `/(pastor)/(tabs)/sessions/${session.id}`,
         },
@@ -319,8 +326,7 @@ export const usePastorFocusItems = () => {
         (a, b) =>
           toTimestamp(a.scheduledDate) - toTimestamp(b.scheduledDate),
       )
-      .map(toMentorshipLinkItem)
-      .filter((item): item is PastorFocusItem => item != null)
+      .map(toMentorshipSessionItem)
       .slice(0, MAX_ITEMS_PER_SECTION);
 
     const mentorshipUpcomingItems: PastorFocusItem[] = scheduledSessions
@@ -333,8 +339,7 @@ export const usePastorFocusItems = () => {
         (a, b) =>
           toTimestamp(a.scheduledDate) - toTimestamp(b.scheduledDate),
       )
-      .map(toMentorshipLinkItem)
-      .filter((item): item is PastorFocusItem => item != null)
+      .map(toMentorshipSessionItem)
       .slice(0, MAX_ITEMS_PER_SECTION);
 
     const roadmapItems: PastorFocusItem[] = roadmaps
@@ -381,10 +386,11 @@ export const usePastorFocusItems = () => {
         };
       });
 
-    const meetingItems: PastorFocusItem[] = (appointments || [])
+    const otherMeetingItems: PastorFocusItem[] = getUpcomingAppointments()
       .filter((appointment: Appointment) => !isMentorshipAppointment(appointment))
+      .filter((appointment: Appointment) => !isCancelledAppointment(appointment))
       .filter((appointment: Appointment) =>
-        isWithinHours(appointment.meetingDate, UPCOMING_MEETING_WINDOW_HOURS),
+        appointmentService.isUpcoming(appointment.meetingDate),
       )
       .sort(
         (a: Appointment, b: Appointment) =>
@@ -394,42 +400,15 @@ export const usePastorFocusItems = () => {
       .map((appointment: Appointment) => {
         const scheduler = getSchedulerLabel(appointment, user?.id, mentorNameById);
         const withWhom = getWithWhomLabel(appointment, mentorNameById);
+        const joinUrl = getAppointmentJoinUrl(appointment);
+        const mentorName = mentorNameById.get(appointment.mentorId);
         return {
-          id: `meeting-${appointment.id}`,
-          title: "Upcoming meeting",
-          description: `Meeting starts ${formatDateTime(appointment.meetingDate)}.`,
-          meta: `${scheduler} • ${withWhom} • Within ${UPCOMING_MEETING_WINDOW_HOURS} hours`,
-          accentColor: "#38BDF8",
-          route: {
-            pathname: "/appointments/meeting-details",
-            params: { appointmentId: String(appointment.id) },
-          },
-        };
-      });
-
-    const monthlyMeetingItems: PastorFocusItem[] = (appointments || [])
-      .filter((appointment: Appointment) => !isMentorshipAppointment(appointment))
-      .filter((appointment: Appointment) => {
-        const in24Hours = isWithinHours(
-          appointment.meetingDate,
-          UPCOMING_MEETING_WINDOW_HOURS,
-        );
-        return !in24Hours && isUpcomingInCurrentMonth(appointment.meetingDate);
-      })
-      .sort(
-        (a: Appointment, b: Appointment) =>
-          toTimestamp(a.meetingDate) - toTimestamp(b.meetingDate),
-      )
-      .slice(0, MAX_ITEMS_PER_SECTION)
-      .map((appointment: Appointment) => {
-        const scheduler = getSchedulerLabel(appointment, user?.id, mentorNameById);
-        const withWhom = getWithWhomLabel(appointment, mentorNameById);
-        return {
-          id: `meeting-month-${appointment.id}`,
-          title: "Upcoming meeting this month",
-          description: `Meeting starts ${formatDateTime(appointment.meetingDate)}.`,
-          meta: `${scheduler} • ${withWhom} • This month`,
-          accentColor: "#22D3EE",
+          id: `other-meeting-${appointment.id}`,
+          title: mentorName ? `Meeting with ${mentorName}` : "Upcoming meeting",
+          description: `Starts ${formatDateTime(appointment.meetingDate)}.`,
+          meta: `${scheduler} • ${withWhom}`,
+          accentColor: "#22C55E",
+          ...(joinUrl ? { joinUrl } : {}),
           route: {
             pathname: "/appointments/meeting-details",
             params: { appointmentId: String(appointment.id) },
@@ -534,26 +513,21 @@ export const usePastorFocusItems = () => {
       {
         id: "mentorship-sessions",
         title: "Today",
-        emptyMessage: "No mentorship session links for today.",
+        emptyMessage: "No mentorship sessions scheduled for today.",
         items: mentorshipTodayItems,
       },
       {
         id: "mentorship-sessions-upcoming",
         title: "Upcoming",
-        emptyMessage: "No upcoming mentorship session links.",
+        emptyMessage: "No upcoming mentorship sessions.",
         items: mentorshipUpcomingItems,
       },
       {
         id: "other-meetings",
-        title: `Other meetings within ${UPCOMING_MEETING_WINDOW_HOURS} hours`,
-        emptyMessage: "No other meetings are coming up in the next 24 hours.",
-        items: meetingItems,
-      },
-      {
-        id: "other-meetings-month",
-        title: "Other meetings this month",
-        emptyMessage: "No other meetings are scheduled for this month.",
-        items: monthlyMeetingItems,
+        title: "Upcoming",
+        emptyMessage:
+          "No other meetings scheduled. Extra mentor meetings (outside the mentorship program) appear here. Program sessions are under Mentorship Session.",
+        items: otherMeetingItems,
       },
       {
         id: "assessments",
@@ -573,6 +547,7 @@ export const usePastorFocusItems = () => {
     appointments,
     assessments,
     feedbackQuery.data,
+    getUpcomingAppointments,
     isMentorshipAppointment,
     mentorshipSessions,
     mentors,

@@ -113,9 +113,7 @@ export default function PastorDashboard() {
       );
     }
     if (focusSheetSectionId === "other-meetings") {
-      return focusSections.filter(
-        (s) => s.id === "other-meetings" || s.id === "other-meetings-month",
-      );
+      return focusSections.filter((s) => s.id === "other-meetings");
     }
     return focusSections.filter((s) => s.id === focusSheetSectionId);
   }, [focusSheetSectionId, focusSections]);
