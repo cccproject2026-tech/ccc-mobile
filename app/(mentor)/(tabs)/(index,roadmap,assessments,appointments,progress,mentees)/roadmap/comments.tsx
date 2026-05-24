@@ -13,13 +13,12 @@ import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import {
     ActivityIndicator,
     Alert,
     FlatList,
     Image,
-    KeyboardAvoidingView,
-    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -188,8 +187,8 @@ export default function CommentsScreen() {
                 />
             </View>
 
-            <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            <KeyboardSafeContainer
+                mode="avoid"
                 style={{ flex: 1 }}
                 keyboardVerticalOffset={100}
             >
@@ -245,7 +244,7 @@ export default function CommentsScreen() {
                         }
                     />
                 </View>
-            </KeyboardAvoidingView>
+            </KeyboardSafeContainer>
         </GradientBackground>
     );
 }

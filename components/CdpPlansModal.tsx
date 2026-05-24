@@ -10,7 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import { roadmapTheme } from './ui/design-system/roadmapTheme';
 
 export interface CdpSection {
@@ -80,7 +80,7 @@ export default function CdpPlansModal({
             onRequestClose={onClose}
         >
             <View style={styles.overlay}>
-                <KeyboardAwareScrollView
+                <KeyboardSafeContainer
                     style={styles.keyboardAwareWrapper}
                     contentContainerStyle={styles.keyboardAwareContent}
                     keyboardShouldPersistTaps="handled"
@@ -269,7 +269,7 @@ export default function CdpPlansModal({
                             </View>
                         </View>
                     </View>
-                </KeyboardAwareScrollView>
+                </KeyboardSafeContainer>
             </View>
         </Modal>
     );

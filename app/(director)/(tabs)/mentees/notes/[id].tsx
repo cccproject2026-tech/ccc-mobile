@@ -1,3 +1,4 @@
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import TopBar from '@/components/director/TopBar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,9 +7,6 @@ import React, { JSX, useEffect, useRef, useState } from 'react';
 import {
     Alert,
     Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
     Text,
     TouchableOpacity,
     View
@@ -112,10 +110,9 @@ export default function MenteeNoteDetail(): JSX.Element {
             colors={['#176192', '#1D548D', '#264387']}
             style={{ flex: 1, paddingBottom: bottom }}
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                className="flex-1"
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            <KeyboardSafeContainer
+                contentContainerStyle={{ flexGrow: 1 }}
+                extraScrollHeight={24}
             >
                 <TopBar
                     userName="David Roe"
@@ -135,12 +132,6 @@ export default function MenteeNoteDetail(): JSX.Element {
                     <Text className="ml-10 text-sm text-white/70">Mentee › John Doe</Text>
                 </View>
 
-                <ScrollView
-                    className="flex-1"
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 20 }}
-                    keyboardShouldPersistTaps="handled"
-                >
                     <View className="flex-row items-center justify-between px-4 mt-4 mb-4">
                         <View className="px-6 py-3 border-2 rounded-2xl border-white/30 bg-white/5">
                             <Text className="text-base font-medium text-white/90">
@@ -350,8 +341,7 @@ export default function MenteeNoteDetail(): JSX.Element {
                             </View>
                         )}
                     </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardSafeContainer>
         </LinearGradient>
     );
 }

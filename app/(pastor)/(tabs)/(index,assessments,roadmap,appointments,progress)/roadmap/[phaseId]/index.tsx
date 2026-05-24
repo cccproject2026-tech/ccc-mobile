@@ -5,6 +5,7 @@ import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { Colors } from "@/constants/Colors";
 import { useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
 import { getTasks } from "@/lib/roadmap/helpers";
@@ -17,7 +18,6 @@ import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -183,14 +183,18 @@ export default function PastorRoadmapDetail() {
 
       <TopBar role="pastor" showUserName />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
+      <KeyboardSafeContainer
+        style={{ flex: 1 }}
+        extraScrollHeight={40}
+        dismissKeyboardOnTap
         contentContainerStyle={[
           styles.container,
           {
-            paddingBottom: bottom + 20,
+            paddingBottom: bottom + 40,
             paddingHorizontal: horizontalPadding,
             maxWidth,
+            width: "100%",
+            alignSelf: maxWidth ? "center" : undefined,
           },
         ]}
         refreshControl={
@@ -263,7 +267,7 @@ export default function PastorRoadmapDetail() {
             })
           )}
         </View>
-      </ScrollView>
+      </KeyboardSafeContainer>
 
       <ContextMenu
         visible={showOutcomeMenu}

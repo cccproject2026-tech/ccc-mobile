@@ -6,14 +6,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import {
     ActivityIndicator,
     Alert,
     Image,
-    KeyboardAvoidingView,
     Platform,
     Pressable,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -179,15 +178,11 @@ export default function InterestFormScreen() {
         <LinearGradient
             colors={['#176192', '#1D548D', '#264387']}
             style={[styles.container, { paddingTop: Platform.OS === 'ios' ? top : top + 10 }]}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
+            <KeyboardSafeContainer
+                contentContainerStyle={{ paddingBottom: bottom + 20 }}
+                useSafeAreaBottom
+                extraScrollHeight={24}
             >
-                <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{ paddingBottom: bottom + 20 }}
-                    showsVerticalScrollIndicator={false}
-                >
                     <View style={styles.header}>
                         <View style={styles.headerCenter}>
                             <LinearGradient
@@ -504,8 +499,7 @@ export default function InterestFormScreen() {
                             </View>
                         </>
                     )}
-                </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardSafeContainer>
 
             {/* Modals */}
             <RejectInterestModal

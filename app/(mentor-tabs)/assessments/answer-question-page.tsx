@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AnswerQuestionPage() {
@@ -52,7 +52,7 @@ export default function AnswerQuestionPage() {
         <SafeAreaView style={styles.scrollContainer}>
           <AssessmentFlowHeader title="Church Assessment Evaluation (CMA)" />
 
-          <KeyboardAwareScrollView
+          <KeyboardSafeContainer
             style={styles.flex}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
@@ -90,7 +90,7 @@ export default function AnswerQuestionPage() {
                 </TouchableOpacity>
               </View>
             </ScrollView>
-          </KeyboardAwareScrollView>
+          </KeyboardSafeContainer>
         </SafeAreaView>
       </AppGradientBackground>
     </>

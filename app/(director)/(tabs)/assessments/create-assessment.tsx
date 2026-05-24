@@ -5,6 +5,7 @@ import { useCreateAssessment } from '@/hooks/assessments';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AppGradientBackground from '@/components/layout/AppGradientBackground';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -484,13 +485,13 @@ export default function CreateAssessmentPage() {
             </View>
 
             {/* Form Content */}
-            <ScrollView
+            <KeyboardSafeContainer
                 style={styles.scrollView}
                 contentContainerStyle={{
                     paddingHorizontal: 16,
                     paddingBottom: bottom + 100,
                 }}
-                showsVerticalScrollIndicator={false}
+                extraScrollHeight={24}
             >
                 {/* Assessment Details */}
                 <View style={styles.section}>
@@ -780,7 +781,7 @@ export default function CreateAssessmentPage() {
                         )}
                     </TouchableOpacity>
                 </View>
-            </ScrollView>
+            </KeyboardSafeContainer>
 
             {/* Success Modal */}
             <AssessmentCreatedSuccessModal

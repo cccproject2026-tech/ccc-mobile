@@ -15,7 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const accent = {
@@ -63,7 +63,7 @@ export default function ContinueApplicationScreen() {
                 <View style={styles.bgCircleBottom} />
                 <TopBar showDrawer={false} showNotifications={false} />
 
-                <KeyboardAwareScrollView
+                <KeyboardSafeContainer
                     contentContainerStyle={[
                         styles.scrollContent,
                         { paddingBottom: bottom + 20 },
@@ -149,7 +149,7 @@ export default function ContinueApplicationScreen() {
                             resizeMode="contain"
                         />
                     </View>
-                </KeyboardAwareScrollView>
+                </KeyboardSafeContainer>
             </LinearGradient>
         </>
     );

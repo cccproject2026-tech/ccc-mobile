@@ -361,6 +361,9 @@ const AddFieldSheet = forwardRef<AddFieldSheetRef, AddFieldSheetProps>(
           ref={bottomSheetRef}
           snapPoints={[config.snapPoint]}
           enablePanDownToClose
+          keyboardBehavior="interactive"
+          keyboardBlurBehavior="restore"
+          android_keyboardInputMode="adjustResize"
           backdropComponent={renderBackdrop}
           backgroundStyle={styles.bottomSheetBackground}
           handleIndicatorStyle={styles.handleIndicator}

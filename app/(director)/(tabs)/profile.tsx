@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ProfileData {
@@ -195,7 +195,7 @@ export default function ProfileScreen() {
             My Profile
           </Text>
         </TouchableOpacity>
-        <KeyboardAwareScrollView
+        <KeyboardSafeContainer
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
@@ -394,7 +394,7 @@ export default function ProfileScreen() {
               <Text style={styles.submitButtonText}>Submit</Text>
             </TouchableOpacity>
           </View>
-        </KeyboardAwareScrollView>
+        </KeyboardSafeContainer>
       </LinearGradient>
     );
   }
@@ -423,7 +423,7 @@ export default function ProfileScreen() {
             My Profile
           </Text>
         </TouchableOpacity>
-        <KeyboardAwareScrollView
+        <KeyboardSafeContainer
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
@@ -618,7 +618,7 @@ export default function ProfileScreen() {
               </View>
             </View>
           </View>
-        </KeyboardAwareScrollView>
+        </KeyboardSafeContainer>
       </LinearGradient>
     );
   }
@@ -646,7 +646,7 @@ export default function ProfileScreen() {
           Edit Profile
         </Text>
       </TouchableOpacity>
-      <KeyboardAwareScrollView
+      <KeyboardSafeContainer
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -930,7 +930,7 @@ export default function ProfileScreen() {
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAwareScrollView>
+      </KeyboardSafeContainer>
     </LinearGradient>
   );
 }

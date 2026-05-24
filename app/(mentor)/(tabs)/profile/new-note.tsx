@@ -3,10 +3,9 @@ import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -150,11 +149,7 @@ export default function NewNote() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-          {/* Header */}
+        {/* Header */}
           <View style={styles.header}>
           <View style={styles.headerTop}>
             <SquircleIconButton
@@ -228,36 +223,35 @@ export default function NewNote() {
           </ScrollView>
         </View>
 
-          <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Note Content Area */}
-            <View style={styles.contentContainer}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Write the Notes here..."
-                placeholderTextColor="rgba(255, 255, 255, 0.4)"
-                multiline
-                textAlignVertical="top"
-                value={noteContent}
-                onChangeText={setNoteContent}
-              />
-            </View>
+        <KeyboardSafeContainer
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1 }}
+          useSafeAreaBottom
+          bottomPadding={16}
+          extraScrollHeight={24}
+        >
+          <View style={styles.contentContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Write the Notes here..."
+              placeholderTextColor="rgba(255, 255, 255, 0.4)"
+              multiline
+              textAlignVertical="top"
+              value={noteContent}
+              onChangeText={setNoteContent}
+            />
+          </View>
 
-            {/* Save Button */}
-            <View style={styles.bottomContainer}>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                style={styles.saveButton}
-                onPress={handleSave}
-              >
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          <View style={styles.bottomContainer}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.saveButton}
+              onPress={handleSave}
+            >
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardSafeContainer>
       </SafeAreaView>
     </AppGradientBackground>
   );

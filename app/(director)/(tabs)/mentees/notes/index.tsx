@@ -1,3 +1,4 @@
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import TopBar from '@/components/director/TopBar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,7 +7,6 @@ import React, { JSX, useRef, useState } from 'react';
 import {
     Alert,
     FlatList,
-    KeyboardAvoidingView,
     Platform,
     Pressable,
     Text,
@@ -185,16 +185,15 @@ export default function MenteeNotes(): JSX.Element {
 
                 {activeTab === 'new' ? (
                     // New Note Editor
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        className="flex-1"
+                    <KeyboardSafeContainer
+                        mode="avoid"
+                        style={{ flex: 1 }}
                         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
                     >
-                        <ScrollView
-                            className="flex-1"
+                        <KeyboardSafeContainer
                             contentContainerStyle={{ paddingHorizontal: 16 }}
-                            showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled"
+                            extraScrollHeight={24}
+                            scrollEnabled
                         >
                             <Pressable
                                 onPress={() => richText.current?.dismissKeyboard()}
@@ -341,8 +340,8 @@ export default function MenteeNotes(): JSX.Element {
                                     </Text>
                                 </TouchableOpacity>
                             </Pressable>
-                        </ScrollView>
-                    </KeyboardAvoidingView>
+                        </KeyboardSafeContainer>
+                    </KeyboardSafeContainer>
                 ) : (
                     <FlatList
                         data={previousNotes}

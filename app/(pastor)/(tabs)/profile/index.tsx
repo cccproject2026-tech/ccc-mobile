@@ -19,18 +19,16 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import {
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const CLEAN_CHURCH_TEMPLATE: ChurchInfo = {
@@ -497,16 +495,12 @@ export default function ProfileScreen() {
       <TopBar role="pastor" />
       {renderHeader()}
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      <KeyboardSafeContainer
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom }]}
+        useSafeAreaBottom
+        extraScrollHeight={24}
       >
-        <KeyboardAwareScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom }]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
         {/* VIEW MODE */}
         {!isEditing && (
           <>
@@ -660,8 +654,7 @@ export default function ProfileScreen() {
             {renderEditActions()}
           </>
         )}
-        </KeyboardAwareScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardSafeContainer>
 
       {/* MODALS */}
       <ConfirmModal

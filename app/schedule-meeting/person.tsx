@@ -7,7 +7,8 @@ import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigati
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -99,7 +100,7 @@ export default function ScheduleMeetingPersonScreen() {
   return (
     <AppGradientBackground style={{ flex: 1 }}>
       <TopBar role={String(user?.role || "pastor")} showUserName />
-      <View style={styles.container}>
+      <KeyboardSafeContainer mode="avoid" style={styles.container}>
         <Text style={styles.title}>Pick person</Text>
         <Text style={styles.subtitle}>Select who you want to meet with.</Text>
 
@@ -124,9 +125,8 @@ export default function ScheduleMeetingPersonScreen() {
             <Text style={styles.subtle}>No people found.</Text>
           </View>
         ) : (
-          <ScrollView
+          <KeyboardSafeContainer
             contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 12) + 24 }}
-            showsVerticalScrollIndicator={false}
           >
             {filtered.map((p) => (
               <Pressable
@@ -154,9 +154,9 @@ export default function ScheduleMeetingPersonScreen() {
                 <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.8)" />
               </Pressable>
             ))}
-          </ScrollView>
+          </KeyboardSafeContainer>
         )}
-      </View>
+      </KeyboardSafeContainer>
     </AppGradientBackground>
   );
 }

@@ -6,14 +6,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import {
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -514,10 +512,7 @@ export default function CreateAssessmentPage() {
         role="mentor"
       />
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
+      <KeyboardSafeContainer mode="avoid" style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={10}>
@@ -527,14 +522,13 @@ export default function CreateAssessmentPage() {
         </View>
 
         {/* Form Content */}
-        <ScrollView
+        <KeyboardSafeContainer
           style={styles.scrollView}
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingBottom: bottom + 100,
           }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          extraScrollHeight={24}
         >
         {/* Assessment Details */}
         <View style={styles.section}>
@@ -862,8 +856,8 @@ export default function CreateAssessmentPage() {
             )}
           </TouchableOpacity>
         </View>
-      </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardSafeContainer>
+      </KeyboardSafeContainer>
 
       {/* Success Modal */}
       <AssessmentCreatedSuccessModal

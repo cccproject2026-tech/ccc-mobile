@@ -29,6 +29,7 @@
         "backgroundColor": "#0F3D5E"
       },
       "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "pan",
       "package": "com.georgejose.cccnewapp",
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",

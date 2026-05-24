@@ -11,7 +11,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 
 interface PreSurveySectionProps {
     assessment: Assessment;
@@ -82,7 +82,7 @@ export default function PreSurveySection({
             </View>
 
             {/* Scrollable Content */}
-            <KeyboardAwareScrollView
+            <KeyboardSafeContainer
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -130,7 +130,7 @@ export default function PreSurveySection({
                         </Text>
                     </TouchableOpacity>
                 </View>
-            </KeyboardAwareScrollView>
+            </KeyboardSafeContainer>
         </>
     );
 }

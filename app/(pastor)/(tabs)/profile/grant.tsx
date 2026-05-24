@@ -13,13 +13,12 @@ import { getFontSize, getSpacing, isSmallDevice } from "@/utils/responsive";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   View
 } from "react-native";
@@ -258,19 +257,16 @@ export default function Grant() {
         />
 
         <View style={{ flex: 1 }}>
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-          >
             <View style={{ width: "100%", alignItems: "center", marginTop: 16, flex: 1 }}>
-              <ScrollView
+              <KeyboardSafeContainer
               contentContainerStyle={{
                 paddingBottom: Platform.OS === "android" ? bottom : bottom * 1.5,
                 paddingHorizontal: getSpacing(16),
                 flexGrow: 1,
               }}
-              style={{ width: "100%" }}
-              keyboardShouldPersistTaps="handled"
+              style={{ width: "100%", flex: 1 }}
+              useSafeAreaBottom
+              extraScrollHeight={24}
             >
               <View style={{ width: "100%", flexDirection: "column" }}>
 
@@ -510,7 +506,7 @@ export default function Grant() {
                   </>
                 )}
               </View>
-              </ScrollView>
+              </KeyboardSafeContainer>
 
               {/* Response modal */}
               <ResponseModal
@@ -523,7 +519,6 @@ export default function Grant() {
                 }
               />
             </View>
-          </KeyboardAvoidingView>
         </View>
 
         <SimpleSuccessModal

@@ -13,14 +13,13 @@ import {
     Alert,
     FlatList,
     Image,
-    KeyboardAvoidingView,
-    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from "react-native";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 
 export default function CommentsScreen() {
     const router = useRouter();
@@ -152,8 +151,8 @@ export default function CommentsScreen() {
                 </View>
             </View>
 
-            <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            <KeyboardSafeContainer
+                mode="avoid"
                 style={{ flex: 1 }}
                 keyboardVerticalOffset={100}
             >
@@ -204,7 +203,7 @@ export default function CommentsScreen() {
                         }
                     />
                 </View>
-            </KeyboardAvoidingView>
+            </KeyboardSafeContainer>
         </AppGradientBackground>
     );
 }

@@ -1,13 +1,8 @@
 import { Colors } from "@/constants/Colors";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  View,
-} from "react-native";
+import { SafeAreaView, View } from "react-native";
 import { PastorNavigationHeader } from "../pastor/Header";
 import Header from "./header";
 
@@ -50,41 +45,36 @@ const ScreenLayout = ({
       style={{ flex: 1 }}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        <KeyboardSafeContainer
+          mode={enableScrollView ? "scroll" : "static"}
+          extraScrollHeight={20}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: enableScrollView ? 26 : 150,
+            paddingHorizontal: paddingX,
+          }}
+          keyboardShouldPersistTaps="handled"
         >
-          <ScrollView
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingBottom: enableScrollView ? 26 : 150,
-              paddingHorizontal: paddingX,
-            }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {enablePastorHeader && (
-              <PastorNavigationHeader
-                showNameTag={showNameTag}
-                showDrawer={showDrawer}
-                showNotificationIcon={showNotificationIcon}
-                tagName={tagName}
-                wrapperClass="mt-4"
-                route={route}
-              />
-            )}
-            {enableHeader && (
-              <Header
-                title={headerTitle}
-                subTitle={headerSubTitle}
-                hideSearchBar={hideSearchBar}
-                showSettings={showSettings}
-              />
-            )}
-            <View style={{ flex: 1, paddingBottom: 26 }}>{children}</View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          {enablePastorHeader && (
+            <PastorNavigationHeader
+              showNameTag={showNameTag}
+              showDrawer={showDrawer}
+              showNotificationIcon={showNotificationIcon}
+              tagName={tagName}
+              wrapperClass="mt-4"
+              route={route}
+            />
+          )}
+          {enableHeader && (
+            <Header
+              title={headerTitle}
+              subTitle={headerSubTitle}
+              hideSearchBar={hideSearchBar}
+              showSettings={showSettings}
+            />
+          )}
+          <View style={{ flex: 1, paddingBottom: 26 }}>{children}</View>
+        </KeyboardSafeContainer>
       </SafeAreaView>
     </LinearGradient>
   );

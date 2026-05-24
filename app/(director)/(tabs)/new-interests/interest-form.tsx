@@ -10,11 +10,10 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { JSX, useRef, useState } from 'react';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import {
-    KeyboardAvoidingView,
     Platform,
     Pressable,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -333,14 +332,10 @@ export default function InterestFormScreen() {
             colors={['#176192', '#1D548D', '#264387']}
             style={[styles.container, { paddingTop: Platform.OS === 'ios' ? top : top + 10 }]}
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
-            >
-                <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{ paddingBottom: bottom + 120 }}
-                    showsVerticalScrollIndicator={false}
+            <KeyboardSafeContainer mode="avoid" style={{ flex: 1 }}>
+                <KeyboardSafeContainer
+                    contentContainerStyle={{ paddingBottom: bottom + 24 }}
+                    extraScrollHeight={24}
                 >
                     {/* Header */}
                     <View style={styles.header}>
@@ -449,7 +444,7 @@ export default function InterestFormScreen() {
                             </React.Fragment>
                         );
                     })}
-                </ScrollView>
+                </KeyboardSafeContainer>
 
                 {/* Bottom Buttons */}
                 {isEditMode ? (
@@ -469,7 +464,7 @@ export default function InterestFormScreen() {
                         </TouchableOpacity>
                     </View>
                 )}
-            </KeyboardAvoidingView>
+            </KeyboardSafeContainer>
 
             <AddFieldSheet
                 ref={addFieldSheetRef}

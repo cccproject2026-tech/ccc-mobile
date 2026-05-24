@@ -3,6 +3,7 @@ import ExpectedOutcomeModal from "@/components/director/ExpectedOutcomeModal";
 import TopBar from "@/components/director/TopBar";
 import { MentorTaskView } from "@/components/roadmaps/MentorTaskView";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { Colors } from "@/constants/Colors";
 import { useRoadmap, useRoadmapComments, useRoadmapQueries } from "@/hooks/roadmaps/useRoadmaps";
 import { resolveRoadmapDetailTask } from "@/lib/roadmap/helpers";
@@ -15,7 +16,6 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -146,14 +146,21 @@ export default function PastorRoadmapItemDetail() {
       <View style={styles.bgCircleBottom} pointerEvents="none" />
       <TopBar role="pastor" showUserName />
 
-      <ScrollView
+      <KeyboardSafeContainer
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
+        extraScrollHeight={100}
+        extraHeight={120}
+        enableResetScrollToCoords={false}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.container,
           {
-            paddingBottom: bottom + 20,
+            paddingBottom: bottom + 140,
             paddingHorizontal: horizontalPadding,
             maxWidth,
+            width: "100%",
+            alignSelf: maxWidth ? "center" : undefined,
           },
         ]}
         refreshControl={
@@ -327,7 +334,7 @@ export default function PastorRoadmapItemDetail() {
             />
           </>
         )}
-      </ScrollView>
+      </KeyboardSafeContainer>
 
       <ContextMenu
         visible={showOutcomeMenu}

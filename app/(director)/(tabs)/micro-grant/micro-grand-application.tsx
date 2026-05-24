@@ -1,3 +1,4 @@
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import { icons } from '@/constants/images';
 import { useMicrograntApplication } from '@/hooks/grant/useMicrograntApplications';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +9,6 @@ import {
     ActivityIndicator,
     Image,
     Linking,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -131,12 +131,12 @@ export default function MicroGrantApplicationScreen() {
                 style={styles.container}
             >
                 <SafeAreaView style={styles.safeArea}>
-                    <ScrollView
+                    <KeyboardSafeContainer
                         style={styles.scrollView}
                         contentContainerStyle={[styles.scrollContent, {
                             paddingBottom: bottom + 20,
                         }]}
-                        showsVerticalScrollIndicator={false}
+                        extraScrollHeight={24}
                     >
                         {isLoading ? (
                             <View style={styles.loadingContainer}>
@@ -392,7 +392,7 @@ export default function MicroGrantApplicationScreen() {
                         </View>
                             </>
                         )}
-                    </ScrollView>
+                    </KeyboardSafeContainer>
                 </SafeAreaView>
             </LinearGradient>
         </>

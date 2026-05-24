@@ -634,6 +634,7 @@ export function MentorTaskView({
                             <TextInput
                                 style={[styles.textInput, styles.textArea]}
                                 multiline
+                                scrollEnabled={false}
                                 numberOfLines={4}
                                 value={formData[extra.name] || ""}
                                 editable
@@ -1137,7 +1138,6 @@ export function MentorTaskView({
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         paddingTop: 6,
         paddingBottom: 14,
         gap: 14,

@@ -1,3 +1,4 @@
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import TopBar from '@/components/director/TopBar';
 import {
     GradientBackground,
@@ -14,10 +15,7 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
-    KeyboardAvoidingView,
-    Platform,
     Pressable,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -141,10 +139,7 @@ export default function QueriesScreen() {
                 <TopBar role="pastor" showUserName />
             </View>
 
-            <KeyboardAvoidingView
-                style={styles.keyboardAvoid}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-            >
+            <KeyboardSafeContainer mode="avoid" style={styles.keyboardAvoid}>
             <View style={[styles.content, { maxWidth: maxWidth ?? undefined }]}>
             <View style={{ paddingHorizontal: horizontalPadding, width: "100%" }}>
                 <RoadmapNavRow onBack={() => router.back()} pillLabel="Queries" />
@@ -181,15 +176,15 @@ export default function QueriesScreen() {
 
             {/* CONTENT */}
             {selectedTab === 'NEW' ? (
-                <ScrollView
+                <KeyboardSafeContainer
                     style={styles.scrollArea}
                     contentContainerStyle={{
                         flexGrow: 1,
                         paddingHorizontal: horizontalPadding,
                         paddingBottom: bottom + 20,
                     }}
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
+                    extraScrollHeight={24}
+                    dismissKeyboardOnTap
                 >
                 <View style={styles.inputSection}>
                     <Text style={styles.inputLabel}>Submit your question here.</Text>
@@ -224,7 +219,7 @@ export default function QueriesScreen() {
                         )}
                     </Pressable>
                 </View>
-                </ScrollView>
+                </KeyboardSafeContainer>
             ) : (
                 <FlatList
                     style={styles.scrollArea}
@@ -252,7 +247,7 @@ export default function QueriesScreen() {
                 />
             )}
             </View>
-            </KeyboardAvoidingView>
+            </KeyboardSafeContainer>
         </GradientBackground>
     );
 }

@@ -7,13 +7,11 @@ import { Mentor, useMentors } from "@/hooks/mentors/useMentors";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router } from "expo-router";
 import React, { useMemo, useState } from "react";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Linking,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -128,21 +126,16 @@ export default function MyMentorsScreen() {
       <AppGradientBackground>
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={{ flex: 1 }}>
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-          >
-            <View style={styles.screen}>
-              <View style={styles.topBarWrap}>
-                <TopBar role="mentor" showUserName showBackButton={false} />
-              </View>
+          <View style={styles.screen}>
+            <View style={styles.topBarWrap}>
+              <TopBar role="mentor" showUserName showBackButton={false} />
+            </View>
 
-              <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-              >
+            <KeyboardSafeContainer
+              style={{ flex: 1 }}
+              contentContainerStyle={styles.scrollContent}
+              extraScrollHeight={24}
+            >
                 <View style={styles.titleRow}>
                   <TouchableOpacity onPress={() => router.back()} style={styles.backPill} activeOpacity={0.85}>
                     <Ionicons name="chevron-back" size={20} color="#fff" />
@@ -194,9 +187,8 @@ export default function MyMentorsScreen() {
                     ))}
                   </View>
                 </View>
-              </ScrollView>
-            </View>
-          </KeyboardAvoidingView>
+            </KeyboardSafeContainer>
+          </View>
         </SafeAreaView>
       </AppGradientBackground>
     </>

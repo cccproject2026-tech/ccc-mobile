@@ -9,10 +9,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -21,6 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 
 interface Instruction {
   id: string;
@@ -186,18 +184,13 @@ export default function EditInstructionsPage() {
             role="mentor"
           />
 
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          <KeyboardSafeContainer
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingBottom: bottom + 100,
+            }}
+            extraScrollHeight={24}
           >
-            <ScrollView
-              contentContainerStyle={{
-                flexGrow: 1,
-                paddingBottom: bottom + 100,
-              }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
             {/* Header Section */}
             <View style={styles.header}>
               <Pressable onPress={() => router.back()} hitSlop={10}>
@@ -326,8 +319,7 @@ export default function EditInstructionsPage() {
                 Edit Sections {">>"}
               </Text>
             </TouchableOpacity>
-            </ScrollView>
-          </KeyboardAvoidingView>
+          </KeyboardSafeContainer>
         </SafeAreaView>
 
         {/* Success Modal */}

@@ -6,6 +6,7 @@ import { Tab } from "@/components/atom/tab"
 import { Separator } from "@/components/build-components"
 import InputField from "@/components/build-components/input-field"
 import TextAreaField from "@/components/build-components/text-area"
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer"
 import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
@@ -14,9 +15,7 @@ import { Stack, router, useLocalSearchParams } from "expo-router"
 import React from "react"
 import {
   Image,
-  KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -67,17 +66,13 @@ export default function DetailedRoadMap() {
       >
         <Stack.Screen options={{ headerShown: false }} />
         <SafeAreaView style={styles.scrollContainer}>
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          <KeyboardSafeContainer
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingBottom: 40,
+            }}
+            extraScrollHeight={24}
           >
-            <ScrollView
-              contentContainerStyle={{
-                flexGrow: 1,
-                paddingBottom: 40,
-              }}
-              keyboardShouldPersistTaps="handled"
-            >
             <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
 
             {/* Header Section */}
@@ -483,8 +478,7 @@ export default function DetailedRoadMap() {
                 </View>
               )}
             </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
+          </KeyboardSafeContainer>
         </SafeAreaView>
 
         {/* Modals */}

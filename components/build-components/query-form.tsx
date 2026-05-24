@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import {
     SafeAreaView,
-    ScrollView,
     Text,
     TextInput,
     TouchableOpacity,
@@ -25,7 +25,7 @@ const QueryForm = () => {
         className="flex-1"
       >
         <SafeAreaView className="flex-1">
-          <ScrollView className="flex-1">
+          <KeyboardSafeContainer contentContainerStyle={{ flexGrow: 1 }} extraScrollHeight={20}>
             <View className="px-6 mt-7 flex-1">
               <Text className="text-white text-base font-normal mb-2.5">
                 Submit your question here.
@@ -67,7 +67,7 @@ const QueryForm = () => {
                 </TouchableOpacity>
               </View>
             </View>
-          </ScrollView>
+          </KeyboardSafeContainer>
         </SafeAreaView>
       </LinearGradient>
     </>

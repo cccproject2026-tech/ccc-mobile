@@ -23,7 +23,8 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
@@ -702,9 +703,10 @@ export default function InterestFormScreen() {
                     showBackButton={true}
                 />
 
-                <KeyboardAwareScrollView
-                    ref={scrollViewRef as any}
+                <KeyboardSafeContainer
+                    innerRef={scrollViewRef as React.Ref<KeyboardAwareScrollView>}
                     showsVerticalScrollIndicator={false}
+                    extraScrollHeight={20}
                     contentContainerStyle={[
                         styles.scrollContent,
                         { paddingBottom: bottom + 20 },
@@ -1340,7 +1342,7 @@ export default function InterestFormScreen() {
                             )}
                         </TouchableOpacity>
                     </View>
-                </KeyboardAwareScrollView>
+                </KeyboardSafeContainer>
 
                 <SearchableSelectModal
                     visible={locationPicker?.type === "country"}

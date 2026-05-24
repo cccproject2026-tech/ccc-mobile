@@ -11,7 +11,6 @@ import {
   Alert,
   Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -20,6 +19,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 
 interface Instruction {
   id: string;
@@ -432,13 +432,13 @@ export default function CreateAssessmentPage() {
       </View>
 
       {/* Form Content */}
-      <ScrollView
+      <KeyboardSafeContainer
         style={styles.scrollView}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingBottom: bottom + 100,
         }}
-        showsVerticalScrollIndicator={false}
+        extraScrollHeight={24}
       >
         {/* Assessment Details */}
         <View style={styles.section}>
@@ -659,7 +659,7 @@ export default function CreateAssessmentPage() {
             )}
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </KeyboardSafeContainer>
 
       {/* Success Modal */}
       <AssessmentCreatedSuccessModal

@@ -17,7 +17,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 
 export default function PreSurveyPage() {
     const { assessmentId } = useLocalSearchParams();
@@ -146,7 +146,7 @@ export default function PreSurveyPage() {
             </View>
 
             {/* Scrollable Content */}
-            <KeyboardAwareScrollView
+            <KeyboardSafeContainer
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -192,7 +192,7 @@ export default function PreSurveyPage() {
                         <Text style={styles.submitButtonText}>Submit</Text>
                     </TouchableOpacity>
                 </View>
-            </KeyboardAwareScrollView>
+            </KeyboardSafeContainer>
         </AppGradientBackground>
     );
 }

@@ -12,7 +12,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 
 interface AssessmentQuestionsSectionProps {
     assessment: Assessment;
@@ -453,10 +453,10 @@ export default function AssessmentQuestionsSection({
                 </View>
             )}
 
-            <KeyboardAwareScrollView
+            <KeyboardSafeContainer
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
+                extraScrollHeight={20}
             >
                 {/* View mode: Responses | Customized Development Plans at top of section */}
                 {isViewMode && (
@@ -606,7 +606,7 @@ export default function AssessmentQuestionsSection({
                     }
                     onDownloadCdp={!reviewMode ? handleDownloadCdp : undefined}
                 />
-            </KeyboardAwareScrollView>
+            </KeyboardSafeContainer>
         </>
     );
 }

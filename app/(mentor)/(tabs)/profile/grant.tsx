@@ -10,11 +10,9 @@ import { NavigationProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useNavigation } from "expo-router";
 import React from "react";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -210,26 +208,24 @@ export default function Grant() {
       <AppGradientBackground>
         <SafeAreaView style={{ flex: 1 }}>
           <PastorNavigationHeader showDrawer={false} showBackButton={true} wrapperClass="mt-5" />
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          <View
+            style={{
+              width: "100%",
+              alignItems: "center",
+              marginTop: 24,
+              flex: 1,
+            }}
           >
-            <View
-              style={{
-                width: "100%",
-                alignItems: "center",
-                marginTop: 24,
-                flex: 1,
+            <KeyboardSafeContainer
+              style={{ flex: 1, width: "100%" }}
+              contentContainerStyle={{
+                paddingBottom: 80,
+                paddingHorizontal: 10,
+                flexGrow: 1,
               }}
+              useSafeAreaBottom
+              extraScrollHeight={24}
             >
-              <ScrollView
-                contentContainerStyle={{
-                  paddingBottom: 80,
-                  paddingHorizontal: 10,
-                  flexGrow: 1,
-                }}
-                keyboardShouldPersistTaps="handled"
-              >
               <View
                 style={{
                   width: "96%",
@@ -649,7 +645,7 @@ export default function Grant() {
                   </View>
                 )}
               </View>
-            </ScrollView>
+            </KeyboardSafeContainer>
             <ResponseModal
               buttonText={responseModal.buttonText}
               buttonPress={scheduleMeeting}
@@ -664,7 +660,6 @@ export default function Grant() {
               }
             ></ResponseModal>
           </View>
-          </KeyboardAvoidingView>
         </SafeAreaView>
         <Modal
           visible={isVisible}

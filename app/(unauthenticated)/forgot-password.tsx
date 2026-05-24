@@ -15,7 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { OtpInput } from "react-native-otp-entry";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -109,7 +109,7 @@ export default function ForgotPasswordScreen() {
             >
                 <TopBar showNotifications={false} showDrawer={false} />
 
-                <KeyboardAwareScrollView
+                <KeyboardSafeContainer
                     contentContainerStyle={[styles.scroll, { paddingBottom: bottom + 16 }]}
                     showsVerticalScrollIndicator={false}
                 >
@@ -325,7 +325,7 @@ export default function ForgotPasswordScreen() {
                             resizeMode="contain"
                         />
                     </View>
-                </KeyboardAwareScrollView>
+                </KeyboardSafeContainer>
             </LinearGradient>
         </>
     );

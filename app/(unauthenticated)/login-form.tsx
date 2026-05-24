@@ -20,7 +20,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const accent = {
@@ -89,9 +89,9 @@ export default function LoginFormScreen() {
                     onPressBack={handleBack}
                 />
 
-                <KeyboardAwareScrollView
+                <KeyboardSafeContainer
                     contentContainerStyle={[styles.scroll, { paddingBottom: bottom + 16 }]}
-                    showsVerticalScrollIndicator={false}
+                    extraScrollHeight={20}
                 >
                  
 
@@ -204,7 +204,7 @@ export default function LoginFormScreen() {
                         <Image source={icons.universityIcon} style={styles.universityLogo} resizeMode="contain" />
                     </View>
 
-                </KeyboardAwareScrollView>
+                </KeyboardSafeContainer>
             </LinearGradient>
         </>
     );

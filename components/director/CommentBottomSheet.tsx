@@ -91,6 +91,9 @@ const CommentBottomSheet = forwardRef<BottomSheetModal, CommentBottomSheetProps>
                 ref={ref}
                 snapPoints={snapPoints}
                 enablePanDownToClose
+                keyboardBehavior="interactive"
+                keyboardBlurBehavior="restore"
+                android_keyboardInputMode="adjustResize"
                 backdropComponent={renderBackdrop}
                 // make the modal background transparent — we'll render our gradient inside so corners and overflow work correctly
                 backgroundStyle={styles.bottomSheetBackgroundTransparent}

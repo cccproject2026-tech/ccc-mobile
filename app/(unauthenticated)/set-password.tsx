@@ -17,7 +17,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { OtpInput } from "react-native-otp-entry";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -188,7 +188,7 @@ export default function VerifyEmailScreen() {
                 <View style={styles.bgCircleBottom} />
                 <TopBar showDrawer={false} showNotifications={false} />
 
-                <KeyboardAwareScrollView
+                <KeyboardSafeContainer
                     contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 20 }]}
                     showsVerticalScrollIndicator={false}
                 >
@@ -376,7 +376,7 @@ export default function VerifyEmailScreen() {
                             resizeMode="contain"
                         />
                     </View>
-                </KeyboardAwareScrollView>
+                </KeyboardSafeContainer>
             </LinearGradient>
         </>
     );
