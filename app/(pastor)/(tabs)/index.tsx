@@ -26,7 +26,6 @@ import { useProfile } from "@/hooks/profile/useProfile";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
-import { getNextIncompleteNestedTaskId } from "@/lib/roadmap/helpers";
 import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores";
 import { AppointmentPlatform } from "@/types/appointment.types";
@@ -171,8 +170,11 @@ export default function PastorDashboard() {
     useRoadmaps("pastor");
   const { data: assessments = [] } = useAssignedAssessments(user?.id);
 
-  const { visibleItems: newAssignmentItems, hasNewAssignments } =
-    usePastorNewAssignmentsHome(user?.id, roadmaps, assessments);
+  const { visibleItems: newAssignmentItems } = usePastorNewAssignmentsHome(
+    user?.id,
+    roadmaps,
+    assessments,
+  );
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
@@ -493,36 +495,6 @@ export default function PastorDashboard() {
     }, 220);
   }, [router]);
 
-  const handleOpenNewRoadmap = useCallback(
-    (roadmap: { _id?: string; id?: string; roadmaps?: { _id?: string; id?: string }[] }) => {
-      const roadmapId = roadmap?._id ?? roadmap?.id;
-      if (!roadmapId) return;
-      const nextTaskId = getNextIncompleteNestedTaskId(roadmap as any);
-      if (nextTaskId) {
-        router.push(`/roadmap/${roadmapId}/${nextTaskId}` as any);
-        return;
-      }
-      const nested = Array.isArray(roadmap?.roadmaps) ? roadmap.roadmaps : [];
-      const firstNestedId = nested?.[0]?._id ?? nested?.[0]?.id;
-      if (nested.length === 1 && firstNestedId) {
-        router.push(`/roadmap/${roadmapId}/${firstNestedId}` as any);
-        return;
-      }
-      router.push(`/roadmap/${roadmapId}` as any);
-    },
-    [router],
-  );
-
-  const handleOpenNewAssessment = useCallback(
-    (assessmentId: string) => {
-      router.push({
-        pathname: "/assessments/survey-guidelines",
-        params: { assessmentId },
-      } as any);
-    },
-    [router],
-  );
-
   // ─── Loading / Error states ───────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -606,7 +578,7 @@ export default function PastorDashboard() {
           </HeaderHero>
 
           <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.scrollBodyStack}>
-          {!showProgressInWelcome && !hasNewAssignments && (
+          {!showProgressInWelcome && (
             <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.infoCard}>
               <View style={styles.infoCardRow}>
                 <LinearGradient
@@ -622,64 +594,6 @@ export default function PastorDashboard() {
                   </Text>
                 </View>
               </View>
-            </Animated.View>
-          )}
-
-          {hasNewAssignments && (
-            <Animated.View entering={FadeInUp.delay(175).springify()} style={styles.newAssignmentCard}>
-              <LinearGradient
-                colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0.06)"]}
-                style={styles.newAssignmentGradient}
-              >
-                <View style={styles.newAssignmentHeader}>
-                  <View style={styles.newAssignmentIconWrap}>
-                    <Ionicons name="sparkles-outline" size={20} color="#FBBF24" />
-                  </View>
-                  <Text style={styles.newAssignmentTitle}>New assignments</Text>
-                </View>
-                <Text style={styles.newAssignmentMessage}>
-                  Sorted by assignment date. This section hides from home 24 hours
-                  after you first see it here.
-                </Text>
-                {newAssignmentItems.map((item) => (
-                  <TouchableOpacity
-                    key={`${item.kind}-${item.id}`}
-                    activeOpacity={0.85}
-                    style={styles.newAssignmentRow}
-                    onPress={() => {
-                      if (item.kind === "roadmap" && item.roadmap) {
-                        handleOpenNewRoadmap(item.roadmap);
-                        return;
-                      }
-                      if (item.kind === "assessment") {
-                        handleOpenNewAssessment(item.id);
-                      }
-                    }}
-                  >
-                    <View style={styles.newAssignmentRowIcon}>
-                      <Ionicons
-                        name={
-                          item.kind === "roadmap"
-                            ? "layers-outline"
-                            : "document-text-outline"
-                        }
-                        size={16}
-                        color={item.kind === "roadmap" ? "#FFB347" : "#A78BFA"}
-                      />
-                    </View>
-                    <View style={styles.newAssignmentRowText}>
-                      <Text style={styles.newAssignmentRowLabel}>
-                        {item.kind === "roadmap" ? "Roadmap" : "Assessment"}
-                        {item.assignedLabel ? ` • ${item.assignedLabel}` : ""}
-                      </Text>
-                      <Text style={styles.newAssignmentRowName} numberOfLines={1}>
-                        {item.title}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
-                  </TouchableOpacity>
-                ))}
-              </LinearGradient>
             </Animated.View>
           )}
 
@@ -1151,77 +1065,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.68)",
     fontSize: 12,
     lineHeight: 18,
-  },
-
-  newAssignmentCard: {
-    borderRadius: 14,
-    overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
-  newAssignmentGradient: {
-    padding: 12,
-    gap: 8,
-  },
-  newAssignmentHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  newAssignmentIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(251, 191, 36, 0.18)",
-    borderWidth: 1,
-    borderColor: "rgba(251, 191, 36, 0.3)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  newAssignmentTitle: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  newAssignmentMessage: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  newAssignmentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-  },
-  newAssignmentRowIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  newAssignmentRowText: {
-    flex: 1,
-    gap: 2,
-  },
-  newAssignmentRowLabel: {
-    color: "rgba(255,255,255,0.55)",
-    fontSize: 10,
-    fontWeight: "600",
-    letterSpacing: 0.2,
-  },
-  newAssignmentRowName: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "700",
   },
 
   // ── Generic card styles ───────────────────────────────────────────────────
