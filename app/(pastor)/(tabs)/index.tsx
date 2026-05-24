@@ -3,6 +3,7 @@ import {
   PastorFocusTilesGrid,
   type PastorFocusGridTile,
 } from "@/components/pastor/PastorFocusTilesGrid";
+import { PastorProgressOverviewSection } from "@/components/pastor/PastorProgressOverviewSection";
 import HeaderHero from "@/components/director/HeroHeader";
 import WelcomeCard from "@/components/director/WelcomeCard";
 import {
@@ -16,6 +17,10 @@ import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { Mentor } from "@/hooks/mentors/useMentors";
 import { usePastorFocusItems } from "@/hooks/pastor/usePastorFocusItems";
 import { usePastorFocusTileStatuses } from "@/hooks/pastor/usePastorFocusTileStatuses";
+import {
+  usePastorProgressOverview,
+  type PastorProgressOverviewStat,
+} from "@/hooks/pastor/usePastorProgressOverview";
 import { usePastorNewAssignmentsHome } from "@/hooks/pastor/usePastorNewAssignmentsHome";
 import { useProfile } from "@/hooks/profile/useProfile";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
@@ -106,6 +111,8 @@ export default function PastorDashboard() {
   const { sections: focusSections, isLoading: isFocusLoading } =
     usePastorFocusItems();
   const focusTileStatuses = usePastorFocusTileStatuses(focusSections);
+  const { stats: progressOverviewStats, isLoading: isProgressOverviewLoading } =
+    usePastorProgressOverview(data?.user?.hasIssuedCertificate);
   const { data: mentorshipSessions = [] } = usePastorSessions(user?.id);
   const [focusSheetSectionId, setFocusSheetSectionId] = useState<string | null>(null);
   const [focusSheetTitle, setFocusSheetTitle] = useState<string | undefined>(undefined);
@@ -431,6 +438,32 @@ export default function PastorDashboard() {
     [openThingsToFocusSheet],
   );
 
+  const handleProgressOverviewDetails = useCallback(() => {
+    router.push("/(pastor)/(tabs)/progress" as any);
+  }, [router]);
+
+  const handleProgressStatPress = useCallback(
+    (stat: PastorProgressOverviewStat) => {
+      switch (stat.id) {
+        case "sessions":
+          router.push("/(pastor)/(tabs)/sessions" as any);
+          break;
+        case "assessments":
+          router.push("/(pastor)/(tabs)/assessments" as any);
+          break;
+        case "roadmap":
+          router.push("/(pastor)/(tabs)/roadmap" as any);
+          break;
+        case "certificates":
+          router.push("/(pastor)/(tabs)/profile/certificates" as any);
+          break;
+        default:
+          handleProgressOverviewDetails();
+      }
+    },
+    [handleProgressOverviewDetails, router],
+  );
+
   const setPastorFocusSheetRef = useCallback((instance: BottomSheetModal | null) => {
     pastorFocusSheetRef.current = instance;
   }, []);
@@ -744,6 +777,15 @@ export default function PastorDashboard() {
                 tiles={focusTilesWithLabels}
                 statuses={focusTileStatuses}
                 onTilePress={handleFocusGridTilePress}
+              />
+            </Animated.View>
+
+            <Animated.View entering={FadeInUp.delay(275).springify()}>
+              <PastorProgressOverviewSection
+                stats={progressOverviewStats}
+                isLoading={isProgressOverviewLoading}
+                onViewDetails={handleProgressOverviewDetails}
+                onStatPress={handleProgressStatPress}
               />
             </Animated.View>
 
