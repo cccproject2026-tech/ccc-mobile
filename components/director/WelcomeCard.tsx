@@ -4,7 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-nativ
 
 type Props = {
     onClick?: () => void;
-    /** When set and progress is shown, tapping the progress row uses this instead of onClick. */
+    /** Navigates to progress when the View Progress button is pressed (compact hero cards). */
     onProgressPress?: () => void;
     avatar: any;
     message: string;
@@ -26,7 +26,7 @@ const WelcomeCard: React.FC<Props> = ({
     compact = false,
 }) => {
     const showProgress = progress !== undefined && progress >= 0;
-    const progressHandler = onProgressPress ?? onClick;
+    const showViewProgressButton = compact && showProgress && !!onProgressPress;
 
     return (
         <View
@@ -46,23 +46,51 @@ const WelcomeCard: React.FC<Props> = ({
                 </Pressable>
 
                 <View style={styles.rightColumn}>
-                    <Pressable
-                        onPress={onClick}
-                        disabled={!onClick}
-                        style={({ pressed }) => [onClick && pressed ? styles.pressedOpacity : null]}
-                    >
-                        <Text style={[styles.message, compact && styles.messageCompact]}>{message}</Text>
-                    </Pressable>
+                    {showViewProgressButton ? (
+                        <View style={[styles.messageRow, compact && styles.messageRowCompact]}>
+                            <Pressable
+                                onPress={onClick}
+                                disabled={!onClick}
+                                style={({ pressed }) => [
+                                    styles.messagePressable,
+                                    onClick && pressed ? styles.pressedOpacity : null,
+                                ]}
+                            >
+                                <Text
+                                    style={[styles.message, compact && styles.messageInRow]}
+                                    numberOfLines={1}
+                                >
+                                    {message}
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={onProgressPress}
+                                style={({ pressed }) => [
+                                    styles.viewProgressButton,
+                                    compact && styles.viewProgressButtonCompact,
+                                    pressed && styles.pressedOpacity,
+                                ]}
+                                accessibilityRole="button"
+                                accessibilityLabel="View progress"
+                            >
+                                <Text style={[styles.viewProgressText, compact && styles.viewProgressTextCompact]}>
+                                    View Progress
+                                </Text>
+                                {/* <Ionicons name="chevron-forward" size={compact ? 14 : 16} color="#fff" /> */}
+                            </Pressable>
+                        </View>
+                    ) : (
+                        <Pressable
+                            onPress={onClick}
+                            disabled={!onClick}
+                            style={({ pressed }) => [onClick && pressed ? styles.pressedOpacity : null]}
+                        >
+                            <Text style={[styles.message, compact && styles.messageCompact]}>{message}</Text>
+                        </Pressable>
+                    )}
 
                     {showProgress && (
-                        <Pressable
-                            onPress={progressHandler}
-                            disabled={!progressHandler}
-                            style={({ pressed }) => [
-                                styles.progressRow,
-                                progressHandler && pressed ? styles.pressedOpacity : null,
-                            ]}
-                        >
+                        <View style={styles.progressRow}>
                             <Text style={[styles.progressLabel, compact && styles.progressLabelCompact]}>Progress</Text>
 
                             <View style={styles.progressVisuals}>
@@ -71,7 +99,7 @@ const WelcomeCard: React.FC<Props> = ({
                                 </View>
                                 <Text style={[styles.progressText, compact && styles.progressTextCompact]}>{progress} %</Text>
                             </View>
-                        </Pressable>
+                        </View>
                     )}
                 </View>
             </View>
@@ -126,10 +154,60 @@ const styles = StyleSheet.create({
         fontSize: isSmallDevice ? 14 : 15,
         marginBottom: 6,
     },
+    messageRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        marginBottom: 8,
+    },
+    messageRowCompact: {
+        gap: 6,
+        marginBottom: 6,
+    },
+    messagePressable: {
+        flex: 1,
+        minWidth: 0,
+    },
+    messageInRow: {
+        fontSize: isSmallDevice ? 14 : 15,
+        marginBottom: 0,
+    },
     progressRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+    },
+    viewProgressButton: {
+        flexShrink: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(255,255,255,0.14)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+    },
+    viewProgressButtonCompact: {
+        paddingVertical: 5,
+        paddingHorizontal: 9,
+        borderRadius: 7,
+    },
+    viewProgressText: {
+        color: '#fff',
+        backgroundColor: 'rgba(255,255,255,0.14)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+        fontWeight: '700',
+        fontSize: isSmallDevice ? 12 : 13,
+    },
+    viewProgressTextCompact: {
+        fontSize: isSmallDevice ? 11 : 12,
     },
     progressLabel: {
         color: '#fff',
