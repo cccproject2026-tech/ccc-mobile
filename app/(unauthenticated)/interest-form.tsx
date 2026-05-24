@@ -1,8 +1,15 @@
+import SearchableSelectModal from "@/components/form/SearchableSelectModal";
 import TopBar from "@/components/director/TopBar";
 import { useInterestMetadata } from "@/hooks/interests/useInterests";
 import { useSubmitInterest } from "@/hooks/onboarding/useOnboarding";
 import { useOnboardingStore } from "@/stores";
 import { ChurchInfo, InterestFormData } from "@/types";
+import {
+    getCountryOptions,
+    getPhoneCountryFromName,
+    getStateNamesForCountry,
+    PhoneCountryOption,
+} from "@/utils/countryState";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -21,13 +28,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
-type PhoneCountryOption = {
-    id: string;
-    name: string;
-    dialCode: string;
-    minLength: number;
-};
-
 const PHONE_COUNTRY_OPTIONS: PhoneCountryOption[] = [
     { id: "US", name: "United States", dialCode: "+1", minLength: 10 },
     { id: "CA", name: "Canada", dialCode: "+1", minLength: 10 },
@@ -37,15 +37,12 @@ const DEFAULT_PHONE_COUNTRY = PHONE_COUNTRY_OPTIONS[0];
 
 const findPhoneCountryByName = (countryName?: string | null): PhoneCountryOption | null => {
     if (!countryName) return null;
-    const trimmed = countryName.trim().toLowerCase();
-    return (
-        PHONE_COUNTRY_OPTIONS.find((c) => c.name.toLowerCase() === trimmed) ||
-        PHONE_COUNTRY_OPTIONS.find((c) =>
-            trimmed.includes(c.name.toLowerCase())
-        ) ||
-        null
-    );
+    return getPhoneCountryFromName(countryName) || PHONE_COUNTRY_OPTIONS.find(
+        (c) => c.name.trim().toLowerCase() === countryName.trim().toLowerCase()
+    ) || null;
 };
+
+type LocationPickerTarget = { type: "country" | "state"; churchIndex: number } | null;
 
 type PhoneInputWithCountryProps = {
     value: string;
@@ -55,6 +52,8 @@ type PhoneInputWithCountryProps = {
     placeholder?: string;
     disabled?: boolean;
     hasError?: boolean;
+    /** When true, dial code is read-only (synced from address country). */
+    lockCountrySelector?: boolean;
 };
 
 const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryProps>(
@@ -67,6 +66,7 @@ const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryP
             placeholder = "Enter phone number",
             disabled,
             hasError,
+            lockCountrySelector,
         },
         ref
     ) => {
@@ -84,16 +84,18 @@ const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryP
                     <TouchableOpacity
                         style={styles.phoneCountryButton}
                         onPress={() => setShowDropdown((prev) => !prev)}
-                        disabled={disabled}
+                        disabled={disabled || lockCountrySelector}
                     >
                         <Text style={styles.phoneCountryCodeText}>
                             {selectedCountry.dialCode}
                         </Text>
-                        <Ionicons
-                            name={showDropdown ? "chevron-up" : "chevron-down"}
-                            size={16}
-                            color="rgba(255,255,255,0.8)"
-                        />
+                        {!lockCountrySelector && (
+                            <Ionicons
+                                name={showDropdown ? "chevron-up" : "chevron-down"}
+                                size={16}
+                                color="rgba(255,255,255,0.8)"
+                            />
+                        )}
                     </TouchableOpacity>
                     <TextInput
                         ref={ref}
@@ -111,7 +113,7 @@ const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryP
                         editable={!disabled}
                     />
                 </View>
-                {showDropdown && (
+                {showDropdown && !lockCountrySelector && (
                     <View style={styles.phoneCountryDropdownMenu}>
                         {PHONE_COUNTRY_OPTIONS.map((option) => (
                             <TouchableOpacity
@@ -180,8 +182,6 @@ export default function InterestFormScreen() {
     // Fetch metadata from API
     const { data: metadata, isLoading: isLoadingMetadata } = useInterestMetadata();
 
-    console.log('Metadata:', metadata?.countryStates);
-
     const prefillTitle = useMemo(() => {
         switch (role) {
             case "pastor":
@@ -213,12 +213,7 @@ export default function InterestFormScreen() {
     }, [metadata?.titles, prefillTitle]);
     const [showTitleDropdown, setShowTitleDropdown] = useState(false);
     const [showInterestsDropdown, setShowInterestsDropdown] = useState(false);
-    const [showCountryDropdown, setShowCountryDropdown] = useState<number | null>(
-        null
-    );
-    const [showStateDropdown, setShowStateDropdown] = useState<number | null>(
-        null
-    );
+    const [locationPicker, setLocationPicker] = useState<LocationPickerTarget>(null);
 
     const [personalPhoneCountry, setPersonalPhoneCountry] = useState<PhoneCountryOption>(
         DEFAULT_PHONE_COUNTRY
@@ -314,25 +309,75 @@ export default function InterestFormScreen() {
     // Transform metadata to form options
     const TITLE_OPTIONS = useMemo(() => metadata?.titles || [], [metadata]);
     const INTEREST_OPTIONS = useMemo(() => metadata?.interests || [], [metadata]);
-    const COUNTRY_OPTIONS = useMemo(() => {
-        if (!metadata?.countries) return [];
-        return metadata.countries.map(country => ({ label: country, value: country }));
-    }, [metadata]);
-
-    // Get states for a specific country
-    const getStatesForCountry = useCallback(
-        (country: string) => {
-            if (!metadata?.countryStates) return [];
-
-            // FIX: normalize for exact match
-            const match = metadata.countryStates.find(
-                (c) => c.country.trim().toLowerCase() === country.trim().toLowerCase()
-            );
-
-            return match?.states || [];
-        },
-        [metadata]
+    // Full country/state lists from country-state-city (matches CCC-Web interest form).
+    const COUNTRY_OPTIONS = useMemo(
+        () =>
+            getCountryOptions().map((country) => ({
+                label: country.name,
+                value: country.name,
+            })),
+        []
     );
+
+    const getStateOptionsForCountry = useCallback((countryName: string) => {
+        return getStateNamesForCountry(countryName).map((name) => ({
+            label: name,
+            value: name,
+        }));
+    }, []);
+
+    const handleChurchCountrySelect = useCallback(
+        (index: number, countryName: string) => {
+            setChurchCountryErrors((prev) => {
+                const copy = [...prev];
+                copy[index] = false;
+                return copy;
+            });
+            setChurchStateErrors((prev) => {
+                const copy = [...prev];
+                copy[index] = false;
+                return copy;
+            });
+            setFormData((prev) => {
+                const churches = [...(prev.churchDetails || [])];
+                churches[index] = {
+                    ...churches[index],
+                    country: countryName,
+                    state: "",
+                };
+                return { ...prev, churchDetails: churches };
+            });
+            const phoneCountry = getPhoneCountryFromName(countryName);
+            if (phoneCountry) {
+                setChurchPhoneCountries((prev) => {
+                    const copy = [...prev];
+                    copy[index] = phoneCountry;
+                    return copy;
+                });
+            }
+            setLocationPicker(null);
+        },
+        []
+    );
+
+    const handleChurchStateSelect = useCallback((index: number, stateName: string) => {
+        setChurchStateErrors((prev) => {
+            const copy = [...prev];
+            copy[index] = false;
+            return copy;
+        });
+        setFormData((prev) => {
+            const churches = [...(prev.churchDetails || [])];
+            churches[index] = { ...churches[index], state: stateName };
+            return { ...prev, churchDetails: churches };
+        });
+        setLocationPicker(null);
+    }, []);
+
+    const activeChurchForPicker =
+        locationPicker != null
+            ? formData.churchDetails?.[locationPicker.churchIndex]
+            : undefined;
 
 
     // Auto-fill function for testing
@@ -480,7 +525,10 @@ export default function InterestFormScreen() {
         const nextChurchNameErrors = churches.map((church) => !church.churchName?.trim());
         const nextChurchPhoneErrors = churches.map((church, index) => {
             const rawChurchPhone = (church.churchPhone || "").replace(/[^\d]/g, "");
-            const country = churchPhoneCountries[index] || DEFAULT_PHONE_COUNTRY;
+            const country =
+                getPhoneCountryFromName(church.country) ||
+                churchPhoneCountries[index] ||
+                DEFAULT_PHONE_COUNTRY;
 
             // Phone is mandatory for each church entry.
             if (!rawChurchPhone) return true;
@@ -533,12 +581,12 @@ export default function InterestFormScreen() {
                 }
                 if (nextChurchCountryErrors[index]) {
                     scrollToField(`churchCountry-${index}`);
-                    setShowCountryDropdown(index);
+                    setLocationPicker({ type: "country", churchIndex: index });
                     return false;
                 }
                 if (nextChurchStateErrors[index]) {
                     scrollToField(`churchState-${index}`);
-                    setShowStateDropdown(index);
+                    setLocationPicker({ type: "state", churchIndex: index });
                     return false;
                 }
                 if (nextChurchZipErrors[index]) {
@@ -846,6 +894,7 @@ export default function InterestFormScreen() {
                                                 handleChurchChange(index, 'churchPhone', text);
                                             }}
                                             selectedCountry={
+                                                getPhoneCountryFromName(church.country) ||
                                                 churchPhoneCountries[index] ||
                                                 DEFAULT_PHONE_COUNTRY
                                             }
@@ -856,9 +905,11 @@ export default function InterestFormScreen() {
                                                     return copy;
                                                 })
                                             }
-                                            // Keep placeholders clean; required state is shown via inline error text.
-                                            placeholder="Number"
-                                            disabled={isLoading}
+                                            placeholder={
+                                                church.country ? "Number" : "Select country first"
+                                            }
+                                            disabled={isLoading || !church.country}
+                                            lockCountrySelector={!!church.country}
                                             hasError={churchPhoneErrors[index]}
                                         />
                                         {churchPhoneErrors[index] && (
@@ -945,9 +996,9 @@ export default function InterestFormScreen() {
                                     </View>
                               
 
-                                       {/* Country Dropdown */}
+                                       {/* Country */}
                                        <View
-                                        style={[styles.halfWidth, styles.countryDropdownWrapper]}
+                                        style={styles.halfWidth}
                                         onLayout={registerFieldLayout(`churchCountry-${index}`)}
                                     >
                                         <TouchableOpacity
@@ -956,9 +1007,10 @@ export default function InterestFormScreen() {
                                                 churchCountryErrors[index] && styles.inputError,
                                             ]}
                                             onPress={() =>
-                                                setShowCountryDropdown(
-                                                    showCountryDropdown === index ? null : index
-                                                )
+                                                setLocationPicker({
+                                                    type: "country",
+                                                    churchIndex: index,
+                                                })
                                             }
                                             disabled={isLoading}
                                         >
@@ -967,60 +1019,18 @@ export default function InterestFormScreen() {
                                                     styles.dropdownText,
                                                     !church.country && styles.placeholderText,
                                                 ]}
+                                                numberOfLines={1}
                                             >
-                                                {church.country || 'Country'}
+                                                {church.country || "Country *"}
                                             </Text>
                                             <Ionicons
-                                                name={
-                                                    showCountryDropdown === index
-                                                        ? 'chevron-up'
-                                                        : 'chevron-down'
-                                                }
+                                                name="chevron-down"
                                                 size={20}
                                                 color="rgba(255,255,255,0.6)"
                                             />
                                         </TouchableOpacity>
                                         {churchCountryErrors[index] && (
                                             <Text style={styles.errorText}>Country is required</Text>
-                                        )}
-                                        {showCountryDropdown === index && (
-                                            <View style={styles.countryDropdownMenu}>
-                                                {COUNTRY_OPTIONS.map((option) => (
-                                                    <TouchableOpacity
-                                                        key={option.value}
-                                                        style={styles.countryDropdownItem}
-                                                        onPress={() => {
-                                                            setChurchCountryErrors((prev) => {
-                                                                const copy = [...prev];
-                                                                copy[index] = false;
-                                                                return copy;
-                                                            });
-                                                            setChurchStateErrors((prev) => {
-                                                                const copy = [...prev];
-                                                                copy[index] = false;
-                                                                return copy;
-                                                            });
-                                                            handleChurchChange(
-                                                                index,
-                                                                'country',
-                                                                option.value
-                                                            );
-                                                            // Clear state when country changes
-                                                            handleChurchChange(index, 'state', '');
-                                                            setShowCountryDropdown(null);
-                                                        }}
-                                                    >
-                                                        <View style={styles.countryRadio}>
-                                                            {church.country === option.value && (
-                                                                <View style={styles.countryRadioSelected} />
-                                                            )}
-                                                        </View>
-                                                        <Text style={styles.countryDropdownItemText}>
-                                                            {option.label}
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                ))}
-                                            </View>
                                         )}
                                     </View>
                                 </View>
@@ -1060,20 +1070,22 @@ export default function InterestFormScreen() {
                                
 
 
-                                        {/* State Dropdown */}
+                                        {/* State / Province */}
                                         <View
-                                        style={[styles.halfWidth, styles.countryDropdownWrapper]}
+                                        style={styles.halfWidth}
                                         onLayout={registerFieldLayout(`churchState-${index}`)}
                                     >
                                         <TouchableOpacity
                                             style={[
                                                 styles.dropdown,
                                                 churchStateErrors[index] && styles.inputError,
+                                                !church.country && styles.inputDisabled,
                                             ]}
                                             onPress={() =>
-                                                setShowStateDropdown(
-                                                    showStateDropdown === index ? null : index
-                                                )
+                                                setLocationPicker({
+                                                    type: "state",
+                                                    churchIndex: index,
+                                                })
                                             }
                                             disabled={isLoading || !church.country}
                                         >
@@ -1082,49 +1094,18 @@ export default function InterestFormScreen() {
                                                     styles.dropdownText,
                                                     !church.state && styles.placeholderText,
                                                 ]}
+                                                numberOfLines={1}
                                             >
-                                                {church.state || 'State'}
+                                                {church.state || "State / Province *"}
                                             </Text>
                                             <Ionicons
-                                                name={
-                                                    showStateDropdown === index
-                                                        ? 'chevron-up'
-                                                        : 'chevron-down'
-                                                }
+                                                name="chevron-down"
                                                 size={20}
                                                 color="rgba(255,255,255,0.6)"
                                             />
                                         </TouchableOpacity>
                                         {churchStateErrors[index] && (
                                             <Text style={styles.errorText}>State is required</Text>
-                                        )}
-                                        {showStateDropdown === index && church.country && (
-                                            <View style={styles.countryDropdownMenu}>
-                                                {getStatesForCountry(church.country).map((state) => (
-                                                    <TouchableOpacity
-                                                        key={state}
-                                                        style={styles.countryDropdownItem}
-                                                        onPress={() => {
-                                                            setChurchStateErrors((prev) => {
-                                                                const copy = [...prev];
-                                                                copy[index] = false;
-                                                                return copy;
-                                                            });
-                                                            handleChurchChange(index, 'state', state);
-                                                            setShowStateDropdown(null);
-                                                        }}
-                                                    >
-                                                        <View style={styles.countryRadio}>
-                                                            {church.state === state && (
-                                                                <View style={styles.countryRadioSelected} />
-                                                            )}
-                                                        </View>
-                                                        <Text style={styles.countryDropdownItemText}>
-                                                            {state}
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                ))}
-                                            </View>
                                         )}
                                     </View>
                                 </View>
@@ -1360,6 +1341,43 @@ export default function InterestFormScreen() {
                         </TouchableOpacity>
                     </View>
                 </KeyboardAwareScrollView>
+
+                <SearchableSelectModal
+                    visible={locationPicker?.type === "country"}
+                    title="Select Country"
+                    options={COUNTRY_OPTIONS}
+                    selectedValue={activeChurchForPicker?.country}
+                    onSelect={(value) => {
+                        if (locationPicker?.type === "country") {
+                            handleChurchCountrySelect(locationPicker.churchIndex, value);
+                        }
+                    }}
+                    onClose={() => setLocationPicker(null)}
+                    searchPlaceholder="Search countries..."
+                />
+
+                <SearchableSelectModal
+                    visible={locationPicker?.type === "state"}
+                    title="Select State / Province"
+                    options={
+                        activeChurchForPicker?.country
+                            ? getStateOptionsForCountry(activeChurchForPicker.country)
+                            : []
+                    }
+                    selectedValue={activeChurchForPicker?.state}
+                    onSelect={(value) => {
+                        if (locationPicker?.type === "state") {
+                            handleChurchStateSelect(locationPicker.churchIndex, value);
+                        }
+                    }}
+                    onClose={() => setLocationPicker(null)}
+                    searchPlaceholder="Search states..."
+                    emptyMessage={
+                        activeChurchForPicker?.country
+                            ? "No states found for this country"
+                            : "Select a country first"
+                    }
+                />
             </LinearGradient>
         </>
     );
