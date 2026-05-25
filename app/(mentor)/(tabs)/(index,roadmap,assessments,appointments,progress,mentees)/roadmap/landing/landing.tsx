@@ -517,11 +517,6 @@ export default function Landing() {
           else router.back();
         }}
         pillLabel="Revitalization Roadmap"
-        rightSlot={
-          <Pressable onPress={() => setIsRoadmapModalVisible(true)} hitSlop={10} style={styles.iconGhost}>
-            <Ionicons name="ellipsis-vertical" size={20} color="rgba(255,255,255,0.92)" />
-          </Pressable>
-        }
       />
 
       <SectionHeader title={sectionTitle} subtitle={sectionSubtitle} showDivider />

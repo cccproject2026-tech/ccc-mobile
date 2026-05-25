@@ -192,14 +192,6 @@ export default function ItemDetail() {
                     </View>
                 </View>
 
-                <View style={styles.headerRight}>
-                    <TouchableOpacity
-                        onPress={() => setShowOutcomeMenu(true)}
-                        style={{ padding: getSpacing(4) }}
-                    >
-                        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-                    </TouchableOpacity>
-                </View>
             </View>
 
             {/* Tabs — equal width pills, consistent with roadmap design system */}

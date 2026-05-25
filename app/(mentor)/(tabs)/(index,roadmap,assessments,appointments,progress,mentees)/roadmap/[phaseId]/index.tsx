@@ -1,10 +1,13 @@
 import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import RoadmapCard from '@/components/director/ProgressRoadmapCard';
-import { RoadmapMetaCard } from '@/components/roadmaps/RoadmapMetaCard';
-import SearchBar from '@/components/director/SearchBar';
-import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from '@/components/director/TopBar';
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { RoadmapMetaCard } from '@/components/roadmaps/RoadmapMetaCard';
+import {
+    RoadmapSearchField,
+    RoadmapTabStrip,
+} from '@/components/ui/design-system/index';
 import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
 import { useRoadmapMeta } from '@/hooks/roadmap/useRoadmapMeta';
 import { getTasks } from '@/lib/roadmap/helpers';
@@ -24,7 +27,6 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type TabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
@@ -229,38 +231,31 @@ export default function RoadmapDetail() {
                     </View>
                 </View>
 
-                <View style={styles.headerActions}>
-                    {phaseNumber && (
+                {phaseNumber && (
+                    <View style={styles.headerActions}>
                         <View style={styles.phaseBadge}>
                             <Text style={styles.phaseBadgeText}>
                                 Phase {phaseNumber}
                             </Text>
                         </View>
-                    )}
-                    <TouchableOpacity
-                        onPress={() => setShowOutcomeMenu(true)}
-                        style={styles.moreBtn}
-                    >
-                        <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
-                    </TouchableOpacity>
-                </View>
+                    </View>
+                )}
             </View>
 
             <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth }]}>
                 <RoadmapMetaCard meta={meta} />
             </View>
 
-            {/* Search */}
             <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth }]}>
-                <SearchBar value={search} onChangeValue={setSearch} />
+                <RoadmapSearchField value={search} onChangeText={setSearch} dense />
             </View>
 
-            {/* Tabs */}
-            <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth }]}>
-                <TabSwitcher
+            <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth, marginBottom: 0 }]}>
+                <RoadmapTabStrip
                     tabs={tabs}
-                    activeTab={activeTab}
+                    activeKey={activeTab}
                     onChange={(key) => setActiveTab(key as TabKey)}
+                    scrollable
                 />
             </View>
 
@@ -290,11 +285,13 @@ export default function RoadmapDetail() {
                         );
                     })
                 ) : (
-                    <View style={{ alignItems: 'center', marginTop: 40 }}>
-                        <Text style={{ color: 'white', fontSize: 16 }}>
+                    <View style={styles.emptyCard}>
+                        <Ionicons name="checkbox-outline" size={28} color="rgba(255,255,255,0.7)" />
+                        <Text style={styles.emptyTitle}>No tasks found</Text>
+                        <Text style={styles.emptySubtitle}>
                             {search.trim()
                                 ? 'No tasks match your search.'
-                                : 'No tasks available.'}
+                                : 'Try a different filter or search.'}
                         </Text>
                     </View>
                 )}
@@ -366,7 +363,6 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(12.5),
         letterSpacing: 0.2,
     },
-    moreBtn: { padding: getSpacing(4) },
     content: {
         paddingTop: 4,
         alignSelf: 'center',
@@ -374,4 +370,16 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     cardPress: { borderRadius: 14, overflow: 'hidden' },
+    emptyCard: {
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+        padding: 16,
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 12,
+    },
+    emptyTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
+    emptySubtitle: { color: 'rgba(255,255,255,0.65)', fontSize: 12, textAlign: 'center' },
 });

@@ -1,10 +1,13 @@
 import RoadmapCard from "@/components/director/ProgressRoadmapCard";
-import { RoadmapMetaCard } from "@/components/roadmaps/RoadmapMetaCard";
-import SearchBar from "@/components/director/SearchBar";
-import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
+import { RoadmapMetaCard } from "@/components/roadmaps/RoadmapMetaCard";
+import {
+  RoadmapSearchField,
+  RoadmapTabStrip,
+  roadmapTheme,
+} from "@/components/ui/design-system/index";
 import { useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
 import { useRoadmapMeta } from "@/hooks/roadmap/useRoadmapMeta";
 import { getTasks } from "@/lib/roadmap/helpers";
@@ -27,10 +30,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 type TabKey = "ALL" | "DUE" | "NOT_STARTED" | "COMPLETED";
 
 const accent = {
-  gold: "#E8C88A",
-  mint: "#6FD4BE",
-  mintSoft: "rgba(111, 212, 190, 0.28)",
-  tealDeep: "#0E5A62",
+  mint: roadmapTheme.accentMint,
+  gold: roadmapTheme.accentGold,
 };
 
 export default function PastorRoadmapDetail() {
@@ -184,13 +185,9 @@ export default function PastorRoadmapDetail() {
           </View>
         ) : null}
 
-        <View style={styles.searchWrap}>
-          <SearchBar value={search} onChangeValue={setSearch} />
-        </View>
+        <RoadmapSearchField value={search} onChangeText={setSearch} dense style={styles.searchField} />
 
-        <View style={styles.tabsWrap}>
-          <TabSwitcher tabs={tabs} activeTab={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
-        </View>
+        <RoadmapTabStrip tabs={tabs} activeKey={activeTab} onChange={(k) => setActiveTab(k as TabKey)} scrollable />
 
         <View style={styles.list}>
           {filtered.length === 0 ? (
@@ -294,9 +291,8 @@ const styles = StyleSheet.create({
   },
   errorText: { color: "rgba(255,255,255,0.92)", fontSize: 12, fontWeight: "700", flex: 1 },
 
-  searchWrap: { marginTop: 8 },
-  tabsWrap: { marginTop: 12 },
-  list: { marginTop: 14, gap: 12, paddingBottom: 10 },
+  searchField: { marginTop: 8, marginBottom: 4 },
+  list: { gap: 12, paddingBottom: 10 },
   cardPress: { borderRadius: 16, overflow: "hidden" },
 
   emptyCard: {
