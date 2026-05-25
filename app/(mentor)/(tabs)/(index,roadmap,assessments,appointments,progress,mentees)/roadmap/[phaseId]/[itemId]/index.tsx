@@ -1,10 +1,13 @@
 import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import TopBar from '@/components/director/TopBar';
+import { RoadmapMetaCard } from '@/components/roadmaps/RoadmapMetaCard';
+import { TaskStatusBadges } from '@/components/roadmaps/TaskStatusBadges';
 import { MentorTaskView } from '@/components/roadmaps/MentorTaskView';
 import { useRoadmap, useRoadmapComments, useRoadmapQueries } from '@/hooks/roadmaps/useRoadmaps';
+import { useRoadmapMeta } from '@/hooks/roadmap/useRoadmapMeta';
 import { resolveRoadmapDetailTask } from '@/lib/roadmap/helpers';
-import { NestedRoadmap } from '@/lib/roadmap/types';
+import type { NestedRoadmap, Roadmap } from '@/lib/roadmap/types';
 import { useAuthStore } from '@/stores';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,6 +43,8 @@ export default function ItemDetail() {
         () => resolveRoadmapDetailTask(roadmap, itemId),
         [roadmap, itemId],
     );
+
+    const meta = useRoadmapMeta(roadmap as Roadmap | undefined, task);
 
     // Get phase number
     const phaseNumber = useMemo(() => {
@@ -332,6 +337,12 @@ export default function ItemDetail() {
                     </View>
                 </View>
 
+                {!meta.isMultiTask && (
+                    <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+                        <RoadmapMetaCard meta={meta} />
+                    </View>
+                )}
+
                 {/* Completion Time / Status */}
                 <View style={styles.completionBox}>
                     {task.status === 'completed' ? (
@@ -351,6 +362,10 @@ export default function ItemDetail() {
                             Completion Time Months: {task.duration}
                         </Text>
                     )}
+                </View>
+
+                <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
+                    <TaskStatusBadges task={task} variant="mentor" />
                 </View>
 
                 {/* Roadmap Section */}

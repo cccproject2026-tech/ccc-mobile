@@ -1,13 +1,15 @@
 import ContextMenu, { MenuItem } from '@/components/director/ContextMenu';
 import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import RoadmapCard from '@/components/director/ProgressRoadmapCard';
+import { RoadmapMetaCard } from '@/components/roadmaps/RoadmapMetaCard';
 import SearchBar from '@/components/director/SearchBar';
 import { TabSwitcher } from '@/components/director/TabSwitcher';
 import TopBar from '@/components/director/TopBar';
 import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
+import { useRoadmapMeta } from '@/hooks/roadmap/useRoadmapMeta';
 import { getTasks } from '@/lib/roadmap/helpers';
 import { getTaskCard } from '@/lib/roadmap/mappers';
-import { NestedRoadmap } from '@/lib/roadmap/types';
+import type { NestedRoadmap, Roadmap } from '@/lib/roadmap/types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -41,6 +43,8 @@ export default function RoadmapDetail() {
     // Fetch single roadmap
     const targetUserId = menteeId;
     const { data: roadmap, isLoading, error, refetch } = useRoadmap(phaseId, targetUserId);
+
+    const meta = useRoadmapMeta(roadmap as Roadmap | undefined);
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -240,6 +244,10 @@ export default function RoadmapDetail() {
                         <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
                     </TouchableOpacity>
                 </View>
+            </View>
+
+            <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth }]}>
+                <RoadmapMetaCard meta={meta} />
             </View>
 
             {/* Search */}

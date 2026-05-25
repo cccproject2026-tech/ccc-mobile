@@ -1,13 +1,15 @@
 import RoadmapCard from "@/components/director/ProgressRoadmapCard";
+import { RoadmapMetaCard } from "@/components/roadmaps/RoadmapMetaCard";
 import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
+import { useRoadmapMeta } from "@/hooks/roadmap/useRoadmapMeta";
 import { getTasks } from "@/lib/roadmap/helpers";
 import { getTaskCard } from "@/lib/roadmap/mappers";
-import type { NestedRoadmap } from "@/lib/roadmap/types";
+import type { NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
@@ -37,6 +39,8 @@ export default function PastorRoadmapDetail() {
   const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
 
   const { data: roadmap, isLoading, error, refetch, isRefetching } = useRoadmap(phaseId);
+
+  const meta = useRoadmapMeta(roadmap as Roadmap | undefined);
 
   const horizontalPadding = useMemo(() => {
     const v = Math.round(width * 0.05);
@@ -170,6 +174,8 @@ export default function PastorRoadmapDetail() {
           <Ionicons name="leaf-outline" size={14} color={accent.mint} />
           <View style={styles.dividerLine} />
         </View>
+
+        <RoadmapMetaCard meta={meta} />
 
         {!!error ? (
           <View style={styles.errorCard}>

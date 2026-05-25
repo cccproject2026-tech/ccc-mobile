@@ -1,6 +1,8 @@
 import ContextMenu, { MenuItem } from "@/components/director/ContextMenu";
 import ExpectedOutcomeModal from "@/components/director/ExpectedOutcomeModal";
 import TopBar from "@/components/director/TopBar";
+import { RoadmapMetaCard } from "@/components/roadmaps/RoadmapMetaCard";
+import { TaskStatusBadges } from "@/components/roadmaps/TaskStatusBadges";
 import { MentorTaskView } from "@/components/roadmaps/MentorTaskView";
 import { TaskCompletionModal } from "@/components/roadmaps/celebration/TaskCompletionModal";
 import { PhaseCompletionModal } from "@/components/roadmaps/celebration/PhaseCompletionModal";
@@ -9,6 +11,7 @@ import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { Colors } from "@/constants/Colors";
 import { useRoadmap, useRoadmapComments, useRoadmapQueries, useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useCompletionCelebration } from "@/hooks/roadmap/useCompletionCelebration";
+import { useRoadmapMeta } from "@/hooks/roadmap/useRoadmapMeta";
 import { resolveRoadmapDetailTask } from "@/lib/roadmap/helpers";
 import { comparePastorPhasesForFocus } from "@/lib/roadmap/helpers";
 import type { NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
@@ -58,6 +61,8 @@ export default function PastorRoadmapItemDetail() {
     list.sort((a, b) => comparePastorPhasesForFocus(a as Roadmap, b as Roadmap));
     return list as Roadmap[];
   }, [allRoadmaps]);
+
+  const meta = useRoadmapMeta(roadmap as Roadmap | undefined, task);
 
   const {
     celebration,
@@ -328,6 +333,8 @@ export default function PastorRoadmapItemDetail() {
               </View>
             </View>
 
+            {!meta.isMultiTask && <RoadmapMetaCard meta={meta} />}
+
             <View style={styles.completionBox}>
               {String(task.status || "").toLowerCase() === "completed" ? (
                 <View style={styles.completionContainer}>
@@ -345,6 +352,8 @@ export default function PastorRoadmapItemDetail() {
                 <Text style={styles.completionText}>Completion Time Months: {String((task as any).duration || "—")}</Text>
               )}
             </View>
+
+            <TaskStatusBadges task={task} variant="pastor" />
 
             <Text style={styles.sectionTitle}>Roadmap</Text>
             <View style={styles.sectionBox}>

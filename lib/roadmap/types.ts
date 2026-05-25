@@ -221,6 +221,11 @@ export interface Roadmap {
     roadmaps: NestedRoadmap[];
     createdAt: string;
     updatedAt: string;
+
+    /** Assignment metadata — may be absent on legacy roadmaps. */
+    assignedAt?: string;
+    assignedBy?: string | { _id: string; firstName?: string; lastName?: string };
+    dueDate?: string;
 }
 
 export interface NestedRoadmap {
@@ -238,6 +243,11 @@ export interface NestedRoadmap {
     phase: string;
     totalSteps: number;
     extras: Extra[];
+
+    /** Resubmission metadata — may be absent on legacy tasks. */
+    isResubmitted?: boolean;
+    resubmittedAt?: string;
+    dueDate?: string;
 }
 
 export interface Extra {
