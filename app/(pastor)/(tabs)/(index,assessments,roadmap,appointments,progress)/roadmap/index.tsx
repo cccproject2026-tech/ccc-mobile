@@ -30,6 +30,7 @@ import {
   buildPastorCompletedJourneyTabs,
   comparePastorPhasesForFocus,
   flattenPastorCompletedTasks,
+  getCardStatus,
   getCompletionStats,
   getNextIncompleteNestedTaskId,
   type PastorCompletedTaskItem,
@@ -207,8 +208,8 @@ export default function PastorRoadmapIndex() {
 
   const filteredPhases = useMemo(() => {
     let list = sortedRoadmaps;
-    if (filter === "Completed") list = list.filter((r: any) => r.status === "completed");
-    if (filter === "Remaining") list = list.filter((r: any) => r.status !== "completed");
+    if (filter === "Completed") list = list.filter((r: any) => getCardStatus(r) === "completed");
+    if (filter === "Remaining") list = list.filter((r: any) => getCardStatus(r) !== "completed");
 
     const q = search.trim().toLowerCase();
     if (!q) return list;

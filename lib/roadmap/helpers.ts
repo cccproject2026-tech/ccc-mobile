@@ -151,7 +151,16 @@ export function resolveRoadmapDetailTask(
  */
 export function getCardStatus(roadmap: Roadmap | NestedRoadmap | undefined | null): RoadmapCardStatus {
     if (!roadmap) return 'initial';
-    
+
+    // If this is a phase with nested tasks, check if all are actually completed.
+    // The backend status can lag behind, so the frontend task count is the source of truth.
+    if ('roadmaps' in roadmap && Array.isArray(roadmap.roadmaps) && roadmap.roadmaps.length > 0) {
+        const { completed, total } = getCompletionStats(roadmap as Roadmap);
+        if (total > 0 && completed >= total) {
+            return 'completed';
+        }
+    }
+
     const statusMap: Record<string, RoadmapCardStatus> = {
         'not started': 'initial',
         'in-progress': 'in-progress',

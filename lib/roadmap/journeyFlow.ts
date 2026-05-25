@@ -106,12 +106,11 @@ export function buildJourneyFlowSteps(roadmaps: Roadmap[]): JourneyFlowStep[] {
     byStepId.set(dynamicId, roadmap);
   }
 
-  let currentStepIndex = -1;
-  for (let i = 0; i < allStepDefs.length; i++) {
-    const step = allStepDefs[i];
-    const assigned = byStepId.get(step.id);
-    if (!assigned) continue;
+  const assignedSteps = allStepDefs.filter((step) => byStepId.has(step.id));
 
+  let currentStepIndex = -1;
+  for (let i = 0; i < assignedSteps.length; i++) {
+    const assigned = byStepId.get(assignedSteps[i].id)!;
     const { completed, total } = getCompletionStats(assigned);
     const done = total > 0 && completed === total;
     if (!done) {
@@ -120,12 +119,8 @@ export function buildJourneyFlowSteps(roadmaps: Roadmap[]): JourneyFlowStep[] {
     }
   }
 
-  return allStepDefs.map((step, index) => {
-    const roadmap = byStepId.get(step.id);
-    if (!roadmap) {
-      return { ...step, state: "locked" as const, roadmap: undefined };
-    }
-
+  return assignedSteps.map((step, index) => {
+    const roadmap = byStepId.get(step.id)!;
     const { completed, total } = getCompletionStats(roadmap);
     const done = total > 0 && completed === total;
 
