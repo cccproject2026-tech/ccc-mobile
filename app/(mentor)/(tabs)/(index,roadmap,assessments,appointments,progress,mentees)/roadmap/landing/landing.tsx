@@ -469,16 +469,16 @@ export default function Landing() {
 
   const searchPlaceholder =
     selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
-      ? "Search completed tasks..."
+      ? "Search history..."
       : selectedPastor
-        ? "Search roadmaps..."
+        ? "Search phases..."
         : mainTab === "PASTOR_ROADMAPS"
           ? "Search pastors..."
           : "Search library...";
 
   const sectionTitle =
     selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
-      ? `${selectedPastor.firstName}'s completed tasks`
+      ? `${selectedPastor.firstName}'s history`
       : selectedPastor
         ? `${selectedPastor.firstName}'s roadmaps`
         : mainTab === "ROADMAP_LIBRARY"
@@ -487,7 +487,7 @@ export default function Landing() {
 
   const sectionSubtitle =
     selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
-      ? "Review this mentee's finished roadmap tasks."
+      ? "Look back at tasks your mentee has already finished."
       : selectedPastor
         ? "Track phases, tasks, and next steps."
         : mainTab === "ROADMAP_LIBRARY"
@@ -496,10 +496,10 @@ export default function Landing() {
 
   const mentorPastorLayerTabs = useMemo(
     () => [
-      { key: "phases" as const, label: "Phases" },
+      { key: "phases" as const, label: "Journey" },
       {
         key: "completed-tasks" as const,
-        label: "Completed Tasks",
+        label: "History",
         badge: mentorCompletedTasks.length > 0 ? mentorCompletedTasks.length : undefined,
       },
     ],
@@ -552,14 +552,16 @@ export default function Landing() {
         />
       </View>
 
-      <RoadmapTabStrip
-        tabs={MAIN_TABS}
-        activeKey={mainTab}
-        onChange={(k) => {
-          setMainTab(k as MainTabKey);
-          clearPastor();
-        }}
-      />
+      {!selectedPastor && (
+        <RoadmapTabStrip
+          tabs={MAIN_TABS}
+          activeKey={mainTab}
+          onChange={(k) => {
+            setMainTab(k as MainTabKey);
+            clearPastor();
+          }}
+        />
+      )}
 
       {mainTab === "PASTOR_ROADMAPS" && selectedPastor && mentorPastorRoadmapView === "phases" ? (
         <RoadmapTabStrip
