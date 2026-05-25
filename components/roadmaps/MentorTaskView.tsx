@@ -1,4 +1,5 @@
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
+import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
@@ -18,20 +19,17 @@ import {
     recordTaskCompletionTimestamp,
     taskCompletionMapKey,
 } from "@/lib/roadmap/taskCompletionTimestamps";
-import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
+import { SignatureModal } from "@/components/forms/SignatureModal";
 import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
-import RNFS from "react-native-fs";
-import * as MediaLibrary from "expo-media-library";
-import { useRouter } from "expo-router";
-import { JSX, useEffect, useMemo, useState } from "react";
-import { LinearGradient } from "expo-linear-gradient";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { format, isValid, parse } from "date-fns";
-import { SignatureModal } from "@/components/forms/SignatureModal";
+import * as DocumentPicker from "expo-document-picker";
+import * as MediaLibrary from "expo-media-library";
+import { useRouter } from "expo-router";
+import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -39,12 +37,14 @@ import {
     Linking,
     Modal,
     Pressable,
+    Animated as RNAnimated,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
+import RNFS from "react-native-fs";
 
 interface Props {
     task: NestedRoadmap;
@@ -177,6 +177,24 @@ export function MentorTaskView({
     const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
 
     const isUpdateMode = !!existingExtras;
+    const [isEditing, setIsEditing] = useState(false);
+    const [showResubmitToast, setShowResubmitToast] = useState(false);
+    const toastOpacity = useRef(new RNAnimated.Value(0)).current;
+
+    /** Pastor viewing their own saved work — fields are read-only until they tap Edit. */
+    const isReadOnly = isViewingPastor || (isUpdateMode && !isEditing);
+
+    const showToast = useCallback(() => {
+        setShowResubmitToast(true);
+        RNAnimated.sequence([
+            RNAnimated.timing(toastOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+            RNAnimated.delay(2000),
+            RNAnimated.timing(toastOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+        ]).start(() => {
+            setShowResubmitToast(false);
+            setIsEditing(false);
+        });
+    }, [toastOpacity]);
 
     /** Initialise formData from API or default dates */
     useEffect(() => {
@@ -211,7 +229,7 @@ export function MentorTaskView({
     }, [existingExtras, task.status, roadmapId, itemId, targetUserId]);
 
     const handleChange = (fieldName: string, value: any) => {
-        if (isViewingPastor) return;
+        if (isReadOnly) return;
         setFormData(prev => ({ ...prev, [fieldName]: value }));
     };
 
@@ -295,7 +313,7 @@ export function MentorTaskView({
     };
     /** Save progress */
     const handleSubmit = async () => {
-        if (isViewingPastor) return;
+        if (isReadOnly) return;
         if (!validateForm()) return;
         if (!currentUser?.id) {
             Alert.alert("Error", "User not authenticated");
@@ -346,7 +364,9 @@ export function MentorTaskView({
                 await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, Date.now());
             }
 
-            if (onSaveSuccess) {
+            if (isUpdateMode) {
+                showToast();
+            } else if (onSaveSuccess) {
                 onSaveSuccess();
             } else {
                 setShowSuccessModal(true);
@@ -377,7 +397,7 @@ export function MentorTaskView({
             extraName.toLowerCase().includes("media");
 
         const pickFile = async () => {
-            if (isViewingPastor) return;
+            if (isReadOnly) return;
             const res = await DocumentPicker.getDocumentAsync({
                 type: "*/*",
                 multiple: true,
@@ -399,7 +419,7 @@ export function MentorTaskView({
         };
 
         const deletePendingLocal = (fileId: string) => {
-            if (isViewingPastor) return;
+            if (isReadOnly) return;
             setPendingFiles((prev) => {
                 const updated = prev[extraName]?.filter((f) => f.id !== fileId) || [];
                 if (updated.length === 0 && docs.length === 0) {
@@ -410,7 +430,7 @@ export function MentorTaskView({
         };
 
         const confirmDelete = (doc: any) => {
-            if (isViewingPastor) return;
+            if (isReadOnly) return;
             Alert.alert(
                 "Delete file",
                 `Delete "${formatFileName(doc.fileName)}"?`,
@@ -461,7 +481,7 @@ export function MentorTaskView({
 
         return (
             <View style={{ marginBottom: 20 }}>
-                {!isViewingPastor ? (
+                {!isReadOnly ? (
                     <Pressable style={[styles.uploadButton, styles.uploadButtonWhite]} onPress={pickFile}>
                         <Ionicons name="cloud-upload-outline" size={22} color="#2563eb" />
                         <Text style={styles.uploadButtonText}>{uploadButtonLabel}</Text>
@@ -474,7 +494,7 @@ export function MentorTaskView({
                             <Text style={styles.pendingFileName} numberOfLines={1}>
                                 {f.name} (not saved yet)
                             </Text>
-                            {!isViewingPastor ? (
+                            {!isReadOnly ? (
                                 <Pressable
                                     onPress={() => deletePendingLocal(f.id)}
                                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -520,7 +540,7 @@ export function MentorTaskView({
                                             View Shared Media ({docs.length})
                                         </Text>
                                     </Pressable>
-                                    {!isViewingPastor ? (
+                                    {!isReadOnly ? (
                                         <Text style={styles.mediaDeleteHint}>
                                             Open shared media — tap the trash icon on a file, or use Select for multiple
                                         </Text>
@@ -546,7 +566,7 @@ export function MentorTaskView({
                                             </View>
                                             <Ionicons name="open-outline" size={18} color="rgba(255,255,255,0.82)" />
                                         </Pressable>
-                                        {!isViewingPastor ? (
+                                        {!isReadOnly ? (
                                             <Pressable
                                                 onPress={() => confirmDelete(doc)}
                                                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -608,7 +628,7 @@ export function MentorTaskView({
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         {renderFieldLabel(extra.name)}
-                        {isViewingPastor ? (
+                        {isReadOnly ? (
                             <View style={styles.readOnlyValue}>
                                 <Text style={styles.readOnlyValueText}>
                                     {formatReadOnlyText(formData[extra.name])}
@@ -631,7 +651,7 @@ export function MentorTaskView({
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         {renderFieldLabel(extra.name)}
-                        {isViewingPastor ? (
+                        {isReadOnly ? (
                             <View style={[styles.readOnlyValue, styles.readOnlyValueMultiline]}>
                                 <Text style={styles.readOnlyValueText}>
                                     {formatReadOnlyText(formData[extra.name])}
@@ -666,14 +686,14 @@ export function MentorTaskView({
                         <Pressable
                             onPress={() => handleChange(extra.name, !formData[extra.name])}
                             style={styles.checkboxRow}
-                            hitSlop={isViewingPastor ? 0 : 8}
-                            disabled={isViewingPastor}
+                            hitSlop={isReadOnly ? 0 : 8}
+                            disabled={isReadOnly}
                         >
                             <View
                                 style={[
                                     styles.checkbox,
                                     formData[extra.name] && styles.checkboxChecked,
-                                    isViewingPastor && styles.checkboxReadOnly,
+                                    isReadOnly && styles.checkboxReadOnly,
                                 ]}
                             >
                                 {formData[extra.name] && <Text style={styles.checkmark}>✓</Text>}
@@ -681,7 +701,7 @@ export function MentorTaskView({
                             <Text
                                 style={[
                                     styles.checkboxLabel,
-                                    isViewingPastor && styles.checkboxLabelReadOnly,
+                                    isReadOnly && styles.checkboxLabelReadOnly,
                                 ]}
                             >
                                 {extra.name}
@@ -697,14 +717,14 @@ export function MentorTaskView({
                                             <Pressable
                                                 onPress={() => handleChange(cbId, !isChecked)}
                                                 style={styles.checkboxRow}
-                                                hitSlop={isViewingPastor ? 0 : 8}
-                                                disabled={isViewingPastor}
+                                                hitSlop={isReadOnly ? 0 : 8}
+                                                disabled={isReadOnly}
                                             >
                                                 <View
                                                     style={[
                                                         styles.checkbox,
                                                         isChecked && styles.checkboxChecked,
-                                                        isViewingPastor && styles.checkboxReadOnly,
+                                                        isReadOnly && styles.checkboxReadOnly,
                                                     ]}
                                                 >
                                                     {isChecked && <Text style={styles.checkmark}>✓</Text>}
@@ -712,7 +732,7 @@ export function MentorTaskView({
                                                 <Text
                                                     style={[
                                                         styles.checkboxLabel,
-                                                        isViewingPastor && styles.checkboxLabelReadOnly,
+                                                        isReadOnly && styles.checkboxLabelReadOnly,
                                                     ]}
                                                 >
                                                     {checkbox.name}
@@ -730,7 +750,7 @@ export function MentorTaskView({
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         {renderFieldLabel(extra.name)}
-                        {isViewingPastor ? (
+                        {isReadOnly ? (
                             <View style={styles.readOnlyValue}>
                                 <Text style={styles.readOnlyValueText}>
                                     {(() => {
@@ -770,7 +790,7 @@ export function MentorTaskView({
                             </Pressable>
                         )}
 
-                        {!isViewingPastor && activeDateField === extra.name ? (
+                        {!isReadOnly && activeDateField === extra.name ? (
                             <DateTimePicker
                                 value={parseAnyDate(formData[extra.name] ?? extra.date) ?? new Date()}
                                 mode="date"
@@ -794,7 +814,7 @@ export function MentorTaskView({
                 return (
                     <View
                         key={id}
-                        style={[styles.sectionBox, isViewingPastor && styles.sectionBoxReview]}
+                        style={[styles.sectionBox, isReadOnly && styles.sectionBoxReview]}
                     >
                         <Text style={styles.sectionBoxTitle}>{extra.name}</Text>
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
@@ -809,7 +829,7 @@ export function MentorTaskView({
                                                     style={[
                                                         styles.checkbox,
                                                         checked && styles.checkboxChecked,
-                                                        isViewingPastor && styles.checkboxReadOnly,
+                                                        isReadOnly && styles.checkboxReadOnly,
                                                     ]}
                                                 >
                                                     {checked && <Text style={styles.checkmark}>✓</Text>}
@@ -817,7 +837,7 @@ export function MentorTaskView({
                                                 <Text
                                                     style={[
                                                         styles.checkboxLabel,
-                                                        isViewingPastor && styles.checkboxLabelReadOnly,
+                                                        isReadOnly && styles.checkboxLabelReadOnly,
                                                     ]}
                                                 >
                                                     {checkbox.name}
@@ -841,7 +861,7 @@ export function MentorTaskView({
             case "BUTTON":
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        {isViewingPastor ? (
+                        {isReadOnly ? (
                             <View style={styles.readOnlyValue}>
                                 <Text style={styles.readOnlyValueText}>
                                     {extra.linkUrl
@@ -957,11 +977,11 @@ export function MentorTaskView({
                         <Pressable
                             style={[
                                 styles.signaturePlaceholder,
-                                isViewingPastor && styles.signaturePlaceholderReadOnly,
+                                isReadOnly && styles.signaturePlaceholderReadOnly,
                             ]}
                             onPress={() => {
                                 if (!signatureValue) {
-                                    if (!isViewingPastor) {
+                                    if (!isReadOnly) {
                                         setSignatureEditor({ visible: true, fieldName: extra.name });
                                     }
                                     return;
@@ -970,7 +990,7 @@ export function MentorTaskView({
                                 const valueStr = String(signatureValue);
                                 const isDataImage = valueStr.startsWith("data:image");
 
-                                if (isViewingPastor) {
+                                if (isReadOnly) {
                                     const actions: { text: string; onPress?: () => void; style?: "cancel" }[] = [
                                         {
                                             text: "View",
@@ -990,7 +1010,7 @@ export function MentorTaskView({
                                         },
                                         { text: "Close", style: "cancel" },
                                     ];
-                                    Alert.alert("Pastor signature", undefined, actions);
+                                    Alert.alert("Signature", undefined, actions);
                                     return;
                                 }
 
@@ -1019,14 +1039,14 @@ export function MentorTaskView({
                                     { text: "Cancel", style: "cancel" },
                                 ]);
                             }}
-                            disabled={isViewingPastor && !signatureValue}
+                            disabled={isReadOnly && !signatureValue}
                         >
                             <Text style={styles.tapToSignText}>
                                 {signatureValue
-                                    ? isViewingPastor
-                                        ? "Tap to view pastor signature"
+                                    ? isReadOnly
+                                        ? "Tap to view signature"
                                         : "Tap to view or edit signature"
-                                    : isViewingPastor
+                                    : isReadOnly
                                       ? "No signature on file"
                                       : "Tap to add signature"}
                             </Text>
@@ -1056,30 +1076,85 @@ export function MentorTaskView({
     // For date changes, we might want a global save button if multiple fields are edited
     const isSaving = createExtras.isPending || updateExtras.isPending;
 
+    const isTaskCompleted =
+        normalizeNestedTaskStatus(task.status) === "completed";
+
     return (
         <>
             <View style={styles.container}>
-                {task.status === 'completed' && (
+                {isTaskCompleted && (
                     <View style={styles.completedBanner}>
-                        <Text style={styles.completedLabel}>Task Completed</Text>
-                        <Ionicons name="checkmark-circle" size={24} color="#34d399" />
+                        <View style={styles.completedBannerLeft}>
+                            <Ionicons name="checkmark-circle" size={22} color="#34d399" />
+                            <Text style={styles.completedLabel}>Task Completed</Text>
+                        </View>
+                    </View>
+                )}
+
+                {isUpdateMode && isReadOnly && !isViewingPastor && (
+                    <View style={styles.viewModeBanner}>
+                        <View style={styles.viewModeBannerContent}>
+                            <Ionicons name="eye-outline" size={18} color="#7EC8FF" />
+                            <View style={styles.viewModeBannerText}>
+                                <Text style={styles.viewModeTitle}>Viewing your responses</Text>
+                                <Text style={styles.viewModeSubtitle}>
+                                    Tap Edit to make changes and resubmit.
+                                </Text>
+                            </View>
+                        </View>
+                        <Pressable
+                            style={styles.editButton}
+                            onPress={() => setIsEditing(true)}
+                        >
+                            <Ionicons name="create-outline" size={16} color="#fff" />
+                            <Text style={styles.editButtonText}>Edit</Text>
+                        </Pressable>
+                    </View>
+                )}
+
+                {isUpdateMode && isEditing && !isViewingPastor && (
+                    <View style={styles.editingBanner}>
+                        <Ionicons name="create-outline" size={16} color="#F59E0B" />
+                        <Text style={styles.editingBannerText}>
+                            Editing mode — update your responses below.
+                        </Text>
+                        <Pressable
+                            onPress={() => setIsEditing(false)}
+                            hitSlop={8}
+                            style={styles.cancelEditBtn}
+                        >
+                            <Text style={styles.cancelEditText}>Cancel</Text>
+                        </Pressable>
                     </View>
                 )}
 
                 {effectiveExtras.map((extra, index) => renderExtra(extra, index))}
 
-                {!isViewingPastor ? (
+                {!isViewingPastor && !isReadOnly ? (
                     <Pressable
-                        style={[styles.saveButton, isSaving ? styles.saveButtonDisabled : null]}
+                        style={[
+                            styles.saveButton,
+                            isUpdateMode && styles.saveButtonUpdate,
+                            isSaving ? styles.saveButtonDisabled : null,
+                        ]}
                         onPress={handleSubmit}
                         disabled={isSaving}
                     >
                         {isSaving ? (
-                            <ActivityIndicator color="#2563eb" />
+                            <ActivityIndicator color={isUpdateMode ? "#fff" : "#2563eb"} />
                         ) : (
                             <>
-                                <Ionicons name="save-outline" size={20} color="#2563eb" />
-                                <Text style={styles.saveButtonText}>Save Progress</Text>
+                                <Ionicons
+                                    name={isUpdateMode ? "refresh-outline" : "save-outline"}
+                                    size={20}
+                                    color={isUpdateMode ? "#fff" : "#2563eb"}
+                                />
+                                <Text style={[
+                                    styles.saveButtonText,
+                                    isUpdateMode && styles.saveButtonTextUpdate,
+                                ]}>
+                                    {isUpdateMode ? "Resubmit" : "Save Progress"}
+                                </Text>
                             </>
                         )}
                     </Pressable>
@@ -1139,6 +1214,18 @@ export function MentorTaskView({
                     title="Progress Saved!"
                 />
             ) : null}
+
+            {showResubmitToast && (
+                <RNAnimated.View
+                    style={[styles.resubmitToast, { opacity: toastOpacity }]}
+                    pointerEvents="none"
+                >
+                    <Ionicons name="checkmark-circle" size={20} color="#34d399" />
+                    <Text style={styles.resubmitToastText}>
+                        Updated successfully!
+                    </Text>
+                </RNAnimated.View>
+            )}
         </>
     );
 }
@@ -1407,18 +1494,131 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(52, 211, 153, 0.2)',
         borderRadius: 12,
         paddingVertical: 12,
-        paddingHorizontal: 20,
-        marginBottom: 24,
+        paddingHorizontal: 14,
+        marginBottom: 12,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         borderWidth: 1,
         borderColor: '#34d399',
+        gap: 8,
+    },
+    completedBannerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        flex: 1,
     },
     completedLabel: {
         color: '#34d399',
-        fontSize: 16,
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    viewModeBanner: {
+        backgroundColor: 'rgba(126, 200, 255, 0.06)',
+        borderRadius: 14,
+        padding: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(126, 200, 255, 0.14)',
+        marginBottom: 14,
+        gap: 12,
+    },
+    viewModeBannerContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+    },
+    viewModeBannerText: {
+        flex: 1,
+        gap: 2,
+    },
+    viewModeTitle: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '800',
+    },
+    viewModeSubtitle: {
+        color: 'rgba(200, 225, 255, 0.68)',
+        fontSize: 12,
         fontWeight: '600',
+        lineHeight: 17,
+    },
+    editButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        backgroundColor: '#2563eb',
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+    },
+    editButtonText: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '800',
+    },
+    editingBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(245, 158, 11, 0.2)',
+        marginBottom: 14,
+    },
+    editingBannerText: {
+        flex: 1,
+        color: 'rgba(245, 200, 100, 0.9)',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    cancelEditBtn: {
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    cancelEditText: {
+        color: 'rgba(255, 255, 255, 0.75)',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    resubmitToast: {
+        position: 'absolute',
+        bottom: 40,
+        left: 24,
+        right: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 14,
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    resubmitToastText: {
+        color: '#1a1a1a',
+        fontSize: 15,
+        fontWeight: '800',
+    },
+    saveButtonUpdate: {
+        backgroundColor: '#2563eb',
+        borderColor: '#3B82F6',
+    },
+    saveButtonTextUpdate: {
+        color: '#ffffff',
     },
     textDisplay: {
         paddingVertical: 16,
