@@ -299,9 +299,8 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
   ];
 
   const handleDrawerItemPress = (navigateLocation: string) => {
-    console.log(navigateLocation, "navigateLocation");
-    router.push(navigateLocation as any);
     closeDrawer();
+    router.navigate(navigateLocation as any);
   };
 
   return (

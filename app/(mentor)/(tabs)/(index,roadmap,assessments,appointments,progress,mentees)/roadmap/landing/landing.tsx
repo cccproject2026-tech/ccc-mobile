@@ -113,6 +113,20 @@ export default function Landing() {
     }
   }, [menteeId, mentees, selectedPastor?.id]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!menteeId) {
+        setSelectedPastor(null);
+        setMentorPastorRoadmapView("phases");
+        setMentorCompletedJourneyTab("all");
+        setMentorCompletedSearch("");
+        setSelectedPastorRoadmapSearch("");
+        setStatusTab("ALL");
+        setMainTab("PASTOR_ROADMAPS");
+      }
+    }, [menteeId]),
+  );
+
   const { data: pastorProgress, isLoading: isLoadingProgress } = useProgressByUserId(selectedPastor?.id);
 
   const pastorMergedRoadmaps = useMemo((): Roadmap[] => {
