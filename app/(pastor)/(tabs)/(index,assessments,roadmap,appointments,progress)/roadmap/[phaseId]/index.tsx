@@ -1,12 +1,9 @@
-import ContextMenu, { MenuItem } from "@/components/director/ContextMenu";
-import ExpectedOutcomeModal from "@/components/director/ExpectedOutcomeModal";
 import RoadmapCard from "@/components/director/ProgressRoadmapCard";
 import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
-import { Colors } from "@/constants/Colors";
 import { useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
 import { getTasks } from "@/lib/roadmap/helpers";
 import { getTaskCard } from "@/lib/roadmap/mappers";
@@ -47,9 +44,6 @@ export default function PastorRoadmapDetail() {
   }, [width]);
   const maxWidth = useMemo(() => (width >= 520 ? 520 : undefined), [width]);
 
-  const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
-  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
-  const [selectedOutcome, setSelectedOutcome] = useState("");
   const [search, setSearch] = useState("");
 
   const phaseNumber = useMemo(() => {
@@ -57,60 +51,6 @@ export default function PastorRoadmapDetail() {
     const match = roadmap.phase.match(/\d+/);
     return match ? parseInt(match[0], 10) : null;
   }, [roadmap]);
-
-  const outcomeMenuItems = useCallback(
-    (): MenuItem[] => [
-      {
-        id: "outcome-4-months",
-        label: "Expected Outcome - 4 Months",
-        onPress: () => {
-          setSelectedOutcome("Expected Outcome - First Four Months");
-          setShowOutcomeMenu(false);
-          setShowOutcomeModal(true);
-        },
-      },
-      {
-        id: "outcome-6-months",
-        label: "Expected Outcome - 6 Months",
-        onPress: () => {
-          setSelectedOutcome("Expected Outcome - Six Months");
-          setShowOutcomeMenu(false);
-          setShowOutcomeModal(true);
-        },
-      },
-      {
-        id: "outcome-9-months",
-        label: "Expected Outcome - 9 Months",
-        onPress: () => {
-          setSelectedOutcome("Expected Outcome - Nine Months");
-          setShowOutcomeMenu(false);
-          setShowOutcomeModal(true);
-        },
-      },
-      {
-        id: "outcome-end-year",
-        label: "Expected Outcome - End of Year",
-        onPress: () => {
-          setSelectedOutcome("Expected Outcome - End of Year");
-          setShowOutcomeMenu(false);
-          setShowOutcomeModal(true);
-        },
-      },
-    ],
-    [],
-  );
-
-  const outcomeData = useCallback(
-    () => [
-      { id: "1", text: "The church is committed to the revitalization process." },
-      { id: "2", text: "The Church is praying consistently and intentionally for revitalization." },
-      { id: "3", text: "The church understands its current health and is committed to making improvements." },
-      { id: "4", text: "The church is beginning to feel like a warm and welcoming place for new attendees." },
-      { id: "5", text: "Church members have begun to build new relationships." },
-      { id: "6", text: "Church members will begin to feel a sense of hope for the future." },
-    ],
-    [],
-  );
 
   const [activeTab, setActiveTab] = useState<TabKey>("ALL");
 
@@ -216,9 +156,6 @@ export default function PastorRoadmapDetail() {
               </Text>
             </View>
           </View>
-          <Pressable onPress={() => setShowOutcomeMenu(true)} hitSlop={10} style={styles.ellipsisBtn}>
-            <Ionicons name="ellipsis-vertical" size={16} color="rgba(255,255,255,0.92)" />
-          </Pressable>
         </View>
 
         <Text style={styles.title}>
@@ -269,25 +206,6 @@ export default function PastorRoadmapDetail() {
         </View>
       </KeyboardSafeContainer>
 
-      <ContextMenu
-        visible={showOutcomeMenu}
-        items={outcomeMenuItems()}
-        onClose={() => setShowOutcomeMenu(false)}
-        position={{ top: 60, right: 16 }}
-        minWidth={280}
-        showIcons={false}
-        itemTextStyle={{ fontSize: 15, fontWeight: "500", color: "#1A4882" }}
-      />
-
-      <ExpectedOutcomeModal
-        visible={showOutcomeModal}
-        onClose={() => setShowOutcomeModal(false)}
-        title={selectedOutcome}
-        outcomes={outcomeData()}
-        onSelect={() => setShowOutcomeModal(false)}
-        onEdit={() => setShowOutcomeModal(false)}
-        onDownload={() => {}}
-      />
     </AppGradientBackground>
   );
 }
@@ -325,16 +243,6 @@ const styles = StyleSheet.create({
   },
   headerPillWrap: { flex: 1, minWidth: 0 },
   backBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.10)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-  },
-  ellipsisBtn: {
     width: 34,
     height: 34,
     borderRadius: 12,
