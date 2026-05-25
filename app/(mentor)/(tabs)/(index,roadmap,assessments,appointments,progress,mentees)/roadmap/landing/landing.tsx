@@ -25,8 +25,9 @@ import {
   getPhaseNumber,
   type PastorCompletedTaskItem,
 } from "@/lib/roadmap/helpers";
-import { getRoadmapCard, getTaskCard } from "@/lib/roadmap/mappers";
+import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { useResubmittedTasks, type ResubmittedEntry } from "@/hooks/roadmap/useResubmittedTasks";
+import { formatRelativeTimestamp } from "@/utils/date";
 import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -678,20 +679,44 @@ export default function Landing() {
     ) : (
       <View style={styles.completedSectionWrap}>
         {filteredResubmittedTasks.map((entry) => {
-          const card = getTaskCard(entry.task);
+          const relativeTime = formatRelativeTimestamp(entry.resubmittedAt);
           return (
             <Pressable
               key={entry.task._id}
               onPress={() => handleOpenResubmittedTask(entry)}
               style={styles.resubmittedCardPress}
             >
-              <View style={styles.resubmittedPhaseTag}>
-                <Ionicons name="layers-outline" size={11} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.resubmittedPhaseText} numberOfLines={1}>
-                  {entry.phaseTitle}
+              <CommonCard style={styles.resubmittedCard}>
+                <View style={styles.resubmittedBadgeRow}>
+                  <View style={styles.resubmittedBadge}>
+                    <Ionicons name="refresh-outline" size={13} color="#FB923C" />
+                    <Text style={styles.resubmittedBadgeText}>Resubmitted</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.35)" />
+                </View>
+
+                <Text style={styles.resubmittedTaskTitle} numberOfLines={2}>
+                  {entry.task.name || "Untitled Task"}
                 </Text>
-              </View>
-              <RoadmapCard data={card} />
+
+                {relativeTime ? (
+                  <Text style={styles.resubmittedTimestamp}>{relativeTime}</Text>
+                ) : null}
+
+                <View style={styles.resubmittedFooter}>
+                  <Ionicons name="person-outline" size={12} color="rgba(255,255,255,0.45)" />
+                  <Text style={styles.resubmittedFooterText}>
+                    Pastor updated this task after completion
+                  </Text>
+                </View>
+
+                <View style={styles.resubmittedPhaseTag}>
+                  <Ionicons name="layers-outline" size={11} color="rgba(255,255,255,0.5)" />
+                  <Text style={styles.resubmittedPhaseText} numberOfLines={1}>
+                    {entry.phaseTitle}
+                  </Text>
+                </View>
+              </CommonCard>
             </Pressable>
           );
         })}
@@ -873,15 +898,60 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: "hidden",
   },
+  resubmittedCard: {
+    borderColor: "rgba(251, 146, 60, 0.2)",
+    backgroundColor: "rgba(251, 146, 60, 0.06)",
+    gap: 10,
+  },
+  resubmittedBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  resubmittedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: "rgba(251, 146, 60, 0.14)",
+  },
+  resubmittedBadgeText: {
+    color: "#FB923C",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  resubmittedTaskTitle: {
+    color: roadmapTheme.textPrimary,
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 21,
+  },
+  resubmittedTimestamp: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  resubmittedFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  resubmittedFooterText: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 11,
+    fontWeight: "600",
+    fontStyle: "italic",
+  },
   resubmittedPhaseTag: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginBottom: 6,
-    paddingLeft: 2,
+    marginTop: 2,
   },
   resubmittedPhaseText: {
-    color: "rgba(255,255,255,0.6)",
+    color: "rgba(255,255,255,0.5)",
     fontSize: 11,
     fontWeight: "600",
   },
