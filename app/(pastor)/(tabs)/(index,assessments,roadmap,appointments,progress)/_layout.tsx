@@ -57,6 +57,7 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
         name="progress/report"
         dangerouslySingular={() => String(Date.now())}
       />
+
     </Stack>
   );
 }

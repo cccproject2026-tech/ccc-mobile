@@ -56,7 +56,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-/** Quick Links: four tiles (sessions, notes, progress, roadmap). Mentors list remains under tab navigation. */
+/** Quick Links: five tiles (sessions, notes, voice notes, progress, roadmap). Mentors list remains under tab navigation. */
 const EXPLORE_TILES = [
   {
     title: "Mentorship\nSessions",
@@ -71,6 +71,13 @@ const EXPLORE_TILES = [
     route: "/(pastor)/(tabs)/profile/notes",
     color: "#10B981",
     gradient: ["#10B981", "#059669"],
+  },
+  {
+    title: "Voice\nNotes",
+    icon: icons.notesIcon,
+    route: "/(pastor)/(tabs)/voice-notes",
+    color: "#AB47BC",
+    gradient: ["#AB47BC", "#8E24AA"],
   },
   {
     title: "Progress\nTracker",

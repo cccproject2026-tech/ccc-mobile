@@ -202,6 +202,8 @@ export default function PastorTabLayout() {
 
                     <Tabs.Screen name="sessions/index" options={{ href: null }} />
                     <Tabs.Screen name="sessions/[id]" options={{ href: null }} />
+                    <Tabs.Screen name="voice-notes/index" options={{ href: null }} />
+                    <Tabs.Screen name="voice-notes/detail" options={{ href: null }} />
                 </Tabs>
             </AssessmentProvider>
         </RoadmapProgressProvider>

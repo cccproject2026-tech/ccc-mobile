@@ -97,6 +97,7 @@ export default function SharedStackLayout({ segment }: { segment: string }) {
       <Stack.Screen name="notes/index" />
       <Stack.Screen name="notes/note-detail" />
       <Stack.Screen name="notes/new-note" />
+
     </Stack>
   );
 }

@@ -16,6 +16,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library so you can select a profile picture.",
         "NSPhotoLibraryAddUsageDescription": "This app needs permission to save photos to your library.",
+        "NSMicrophoneUsageDescription": "This app needs access to your microphone to record voice notes for AI transcription and summary.",
         "UISupportsDocumentBrowser": true,
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
@@ -73,6 +74,12 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "This app needs access to your microphone to record voice notes."
+        }
+      ],
       "@react-native-community/datetimepicker",
       "expo-font",
       "expo-web-browser"

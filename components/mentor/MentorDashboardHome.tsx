@@ -26,12 +26,17 @@ import MapView, { Marker } from "react-native-maps";
 import Animated, { FadeInUp, useAnimatedRef, useScrollViewOffset } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-/** Quick Links: four tiles. Mentorship Insights is in the drawer menu. */
+/** Quick Links: five tiles. Mentorship Insights is in the drawer menu. */
 const EXPLORE_TILES = [
   {
     icon: "document-text-outline",
     title: "Session\nNotes",
     route: "/(mentor)/(tabs)/profile/notes",
+  },
+  {
+    icon: "mic-outline",
+    title: "Voice\nNotes",
+    route: "/(mentor)/(tabs)/voice-notes",
   },
   {
     icon: "calendar-outline",
