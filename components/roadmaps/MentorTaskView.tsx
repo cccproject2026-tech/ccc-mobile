@@ -33,11 +33,12 @@ import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Animated as RNAnimated,
+    BackHandler,
     Image,
     Linking,
     Modal,
     Pressable,
-    Animated as RNAnimated,
     StyleSheet,
     Text,
     TextInput,
@@ -178,11 +179,43 @@ export function MentorTaskView({
 
     const isUpdateMode = !!existingExtras;
     const [isEditing, setIsEditing] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
     const [showResubmitToast, setShowResubmitToast] = useState(false);
     const toastOpacity = useRef(new RNAnimated.Value(0)).current;
 
     /** Pastor viewing their own saved work — fields are read-only until they tap Edit. */
     const isReadOnly = isViewingPastor || (isUpdateMode && !isEditing);
+
+    const confirmDiscardEdit = useCallback(() => {
+        if (!isDirty) {
+            setIsEditing(false);
+            return;
+        }
+        Alert.alert(
+            "Discard your changes?",
+            "You have unsaved edits that will be lost.",
+            [
+                { text: "Continue Editing", style: "cancel" },
+                {
+                    text: "Discard",
+                    style: "destructive",
+                    onPress: () => {
+                        setIsEditing(false);
+                        setIsDirty(false);
+                    },
+                },
+            ],
+        );
+    }, [isDirty]);
+
+    useEffect(() => {
+        if (!isEditing || !isDirty) return;
+        const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+            confirmDiscardEdit();
+            return true;
+        });
+        return () => sub.remove();
+    }, [isEditing, isDirty, confirmDiscardEdit]);
 
     const showToast = useCallback(() => {
         setShowResubmitToast(true);
@@ -193,6 +226,7 @@ export function MentorTaskView({
         ]).start(() => {
             setShowResubmitToast(false);
             setIsEditing(false);
+            setIsDirty(false);
         });
     }, [toastOpacity]);
 
@@ -230,6 +264,7 @@ export function MentorTaskView({
 
     const handleChange = (fieldName: string, value: any) => {
         if (isReadOnly) return;
+        if (isEditing) setIsDirty(true);
         setFormData(prev => ({ ...prev, [fieldName]: value }));
     };
 
@@ -1086,7 +1121,10 @@ export function MentorTaskView({
                     <View style={styles.completedBanner}>
                         <View style={styles.completedBannerLeft}>
                             <Ionicons name="checkmark-circle" size={22} color="#34d399" />
-                            <Text style={styles.completedLabel}>Task Completed</Text>
+                            <Text style={styles.completedLabel}>Completed</Text>
+                        </View>
+                        <View style={styles.completedBadge}>
+                            <Text style={styles.completedBadgeText}>Done</Text>
                         </View>
                     </View>
                 )}
@@ -1114,15 +1152,19 @@ export function MentorTaskView({
 
                 {isUpdateMode && isEditing && !isViewingPastor && (
                     <View style={styles.editingBanner}>
-                        <Ionicons name="create-outline" size={16} color="#F59E0B" />
+                        <View style={styles.editingBadge}>
+                            <Ionicons name="create-outline" size={13} color="#F59E0B" />
+                            <Text style={styles.editingBadgeText}>Editing Mode</Text>
+                        </View>
                         <Text style={styles.editingBannerText}>
-                            Editing mode — update your responses below.
+                            Update your responses and tap Resubmit when done.
                         </Text>
                         <Pressable
-                            onPress={() => setIsEditing(false)}
+                            onPress={confirmDiscardEdit}
                             hitSlop={8}
                             style={styles.cancelEditBtn}
                         >
+                            <Ionicons name="close-outline" size={14} color="rgba(255,255,255,0.75)" />
                             <Text style={styles.cancelEditText}>Cancel</Text>
                         </Pressable>
                     </View>
@@ -1135,13 +1177,21 @@ export function MentorTaskView({
                         style={[
                             styles.saveButton,
                             isUpdateMode && styles.saveButtonUpdate,
-                            isSaving ? styles.saveButtonDisabled : null,
+                            isSaving ? styles.saveButtonSaving : null,
                         ]}
                         onPress={handleSubmit}
                         disabled={isSaving}
                     >
                         {isSaving ? (
-                            <ActivityIndicator color={isUpdateMode ? "#fff" : "#2563eb"} />
+                            <>
+                                <ActivityIndicator color={isUpdateMode ? "#fff" : "#2563eb"} size="small" />
+                                <Text style={[
+                                    styles.saveButtonText,
+                                    isUpdateMode && styles.saveButtonTextUpdate,
+                                ]}>
+                                    Saving Changes...
+                                </Text>
+                            </>
                         ) : (
                             <>
                                 <Ionicons
@@ -1222,7 +1272,7 @@ export function MentorTaskView({
                 >
                     <Ionicons name="checkmark-circle" size={20} color="#34d399" />
                     <Text style={styles.resubmitToastText}>
-                        Updated successfully!
+                        Task updated successfully
                     </Text>
                 </RNAnimated.View>
             )}
@@ -1315,6 +1365,9 @@ const styles = StyleSheet.create({
     },
     saveButtonDisabled: {
         opacity: 0.7,
+    },
+    saveButtonSaving: {
+        opacity: 0.75,
     },
     saveButtonText: {
         color: "#2563eb",
@@ -1512,7 +1565,20 @@ const styles = StyleSheet.create({
     completedLabel: {
         color: '#34d399',
         fontSize: 15,
-        fontWeight: '700',
+        fontWeight: '800',
+    },
+    completedBadge: {
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+        backgroundColor: 'rgba(52, 211, 153, 0.15)',
+    },
+    completedBadgeText: {
+        color: '#34d399',
+        fontSize: 11,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     viewModeBanner: {
         backgroundColor: 'rgba(126, 200, 255, 0.06)',
@@ -1559,26 +1625,45 @@ const styles = StyleSheet.create({
         fontWeight: '800',
     },
     editingBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
+        gap: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
         borderRadius: 12,
         backgroundColor: 'rgba(245, 158, 11, 0.08)',
         borderWidth: 1,
         borderColor: 'rgba(245, 158, 11, 0.2)',
         marginBottom: 14,
     },
-    editingBannerText: {
-        flex: 1,
-        color: 'rgba(245, 200, 100, 0.9)',
-        fontSize: 12,
-        fontWeight: '700',
-    },
-    cancelEditBtn: {
+    editingBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: 5,
         paddingVertical: 4,
         paddingHorizontal: 10,
+        borderRadius: 8,
+        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+        borderWidth: 1,
+        borderColor: 'rgba(245, 158, 11, 0.3)',
+    },
+    editingBadgeText: {
+        color: '#F59E0B',
+        fontSize: 12,
+        fontWeight: '800',
+    },
+    editingBannerText: {
+        color: 'rgba(245, 200, 100, 0.85)',
+        fontSize: 12,
+        fontWeight: '600',
+        lineHeight: 17,
+    },
+    cancelEditBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: 4,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
         borderRadius: 8,
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
         borderWidth: 1,
