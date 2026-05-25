@@ -53,6 +53,8 @@ interface Props {
     phaseId?: string;
     itemId?: string;
     userId?: string; // Target user (mentee)
+    /** When provided, called after a successful save instead of showing the default modal + router.back(). */
+    onSaveSuccess?: () => void;
 }
 
 export function MentorTaskView({
@@ -61,6 +63,7 @@ export function MentorTaskView({
     phaseId: roadmapId,
     itemId,
     userId,
+    onSaveSuccess,
 }: Props) {
     const router = useRouter();
     const { user: currentUser } = useAuthStore();
@@ -343,11 +346,15 @@ export function MentorTaskView({
                 await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, Date.now());
             }
 
-            setShowSuccessModal(true);
-            setTimeout(() => {
-                setShowSuccessModal(false);
-                router.back();
-            }, 1800);
+            if (onSaveSuccess) {
+                onSaveSuccess();
+            } else {
+                setShowSuccessModal(true);
+                setTimeout(() => {
+                    setShowSuccessModal(false);
+                    router.back();
+                }, 1800);
+            }
         } catch (err: any) {
             console.error("❌ Submission error:", err);
             Alert.alert("Submission Failed", err?.message || "Failed to submit. Please try again.");

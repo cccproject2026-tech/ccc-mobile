@@ -2,12 +2,16 @@ import ContextMenu, { MenuItem } from "@/components/director/ContextMenu";
 import ExpectedOutcomeModal from "@/components/director/ExpectedOutcomeModal";
 import TopBar from "@/components/director/TopBar";
 import { MentorTaskView } from "@/components/roadmaps/MentorTaskView";
+import { TaskCompletionModal } from "@/components/roadmaps/celebration/TaskCompletionModal";
+import { PhaseCompletionModal } from "@/components/roadmaps/celebration/PhaseCompletionModal";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { Colors } from "@/constants/Colors";
-import { useRoadmap, useRoadmapComments, useRoadmapQueries } from "@/hooks/roadmaps/useRoadmaps";
+import { useRoadmap, useRoadmapComments, useRoadmapQueries, useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { useCompletionCelebration } from "@/hooks/roadmap/useCompletionCelebration";
 import { resolveRoadmapDetailTask } from "@/lib/roadmap/helpers";
-import type { NestedRoadmap } from "@/lib/roadmap/types";
+import { comparePastorPhasesForFocus } from "@/lib/roadmap/helpers";
+import type { NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -47,6 +51,35 @@ export default function PastorRoadmapItemDetail() {
     () => resolveRoadmapDetailTask(roadmap, itemId),
     [itemId, roadmap],
   );
+
+  const { data: allRoadmaps } = useRoadmaps("pastor");
+  const sortedRoadmaps = useMemo(() => {
+    const list = [...(allRoadmaps ?? [])];
+    list.sort((a, b) => comparePastorPhasesForFocus(a as Roadmap, b as Roadmap));
+    return list as Roadmap[];
+  }, [allRoadmaps]);
+
+  const {
+    celebration,
+    triggerCelebration,
+    handleContinueJourney,
+    handleBackToPhase,
+    handleStartNextPhase,
+    handleBackToJourney,
+  } = useCompletionCelebration();
+
+  const handleSaveSuccess = useCallback(() => {
+    const taskName = String((task as any)?.name || task?.title || "Task");
+    const triggered = triggerCelebration(
+      roadmap as Roadmap | undefined,
+      itemId,
+      taskName,
+      sortedRoadmaps,
+    );
+    if (!triggered) {
+      router.back();
+    }
+  }, [task, roadmap, itemId, sortedRoadmaps, triggerCelebration, router]);
 
   const [activeTab, setActiveTab] = useState<"overview" | "comments" | "queries">("overview");
 
@@ -331,6 +364,7 @@ export default function PastorRoadmapItemDetail() {
               phaseId={String(phaseId)}
               itemId={String(itemId)}
               userId={targetUserId}
+              onSaveSuccess={handleSaveSuccess}
             />
           </>
         )}
@@ -354,6 +388,29 @@ export default function PastorRoadmapItemDetail() {
         onSelect={() => setShowOutcomeModal(false)}
         onEdit={() => setShowOutcomeModal(false)}
         onDownload={() => {}}
+      />
+
+      <TaskCompletionModal
+        visible={celebration.kind === "task"}
+        taskName={celebration.taskName}
+        phaseName={celebration.phaseName}
+        completedCount={celebration.completedCount}
+        totalCount={celebration.totalCount}
+        onContinueJourney={handleContinueJourney}
+        onBackToPhase={handleBackToPhase}
+      />
+
+      <PhaseCompletionModal
+        visible={celebration.kind === "phase"}
+        phaseName={celebration.phaseName}
+        completedCount={celebration.completedCount}
+        totalCount={celebration.totalCount}
+        currentPhaseNumber={celebration.currentPhaseNumber}
+        totalPhases={celebration.totalPhases}
+        nextPhaseName={celebration.nextPhaseName}
+        hasNextPhase={celebration.hasNextPhase}
+        onStartNextPhase={handleStartNextPhase}
+        onBackToJourney={handleBackToJourney}
       />
     </AppGradientBackground>
   );
