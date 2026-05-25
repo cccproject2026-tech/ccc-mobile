@@ -1,6 +1,6 @@
 import type { VoiceNote, VoiceNoteStatus } from "@/types/voiceNote.types";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface VoiceNoteCardProps {
@@ -34,61 +34,57 @@ function formatDate(dateStr: string): string {
 }
 
 export function VoiceNoteCard({ voiceNote, onPress }: VoiceNoteCardProps) {
-  const statusConfig = STATUS_CONFIG[voiceNote.status];
+  const statusConfig = STATUS_CONFIG[voiceNote.status] || STATUS_CONFIG.pending;
   const isRecording = voiceNote.source === "recording";
 
   return (
-    <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-      onPress={() => onPress(voiceNote)}
-    >
-      <View style={styles.iconContainer}>
-        <Ionicons
-          name={isRecording ? "mic" : "document-attach"}
-          size={22}
-          color="rgba(255,255,255,0.7)"
-        />
-      </View>
-
-      <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={1}>
-          {voiceNote.title || "Untitled Voice Note"}
-        </Text>
-
-        <View style={styles.metaRow}>
-          <View
-            style={[styles.statusBadge, { backgroundColor: statusConfig.bgColor }]}
-          >
-            <View style={[styles.statusDot, { backgroundColor: statusConfig.color }]} />
-            <Text style={[styles.statusText, { color: statusConfig.color }]}>
-              {statusConfig.label}
-            </Text>
-          </View>
-
-          <Text style={styles.dateText}>{formatDate(voiceNote.createdAt)}</Text>
+    <Pressable onPress={() => onPress(voiceNote)}>
+      <View style={styles.card}>
+        <View style={styles.iconContainer}>
+          <Ionicons
+            name={isRecording ? "mic" : "document-attach"}
+            size={22}
+            color="rgba(255,255,255,0.7)"
+          />
         </View>
 
-        {voiceNote.recordingDurationSeconds != null && (
-          <Text style={styles.durationText}>
-            {Math.floor(voiceNote.recordingDurationSeconds / 60)}:
-            {(voiceNote.recordingDurationSeconds % 60).toString().padStart(2, "0")}
+        <View style={styles.content}>
+          <Text style={styles.title} numberOfLines={1}>
+            {voiceNote.title || "Untitled Voice Note"}
           </Text>
-        )}
-      </View>
 
-      <Ionicons
-        name="chevron-forward"
-        size={18}
-        color="rgba(255,255,255,0.3)"
-      />
+          <View style={styles.metaRow}>
+            <View style={[styles.statusBadge, { backgroundColor: statusConfig.bgColor }]}>
+              <View style={[styles.statusDot, { backgroundColor: statusConfig.color }]} />
+              <Text style={[styles.statusText, { color: statusConfig.color }]}>
+                {statusConfig.label}
+              </Text>
+            </View>
+            <Text style={styles.dateText}>{formatDate(voiceNote.createdAt)}</Text>
+          </View>
+
+          {voiceNote.recordingDurationSeconds != null && (
+            <Text style={styles.durationText}>
+              {Math.floor(voiceNote.recordingDurationSeconds / 60)}:
+              {(voiceNote.recordingDurationSeconds % 60).toString().padStart(2, "0")}
+            </Text>
+          )}
+        </View>
+
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color="rgba(255,255,255,0.3)"
+        />
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     backgroundColor: "rgba(255,255,255,0.06)",
     borderRadius: 14,
     padding: 14,
@@ -96,16 +92,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
   },
-  cardPressed: {
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
   iconContainer: {
     width: 42,
     height: 42,
     borderRadius: 12,
     backgroundColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginRight: 12,
   },
   content: {
@@ -114,17 +107,17 @@ const styles = StyleSheet.create({
   title: {
     color: "#fff",
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "600" as const,
     marginBottom: 6,
   },
   metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: 10,
   },
   statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -137,7 +130,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "600" as const,
   },
   dateText: {
     color: "rgba(255,255,255,0.45)",

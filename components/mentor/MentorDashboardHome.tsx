@@ -9,8 +9,8 @@ import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { LinearGradient } from "expo-linear-gradient";
 import Constants from "expo-constants";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -26,7 +26,7 @@ import MapView, { Marker } from "react-native-maps";
 import Animated, { FadeInUp, useAnimatedRef, useScrollViewOffset } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-/** Quick Links: five tiles. Mentorship Insights is in the drawer menu. */
+/** Quick Links: six tiles in 3x2 grid layout. */
 const EXPLORE_TILES = [
   {
     icon: "document-text-outline",
@@ -52,6 +52,11 @@ const EXPLORE_TILES = [
     icon: "bar-chart-outline",
     title: "Mentees'\nProgress",
     route: "/(mentor)/mentees/progress-tracker",
+  },
+  {
+    icon: "analytics-outline",
+    title: "Mentorship\nInsights",
+    route: "/(mentor)/(tabs)/insights",
   },
 ] as const;
 
@@ -111,7 +116,7 @@ export default function MentorDashboardHome() {
       {
         icon: "calendar-outline" as const,
         line1: "Today's",
-        line2: "Mentorship Sessions",
+        line2: "Sessions",
         sheetTitle: "Today's Mentorship Sessions",
         sectionId: "mentorship-sessions-today",
       },
@@ -293,16 +298,18 @@ export default function MentorDashboardHome() {
                 <Text style={styles.sectionTitleText}>Quick Links</Text>
               </View>
 
-              <View style={styles.exploreRow}>
+              <View style={styles.exploreGrid}>
                 {EXPLORE_TILES.map((tile) => (
-                  <ExploreCard
-                    key={tile.route}
-                    ionicon={tile.icon as any}
-                    title={tile.title}
-                    route={tile.route as any}
-                    appearance="frosted"
-                    compact
-                  />
+                  <View key={tile.route} style={styles.exploreGridItem}>
+                    <ExploreCard
+                      ionicon={tile.icon as any}
+                      title={tile.title}
+                      route={tile.route as any}
+                      appearance="frosted"
+                      compact
+                      wrapperStyle={{ width: "100%", maxWidth: "100%" }}
+                    />
+                  </View>
                 ))}
               </View>
             </Animated.View>
@@ -440,6 +447,21 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 2,
     paddingBottom: 2,
+  },
+
+  exploreGrid: {
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 6,
+    marginTop: 2,
+    paddingBottom: 2,
+  },
+
+  exploreGridItem: {
+    width: "31%",
+    minWidth: 0,
   },
 
   // Help Card
