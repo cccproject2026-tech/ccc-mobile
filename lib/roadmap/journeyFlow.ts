@@ -75,19 +75,40 @@ export function getOverallJourneyTaskStats(roadmaps: Roadmap[]): {
 /**
  * Build visual journey steps: ✓ completed, highlighted current, 🔒 locked future.
  * Sequential rule: a phase stays locked until all earlier assigned phases are finished.
+ *
+ * Any assigned roadmaps that don't match a canonical step are appended
+ * dynamically so newly-added phases always appear in the flow strip.
  */
 export function buildJourneyFlowSteps(roadmaps: Roadmap[]): JourneyFlowStep[] {
   const byStepId = new Map<string, Roadmap>();
+  const matchedRoadmapIds = new Set<string>();
+
   for (const roadmap of roadmaps) {
     const stepId = matchRoadmapToCanonicalStep(roadmap);
     if (stepId && !byStepId.has(stepId)) {
       byStepId.set(stepId, roadmap);
+      matchedRoadmapIds.add(String(roadmap._id));
     }
   }
 
+  const unmatchedRoadmaps = roadmaps.filter(
+    (r) => !matchedRoadmapIds.has(String(r._id)),
+  );
+
+  type StepDef = { id: string; title: string; shortTitle: string };
+  const allStepDefs: StepDef[] = [...CANONICAL_JOURNEY_STEPS];
+
+  for (const roadmap of unmatchedRoadmaps) {
+    const dynamicId = `dynamic-${roadmap._id}`;
+    const name = String(roadmap.name ?? "Phase").trim();
+    const shortName = name.length > 12 ? name.slice(0, 12).trim() : name;
+    allStepDefs.push({ id: dynamicId, title: name, shortTitle: shortName });
+    byStepId.set(dynamicId, roadmap);
+  }
+
   let currentStepIndex = -1;
-  for (let i = 0; i < CANONICAL_JOURNEY_STEPS.length; i++) {
-    const step = CANONICAL_JOURNEY_STEPS[i];
+  for (let i = 0; i < allStepDefs.length; i++) {
+    const step = allStepDefs[i];
     const assigned = byStepId.get(step.id);
     if (!assigned) continue;
 
@@ -99,7 +120,7 @@ export function buildJourneyFlowSteps(roadmaps: Roadmap[]): JourneyFlowStep[] {
     }
   }
 
-  return CANONICAL_JOURNEY_STEPS.map((step, index) => {
+  return allStepDefs.map((step, index) => {
     const roadmap = byStepId.get(step.id);
     if (!roadmap) {
       return { ...step, state: "locked" as const, roadmap: undefined };
