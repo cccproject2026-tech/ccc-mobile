@@ -110,6 +110,10 @@ export default function RoadmapDetail() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
+    const allTasks = useMemo(() => {
+        return roadmap ? getTasks(roadmap) : [];
+    }, [roadmap]);
+
     const tabs = useMemo(
         () => [
             { key: 'ALL', label: 'All' },
@@ -120,11 +124,6 @@ export default function RoadmapDetail() {
         [],
     );
 
-    // Get all tasks
-    const allTasks = useMemo(() => {
-        return roadmap ? getTasks(roadmap) : [];
-    }, [roadmap]);
-
     const filteredTasks = useMemo(() => {
         if (!roadmap) return [];
 
@@ -132,11 +131,9 @@ export default function RoadmapDetail() {
 
         if (activeTab === 'COMPLETED') {
             list = list.filter((task) => String(task.status || '').toLowerCase() === 'completed');
-        }
-        if (activeTab === 'NOT_STARTED') {
+        } else if (activeTab === 'NOT_STARTED') {
             list = list.filter((task) => String(task.status || '').toLowerCase() === 'not started');
-        }
-        if (activeTab === 'DUE') {
+        } else if (activeTab === 'DUE') {
             const today = new Date().toISOString().slice(0, 10);
             list = list.filter((task) => {
                 const status = String(task.status || '').toLowerCase();

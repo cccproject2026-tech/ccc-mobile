@@ -25,7 +25,8 @@ import {
   getPhaseNumber,
   type PastorCompletedTaskItem,
 } from "@/lib/roadmap/helpers";
-import { getRoadmapCard } from "@/lib/roadmap/mappers";
+import { getRoadmapCard, getTaskCard } from "@/lib/roadmap/mappers";
+import { useResubmittedTasks, type ResubmittedEntry } from "@/hooks/roadmap/useResubmittedTasks";
 import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -47,7 +48,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type MainTabKey = "PASTOR_ROADMAPS" | "ROADMAP_LIBRARY";
 type StatusTabKey = "ALL" | "DUE" | "IN_PROGRESS" | "NOT_STARTED" | "COMPLETED";
-type MentorPastorRoadmapView = "phases" | "completed-tasks";
+type MentorPastorRoadmapView = "phases" | "completed-tasks" | "resubmitted";
 
 const MAIN_TABS = [
   { key: "PASTOR_ROADMAPS" as const, label: "Pastor's Roadmaps" },
@@ -73,6 +74,7 @@ export default function Landing() {
   const [librarySearch, setLibrarySearch] = useState("");
   const [selectedPastorRoadmapSearch, setSelectedPastorRoadmapSearch] = useState("");
   const [mentorCompletedSearch, setMentorCompletedSearch] = useState("");
+  const [resubmittedSearch, setResubmittedSearch] = useState("");
   const [mentorPastorRoadmapView, setMentorPastorRoadmapView] =
     useState<MentorPastorRoadmapView>("phases");
   const [mentorCompletedJourneyTab, setMentorCompletedJourneyTab] = useState("all");
@@ -120,6 +122,7 @@ export default function Landing() {
         setMentorPastorRoadmapView("phases");
         setMentorCompletedJourneyTab("all");
         setMentorCompletedSearch("");
+        setResubmittedSearch("");
         setSelectedPastorRoadmapSearch("");
         setStatusTab("ALL");
         setMainTab("PASTOR_ROADMAPS");
@@ -139,13 +142,17 @@ export default function Landing() {
     });
   }, [selectedPastor, pastorProgress, roadmaps]);
 
+  const { resubmittedTasks, isLoadingResubmitted, reloadResubmitted } =
+    useResubmittedTasks(pastorMergedRoadmaps, selectedPastor?.id);
+
   const { timestamps: mentorCompletionTimestamps, reloadTimestamps } =
     useTaskCompletionTimestamps(selectedPastor?.id, pastorMergedRoadmaps);
 
   useFocusEffect(
     useCallback(() => {
       reloadTimestamps();
-    }, [reloadTimestamps]),
+      reloadResubmitted();
+    }, [reloadTimestamps, reloadResubmitted]),
   );
 
   const mentorCompletedTasks = useMemo(
@@ -189,6 +196,16 @@ export default function Landing() {
     });
   }, [mentorCompletedByJourney, mentorCompletedSearch]);
 
+  const filteredResubmittedTasks = useMemo(() => {
+    const q = resubmittedSearch.trim().toLowerCase();
+    if (!q) return resubmittedTasks;
+    return resubmittedTasks.filter((entry) => {
+      const title = (entry.task.name ?? "").toLowerCase();
+      const phase = entry.phaseTitle.toLowerCase();
+      return title.includes(q) || phase.includes(q);
+    });
+  }, [resubmittedTasks, resubmittedSearch]);
+
   const selectPastor = useCallback((mentee: Mentee) => {
     setSelectedPastor(mentee);
     setMentorPastorRoadmapView("phases");
@@ -209,6 +226,22 @@ export default function Landing() {
       const menteeName = [selectedPastor.firstName, selectedPastor.lastName].filter(Boolean).join(" ").trim();
       router.push({
         pathname: `/(mentor)/roadmap/${item.phaseId}/${item.taskId}` as any,
+        params: {
+          menteeId: selectedPastor.id,
+          menteeName: menteeName || undefined,
+        },
+      });
+    },
+    [selectedPastor],
+  );
+
+  const handleOpenResubmittedTask = useCallback(
+    (entry: ResubmittedEntry) => {
+      const taskId = entry.task._id;
+      if (!entry.phaseId || !taskId || !selectedPastor?.id) return;
+      const menteeName = [selectedPastor.firstName, selectedPastor.lastName].filter(Boolean).join(" ").trim();
+      router.push({
+        pathname: `/(mentor)/roadmap/${entry.phaseId}/${taskId}` as any,
         params: {
           menteeId: selectedPastor.id,
           menteeName: menteeName || undefined,
@@ -346,8 +379,7 @@ export default function Landing() {
     });
 
     if (statusTab !== "ALL") {
-      const statusMap: Record<StatusTabKey, RoadmapCardStatus> = {
-        ALL: "initial",
+      const statusMap: Record<string, RoadmapCardStatus> = {
         COMPLETED: "completed",
         IN_PROGRESS: "in-progress",
         NOT_STARTED: "initial",
@@ -417,13 +449,15 @@ export default function Landing() {
     }
 
     const currentSearch =
-      selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
-        ? mentorCompletedSearch
-        : selectedPastor
-          ? selectedPastorRoadmapSearch
-          : mainTab === "PASTOR_ROADMAPS"
-            ? pastorSearch
-            : librarySearch;
+      selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "resubmitted"
+        ? resubmittedSearch
+        : selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+          ? mentorCompletedSearch
+          : selectedPastor
+            ? selectedPastorRoadmapSearch
+            : mainTab === "PASTOR_ROADMAPS"
+              ? pastorSearch
+              : librarySearch;
 
     return (
       <View style={styles.emptyContainer}>
@@ -442,6 +476,7 @@ export default function Landing() {
     pastorSearch,
     librarySearch,
     selectedPastorRoadmapSearch,
+    resubmittedSearch,
     mentorCompletedSearch,
     mentorPastorRoadmapView,
     mainTab,
@@ -464,64 +499,82 @@ export default function Landing() {
   }, [hasNextPage, isFetchingNextPage, mainTab, selectedPastor, fetchNextPage]);
 
   const searchValue =
-    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
-      ? mentorCompletedSearch
-      : selectedPastor
-        ? selectedPastorRoadmapSearch
-        : mainTab === "PASTOR_ROADMAPS"
-          ? pastorSearch
-          : librarySearch;
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "resubmitted"
+      ? resubmittedSearch
+      : selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+        ? mentorCompletedSearch
+        : selectedPastor
+          ? selectedPastorRoadmapSearch
+          : mainTab === "PASTOR_ROADMAPS"
+            ? pastorSearch
+            : librarySearch;
 
   const setSearchValue =
-    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
-      ? setMentorCompletedSearch
-      : selectedPastor
-        ? setSelectedPastorRoadmapSearch
-        : mainTab === "PASTOR_ROADMAPS"
-          ? setPastorSearch
-          : setLibrarySearch;
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "resubmitted"
+      ? setResubmittedSearch
+      : selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+        ? setMentorCompletedSearch
+        : selectedPastor
+          ? setSelectedPastorRoadmapSearch
+          : mainTab === "PASTOR_ROADMAPS"
+            ? setPastorSearch
+            : setLibrarySearch;
 
   const searchPlaceholder =
-    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
-      ? "Search history..."
-      : selectedPastor
-        ? "Search phases..."
-        : mainTab === "PASTOR_ROADMAPS"
-          ? "Search pastors..."
-          : "Search library...";
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "resubmitted"
+      ? "Search resubmitted tasks..."
+      : selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+        ? "Search history..."
+        : selectedPastor
+          ? "Search phases..."
+          : mainTab === "PASTOR_ROADMAPS"
+            ? "Search pastors..."
+            : "Search library...";
 
   const sectionTitle =
-    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
-      ? `${selectedPastor.firstName}'s history`
-      : selectedPastor
-        ? `${selectedPastor.firstName}'s roadmaps`
-        : mainTab === "ROADMAP_LIBRARY"
-          ? "Roadmap library"
-          : "Pastor roadmaps";
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "resubmitted"
+      ? `${selectedPastor.firstName}'s resubmitted tasks`
+      : selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+        ? `${selectedPastor.firstName}'s history`
+        : selectedPastor
+          ? `${selectedPastor.firstName}'s roadmaps`
+          : mainTab === "ROADMAP_LIBRARY"
+            ? "Roadmap library"
+            : "Pastor roadmaps";
 
   const sectionSubtitle =
-    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
-      ? "Look back at tasks your mentee has already finished."
-      : selectedPastor
-        ? "Track phases, tasks, and next steps."
-        : mainTab === "ROADMAP_LIBRARY"
-          ? "Browse templates and assign to pastors."
-          : "Select a mentee to view their revitalization roadmaps.";
+    selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "resubmitted"
+      ? "Tasks resubmitted by your mentee awaiting your review."
+      : selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks"
+        ? "Look back at tasks your mentee has already finished."
+        : selectedPastor
+          ? "Track phases, tasks, and next steps."
+          : mainTab === "ROADMAP_LIBRARY"
+            ? "Browse templates and assign to pastors."
+            : "Select a mentee to view their revitalization roadmaps.";
 
   const mentorPastorLayerTabs = useMemo(
     () => [
       { key: "phases" as const, label: "Journey" },
+      {
+        key: "resubmitted" as const,
+        label: "Resubmitted",
+        badge: resubmittedTasks.length > 0 ? resubmittedTasks.length : undefined,
+      },
       {
         key: "completed-tasks" as const,
         label: "History",
         badge: mentorCompletedTasks.length > 0 ? mentorCompletedTasks.length : undefined,
       },
     ],
-    [mentorCompletedTasks.length],
+    [mentorCompletedTasks.length, resubmittedTasks.length],
   );
 
   const showMentorPastorCompleted =
     !!selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "completed-tasks";
+
+  const showMentorPastorResubmitted =
+    !!selectedPastor && mainTab === "PASTOR_ROADMAPS" && mentorPastorRoadmapView === "resubmitted";
 
   const listHeader = (
     <View style={styles.headerBlock}>
@@ -600,6 +653,51 @@ export default function Landing() {
     </View>
   );
 
+  const resubmittedScrollBody =
+    isLoadingRoadmaps || isLoadingProgress || isLoadingResubmitted ? (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#fff" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    ) : resubmittedTasks.length > 0 &&
+      filteredResubmittedTasks.length === 0 &&
+      resubmittedSearch.trim() ? (
+      <CommonCard style={styles.emptySearchCard}>
+        <Ionicons name="search-outline" size={28} color="rgba(255,255,255,0.7)" />
+        <Text style={styles.emptySearchTitle}>No matching resubmitted tasks</Text>
+        <Text style={styles.emptySearchSubtitle}>Try a different search term.</Text>
+      </CommonCard>
+    ) : resubmittedTasks.length === 0 ? (
+      <CommonCard style={styles.emptySearchCard}>
+        <Ionicons name="refresh-outline" size={28} color="rgba(251,146,60,0.7)" />
+        <Text style={styles.emptySearchTitle}>No resubmitted tasks</Text>
+        <Text style={styles.emptySearchSubtitle}>
+          Tasks resubmitted by your mentee will appear here for review.
+        </Text>
+      </CommonCard>
+    ) : (
+      <View style={styles.completedSectionWrap}>
+        {filteredResubmittedTasks.map((entry) => {
+          const card = getTaskCard(entry.task);
+          return (
+            <Pressable
+              key={entry.task._id}
+              onPress={() => handleOpenResubmittedTask(entry)}
+              style={styles.resubmittedCardPress}
+            >
+              <View style={styles.resubmittedPhaseTag}>
+                <Ionicons name="layers-outline" size={11} color="rgba(255,255,255,0.6)" />
+                <Text style={styles.resubmittedPhaseText} numberOfLines={1}>
+                  {entry.phaseTitle}
+                </Text>
+              </View>
+              <RoadmapCard data={card} />
+            </Pressable>
+          );
+        })}
+      </View>
+    );
+
   const completedScrollBody =
     isLoadingRoadmaps || isLoadingProgress ? (
       <View style={styles.loadingContainer}>
@@ -636,7 +734,20 @@ export default function Landing() {
 
       <TopBar role="mentor" showUserName />
 
-      {showMentorPastorCompleted ? (
+      {showMentorPastorResubmitted ? (
+        <ScrollView
+          style={styles.flatList}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: listBottomPad, paddingHorizontal: horizontalPadding },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {listHeader}
+          {resubmittedScrollBody}
+        </ScrollView>
+      ) : showMentorPastorCompleted ? (
         <ScrollView
           style={styles.flatList}
           contentContainerStyle={[
@@ -756,6 +867,23 @@ const styles = StyleSheet.create({
   },
   completedSectionWrap: {
     marginTop: 4,
+    gap: 12,
+  },
+  resubmittedCardPress: {
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  resubmittedPhaseTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 6,
+    paddingLeft: 2,
+  },
+  resubmittedPhaseText: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 11,
+    fontWeight: "600",
   },
   emptySearchCard: {
     marginTop: 12,

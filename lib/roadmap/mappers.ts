@@ -65,6 +65,7 @@ import {
     parseDurationMonths,
     type PastorCompletedTaskItem,
 } from './helpers';
+import { isResubmittedTask } from './resubmission';
 import { NestedRoadmap, Roadmap, RoadmapCardData } from './types';
 
 /**
@@ -114,6 +115,7 @@ export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
 export function getTaskCard(task: NestedRoadmap): RoadmapCardData {
     const status = getCardStatus(task);
     const isCompleted = status === 'completed';
+    const resubmitted = isResubmittedTask(task);
 
     return {
         image: task.imageUrl,
@@ -125,6 +127,8 @@ export function getTaskCard(task: NestedRoadmap): RoadmapCardData {
         completedDate: task.completedOn ? formatDate(task.completedOn) : undefined,
         showArrow: true,
         showCheckmark: isCompleted,
+        isResubmitted: resubmitted,
+        resubmittedAt: resubmitted ? task.resubmittedAt : undefined,
     };
 }
 

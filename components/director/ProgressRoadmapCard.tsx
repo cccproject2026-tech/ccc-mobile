@@ -408,6 +408,12 @@ export const RoadmapCard: React.FC<Props> = ({
                                         {statusConfig.text}
                                     </Text>
                                 </View>
+                                {data.isResubmitted && (
+                                    <View style={styles.resubmittedPill}>
+                                        <Ionicons name="refresh-outline" size={12} color="#FB923C" />
+                                        <Text style={styles.resubmittedPillText}>Resubmitted</Text>
+                                    </View>
+                                )}
                             </View>
                         )}
 
@@ -670,6 +676,10 @@ const styles = StyleSheet.create({
         opacity: 0.95,
     },
     statusRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 6,
         marginTop: getSpacing(6),
         paddingRight: getSpacing(40),
     },
@@ -708,6 +718,25 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(12.5),
         fontWeight: '800',
         flexShrink: 1,
+    },
+    resubmittedPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: getSpacing(9),
+        paddingVertical: getSpacing(5),
+        borderRadius: 10,
+        backgroundColor: 'rgba(251, 146, 60, 0.18)',
+        borderWidth: 1,
+        borderColor: 'rgba(251, 146, 60, 0.35)',
+        alignSelf: 'flex-start',
+    },
+    resubmittedPillText: {
+        color: '#FDBA74',
+        fontSize: getFontSize(11),
+        fontWeight: '800',
+        letterSpacing: 0.3,
+        textTransform: 'uppercase',
     },
     progressSection: {
         marginTop: getSpacing(12),

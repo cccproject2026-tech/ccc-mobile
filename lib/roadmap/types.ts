@@ -306,6 +306,10 @@ export interface RoadmapCardData {
     phaseContextPrefix?: string;
     /** When "plain", completed line omits the "Completed on :" prefix. */
     completedDateDisplay?: 'labeled' | 'plain';
+    /** When true, shows a "RESUBMITTED" badge on the card. */
+    isResubmitted?: boolean;
+    /** ISO timestamp of the latest resubmission. */
+    resubmittedAt?: string;
 }
 
 // ============= EXTRAS TYPES =============

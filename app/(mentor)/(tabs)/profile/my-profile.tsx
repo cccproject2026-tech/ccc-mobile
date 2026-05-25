@@ -344,7 +344,7 @@ export default function ProfileScreen() {
                 source={
                   profileImage
                     ? { uri: profileImage }
-                    : getAvatarSource(profileData?.user)
+                    : getAvatarSource(apiProfileData?.user)
                 }
                 resizeMode="cover"
                 style={styles.avatarImage}
