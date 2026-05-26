@@ -284,11 +284,8 @@ export function isPastorPhaseNewlyAssigned(roadmap: Roadmap): boolean {
     return getPastorPhaseSortGroup(roadmap) === 1;
 }
 
-/** Prioritize newly assigned phases, then in-progress, then completed. */
+/** Sort phases in canonical journey order (Jump Start → Self → Church → Community). */
 export function comparePastorPhasesForHome(a: Roadmap, b: Roadmap): number {
-    const aNew = isPastorPhaseNewlyAssigned(a) ? 0 : 1;
-    const bNew = isPastorPhaseNewlyAssigned(b) ? 0 : 1;
-    if (aNew !== bNew) return aNew - bNew;
     return comparePastorPhasesForFocus(a, b);
 }
 
@@ -298,10 +295,27 @@ function toEpochMsForSort(dateString?: string): number {
     return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+function getCanonicalPhaseIndex(roadmap: Roadmap): number {
+    const name = String(roadmap.name ?? roadmap.phase ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+    if (name.includes('jump') || name.includes('jumpstart')) return 0;
+
+    const phaseNum = getPhaseNumber(String(roadmap.phase ?? ''));
+    if (phaseNum === 1) return 1;
+    if (phaseNum === 2) return 2;
+    if (phaseNum === 3) return 3;
+
+    if (name.includes('self revitalization') || name.includes('phase 1')) return 1;
+    if (name.includes('church empowerment') || name.includes('phase 2')) return 2;
+    if (name.includes('community revitalization') || name.includes('multiplication') || name.includes('phase 3')) return 3;
+
+    return 99;
+}
+
 export function comparePastorPhasesForFocus(a: Roadmap, b: Roadmap): number {
-    const ga = getPastorPhaseSortGroup(a);
-    const gb = getPastorPhaseSortGroup(b);
-    if (ga !== gb) return ga - gb;
+    const aIdx = getCanonicalPhaseIndex(a);
+    const bIdx = getCanonicalPhaseIndex(b);
+    if (aIdx !== bIdx) return aIdx - bIdx;
     const timeDelta = toEpochMsForSort(b.updatedAt) - toEpochMsForSort(a.updatedAt);
     if (timeDelta !== 0) return timeDelta;
     return String(a?._id ?? '').localeCompare(String(b?._id ?? ''));
