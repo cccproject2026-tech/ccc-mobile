@@ -689,6 +689,13 @@ export const PastorMenuItems: MenuItem[] = [
     route: "/(pastor)/(tabs)/progress",
   },
   {
+    id: "voiceNotes",
+    label: "Voice Notes",
+    icon: icons.notesIcon,
+    iconType: "image",
+    route: "/(pastor)/(tabs)/voice-notes",
+  },
+  {
     id: "appointments",
     label: "Appointments",
     icon: icons.Appointments,

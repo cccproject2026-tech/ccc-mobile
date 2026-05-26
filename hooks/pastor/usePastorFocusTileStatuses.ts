@@ -27,20 +27,11 @@ function statusForMentorship(
     return { label: "None scheduled", variant: "inProgress" };
   }
 
-  const items = [...(today?.items ?? []), ...(upcoming?.items ?? [])];
-  const linkPending = items.some((item) => item.meta?.includes("Link pending"));
-
   if (todayCount > 0) {
-    return {
-      label: linkPending ? "Link pending" : "Today",
-      variant: linkPending ? "pending" : "upcoming",
-    };
+    return { label: "Today", variant: "upcoming" };
   }
 
-  return {
-    label: linkPending ? "Link pending" : "Scheduled",
-    variant: linkPending ? "pending" : "upcoming",
-  };
+  return { label: "Scheduled", variant: "upcoming" };
 }
 
 function statusForOtherMeetings(
@@ -58,18 +49,12 @@ function statusForRoadmaps(section?: PastorFocusSection): PastorFocusTileStatus 
 
   const meta = item.meta ?? "";
   if (meta.includes("Newly assigned")) {
-    return { label: "New phase", variant: "pending" };
-  }
-  if (meta.includes("Blocked")) {
-    return { label: "Blocked", variant: "dueToday" };
-  }
-  if (meta.includes("Due soon")) {
-    return { label: "Due soon", variant: "dueToday" };
+    return { label: "New", variant: "pending" };
   }
   if (meta.includes("In progress")) {
     return { label: "In progress", variant: "inProgress" };
   }
-  return { label: "Get started", variant: "pending" };
+  return { label: "In progress", variant: "inProgress" };
 }
 
 function statusForAssessments(
@@ -83,10 +68,7 @@ function statusForAssessments(
   if (meta.includes("Newly assigned")) {
     return { label: "New", variant: "pending" };
   }
-  if (/due/i.test(meta)) {
-    return { label: "Due", variant: "dueToday" };
-  }
-  return { label: "Pending", variant: "pending" };
+  return { label: "New", variant: "pending" };
 }
 
 function statusForFeedback(section?: PastorFocusSection): PastorFocusTileStatus {
