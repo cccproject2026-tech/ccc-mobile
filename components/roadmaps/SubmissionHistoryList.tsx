@@ -22,11 +22,11 @@ interface Props {
 }
 
 const STATUS_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }> = {
-    submitted: { icon: "paper-plane-outline", color: "#3B82F6", label: "Submitted" },
-    reviewed: { icon: "checkmark-done-outline", color: "#8B5CF6", label: "Reviewed" },
-    approved: { icon: "checkmark-circle-outline", color: "#22C55E", label: "Approved" },
-    needs_revision: { icon: "alert-circle-outline", color: "#F59E0B", label: "Needs Revision" },
-    resubmitted: { icon: "refresh-outline", color: "#F97316", label: "Resubmitted" },
+    submitted: { icon: "paper-plane-outline", color: "#34D399", label: "Submitted" },
+    reviewed: { icon: "checkmark-done-outline", color: "#A78BFA", label: "Reviewed" },
+    approved: { icon: "checkmark-circle-outline", color: "#34D399", label: "Approved" },
+    needs_revision: { icon: "alert-circle-outline", color: "#FBBF24", label: "Needs Revision" },
+    resubmitted: { icon: "refresh-outline", color: "#FCD34D", label: "Resubmitted" },
 };
 
 function getSubmissionLabel(sub: TaskSubmission): string {
@@ -346,15 +346,15 @@ const styles = StyleSheet.create({
     statusRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
+        gap: 5,
     },
     statusText: {
-        fontSize: 12,
-        fontWeight: "600",
+        fontSize: 13,
+        fontWeight: "700",
     },
     dateText: {
-        color: "rgba(255,255,255,0.45)",
-        fontSize: 11,
+        color: "rgba(255,255,255,0.55)",
+        fontSize: 12,
         fontWeight: "500",
     },
     center: {

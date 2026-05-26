@@ -1239,10 +1239,6 @@ export function MentorTaskView({
                             Your responses are locked. You can view your history or submit a new version.
                         </Text>
                         <View style={styles.submissionActions}>
-                            <Pressable style={styles.submissionActionBtn} onPress={handleViewHistory}>
-                                <Ionicons name="time-outline" size={16} color="#60A5FA" />
-                                <Text style={styles.submissionActionBtnText}>View History</Text>
-                            </Pressable>
                             <Pressable
                                 style={[styles.submissionActionBtn, styles.submissionActionBtnPrimary]}
                                 onPress={handleStartResubmit}
@@ -1251,6 +1247,13 @@ export function MentorTaskView({
                                 <Text style={styles.submissionActionBtnTextPrimary}>Resubmit Task</Text>
                             </Pressable>
                         </View>
+                        <Pressable style={styles.viewHistoryBtn} onPress={handleViewHistory}>
+                            <Ionicons name="document-text-outline" size={16} color="rgba(255,255,255,0.75)" />
+                            <Text style={styles.viewHistoryBtnText}>
+                                View your previous submissions
+                            </Text>
+                            <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.4)" />
+                        </Pressable>
                     </View>
                 )}
 
@@ -1263,9 +1266,12 @@ export function MentorTaskView({
                                 Viewing Submission #{currentSubmissionNumber}
                             </Text>
                         </View>
-                        <Pressable style={styles.submissionActionBtn} onPress={handleViewHistory}>
-                            <Ionicons name="time-outline" size={16} color="#60A5FA" />
-                            <Text style={styles.submissionActionBtnText}>View All Submissions</Text>
+                        <Pressable style={styles.viewHistoryBtn} onPress={handleViewHistory}>
+                            <Ionicons name="document-text-outline" size={16} color="rgba(255,255,255,0.75)" />
+                            <Text style={styles.viewHistoryBtnText}>
+                                View all submissions
+                            </Text>
+                            <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.4)" />
                         </Pressable>
                     </View>
                 )}
@@ -1763,11 +1769,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
+        gap: 7,
         flex: 1,
         borderRadius: 12,
-        paddingVertical: 11,
-        paddingHorizontal: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
         backgroundColor: 'rgba(255,255,255,0.08)',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.12)',
@@ -1777,9 +1783,26 @@ const styles = StyleSheet.create({
         borderColor: '#2563eb',
     },
     submissionActionBtnText: {
-        color: '#60A5FA',
+        color: '#7EC8FF',
         fontSize: 13,
         fontWeight: '700',
+    },
+    viewHistoryBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderRadius: 12,
+        backgroundColor: 'rgba(30, 54, 111, 0.35)',
+        borderWidth: 1,
+        borderColor: 'rgba(126, 200, 255, 0.15)',
+    },
+    viewHistoryBtnText: {
+        color: 'rgba(255,255,255,0.75)',
+        fontSize: 13,
+        fontWeight: '600',
+        flex: 1,
     },
     submissionActionBtnTextPrimary: {
         color: '#fff',
