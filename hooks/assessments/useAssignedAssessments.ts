@@ -1,4 +1,5 @@
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
+import { useAuthStore } from "@/stores/auth.store";
 import type { Assessment } from "@/types/assessment.types";
 import { useMemo } from "react";
 import { useAssessmentProgress } from "../progress/useProgress";
@@ -8,7 +9,8 @@ import { useAssessments } from "./useAssessments";
  * Hook to get only assessments assigned to the current user with progress status
  */
 export const useAssignedAssessments = (userId?: string) => {
-  const targetUserId = userId;
+  const { user } = useAuthStore();
+  const targetUserId = userId || user?.id;
 
   // Fetch all assessments
   const {
@@ -56,10 +58,12 @@ export const useAssignedAssessments = (userId?: string) => {
   const assignedAssessments = useMemo(() => {
     if (!allAssessments) return [];
 
-    // Filter only assigned assessments
-    const filtered = allAssessments.filter((assessment) =>
-      assignedAssessmentIds.includes(assessment._id),
-    );
+    // Filter assessments assigned to this user (by progress record OR assignments array)
+    const filtered = allAssessments.filter((assessment) => {
+      if (assignedAssessmentIds.includes(assessment._id)) return true;
+      if (targetUserId && assessment.assignments?.some((a) => a.userId === targetUserId)) return true;
+      return false;
+    });
 
     // Map to frontend format and merge with progress data
     return filtered.map((apiAssessment) => {
@@ -88,7 +92,7 @@ export const useAssignedAssessments = (userId?: string) => {
 
       return withDates;
     });
-  }, [allAssessments, assignedAssessmentIds, progressMap]);
+  }, [allAssessments, assignedAssessmentIds, progressMap, targetUserId]);
 
   return {
     data: assignedAssessments,
@@ -96,6 +100,6 @@ export const useAssignedAssessments = (userId?: string) => {
     error,
     refetch,
     isRefetching,
-    assignedCount: assignedAssessmentIds.length,
+    assignedCount: assignedAssessments.length,
   };
 };

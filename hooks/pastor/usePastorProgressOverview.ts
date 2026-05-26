@@ -28,17 +28,10 @@ export function usePastorProgressOverview(hasIssuedCertificate?: boolean) {
     ).length;
     const sessionsTotal = sessions.length;
 
-    const assessmentsCompletedFromApi = progress?.assessments?.completed ?? 0;
-    const assessmentsTotalFromApi = progress?.assessments?.total ?? 0;
-    const assessmentsCompletedFallback = assessments.filter(
+    const assessmentsCompleted = assessments.filter(
       (a) => (a.status || "").toLowerCase() === "completed",
     ).length;
-    const assessmentsCompleted =
-      assessmentsTotalFromApi > 0
-        ? assessmentsCompletedFromApi
-        : assessmentsCompletedFallback;
-    const assessmentsTotal =
-      assessmentsTotalFromApi > 0 ? assessmentsTotalFromApi : assessments.length;
+    const assessmentsTotal = assessments.length;
 
     const roadmapPercent = Math.round(
       progress?.roadmaps?.percentage ?? progress?.overallProgress ?? 0,
@@ -75,8 +68,6 @@ export function usePastorProgressOverview(hasIssuedCertificate?: boolean) {
   }, [
     assessments,
     hasIssuedCertificate,
-    progress?.assessments?.completed,
-    progress?.assessments?.total,
     progress?.overallProgress,
     progress?.roadmaps?.percentage,
     sessions,

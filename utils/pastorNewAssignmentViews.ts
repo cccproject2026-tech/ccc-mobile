@@ -1,7 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-/** Hide from pastor home this long after the assignment card was first seen. */
-export const PASTOR_NEW_ASSIGNMENT_VIEW_HIDE_MS = 24 * 60 * 60 * 1000;
 
 const STORAGE_PREFIX = "pastor_new_assignment_viewed_";
 
@@ -56,5 +54,5 @@ export function shouldShowNewAssignmentOnHome(
   viewedAtMs: number | null | undefined,
 ): boolean {
   if (viewedAtMs == null) return true;
-  return Date.now() - viewedAtMs <= PASTOR_NEW_ASSIGNMENT_VIEW_HIDE_MS;
+  return false;
 }

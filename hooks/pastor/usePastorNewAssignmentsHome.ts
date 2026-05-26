@@ -14,7 +14,7 @@ import {
   shouldShowNewAssignmentOnHome,
 } from "@/utils/pastorNewAssignmentViews";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export function usePastorNewAssignmentsHome(
   userId: string | undefined,
@@ -22,7 +22,6 @@ export function usePastorNewAssignmentsHome(
   assessments: Assessment[],
 ) {
   const [viewedAtByKey, setViewedAtByKey] = useState<Record<string, number>>({});
-  const markedThisSessionRef = useRef<Set<string>>(new Set());
 
   const refreshViews = useCallback(async () => {
     if (!userId) {
@@ -80,34 +79,18 @@ export function usePastorNewAssignmentsHome(
     [candidates, viewedAtByKey],
   );
 
-  const visibleIdsKey = useMemo(
-    () => visibleItems.map((i) => `${i.kind}:${i.id}`).join(","),
-    [visibleItems],
-  );
-
-  useEffect(() => {
+  const dismissAll = useCallback(async () => {
     if (!userId || visibleItems.length === 0) return;
-
-    let cancelled = false;
-    const markSeen = async () => {
-      for (const item of visibleItems) {
-        const sessionKey = `${item.kind}:${item.id}`;
-        if (markedThisSessionRef.current.has(sessionKey)) continue;
-        markedThisSessionRef.current.add(sessionKey);
-        await markNewAssignmentViewed(userId, item.kind, item.id);
-      }
-      if (!cancelled) await refreshViews();
-    };
-
-    markSeen().catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, visibleIdsKey, visibleItems, refreshViews]);
+    for (const item of visibleItems) {
+      await markNewAssignmentViewed(userId, item.kind, item.id);
+    }
+    await refreshViews();
+  }, [userId, visibleItems, refreshViews]);
 
   return {
     visibleItems,
     hasNewAssignments: visibleItems.length > 0,
     refreshViews,
+    dismissAll,
   };
 }

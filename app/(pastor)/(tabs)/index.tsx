@@ -170,11 +170,8 @@ export default function PastorDashboard() {
     useRoadmaps("pastor");
   const { data: assessments = [] } = useAssignedAssessments(user?.id);
 
-  const { visibleItems: newAssignmentItems } = usePastorNewAssignmentsHome(
-    user?.id,
-    roadmaps,
-    assessments,
-  );
+  const { visibleItems: newAssignmentItems, dismissAll: dismissNewAssignments } =
+    usePastorNewAssignmentsHome(user?.id, roadmaps, assessments);
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
@@ -432,12 +429,15 @@ export default function PastorDashboard() {
 
   const handleFocusGridTilePress = useCallback(
     (tile: PastorFocusGridTile) => {
+      if (tile.sectionId === "new-assignments") {
+        dismissNewAssignments();
+      }
       openThingsToFocusSheet({
         sectionId: tile.sectionId,
         title: tile.sheetTitle,
       });
     },
-    [openThingsToFocusSheet],
+    [openThingsToFocusSheet, dismissNewAssignments],
   );
 
   const handleProgressOverviewDetails = useCallback(() => {
