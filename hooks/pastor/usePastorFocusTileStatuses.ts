@@ -17,6 +17,18 @@ function statusForNewAssignments(
   return { label: `${count} new`, variant: "pending" };
 }
 
+function extractTimeFromDescription(description?: string): string {
+  if (!description) return "";
+  const match = description.match(/(\d{1,2}:\d{2}\s*[AP]M)/i);
+  return match ? match[1] : "";
+}
+
+function extractDateFromDescription(description?: string): string {
+  if (!description) return "";
+  const match = description.match(/(\d{1,2}\s+\w{3})/);
+  return match ? match[1] : "";
+}
+
 function statusForMentorship(
   today?: PastorFocusSection,
   upcoming?: PastorFocusSection,
@@ -28,10 +40,12 @@ function statusForMentorship(
   }
 
   if (todayCount > 0) {
-    return { label: "Today", variant: "upcoming" };
+    const time = extractTimeFromDescription(today!.items[0].description);
+    return { label: time ? `Today, ${time}` : "Today", variant: "upcoming" };
   }
 
-  return { label: "Scheduled", variant: "upcoming" };
+  const date = extractDateFromDescription(upcoming!.items[0].description);
+  return { label: date || "Scheduled", variant: "upcoming" };
 }
 
 function statusForOtherMeetings(
