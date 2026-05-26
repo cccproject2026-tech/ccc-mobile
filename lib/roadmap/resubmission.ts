@@ -1,19 +1,4 @@
-import type { NestedRoadmap, Roadmap } from "./types";
-
-const RESUBMITTED_STATUSES = new Set([
-    "resubmitted",
-    "re_submitted",
-    "re-submitted",
-    "needs_review_again",
-    "needs-review-again",
-]);
-
-export function isResubmittedTask(task: NestedRoadmap | null | undefined): boolean {
-    if (!task) return false;
-    if (task.isResubmitted) return true;
-    const status = String(task.status ?? "").toLowerCase().replace(/\s+/g, "_");
-    return RESUBMITTED_STATUSES.has(status);
-}
+import type { NestedRoadmap, Roadmap, TaskSubmission } from "./types";
 
 export type TaskDisplayStatus =
     | "not-started"
@@ -21,6 +6,34 @@ export type TaskDisplayStatus =
     | "completed"
     | "due"
     | "resubmitted";
+
+/**
+ * Determines if a task has been resubmitted based on explicit submission metadata.
+ * No longer relies on updatedAt > createdAt timestamp comparison.
+ */
+export function isResubmittedTask(task: NestedRoadmap | null | undefined): boolean {
+    if (!task) return false;
+    if (task.isResubmitted) return true;
+    const status = String(task.status ?? "").toLowerCase().replace(/\s+/g, "_");
+    return status === "resubmitted" || status === "re_submitted" || status === "re-submitted";
+}
+
+/**
+ * Determines if a submission list indicates resubmission (more than 1 submission).
+ */
+export function hasResubmissions(submissions: TaskSubmission[] | null | undefined): boolean {
+    return !!submissions && submissions.length > 1;
+}
+
+/**
+ * Returns the latest submission from a list (highest submissionNumber).
+ */
+export function getLatestSubmission(submissions: TaskSubmission[]): TaskSubmission | undefined {
+    if (!submissions.length) return undefined;
+    return submissions.reduce((latest, s) =>
+        s.submissionNumber > latest.submissionNumber ? s : latest,
+    );
+}
 
 export function getTaskDisplayStatus(task: NestedRoadmap | null | undefined): TaskDisplayStatus {
     if (!task) return "not-started";

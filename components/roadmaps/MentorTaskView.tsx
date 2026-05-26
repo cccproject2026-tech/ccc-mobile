@@ -9,6 +9,11 @@ import {
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
 import {
+    useLatestSubmission,
+    useCreateSubmission,
+    useUploadSubmissionDocument,
+} from "@/hooks/roadmap/useTaskSubmissions";
+import {
     getEffectiveTaskExtras,
     normalizeNestedTaskStatus,
     parseRoadmapTimestampMs,
@@ -21,7 +26,7 @@ import {
 } from "@/lib/roadmap/taskCompletionTimestamps";
 
 import { SignatureModal } from "@/components/forms/SignatureModal";
-import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
+import { Extra, NestedRoadmap, Roadmap, TaskSubmission } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
@@ -177,58 +182,118 @@ export function MentorTaskView({
     const deleteDocument = useDeleteRoadmapDocument();
     const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
 
+    // ── New submission-based state ──
+    const { data: latestSubmission, error: submissionError } = useLatestSubmission(
+        roadmapId,
+        itemId,
+        targetUserId,
+    );
+    const createSubmission = useCreateSubmission();
+    const uploadSubmissionDoc = useUploadSubmissionDocument();
+
     const isUpdateMode = !!existingExtras;
-    const [isEditing, setIsEditing] = useState(false);
-    const [isDirty, setIsDirty] = useState(false);
-    const [showResubmitToast, setShowResubmitToast] = useState(false);
+    const isTaskAlreadyCompleted = normalizeNestedTaskStatus(task.status) === "completed";
+
+    /**
+     * Task has been previously submitted if:
+     * - New submission API returns a record, OR
+     * - Legacy: existing extras exist AND task is completed (pre-migration fallback)
+     */
+    const hasSubmission = !!latestSubmission || (isUpdateMode && isTaskAlreadyCompleted);
+
+    /** Submission number for display — from API or inferred as 1 for legacy data. */
+    const currentSubmissionNumber = latestSubmission?.submissionNumber ?? (hasSubmission ? 1 : 0);
+
+    const [isResubmitting, setIsResubmitting] = useState(false);
+    const [showSubmitToast, setShowSubmitToast] = useState(false);
     const toastOpacity = useRef(new RNAnimated.Value(0)).current;
 
-    /** Pastor viewing their own saved work — fields are read-only until they tap Edit. */
-    const isReadOnly = isViewingPastor || (isUpdateMode && !isEditing);
+    /**
+     * Read-only when:
+     * - Mentor is viewing a pastor's work (isViewingPastor)
+     * - Task already has a submission AND we're not in resubmit mode
+     */
+    const isReadOnly = isViewingPastor || (hasSubmission && !isResubmitting);
 
-    const confirmDiscardEdit = useCallback(() => {
-        if (!isDirty) {
-            setIsEditing(false);
-            return;
-        }
+    const confirmDiscardResubmit = useCallback(() => {
         Alert.alert(
-            "Discard your changes?",
-            "You have unsaved edits that will be lost.",
+            "Discard resubmission?",
+            "Your new draft will be lost.",
             [
                 { text: "Continue Editing", style: "cancel" },
                 {
                     text: "Discard",
                     style: "destructive",
                     onPress: () => {
-                        setIsEditing(false);
-                        setIsDirty(false);
+                        setIsResubmitting(false);
+                        // Restore form data to latest submission values
+                        if (latestSubmission?.responses) {
+                            const restored: Record<string, any> = {};
+                            for (const r of latestSubmission.responses) {
+                                if (r.type === "SIGNATURE") {
+                                    restored[r.name] = r.signatureData;
+                                } else {
+                                    restored[r.name] = r.value;
+                                }
+                            }
+                            setFormData(restored);
+                        }
                     },
                 },
             ],
         );
-    }, [isDirty]);
+    }, [latestSubmission]);
 
     useEffect(() => {
-        if (!isEditing || !isDirty) return;
+        if (!isResubmitting) return;
         const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-            confirmDiscardEdit();
+            confirmDiscardResubmit();
             return true;
         });
         return () => sub.remove();
-    }, [isEditing, isDirty, confirmDiscardEdit]);
+    }, [isResubmitting, confirmDiscardResubmit]);
 
     const showToast = useCallback(() => {
-        setShowResubmitToast(true);
+        setShowSubmitToast(true);
         RNAnimated.sequence([
             RNAnimated.timing(toastOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
             RNAnimated.delay(2000),
             RNAnimated.timing(toastOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
         ]).start(() => {
-            setShowResubmitToast(false);
-            setIsEditing(false);
-            setIsDirty(false);
+            setShowSubmitToast(false);
+            setIsResubmitting(false);
         });
     }, [toastOpacity]);
+
+    const handleStartResubmit = useCallback(() => {
+        setIsResubmitting(true);
+    }, []);
+
+    const handleViewHistory = useCallback(() => {
+        if (!roadmapId || !itemId) return;
+        const taskLabel = String((task as any)?.name ?? "");
+
+        if (isViewingPastor) {
+            router.push({
+                pathname: "/(mentor)/roadmap/submission-history" as any,
+                params: {
+                    roadmapId,
+                    taskId: itemId,
+                    taskName: taskLabel || undefined,
+                    menteeId: targetUserId,
+                },
+            });
+        } else {
+            router.push({
+                pathname: "/(pastor)/roadmap/submission-history" as any,
+                params: {
+                    roadmapId,
+                    taskId: itemId,
+                    taskName: taskLabel || undefined,
+                },
+            });
+        }
+    }, [roadmapId, itemId, task, isViewingPastor, targetUserId, router]);
 
     /** Initialise formData from API or default dates */
     useEffect(() => {
@@ -264,7 +329,6 @@ export function MentorTaskView({
 
     const handleChange = (fieldName: string, value: any) => {
         if (isReadOnly) return;
-        if (isEditing) setIsDirty(true);
         setFormData(prev => ({ ...prev, [fieldName]: value }));
     };
 
@@ -346,7 +410,7 @@ export function MentorTaskView({
         if (name == "Church Ministry Survey") return "CMA";
         return name;
     };
-    /** Save progress */
+    /** Save progress — always creates a NEW submission record (never PATCH). */
     const handleSubmit = async () => {
         if (isReadOnly) return;
         if (!validateForm()) return;
@@ -356,9 +420,11 @@ export function MentorTaskView({
         }
 
         try {
-            // Build extras payload
-            const extrasArray = Object.entries(formData).map(([name, value]) => {
+            const responsesArray = Object.entries(formData).map(([name, value]) => {
                 const type = getExtraType(name, value);
+                if (type === "SIGNATURE") {
+                    return { type: "SIGNATURE", name, signatureData: value };
+                }
                 return {
                     type,
                     name,
@@ -366,22 +432,57 @@ export function MentorTaskView({
                 };
             });
 
+            // Try to create a new submission record (immutable)
+            let newSubmissionId: string | undefined;
+            try {
+                const newSubmission = await createSubmission.mutateAsync({
+                    roadMapId: roadmapId!,
+                    nestedRoadMapItemId: itemId,
+                    submittedBy: targetUserId!,
+                    responses: responsesArray,
+                    resubmittedFromSubmissionId: latestSubmission?._id ?? null,
+                });
+                newSubmissionId = newSubmission._id;
+
+                // Upload pending files to the new submission
+                for (const [extraName, files] of Object.entries(pendingFiles)) {
+                    for (const file of files) {
+                        await uploadSubmissionDoc.mutateAsync({
+                            submissionId: newSubmission._id,
+                            extraName,
+                            file,
+                        });
+                    }
+                }
+            } catch {
+                // Submission API not yet available — continue with extras fallback
+            }
+
+            setPendingFiles({});
+
+            if (roadmapId && itemId && targetUserId) {
+                await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, Date.now());
+            }
+
+            // Also create/update extras for backward compatibility with progress tracking
+            const extrasArray = responsesArray;
             if (isUpdateMode) {
                 await updateExtras.mutateAsync({
                     roadMapId: roadmapId!,
                     payload: { extras: extrasArray },
-                    userId: targetUserId!, // Update for mentee
+                    userId: targetUserId!,
                     nestedRoadMapItemId: itemId,
-                });
+                }).catch(() => {});
             } else {
                 await createExtras.mutateAsync({
-                    userId: targetUserId!, // Create for mentee
+                    userId: targetUserId!,
                     roadMapId: roadmapId!,
                     nestedRoadMapItemId: itemId,
                     extras: extrasArray,
-                });
+                }).catch(() => {});
             }
 
+            // Upload files to legacy extras endpoint too
             for (const [extraName, files] of Object.entries(pendingFiles)) {
                 for (const file of files) {
                     await uploadDocument.mutateAsync({
@@ -390,16 +491,11 @@ export function MentorTaskView({
                         nestedRoadMapItemId: itemId!,
                         extraName,
                         file,
-                    });
+                    }).catch(() => {});
                 }
             }
-            setPendingFiles({});
 
-            if (roadmapId && itemId && targetUserId) {
-                await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, Date.now());
-            }
-
-            if (isUpdateMode) {
+            if (isResubmitting) {
                 showToast();
             } else if (onSaveSuccess) {
                 onSaveSuccess();
@@ -1108,8 +1204,10 @@ export function MentorTaskView({
 
     if (effectiveExtras.length === 0) return null;
 
-    // For date changes, we might want a global save button if multiple fields are edited
-    const isSaving = createExtras.isPending || updateExtras.isPending;
+    const isSaving =
+        createExtras.isPending ||
+        updateExtras.isPending ||
+        createSubmission.isPending;
 
     const isTaskCompleted =
         normalizeNestedTaskStatus(task.status) === "completed";
@@ -1129,38 +1227,64 @@ export function MentorTaskView({
                     </View>
                 )}
 
-                {isUpdateMode && isReadOnly && !isViewingPastor && (
-                    <View style={styles.viewModeBanner}>
-                        <View style={styles.viewModeBannerContent}>
-                            <Ionicons name="eye-outline" size={18} color="#7EC8FF" />
-                            <View style={styles.viewModeBannerText}>
-                                <Text style={styles.viewModeTitle}>Viewing your responses</Text>
-                                <Text style={styles.viewModeSubtitle}>
-                                    Tap Edit to make changes and resubmit.
-                                </Text>
-                            </View>
+                {/* Previously submitted — show action buttons (not edit) */}
+                {hasSubmission && !isResubmitting && !isViewingPastor && (
+                    <View style={styles.submissionActionsBanner}>
+                        <View style={styles.submissionBannerHeader}>
+                            <Ionicons name="checkmark-done-outline" size={18} color="#34d399" />
+                            <Text style={styles.submissionBannerTitle}>
+                                Submission #{currentSubmissionNumber} saved
+                            </Text>
                         </View>
-                        <Pressable
-                            style={styles.editButton}
-                            onPress={() => setIsEditing(true)}
-                        >
-                            <Ionicons name="create-outline" size={16} color="#fff" />
-                            <Text style={styles.editButtonText}>Edit</Text>
+                        <Text style={styles.submissionBannerSubtitle}>
+                            Your responses are locked. You can view your history or submit a new version.
+                        </Text>
+                        <View style={styles.submissionActions}>
+                            <Pressable style={styles.submissionActionBtn} onPress={handleViewHistory}>
+                                <Ionicons name="time-outline" size={16} color="#60A5FA" />
+                                <Text style={styles.submissionActionBtnText}>View History</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.submissionActionBtn, styles.submissionActionBtnPrimary]}
+                                onPress={handleStartResubmit}
+                            >
+                                <Ionicons name="add-circle-outline" size={16} color="#fff" />
+                                <Text style={styles.submissionActionBtnTextPrimary}>Resubmit Task</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                )}
+
+                {/* Mentor viewing pastor's work — show history access */}
+                {hasSubmission && isViewingPastor && (
+                    <View style={styles.submissionActionsBanner}>
+                        <View style={styles.submissionBannerHeader}>
+                            <Ionicons name="eye-outline" size={18} color="#7EC8FF" />
+                            <Text style={styles.submissionBannerTitle}>
+                                Viewing Submission #{currentSubmissionNumber}
+                            </Text>
+                        </View>
+                        <Pressable style={styles.submissionActionBtn} onPress={handleViewHistory}>
+                            <Ionicons name="time-outline" size={16} color="#60A5FA" />
+                            <Text style={styles.submissionActionBtnText}>View All Submissions</Text>
                         </Pressable>
                     </View>
                 )}
 
-                {isUpdateMode && isEditing && !isViewingPastor && (
-                    <View style={styles.editingBanner}>
-                        <View style={styles.editingBadge}>
-                            <Ionicons name="create-outline" size={13} color="#F59E0B" />
-                            <Text style={styles.editingBadgeText}>Editing Mode</Text>
+                {/* Resubmitting — show new submission banner */}
+                {isResubmitting && (
+                    <View style={styles.resubmitBanner}>
+                        <View style={styles.resubmitBadge}>
+                            <Ionicons name="add-circle-outline" size={13} color="#3B82F6" />
+                            <Text style={styles.resubmitBadgeText}>
+                                New Submission #{currentSubmissionNumber + 1}
+                            </Text>
                         </View>
-                        <Text style={styles.editingBannerText}>
-                            Update your responses and tap Resubmit when done.
+                        <Text style={styles.resubmitBannerText}>
+                            Edit your responses below and submit as a new version.
                         </Text>
                         <Pressable
-                            onPress={confirmDiscardEdit}
+                            onPress={confirmDiscardResubmit}
                             hitSlop={8}
                             style={styles.cancelEditBtn}
                         >
@@ -1172,11 +1296,12 @@ export function MentorTaskView({
 
                 {effectiveExtras.map((extra, index) => renderExtra(extra, index))}
 
+                {/* Submit / Resubmit button */}
                 {!isViewingPastor && !isReadOnly ? (
                     <Pressable
                         style={[
                             styles.saveButton,
-                            isUpdateMode && styles.saveButtonUpdate,
+                            isResubmitting && styles.saveButtonUpdate,
                             isSaving ? styles.saveButtonSaving : null,
                         ]}
                         onPress={handleSubmit}
@@ -1184,26 +1309,26 @@ export function MentorTaskView({
                     >
                         {isSaving ? (
                             <>
-                                <ActivityIndicator color={isUpdateMode ? "#fff" : "#2563eb"} size="small" />
+                                <ActivityIndicator color={isResubmitting ? "#fff" : "#2563eb"} size="small" />
                                 <Text style={[
                                     styles.saveButtonText,
-                                    isUpdateMode && styles.saveButtonTextUpdate,
+                                    isResubmitting && styles.saveButtonTextUpdate,
                                 ]}>
-                                    Saving Changes...
+                                    Submitting...
                                 </Text>
                             </>
                         ) : (
                             <>
                                 <Ionicons
-                                    name={isUpdateMode ? "refresh-outline" : "save-outline"}
+                                    name={isResubmitting ? "paper-plane-outline" : "save-outline"}
                                     size={20}
-                                    color={isUpdateMode ? "#fff" : "#2563eb"}
+                                    color={isResubmitting ? "#fff" : "#2563eb"}
                                 />
                                 <Text style={[
                                     styles.saveButtonText,
-                                    isUpdateMode && styles.saveButtonTextUpdate,
+                                    isResubmitting && styles.saveButtonTextUpdate,
                                 ]}>
-                                    {isUpdateMode ? "Resubmit" : "Save Progress"}
+                                    {isResubmitting ? "Submit New Version" : "Save Progress"}
                                 </Text>
                             </>
                         )}
@@ -1261,18 +1386,18 @@ export function MentorTaskView({
                 <SimpleSuccessModal
                     visible={showSuccessModal}
                     onClose={() => setShowSuccessModal(false)}
-                    title="Progress Saved!"
+                    title={isResubmitting ? "New Submission Saved!" : "Progress Saved!"}
                 />
             ) : null}
 
-            {showResubmitToast && (
+            {showSubmitToast && (
                 <RNAnimated.View
                     style={[styles.resubmitToast, { opacity: toastOpacity }]}
                     pointerEvents="none"
                 >
                     <Ionicons name="checkmark-circle" size={20} color="#34d399" />
                     <Text style={styles.resubmitToastText}>
-                        Task updated successfully
+                        New submission created successfully
                     </Text>
                 </RNAnimated.View>
             )}
@@ -1580,61 +1705,74 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
-    viewModeBanner: {
-        backgroundColor: 'rgba(126, 200, 255, 0.06)',
+    submissionActionsBanner: {
+        backgroundColor: 'rgba(34, 197, 94, 0.06)',
         borderRadius: 14,
         padding: 14,
         borderWidth: 1,
-        borderColor: 'rgba(126, 200, 255, 0.14)',
+        borderColor: 'rgba(34, 197, 94, 0.14)',
         marginBottom: 14,
-        gap: 12,
-    },
-    viewModeBannerContent: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
         gap: 10,
     },
-    viewModeBannerText: {
-        flex: 1,
-        gap: 2,
+    submissionBannerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
-    viewModeTitle: {
+    submissionBannerTitle: {
         color: '#FFFFFF',
         fontSize: 14,
         fontWeight: '800',
     },
-    viewModeSubtitle: {
-        color: 'rgba(200, 225, 255, 0.68)',
+    submissionBannerSubtitle: {
+        color: 'rgba(200, 225, 255, 0.6)',
         fontSize: 12,
         fontWeight: '600',
         lineHeight: 17,
     },
-    editButton: {
+    submissionActions: {
+        flexDirection: 'row',
+        gap: 8,
+        marginTop: 4,
+    },
+    submissionActionBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
-        backgroundColor: '#2563eb',
+        flex: 1,
         borderRadius: 12,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        paddingVertical: 11,
+        paddingHorizontal: 12,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.12)',
     },
-    editButtonText: {
-        color: '#FFFFFF',
-        fontSize: 15,
-        fontWeight: '800',
+    submissionActionBtnPrimary: {
+        backgroundColor: '#2563eb',
+        borderColor: '#2563eb',
     },
-    editingBanner: {
+    submissionActionBtnText: {
+        color: '#60A5FA',
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    submissionActionBtnTextPrimary: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    resubmitBanner: {
         gap: 10,
         paddingVertical: 12,
         paddingHorizontal: 14,
         borderRadius: 12,
-        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+        backgroundColor: 'rgba(59, 130, 246, 0.08)',
         borderWidth: 1,
-        borderColor: 'rgba(245, 158, 11, 0.2)',
+        borderColor: 'rgba(59, 130, 246, 0.2)',
         marginBottom: 14,
     },
-    editingBadge: {
+    resubmitBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         alignSelf: 'flex-start',
@@ -1642,17 +1780,17 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         paddingHorizontal: 10,
         borderRadius: 8,
-        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
         borderWidth: 1,
-        borderColor: 'rgba(245, 158, 11, 0.3)',
+        borderColor: 'rgba(59, 130, 246, 0.3)',
     },
-    editingBadgeText: {
-        color: '#F59E0B',
+    resubmitBadgeText: {
+        color: '#60A5FA',
         fontSize: 12,
         fontWeight: '800',
     },
-    editingBannerText: {
-        color: 'rgba(245, 200, 100, 0.85)',
+    resubmitBannerText: {
+        color: 'rgba(150, 200, 255, 0.85)',
         fontSize: 12,
         fontWeight: '600',
         lineHeight: 17,

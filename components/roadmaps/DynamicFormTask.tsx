@@ -1096,6 +1096,11 @@ import {
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
+import {
+    useLatestSubmission,
+    useCreateSubmission,
+    useUploadSubmissionDocument,
+} from "@/hooks/roadmap/useTaskSubmissions";
 import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
@@ -1231,6 +1236,15 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
     const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
     const isUpdateMode = !!existingExtras;
 
+    // Submission history hooks
+    const { data: latestSubmission } = useLatestSubmission(
+        isMongoObjectId(roadmapId) ? roadmapId : undefined,
+        isMongoObjectId(itemId) ? itemId : undefined,
+        isMongoObjectId(targetUserId) ? targetUserId : undefined,
+    );
+    const createSubmission = useCreateSubmission();
+    const uploadSubmissionDoc = useUploadSubmissionDocument();
+
     /** Initialise formData from API or default dates */
     useEffect(() => {
         // if (isFetchingExtras) return;
@@ -1331,13 +1345,8 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         }
     };
 
-    /** Save progress – text extras + pending file uploads */
+    /** Save progress – always creates a NEW submission record + extras for backward compat */
     const handleSubmit = async () => {
-        console.log("----------------------------------------------")
-        console.log("----------------------------------------------")
-        console.log('formData', formData);
-        console.log("----------------------------------------------")
-        console.log("----------------------------------------------")
         const signatureErrors = collectSignatureErrors(effectiveExtras);
         if (Object.keys(signatureErrors).length > 0) {
             setErrors(prev => ({ ...prev, ...signatureErrors }));
@@ -1361,14 +1370,8 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                 !!currentUser?.id &&
                 (isUpdateMode || jumpstartTriggeredUsersRef.current.has(currentUser.id));
 
-            console.log(
-                extrasAlreadyExistForUser
-                    ? "STEP 2: Saving extras (PATCH)"
-                    : "STEP 2: Saving extras",
-            );
-
-            // 1️⃣ Build extras payload (including upload fields as boolean flags, signature as signatureData)
-            const extrasArray = Object.entries(formData).map(([name, value]) => {
+            // Build responses payload
+            const responsesArray = Object.entries(formData).map(([name, value]) => {
                 const type = getExtraType(name, value);
                 if (type === "SIGNATURE") {
                     return { type: "SIGNATURE", name, signatureData: value };
@@ -1382,40 +1385,44 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
 
             const nestedExtraId = isMongoObjectId(itemId) ? itemId : undefined;
 
-            if (extrasAlreadyExistForUser) {
-                await updateExtras.mutateAsync({
-                    roadMapId: roadmapId!,
-                    payload: { extras: extrasArray },
-                    userId: currentUser.id,
-                    nestedRoadMapItemId: nestedExtraId,
-                });
-            } else {
-                try {
-                    await createExtras.mutateAsync({
-                        userId: currentUser.id,
-                        roadMapId: roadmapId!,
-                        nestedRoadMapItemId: nestedExtraId,
-                        extras: extrasArray,
-                    });
-                } catch (createError: any) {
-                    const createErrorMessage = String(
-                        createError?.response?.data?.message || createError?.message || "",
-                    ).toLowerCase();
+            // 1️⃣ Create a new submission record (immutable)
+            const newSubmission = await createSubmission.mutateAsync({
+                roadMapId: roadmapId!,
+                nestedRoadMapItemId: nestedExtraId,
+                submittedBy: currentUser.id,
+                responses: responsesArray,
+                resubmittedFromSubmissionId: latestSubmission?._id ?? null,
+            });
 
-                    if (createErrorMessage.includes("extras already exist")) {
-                        await updateExtras.mutateAsync({
-                            roadMapId: roadmapId!,
-                            payload: { extras: extrasArray },
-                            userId: currentUser.id,
-                            nestedRoadMapItemId: nestedExtraId,
-                        });
-                    } else {
-                        throw createError;
-                    }
+            // 2️⃣ Upload pending files to the new submission
+            for (const [extraName, files] of Object.entries(pendingFiles)) {
+                for (const file of files) {
+                    await uploadSubmissionDoc.mutateAsync({
+                        submissionId: newSubmission._id,
+                        extraName,
+                        file,
+                    });
                 }
             }
 
-            // 2️⃣ Upload each pending file batch
+            // 3️⃣ Also save extras for backward compatibility with progress tracking
+            if (extrasAlreadyExistForUser) {
+                await updateExtras.mutateAsync({
+                    roadMapId: roadmapId!,
+                    payload: { extras: responsesArray },
+                    userId: currentUser.id,
+                    nestedRoadMapItemId: nestedExtraId,
+                }).catch(() => {});
+            } else {
+                await createExtras.mutateAsync({
+                    userId: currentUser.id,
+                    roadMapId: roadmapId!,
+                    nestedRoadMapItemId: nestedExtraId,
+                    extras: responsesArray,
+                }).catch(() => {});
+            }
+
+            // 4️⃣ Upload files to legacy extras endpoint too (backward compat)
             for (const [extraName, files] of Object.entries(pendingFiles)) {
                 for (const file of files) {
                     await uploadDocument.mutateAsync({
@@ -1424,7 +1431,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                         nestedRoadMapItemId: itemId!,
                         extraName,
                         file,
-                    });
+                    }).catch(() => {});
                 }
             }
 
@@ -2214,7 +2221,8 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         createExtras.isPending ||
         updateExtras.isPending ||
         uploadDocument.isPending ||
-        isTriggeringJumpstart;
+        isTriggeringJumpstart ||
+        createSubmission.isPending;
 
     const scheduledMeeting = task.meetings?.find(
         (m) => !String(m?.status ?? '').trim().toLowerCase().startsWith('cancel'),
@@ -2266,7 +2274,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                             <ActivityIndicator color="#1e40af" />
                         ) : (
                             <Text style={styles.signButtonText}>
-                                {isUpdateMode ? "Update Progress" : "Save Progress"}
+                                {latestSubmission ? "Submit New Version" : "Save Progress"}
                             </Text>
                         )}
                     </Pressable>

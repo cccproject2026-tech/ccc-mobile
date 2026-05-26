@@ -312,6 +312,59 @@ export interface RoadmapCardData {
     resubmittedAt?: string;
 }
 
+// ============= SUBMISSION TYPES =============
+
+export type SubmissionStatus =
+    | 'submitted'
+    | 'reviewed'
+    | 'approved'
+    | 'needs_revision'
+    | 'resubmitted';
+
+export interface TaskSubmission {
+    _id: string;
+    roadMapId: string;
+    nestedRoadMapItemId?: string;
+    submittedBy: string;
+    submissionNumber: number;
+    status: SubmissionStatus;
+    responses: any[];
+    uploadedDocuments?: any[];
+    resubmittedFromSubmissionId?: string | null;
+    submittedAt: string;
+    reviewedAt?: string;
+    reviewedBy?: string;
+    reviewNotes?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateSubmissionDto {
+    roadMapId: string;
+    nestedRoadMapItemId?: string;
+    submittedBy: string;
+    responses: any[];
+    resubmittedFromSubmissionId?: string | null;
+}
+
+export interface SubmissionApiResponse {
+    success: boolean;
+    message: string;
+    data?: TaskSubmission;
+}
+
+export interface SubmissionListApiResponse {
+    success: boolean;
+    message: string;
+    data: TaskSubmission[];
+}
+
+export interface LatestSubmissionApiResponse {
+    success: boolean;
+    message: string;
+    data: TaskSubmission | null;
+}
+
 // ============= EXTRAS TYPES =============
 
 export interface CreateExtrasDto {

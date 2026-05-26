@@ -1,6 +1,6 @@
 import { roadmapService } from "@/services/roadmap.service";
 import { getTasks } from "@/lib/roadmap/helpers";
-import type { NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
+import type { NestedRoadmap, Roadmap, TaskSubmission } from "@/lib/roadmap/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type ResubmittedEntry = {
@@ -8,14 +8,13 @@ export type ResubmittedEntry = {
     phaseId: string;
     phaseTitle: string;
     resubmittedAt: string;
+    submissionCount: number;
+    latestSubmission?: TaskSubmission;
 };
 
 /**
- * Detects resubmitted tasks by comparing each task's extras
- * `updatedAt` vs `createdAt`. A task is "resubmitted" when a pastor
- * updates saved extras after the initial submission (updatedAt > createdAt).
- *
- * Only fetches extras for tasks that already have saved data (status !== "not started").
+ * Detects resubmitted tasks by checking if a task has more than one submission record.
+ * Replaces the old unreliable updatedAt > createdAt timestamp comparison.
  */
 export function useResubmittedTasks(
     roadmaps: Roadmap[] | undefined | null,
@@ -59,26 +58,27 @@ export function useResubmittedTasks(
             await Promise.all(
                 candidateTasks.map(async ({ task, phaseId, phaseTitle }) => {
                     try {
-                        const extras = await roadmapService.getRoadmapExtras(
+                        const submissions = await roadmapService.getTaskSubmissions(
                             phaseId,
                             task._id,
                             pastorId,
                         );
-                        if (!extras) return;
 
-                        const created = new Date(extras.createdAt).getTime();
-                        const updated = new Date(extras.updatedAt).getTime();
-                        const FIVE_SECONDS = 5_000;
-                        if (updated - created > FIVE_SECONDS) {
+                        if (submissions.length > 1) {
+                            const latest = submissions.reduce((a, b) =>
+                                b.submissionNumber > a.submissionNumber ? b : a,
+                            );
                             results.push({
                                 task,
                                 phaseId,
                                 phaseTitle,
-                                resubmittedAt: new Date(extras.updatedAt).toISOString(),
+                                resubmittedAt: latest.submittedAt,
+                                submissionCount: submissions.length,
+                                latestSubmission: latest,
                             });
                         }
                     } catch {
-                        // Task may not have extras saved yet — ignore
+                        // Task may not have submissions yet — ignore
                     }
                 }),
             );

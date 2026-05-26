@@ -3,17 +3,22 @@ import {
     AddCommentRequest,
     AddCommentResponse,
     CreateExtrasDto,
+    CreateSubmissionDto,
     ExtrasApiResponse,
     GetExtrasResponse,
     GetQueriesResponse,
+    LatestSubmissionApiResponse,
     ReplyQueryRequest,
     ReplyQueryResponse,
     Roadmap,
     RoadmapComment,
     RoadmapCommentsThread,
     RoadmapResponse,
+    SubmissionApiResponse,
+    SubmissionListApiResponse,
     SubmitQueryRequest,
     SubmitQueryResponse,
+    TaskSubmission,
     UpdateExtrasDto
 } from '@/lib/roadmap/types';
 import { CreateNestedRoadmapRequest, CreateNestedRoadmapResponse, CreateRoadmapRequest, CreateRoadmapResponse, UpdateRoadmapRequest, UpdateRoadmapResponse } from '@/lib/roadmaps/types';
@@ -783,6 +788,97 @@ export const roadmapService = {
             }
             throw error;
         }
-    }
+    },
+
+    // ============================================
+    // SUBMISSION HISTORY API
+    // ============================================
+
+    async getTaskSubmissions(
+        roadMapId: string,
+        nestedRoadMapItemId: string,
+        userId: string,
+    ): Promise<TaskSubmission[]> {
+        const params = new URLSearchParams();
+        params.set('userId', userId);
+        params.set('nestedRoadMapItemId', nestedRoadMapItemId);
+
+        const url = `/roadmaps/${roadMapId}/submissions?${params.toString()}`;
+        const response = await apiClient.get<SubmissionListApiResponse>(url);
+
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to fetch submissions');
+        }
+        return response.data.data ?? [];
+    },
+
+    async getLatestSubmission(
+        roadMapId: string,
+        nestedRoadMapItemId: string,
+        userId: string,
+    ): Promise<TaskSubmission | null> {
+        const params = new URLSearchParams();
+        params.set('userId', userId);
+        params.set('nestedRoadMapItemId', nestedRoadMapItemId);
+
+        const url = `/roadmaps/${roadMapId}/submissions/latest?${params.toString()}`;
+        try {
+            const response = await apiClient.get<LatestSubmissionApiResponse>(url);
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Failed to fetch latest submission');
+            }
+            return response.data.data ?? null;
+        } catch (error: unknown) {
+            if (getHttpErrorStatus(error) === 404) return null;
+            throw error;
+        }
+    },
+
+    async getSubmissionById(submissionId: string): Promise<TaskSubmission> {
+        const response = await apiClient.get<SubmissionApiResponse>(
+            `/roadmaps/submissions/${submissionId}`,
+        );
+        if (!response.data.success || !response.data.data) {
+            throw new Error(response.data.message || 'Failed to fetch submission');
+        }
+        return response.data.data;
+    },
+
+    async createSubmission(payload: CreateSubmissionDto): Promise<TaskSubmission> {
+        const response = await apiClient.post<SubmissionApiResponse>(
+            `/roadmaps/${payload.roadMapId}/submissions`,
+            payload,
+        );
+        if (!response.data.success || !response.data.data) {
+            throw new Error(response.data.message || 'Failed to create submission');
+        }
+        return response.data.data;
+    },
+
+    async uploadSubmissionDocument(
+        submissionId: string,
+        extraName: string,
+        file: any,
+    ) {
+        const formData = new FormData();
+        formData.append("files", {
+            uri: file.uri,
+            name: file.name,
+            type: file.type,
+        } as any);
+
+        const url =
+            `/roadmaps/submissions/${submissionId}/documents` +
+            `?name=${encodeURIComponent(extraName)}`;
+
+        const response = await apiClient.post(url, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (!response.data.success) {
+            throw new Error(response.data.message || "File upload failed");
+        }
+        return response.data;
+    },
 
 };
