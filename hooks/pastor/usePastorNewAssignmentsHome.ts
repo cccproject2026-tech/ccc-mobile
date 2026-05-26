@@ -8,42 +8,27 @@ import {
 } from "@/lib/pastor/newAssignments";
 import type { Roadmap } from "@/lib/roadmap/types";
 import type { Assessment } from "@/types/assessment.types";
-import {
-  loadNewAssignmentViews,
-  markNewAssignmentViewed,
-  shouldShowNewAssignmentOnHome,
-} from "@/utils/pastorNewAssignmentViews";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
+
+const NEW_ASSIGNMENT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+function isWithin24Hours(assignedTs: number): boolean {
+  if (!assignedTs) return false;
+  return Date.now() - assignedTs <= NEW_ASSIGNMENT_WINDOW_MS;
+}
 
 export function usePastorNewAssignmentsHome(
-  userId: string | undefined,
+  _userId: string | undefined,
   roadmaps: Roadmap[] | undefined,
   assessments: Assessment[],
 ) {
-  const [viewedAtByKey, setViewedAtByKey] = useState<Record<string, number>>({});
-
-  const refreshViews = useCallback(async () => {
-    if (!userId) {
-      setViewedAtByKey({});
-      return;
-    }
-    const map = await loadNewAssignmentViews(userId);
-    setViewedAtByKey(map);
-  }, [userId]);
-
-  useFocusEffect(
-    useCallback(() => {
-      refreshViews();
-    }, [refreshViews]),
-  );
-
-  const candidates = useMemo<NewAssignmentHomeItem[]>(() => {
+  const visibleItems = useMemo<NewAssignmentHomeItem[]>(() => {
     const items: NewAssignmentHomeItem[] = [];
 
     for (const roadmap of roadmaps ?? []) {
       if (!isNewlyAssignedRoadmapCandidate(roadmap)) continue;
       const sortTs = getRoadmapAssignmentSortTs(roadmap);
+      if (!isWithin24Hours(sortTs)) continue;
       items.push({
         kind: "roadmap",
         id: String(roadmap._id),
@@ -57,6 +42,7 @@ export function usePastorNewAssignmentsHome(
     for (const assessment of assessments) {
       if (!isNewlyAssignedAssessment(assessment)) continue;
       const sortTs = getAssessmentAssignmentSortTs(assessment);
+      if (!isWithin24Hours(sortTs)) continue;
       items.push({
         kind: "assessment",
         id: assessment.id,
@@ -70,27 +56,8 @@ export function usePastorNewAssignmentsHome(
     return items.sort((a, b) => b.sortTs - a.sortTs);
   }, [roadmaps, assessments]);
 
-  const visibleItems = useMemo(
-    () =>
-      candidates.filter((item) => {
-        const viewedAt = viewedAtByKey[`${item.kind}:${item.id}`];
-        return shouldShowNewAssignmentOnHome(viewedAt);
-      }),
-    [candidates, viewedAtByKey],
-  );
-
-  const dismissAll = useCallback(async () => {
-    if (!userId || visibleItems.length === 0) return;
-    for (const item of visibleItems) {
-      await markNewAssignmentViewed(userId, item.kind, item.id);
-    }
-    await refreshViews();
-  }, [userId, visibleItems, refreshViews]);
-
   return {
     visibleItems,
     hasNewAssignments: visibleItems.length > 0,
-    refreshViews,
-    dismissAll,
   };
 }

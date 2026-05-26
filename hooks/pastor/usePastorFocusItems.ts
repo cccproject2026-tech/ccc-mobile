@@ -16,16 +16,12 @@ import { Appointment } from "@/types/appointment.types";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useCallback, useMemo } from "react";
-import { isNewlyAssignedAssessment } from "@/lib/pastor/newAssignments";
 import {
   comparePastorPhasesForHome,
   getCompletionStats,
   getNestedTaskTitleById,
   getNextIncompleteNestedTaskId,
-  getTasks,
   isPastorPhaseInFocus,
-  isPastorPhaseNewlyAssigned,
-  normalizeNestedTaskStatus,
 } from "@/lib/roadmap/helpers";
 import {
   MentorInfo,
@@ -388,37 +384,21 @@ export const usePastorFocusItems = () => {
     );
 
     const roadmapItems: PastorFocusItem[] = roadmaps
-      .filter(
-        (roadmap) =>
-          isPastorPhaseInFocus(roadmap) || isPastorPhaseNewlyAssigned(roadmap),
-      )
+      .filter((roadmap) => isPastorPhaseInFocus(roadmap))
       .sort(comparePastorPhasesForHome)
       .slice(0, MAX_ITEMS_PER_SECTION)
       .map((roadmap) => {
-        const newlyAssigned = isPastorPhaseNewlyAssigned(roadmap);
         const { completed, total } = getCompletionStats(roadmap);
         const nextTaskId = getNextIncompleteNestedTaskId(roadmap);
         const nextTaskName = getNestedTaskTitleById(roadmap, nextTaskId);
-        const nextTask = getTasks(roadmap).find(
-          (t) => nextTaskId && String(t._id) === String(nextTaskId),
-        );
-        const nextStatus = normalizeNestedTaskStatus(nextTask?.status);
-        const meta = newlyAssigned
-          ? "Newly assigned • Start your first task"
-          : nextStatus === "blocked"
-            ? "Blocked"
-            : nextTask?.endDate && isWithinDays(nextTask.endDate, UPCOMING_DUE_WINDOW_DAYS)
-              ? `Due soon • ${completed} of ${total} tasks`
-              : `In progress • ${completed} of ${total} tasks`;
+        const meta = `In progress • ${completed} of ${total} tasks`;
 
         return {
           id: `roadmap-phase-${roadmap._id}`,
           title: roadmap.name || "Roadmap phase",
-          description: newlyAssigned
-            ? "A new roadmap phase has been assigned to you."
-            : nextTaskName
-              ? `Next: ${nextTaskName}`
-              : "Continue your revitalization journey.",
+          description: nextTaskName
+            ? `Next: ${nextTaskName}`
+            : "Continue your revitalization journey.",
           meta,
           accentColor: "#22C55E",
           route: nextTaskId
@@ -467,29 +447,20 @@ export const usePastorFocusItems = () => {
         ) {
           return false;
         }
-        if (isNewlyAssignedAssessment(assessment)) return true;
-        return isWithinDays(assessment.dueDate, UPCOMING_DUE_WINDOW_DAYS);
+        return true;
       })
       .sort((a: Assessment, b: Assessment) => {
-        const aNew = isNewlyAssignedAssessment(a) ? 0 : 1;
-        const bNew = isNewlyAssignedAssessment(b) ? 0 : 1;
-        if (aNew !== bNew) return aNew - bNew;
         return toTimestamp(a.dueDate) - toTimestamp(b.dueDate);
       })
       .slice(0, MAX_ITEMS_PER_SECTION)
       .map((assessment: Assessment) => {
-        const newlyAssigned = isNewlyAssignedAssessment(assessment);
         return {
           id: `assessment-${assessment.id}`,
           title: assessment.title,
-          description: newlyAssigned
-            ? "A new assessment has been assigned to you."
-            : assessment.description,
-          meta: newlyAssigned
-            ? "Newly assigned"
-            : assessment.dueDate
-              ? `Due ${formatDateTime(assessment.dueDate)}`
-              : "Assessment pending",
+          description: assessment.description,
+          meta: assessment.dueDate
+            ? `Due ${formatDateTime(assessment.dueDate)}`
+            : "Assessment pending",
           accentColor: "#A78BFA",
           route: {
             pathname: "/assessments/survey-guidelines",

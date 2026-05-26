@@ -60,14 +60,6 @@ function statusForOtherMeetings(
 function statusForRoadmaps(section?: PastorFocusSection): PastorFocusTileStatus {
   const item = section?.items[0];
   if (!item) return { label: "No phase", variant: "inProgress" };
-
-  const meta = item.meta ?? "";
-  if (meta.includes("Newly assigned")) {
-    return { label: "New", variant: "pending" };
-  }
-  if (meta.includes("In progress")) {
-    return { label: "In progress", variant: "inProgress" };
-  }
   return { label: "In progress", variant: "inProgress" };
 }
 
@@ -75,14 +67,9 @@ function statusForAssessments(
   section?: PastorFocusSection,
 ): PastorFocusTileStatus {
   const count = section?.items.length ?? 0;
-  if (count === 0) return { label: "Up to date", variant: "inProgress" };
-
-  const first = section!.items[0];
-  const meta = first.meta ?? "";
-  if (meta.includes("Newly assigned")) {
-    return { label: "New", variant: "pending" };
-  }
-  return { label: "New", variant: "pending" };
+  if (count === 0) return { label: "Completed", variant: "inProgress" };
+  if (count === 1) return { label: "1 pending", variant: "pending" };
+  return { label: `${count} pending`, variant: "pending" };
 }
 
 function statusForFeedback(section?: PastorFocusSection): PastorFocusTileStatus {
