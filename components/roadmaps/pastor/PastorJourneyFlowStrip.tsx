@@ -31,16 +31,17 @@ function estimateLabelColumnWidth(title: string): number {
   return Math.min(MAX_STEP_WIDTH, Math.max(MIN_STEP_WIDTH, Math.ceil(estimated)));
 }
 
-function lockedStatusLabel(index: number, steps: JourneyFlowStep[]): string {
+function notStartedStatusLabel(index: number, steps: JourneyFlowStep[]): string {
   const currentIndex = steps.findIndex((s) => s.state === "current");
   if (currentIndex >= 0 && index === currentIndex + 1) return "Coming next";
-  return "Locked";
+  return "Not Started";
 }
 
 function StepCircle({ step, index }: { step: JourneyFlowStep; index: number }) {
-  const isLocked = step.state === "locked";
   const isCurrent = step.state === "current";
   const isCompleted = step.state === "completed";
+  const isInProgress = step.state === "in-progress";
+  const isNotStarted = step.state === "not-started";
 
   if (isCurrent) {
     return (
@@ -53,10 +54,29 @@ function StepCircle({ step, index }: { step: JourneyFlowStep; index: number }) {
     );
   }
 
+  if (isInProgress) {
+    return (
+      <LinearGradient
+        colors={["#6FD4BE", "#34D399"]}
+        style={[styles.circle, styles.circleInProgress]}
+      >
+        <Text style={styles.circleNum}>{index + 1}</Text>
+      </LinearGradient>
+    );
+  }
+
   if (isCompleted) {
     return (
       <View style={[styles.circle, styles.circleCompleted]}>
         <Ionicons name="checkmark" size={22} color="#fff" />
+      </View>
+    );
+  }
+
+  if (isNotStarted) {
+    return (
+      <View style={[styles.circle, styles.circleNotStarted]}>
+        <Text style={styles.circleNumDimmed}>{index + 1}</Text>
       </View>
     );
   }
@@ -84,9 +104,11 @@ function JourneyStepColumn({
   const isLocked = step.state === "locked";
   const isCurrent = step.state === "current";
   const isCompleted = step.state === "completed";
-  const canOpen = !isLocked && !!step.roadmap;
+  const isInProgress = step.state === "in-progress";
+  const isNotStarted = step.state === "not-started";
+  const canOpen = step.state !== "locked" && !!step.roadmap;
   const isLast = index === steps.length - 1;
-  const connectorActive = step.state === "completed";
+  const connectorActive = step.state === "completed" || step.state === "in-progress";
 
   return (
     <>
@@ -107,9 +129,9 @@ function JourneyStepColumn({
             <Text
               style={[
                 styles.label,
-                isCurrent && styles.labelCurrent,
+                (isCurrent || isInProgress) && styles.labelCurrent,
                 isCompleted && styles.labelCompleted,
-                isLocked && styles.labelLocked,
+                (isLocked || isNotStarted) && styles.labelLocked,
               ]}
               numberOfLines={2}
             >
@@ -124,6 +146,16 @@ function JourneyStepColumn({
                   YOU ARE HERE
                 </Text>
               </View>
+            ) : isInProgress ? (
+              <View style={styles.inProgressBadge}>
+                <Ionicons
+                  name="ellipsis-horizontal"
+                  size={10}
+                  color="rgba(56,189,248,0.9)"
+                  style={styles.doneIcon}
+                />
+                <Text style={styles.inProgressText}>In Progress</Text>
+              </View>
             ) : isCompleted ? (
               <View style={styles.doneBadge}>
                 <Ionicons
@@ -134,9 +166,13 @@ function JourneyStepColumn({
                 />
                 <Text style={styles.doneText}>Done</Text>
               </View>
+            ) : isNotStarted ? (
+              <Text style={styles.notStartedText} numberOfLines={1}>
+                {notStartedStatusLabel(index, steps)}
+              </Text>
             ) : (
               <Text style={styles.lockedText} numberOfLines={1}>
-                {lockedStatusLabel(index, steps)}
+                Locked
               </Text>
             )}
           </View>
@@ -159,8 +195,10 @@ export function PastorJourneyFlowStrip({ steps, onPressStep }: Props) {
   const progressMeta = useMemo(() => {
     const total = steps.length;
     const completedCount = steps.filter((s) => s.state === "completed").length;
+    const activeCount = steps.filter((s) => s.state === "current" || s.state === "in-progress").length;
+    const effectiveProgress = completedCount + activeCount * 0.5;
     const fillPct =
-      total <= 1 ? (completedCount > 0 ? 100 : 0) : (completedCount / (total - 1)) * 100;
+      total <= 1 ? (completedCount > 0 ? 100 : 0) : (effectiveProgress / (total - 1)) * 100;
     return { total, completedCount, fillPct };
   }, [steps]);
 
@@ -196,7 +234,7 @@ export function PastorJourneyFlowStrip({ steps, onPressStep }: Props) {
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.heading}>Your journey path</Text>
-          <Text style={styles.subheading}>Complete each Roadmap to unlock the next</Text>
+          <Text style={styles.subheading}>Complete each Roadmap phase in your journey</Text>
         </View>
         <View style={styles.phaseBadge}>
           <Text style={styles.phaseBadgeNum}>
@@ -381,10 +419,20 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
+  circleInProgress: {
+    borderWidth: 2,
+    borderColor: "rgba(56,189,248,0.6)",
+    opacity: 0.85,
+  },
   circleCompleted: {
     backgroundColor: "rgba(34,197,94,0.88)",
     borderWidth: 1.5,
     borderColor: "rgba(74,222,128,0.45)",
+  },
+  circleNotStarted: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.20)",
   },
   circleLocked: {
     backgroundColor: "rgba(255,255,255,0.05)",
@@ -393,6 +441,11 @@ const styles = StyleSheet.create({
   },
   circleNum: {
     color: roadmapTheme.tealDeep,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  circleNumDimmed: {
+    color: "rgba(255,255,255,0.45)",
     fontSize: 18,
     fontWeight: "900",
   },
@@ -447,6 +500,17 @@ const styles = StyleSheet.create({
     borderColor: "rgba(74,222,128,0.22)",
     maxWidth: "100%",
   },
+  inProgressBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(56,189,248,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(56,189,248,0.25)",
+    maxWidth: "100%",
+  },
   doneIcon: {
     marginRight: 3,
   },
@@ -455,7 +519,18 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "rgba(74,222,128,0.90)",
   },
+  inProgressText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "rgba(56,189,248,0.90)",
+  },
 
+  notStartedText: {
+    fontSize: 9,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.45)",
+    textAlign: "center",
+  },
   lockedText: {
     fontSize: 9,
     fontWeight: "600",

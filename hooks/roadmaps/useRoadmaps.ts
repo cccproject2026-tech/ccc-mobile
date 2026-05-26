@@ -55,7 +55,9 @@ function mapProgressStatus(
 }
 
 /**
- * Merges roadmap with its progress data
+ * Merges roadmap with its progress data.
+ * Uses step counts as the source of truth for completion when the backend
+ * status field lags behind (known issue documented in PROGRESS_AND_SAVE_FLOW.md).
  */
 export function mergeRoadmapWithProgress(
     roadmap: Roadmap,
@@ -77,17 +79,31 @@ export function mergeRoadmapWithProgress(
             return nestedRoadmap;
         }
 
+        const stepsComplete =
+            nestedProgress.totalSteps > 0 &&
+            nestedProgress.completedSteps >= nestedProgress.totalSteps;
+        const resolvedStatus: 'not started' | 'in-progress' | 'completed' = stepsComplete
+            ? 'completed'
+            : mapProgressStatus(nestedProgress.status);
+
         return {
             ...nestedRoadmap,
-            status: mapProgressStatus(nestedProgress.status),
+            status: resolvedStatus,
             totalSteps: nestedProgress.totalSteps,
         } as NestedRoadmap;
     });
 
+    const parentStepsComplete =
+        progressItem.totalSteps > 0 &&
+        progressItem.completedSteps >= progressItem.totalSteps;
+    const resolvedParentStatus: 'not started' | 'in-progress' | 'completed' = parentStepsComplete
+        ? 'completed'
+        : mapProgressStatus(progressItem.status);
+
     // Return roadmap with updated status and nested roadmaps
     return {
         ...roadmap,
-        status: mapProgressStatus(progressItem.status),
+        status: resolvedParentStatus,
         totalSteps: progressItem.totalSteps,
         roadmaps: updatedNestedRoadmaps,
     };

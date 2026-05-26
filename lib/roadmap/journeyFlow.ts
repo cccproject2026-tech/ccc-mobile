@@ -2,6 +2,8 @@ import {
   comparePastorPhasesForFocus,
   getCompletionStats,
   getPhaseNumber,
+  getTasks,
+  normalizeNestedTaskStatus,
 } from "@/lib/roadmap/helpers";
 import type { Roadmap } from "@/lib/roadmap/types";
 
@@ -13,7 +15,7 @@ export const CANONICAL_JOURNEY_STEPS = [
   { id: "phase-3", title: "Community Revitalization", shortTitle: "Community" },
 ] as const;
 
-export type JourneyFlowStepState = "completed" | "current" | "locked";
+export type JourneyFlowStepState = "completed" | "current" | "in-progress" | "not-started" | "locked";
 
 export type JourneyFlowStep = {
   id: string;
@@ -108,39 +110,52 @@ export function buildJourneyFlowSteps(roadmaps: Roadmap[]): JourneyFlowStep[] {
 
   const assignedSteps = allStepDefs.filter((step) => byStepId.has(step.id));
 
-  let currentStepIndex = -1;
-  for (let i = 0; i < assignedSteps.length; i++) {
-    const assigned = byStepId.get(assignedSteps[i].id)!;
-    const { completed, total } = getCompletionStats(assigned);
-    const done = total > 0 && completed === total;
-    if (!done) {
-      currentStepIndex = i;
-      break;
-    }
-  }
-
-  return assignedSteps.map((step, index) => {
+  const stepStats = assignedSteps.map((step) => {
     const roadmap = byStepId.get(step.id)!;
     const { completed, total } = getCompletionStats(roadmap);
     const done = total > 0 && completed === total;
+    const hasActiveWork = getTasks(roadmap).some((t) => {
+      const s = normalizeNestedTaskStatus(t?.status);
+      return s === "in-progress" || s === "completed" || s === "blocked";
+    });
+    const hasProgress = completed > 0 || hasActiveWork;
+    return { step, roadmap, completed, total, done, hasProgress };
+  });
 
+  let primaryCurrentIndex = -1;
+  for (let i = 0; i < stepStats.length; i++) {
+    if (!stepStats[i].done && stepStats[i].hasProgress) {
+      primaryCurrentIndex = i;
+      break;
+    }
+  }
+  if (primaryCurrentIndex === -1) {
+    for (let i = 0; i < stepStats.length; i++) {
+      if (!stepStats[i].done) {
+        primaryCurrentIndex = i;
+        break;
+      }
+    }
+  }
+
+  return stepStats.map(({ step, roadmap, done, hasProgress }, index) => {
     if (done) {
       return { ...step, state: "completed" as const, roadmap };
     }
 
-    if (currentStepIndex === -1) {
+    if (primaryCurrentIndex === -1) {
       return { ...step, state: "completed" as const, roadmap };
     }
 
-    if (index === currentStepIndex) {
+    if (index === primaryCurrentIndex) {
       return { ...step, state: "current" as const, roadmap };
     }
 
-    if (index < currentStepIndex) {
-      return { ...step, state: "completed" as const, roadmap };
+    if (hasProgress) {
+      return { ...step, state: "in-progress" as const, roadmap };
     }
 
-    return { ...step, state: "locked" as const, roadmap };
+    return { ...step, state: "not-started" as const, roadmap };
   });
 }
 
