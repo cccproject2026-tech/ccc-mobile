@@ -149,6 +149,10 @@ apiClient.interceptors.response.use(
 
         const { accessToken, refreshToken: newRefreshToken } = response.data;
 
+        if (!accessToken || !newRefreshToken) {
+          throw new Error("Refresh response missing tokens");
+        }
+
         // Update stored tokens
         await storage.setTokens(accessToken, newRefreshToken);
 

@@ -837,6 +837,13 @@ export const MentorMenuItems: MenuItem[] = [
     route: "/(mentor)/appointments",
   },
   {
+    id: "voiceNotes",
+    label: "Voice Notes",
+    icon: "mic-outline",
+    iconType: "ionicon",
+    route: "/(mentor)/(tabs)/voice-notes",
+  },
+  {
     id: "profile",
     label: "Profile",
     icon: icons.profile,

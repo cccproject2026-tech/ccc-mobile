@@ -34,9 +34,9 @@ const EXPLORE_TILES = [
     route: "/(mentor)/(tabs)/profile/notes",
   },
   {
-    icon: "mic-outline",
-    title: "Voice\nNotes",
-    route: "/(mentor)/(tabs)/voice-notes",
+    icon: "map-outline",
+    title: "Revitalization\nRoadmap",
+    route: "/(mentor)/roadmap/landing/landing",
   },
   {
     icon: "calendar-outline",
