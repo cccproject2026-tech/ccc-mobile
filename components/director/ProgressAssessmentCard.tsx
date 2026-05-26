@@ -1,7 +1,4 @@
 import { AssessmentProgress } from '@/constants/mockData';
-import { icons } from '@/constants/images';
-import { useAuthStore } from '@/stores/auth.store';
-import { getAvatarSource } from '@/utils/avatarSource';
 import type { Assessment } from '@/types/assessment.types';
 import React from 'react';
 import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,10 +9,14 @@ interface Props {
     onPress?: () => void;
 }
 
+const TYPE_COLORS: Record<string, { bg: string; border: string }> = {
+    PMP: { bg: '#1A8A8A', border: 'rgba(111, 212, 190, 0.3)' },
+    CMA: { bg: '#1A8A8A', border: 'rgba(111, 212, 190, 0.3)' },
+};
+
 export const ProgressAssessmentCard: React.FC<Props> = ({ data, onDevelopmentPlanPress, onPress }) => {
     const statusLower = data.status.toLowerCase();
     const isCompleted = statusLower === 'completed';
-    const { user } = useAuthStore();
 
     const formatDisplayDate = (value?: string): string | null => {
         if (!value) return null;
@@ -28,16 +29,29 @@ export const ProgressAssessmentCard: React.FC<Props> = ({ data, onDevelopmentPla
         });
     };
 
-    const imageSource: ImageSourcePropType = (() => {
-        const maybeImage = (data as any)?.image;
-        if (maybeImage) {
-            if (typeof maybeImage === 'number') return maybeImage;
-            if (typeof maybeImage === 'string') return { uri: maybeImage };
-            if (typeof maybeImage === 'object' && (maybeImage as any).uri) return maybeImage;
-        }
+    const assessmentType = (data as any)?.type as string | undefined;
 
-        return getAvatarSource(user);
+    const hasExplicitImage = (() => {
+        const maybeImage = (data as any)?.image;
+        if (!maybeImage) return false;
+        if (typeof maybeImage === 'number') return true;
+        if (typeof maybeImage === 'string' && maybeImage.length > 0) return true;
+        if (typeof maybeImage === 'object' && (maybeImage as any).uri) return true;
+        return false;
     })();
+
+    const imageSource: ImageSourcePropType | null = (() => {
+        const maybeImage = (data as any)?.image;
+        if (!maybeImage) return null;
+        if (typeof maybeImage === 'number') return maybeImage;
+        if (typeof maybeImage === 'string') return { uri: maybeImage };
+        if (typeof maybeImage === 'object' && (maybeImage as any).uri) return maybeImage;
+        return null;
+    })();
+
+    const typeLabel = assessmentType?.toUpperCase() ?? 'PMP';
+    const typeSubLabel = typeLabel === 'CMA' ? 'CHURCH ASSESSMENT\nEVALUATION' : 'PASTORAL MINISTRY\nPROFILE';
+    const colors = TYPE_COLORS[typeLabel] ?? TYPE_COLORS.PMP;
 
     const dateLabel = (() => {
         const submittedDate = (data as any)?.submittedDate;
@@ -77,7 +91,15 @@ export const ProgressAssessmentCard: React.FC<Props> = ({ data, onDevelopmentPla
         <CardWrapper style={styles.card} onPress={onPress} activeOpacity={0.85}>
             <View style={styles.content}>
                 <View style={styles.imageContainer}>
-                    <Image source={imageSource} style={styles.image} />
+                    {hasExplicitImage && imageSource ? (
+                        <Image source={imageSource} style={styles.image} />
+                    ) : (
+                        <View style={[styles.typeBadge, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                            <Text style={styles.typeBadgeTitle}>{typeLabel}</Text>
+                            <View style={styles.typeBadgeDivider} />
+                            <Text style={styles.typeBadgeSubtitle}>{typeSubLabel}</Text>
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.textContent}>
@@ -118,6 +140,36 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
+    },
+    typeBadge: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 6,
+    },
+    typeBadgeTitle: {
+        color: '#FFFFFF',
+        fontSize: 26,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
+    typeBadgeDivider: {
+        width: '60%',
+        height: 1.5,
+        backgroundColor: 'rgba(255,255,255,0.35)',
+        marginVertical: 4,
+        borderRadius: 1,
+    },
+    typeBadgeSubtitle: {
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 7,
+        fontWeight: '700',
+        textAlign: 'center',
+        letterSpacing: 0.5,
+        lineHeight: 10,
     },
     textContent: {
         flex: 1,

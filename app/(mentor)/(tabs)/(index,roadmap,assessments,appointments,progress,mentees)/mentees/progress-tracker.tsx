@@ -312,24 +312,6 @@ export default function ProgressTracker() {
           showBackButton
           alwaysShowBack
           onBackPress={() => router.back()}
-          headerRight={
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={() => setViewMode(viewMode === "card" ? "list" : "card")}
-                style={styles.headerIconButton}
-                activeOpacity={0.85}
-              >
-                <Ionicons name={viewMode === "card" ? "list" : "grid"} size={20} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setFilterModalVisible(true)}
-                style={styles.headerIconButton}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="filter" size={19} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          }
         />
 
         <CommonCard style={styles.summaryCard}>

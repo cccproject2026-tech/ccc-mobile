@@ -8,17 +8,19 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useMentees } from "@/hooks/mentees/useMentees";
-import { useAddFinalComment, useDeleteFinalComment, useProgress, useUpdateFinalComment } from "@/hooks/progress/useProgress";
+import { useProgress } from "@/hooks/progress/useProgress";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { comparePastorPhasesForHome } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { useAuthStore } from "@/stores";
 import { sharePdfFromHtml } from "@/utils/pdf";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { RoadmapTabStrip } from "@/components/ui/design-system";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RefreshControl, ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -54,13 +56,6 @@ export default function MenteeProgressScreen() {
 
   const [roadmapTabs, setRoadmapTabs] = useState<TabKey>("All");
   const [assessmentTabs, setAssessmentTabs] = useState<TabKey>("All");
-  const [showCommentsModal, setShowCommentsModal] = useState(false);
-  const [finalComments, setFinalComments] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-
-  const addFinalCommentMutation = useAddFinalComment();
-  const updateFinalCommentMutation = useUpdateFinalComment();
-  const deleteFinalCommentMutation = useDeleteFinalComment();
 
   const {
     data: menteesData,
@@ -96,30 +91,30 @@ export default function MenteeProgressScreen() {
     return `${mentee.firstName ?? ""}${mentee.lastName ? ` ${mentee.lastName}` : ""}`.trim() || "Mentee Progress";
   }, [mentee]);
 
-  const existingComments = useMemo(() => {
-    return progressData?.finalComments || [];
-  }, [progressData?.finalComments]);
-
   const overallProgress = useMemo(() => {
     const completedPercentage = round1(progressData?.overallProgress ?? 0);
     const remainingPercentage = round1(Math.max(0, 100 - completedPercentage));
     return { completedPercentage, remainingPercentage };
   }, [progressData]);
 
-  const availableTabs = [{ tab: "All" }, { tab: "Completed" }, { tab: "Remaining" }];
+  const availableTabs = [
+    { key: "All", label: "All" },
+    { key: "Remaining", label: "Remaining" },
+    { key: "Completed", label: "Completed" },
+  ];
 
   const filteredRoadmaps = useMemo(() => {
     if (!roadmaps) return [];
 
-    const sorted = [...roadmaps].sort((a, b) => toEpochMs(b.updatedAt) - toEpochMs(a.updatedAt));
+    const sorted = [...roadmaps].sort(comparePastorPhasesForHome);
 
     switch (roadmapTabs) {
       case "Completed":
-        return sorted.filter((item) => item.status === "completed").slice(0, 5);
+        return sorted.filter((item) => item.status === "completed");
       case "Remaining":
-        return sorted.filter((item) => item.status !== "completed").slice(0, 5);
+        return sorted.filter((item) => item.status !== "completed");
       default:
-        return sorted.slice(0, 5);
+        return sorted;
     }
   }, [roadmapTabs, roadmaps]);
 
@@ -263,95 +258,6 @@ export default function MenteeProgressScreen() {
     });
   }, [menteeId]);
 
-  const handleAddComments = useCallback(() => {
-    setEditingCommentId(null);
-    setFinalComments("");
-    setShowCommentsModal(true);
-  }, []);
-
-  const handleEditComment = useCallback((commentId: string, commentText: string) => {
-    setEditingCommentId(commentId);
-    setFinalComments(commentText);
-    setShowCommentsModal(true);
-  }, []);
-
-  const handleCancelEdit = useCallback(() => {
-    setEditingCommentId(null);
-    setFinalComments("");
-    setShowCommentsModal(false);
-  }, []);
-
-  const handleDeleteComment = useCallback((commentId: string) => {
-    if (!menteeId) return;
-
-    Alert.alert(
-      "Delete Comment",
-      "Are you sure you want to delete this comment? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deleteFinalCommentMutation.mutate(
-              {
-                userId: menteeId,
-                commentId,
-              },
-              {
-                onError: () => {
-                  Alert.alert("Error", "Failed to delete comment. Please try again.");
-                },
-              }
-            );
-          },
-        },
-      ]
-    );
-  }, [deleteFinalCommentMutation, menteeId]);
-
-  const handleSubmitComments = useCallback(() => {
-    if (!finalComments.trim() || !user?.id || !menteeId) return;
-
-    if (editingCommentId) {
-      updateFinalCommentMutation.mutate(
-        {
-          userId: menteeId,
-          commentId: editingCommentId,
-          comment: finalComments.trim(),
-        },
-        {
-          onSuccess: () => {
-            setFinalComments("");
-            setEditingCommentId(null);
-            setShowCommentsModal(false);
-          },
-          onError: () => {
-            Alert.alert("Error", "Failed to update comment. Please try again.");
-          },
-        }
-      );
-      return;
-    }
-
-    addFinalCommentMutation.mutate(
-      {
-        userId: menteeId,
-        commentorId: user.id,
-        comment: finalComments.trim(),
-      },
-      {
-        onSuccess: () => {
-          setFinalComments("");
-          setShowCommentsModal(false);
-        },
-        onError: () => {
-          Alert.alert("Error", "Failed to add comment. Please try again.");
-        },
-      }
-    );
-  }, [addFinalCommentMutation, editingCommentId, finalComments, menteeId, updateFinalCommentMutation, user?.id]);
-
   const isLoading =
     isMenteesLoading ||
     isProgressLoading ||
@@ -363,31 +269,6 @@ export default function MenteeProgressScreen() {
     isRoadmapsRefetching ||
     isAssessmentsRefetching;
 
-  const FilterTabs = ({
-    value,
-    onChange,
-  }: {
-    value: TabKey;
-    onChange: (next: TabKey) => void;
-  }) => (
-    <View style={styles.filterTabsRow}>
-      {availableTabs.map((tabItem) => {
-        const isActive = value === (tabItem.tab as TabKey);
-        return (
-          <TouchableOpacity
-            key={tabItem.tab}
-            onPress={() => onChange(tabItem.tab as TabKey)}
-            style={[styles.filterTabButton, isActive && styles.filterTabButtonActive]}
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.filterTabText, isActive && styles.filterTabTextActive]}>
-              {tabItem.tab}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
 
   if (isLoading) {
     return (
@@ -443,9 +324,6 @@ export default function MenteeProgressScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.addCommentsButton} onPress={handleAddComments}>
-              <Text style={styles.addCommentsButtonText}>Add Final Comments</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -480,7 +358,14 @@ export default function MenteeProgressScreen() {
 
           <View style={styles.progressBlock}>
             <Text style={styles.progressBlockTitle}>Revitalization Roadmap Progress</Text>
-            <FilterTabs value={roadmapTabs} onChange={setRoadmapTabs} />
+            <View style={styles.tabStripWrap}>
+              <RoadmapTabStrip
+                tabs={availableTabs}
+                activeKey={roadmapTabs}
+                onChange={(k) => setRoadmapTabs(k as TabKey)}
+                scrollable
+              />
+            </View>
 
             <View style={styles.cardListContainer}>
               {filteredRoadmaps.length > 0 ? (
@@ -511,7 +396,14 @@ export default function MenteeProgressScreen() {
 
           <View style={styles.progressBlock}>
             <Text style={styles.progressBlockTitle}>Assessment Progress</Text>
-            <FilterTabs value={assessmentTabs} onChange={setAssessmentTabs} />
+            <View style={styles.tabStripWrap}>
+              <RoadmapTabStrip
+                tabs={availableTabs}
+                activeKey={assessmentTabs}
+                onChange={(k) => setAssessmentTabs(k as TabKey)}
+                scrollable
+              />
+            </View>
 
             <View style={styles.cardListContainer}>
               {filteredAssessments.length > 0 ? (
@@ -521,10 +413,7 @@ export default function MenteeProgressScreen() {
                     style={[styles.cardWrapper, { paddingTop: index === 0 ? 15 : 0 }]}
                   >
                     <ProgressAssessmentCard
-                      data={{
-                        ...(assessment as any),
-                        image: mentee?.profilePicture,
-                      }}
+                      data={assessment as any}
                       onPress={() => handleAssessmentPress(assessment)}
                       onDevelopmentPlanPress={openPMPSheet}
                     />
@@ -540,107 +429,8 @@ export default function MenteeProgressScreen() {
             </View>
           </View>
 
-          <View style={styles.commentsSection}>
-            <View style={styles.commentsHeaderRow}>
-              <Text style={styles.progressBlockTitle}>Final Comments</Text>
-              {existingComments.length > 0 ? (
-                <Text style={styles.commentsCountText}>{existingComments.length}</Text>
-              ) : null}
-            </View>
-
-            <View style={styles.commentsCard}>
-              {existingComments.length > 0 ? (
-                existingComments.map((comment, index) => (
-                  <View
-                    key={comment._id}
-                    style={[
-                      styles.commentItem,
-                      index !== existingComments.length - 1 && styles.commentItemBorder,
-                    ]}
-                  >
-                    <View style={styles.commentActions}>
-                      <TouchableOpacity
-                        style={styles.commentActionButton}
-                        onPress={() => handleEditComment(comment._id, comment.comment)}
-                      >
-                        <Ionicons name="create-outline" size={16} color="#FFFFFF" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.commentActionButton, styles.commentDeleteButton]}
-                        onPress={() => handleDeleteComment(comment._id)}
-                      >
-                        <Ionicons name="trash-outline" size={16} color="#FFB4B4" />
-                      </TouchableOpacity>
-                    </View>
-
-                    <Text style={styles.commentText}>{comment.comment}</Text>
-                    <Text style={styles.commentMeta}>
-                      {new Date(comment.updatedAt || comment.createdAt).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.emptyText}>No final comments added yet</Text>
-              )}
-            </View>
-          </View>
         </ScrollView>
       </View>
-
-      <Modal
-        visible={showCommentsModal}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCancelEdit}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>
-              {editingCommentId ? "Edit Final Comment" : "Add Final Comment"}
-            </Text>
-
-            <TextInput
-              value={finalComments}
-              onChangeText={setFinalComments}
-              placeholder="Write your final comments here"
-              placeholderTextColor="rgba(255, 255, 255, 0.55)"
-              multiline
-              textAlignVertical="top"
-              style={styles.commentInput}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.cancelButton} onPress={handleCancelEdit}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.submitButton,
-                  (!finalComments.trim() ||
-                    addFinalCommentMutation.isPending ||
-                    updateFinalCommentMutation.isPending) &&
-                    styles.submitButtonDisabled,
-                ]}
-                onPress={handleSubmitComments}
-                disabled={
-                  !finalComments.trim() ||
-                  addFinalCommentMutation.isPending ||
-                  updateFinalCommentMutation.isPending
-                }
-              >
-                <Text style={styles.submitButtonText}>
-                  {editingCommentId ? "Update" : "Save"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <PMPBottomSheet
         ref={pmpSheetRef}
@@ -678,19 +468,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  addCommentsButton: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.35)",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  addCommentsButtonText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
   section: { marginHorizontal: 16, marginBottom: 20 },
   sectionTitle: {
     color: "white",
@@ -713,33 +490,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     paddingHorizontal: 16,
   },
-  filterTabsRow: {
-    flexDirection: "row",
-    gap: 12,
+  tabStripWrap: {
     paddingHorizontal: 16,
-    marginTop: 15,
-  },
-  filterTabButton: {
-    flex: 1,
-    height: 38,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.35)",
-    backgroundColor: "rgba(255, 255, 255, 0.16)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  filterTabButtonActive: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "rgba(255, 255, 255, 0.85)",
-  },
-  filterTabText: {
-    color: "rgba(255, 255, 255, 0.9)",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  filterTabTextActive: {
-    color: "#1535A8",
+    marginTop: 8,
   },
   cardListContainer: {
     marginVertical: 10,
@@ -755,130 +508,6 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.6)",
     fontSize: 15,
     textAlign: "center",
-  },
-  commentsSection: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-  },
-  commentsHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  commentsCountText: {
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  commentsCard: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    padding: 16,
-  },
-  commentItem: {
-    paddingVertical: 4,
-  },
-  commentItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.12)",
-    marginBottom: 12,
-    paddingBottom: 12,
-  },
-  commentActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginBottom: 10,
-  },
-  commentActionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  commentDeleteButton: {
-    borderColor: "rgba(255,120,120,0.25)",
-    backgroundColor: "rgba(255,107,107,0.08)",
-  },
-  commentText: {
-    color: "#fff",
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  commentMeta: {
-    color: "rgba(255,255,255,0.62)",
-    fontSize: 12,
-    marginTop: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  modalContainer: {
-    backgroundColor: "#165A8B",
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-  },
-  modalTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 14,
-  },
-  commentInput: {
-    minHeight: 140,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    color: "#fff",
-    fontSize: 15,
-    padding: 14,
-  },
-  modalButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 18,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 46,
-  },
-  cancelButtonText: {
-    color: "#1A4882",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  submitButton: {
-    flex: 1,
-    backgroundColor: "#1A4882",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 46,
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
   },
   stateContainer: {
     flex: 1,
