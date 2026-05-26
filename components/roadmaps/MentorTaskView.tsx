@@ -711,31 +711,6 @@ export function MentorTaskView({
                     )
                 )}
 
-                {/* Download button only when server files exist */}
-                {!isLoading && docs.length > 0 ? (
-                    <Pressable
-                        style={[styles.uploadButton, styles.uploadButtonWhite]}
-                        onPress={async () => {
-                            try {
-                                let successCount = 0;
-                                for (const doc of docs) {
-                                    if (doc.fileUrl) {
-                                        await Linking.openURL(doc.fileUrl);
-                                        successCount++;
-                                    }
-                                }
-                                if (successCount === 0) {
-                                    Alert.alert("Error", "Could not open any documents.");
-                                }
-                            } catch (err: any) {
-                                Alert.alert("Error", "Could not download files: " + err.message);
-                            }
-                        }}
-                    >
-                        <Ionicons name="download-outline" size={22} color="#2563eb" />
-                        <Text style={styles.uploadButtonText}>Download</Text>
-                    </Pressable>
-                ) : null}
             </View>
         );
     };
