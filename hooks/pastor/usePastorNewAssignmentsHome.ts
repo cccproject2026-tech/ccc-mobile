@@ -6,6 +6,7 @@ import {
   isNewlyAssignedRoadmapCandidate,
   NewAssignmentHomeItem,
 } from "@/lib/pastor/newAssignments";
+import { getCompletionStats } from "@/lib/roadmap/helpers";
 import type { Roadmap } from "@/lib/roadmap/types";
 import type { Assessment } from "@/types/assessment.types";
 import { useMemo } from "react";
@@ -28,13 +29,18 @@ export function usePastorNewAssignmentsHome(
     for (const roadmap of roadmaps ?? []) {
       if (!isNewlyAssignedRoadmapCandidate(roadmap)) continue;
       const sortTs = getRoadmapAssignmentSortTs(roadmap);
-      if (!isWithin24Hours(sortTs)) continue;
+      const { completed } = getCompletionStats(roadmap);
+      const hasReliableTimestamp = !!roadmap.assignedAt;
+      if (hasReliableTimestamp && !isWithin24Hours(sortTs)) continue;
+      if (!hasReliableTimestamp && completed > 0) continue;
       items.push({
         kind: "roadmap",
         id: String(roadmap._id),
         title: roadmap.name || "Roadmap phase",
-        sortTs,
-        assignedLabel: formatAssignmentDateTime(sortTs),
+        sortTs: sortTs || Date.now(),
+        assignedLabel: hasReliableTimestamp
+          ? formatAssignmentDateTime(sortTs)
+          : "Recently assigned",
         roadmap,
       });
     }

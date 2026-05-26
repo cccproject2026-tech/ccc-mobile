@@ -348,7 +348,6 @@ export const usePastorFocusItems = () => {
       (item) => {
         if (item.kind === "roadmap" && item.roadmap) {
           const roadmap = item.roadmap;
-          const nextTaskId = getNextIncompleteNestedTaskId(roadmap);
           return {
             id: `new-assignment-roadmap-${item.id}`,
             title: item.title,
@@ -357,13 +356,9 @@ export const usePastorFocusItems = () => {
               ? `Assigned ${item.assignedLabel}`
               : "Newly assigned",
             accentColor: "#FBBF24",
-            route: nextTaskId
-              ? {
-                  pathname: `/roadmap/${roadmap._id}/${nextTaskId}`,
-                }
-              : {
-                  pathname: `/roadmap/${roadmap._id}`,
-                },
+            route: {
+              pathname: `/roadmap/${roadmap._id}`,
+            },
           };
         }
 
@@ -383,8 +378,15 @@ export const usePastorFocusItems = () => {
       },
     );
 
+    const newAssignmentRoadmapIds = new Set(
+      newAssignmentHomeItems
+        .filter((i) => i.kind === "roadmap")
+        .map((i) => i.id),
+    );
+
     const roadmapItems: PastorFocusItem[] = roadmaps
       .filter((roadmap) => isPastorPhaseInFocus(roadmap))
+      .filter((roadmap) => !newAssignmentRoadmapIds.has(String(roadmap._id)))
       .sort(comparePastorPhasesForHome)
       .slice(0, MAX_ITEMS_PER_SECTION)
       .map((roadmap) => {

@@ -1,6 +1,6 @@
 import type { Assessment } from "@/types/assessment.types";
 import type { Roadmap } from "@/lib/roadmap/types";
-import { isPastorPhaseNewlyAssigned } from "@/lib/roadmap/helpers";
+import { getCompletionStats, isPastorPhaseNewlyAssigned } from "@/lib/roadmap/helpers";
 import { format } from "date-fns";
 
 export function parseAssignmentTimestamp(iso?: string | null): number | null {
@@ -19,6 +19,7 @@ export function getAssessmentAssignmentSortTs(assessment: Assessment): number {
 
 export function getRoadmapAssignmentSortTs(roadmap: Roadmap): number {
   return (
+    parseAssignmentTimestamp(roadmap.assignedAt) ??
     parseAssignmentTimestamp(roadmap.updatedAt) ??
     parseAssignmentTimestamp(roadmap.createdAt) ??
     0
@@ -37,6 +38,12 @@ export function isNewlyAssignedAssessment(assessment: Assessment): boolean {
 }
 
 export function isNewlyAssignedRoadmapCandidate(roadmap: Roadmap): boolean {
+  if (roadmap.assignedAt) {
+    const s = (roadmap.status || "").toLowerCase().trim();
+    return s !== "completed" && s !== "complete" && s !== "done";
+  }
+  const { completed } = getCompletionStats(roadmap);
+  if (completed === 0) return true;
   return isPastorPhaseNewlyAssigned(roadmap);
 }
 
