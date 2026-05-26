@@ -1274,7 +1274,9 @@ export function MentorTaskView({
                     </View>
                 )}
 
-                {effectiveExtras.map((extra, index) => renderExtra(extra, index))}
+                {!(isViewingPastor && hasSubmission) &&
+                    effectiveExtras.map((extra, index) => renderExtra(extra, index))
+                }
 
                 {/* Submit / Resubmit button */}
                 {!isViewingPastor && !isReadOnly ? (
