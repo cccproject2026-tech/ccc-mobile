@@ -104,14 +104,6 @@ function FocusItemCard({
           onPressOut={handlePressOut}
           style={[styles.itemCard, isPrimary && styles.itemCardPrimary]}
         >
-          {/* Priority ribbon for first item */}
-          {isPrimary && (
-            <View style={styles.priorityBadge}>
-              <Ionicons name="flash" size={10} color="#FFD964" />
-              <Text style={styles.priorityBadgeText}>Top Priority</Text>
-            </View>
-          )}
-
           {/* Header row */}
           <View style={styles.itemHeader}>
             <Text
@@ -145,21 +137,6 @@ function FocusItemCard({
             </View>
           )}
 
-          {/* Progress bar */}
-          <View style={styles.progressSection}>
-            <View style={styles.progressTrack}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: isPrimary ? "22%" : "8%" },
-                  isPrimary && styles.progressFillPrimary,
-                ]}
-              />
-            </View>
-            <Text style={styles.progressLabel}>
-              {isPrimary ? "22% complete" : "8% complete"}
-            </Text>
-          </View>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -565,25 +542,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(58, 136, 229, 0.14)",
     borderColor: "rgba(120, 185, 255, 0.38)",
   },
-  priorityBadge: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 99,
-    backgroundColor: "rgba(255, 210, 60, 0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 215, 80, 0.35)",
-    marginBottom: 2,
-  },
-  priorityBadgeText: {
-    color: "#FFD964",
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.4,
-  },
   itemHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -651,30 +609,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // ── Progress ──
-  progressSection: {
-    gap: 4,
-    marginTop: 2,
-  },
-  progressTrack: {
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: "rgba(200, 230, 255, 0.14)",
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 999,
-    backgroundColor: "rgba(52, 199, 89, 0.7)",
-  },
-  progressFillPrimary: {
-    backgroundColor: "#34C759",
-  },
-  progressLabel: {
-    color: "rgba(160, 210, 255, 0.55)",
-    fontSize: 10,
-    fontWeight: "600",
-  },
 
   // ── Empty state ──
   emptyCard: {
