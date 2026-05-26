@@ -48,7 +48,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type MainTabKey = "PASTOR_ROADMAPS" | "ROADMAP_LIBRARY";
-type StatusTabKey = "ALL" | "DUE" | "IN_PROGRESS" | "NOT_STARTED" | "COMPLETED";
+type StatusTabKey = "ALL" | "IN_PROGRESS" | "NOT_STARTED" | "COMPLETED";
 type MentorPastorRoadmapView = "phases" | "completed-tasks" | "resubmitted";
 
 const MAIN_TABS = [
@@ -58,7 +58,6 @@ const MAIN_TABS = [
 
 const STATUS_TABS: { key: StatusTabKey; label: string }[] = [
   { key: "ALL", label: "All" },
-  { key: "DUE", label: "Due" },
   { key: "IN_PROGRESS", label: "In Progress" },
   { key: "NOT_STARTED", label: "Not Started" },
   { key: "COMPLETED", label: "Completed" },
@@ -453,7 +452,6 @@ export default function Landing() {
         COMPLETED: "completed",
         IN_PROGRESS: "in-progress",
         NOT_STARTED: "initial",
-        DUE: "due",
       };
       merged = merged.filter(({ status }) => status === statusMap[statusTab]);
     }
