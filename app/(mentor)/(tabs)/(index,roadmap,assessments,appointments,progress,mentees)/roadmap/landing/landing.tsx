@@ -79,6 +79,7 @@ export default function Landing() {
   const [mentorPastorRoadmapView, setMentorPastorRoadmapView] =
     useState<MentorPastorRoadmapView>("phases");
   const [mentorCompletedJourneyTab, setMentorCompletedJourneyTab] = useState("all");
+  const [resubmittedJourneyTab, setResubmittedJourneyTab] = useState("all");
   const [selectedPastor, setSelectedPastor] = useState<Mentee | null>(null);
 
   const { user } = useAuthStore();
@@ -111,6 +112,7 @@ export default function Landing() {
       setSelectedPastor(routePastor);
       setMentorPastorRoadmapView("phases");
       setMentorCompletedJourneyTab("all");
+      setResubmittedJourneyTab("all");
       setMentorCompletedSearch("");
       setMainTab("PASTOR_ROADMAPS");
     }
@@ -122,6 +124,7 @@ export default function Landing() {
         setSelectedPastor(null);
         setMentorPastorRoadmapView("phases");
         setMentorCompletedJourneyTab("all");
+        setResubmittedJourneyTab("all");
         setMentorCompletedSearch("");
         setResubmittedSearch("");
         setSelectedPastorRoadmapSearch("");
@@ -197,8 +200,58 @@ export default function Landing() {
     });
   }, [mentorCompletedByJourney, mentorCompletedSearch]);
 
+  // Build journey tabs for resubmitted tasks (All + per roadmap phase)
+  const resubmittedJourneyTabs = useMemo(() => {
+    const tabs: { key: string; label: string; count: number }[] = [
+      { key: "all", label: "All", count: resubmittedTasks.length },
+    ];
+    if (!resubmittedTasks.length) return tabs;
+
+    const countByPhase = new Map<string, number>();
+    for (const entry of resubmittedTasks) {
+      countByPhase.set(entry.phaseId, (countByPhase.get(entry.phaseId) ?? 0) + 1);
+    }
+
+    const roadmapById = new Map<string, Roadmap>();
+    for (const r of pastorMergedRoadmaps ?? []) {
+      if (r._id) roadmapById.set(r._id, r);
+    }
+
+    for (const [phaseId, count] of countByPhase) {
+      const roadmap = roadmapById.get(phaseId);
+      const rawName = String(roadmap?.name ?? roadmap?.phase ?? "").trim();
+      const label = rawName.replace(/\s+Phase$/i, "").trim() || rawName || "Roadmap";
+      tabs.push({ key: phaseId, label, count });
+    }
+
+    return tabs;
+  }, [resubmittedTasks, pastorMergedRoadmaps]);
+
+  const resubmittedJourneyTabStrip = useMemo(
+    () =>
+      resubmittedJourneyTabs.map((t) => ({
+        key: t.key,
+        label: t.label,
+        badge: t.count > 0 ? t.count : undefined,
+      })),
+    [resubmittedJourneyTabs],
+  );
+
+  // Reset tab if it becomes invalid
+  useEffect(() => {
+    if (mentorPastorRoadmapView !== "resubmitted") return;
+    const valid = new Set(resubmittedJourneyTabs.map((t) => t.key));
+    if (!valid.has(resubmittedJourneyTab)) setResubmittedJourneyTab("all");
+  }, [mentorPastorRoadmapView, resubmittedJourneyTabs, resubmittedJourneyTab]);
+
+  // Filter by selected journey tab, then by search, sorted by most recent first
   const filteredResubmittedTasks = useMemo(() => {
     let list = [...resubmittedTasks];
+
+    // Filter by journey tab
+    if (resubmittedJourneyTab !== "all") {
+      list = list.filter((entry) => entry.phaseId === resubmittedJourneyTab);
+    }
 
     // Sort by most recently resubmitted first
     list.sort((a, b) => {
@@ -208,6 +261,7 @@ export default function Landing() {
       return 0;
     });
 
+    // Filter by search
     const q = resubmittedSearch.trim().toLowerCase();
     if (q) {
       list = list.filter((entry) => {
@@ -218,12 +272,13 @@ export default function Landing() {
     }
 
     return list;
-  }, [resubmittedTasks, resubmittedSearch]);
+  }, [resubmittedTasks, resubmittedJourneyTab, resubmittedSearch]);
 
   const selectPastor = useCallback((mentee: Mentee) => {
     setSelectedPastor(mentee);
     setMentorPastorRoadmapView("phases");
     setMentorCompletedJourneyTab("all");
+    setResubmittedJourneyTab("all");
     setMentorCompletedSearch("");
   }, []);
 
@@ -231,6 +286,7 @@ export default function Landing() {
     setSelectedPastor(null);
     setMentorPastorRoadmapView("phases");
     setMentorCompletedJourneyTab("all");
+    setResubmittedJourneyTab("all");
     setMentorCompletedSearch("");
   }, []);
 
@@ -664,6 +720,18 @@ export default function Landing() {
           scrollable
         />
       ) : null}
+
+      {mainTab === "PASTOR_ROADMAPS" &&
+      selectedPastor &&
+      mentorPastorRoadmapView === "resubmitted" &&
+      resubmittedJourneyTabStrip.length > 1 ? (
+        <RoadmapTabStrip
+          tabs={resubmittedJourneyTabStrip}
+          activeKey={resubmittedJourneyTab}
+          onChange={setResubmittedJourneyTab}
+          scrollable
+        />
+      ) : null}
     </View>
   );
 
@@ -680,6 +748,14 @@ export default function Landing() {
         <Ionicons name="search-outline" size={28} color="rgba(255,255,255,0.7)" />
         <Text style={styles.emptySearchTitle}>No matching resubmitted tasks</Text>
         <Text style={styles.emptySearchSubtitle}>Try a different search term.</Text>
+      </CommonCard>
+    ) : resubmittedTasks.length > 0 &&
+      filteredResubmittedTasks.length === 0 &&
+      resubmittedJourneyTab !== "all" ? (
+      <CommonCard style={styles.emptySearchCard}>
+        <Ionicons name="refresh-outline" size={28} color="rgba(251,146,60,0.7)" />
+        <Text style={styles.emptySearchTitle}>No resubmitted tasks in this roadmap</Text>
+        <Text style={styles.emptySearchSubtitle}>Try another journey tab or view All.</Text>
       </CommonCard>
     ) : resubmittedTasks.length === 0 ? (
       <CommonCard style={styles.emptySearchCard}>
