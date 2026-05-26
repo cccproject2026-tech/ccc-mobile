@@ -226,9 +226,6 @@ export default function PastorRoadmapItemDetail() {
               </Text>
             </View>
           </View>
-          <Pressable onPress={() => setShowOutcomeMenu(true)} hitSlop={10} style={styles.ellipsisBtn}>
-            <Ionicons name="ellipsis-vertical" size={16} color="rgba(255,255,255,0.92)" />
-          </Pressable>
         </View>
 
         {!!error ? (

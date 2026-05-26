@@ -1,6 +1,8 @@
 import React, { memo, useMemo } from "react";
 import {
     ActivityIndicator,
+    Image,
+    Linking,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -10,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import type { TaskSubmission } from "@/lib/roadmap/types";
 import { useSubmissionDetail } from "@/hooks/roadmap/useTaskSubmissions";
+import { useRoadmapDocuments } from "@/hooks/roadmaps/useRoadmaps";
 
 interface Props {
     /** Pass the full submission object for inline display, or submissionId for lazy loading. */
@@ -18,6 +21,9 @@ interface Props {
     onClose?: () => void;
     /** When true, the internal header (back button, title, status pill) is hidden — useful when the parent screen provides its own header. */
     hideHeader?: boolean;
+    roadmapId?: string;
+    nestedRoadMapItemId?: string;
+    userId?: string;
 }
 
 const STATUS_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }> = {
@@ -47,10 +53,96 @@ function formatReadOnlyValue(value: unknown): string {
     return String(value);
 }
 
+function UploadResponseField({
+    name,
+    value,
+    roadmapId,
+    nestedRoadMapItemId,
+    userId,
+}: {
+    name: string;
+    value: any;
+    roadmapId?: string;
+    nestedRoadMapItemId?: string;
+    userId?: string;
+}) {
+    const { data: docs = [] } = useRoadmapDocuments(
+        roadmapId,
+        nestedRoadMapItemId,
+        userId,
+        name,
+    );
+
+    if (!value && docs.length === 0) {
+        return (
+            <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>{name}</Text>
+                <View style={styles.readOnlyValue}>
+                    <Ionicons name="document-attach-outline" size={14} color="rgba(255,255,255,0.5)" />
+                    <Text style={styles.readOnlyValueText}>No file uploaded</Text>
+                </View>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>{name}</Text>
+            {docs.map((doc: any) => {
+                const fileType = String(doc.fileType ?? "").toLowerCase();
+                const isImage = fileType.startsWith("image/") ||
+                    /\.(jpg|jpeg|png|gif|webp)$/i.test(String(doc.fileName ?? ""));
+
+                if (isImage && doc.fileUrl) {
+                    return (
+                        <Pressable
+                            key={doc._id}
+                            onPress={() => Linking.openURL(doc.fileUrl)}
+                            style={styles.imagePreviewWrap}
+                        >
+                            <Image
+                                source={{ uri: doc.fileUrl }}
+                                style={styles.imagePreview}
+                                resizeMode="cover"
+                            />
+                        </Pressable>
+                    );
+                }
+
+                return (
+                    <Pressable
+                        key={doc._id}
+                        onPress={() => Linking.openURL(doc.fileUrl)}
+                        style={styles.fileRow}
+                    >
+                        <Ionicons name="document-attach-outline" size={16} color="rgba(255,255,255,0.6)" />
+                        <Text style={styles.fileNameText} numberOfLines={1}>
+                            {doc.fileName || "File"}
+                        </Text>
+                        <Ionicons name="open-outline" size={14} color="rgba(255,255,255,0.4)" />
+                    </Pressable>
+                );
+            })}
+            {docs.length === 0 && value && (
+                <View style={styles.readOnlyValue}>
+                    <Ionicons name="document-attach-outline" size={14} color="rgba(255,255,255,0.5)" />
+                    <Text style={styles.readOnlyValueText}>File uploaded</Text>
+                </View>
+            )}
+        </View>
+    );
+}
+
 const ResponseField = memo(function ResponseField({
     response,
+    roadmapId,
+    nestedRoadMapItemId,
+    userId,
 }: {
     response: { type?: string; name: string; value?: any; signatureData?: string };
+    roadmapId?: string;
+    nestedRoadMapItemId?: string;
+    userId?: string;
 }) {
     const type = response.type ?? "TEXT_FIELD";
     const value = type === "SIGNATURE" ? response.signatureData : response.value;
@@ -78,28 +170,39 @@ const ResponseField = memo(function ResponseField({
 
     if (type === "UPLOAD") {
         return (
-            <View style={styles.fieldContainer}>
-                <Text style={styles.fieldLabel}>{response.name}</Text>
-                <View style={styles.readOnlyValue}>
-                    <Ionicons name="document-attach-outline" size={14} color="rgba(255,255,255,0.5)" />
-                    <Text style={styles.readOnlyValueText}>
-                        {value ? "File uploaded" : "No file uploaded"}
-                    </Text>
-                </View>
-            </View>
+            <UploadResponseField
+                name={response.name}
+                value={value}
+                roadmapId={roadmapId}
+                nestedRoadMapItemId={nestedRoadMapItemId}
+                userId={userId}
+            />
         );
     }
 
     if (type === "SIGNATURE") {
+        const signatureUri = value;
+        const hasSignature = !!signatureUri;
         return (
             <View style={styles.fieldContainer}>
                 <Text style={styles.fieldLabel}>{response.name}</Text>
-                <View style={styles.readOnlyValue}>
-                    <Ionicons name="pencil-outline" size={14} color="rgba(255,255,255,0.5)" />
-                    <Text style={styles.readOnlyValueText}>
-                        {value ? "Signature provided" : "No signature"}
-                    </Text>
-                </View>
+                {hasSignature ? (
+                    <Pressable
+                        onPress={() => Linking.openURL(signatureUri)}
+                        style={styles.imagePreviewWrap}
+                    >
+                        <Image
+                            source={{ uri: signatureUri }}
+                            style={styles.signaturePreview}
+                            resizeMode="contain"
+                        />
+                    </Pressable>
+                ) : (
+                    <View style={styles.readOnlyValue}>
+                        <Ionicons name="pencil-outline" size={14} color="rgba(255,255,255,0.5)" />
+                        <Text style={styles.readOnlyValueText}>No signature</Text>
+                    </View>
+                )}
             </View>
         );
     }
@@ -121,6 +224,9 @@ export const SubmissionDetailView = memo(function SubmissionDetailView({
     submissionId,
     onClose,
     hideHeader,
+    roadmapId,
+    nestedRoadMapItemId,
+    userId,
 }: Props) {
     const { data: fetchedSubmission, isLoading } = useSubmissionDetail(
         !submissionProp ? submissionId : undefined,
@@ -208,6 +314,9 @@ export const SubmissionDetailView = memo(function SubmissionDetailView({
                 <ResponseField
                     key={`${response.name}-${index}`}
                     response={response}
+                    roadmapId={roadmapId ?? submission.roadMapId}
+                    nestedRoadMapItemId={nestedRoadMapItemId ?? submission.nestedRoadMapItemId}
+                    userId={userId ?? submission.submittedBy}
                 />
             ))}
         </View>
@@ -375,6 +484,41 @@ const styles = StyleSheet.create({
     checkboxLabel: {
         color: "rgba(255,255,255,0.75)",
         fontSize: 14,
+        flex: 1,
+    },
+    imagePreviewWrap: {
+        borderRadius: 12,
+        overflow: "hidden",
+        marginTop: 6,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.1)",
+    },
+    imagePreview: {
+        width: "100%",
+        height: 200,
+        borderRadius: 12,
+    },
+    signaturePreview: {
+        width: "100%",
+        height: 120,
+        borderRadius: 12,
+        backgroundColor: "#fff",
+    },
+    fileRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        backgroundColor: "rgba(255,255,255,0.05)",
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        marginTop: 6,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.06)",
+    },
+    fileNameText: {
+        color: "rgba(255,255,255,0.75)",
+        fontSize: 13,
         flex: 1,
     },
 });
