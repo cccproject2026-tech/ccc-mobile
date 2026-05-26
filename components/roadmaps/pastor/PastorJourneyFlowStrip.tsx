@@ -196,7 +196,7 @@ export function PastorJourneyFlowStrip({ steps, onPressStep }: Props) {
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.heading}>Your journey path</Text>
-          <Text style={styles.subheading}>Complete each phase to unlock the next</Text>
+          <Text style={styles.subheading}>Complete each Roadmap to unlock the next</Text>
         </View>
         <View style={styles.phaseBadge}>
           <Text style={styles.phaseBadgeNum}>

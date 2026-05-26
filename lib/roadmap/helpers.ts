@@ -165,18 +165,8 @@ export function getCardStatus(roadmap: Roadmap | NestedRoadmap | undefined | nul
         'not started': 'initial',
         'in-progress': 'in-progress',
         'completed': 'completed',
-        'blocked': 'due',
+        'blocked': 'in-progress',
     };
-
-    // Check if roadmap is overdue (only for non-completed items)
-    if ('endDate' in roadmap && roadmap.endDate && roadmap.status !== 'completed') {
-        const endDate = new Date(roadmap.endDate);
-        const now = new Date();
-
-        if (endDate < now) {
-            return 'due';
-        }
-    }
 
     return statusMap[roadmap.status] || 'initial';
 }

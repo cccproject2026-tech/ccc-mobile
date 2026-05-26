@@ -92,7 +92,7 @@ export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
     const phaseNumber = isSingleTask(roadmap) ? undefined : getPhaseNumber(roadmap.phase || '');
 
     const allCompleted = completed === total && total > 0;
-    const hasProgress = (status === 'in-progress' || status === 'due') && total > 0;
+    const hasProgress = (status === 'in-progress') && total > 0;
     return {
         image: roadmap.imageUrl,
         title: roadmap.name || 'Untitled Roadmap',

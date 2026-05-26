@@ -42,7 +42,7 @@ export function PastorJourneyWelcomeModal({ visible, onStart }: Props) {
 
           <View style={styles.steps}>
             <WelcomeStep icon="layers-outline" text="Phases are big chapters of your journey" />
-            <WelcomeStep icon="checkbox-outline" text="Tasks are the steps inside each phase" />
+            <WelcomeStep icon="checkbox-outline" text="Tasks are the steps inside each Roadmap" />
             <WelcomeStep icon="people-outline" text="Your mentor supports you along the way" />
           </View>
 

@@ -72,9 +72,9 @@ export const RoadmapCard: React.FC<Props> = ({
                 accent: 'rgba(34, 197, 94, 0.55)',
             },
             'due': {
-                text: 'Due',
-                bg: 'rgba(250, 204, 21, 0.20)', // amber (friendlier than red for "due")
-                accent: 'rgba(250, 204, 21, 0.55)',
+                text: 'In Progress',
+                bg: 'rgba(59, 130, 246, 0.18)',
+                accent: 'rgba(59, 130, 246, 0.55)',
             },
             'in-progress': {
                 text: 'In Progress',
@@ -100,7 +100,7 @@ export const RoadmapCard: React.FC<Props> = ({
 
     const progressFillColor = useMemo(() => {
         if (data.status === 'completed') return 'rgba(34, 197, 94, 0.85)'; // green
-        if (data.status === 'due') return 'rgba(250, 204, 21, 0.85)'; // amber
+        if (data.status === 'due') return 'rgba(59, 130, 246, 0.82)'; // blue (same as in-progress)
         if (data.status === 'in-progress') return 'rgba(59, 130, 246, 0.82)'; // blue
         if (data.status === 'initial') return 'rgba(56, 189, 248, 0.80)'; // sky
         return 'rgba(255,255,255,0.55)';

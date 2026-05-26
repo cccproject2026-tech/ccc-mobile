@@ -1,4 +1,5 @@
 import { RoadmapCard } from "@/components/director/ProgressRoadmapCard";
+import TopBar from "@/components/director/TopBar";
 import { PastorCompletedTasksSection } from "@/components/roadmaps/PastorCompletedTasksSection";
 import {
   PastorContinueFocusCard,
@@ -7,7 +8,6 @@ import {
 import { PastorJourneyFlowStrip } from "@/components/roadmaps/pastor/PastorJourneyFlowStrip";
 import { PastorJourneyHeader } from "@/components/roadmaps/pastor/PastorJourneyHeader";
 import { PastorJourneyWelcomeModal } from "@/components/roadmaps/pastor/PastorJourneyWelcomeModal";
-import TopBar from "@/components/director/TopBar";
 import {
   CommonCard,
   GradientBackground,
@@ -20,13 +20,6 @@ import {
 import { useTaskCompletionTimestamps } from "@/hooks/roadmap/useTaskCompletionTimestamps";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import {
-  areAllAssignedPhasesComplete,
-  buildJourneyFlowSteps,
-  getFocusRoadmap,
-  getOverallJourneyTaskStats,
-  type JourneyFlowStep,
-} from "@/lib/roadmap/journeyFlow";
-import {
   buildPastorCompletedJourneyTabs,
   comparePastorPhasesForFocus,
   flattenPastorCompletedTasks,
@@ -35,6 +28,13 @@ import {
   getNextIncompleteNestedTaskId,
   type PastorCompletedTaskItem,
 } from "@/lib/roadmap/helpers";
+import {
+  areAllAssignedPhasesComplete,
+  buildJourneyFlowSteps,
+  getFocusRoadmap,
+  getOverallJourneyTaskStats,
+  type JourneyFlowStep,
+} from "@/lib/roadmap/journeyFlow";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import type { Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
@@ -57,13 +57,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type FilterKey = "All" | "Completed" | "Remaining";
+type FilterKey = "All" | "Completed" | "InProgress" | "NotStarted";
 type ScreenView = "journey" | "history";
 
 const filterTabs: { key: FilterKey; label: string }[] = [
   { key: "All", label: "All Phases" },
-  { key: "Completed", label: "Finished" },
-  { key: "Remaining", label: "To Do" },
+  { key: "Completed", label: "Completed" },
+  { key: "InProgress", label: "In Progress" },
+  { key: "NotStarted", label: "Not Started" },
 ];
 
 function computePastorJourneyMeta(roadmap: Roadmap | undefined | null) {
@@ -209,7 +210,8 @@ export default function PastorRoadmapIndex() {
   const filteredPhases = useMemo(() => {
     let list = sortedRoadmaps;
     if (filter === "Completed") list = list.filter((r: any) => getCardStatus(r) === "completed");
-    if (filter === "Remaining") list = list.filter((r: any) => getCardStatus(r) !== "completed");
+    if (filter === "InProgress") list = list.filter((r: any) => getCardStatus(r) === "in-progress");
+    if (filter === "NotStarted") list = list.filter((r: any) => getCardStatus(r) === "initial");
 
     const q = search.trim().toLowerCase();
     if (!q) return list;
@@ -345,8 +347,8 @@ export default function PastorRoadmapIndex() {
             ) : null}
 
             <SectionHeader
-              title="Your phases"
-              subtitle="Each phase contains tasks to complete with your mentor."
+              title="Your roadmap"
+              subtitle="Each Roadmap contains tasks to complete with your mentor."
               showDivider
             />
 
@@ -354,6 +356,7 @@ export default function PastorRoadmapIndex() {
               tabs={filterTabs}
               activeKey={filter}
               onChange={(k: string) => setFilter(k as FilterKey)}
+              scrollable
             />
 
             <View style={styles.list}>

@@ -27,7 +27,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type TabKey = "ALL" | "DUE" | "NOT_STARTED" | "COMPLETED";
+type TabKey = "ALL" | "NOT_STARTED" | "COMPLETED";
 
 const accent = {
   mint: roadmapTheme.accentMint,
@@ -62,7 +62,6 @@ export default function PastorRoadmapDetail() {
   const tabs = useMemo(
     () => [
       { key: "ALL", label: "All" },
-      { key: "DUE", label: "Due" },
       { key: "NOT_STARTED", label: "Not Started" },
       { key: "COMPLETED", label: "Completed" },
     ],
@@ -83,15 +82,7 @@ export default function PastorRoadmapDetail() {
     if (activeTab === "NOT_STARTED") {
       list = list.filter((t) => String(t.status || "").toLowerCase() === "not started");
     }
-    if (activeTab === "DUE") {
-      const today = new Date().toISOString().slice(0, 10);
-      list = list.filter((t) => {
-        const status = String(t.status || "").toLowerCase();
-        if (status === "completed") return false;
-        if (!(t as any).endDate) return false;
-        return String((t as any).endDate) <= today;
-      });
-    }
+
 
     const q = search.trim().toLowerCase();
     if (!q) return list;
