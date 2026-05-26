@@ -253,11 +253,24 @@ export default function PastorDashboard() {
       return;
     }
     try {
+      const dismissed = await AsyncStorage.getItem(`pastor_mentor_card_dismissed_${userId}`);
+      if (dismissed) {
+        setShowMentorIntroForNewPastor(false);
+        return;
+      }
       const active = await isPastorMentorIntroActive(userId);
       setShowMentorIntroForNewPastor(active);
     } catch {
       setShowMentorIntroForNewPastor(false);
     }
+  }, [user?.id]);
+
+  const dismissMentorCard = useCallback(async () => {
+    const userId = user?.id;
+    if (userId) {
+      await AsyncStorage.setItem(`pastor_mentor_card_dismissed_${userId}`, "true");
+    }
+    setShowMentorIntroForNewPastor(false);
   }, [user?.id]);
 
   useFocusEffect(
@@ -603,27 +616,27 @@ export default function PastorDashboard() {
                 <View style={styles.mentorCardHeader}>
                   <View style={styles.mentorHeaderLeft}>
                     <View style={styles.mentorIconWrapper}>
-                      <Ionicons name="people-outline" size={22} color="#6FD4BE" />
+                      <Ionicons name="people-outline" size={18} color="#6FD4BE" />
                     </View>
-                    <View style={styles.mentorHeaderTextWrap}>
-                      <Text style={styles.mentorHeaderTitle}>Mentor assigned</Text>
+                    <Text style={styles.mentorHeaderTitle}>Mentor assigned</Text>
+                    <View style={styles.statusBadge}>
+                      <Ionicons name="checkmark-circle" size={12} color="#4ADE80" />
+                      <Text style={styles.statusBadgeText}>Assigned</Text>
                     </View>
                   </View>
-                  <View style={styles.statusBadge}>
-                    <Ionicons name="checkmark-circle" size={14} color="#4ADE80" />
-                    <Text style={styles.statusBadgeText}>Assigned</Text>
-                  </View>
+                  <Pressable onPress={dismissMentorCard} hitSlop={10} style={styles.mentorCloseBtn}>
+                    <Ionicons name="close" size={14} color="rgba(255,255,255,0.6)" />
+                  </Pressable>
                 </View>
 
-                <View style={styles.mentorIdentityBlock}>
+                <View style={styles.mentorCompactRow}>
                   <Text style={styles.mentorName}>{acceptedMentor.name}</Text>
                   <View style={styles.mentorRolePill}>
-                    <Ionicons name="person-outline" size={12} color="rgba(255,255,255,0.85)" />
+                    <Ionicons name="person-outline" size={10} color="rgba(255,255,255,0.85)" />
                     <Text style={styles.mentorRolePillText}>{acceptedMentor.role}</Text>
                   </View>
                 </View>
 
-                <Text style={styles.mentorMessage}>{mentorAssignedMessage}</Text>
                 <TouchableOpacity
                   activeOpacity={0.85}
                   style={styles.scheduleButton}
@@ -644,10 +657,13 @@ export default function PastorDashboard() {
                 colors={["rgba(255,193,7,0.15)", "rgba(255,193,7,0.05)"]}
                 style={styles.pendingCardGradient}
               >
-                <Ionicons name="time-outline" size={32} color="#FFC107" />
+                <Pressable onPress={dismissMentorCard} hitSlop={10} style={styles.mentorCloseBtn}>
+                  <Ionicons name="close" size={16} color="rgba(255,255,255,0.6)" />
+                </Pressable>
+                <Ionicons name="time-outline" size={24} color="#FFC107" />
                 <Text style={styles.pendingTitle}>Mentor Assignment In Progress</Text>
                 <Text style={styles.pendingMessage}>
-                  Your request is under review. You'll be notified once a mentor is confirmed.
+                  Your request is under review. You'll be notified once confirmed.
                 </Text>
               </LinearGradient>
             </Animated.View>
@@ -655,9 +671,12 @@ export default function PastorDashboard() {
 
           {showMentorIntroForNewPastor && !acceptedMentor && !hasMentorInProgress && (
             <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.unassignedMentorCard}>
+              <Pressable onPress={dismissMentorCard} hitSlop={10} style={styles.mentorCloseBtnAbs}>
+                <Ionicons name="close" size={16} color="rgba(255,255,255,0.6)" />
+              </Pressable>
               <View style={styles.unassignedMentorRow}>
                 <View style={styles.unassignedMentorIconWrap}>
-                  <Ionicons name="people-outline" size={18} color="#6FD4BE" />
+                  <Ionicons name="people-outline" size={16} color="#6FD4BE" />
                 </View>
                 <View style={styles.unassignedMentorTextWrap}>
                   <Text style={styles.unassignedMentorTitle}>Mentor assignment pending</Text>
@@ -899,47 +918,64 @@ const styles = StyleSheet.create({
   },
   mentorCardGradient: {
     padding: 12,
-    gap: 6,
+    gap: 4,
+  },
+  mentorCloseBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mentorCloseBtnAbs: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
   },
   mentorCardHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 4,
   },
   mentorHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  mentorHeaderTextWrap: {
-    gap: 0,
-  },
   mentorHeaderTitle: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
   },
   mentorIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: "rgba(111, 212, 190, 0.18)",
     borderWidth: 1,
     borderColor: "rgba(111, 212, 190, 0.28)",
     alignItems: "center",
     justifyContent: "center",
   },
-  mentorIdentityBlock: {
-    marginTop: 0,
-    marginBottom: 0,
-    gap: 4,
+  mentorCompactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 2,
   },
   mentorName: {
     color: "#fff",
     fontWeight: "800",
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 20,
   },
   mentorRolePill: {
     flexDirection: "row",
@@ -1008,24 +1044,24 @@ const styles = StyleSheet.create({
 
   // ── Pending card ──────────────────────────────────────────────────────────
   pendingCard: {
-    borderRadius: 20,
+    borderRadius: 14,
     overflow: "hidden",
   },
   pendingCardGradient: {
-    padding: 14,
+    padding: 12,
     alignItems: "center",
-    gap: 10,
+    gap: 6,
   },
   pendingTitle: {
     color: "#FFC107",
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: 14,
   },
   pendingMessage: {
     color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
+    fontSize: 11,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 16,
   },
   unassignedMentorCard: {
     borderRadius: 14,
