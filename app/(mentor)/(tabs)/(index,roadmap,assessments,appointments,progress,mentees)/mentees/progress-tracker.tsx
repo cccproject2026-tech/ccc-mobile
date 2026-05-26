@@ -1,13 +1,13 @@
 import ActionBottomSheet from "@/components/director/ActionSheetModal";
 import FilterModal, { FilterOption } from "@/components/director/FilterModal";
 import MenteeCard from "@/components/director/MenteeCard";
-import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import {
   CommonCard,
   GradientBackground,
   PrimaryButton,
   RoadmapSearchField,
+  RoadmapTabStrip,
   SectionHeader,
   roadmapTheme,
 } from "@/components/ui/design-system";
@@ -351,7 +351,7 @@ export default function ProgressTracker() {
           </View>
         </CommonCard>
 
-        <CommonCard style={styles.controlsCard}>
+        <View style={styles.controlsWrap}>
           <RoadmapSearchField
             value={search}
             onChangeText={setSearch}
@@ -359,10 +359,13 @@ export default function ProgressTracker() {
             dense
             style={styles.compactSearchField}
           />
-          <View style={styles.tabsWrap}>
-            <TabSwitcher tabs={tabs} activeTab={activeTab} onChange={(k: string) => setActiveTab(k as any)} />
-          </View>
-        </CommonCard>
+          <RoadmapTabStrip
+            tabs={tabs}
+            activeKey={activeTab}
+            onChange={(k) => setActiveTab(k as any)}
+            scrollable
+          />
+        </View>
 
         {isLoading ? (
           <View style={styles.stateContainer}>
@@ -539,19 +542,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: "center",
   },
-  controlsCard: {
+  controlsWrap: {
     marginHorizontal: 16,
     marginBottom: 6,
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
   },
   compactSearchField: {
     paddingVertical: 5,
     minHeight: 38,
-  },
-  tabsWrap: {
-    marginHorizontal: -6,
   },
   list: {
     flex: 1,
