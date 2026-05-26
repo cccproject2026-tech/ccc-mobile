@@ -521,11 +521,8 @@ export function MentorTaskView({
             extraName
         );
 
-        const isMediaUpload =
-            extraName.toLowerCase().includes("image") ||
-            extraName.toLowerCase().includes("video") ||
-            extraName.toLowerCase().includes("photo") ||
-            extraName.toLowerCase().includes("media");
+        const isVideoFile = (name: string) =>
+            /\.(mp4|mov|avi|mkv|webm|wmv|flv)$/i.test(name);
 
         const pickFile = async () => {
             if (isReadOnly) return;
@@ -602,13 +599,9 @@ export function MentorTaskView({
 
         const hasPendingFiles = (pendingFiles[extraName]?.length ?? 0) > 0;
         const hasServerFiles = docs.length > 0;
-        const uploadButtonLabel = isMediaUpload
-            ? hasServerFiles || hasPendingFiles
-                ? "Add more media"
-                : "Upload media"
-            : hasServerFiles || hasPendingFiles
-                ? "Upload another file"
-                : "Upload file";
+        const uploadButtonLabel = hasServerFiles || hasPendingFiles
+            ? "Upload another file"
+            : "Upload file";
 
         return (
             <View style={{ marginBottom: 20 }}>
@@ -642,73 +635,78 @@ export function MentorTaskView({
                 ) : (
                     hasServerFiles && (
                         <View style={[styles.uploadedFilesContainer]}>
-                            {!isMediaUpload && (
-                                <Text style={styles.uploadedFilesLabel}>Uploaded :</Text>
-                            )}
-                            {isMediaUpload ? (
-                                <View style={styles.mediaUploadedBlock}>
-                                    <Pressable
-                                        onPress={() =>
-                                            router.push({
-                                                pathname: "/roadmap/shared-media",
-                                                params: {
-                                                    taskId: task._id,
-                                                    extraName: extraName,
-                                                    roadMapId: roadmapId!,
-                                                    nestedId: itemId,
-                                                    userId: targetUserId,
-                                                },
-                                            })
-                                        }
-                                        style={{ alignItems: "center", width: "100%", paddingVertical: 6 }}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.fileName,
-                                                { textDecorationLine: "underline", textAlign: "center" },
-                                            ]}
-                                        >
-                                            View Shared Media ({docs.length})
-                                        </Text>
-                                    </Pressable>
-                                    {!isReadOnly ? (
-                                        <Text style={styles.mediaDeleteHint}>
-                                            Open shared media — tap the trash icon on a file, or use Select for multiple
-                                        </Text>
-                                    ) : null}
-                                </View>
-                            ) : (
-                                docs.map((doc: any) => (
-                                    <View key={doc._id} style={styles.fileRow}>
-                                        <Pressable
-                                            onPress={() => Linking.openURL(doc.fileUrl)}
-                                            style={[styles.filePress, { flex: 1 }]}
-                                        >
-                                            <View style={styles.fileIcon}>
-                                                <Ionicons name="document-attach-outline" size={18} color="#FFFFFF" />
-                                            </View>
-                                            <View style={{ flex: 1, minWidth: 0 }}>
-                                                <Text style={styles.fileName} numberOfLines={1} ellipsizeMode="middle">
-                                                    {formatFileName(doc.fileName)}
-                                                </Text>
-                                                <Text style={styles.fileHint} numberOfLines={1}>
-                                                    Tap to open
-                                                </Text>
-                                            </View>
-                                            <Ionicons name="open-outline" size={18} color="rgba(255,255,255,0.82)" />
-                                        </Pressable>
-                                        {!isReadOnly ? (
+                            <Text style={styles.uploadedFilesLabel}>
+                                {isResubmitting ? "Previously uploaded :" : "Uploaded :"}
+                            </Text>
+                            {docs.map((doc: any) => {
+                                const fileType = String(doc.fileType ?? doc.type ?? "").toLowerCase();
+                                const docFileName = String(doc.fileName ?? doc.name ?? "").toLowerCase();
+                                const isImage =
+                                    fileType.startsWith("image/") ||
+                                    /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(docFileName);
+                                const isVideo =
+                                    fileType.startsWith("video/") ||
+                                    isVideoFile(docFileName);
+
+                                return (
+                                    <View key={doc._id}>
+                                        {isImage && doc.fileUrl ? (
                                             <Pressable
-                                                onPress={() => confirmDelete(doc)}
-                                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                                style={styles.removeIconWrapper}
+                                                onPress={() => Linking.openURL(doc.fileUrl)}
+                                                style={styles.imagePreviewWrap}
                                             >
-                                                <Ionicons name="trash-outline" size={22} color="#ef4444" />
+                                                <Image
+                                                    source={{ uri: doc.fileUrl }}
+                                                    style={styles.imagePreview}
+                                                    resizeMode="cover"
+                                                />
+                                                {!isReadOnly ? (
+                                                    <Pressable
+                                                        onPress={() => confirmDelete(doc)}
+                                                        hitSlop={8}
+                                                        style={styles.imageDeleteBtn}
+                                                    >
+                                                        <Ionicons name="trash-outline" size={16} color="#fff" />
+                                                    </Pressable>
+                                                ) : null}
                                             </Pressable>
-                                        ) : null}
+                                        ) : (
+                                            <View style={styles.fileRow}>
+                                                <Pressable
+                                                    onPress={() => Linking.openURL(doc.fileUrl)}
+                                                    style={[styles.filePress, { flex: 1 }]}
+                                                >
+                                                    <View style={styles.fileIcon}>
+                                                        <Ionicons
+                                                            name={isVideo ? "videocam-outline" : "document-attach-outline"}
+                                                            size={18}
+                                                            color="#FFFFFF"
+                                                        />
+                                                    </View>
+                                                    <View style={{ flex: 1, minWidth: 0 }}>
+                                                        <Text style={styles.fileName} numberOfLines={1} ellipsizeMode="middle">
+                                                            {formatFileName(doc.fileName)}
+                                                        </Text>
+                                                        <Text style={styles.fileHint} numberOfLines={1}>
+                                                            Tap to open
+                                                        </Text>
+                                                    </View>
+                                                    <Ionicons name="open-outline" size={18} color="rgba(255,255,255,0.82)" />
+                                                </Pressable>
+                                                {!isReadOnly ? (
+                                                    <Pressable
+                                                        onPress={() => confirmDelete(doc)}
+                                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                        style={styles.removeIconWrapper}
+                                                    >
+                                                        <Ionicons name="trash-outline" size={22} color="#ef4444" />
+                                                    </Pressable>
+                                                ) : null}
+                                            </View>
+                                        )}
                                     </View>
-                                ))
-                            )}
+                                );
+                            })}
                         </View>
                     )
                 )}
@@ -751,6 +749,7 @@ export function MentorTaskView({
             case "UPLOAD":
                 return (
                     <View key={id} style={styles.fieldContainer}>
+                        {renderFieldLabel(extra.name)}
                         <UploadField extraName={extra.name} />
                     </View>
                 );
@@ -1534,6 +1533,31 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         marginBottom: 12,
         letterSpacing: 0.3,
+    },
+    imagePreviewWrap: {
+        position: 'relative',
+        marginBottom: 10,
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    imagePreview: {
+        width: '100%',
+        height: 180,
+        borderRadius: 12,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+    },
+    imageDeleteBtn: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     fileRow: {
         flexDirection: "row",
