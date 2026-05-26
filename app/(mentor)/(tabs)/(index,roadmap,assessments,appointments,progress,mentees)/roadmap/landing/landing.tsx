@@ -198,13 +198,26 @@ export default function Landing() {
   }, [mentorCompletedByJourney, mentorCompletedSearch]);
 
   const filteredResubmittedTasks = useMemo(() => {
-    const q = resubmittedSearch.trim().toLowerCase();
-    if (!q) return resubmittedTasks;
-    return resubmittedTasks.filter((entry) => {
-      const title = (entry.task.name ?? "").toLowerCase();
-      const phase = entry.phaseTitle.toLowerCase();
-      return title.includes(q) || phase.includes(q);
+    let list = [...resubmittedTasks];
+
+    // Sort by most recently resubmitted first
+    list.sort((a, b) => {
+      const ta = new Date(a.resubmittedAt).getTime();
+      const tb = new Date(b.resubmittedAt).getTime();
+      if (!Number.isNaN(ta) && !Number.isNaN(tb)) return tb - ta;
+      return 0;
     });
+
+    const q = resubmittedSearch.trim().toLowerCase();
+    if (q) {
+      list = list.filter((entry) => {
+        const title = (entry.task.name ?? "").toLowerCase();
+        const phase = entry.phaseTitle.toLowerCase();
+        return title.includes(q) || phase.includes(q);
+      });
+    }
+
+    return list;
   }, [resubmittedTasks, resubmittedSearch]);
 
   const selectPastor = useCallback((mentee: Mentee) => {
