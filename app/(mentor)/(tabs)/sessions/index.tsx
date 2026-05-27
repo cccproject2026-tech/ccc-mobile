@@ -8,8 +8,8 @@ import {
   SessionProgressHeader,
   SessionStatusBadge
 } from "@/components/sessions/SessionFlowShared";
+import { PastorDisplayAvatar } from "@/components/sessions/PastorDisplayAvatar";
 import { Colors } from "@/constants/Colors";
-import { icons } from "@/constants/images";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
@@ -38,7 +38,6 @@ import React, {
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   LayoutAnimation,
   ListRenderItem,
   Platform,
@@ -186,14 +185,11 @@ const SessionRow = React.memo(function SessionRow({
         {(item.pastorName?.trim() || item.pastorProfilePicture) ? (
           <View style={styles.pastorIdentityRow}>
             <View style={styles.pastorAvatarWrap}>
-              <Image
-                source={
-                  item.pastorProfilePicture
-                    ? { uri: item.pastorProfilePicture }
-                    : icons.myProfile
-                }
+              <PastorDisplayAvatar
+                name={item.pastorName}
+                photoUri={item.pastorProfilePicture}
+                size={42}
                 style={styles.pastorIdentityAvatar}
-                resizeMode="cover"
               />
             </View>
             <View style={styles.pastorIdentityTextWrap}>
@@ -345,7 +341,6 @@ const PastorAvatarTab = React.memo(function PastorAvatarTab({
     return { completed: done, total: group.sessions.length };
   }, [group.sessions]);
 
-  const hasPhoto  = !!group.pastorProfilePicture?.trim();
   const ringColors = selected
     ? (["#818CF8", "#34D399"] as const)
     : (["rgba(129,140,248,0.4)", "rgba(52,211,153,0.35)"] as const);
@@ -379,15 +374,15 @@ const PastorAvatarTab = React.memo(function PastorAvatarTab({
             styles.pastorAvatarInnerDisk,
             selected && styles.pastorAvatarInnerDiskSelected,
           ]}>
-            {hasPhoto ? (
-              <Image
-                source={{ uri: group.pastorProfilePicture! }}
-                style={styles.pastorAvatarPhoto}
-                resizeMode="cover"
-              />
-            ) : (
-              <Ionicons name="person-outline" size={28} color="rgba(255,255,255,0.9)" />
-            )}
+            <PastorDisplayAvatar
+              name={group.pastorName}
+              photoUri={group.pastorProfilePicture}
+              size={AVATAR_INNER_SIZE}
+              initialColor="rgba(255,255,255,0.95)"
+              fallbackBackgroundColor={
+                selected ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.1)"
+              }
+            />
           </View>
         </LinearGradient>
 
@@ -882,7 +877,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pastorAvatarInnerDiskSelected: { backgroundColor: "#264873" },
-  pastorAvatarPhoto: { width: AVATAR_INNER_SIZE, height: AVATAR_INNER_SIZE },
 
   // small badge bottom-right of avatar
   progressBadge: {

@@ -971,6 +971,7 @@ export default function SessionDetailsScreen() {
         refetchMenteeAppointments(),
       ]);
       Toast.show({ type: "success", position: "top", text1: "✓ Session completed", text2: response.message });
+      router.replace("/(mentor)/(tabs)/sessions");
     } catch (error) {
       Toast.show({
         type: "error",
