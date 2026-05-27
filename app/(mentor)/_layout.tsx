@@ -89,6 +89,13 @@ export default function MentorDrawerLayout() {
                     drawerItemStyle: { display: 'none' },
                 }}
             />
+            <Drawer.Screen
+                name="review-center"
+                options={{
+                    headerShown: false,
+                    drawerItemStyle: { display: 'none' },
+                }}
+            />
         </Drawer>
     );
 }

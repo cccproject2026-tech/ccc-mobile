@@ -4,6 +4,7 @@ import WelcomeCard from "@/components/director/WelcomeCard";
 import { PastorFocusBottomSheet, type PastorFocusItem } from "@/components/sheets/PastorFocusBottomSheet";
 import { icons } from "@/constants/images";
 import { useMentorFocusItems } from "@/hooks/mentors/useMentorFocusItems";
+import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
 import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
@@ -103,6 +104,7 @@ export default function MentorDashboardHome() {
   }, [greetingPeriod]);
 
   const { sections, isLoading } = useMentorFocusItems();
+  const { pendingActionCount } = useReviewCenterV2();
 
   const heroHeight = Math.min(210, Math.max(162, Math.round(windowHeight * 0.22)));
 
@@ -297,6 +299,29 @@ export default function MentorDashboardHome() {
                 </View>
                 <Text style={styles.sectionTitleText}>Quick Links</Text>
               </View>
+
+              <Pressable
+                style={styles.reviewCenterLink}
+                onPress={() => router.push("/(mentor)/review-center" as any)}
+                accessibilityRole="button"
+                accessibilityLabel={`Review Center${pendingActionCount > 0 ? `, ${pendingActionCount} pending` : ""}`}
+              >
+                <View style={styles.reviewCenterIconWrap}>
+                  <Ionicons name="file-tray-full-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.reviewCenterLinkText}>Review Center</Text>
+                {pendingActionCount > 0 ? (
+                  <View style={styles.reviewCenterBadge}>
+                    <Text style={styles.reviewCenterBadgeText}>{pendingActionCount}</Text>
+                  </View>
+                ) : null}
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color="rgba(255,255,255,0.45)"
+                  style={styles.reviewCenterChevron}
+                />
+              </Pressable>
 
               <View style={styles.exploreGrid}>
                 {EXPLORE_TILES.map((tile) => (
@@ -556,6 +581,51 @@ const styles = StyleSheet.create({
     padding: 14,
     paddingBottom: 16,
     gap: 6,
+  },
+
+  reviewCenterLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 4,
+    marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
+  },
+  reviewCenterIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reviewCenterLinkText: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  reviewCenterBadge: {
+    backgroundColor: "#EF4444",
+    borderRadius: 10,
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reviewCenterBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  reviewCenterChevron: {
+    marginLeft: 2,
   },
 });
 

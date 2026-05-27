@@ -812,6 +812,28 @@ export const roadmapService = {
         return response.data.data ?? [];
     },
 
+    /**
+     * Fetch all submissions for a roadmap+user (no nestedRoadMapItemId filter).
+     * Used by Review Center to avoid per-task nested id mismatch.
+     */
+    async getAllSubmissionsForUser(
+        roadMapId: string,
+        userId: string,
+    ): Promise<TaskSubmission[]> {
+        const params = new URLSearchParams();
+        params.set('userId', userId);
+
+        const url = `/roadmaps/${roadMapId}/submissions?${params.toString()}`;
+        const response = await apiClient.get<SubmissionListApiResponse>(url);
+
+        if (!response.data.success) {
+            throw new Error(
+                response.data.message || 'Failed to fetch roadmap submissions',
+            );
+        }
+        return response.data.data ?? [];
+    },
+
     async getLatestSubmission(
         roadMapId: string,
         nestedRoadMapItemId: string,
