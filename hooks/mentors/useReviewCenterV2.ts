@@ -8,10 +8,12 @@ import {
   type ReviewFilterTab,
   type ReviewItem,
   REVIEW_PRIORITY,
+  buildPastorGroups,
   computeDashboardCounts,
   computePendingActionCount,
   getReviewCategory,
   mapSubmissionStatusToReview,
+  type ReviewPastorGroup,
 } from "@/lib/mentor/reviewCenter.types";
 import { assessmentService } from "@/services/assessment.service";
 import { roadmapService } from "@/services/roadmap.service";
@@ -505,6 +507,9 @@ export function useReviewCenterV2() {
     return computePendingActionCount(dashboardCounts);
   }, [dashboardCounts]);
 
+  const pastorGroups = useMemo((): ReviewPastorGroup[] => {
+    return buildPastorGroups(allItems);
+  }, [allItems]);
   const badgeCounts = useMemo((): ReviewBadgeCounts => {
     const counts: ReviewBadgeCounts = { roadmaps: 0, assessments: 0 };
     for (const item of allItems) {
@@ -535,6 +540,7 @@ export function useReviewCenterV2() {
   return {
     items: filteredItems,
     allItems,
+    pastorGroups,
     categoryCounts,
     dashboardCounts,
     pendingActionCount,

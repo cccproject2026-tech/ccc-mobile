@@ -11,6 +11,7 @@ export default function ReviewCenterLayout() {
       }}
     >
       <Stack.Screen name="index" />
+      <Stack.Screen name="pastor" />
       <Stack.Screen name="list" />
     </Stack>
   );

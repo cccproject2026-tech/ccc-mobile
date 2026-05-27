@@ -149,3 +149,63 @@ export const DASHBOARD_BUCKET_PRIORITY: Record<ReviewDashboardBucket, number> = 
   new_assessments: 2,
   not_started: 3,
 };
+
+/** One mentee (pastor) row in Review Center home. */
+export interface ReviewPastorGroup {
+  pastorId: string;
+  pastorName: string;
+  counts: ReviewDashboardCounts;
+  pendingActionCount: number;
+  totalItems: number;
+}
+
+export function filterItemsByPastor(
+  items: ReviewItem[],
+  pastorId: string,
+): ReviewItem[] {
+  const id = String(pastorId ?? "").trim();
+  if (!id) return items;
+  return items.filter((item) => String(item.pastorId) === id);
+}
+
+export function buildPastorGroups(items: ReviewItem[]): ReviewPastorGroup[] {
+  const map = new Map<string, ReviewPastorGroup>();
+
+  for (const item of items) {
+    const pastorId = String(item.pastorId ?? "").trim();
+    if (!pastorId) continue;
+
+    let group = map.get(pastorId);
+    if (!group) {
+      group = {
+        pastorId,
+        pastorName: item.pastorName || "Pastor",
+        counts: {
+          new_roadmap_submissions: 0,
+          resubmitted_tasks: 0,
+          new_assessments: 0,
+          not_started: 0,
+        },
+        pendingActionCount: 0,
+        totalItems: 0,
+      };
+      map.set(pastorId, group);
+    }
+
+    group.totalItems++;
+    const bucket = getDashboardBucket(item);
+    if (bucket) group.counts[bucket]++;
+  }
+
+  return [...map.values()]
+    .map((g) => ({
+      ...g,
+      pendingActionCount: computePendingActionCount(g.counts),
+    }))
+    .sort((a, b) => {
+      if (a.pendingActionCount !== b.pendingActionCount) {
+        return b.pendingActionCount - a.pendingActionCount;
+      }
+      return a.pastorName.localeCompare(b.pastorName);
+    });
+}

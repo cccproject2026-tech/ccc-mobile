@@ -3,6 +3,7 @@ import { DASHBOARD_CARD_CONFIG } from "@/components/mentor/review-center/ReviewD
 import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
 import {
   filterItemsByBucket,
+  filterItemsByPastor,
   type ReviewDashboardBucket,
   type ReviewItem,
 } from "@/lib/mentor/reviewCenter.types";
@@ -39,19 +40,26 @@ function parseBucket(raw: string | string[] | undefined): ReviewDashboardBucket 
 export default function MentorReviewCenterList() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { bucket: bucketParam } = useLocalSearchParams<{ bucket?: string }>();
+  const { bucket: bucketParam, pastorId: pastorIdParam, pastorName: pastorNameParam } = useLocalSearchParams<{
+    bucket?: string;
+    pastorId?: string;
+    pastorName?: string;
+  }>();
   const bucket = parseBucket(bucketParam);
+  const pastorId = String(Array.isArray(pastorIdParam) ? pastorIdParam[0] : pastorIdParam ?? '').trim();
+  const pastorName = String(Array.isArray(pastorNameParam) ? pastorNameParam[0] : pastorNameParam ?? '').trim();
 
   const { allItems, markAsSeen, isLoading } = useReviewCenterV2();
 
   const listItems = useMemo(() => {
-    const filtered = filterItemsByBucket(allItems, bucket);
+    const scoped = pastorId ? filterItemsByPastor(allItems, pastorId) : allItems;
+    const filtered = filterItemsByBucket(scoped, bucket);
     return filtered.sort((a, b) => {
       const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
       const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
       return bTime - aTime;
     });
-  }, [allItems, bucket]);
+  }, [allItems, bucket, pastorId]);
 
   const config = DASHBOARD_CARD_CONFIG[bucket];
 
@@ -111,7 +119,7 @@ export default function MentorReviewCenterList() {
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
         <View style={styles.headerTextBlock}>
-          <Text style={styles.headerTitle}>{config.title}</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>{pastorName ? `${pastorName} · ${config.title}` : config.title}</Text>
           <Text style={styles.headerSubtitle}>
             {listItems.length} {listItems.length === 1 ? "item" : "items"}
           </Text>

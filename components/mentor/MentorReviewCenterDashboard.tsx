@@ -1,9 +1,5 @@
-import {
-  DASHBOARD_BUCKET_ORDER,
-  ReviewDashboardCard,
-} from "@/components/mentor/review-center/ReviewDashboardCard";
+import { ReviewPastorRow } from "@/components/mentor/review-center/ReviewPastorRow";
 import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
-import type { ReviewDashboardBucket } from "@/lib/mentor/reviewCenter.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -22,13 +18,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function MentorReviewCenterDashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { dashboardCounts, pendingActionCount, isLoading } = useReviewCenterV2();
+  const { pastorGroups, pendingActionCount, isLoading } = useReviewCenterV2();
 
-  const openBucket = useCallback(
-    (bucket: ReviewDashboardBucket) => {
+  const openPastor = useCallback(
+    (pastorId: string, pastorName: string) => {
       router.push({
-        pathname: "/(mentor)/review-center/list",
-        params: { bucket },
+        pathname: "/(mentor)/review-center/pastor",
+        params: { pastorId, pastorName },
       });
     },
     [router],
@@ -67,7 +63,7 @@ export default function MentorReviewCenterDashboard() {
           <Text style={styles.headerSubtitle}>
             {pendingActionCount > 0
               ? `${pendingActionCount} item${pendingActionCount === 1 ? "" : "s"} need your attention`
-              : "Track roadmap and assessment activity"}
+              : "Select a pastor to review their activity"}
           </Text>
         </View>
       </View>
@@ -79,17 +75,27 @@ export default function MentorReviewCenterDashboard() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInUp.delay(50).springify()} style={styles.cards}>
-          {DASHBOARD_BUCKET_ORDER.map((bucket, index) => (
-            <Animated.View key={bucket} entering={FadeInUp.delay(80 + index * 60).springify()}>
-              <ReviewDashboardCard
-                bucket={bucket}
-                count={dashboardCounts[bucket]}
-                onPress={() => openBucket(bucket)}
-              />
-            </Animated.View>
-          ))}
-        </Animated.View>
+        {pastorGroups.length === 0 ? (
+          <View style={styles.empty}>
+            <Ionicons name="people-outline" size={40} color="rgba(255,255,255,0.35)" />
+            <Text style={styles.emptyTitle}>No mentees yet</Text>
+            <Text style={styles.emptyText}>
+              Assigned pastors will appear here with their roadmap and assessment status.
+            </Text>
+          </View>
+        ) : (
+          <Animated.View entering={FadeInUp.delay(50).springify()} style={styles.listCard}>
+            <Text style={styles.sectionLabel}>Your pastors</Text>
+            {pastorGroups.map((group, index) => (
+              <Animated.View key={group.pastorId} entering={FadeInUp.delay(80 + index * 40).springify()}>
+                <ReviewPastorRow
+                  group={group}
+                  onPress={() => openPastor(group.pastorId, group.pastorName)}
+                />
+              </Animated.View>
+            ))}
+          </Animated.View>
+        )}
       </ScrollView>
     </LinearGradient>
   );
@@ -158,7 +164,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
-  cards: {
-    gap: 12,
+  listCard: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
+  },
+  sectionLabel: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 4,
+  },
+  empty: {
+    alignItems: "center",
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    gap: 10,
+  },
+  emptyTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  emptyText: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
