@@ -168,10 +168,6 @@ import {
             isEmailVerified,
         ]);
 
-        if (resumePath) {
-            return <Redirect href={resumePath} />;
-        }
-
         const layout = useMemo(() => {
             const isNarrow = width < 360;
             const isCompactHeight = height < 700;
@@ -186,6 +182,10 @@ import {
                 logoWidth: Math.min(200, width * 0.52),
             };
         }, [width, height]);
+
+        if (resumePath) {
+            return <Redirect href={resumePath} />;
+        }
 
         const handleGetStarted = () => {
             router.push('/get-started');
