@@ -33,7 +33,7 @@ export const DASHBOARD_CARD_CONFIG: Record<
   not_started: {
     title: "Not Started",
     subtitle: (n) => (n === 1 ? "1 task not started" : `${n} tasks not started`),
-    accentColor: "#6B7280",
+    accentColor: "#FBBF24",
     icon: "ellipse-outline",
   },
 };
