@@ -10,8 +10,11 @@ import {
 } from "@/components/sessions/SessionFlowShared";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
+import { resolveSessionModeFromSources } from "@/utils/sessionMeetingMode";
+import type { SessionMode } from "@/types/appointment.types";
 import { menteesService } from "@/services/mentees.service";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
@@ -480,6 +483,33 @@ export default function SessionsScreen() {
     isRefetching,
   } = useMentorshipSessions(user?.id);
 
+  const { appointments: mentorAppointments = [] } = useAppointments({
+    mentorId: user?.id,
+    futureOnly: false,
+  });
+
+  const appointmentById = useMemo(() => {
+    const map = new Map<string, (typeof mentorAppointments)[number]>();
+    for (const apt of mentorAppointments) {
+      map.set(String(apt.id), apt);
+    }
+    return map;
+  }, [mentorAppointments]);
+
+  const enrichSessionMode = useCallback((session: MentorshipSession): MentorshipSession => {
+    const apt = session.appointmentId
+      ? appointmentById.get(String(session.appointmentId))
+      : undefined;
+    const displayMode = resolveSessionModeFromSources({
+      sessionMode: apt?.sessionMode ?? session.sessionMode,
+      platform: apt?.platform,
+    });
+    const sessionMode: SessionMode =
+      displayMode === "IN_PERSON" ? "IN_PERSON" : "ONLINE";
+    if (session.sessionMode === sessionMode) return session;
+    return { ...session, sessionMode };
+  }, [appointmentById]);
+
   const { data: assigned = { users: [] as any[] }, isLoading: isLoadingAssigned } = useQuery({
     queryKey: ["mentees", "assigned-lite", user?.id ?? ""],
     queryFn: () => menteesService.getAssignedMentees(user!.id),
@@ -503,7 +533,9 @@ export default function SessionsScreen() {
   const [completingId,   setCompletingId]   = useState<string | null>(null);
 
   const pastorGroups = useMemo(() => {
-    const groupsFromSessions = groupSessionsByPastor(sessions);
+    const groupsFromSessions = groupSessionsByPastor(
+      sessions.map(enrichSessionMode),
+    );
 
     // Ensure all assigned pastors show in the avatar bar even if a pastor's sessions
     // request was throttled/failed and returned zero sessions for that pastor.
@@ -532,7 +564,7 @@ export default function SessionsScreen() {
       a.pastorName.localeCompare(b.pastorName, undefined, { sensitivity: "base" }),
     );
     return merged;
-  }, [sessions, assigned]);
+  }, [sessions, assigned, enrichSessionMode]);
   const [selectedPastorId, setSelectedPastorId] = useState<string | null>(null);
 
   useEffect(() => {

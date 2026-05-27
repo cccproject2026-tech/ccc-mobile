@@ -50,6 +50,7 @@ import {
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
 import {
     resolveDisplaySessionMode,
+    resolveSessionModeFromSources,
     type DisplaySessionMode,
 } from "@/utils/sessionMeetingMode";
 import { Ionicons } from "@expo/vector-icons";
@@ -886,9 +887,10 @@ export default function SessionDetailsScreen() {
     apiMeetingLink ||
     (showPlaceholderMeeting ? MENTOR_MEETING_UI.placeholderMeetingLink : undefined);
 
-  const serverSessionMode = resolveDisplaySessionMode(
-    (appointment as any)?.sessionMode ?? session?.sessionMode,
-  );
+  const serverSessionMode = resolveSessionModeFromSources({
+    sessionMode: (appointment as any)?.sessionMode ?? session?.sessionMode,
+    platform: appointment?.platform,
+  });
   const sessionMode = sessionModeOverride ?? serverSessionMode;
   const isInPerson = sessionMode === "IN_PERSON";
   const platform: AppointmentPlatform = useMemo(() => {

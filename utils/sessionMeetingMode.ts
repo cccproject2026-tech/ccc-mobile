@@ -12,6 +12,19 @@ export function resolveDisplaySessionMode(
   return "ONLINE";
 }
 
+/** Prefer appointment sessionMode, then session; infer IN_PERSON from platform when needed. */
+export function resolveSessionModeFromSources(sources?: {
+  sessionMode?: SessionMode | string | null;
+  platform?: string | null;
+}): DisplaySessionMode {
+  const rawMode = String(sources?.sessionMode ?? "").toUpperCase();
+  if (rawMode === "IN_PERSON") return "IN_PERSON";
+  if (String(sources?.platform ?? "").toLowerCase() === "in_person") {
+    return "IN_PERSON";
+  }
+  return resolveDisplaySessionMode(sources?.sessionMode);
+}
+
 export function sessionModeLabel(mode: DisplaySessionMode): string {
   return mode === "IN_PERSON" ? "In Person" : "Online";
 }

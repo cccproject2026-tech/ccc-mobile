@@ -37,7 +37,7 @@ import {
     zoomUrlHasPasscodeQuery,
 } from "@/utils/meetingLinkDetails";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
-import { resolveDisplaySessionMode } from "@/utils/sessionMeetingMode";
+import { resolveSessionModeFromSources } from "@/utils/sessionMeetingMode";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
@@ -906,9 +906,10 @@ export default function PastorSessionDetailScreen() {
 
   const meetingLink =
     getAppointmentJoinUrl(appointment) ?? currentSession?.meetingLink ?? null;
-  const sessionMode = resolveDisplaySessionMode(
-    currentSession?.sessionMode ?? (appointment as any)?.sessionMode,
-  );
+  const sessionMode = resolveSessionModeFromSources({
+    sessionMode: (appointment as any)?.sessionMode ?? currentSession?.sessionMode,
+    platform: appointment?.platform,
+  });
   const isInPerson = sessionMode === "IN_PERSON";
   const recordingStatus =
     currentSession?.recordingStatus ??

@@ -11,6 +11,7 @@ import { formatClock } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   StyleSheet,
@@ -168,6 +169,15 @@ export function SessionModeBadge({
   );
 }
 
+const MEETING_TYPE_TABS: {
+  key: DisplaySessionMode;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { key: "ONLINE", label: "Online", icon: "globe-outline" },
+  { key: "IN_PERSON", label: "In Person", icon: "people-outline" },
+];
+
 export function SessionMeetingTypeSelector({
   value,
   onChange,
@@ -179,77 +189,57 @@ export function SessionMeetingTypeSelector({
   disabled?: boolean;
   isUpdating?: boolean;
 }) {
-  const [open, setOpen] = React.useState(false);
-  const options: DisplaySessionMode[] = ["ONLINE", "IN_PERSON"];
+  const isDisabled = disabled || isUpdating;
 
   return (
     <View style={progressStyles.meetingTypeWrap}>
       <Text style={progressStyles.meetingTypeLabel}>Meeting Type</Text>
-      <Pressable
+      <View
         style={[
-          progressStyles.meetingTypeTrigger,
-          (disabled || isUpdating) && progressStyles.meetingTypeDisabled,
+          progressStyles.meetingTypeTabs,
+          isDisabled && progressStyles.meetingTypeDisabled,
         ]}
-        disabled={disabled || isUpdating}
-        onPress={() => setOpen((v) => !v)}
-        accessibilityRole="button"
-        accessibilityLabel={`Meeting type ${sessionModeLabel(value)}`}
       >
-        <View style={progressStyles.meetingTypeTriggerLeft}>
-          <Ionicons
-            name={value === "IN_PERSON" ? "people-outline" : "globe-outline"}
-            size={18}
-            color="rgba(255,255,255,0.85)"
-          />
-          <Text style={progressStyles.meetingTypeValue}>
-            {sessionModeLabel(value)}
-          </Text>
-        </View>
-        {isUpdating ? (
-          <Text style={progressStyles.meetingTypeHint}>Updating…</Text>
-        ) : (
-          <Ionicons
-            name={open ? "chevron-up" : "chevron-down"}
-            size={18}
-            color="rgba(255,255,255,0.6)"
-          />
-        )}
-      </Pressable>
-      {open && !disabled && !isUpdating ? (
-        <View style={progressStyles.meetingTypeMenu}>
-          {options.map((opt) => {
-            const selected = opt === value;
-            return (
-              <Pressable
-                key={opt}
+        {MEETING_TYPE_TABS.map((tab) => {
+          const selected = tab.key === value;
+          return (
+            <Pressable
+              key={tab.key}
+              style={[
+                progressStyles.meetingTypeTab,
+                selected && progressStyles.meetingTypeTabActive,
+              ]}
+              disabled={isDisabled}
+              onPress={() => {
+                if (tab.key !== value) onChange(tab.key);
+              }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected, disabled: isDisabled }}
+              accessibilityLabel={`${tab.label} meeting type`}
+            >
+              <Ionicons
+                name={tab.icon}
+                size={18}
+                color={
+                  selected ? "#FFFFFF" : "rgba(255,255,255,0.45)"
+                }
+              />
+              <Text
                 style={[
-                  progressStyles.meetingTypeOption,
-                  selected && progressStyles.meetingTypeOptionSelected,
+                  progressStyles.meetingTypeTabText,
+                  selected && progressStyles.meetingTypeTabTextActive,
                 ]}
-                onPress={() => {
-                  setOpen(false);
-                  if (opt !== value) onChange(opt);
-                }}
               >
-                <Ionicons
-                  name={opt === "IN_PERSON" ? "people-outline" : "globe-outline"}
-                  size={16}
-                  color={selected ? "#FFFFFF" : "rgba(255,255,255,0.65)"}
-                />
-                <Text
-                  style={[
-                    progressStyles.meetingTypeOptionText,
-                    selected && progressStyles.meetingTypeOptionTextSelected,
-                  ]}
-                >
-                  {sessionModeLabel(opt)}
-                </Text>
-                {selected ? (
-                  <Ionicons name="checkmark" size={16} color="#4ADE80" />
-                ) : null}
-              </Pressable>
-            );
-          })}
+                {tab.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {isUpdating ? (
+        <View style={progressStyles.meetingTypeUpdatingRow}>
+          <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" />
+          <Text style={progressStyles.meetingTypeHint}>Updating…</Text>
         </View>
       ) : null}
       <Text style={progressStyles.meetingTypeCaption}>
@@ -536,62 +526,44 @@ const progressStyles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
-  meetingTypeTrigger: {
+  meetingTypeTabs: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(0,0,0,0.25)",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    padding: 4,
+    gap: 4,
   },
-  meetingTypeTriggerLeft: {
+  meetingTypeTab: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
   },
-  meetingTypeValue: {
-    color: "#FFFFFF",
-    fontSize: 16,
+  meetingTypeTabActive: {
+    backgroundColor: "rgba(255,255,255,0.14)",
+  },
+  meetingTypeTabText: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 15,
     fontWeight: "600",
+  },
+  meetingTypeTabTextActive: {
+    color: "#FFFFFF",
   },
   meetingTypeHint: {
     color: "rgba(255,255,255,0.5)",
     fontSize: 13,
   },
-  meetingTypeDisabled: {
-    opacity: 0.55,
-  },
-  meetingTypeMenu: {
-    backgroundColor: "rgba(0,0,0,0.25)",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    overflow: "hidden",
-  },
-  meetingTypeOption: {
+  meetingTypeUpdatingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    gap: 8,
   },
-  meetingTypeOptionSelected: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-  },
-  meetingTypeOptionText: {
-    flex: 1,
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  meetingTypeOptionTextSelected: {
-    color: "#FFFFFF",
-    fontWeight: "700",
+  meetingTypeDisabled: {
+    opacity: 0.55,
   },
   meetingTypeCaption: {
     color: "rgba(255,255,255,0.45)",

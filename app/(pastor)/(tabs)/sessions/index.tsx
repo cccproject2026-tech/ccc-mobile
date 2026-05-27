@@ -22,6 +22,8 @@ import {
   sessionTopicSubtitle,
 } from "@/constants/sessionTitles";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { resolveSessionModeFromSources } from "@/utils/sessionMeetingMode";
+import type { SessionMode } from "@/types/appointment.types";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -76,9 +78,17 @@ export default function PastorSessionsScreen() {
       const mentorName = apt?.mentorId
         ? mentorNameById.get(String(apt.mentorId))
         : undefined;
+      const displayMode = resolveSessionModeFromSources({
+        sessionMode: apt?.sessionMode ?? s.sessionMode,
+        platform: apt?.platform,
+      });
+      const sessionMode: SessionMode =
+        displayMode === "IN_PERSON" ? "IN_PERSON" : "ONLINE";
+
       return {
         ...s,
         mentorName,
+        sessionMode,
         meetingLink:
           getAppointmentJoinUrl(apt) ?? s.meetingLink ?? undefined,
         phase: phaseLabelForSessionNumber(s.sessionNumber),

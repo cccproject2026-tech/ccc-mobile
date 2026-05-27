@@ -58,9 +58,15 @@ const getHttpErrorStatus = (error: unknown): number | undefined => {
     return e?.response?.status ?? e?.statusCode;
 };
 
-const normalizeSessionMode = (raw: unknown): SessionMode => {
-    const mode = String(raw ?? "ONLINE").toUpperCase();
+const normalizeSessionMode = (
+    raw: unknown,
+    platformHint?: unknown,
+): SessionMode => {
+    const mode = String(raw ?? "").toUpperCase();
     if (mode === "IN_PERSON") return "IN_PERSON";
+    if (String(platformHint ?? "").toLowerCase() === "in_person") {
+        return "IN_PERSON";
+    }
     // Legacy / backend NOT_DECIDED → treat as ONLINE in UI
     return "ONLINE";
 };
@@ -309,6 +315,9 @@ export const roadmapService = {
             );
             const sessionMode = normalizeSessionMode(
                 item?.sessionMode ?? item?.session_mode ?? embeddedAppointment?.sessionMode,
+                embeddedAppointment?.platform ??
+                    item?.platform ??
+                    item?.appointmentPlatform,
             );
             const recordingStatus = normalizeRecordingStatus(
                 item?.recordingStatus ??

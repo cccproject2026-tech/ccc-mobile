@@ -2,6 +2,7 @@ import { appointmentService } from "@/services/appointments.service";
 import type { Appointment, SessionMode } from "@/types/appointment.types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { appointmentKeys } from "./useAppointments";
+import { mentorshipSessionKeys } from "@/hooks/roadmaps/useMentorshipSessions";
 
 export function useUpdateSessionMode() {
   const queryClient = useQueryClient();
@@ -11,6 +12,7 @@ export function useUpdateSessionMode() {
       appointmentService.updateSessionMode(appointmentId, sessionMode),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+      queryClient.invalidateQueries({ queryKey: mentorshipSessionKeys.all });
     },
   });
 }
@@ -40,6 +42,7 @@ export function useUploadSessionRecording() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+      queryClient.invalidateQueries({ queryKey: mentorshipSessionKeys.all });
     },
   });
 }
