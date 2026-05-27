@@ -1,5 +1,6 @@
-import SearchableSelectModal from "@/components/form/SearchableSelectModal";
 import TopBar from "@/components/director/TopBar";
+import SearchableSelectModal from "@/components/form/SearchableSelectModal";
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import { useInterestMetadata } from "@/hooks/interests/useInterests";
 import { useSubmitInterest } from "@/hooks/onboarding/useOnboarding";
 import { useOnboardingStore } from "@/stores";
@@ -23,16 +24,26 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
-const PHONE_COUNTRY_OPTIONS: PhoneCountryOption[] = [
-    { id: "US", name: "United States", dialCode: "+1", minLength: 10 },
-    { id: "CA", name: "Canada", dialCode: "+1", minLength: 10 },
-];
+const PHONE_COUNTRY_OPTIONS: PhoneCountryOption[] = getCountryOptions()
+    .map((country) => {
+        const dialCode = country.phonecode
+            ? `+${country.phonecode.replace(/^\+/, "")}`
+            : "";
+        if (!dialCode) return null;
+        return {
+            id: country.isoCode,
+            name: country.name,
+            dialCode,
+            minLength:
+                country.isoCode === "US" || country.isoCode === "CA" ? 10 : 7,
+        } satisfies PhoneCountryOption;
+    })
+    .filter((option): option is PhoneCountryOption => option !== null);
 
 const DEFAULT_PHONE_COUNTRY = PHONE_COUNTRY_OPTIONS[0];
 
@@ -43,18 +54,22 @@ const findPhoneCountryByName = (countryName?: string | null): PhoneCountryOption
     ) || null;
 };
 
-type LocationPickerTarget = { type: "country" | "state"; churchIndex: number } | null;
+type LocationPickerTarget =
+    | { type: "country" | "state"; churchIndex: number }
+    | { type: "churchPhoneCountry"; churchIndex: number }
+    | { type: "personalPhoneCountry" }
+    | null;
 
 type PhoneInputWithCountryProps = {
     value: string;
     onChangeText: (value: string) => void;
     selectedCountry: PhoneCountryOption;
-    onSelectCountry: (country: PhoneCountryOption) => void;
     placeholder?: string;
     disabled?: boolean;
     hasError?: boolean;
     /** When true, dial code is read-only (synced from address country). */
     lockCountrySelector?: boolean;
+    onOpenCountryPicker?: () => void;
 };
 
 const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryProps>(
@@ -63,16 +78,14 @@ const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryP
             value,
             onChangeText,
             selectedCountry,
-            onSelectCountry,
             placeholder = "Enter phone number",
             disabled,
             hasError,
             lockCountrySelector,
+            onOpenCountryPicker,
         },
         ref
     ) => {
-        const [showDropdown, setShowDropdown] = useState(false);
-
         return (
             <View style={[styles.halfWidth, styles.phoneCountryDropdownWrapper]}>
                 <View
@@ -84,7 +97,7 @@ const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryP
                 >
                     <TouchableOpacity
                         style={styles.phoneCountryButton}
-                        onPress={() => setShowDropdown((prev) => !prev)}
+                        onPress={onOpenCountryPicker}
                         disabled={disabled || lockCountrySelector}
                     >
                         <Text style={styles.phoneCountryCodeText}>
@@ -92,7 +105,7 @@ const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryP
                         </Text>
                         {!lockCountrySelector && (
                             <Ionicons
-                                name={showDropdown ? "chevron-up" : "chevron-down"}
+                                name="chevron-down"
                                 size={16}
                                 color="rgba(255,255,255,0.8)"
                             />
@@ -114,29 +127,6 @@ const PhoneInputWithCountry = React.forwardRef<TextInput, PhoneInputWithCountryP
                         editable={!disabled}
                     />
                 </View>
-                {showDropdown && !lockCountrySelector && (
-                    <View style={styles.phoneCountryDropdownMenu}>
-                        {PHONE_COUNTRY_OPTIONS.map((option) => (
-                            <TouchableOpacity
-                                key={option.id}
-                                style={styles.countryDropdownItem}
-                                onPress={() => {
-                                    onSelectCountry(option);
-                                    setShowDropdown(false);
-                                }}
-                            >
-                                <View style={styles.countryRadio}>
-                                    {selectedCountry.id === option.id && (
-                                        <View style={styles.countryRadioSelected} />
-                                    )}
-                                </View>
-                                <Text style={styles.countryDropdownItemText}>
-                                    {option.name} ({option.dialCode})
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                )}
             </View>
         );
     }
@@ -375,8 +365,50 @@ export default function InterestFormScreen() {
         setLocationPicker(null);
     }, []);
 
+    const handleChurchPhoneCountrySelect = useCallback(
+        (index: number, phoneCountry: PhoneCountryOption) => {
+            setChurchPhoneCountries((prev) => {
+                const copy = [...prev];
+                copy[index] = phoneCountry;
+                return copy;
+            });
+
+            // Prefill church country from selected phone country code.
+            // User can still change country manually afterward.
+            setFormData((prev) => {
+                const churches = [...(prev.churchDetails || [])];
+                const current = churches[index] || INITIAL_CHURCH;
+                const isCountryChanged =
+                    (current.country || "").trim().toLowerCase() !==
+                    phoneCountry.name.trim().toLowerCase();
+
+                churches[index] = {
+                    ...current,
+                    country: phoneCountry.name,
+                    // If country changed, reset state to avoid stale state/province.
+                    state: isCountryChanged ? "" : current.state,
+                };
+                return { ...prev, churchDetails: churches };
+            });
+
+            setChurchCountryErrors((prev) => {
+                const copy = [...prev];
+                copy[index] = false;
+                return copy;
+            });
+            setChurchStateErrors((prev) => {
+                const copy = [...prev];
+                copy[index] = false;
+                return copy;
+            });
+
+            setLocationPicker(null);
+        },
+        []
+    );
+
     const activeChurchForPicker =
-        locationPicker != null
+        locationPicker != null && "churchIndex" in locationPicker
             ? formData.churchDetails?.[locationPicker.churchIndex]
             : undefined;
 
@@ -773,8 +805,8 @@ export default function InterestFormScreen() {
                                         handleInputChange('phoneNumber', text);
                                     }}
                                     selectedCountry={personalPhoneCountry}
-                                    onSelectCountry={(country) =>
-                                        setPersonalPhoneCountry(country)
+                                    onOpenCountryPicker={() =>
+                                        setLocationPicker({ type: "personalPhoneCountry" })
                                     }
                                     // Keep placeholders clean; required state is shown via inline error text.
                                     placeholder="Number"
@@ -896,22 +928,18 @@ export default function InterestFormScreen() {
                                                 handleChurchChange(index, 'churchPhone', text);
                                             }}
                                             selectedCountry={
-                                                getPhoneCountryFromName(church.country) ||
                                                 churchPhoneCountries[index] ||
+                                                getPhoneCountryFromName(church.country) ||
                                                 DEFAULT_PHONE_COUNTRY
                                             }
-                                            onSelectCountry={(country) =>
-                                                setChurchPhoneCountries((prev) => {
-                                                    const copy = [...prev];
-                                                    copy[index] = country;
-                                                    return copy;
+                                            onOpenCountryPicker={() =>
+                                                setLocationPicker({
+                                                    type: "churchPhoneCountry",
+                                                    churchIndex: index,
                                                 })
                                             }
-                                            placeholder={
-                                                church.country ? "Number" : "Select country first"
-                                            }
-                                            disabled={isLoading || !church.country}
-                                            lockCountrySelector={!!church.country}
+                                            placeholder="Number"
+                                            disabled={isLoading}
                                             hasError={churchPhoneErrors[index]}
                                         />
                                         {churchPhoneErrors[index] && (
@@ -1343,6 +1371,64 @@ export default function InterestFormScreen() {
                         </TouchableOpacity>
                     </View>
                 </KeyboardSafeContainer>
+
+                <SearchableSelectModal
+                    visible={locationPicker?.type === "personalPhoneCountry"}
+                    title="Select Mobile Country Code"
+                    options={PHONE_COUNTRY_OPTIONS.map((option) => ({
+                        label: `${option.name} (${option.dialCode})`,
+                        value: option.id,
+                    }))}
+                    selectedValue={personalPhoneCountry.id}
+                    onSelect={(value) => {
+                        const selected = PHONE_COUNTRY_OPTIONS.find(
+                            (option) => option.id === value
+                        );
+                        if (selected) {
+                            setPersonalPhoneCountry(selected);
+                        }
+                        setLocationPicker(null);
+                    }}
+                    onClose={() => setLocationPicker(null)}
+                    searchPlaceholder="Search countries..."
+                />
+
+                <SearchableSelectModal
+                    visible={locationPicker?.type === "churchPhoneCountry"}
+                    title="Select Church Phone Country Code"
+                    options={PHONE_COUNTRY_OPTIONS.map((option) => ({
+                        label: `${option.name} (${option.dialCode})`,
+                        value: option.id,
+                    }))}
+                    selectedValue={
+                        locationPicker?.type === "churchPhoneCountry"
+                            ? (
+                                  churchPhoneCountries[locationPicker.churchIndex] ||
+                                  getPhoneCountryFromName(
+                                      formData.churchDetails?.[locationPicker.churchIndex]?.country
+                                  ) ||
+                                  DEFAULT_PHONE_COUNTRY
+                              ).id
+                            : undefined
+                    }
+                    onSelect={(value) => {
+                        if (locationPicker?.type === "churchPhoneCountry") {
+                            const selected = PHONE_COUNTRY_OPTIONS.find(
+                                (option) => option.id === value
+                            );
+                            if (selected) {
+                                handleChurchPhoneCountrySelect(
+                                    locationPicker.churchIndex,
+                                    selected
+                                );
+                                return;
+                            }
+                        }
+                        setLocationPicker(null);
+                    }}
+                    onClose={() => setLocationPicker(null)}
+                    searchPlaceholder="Search countries..."
+                />
 
                 <SearchableSelectModal
                     visible={locationPicker?.type === "country"}
