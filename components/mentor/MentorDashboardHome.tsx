@@ -137,11 +137,15 @@ export default function MentorDashboardHome() {
         sectionId: "pastor-queries",
       },
       {
-        icon: "document-text-outline" as const,
-        line1: "Survey",
-        line2: "Submissions",
-        sheetTitle: "Survey Submissions (in time order)",
-        sectionId: "survey-submissions",
+        icon: "calendar-clear-outline" as const,
+        line1: "My",
+        line2: "Calendar",
+        sheetTitle: "My Calendar",
+        sectionId: "mentorship-sessions-today",
+        route: {
+          pathname: "/appointments",
+          params: {},
+        },
       },
     ],
     [],
@@ -254,15 +258,45 @@ export default function MentorDashboardHome() {
                     title={`${tile.line1}\n${tile.line2}`}
                     appearance="frosted"
                     compact
-                    onPress={() =>
+                    onPress={() => {
+                      if (tile.route) {
+                        router.push({
+                          pathname: tile.route.pathname as any,
+                          params: tile.route.params ?? {},
+                        });
+                        return;
+                      }
                       openThingsToFocusSheet({
                         sectionId: tile.sectionId,
                         title: tile.sheetTitle,
-                      })
-                    }
+                      });
+                    }}
                   />
                 ))}
               </View>
+
+              <Pressable
+                style={styles.reviewCenterLink}
+                onPress={() => router.push("/(mentor)/review-center" as any)}
+                accessibilityRole="button"
+                accessibilityLabel={`Review Center${pendingActionCount > 0 ? `, ${pendingActionCount} pending` : ""}`}
+              >
+                <View style={styles.reviewCenterIconWrap}>
+                  <Ionicons name="file-tray-full-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.reviewCenterLinkText}>Review Center</Text>
+                {pendingActionCount > 0 ? (
+                  <View style={styles.reviewCenterBadge}>
+                    <Text style={styles.reviewCenterBadgeText}>{pendingActionCount}</Text>
+                  </View>
+                ) : null}
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color="rgba(255,255,255,0.45)"
+                  style={styles.reviewCenterChevron}
+                />
+              </Pressable>
             </Animated.View>
 
             <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.howToCard}>
@@ -299,29 +333,6 @@ export default function MentorDashboardHome() {
                 </View>
                 <Text style={styles.sectionTitleText}>Quick Links</Text>
               </View>
-
-              <Pressable
-                style={styles.reviewCenterLink}
-                onPress={() => router.push("/(mentor)/review-center" as any)}
-                accessibilityRole="button"
-                accessibilityLabel={`Review Center${pendingActionCount > 0 ? `, ${pendingActionCount} pending` : ""}`}
-              >
-                <View style={styles.reviewCenterIconWrap}>
-                  <Ionicons name="file-tray-full-outline" size={20} color="#fff" />
-                </View>
-                <Text style={styles.reviewCenterLinkText}>Review Center</Text>
-                {pendingActionCount > 0 ? (
-                  <View style={styles.reviewCenterBadge}>
-                    <Text style={styles.reviewCenterBadgeText}>{pendingActionCount}</Text>
-                  </View>
-                ) : null}
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color="rgba(255,255,255,0.45)"
-                  style={styles.reviewCenterChevron}
-                />
-              </Pressable>
 
               <View style={styles.exploreGrid}>
                 {EXPLORE_TILES.map((tile) => (
