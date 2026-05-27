@@ -1,7 +1,8 @@
 import {
-  DASHBOARD_BUCKET_ORDER,
+  ACTION_BUCKET_ORDER,
   ReviewDashboardCard,
 } from "@/components/mentor/review-center/ReviewDashboardCard";
+import { ReviewPastorPhaseOverview } from "@/components/mentor/review-center/ReviewPastorPhaseOverview";
 import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
 import {
   computeDashboardCounts,
@@ -93,7 +94,7 @@ export default function MentorReviewCenterPastor() {
           <Text style={styles.headerSubtitle}>
             {pendingActionCount > 0
               ? `${pendingActionCount} item${pendingActionCount === 1 ? "" : "s"} need attention`
-              : `${pastorItems.length} tracked item${pastorItems.length === 1 ? "" : "s"}`}
+              : `${pastorItems.length} tracked item${pastorItems.length === 1 ? "" : "s"} across roadmaps & assessments`}
           </Text>
         </View>
       </View>
@@ -105,9 +106,21 @@ export default function MentorReviewCenterPastor() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInUp.delay(50).springify()} style={styles.cards}>
-          {DASHBOARD_BUCKET_ORDER.map((bucket, index) => (
-            <Animated.View key={bucket} entering={FadeInUp.delay(80 + index * 60).springify()}>
+        <Animated.View entering={FadeInUp.delay(40).springify()}>
+          <ReviewPastorPhaseOverview
+            pastorId={pastorIdStr}
+            pastorName={pastorName}
+            pastorItems={pastorItems}
+          />
+        </Animated.View>
+
+        <Text style={styles.sectionLabel}>Needs your attention</Text>
+        <View style={styles.cards}>
+          {ACTION_BUCKET_ORDER.map((bucket, index) => (
+            <Animated.View
+              key={bucket}
+              entering={FadeInUp.delay(80 + index * 50).springify()}
+            >
               <ReviewDashboardCard
                 bucket={bucket}
                 count={dashboardCounts[bucket]}
@@ -115,7 +128,7 @@ export default function MentorReviewCenterPastor() {
               />
             </Animated.View>
           ))}
-        </Animated.View>
+        </View>
       </ScrollView>
     </LinearGradient>
   );
@@ -162,7 +175,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
+  sectionLabel: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
   cards: {
     gap: 12,
+    marginBottom: 4,
   },
 });

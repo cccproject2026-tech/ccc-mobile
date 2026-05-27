@@ -25,7 +25,7 @@ function statLine(group: ReviewPastorGroup): string {
   if (counts.not_started > 0) {
     parts.push(`${counts.not_started} not started`);
   }
-  if (parts.length === 0) return "No pending activity";
+  if (parts.length === 0) return "No activity tracked";
   return parts.join(" · ");
 }
 
@@ -41,11 +41,7 @@ export function ReviewPastorRow({ group, onPress }: Props) {
       accessibilityLabel={`${group.pastorName}, ${statLine(group)}`}
     >
       {hasPhoto ? (
-        <UserAvatar
-          user={group}
-          size={44}
-          containerStyle={styles.avatarImage}
-        />
+        <UserAvatar user={group} size={44} containerStyle={styles.avatarImage} />
       ) : (
         <View style={styles.avatarFallback}>
           <Text style={styles.avatarText}>{initial}</Text>

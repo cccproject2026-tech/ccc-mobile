@@ -31,18 +31,23 @@ export const DASHBOARD_CARD_CONFIG: Record<
     icon: "clipboard-outline",
   },
   not_started: {
-    title: "Not Started By Pastors",
-    subtitle: (n) => (n === 1 ? "1 pastor inactive" : `${n} pastors inactive`),
+    title: "Not Started",
+    subtitle: (n) => (n === 1 ? "1 task not started" : `${n} tasks not started`),
     accentColor: "#6B7280",
     icon: "ellipse-outline",
   },
 };
 
-export const DASHBOARD_BUCKET_ORDER: ReviewDashboardBucket[] = [
+/** Buckets that need mentor action (badge counts these). */
+export const ACTION_BUCKET_ORDER: ReviewDashboardBucket[] = [
   "resubmitted_tasks",
   "new_roadmap_submissions",
   "new_assessments",
   "not_started",
+];
+
+export const DASHBOARD_BUCKET_ORDER: ReviewDashboardBucket[] = [
+  ...ACTION_BUCKET_ORDER,
 ];
 
 type Props = {

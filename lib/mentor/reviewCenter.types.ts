@@ -151,8 +151,6 @@ export const DASHBOARD_BUCKET_PRIORITY: Record<ReviewDashboardBucket, number> = 
   not_started: 3,
 };
 
-/** One mentee (pastor) row in Review Center home. */
-
 export interface ReviewRoadmapSection {
   roadmapId: string;
   roadmapName: string;
@@ -225,6 +223,7 @@ export function groupReviewItemsByRoadmap(items: ReviewItem[]): {
   return { sections, standaloneItems };
 }
 
+/** One mentee (pastor) row in Review Center home. */
 export interface ReviewPastorGroup {
   pastorId: string;
   pastorName: string;
