@@ -27,6 +27,9 @@ import React, { useCallback, useMemo, useState } from "react";
 const SEEN_STORAGE_KEY = "mentor_review_center_seen";
 const MAX_MENTEES = 20;
 const MAX_ROADMAPS_PER_MENTEE = 6;
+const LEGACY_EXTRAS_CONCURRENCY = 2;
+const LEGACY_EXTRAS_MAX_RETRIES = 2;
+const LEGACY_EXTRAS_RETRY_BASE_MS = 450;
 
 const isMongoObjectIdLike = (id: string | undefined | null): id is string => {
   return (
@@ -41,7 +44,7 @@ function buildLatestLegacyRoadmapSubmission(
   extras: any,
 ): { status: "SUBMITTED" | "RESUBMITTED"; category: "pending_review" | "resubmitted"; resubmissionCount: number; submittedAt: string } | null {
   const allExtras: any[] = (extras?.extras ?? []).filter(
-    (e) => e?.name && e?.type !== "JUMPSTART_COMPLETE",
+    (e: any) => e?.name && e?.type !== "JUMPSTART_COMPLETE",
   );
 
   if (allExtras.length === 0) return null;
@@ -93,6 +96,52 @@ async function persistSeenIds(ids: Set<string>): Promise<void> {
 
 function uniqueNonEmpty(values: Array<string | undefined | null>): string[] {
   return [...new Set(values.map((v) => String(v ?? "").trim()).filter(Boolean))];
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isTooManyRequestsError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const maybeError = error as { statusCode?: number; message?: string };
+  if (maybeError.statusCode === 429) return true;
+  const message = String(maybeError.message ?? "");
+  return message.includes("429") || message.includes("Too Many Requests");
+}
+
+function isNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const maybeError = error as { statusCode?: number; message?: string };
+  if (maybeError.statusCode === 404) return true;
+  const message = String(maybeError.message ?? "");
+  return message.includes("404") || message.includes("Cannot GET");
+}
+
+async function getRoadmapExtrasWithRetry(
+  roadmapId: string,
+  nestedRoadMapItemId: string,
+  userId: string,
+): Promise<any> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await roadmapService.getRoadmapExtras(
+        roadmapId,
+        nestedRoadMapItemId,
+        userId,
+      );
+    } catch (error) {
+      if (!isTooManyRequestsError(error) || attempt >= LEGACY_EXTRAS_MAX_RETRIES) {
+        throw error;
+      }
+      const backoffMs =
+        LEGACY_EXTRAS_RETRY_BASE_MS * Math.pow(2, attempt) +
+        Math.floor(Math.random() * 150);
+      attempt += 1;
+      await sleep(backoffMs);
+    }
+  }
 }
 
 export function useReviewCenterV2() {
@@ -186,6 +235,21 @@ export function useReviewCenterV2() {
     queryFn: async (): Promise<ReviewItem[]> => {
       const seenIds = await loadSeenIds();
       const items: ReviewItem[] = [];
+      const extrasRequestCache = new Map<string, Promise<any>>();
+      const blockedExtrasByRoadmapUser = new Set<string>();
+
+      const getCachedExtras = (
+        roadmapId: string,
+        nestedRoadMapItemId: string,
+        userId: string,
+      ): Promise<any> => {
+        const key = `${roadmapId}:${nestedRoadMapItemId}:${userId}`;
+        const existing = extrasRequestCache.get(key);
+        if (existing) return existing;
+        const req = getRoadmapExtrasWithRetry(roadmapId, nestedRoadMapItemId, userId);
+        extrasRequestCache.set(key, req);
+        return req;
+      };
 
       await mapWithConcurrency(mentees as any[], 2, async (mentee: any) => {
         // Router/UI should keep the app's canonical id, but APIs can be inconsistent.
@@ -229,7 +293,9 @@ export function useReviewCenterV2() {
 
             if (submissions.length === 0) {
               for (const candidateUserId of pastorIdCandidates) {
-                await mapWithConcurrency(tasks, 4, async (task) => {
+                let taskSubmissionsEndpointMissing = false;
+                await mapWithConcurrency(tasks, LEGACY_EXTRAS_CONCURRENCY, async (task) => {
+                  if (taskSubmissionsEndpointMissing) return;
                   try {
                     const subs = await roadmapService.getTaskSubmissions(
                       rid,
@@ -237,8 +303,12 @@ export function useReviewCenterV2() {
                       candidateUserId,
                     );
                     submissions.push(...subs);
-                  } catch {
-                    // skip task
+                  } catch (error) {
+                    if (isNotFoundError(error)) {
+                      // Endpoint not supported for this roadmap/user.
+                      // Stop making further per-task submissions calls in this cycle.
+                      taskSubmissionsEndpointMissing = true;
+                    }
                   }
                 });
                 if (submissions.length > 0) break;
@@ -291,8 +361,9 @@ export function useReviewCenterV2() {
                 legacyUserIdCandidates[0] ?? pastorId;
               const canUseLegacy = isMongoObjectIdLike(legacyUserIdForItems);
 
-              await mapWithConcurrency(tasks, 4, async (task) => {
+              await mapWithConcurrency(tasks, LEGACY_EXTRAS_CONCURRENCY, async (task) => {
                 const itemId = `roadmap-${rid}-${task.id}-${legacyUserIdForItems}`;
+                const roadmapUserKey = `${rid}:${legacyUserIdForItems}`;
 
                 if (!canUseLegacy) {
                   items.push({
@@ -314,8 +385,28 @@ export function useReviewCenterV2() {
                   return;
                 }
 
+                if (blockedExtrasByRoadmapUser.has(roadmapUserKey)) {
+                  items.push({
+                    id: itemId,
+                    type: "roadmap",
+                    pastorId: legacyUserIdForItems,
+                    pastorName,
+                    title: task.name,
+                    status: "NOT_STARTED",
+                    category: "not_started",
+                    submittedAt: null,
+                    resubmissionCount: 0,
+                    isSeen: seenIds.has(itemId),
+                    roadmapId: rid,
+                    roadmapName,
+                    nestedRoadMapItemId: task.id,
+                    taskName: task.name,
+                  });
+                  return;
+                }
+
                 try {
-                  const extrasResp = await roadmapService.getRoadmapExtras(
+                  const extrasResp = await getCachedExtras(
                     rid,
                     task.id,
                     legacyUserIdForItems,
@@ -358,7 +449,12 @@ export function useReviewCenterV2() {
                     nestedRoadMapItemId: task.id,
                     taskName: task.name,
                   });
-                } catch {
+                } catch (error) {
+                  // If the backend rate-limits this roadmap+user, skip further extras
+                  // calls for this pair in the current query cycle.
+                  if (isTooManyRequestsError(error)) {
+                    blockedExtrasByRoadmapUser.add(roadmapUserKey);
+                  }
                   items.push({
                     id: itemId,
                     type: "roadmap",
