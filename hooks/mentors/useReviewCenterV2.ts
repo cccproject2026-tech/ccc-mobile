@@ -269,13 +269,14 @@ export function useReviewCenterV2() {
                   type: "roadmap",
                   pastorId,
                   pastorName,
-                  title: taskMeta?.name ?? roadmapName,
+                  title: taskMeta?.name ?? "Task",
                   status: reviewStatus,
                   category,
                   submittedAt: sub.submittedAt ?? sub.createdAt,
                   resubmissionCount: Math.max(0, sub.submissionNumber - 1),
                   isSeen: seenIds.has(itemId),
                   roadmapId: rid,
+                  roadmapName,
                   nestedRoadMapItemId: taskId,
                   taskName: taskMeta?.name,
                 });
@@ -306,6 +307,7 @@ export function useReviewCenterV2() {
                     resubmissionCount: 0,
                     isSeen: seenIds.has(itemId),
                     roadmapId: rid,
+                    roadmapName,
                     nestedRoadMapItemId: task.id,
                     taskName: task.name,
                   });
@@ -333,6 +335,7 @@ export function useReviewCenterV2() {
                       resubmissionCount: 0,
                       isSeen: seenIds.has(itemId),
                       roadmapId: rid,
+                      roadmapName,
                       nestedRoadMapItemId: task.id,
                       taskName: task.name,
                     });
@@ -351,6 +354,7 @@ export function useReviewCenterV2() {
                     resubmissionCount: synthetic.resubmissionCount,
                     isSeen: seenIds.has(itemId),
                     roadmapId: rid,
+                    roadmapName,
                     nestedRoadMapItemId: task.id,
                     taskName: task.name,
                   });
@@ -367,6 +371,7 @@ export function useReviewCenterV2() {
                     resubmissionCount: 0,
                     isSeen: seenIds.has(itemId),
                     roadmapId: rid,
+                    roadmapName,
                     nestedRoadMapItemId: task.id,
                     taskName: task.name,
                   });

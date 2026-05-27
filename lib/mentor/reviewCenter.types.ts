@@ -42,6 +42,7 @@ export interface ReviewItem {
   resubmissionCount: number;
   isSeen: boolean;
   roadmapId?: string;
+  roadmapName?: string;
   nestedRoadMapItemId?: string;
   assessmentId?: string;
   taskName?: string;
@@ -151,6 +152,79 @@ export const DASHBOARD_BUCKET_PRIORITY: Record<ReviewDashboardBucket, number> = 
 };
 
 /** One mentee (pastor) row in Review Center home. */
+
+export interface ReviewRoadmapSection {
+  roadmapId: string;
+  roadmapName: string;
+  items: ReviewItem[];
+  latestSubmittedAt: string | null;
+}
+
+export function shouldGroupRoadmapList(bucket: ReviewDashboardBucket): boolean {
+  return (
+    bucket === "new_roadmap_submissions" ||
+    bucket === "resubmitted_tasks" ||
+    bucket === "not_started"
+  );
+}
+
+export function groupReviewItemsByRoadmap(items: ReviewItem[]): {
+  sections: ReviewRoadmapSection[];
+  standaloneItems: ReviewItem[];
+} {
+  const standaloneItems: ReviewItem[] = [];
+  const map = new Map<string, ReviewRoadmapSection>();
+
+  for (const item of items) {
+    if (item.type !== "roadmap" || !item.roadmapId) {
+      standaloneItems.push(item);
+      continue;
+    }
+
+    const roadmapId = String(item.roadmapId);
+    let section = map.get(roadmapId);
+    if (!section) {
+      section = {
+        roadmapId,
+        roadmapName: item.roadmapName?.trim() || "Roadmap",
+        items: [],
+        latestSubmittedAt: null,
+      };
+      map.set(roadmapId, section);
+    }
+
+    section.items.push(item);
+    const submittedAt = item.submittedAt;
+    if (
+      submittedAt &&
+      (!section.latestSubmittedAt || submittedAt > section.latestSubmittedAt)
+    ) {
+      section.latestSubmittedAt = submittedAt;
+    }
+  }
+
+  const sections = [...map.values()]
+    .map((section) => ({
+      ...section,
+      items: [...section.items].sort((a, b) => {
+        const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+        const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+        return bTime - aTime;
+      }),
+    }))
+    .sort((a, b) => {
+      const aTime = a.latestSubmittedAt
+        ? new Date(a.latestSubmittedAt).getTime()
+        : 0;
+      const bTime = b.latestSubmittedAt
+        ? new Date(b.latestSubmittedAt).getTime()
+        : 0;
+      return bTime - aTime;
+    });
+
+  return { sections, standaloneItems };
+}
+
 export interface ReviewPastorGroup {
   pastorId: string;
   pastorName: string;

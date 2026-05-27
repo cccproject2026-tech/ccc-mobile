@@ -7,57 +7,80 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 function formatSubmittedTime(dateStr: string | null): string {
-  if (!dateStr) return "—";
+  if (!dateStr) return "-";
   try {
     return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
   } catch {
-    return "—";
+    return "-";
   }
 }
 
 type Props = {
   item: ReviewItem;
   onPress: () => void;
+  /** Task row nested under a roadmap phase header. */
+  nested?: boolean;
+  hidePastorName?: boolean;
+  isLastInSection?: boolean;
 };
 
-export function ReviewListRow({ item, onPress }: Props) {
+export function ReviewListRow({
+  item,
+  onPress,
+  nested = false,
+  hidePastorName = false,
+  isLastInSection = false,
+}: Props) {
   const bucket = getDashboardBucket(item);
   const accent = bucket ? DASHBOARD_CARD_CONFIG[bucket].accentColor : "#94A3B8";
+  const displayTitle = item.taskName?.trim() || item.title;
+  const showPastor = !hidePastorName && !nested;
 
   return (
-    <Pressable style={styles.row} onPress={onPress}>
+    <Pressable
+      style={[
+        styles.row,
+        nested && styles.rowNested,
+        isLastInSection && styles.rowLast,
+      ]}
+      onPress={onPress}
+    >
       <View style={[styles.dot, { backgroundColor: accent }]} />
       <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={1}>
-          {item.title}
+        <Text style={styles.title} numberOfLines={2}>
+          {displayTitle}
         </Text>
-        <Text style={styles.pastor} numberOfLines={1}>
-          {item.pastorName}
-        </Text>
+        {showPastor ? (
+          <Text style={styles.pastor} numberOfLines={1}>
+            {item.pastorName}
+          </Text>
+        ) : null}
         <View style={styles.metaRow}>
-          <View
-            style={[
-              styles.typeBadge,
-              item.type === "roadmap" ? styles.typeRoadmap : styles.typeAssessment,
-            ]}
-          >
-            <Ionicons
-              name={item.type === "roadmap" ? "map-outline" : "clipboard-outline"}
-              size={10}
-              color={item.type === "roadmap" ? "#38BDF8" : "#A78BFA"}
-            />
-            <Text
+          {!nested ? (
+            <View
               style={[
-                styles.typeText,
-                { color: item.type === "roadmap" ? "#38BDF8" : "#A78BFA" },
+                styles.typeBadge,
+                item.type === "roadmap" ? styles.typeRoadmap : styles.typeAssessment,
               ]}
             >
-              {item.type === "roadmap" ? "Roadmap" : "Assessment"}
-            </Text>
-          </View>
-          {item.resubmissionCount > 0 && (
-            <Text style={styles.resubmit}>×{item.resubmissionCount}</Text>
-          )}
+              <Ionicons
+                name={item.type === "roadmap" ? "map-outline" : "clipboard-outline"}
+                size={10}
+                color={item.type === "roadmap" ? "#38BDF8" : "#A78BFA"}
+              />
+              <Text
+                style={[
+                  styles.typeText,
+                  { color: item.type === "roadmap" ? "#38BDF8" : "#A78BFA" },
+                ]}
+              >
+                {item.type === "roadmap" ? "Roadmap" : "Assessment"}
+              </Text>
+            </View>
+          ) : null}
+          {item.resubmissionCount > 0 ? (
+            <Text style={styles.resubmit}>x{item.resubmissionCount}</Text>
+          ) : null}
           {item.submittedAt ? (
             <Text style={styles.time}>{formatSubmittedTime(item.submittedAt)}</Text>
           ) : null}
@@ -77,6 +100,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  rowNested: {
+    paddingLeft: 22,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  rowLast: {
+    borderBottomWidth: 0,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
   },
   dot: {
     width: 8,
