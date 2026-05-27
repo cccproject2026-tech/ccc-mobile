@@ -182,11 +182,13 @@ export function SessionMeetingTypeSelector({
   value,
   onChange,
   disabled,
+  disabledHint,
   isUpdating,
 }: {
   value: DisplaySessionMode;
   onChange: (mode: DisplaySessionMode) => void;
   disabled?: boolean;
+  disabledHint?: string;
   isUpdating?: boolean;
 }) {
   const isDisabled = disabled || isUpdating;
@@ -243,9 +245,11 @@ export function SessionMeetingTypeSelector({
         </View>
       ) : null}
       <Text style={progressStyles.meetingTypeCaption}>
-        {value === "ONLINE"
-          ? "Zoom meeting link and join flow are used for this session."
-          : "Record or upload audio after the in-person meeting. Zoom details stay saved if you switch back."}
+        {isDisabled && disabledHint
+          ? disabledHint
+          : value === "ONLINE"
+            ? "Zoom meeting link and join flow are used for this session."
+            : "Record or upload audio after the in-person meeting. Zoom details stay saved if you switch back."}
       </Text>
     </View>
   );

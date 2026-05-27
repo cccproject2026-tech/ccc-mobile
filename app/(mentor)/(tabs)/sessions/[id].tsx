@@ -57,7 +57,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as DocumentPicker from "expo-document-picker";
 import {
     ActivityIndicator,
     Animated,
@@ -673,12 +674,21 @@ export default function SessionDetailsScreen() {
     return sessions.find((s) => s.id === sessionId) ?? null;
   }, [sessions, sessionId]);
 
+  const sessionsForPastor = useMemo(() => {
+    if (!session?.pastorId) return sessions;
+    return sessions.filter((s) => s.pastorId === session.pastorId);
+  }, [sessions, session?.pastorId]);
+
   const sortedSessions = useMemo(
-    () => [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber),
-    [sessions],
+    () =>
+      [...sessionsForPastor].sort((a, b) => a.sessionNumber - b.sessionNumber),
+    [sessionsForPastor],
   );
 
-  const nextSessionId = useMemo(() => getNextSessionId(sortedSessions), [sortedSessions]);
+  const nextSessionId = useMemo(
+    () => getNextSessionId(sortedSessions),
+    [sortedSessions],
+  );
 
   const { appointments: mentorAppointments = [], refetch: refetchMentorAppointments } = useAppointments({ mentorId: user?.id, futureOnly: false });
   const { appointments: menteeAppointments = [], refetch: refetchMenteeAppointments } = useAppointments({ userId: session?.pastorId, futureOnly: false });
@@ -697,6 +707,7 @@ export default function SessionDetailsScreen() {
   const isMutating = isCompleting || isRedoing;
   const [confirmKind, setConfirmKind] = useState<"complete" | "redo" | null>(null);
   const [showRecordingSheet, setShowRecordingSheet] = useState(false);
+  const [isPickingRecordingFile, setIsPickingRecordingFile] = useState(false);
 
   const appointment = useMemo(() => {
     if (!session?.appointmentId) return undefined;
@@ -914,6 +925,9 @@ export default function SessionDetailsScreen() {
   const recordingUrl = session?.recordingUrl ?? (appointment as any)?.recordingUrl;
   const showJoinButton = isScheduled && !isInPerson && !!meetingLink;
   const isCompleted = session?.status === "COMPLETED";
+  const isAppointmentCompleted =
+    String(appointment?.status ?? "").toLowerCase() === "completed";
+  const isMeetingTypeLocked = isCompleted || isAppointmentCompleted;
   const canComplete = !!session?.appointmentId && !isCompleted;
   const canRedo = !!session?.appointmentId;
 
@@ -987,6 +1001,8 @@ export default function SessionDetailsScreen() {
   };
 
   const handleMeetingTypeChange = async (mode: DisplaySessionMode) => {
+    if (isMeetingTypeLocked) return;
+
     const aptId = appointment?.id ?? session?.appointmentId;
     if (!aptId) {
       Toast.show({
@@ -1024,6 +1040,76 @@ export default function SessionDetailsScreen() {
       });
     }
   };
+
+  const handleUploadSessionRecordingFile = useCallback(async () => {
+    if (isMeetingTypeLocked) return;
+
+    const aptId = appointment?.id ?? session?.appointmentId;
+    if (!aptId) {
+      Toast.show({
+        type: "error",
+        position: "top",
+        text1: "Missing appointment",
+        text2: "Session appointment is not available",
+      });
+      return;
+    }
+
+    try {
+      setIsPickingRecordingFile(true);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "audio/*",
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const file = result.assets[0];
+      const fileName = file.name || `session_recording_${Date.now()}.m4a`;
+      const mimeType = file.mimeType || "audio/mpeg";
+
+      await uploadSessionRecordingAsync({
+        appointmentId: String(aptId),
+        audio: {
+          uri: file.uri,
+          name: fileName,
+          type: mimeType,
+        },
+      });
+
+      await Promise.all([
+        refetchMentorAppointments(),
+        refetchMenteeAppointments(),
+        refetchSessions(),
+      ]);
+
+      Toast.show({
+        type: "success",
+        position: "top",
+        text1: "Upload successful",
+        text2: "Session recording is being processed",
+      });
+    } catch (error) {
+      const message = getErrorMessage(error, "Could not upload file");
+      if (message.toLowerCase().includes("cancel")) return;
+      Toast.show({
+        type: "error",
+        position: "top",
+        text1: "Upload failed",
+        text2: message,
+      });
+    } finally {
+      setIsPickingRecordingFile(false);
+    }
+  }, [
+    isMeetingTypeLocked,
+    appointment?.id,
+    session?.appointmentId,
+    uploadSessionRecordingAsync,
+    refetchMentorAppointments,
+    refetchMenteeAppointments,
+    refetchSessions,
+  ]);
 
   const phase = session ? phaseLabelForSessionNumber(session.sessionNumber) : undefined;
   const scheduleText = session ? `${formatSessionDate(session.scheduledDate)} · ${formatSessionTime(session.scheduledDate) || "Time TBD"}` : "";
@@ -1138,14 +1224,19 @@ export default function SessionDetailsScreen() {
               <SessionMeetingTypeSelector
                 value={sessionMode}
                 onChange={handleMeetingTypeChange}
-                disabled={!session.appointmentId}
+                disabled={!session.appointmentId || isMeetingTypeLocked}
+                disabledHint={
+                  isMeetingTypeLocked
+                    ? "Meeting type cannot be changed after the session is completed."
+                    : undefined
+                }
                 isUpdating={isUpdatingSessionMode}
               />
             </View>
           ) : null}
 
-          {/* Meeting Section (ONLINE) */}
-          {!isInPerson && meetingLink && (
+          {/* Meeting Section (ONLINE) — hidden after session is completed */}
+          {!isInPerson && meetingLink && !isMeetingTypeLocked && (
             <View style={styles.meetingSection}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="videocam-outline" size={20} color="rgba(255,255,255,0.7)" />
@@ -1162,7 +1253,7 @@ export default function SessionDetailsScreen() {
             </View>
           )}
 
-          {!isInPerson && isScheduled && session.appointmentId && !meetingLink && (
+          {!isInPerson && isScheduled && session.appointmentId && !meetingLink && !isMeetingTypeLocked && (
             <View style={styles.waitingCard}>
               <Ionicons name="time-outline" size={24} color="rgba(255,255,255,0.5)" />
               <View style={styles.waitingContent}>
@@ -1178,37 +1269,58 @@ export default function SessionDetailsScreen() {
                 <Ionicons name="mic-outline" size={20} color="rgba(255,255,255,0.7)" />
                 <Text style={styles.sectionTitle}>In-Person Recording</Text>
               </View>
-              <View style={styles.inPersonActions}>
-                <Pressable
-                  style={styles.joinButton}
-                  onPress={() => setShowRecordingSheet(true)}
-                  disabled={isUploadingSessionRecording}
-                >
-                  <Ionicons name="radio-outline" size={18} color="#153C5A" />
-                  <Text style={styles.joinButtonText}>Start Recording</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.secondaryButton}
-                  onPress={() => setShowRecordingSheet(true)}
-                  disabled={isUploadingSessionRecording}
-                >
-                  <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
-                  <Text style={styles.secondaryButtonText}>Upload Recording</Text>
-                </Pressable>
-              </View>
-              {recordingStatus === "PROCESSING" ? (
-                <ProcessingStatus status="transcribing" />
-              ) : recordingStatus === "FAILED" ? (
+              {!isMeetingTypeLocked ? (
+                <>
+                  <View style={styles.inPersonActions}>
+                    <Pressable
+                      style={styles.joinButton}
+                      onPress={() => setShowRecordingSheet(true)}
+                      disabled={
+                        isUploadingSessionRecording || isPickingRecordingFile
+                      }
+                    >
+                      <Ionicons name="radio-outline" size={18} color="#153C5A" />
+                      <Text style={styles.joinButtonText}>Start Recording</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.secondaryButton}
+                      onPress={handleUploadSessionRecordingFile}
+                      disabled={
+                        isUploadingSessionRecording || isPickingRecordingFile
+                      }
+                    >
+                      {isPickingRecordingFile || isUploadingSessionRecording ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
+                      )}
+                      <Text style={styles.secondaryButtonText}>Upload Recording</Text>
+                    </Pressable>
+                  </View>
+                  {recordingStatus === "PROCESSING" ? (
+                    <ProcessingStatus status="transcribing" />
+                  ) : recordingStatus === "FAILED" ? (
+                    <View style={styles.waitingCard}>
+                      <Ionicons name="alert-circle-outline" size={20} color="rgba(255,255,255,0.7)" />
+                      <Text style={styles.waitingText}>Recording processing failed. Please re-upload.</Text>
+                    </View>
+                  ) : recordingStatus === "NOT_STARTED" ? (
+                    <View style={styles.waitingCard}>
+                      <Ionicons name="mic-off-outline" size={20} color="rgba(255,255,255,0.7)" />
+                      <Text style={styles.waitingText}>Recording not uploaded</Text>
+                    </View>
+                  ) : null}
+                </>
+              ) : (
                 <View style={styles.waitingCard}>
-                  <Ionicons name="alert-circle-outline" size={20} color="rgba(255,255,255,0.7)" />
-                  <Text style={styles.waitingText}>Recording processing failed. Please re-upload.</Text>
+                  <Ionicons name="checkmark-circle-outline" size={20} color="rgba(255,255,255,0.7)" />
+                  <Text style={styles.waitingText}>
+                    {recordingUrl
+                      ? "Session completed. Playback is available below."
+                      : "Session completed. Recording upload is no longer available."}
+                  </Text>
                 </View>
-              ) : recordingStatus === "NOT_STARTED" ? (
-                <View style={styles.waitingCard}>
-                  <Ionicons name="mic-off-outline" size={20} color="rgba(255,255,255,0.7)" />
-                  <Text style={styles.waitingText}>Recording not uploaded</Text>
-                </View>
-              ) : null}
+              )}
               {recordingUrl ? (
                 <View style={styles.playerWrap}>
                   <AudioPlayerCard audioUri={recordingUrl} title="Session Recording" />
