@@ -739,9 +739,10 @@ export default function InterestFormScreen() {
                     innerRef={scrollViewRef as React.Ref<KeyboardAwareScrollView>}
                     showsVerticalScrollIndicator={false}
                     extraScrollHeight={20}
+                    useSafeAreaBottom
+                    bottomPadding={96}
                     contentContainerStyle={[
                         styles.scrollContent,
-                        { paddingBottom: bottom + 20 },
                     ]}
                 >
                     {/* Loading Metadata */}
@@ -1369,6 +1370,8 @@ export default function InterestFormScreen() {
                                 <Text style={styles.submitButtonText}>Submit</Text>
                             )}
                         </TouchableOpacity>
+                        {/* Extra space so Submit is never under Android system bar */}
+                        <View style={{ height: bottom + 120 }} />
                     </View>
                 </KeyboardSafeContainer>
 
