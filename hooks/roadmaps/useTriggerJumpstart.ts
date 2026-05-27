@@ -2,6 +2,7 @@ import { roadmapService } from "@/services/roadmap.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { mentorshipSessionKeys } from "./useMentorshipSessions";
 import { pastorSessionKeys } from "./usePastorSessions";
+import { appointmentKeys } from "@/hooks/appointments/useAppointments";
 
 export const useTriggerJumpstart = () => {
   const queryClient = useQueryClient();
@@ -33,6 +34,10 @@ export const useTriggerJumpstart = () => {
         queryKey: pastorSessionKeys.all,
         refetchType: "active",
       });
+      queryClient.invalidateQueries({
+        queryKey: appointmentKeys.all,
+        refetchType: "active",
+      });
       queryClient.invalidateQueries({ queryKey: ["roadmaps"] });
 
       // Backend may create Session 1 asynchronously right after jumpstart save.
@@ -44,6 +49,10 @@ export const useTriggerJumpstart = () => {
         });
         queryClient.refetchQueries({
           queryKey: mentorshipSessionKeys.all,
+          type: "all",
+        });
+        queryClient.refetchQueries({
+          queryKey: appointmentKeys.user(variables.userId),
           type: "all",
         });
       }, 1500);
