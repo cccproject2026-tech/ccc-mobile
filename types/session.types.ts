@@ -1,4 +1,8 @@
 import type { MentorshipInsightsPayload } from "@/types/mentorshipInsights.types";
+import type {
+  SessionMode,
+  SessionRecordingStatus,
+} from "@/types/appointment.types";
 
 export type MentorshipSessionStatus = "SCHEDULED" | "COMPLETED";
 
@@ -37,6 +41,10 @@ export interface MentorshipSession {
   transcript?: MentorshipTranscriptLine[];
   aiSummary?: MentorshipAiSummary;
   mentorshipInsights?: MentorshipInsightsPayload;
+  sessionMode?: SessionMode;
+  recordingStatus?: SessionRecordingStatus;
+  recordingUrl?: string;
+  meetingLocation?: string;
 }
 
 export interface MentorshipSessionsApiResponse {

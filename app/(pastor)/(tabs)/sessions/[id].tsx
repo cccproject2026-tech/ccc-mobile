@@ -5,10 +5,15 @@ import {
     DetailScreenSkeleton,
     formatSessionTime,
     getNextSessionId,
+    SessionModeBadge,
     sessionGradientColors,
     SessionProgressHeader,
     SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
+import {
+  AudioPlayerCard,
+  ProcessingStatus,
+} from "@/components/voiceNotes";
 import { Colors } from "@/constants/Colors";
 import {
     sessionOrdinalLabel,
@@ -32,6 +37,7 @@ import {
     zoomUrlHasPasscodeQuery,
 } from "@/utils/meetingLinkDetails";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
+import { resolveDisplaySessionMode } from "@/utils/sessionMeetingMode";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
@@ -900,6 +906,16 @@ export default function PastorSessionDetailScreen() {
 
   const meetingLink =
     getAppointmentJoinUrl(appointment) ?? currentSession?.meetingLink ?? null;
+  const sessionMode = resolveDisplaySessionMode(
+    currentSession?.sessionMode ?? (appointment as any)?.sessionMode,
+  );
+  const isInPerson = sessionMode === "IN_PERSON";
+  const recordingStatus =
+    currentSession?.recordingStatus ??
+    (appointment as any)?.recordingStatus ??
+    "NOT_STARTED";
+  const recordingUrl =
+    currentSession?.recordingUrl ?? (appointment as any)?.recordingUrl;
   const hasStringTranscript =
     typeof (appointment as any)?.transcript === "string" &&
     (appointment as any).transcript.trim().length > 0;
@@ -915,7 +931,7 @@ export default function PastorSessionDetailScreen() {
     ? sessionTopicSubtitle(currentSession.sessionNumber)
     : undefined;
   const isScheduled = currentSession?.status === "SCHEDULED";
-  const canJoin = isScheduled && !!meetingLink;
+  const canJoin = isScheduled && !isInPerson && !!meetingLink;
 
   const meetingsUI = useMemo(() => {
     return currentSession ? buildPastorMeetingsUi(currentSession, appointment) : [];
@@ -1016,7 +1032,10 @@ export default function PastorSessionDetailScreen() {
                   </Text>
                 )}
               </View>
-              <SessionStatusBadge status={currentSession.status} />
+              <View style={styles.badgeStack}>
+                <SessionModeBadge sessionMode={sessionMode} />
+                <SessionStatusBadge status={currentSession.status} />
+              </View>
             </View>
 
             <View style={styles.divider} />
@@ -1076,7 +1095,7 @@ export default function PastorSessionDetailScreen() {
                   getTranscriptSummary(appointmentId, true);
                 }}
                 joinButton={
-                  meeting.isLatest && meetingLink ? (
+                  !isInPerson && meeting.isLatest && meetingLink ? (
                     <View style={styles.joinContainer}>
                       <MeetingJoinDetails meetingLink={meetingLink} platform={appointment?.platform ?? "zoom"} />
                       {canJoin && (
@@ -1087,12 +1106,29 @@ export default function PastorSessionDetailScreen() {
                         </Pressable>
                       )}
                     </View>
-                  ) : meeting.isLatest && isScheduled && !meetingLink ? (
+                  ) : !isInPerson && meeting.isLatest && isScheduled && !meetingLink ? (
                     <View style={styles.waitingHint}>
                       <Ionicons name="time-outline" size={20} color="rgba(255,255,255,0.7)" />
                       <Text style={styles.waitingText}>
                         Meeting link will appear when your mentor adds it
                       </Text>
+                    </View>
+                  ) : isInPerson && meeting.isLatest ? (
+                    <View style={styles.inPersonReadOnly}>
+                      {recordingStatus === "PROCESSING" ? (
+                        <ProcessingStatus status="transcribing" />
+                      ) : recordingStatus === "FAILED" ? (
+                        <Text style={styles.sectionSubtitle}>
+                          Recording processing failed. Your mentor may re-upload.
+                        </Text>
+                      ) : recordingStatus === "NOT_STARTED" ? (
+                        <Text style={styles.sectionSubtitle}>
+                          Waiting for your mentor to upload the in-person recording.
+                        </Text>
+                      ) : null}
+                      {recordingUrl ? (
+                        <AudioPlayerCard audioUri={recordingUrl} title="Session Recording" />
+                      ) : null}
                     </View>
                   ) : undefined
                 }
@@ -1140,6 +1176,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     gap: SPACING.md,
+  },
+  badgeStack: {
+    alignItems: "flex-end",
+    gap: SPACING.sm,
   },
   heroInfo: { flex: 1 },
   heroBadge: {
@@ -1198,6 +1238,7 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
   },
   waitingText: { color: "rgba(255,255,255,0.7)", fontSize: 13, flex: 1 },
+  inPersonReadOnly: { gap: SPACING.md },
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", gap: SPACING.md },
   emptyText: { color: "rgba(255,255,255,0.6)", fontSize: 16 },
 });

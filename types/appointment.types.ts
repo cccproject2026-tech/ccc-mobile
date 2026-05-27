@@ -1,5 +1,11 @@
 export type AppointmentPlatform = 'zoom' | 'google_meet' | 'teams' | 'phone' | 'in_person';
 export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+export type SessionMode = "ONLINE" | "IN_PERSON" | "NOT_DECIDED";
+export type SessionRecordingStatus =
+  | "NOT_STARTED"
+  | "PROCESSING"
+  | "COMPLETED"
+  | "FAILED";
 
 export interface CreateAppointmentPayload {
     userId: string; // MongoId - REQUIRED
@@ -8,6 +14,8 @@ export interface CreateAppointmentPayload {
     platform: AppointmentPlatform; // REQUIRED
     meetingLink?: string; // OPTIONAL
     notes?: string; // OPTIONAL
+    sessionMode?: SessionMode; // OPTIONAL (defaults to ONLINE on older flows)
+    meetingLocation?: string; // OPTIONAL (in-person location)
 }
 
 export interface UpdateAppointmentPayload {
@@ -16,6 +24,8 @@ export interface UpdateAppointmentPayload {
     meetingLink?: string;
     notes?: string;
     status?: AppointmentStatus;
+    sessionMode?: SessionMode;
+    meetingLocation?: string;
 }
 
 export interface Appointment {
@@ -37,6 +47,18 @@ export interface Appointment {
     };
     notes?: string;
     status: AppointmentStatus;
+    sessionMode?: SessionMode;
+    meetingLocation?: string;
+    recordingStatus?: SessionRecordingStatus;
+    recordingUrl?: string;
+    transcript?: string | { role?: "mentor" | "pastor"; text?: string; speaker?: string }[];
+    transcriptSummary?: {
+      sessionOverview?: string;
+      keyDiscussionPoints?: string[];
+      mentorGuidance?: string[];
+      actionItems?: string[];
+      followUp?: string;
+    };
     createdAt?: string;
     updatedAt?: string;
 }

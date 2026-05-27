@@ -20,6 +20,13 @@ interface RecordingSheetProps {
   visible: boolean;
   onClose: () => void;
   onUploadComplete: (voiceNoteId: string) => void;
+  title?: string;
+  uploadRecording?: (payload: {
+    uri: string;
+    durationSeconds: number;
+    title: string;
+  }) => Promise<{ id?: string; _id?: string }>;
+  successText?: string;
 }
 
 function formatTimer(seconds: number): string {
@@ -32,6 +39,9 @@ export function RecordingSheet({
   visible,
   onClose,
   onUploadComplete,
+  title,
+  uploadRecording,
+  successText,
 }: RecordingSheetProps) {
   const {
     recordingState,
@@ -45,7 +55,7 @@ export function RecordingSheet({
     requestPermission,
   } = useVoiceNotesStore();
 
-  const [title, setTitle] = useState("");
+  const [recordingTitle, setRecordingTitle] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -96,42 +106,48 @@ export function RecordingSheet({
 
   const handleCancel = useCallback(async () => {
     await cancelRecording();
-    setTitle("");
+    setRecordingTitle("");
   }, [cancelRecording]);
 
   const handleReRecord = useCallback(async () => {
     reset();
-    setTitle("");
+    setRecordingTitle("");
   }, [reset]);
 
   const handleUpload = useCallback(async () => {
     if (!recordingUri) return;
 
-    const finalTitle = title.trim() || `Recording ${new Date().toLocaleDateString()}`;
+    const finalTitle = recordingTitle.trim() || `Recording ${new Date().toLocaleDateString()}`;
     setIsUploading(true);
 
     try {
-      const result = await voiceNotesService.upload({
-        audio: {
-          uri: recordingUri,
-          name: `recording_${Date.now()}.m4a`,
-          type: "audio/m4a",
-        },
-        title: finalTitle,
-        source: "recording",
-        recordingPlatform: voiceNotesService.getRecordingPlatform(),
-        recordingDeviceType: voiceNotesService.getRecordingDeviceType(),
-        recordingDurationSeconds: recordingDuration,
-      });
+      const result = uploadRecording
+        ? await uploadRecording({
+            uri: recordingUri,
+            durationSeconds: recordingDuration,
+            title: finalTitle,
+          })
+        : await voiceNotesService.upload({
+            audio: {
+              uri: recordingUri,
+              name: `recording_${Date.now()}.m4a`,
+              type: "audio/m4a",
+            },
+            title: finalTitle,
+            source: "recording",
+            recordingPlatform: voiceNotesService.getRecordingPlatform(),
+            recordingDeviceType: voiceNotesService.getRecordingDeviceType(),
+            recordingDurationSeconds: recordingDuration,
+          });
 
       Toast.show({
         type: "success",
         text1: "Upload Successful",
-        text2: "Your recording is being processed",
+        text2: successText ?? "Your recording is being processed",
       });
 
       reset();
-      setTitle("");
+      setRecordingTitle("");
       onUploadComplete(result.id || result._id!);
     } catch (error: any) {
       Toast.show({
@@ -142,7 +158,15 @@ export function RecordingSheet({
     } finally {
       setIsUploading(false);
     }
-  }, [recordingUri, title, recordingDuration, reset, onUploadComplete]);
+  }, [
+    recordingUri,
+    recordingTitle,
+    recordingDuration,
+    reset,
+    onUploadComplete,
+    uploadRecording,
+    successText,
+  ]);
 
   const handleClose = useCallback(async () => {
     if (recordingState === "recording") {
@@ -150,7 +174,7 @@ export function RecordingSheet({
     }
     previewPlayer.unload();
     reset();
-    setTitle("");
+    setRecordingTitle("");
     onClose();
   }, [recordingState, cancelRecording, reset, onClose, previewPlayer]);
 
@@ -163,7 +187,7 @@ export function RecordingSheet({
     >
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Record Voice Note</Text>
+          <Text style={styles.headerTitle}>{title ?? "Record Voice Note"}</Text>
           <Pressable onPress={handleClose} hitSlop={12}>
             <Ionicons name="close" size={24} color="rgba(255,255,255,0.7)" />
           </Pressable>
@@ -226,8 +250,8 @@ export function RecordingSheet({
                 style={styles.titleInput}
                 placeholder="Enter a title (optional)"
                 placeholderTextColor="rgba(255,255,255,0.35)"
-                value={title}
-                onChangeText={setTitle}
+                value={recordingTitle}
+                onChangeText={setRecordingTitle}
                 maxLength={100}
               />
 

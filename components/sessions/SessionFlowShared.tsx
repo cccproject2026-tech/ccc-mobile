@@ -1,6 +1,12 @@
 import { Colors } from "@/constants/Colors";
 import { sessionTopicSubtitle } from "@/constants/sessionTitles";
 import { MentorshipSession } from "@/types/session.types";
+import { SessionMode } from "@/types/appointment.types";
+import {
+  resolveDisplaySessionMode,
+  sessionModeLabel,
+  type DisplaySessionMode,
+} from "@/utils/sessionMeetingMode";
 import { formatClock } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
@@ -131,6 +137,126 @@ export function SessionStatusBadge({
       ]}
     >
       <Text style={progressStyles.badgeText}>{status}</Text>
+    </View>
+  );
+}
+
+export function SessionModeBadge({
+  sessionMode,
+  compact,
+}: {
+  sessionMode?: SessionMode | string | null;
+  compact?: boolean;
+}) {
+  const mode = resolveDisplaySessionMode(sessionMode);
+  const tone =
+    mode === "IN_PERSON"
+      ? progressStyles.modeInPerson
+      : progressStyles.modeOnline;
+  const label = mode === "IN_PERSON" ? "IN_PERSON" : "ONLINE";
+
+  return (
+    <View
+      style={[
+        progressStyles.modeBadge,
+        tone,
+        compact && progressStyles.modeBadgeCompact,
+      ]}
+    >
+      <Text style={progressStyles.modeBadgeText}>{label}</Text>
+    </View>
+  );
+}
+
+export function SessionMeetingTypeSelector({
+  value,
+  onChange,
+  disabled,
+  isUpdating,
+}: {
+  value: DisplaySessionMode;
+  onChange: (mode: DisplaySessionMode) => void;
+  disabled?: boolean;
+  isUpdating?: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const options: DisplaySessionMode[] = ["ONLINE", "IN_PERSON"];
+
+  return (
+    <View style={progressStyles.meetingTypeWrap}>
+      <Text style={progressStyles.meetingTypeLabel}>Meeting Type</Text>
+      <Pressable
+        style={[
+          progressStyles.meetingTypeTrigger,
+          (disabled || isUpdating) && progressStyles.meetingTypeDisabled,
+        ]}
+        disabled={disabled || isUpdating}
+        onPress={() => setOpen((v) => !v)}
+        accessibilityRole="button"
+        accessibilityLabel={`Meeting type ${sessionModeLabel(value)}`}
+      >
+        <View style={progressStyles.meetingTypeTriggerLeft}>
+          <Ionicons
+            name={value === "IN_PERSON" ? "people-outline" : "globe-outline"}
+            size={18}
+            color="rgba(255,255,255,0.85)"
+          />
+          <Text style={progressStyles.meetingTypeValue}>
+            {sessionModeLabel(value)}
+          </Text>
+        </View>
+        {isUpdating ? (
+          <Text style={progressStyles.meetingTypeHint}>Updating…</Text>
+        ) : (
+          <Ionicons
+            name={open ? "chevron-up" : "chevron-down"}
+            size={18}
+            color="rgba(255,255,255,0.6)"
+          />
+        )}
+      </Pressable>
+      {open && !disabled && !isUpdating ? (
+        <View style={progressStyles.meetingTypeMenu}>
+          {options.map((opt) => {
+            const selected = opt === value;
+            return (
+              <Pressable
+                key={opt}
+                style={[
+                  progressStyles.meetingTypeOption,
+                  selected && progressStyles.meetingTypeOptionSelected,
+                ]}
+                onPress={() => {
+                  setOpen(false);
+                  if (opt !== value) onChange(opt);
+                }}
+              >
+                <Ionicons
+                  name={opt === "IN_PERSON" ? "people-outline" : "globe-outline"}
+                  size={16}
+                  color={selected ? "#FFFFFF" : "rgba(255,255,255,0.65)"}
+                />
+                <Text
+                  style={[
+                    progressStyles.meetingTypeOptionText,
+                    selected && progressStyles.meetingTypeOptionTextSelected,
+                  ]}
+                >
+                  {sessionModeLabel(opt)}
+                </Text>
+                {selected ? (
+                  <Ionicons name="checkmark" size={16} color="#4ADE80" />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+      <Text style={progressStyles.meetingTypeCaption}>
+        {value === "ONLINE"
+          ? "Zoom meeting link and join flow are used for this session."
+          : "Record or upload audio after the in-person meeting. Zoom details stay saved if you switch back."}
+      </Text>
     </View>
   );
 }
@@ -376,6 +502,101 @@ const progressStyles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 0.4,
+  },
+  modeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    alignSelf: "flex-start",
+    flexShrink: 0,
+  },
+  modeBadgeCompact: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  modeOnline: {
+    backgroundColor: "rgba(34,197,94,0.35)",
+  },
+  modeInPerson: {
+    backgroundColor: "rgba(251,146,60,0.35)",
+  },
+  modeBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+  },
+  meetingTypeWrap: {
+    gap: 10,
+  },
+  meetingTypeLabel: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  meetingTypeTrigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  meetingTypeTriggerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  meetingTypeValue: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  meetingTypeHint: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 13,
+  },
+  meetingTypeDisabled: {
+    opacity: 0.55,
+  },
+  meetingTypeMenu: {
+    backgroundColor: "rgba(0,0,0,0.25)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
+  },
+  meetingTypeOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.06)",
+  },
+  meetingTypeOptionSelected: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  meetingTypeOptionText: {
+    flex: 1,
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  meetingTypeOptionTextSelected: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  meetingTypeCaption: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 12,
+    lineHeight: 17,
   },
   skeletonWrap: { gap: 12, paddingBottom: 8 },
   skeletonCard: {

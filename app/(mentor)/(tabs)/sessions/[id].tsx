@@ -1,4 +1,6 @@
 import {
+    SessionMeetingTypeSelector,
+    SessionModeBadge,
     DetailScreenSkeleton,
     formatSessionTime,
     getNextSessionId,
@@ -7,6 +9,11 @@ import {
     SessionProgressHeader,
     SessionStatusBadge
 } from "@/components/sessions/SessionFlowShared";
+import {
+  AudioPlayerCard,
+  ProcessingStatus,
+  RecordingSheet,
+} from "@/components/voiceNotes";
 import { MENTOR_MEETING_UI } from "@/components/sessions/mentor/mentorSessionMeetingConfig";
 import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
 import { Colors } from "@/constants/Colors";
@@ -15,6 +22,10 @@ import {
     sessionTopicSubtitle,
 } from "@/constants/sessionTitles";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
+import {
+  useUpdateSessionMode,
+  useUploadSessionRecording,
+} from "@/hooks/appointments/useSessionMeetingModes";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
@@ -37,6 +48,10 @@ import {
     zoomUrlHasPasscodeQuery,
 } from "@/utils/meetingLinkDetails";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
+import {
+    resolveDisplaySessionMode,
+    type DisplaySessionMode,
+} from "@/utils/sessionMeetingMode";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
@@ -673,9 +688,14 @@ export default function SessionDetailsScreen() {
       router.replace("/(mentor)/(tabs)/sessions");
     },
   });
+  const { mutateAsync: updateSessionModeAsync, isPending: isUpdatingSessionMode } =
+    useUpdateSessionMode();
+  const { mutateAsync: uploadSessionRecordingAsync, isPending: isUploadingSessionRecording } =
+    useUploadSessionRecording();
   
   const isMutating = isCompleting || isRedoing;
   const [confirmKind, setConfirmKind] = useState<"complete" | "redo" | null>(null);
+  const [showRecordingSheet, setShowRecordingSheet] = useState(false);
 
   const appointment = useMemo(() => {
     if (!session?.appointmentId) return undefined;
@@ -691,6 +711,7 @@ export default function SessionDetailsScreen() {
     "NO_TRANSCRIPT" | "SHORT_TRANSCRIPT" | "GENERAL_ERROR" | null
   >(null);
   const lastFetchedAppointmentIdRef = useRef<string | null>(null);
+  const [sessionModeOverride, setSessionModeOverride] = useState<DisplaySessionMode | null>(null);
 
   const getTranscriptSummary = async (id: string, refresh = false) => {
     setLoadingTranscriptSummary(true);
@@ -865,13 +886,39 @@ export default function SessionDetailsScreen() {
     apiMeetingLink ||
     (showPlaceholderMeeting ? MENTOR_MEETING_UI.placeholderMeetingLink : undefined);
 
-  const platform =
-    appointment?.platform ?? MENTOR_MEETING_UI.placeholderPlatform;
-
-  const showJoinButton = isScheduled && !!meetingLink;
+  const serverSessionMode = resolveDisplaySessionMode(
+    (appointment as any)?.sessionMode ?? session?.sessionMode,
+  );
+  const sessionMode = sessionModeOverride ?? serverSessionMode;
+  const isInPerson = sessionMode === "IN_PERSON";
+  const platform: AppointmentPlatform = useMemo(() => {
+    if (isInPerson) {
+      return appointment?.platform ?? "in_person";
+    }
+    const link = (meetingLink ?? "").toLowerCase();
+    if (link.includes("zoom.us")) return "zoom";
+    if (link.includes("meet.google.com")) return "google_meet";
+    if (link.includes("teams.microsoft.com")) return "teams";
+    if (link.startsWith("tel:")) return "phone";
+    if (appointment?.platform && appointment.platform !== "in_person") {
+      return appointment.platform;
+    }
+    return MENTOR_MEETING_UI.placeholderPlatform;
+  }, [isInPerson, meetingLink, appointment?.platform]);
+  const recordingStatus =
+    session?.recordingStatus ??
+    (appointment as any)?.recordingStatus ??
+    "NOT_STARTED";
+  const recordingUrl = session?.recordingUrl ?? (appointment as any)?.recordingUrl;
+  const showJoinButton = isScheduled && !isInPerson && !!meetingLink;
   const isCompleted = session?.status === "COMPLETED";
   const canComplete = !!session?.appointmentId && !isCompleted;
   const canRedo = !!session?.appointmentId;
+
+  useEffect(() => {
+    // Reset local override when navigating to another session.
+    setSessionModeOverride(null);
+  }, [session?.id]);
 
   const handleJoin = () => {
     if (!meetingLink) return;
@@ -932,6 +979,45 @@ export default function SessionDetailsScreen() {
         type: "error",
         position: "top",
         text1: "Cannot redo session",
+        text2: getErrorMessage(error, "Please try again"),
+      });
+    }
+  };
+
+  const handleMeetingTypeChange = async (mode: DisplaySessionMode) => {
+    const aptId = appointment?.id ?? session?.appointmentId;
+    if (!aptId) {
+      Toast.show({
+        type: "error",
+        position: "top",
+        text1: "Missing appointment",
+        text2: "Session appointment is not available",
+      });
+      return;
+    }
+    try {
+      setSessionModeOverride(mode);
+      await updateSessionModeAsync({ appointmentId: String(aptId), sessionMode: mode });
+      await Promise.all([
+        refetchSessions(),
+        refetchMentorAppointments(),
+        refetchMenteeAppointments(),
+      ]);
+      Toast.show({
+        type: "success",
+        position: "top",
+        text1: "Meeting type updated",
+        text2:
+          mode === "ONLINE"
+            ? "Online Zoom meeting is active for this session"
+            : "In-person recording is now active for this session",
+      });
+    } catch (error) {
+      setSessionModeOverride(null);
+      Toast.show({
+        type: "error",
+        position: "top",
+        text1: "Unable to update meeting type",
         text2: getErrorMessage(error, "Please try again"),
       });
     }
@@ -1014,7 +1100,10 @@ export default function SessionDetailsScreen() {
                 <Text style={styles.heroTitle}>{heroTopic || sessionOrdinalLabel(session.sessionNumber)}</Text>
                 {heroTopic && <Text style={styles.heroSubtitle}>{sessionOrdinalLabel(session.sessionNumber)}</Text>}
               </View>
-              <SessionStatusBadge status={session.status} />
+              <View style={styles.badgeStack}>
+                <SessionModeBadge sessionMode={sessionMode} />
+                <SessionStatusBadge status={session.status} />
+              </View>
             </View>
 
             <View style={styles.divider} />
@@ -1042,8 +1131,19 @@ export default function SessionDetailsScreen() {
             </View>
           </View>
 
-          {/* Meeting Section */}
-          {meetingLink && (
+          {session.appointmentId ? (
+            <View style={styles.contentSection}>
+              <SessionMeetingTypeSelector
+                value={sessionMode}
+                onChange={handleMeetingTypeChange}
+                disabled={!session.appointmentId}
+                isUpdating={isUpdatingSessionMode}
+              />
+            </View>
+          ) : null}
+
+          {/* Meeting Section (ONLINE) */}
+          {!isInPerson && meetingLink && (
             <View style={styles.meetingSection}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="videocam-outline" size={20} color="rgba(255,255,255,0.7)" />
@@ -1060,13 +1160,58 @@ export default function SessionDetailsScreen() {
             </View>
           )}
 
-          {isScheduled && session.appointmentId && !meetingLink && (
+          {!isInPerson && isScheduled && session.appointmentId && !meetingLink && (
             <View style={styles.waitingCard}>
               <Ionicons name="time-outline" size={24} color="rgba(255,255,255,0.5)" />
               <View style={styles.waitingContent}>
                 <Text style={styles.waitingTitle}>Waiting for Meeting Link</Text>
                 <Text style={styles.waitingText}>The meeting link will appear here once added to the appointment</Text>
               </View>
+            </View>
+          )}
+
+          {isInPerson && (
+            <View style={styles.contentSection}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="mic-outline" size={20} color="rgba(255,255,255,0.7)" />
+                <Text style={styles.sectionTitle}>In-Person Recording</Text>
+              </View>
+              <View style={styles.inPersonActions}>
+                <Pressable
+                  style={styles.joinButton}
+                  onPress={() => setShowRecordingSheet(true)}
+                  disabled={isUploadingSessionRecording}
+                >
+                  <Ionicons name="radio-outline" size={18} color="#153C5A" />
+                  <Text style={styles.joinButtonText}>Start Recording</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.secondaryButton}
+                  onPress={() => setShowRecordingSheet(true)}
+                  disabled={isUploadingSessionRecording}
+                >
+                  <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.secondaryButtonText}>Upload Recording</Text>
+                </Pressable>
+              </View>
+              {recordingStatus === "PROCESSING" ? (
+                <ProcessingStatus status="transcribing" />
+              ) : recordingStatus === "FAILED" ? (
+                <View style={styles.waitingCard}>
+                  <Ionicons name="alert-circle-outline" size={20} color="rgba(255,255,255,0.7)" />
+                  <Text style={styles.waitingText}>Recording processing failed. Please re-upload.</Text>
+                </View>
+              ) : recordingStatus === "NOT_STARTED" ? (
+                <View style={styles.waitingCard}>
+                  <Ionicons name="mic-off-outline" size={20} color="rgba(255,255,255,0.7)" />
+                  <Text style={styles.waitingText}>Recording not uploaded</Text>
+                </View>
+              ) : null}
+              {recordingUrl ? (
+                <View style={styles.playerWrap}>
+                  <AudioPlayerCard audioUri={recordingUrl} title="Session Recording" />
+                </View>
+              ) : null}
             </View>
           )}
 
@@ -1190,6 +1335,31 @@ export default function SessionDetailsScreen() {
             </Pressable>
           </View>
         </ScrollView>
+        <RecordingSheet
+          visible={showRecordingSheet}
+          title="Record Session Audio"
+          successText="Session recording uploaded"
+          onClose={() => setShowRecordingSheet(false)}
+          onUploadComplete={() => {
+            setShowRecordingSheet(false);
+            refetchMentorAppointments();
+            refetchMenteeAppointments();
+            refetchSessions();
+          }}
+          uploadRecording={async ({ uri, durationSeconds }) => {
+            const aptId = appointment?.id ?? session?.appointmentId;
+            if (!aptId) throw new Error("Missing appointment");
+            return uploadSessionRecordingAsync({
+              appointmentId: String(aptId),
+              audio: {
+                uri,
+                name: `session_recording_${Date.now()}.m4a`,
+                type: "audio/m4a",
+              },
+              recordingDurationSeconds: durationSeconds,
+            });
+          }}
+        />
       </LinearGradient>
     </SafeAreaView>
   );
@@ -1230,6 +1400,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     gap: SPACING.md,
+  },
+  badgeStack: {
+    alignItems: "flex-end",
+    gap: SPACING.sm,
   },
   heroInfo: { flex: 1 },
   heroBadge: {
@@ -1273,6 +1447,8 @@ const styles = StyleSheet.create({
   waitingContent: { flex: 1, gap: SPACING.xs },
   waitingTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "600" },
   waitingText: { color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 19 },
+  inPersonActions: { gap: SPACING.md },
+  playerWrap: { marginTop: SPACING.sm },
   contentSection: { gap: SPACING.md },
   conversationFrame: {
     backgroundColor: "rgba(255,255,255,0.09)",

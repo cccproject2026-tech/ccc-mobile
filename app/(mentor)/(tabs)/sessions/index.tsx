@@ -4,6 +4,7 @@ import {
   SessionConfirmModal,
   sessionGradientColors,
   SessionListSkeleton,
+  SessionModeBadge,
   SessionProgressHeader,
   SessionStatusBadge
 } from "@/components/sessions/SessionFlowShared";
@@ -227,7 +228,10 @@ const SessionRow = React.memo(function SessionRow({
               </View>
             )}
           </View>
-          <SessionStatusBadge status={item.status} compact />
+          <View style={styles.badgeStack}>
+            <SessionModeBadge sessionMode={item.sessionMode} compact />
+            <SessionStatusBadge status={item.status} compact />
+          </View>
         </View>
 
         {/* Meta */}
@@ -944,6 +948,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
     marginBottom: 10,
+  },
+  badgeStack: {
+    alignItems: "flex-end",
+    gap: 6,
   },
   cardTitleBlock: {
     flex: 1,

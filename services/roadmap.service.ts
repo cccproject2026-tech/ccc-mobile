@@ -26,7 +26,11 @@ import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 import { menteesService } from './mentees.service';
 import { MentorshipSession, MentorshipSessionsApiResponse } from "@/types/session.types";
-import type { Appointment } from "@/types/appointment.types";
+import type {
+    Appointment,
+    SessionMode,
+    SessionRecordingStatus,
+} from "@/types/appointment.types";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import {
     parseAiSummaryFromApi,
@@ -52,6 +56,26 @@ function normalizeRoadmapSessionsPayload(responseData: unknown): any[] {
 const getHttpErrorStatus = (error: unknown): number | undefined => {
     const e = error as { response?: { status?: number }; statusCode?: number };
     return e?.response?.status ?? e?.statusCode;
+};
+
+const normalizeSessionMode = (raw: unknown): SessionMode => {
+    const mode = String(raw ?? "ONLINE").toUpperCase();
+    if (mode === "IN_PERSON") return "IN_PERSON";
+    // Legacy / backend NOT_DECIDED → treat as ONLINE in UI
+    return "ONLINE";
+};
+
+const normalizeRecordingStatus = (raw: unknown): SessionRecordingStatus | undefined => {
+    const status = String(raw ?? "").toUpperCase();
+    if (
+        status === "NOT_STARTED" ||
+        status === "PROCESSING" ||
+        status === "COMPLETED" ||
+        status === "FAILED"
+    ) {
+        return status;
+    }
+    return undefined;
 };
 
 // Helper to append data to FormData with support for nested objects/arrays
@@ -283,6 +307,30 @@ export const roadmapService = {
             const mentorshipInsights = parseMentorshipInsightsFromApi(
                 item?.mentorshipInsights,
             );
+            const sessionMode = normalizeSessionMode(
+                item?.sessionMode ?? item?.session_mode ?? embeddedAppointment?.sessionMode,
+            );
+            const recordingStatus = normalizeRecordingStatus(
+                item?.recordingStatus ??
+                item?.recording_status ??
+                embeddedAppointment?.recordingStatus,
+            );
+            const recordingUrlRaw =
+                item?.recordingUrl ??
+                item?.recording_url ??
+                embeddedAppointment?.recordingUrl;
+            const recordingUrl =
+                typeof recordingUrlRaw === "string" && recordingUrlRaw.trim().length > 0
+                    ? recordingUrlRaw.trim()
+                    : undefined;
+            const meetingLocationRaw =
+                item?.meetingLocation ??
+                item?.meeting_location ??
+                embeddedAppointment?.meetingLocation;
+            const meetingLocation =
+                typeof meetingLocationRaw === "string" && meetingLocationRaw.trim().length > 0
+                    ? meetingLocationRaw.trim()
+                    : undefined;
 
             return {
                 id,
@@ -292,6 +340,10 @@ export const roadmapService = {
                 mentorNote,
                 pastorNote,
                 appointmentId,
+                sessionMode,
+                ...(recordingStatus ? { recordingStatus } : {}),
+                ...(recordingUrl ? { recordingUrl } : {}),
+                ...(meetingLocation ? { meetingLocation } : {}),
                 ...(meetingLink ? { meetingLink } : {}),
                 ...(transcript ? { transcript } : {}),
                 ...(aiSummary ? { aiSummary } : {}),

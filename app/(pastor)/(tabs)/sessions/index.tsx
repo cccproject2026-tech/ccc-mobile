@@ -4,6 +4,7 @@ import {
   sessionCardHighlightStyle,
   sessionGradientColors,
   SessionListSkeleton,
+  SessionModeBadge,
   SessionProgressHeader,
   SessionStatusBadge,
 } from "@/components/sessions/SessionFlowShared";
@@ -223,7 +224,10 @@ export default function PastorSessionsScreen() {
                         </View>
                       ) : null}
                     </View>
-                    <SessionStatusBadge status={item.status} compact />
+                    <View style={styles.badgeStack}>
+                      <SessionModeBadge sessionMode={item.sessionMode} compact />
+                      <SessionStatusBadge status={item.status} compact />
+                    </View>
                   </View>
 
                   <View style={styles.metaBlock}>
@@ -343,6 +347,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
     marginBottom: 12,
+  },
+  badgeStack: {
+    alignItems: "flex-end",
+    gap: 6,
   },
   titleBlock: {
     flex: 1,

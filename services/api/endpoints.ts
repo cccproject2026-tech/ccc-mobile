@@ -102,6 +102,7 @@ export const ENDPOINTS = {
     GET: (userId: string) => `/appointments/user/${userId}`,
     CREATE: "/appointments",
     GET_BY_MENTOR: (mentorId: string) => `/appointments/mentor/${mentorId}`,
+    GET_BY_ID: (appointmentId: string) => `/appointments/${appointmentId}`,
     UPDATE: (appointmentId: string) => `/appointments/${appointmentId}`,
     GET_WEEKLY_AVAILABILITY: (mentorId: string) =>
       `/appointments/availability/${mentorId}`,
@@ -112,6 +113,10 @@ export const ENDPOINTS = {
       `/appointments/${appointmentId}/reschedule`,
     CANCEL: (appointmentId: string) =>
       `/appointments/${appointmentId}/cancel`,
+    UPDATE_SESSION_MODE: (appointmentId: string) =>
+      `/appointments/${appointmentId}/session-mode`,
+    UPLOAD_RECORDING: (appointmentId: string) =>
+      `/appointments/${appointmentId}/recording`,
   },
 
   ROADMAPS: {

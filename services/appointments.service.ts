@@ -9,6 +9,7 @@ import {
   SetAvailabilityApiResponse,
   SetAvailabilityPayload,
   SetAvailabilityResponse,
+  SessionMode,
   UpdateAppointmentPayload,
   WeeklyAvailability,
 } from "../types/appointment.types";
@@ -66,6 +67,15 @@ export const appointmentService = {
       console.error("Error fetching mentor appointments:", error);
       throw error;
     }
+  },
+
+  getAppointmentById: async (appointmentId: string): Promise<Appointment> => {
+    const response = await apiClient.get<AppointmentResponse>(
+      ENDPOINTS.APPOINTMENTS.GET_BY_ID(appointmentId),
+    );
+    return Array.isArray(response.data.data)
+      ? response.data.data[0]
+      : response.data.data;
   },
 
   /**
@@ -173,6 +183,58 @@ export const appointmentService = {
       console.error("Error updating appointment:", error);
       throw error;
     }
+  },
+
+  updateSessionMode: async (
+    appointmentId: string,
+    sessionMode: SessionMode,
+  ): Promise<Appointment> => {
+    const response = await apiClient.patch<AppointmentResponse>(
+      ENDPOINTS.APPOINTMENTS.UPDATE_SESSION_MODE(appointmentId),
+      { sessionMode },
+    );
+    return Array.isArray(response.data.data)
+      ? response.data.data[0]
+      : response.data.data;
+  },
+
+  uploadSessionRecording: async (
+    appointmentId: string,
+    payload: {
+      audio: { uri: string; name: string; type: string };
+      recordingDurationSeconds?: number;
+      recordingPlatform?: string;
+      recordingDeviceType?: string;
+    },
+  ): Promise<Appointment> => {
+    const formData = new FormData();
+    formData.append("audio", {
+      uri: payload.audio.uri,
+      name: payload.audio.name,
+      type: payload.audio.type,
+    } as any);
+
+    if (payload.recordingDurationSeconds != null) {
+      formData.append(
+        "recordingDurationSeconds",
+        String(payload.recordingDurationSeconds),
+      );
+    }
+    if (payload.recordingPlatform) {
+      formData.append("recordingPlatform", payload.recordingPlatform);
+    }
+    if (payload.recordingDeviceType) {
+      formData.append("recordingDeviceType", payload.recordingDeviceType);
+    }
+
+    const response = await apiClient.post<AppointmentResponse>(
+      ENDPOINTS.APPOINTMENTS.UPLOAD_RECORDING(appointmentId),
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" }, timeout: 120000 },
+    );
+    return Array.isArray(response.data.data)
+      ? response.data.data[0]
+      : response.data.data;
   },
 
   /**
