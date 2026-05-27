@@ -132,9 +132,10 @@ export const roadmapService = {
         } catch (error: unknown) {
             const err = error as {
                 response?: { status?: number; data?: { message?: string } };
+                statusCode?: number;
                 message?: string;
             };
-            const status = err?.response?.status;
+            const status = err?.response?.status ?? err?.statusCode;
             const message =
                 err?.response?.data?.message ||
                 err?.message ||
@@ -143,7 +144,7 @@ export const roadmapService = {
             // Backend may return conflict/bad request if the extra already exists.
             if (
                 status === 409 ||
-                (status === 400 && /already exists|duplicate|already/i.test(message))
+                (status === 400 && /already exists|already exist|duplicate|already/i.test(message))
             ) {
                 return {
                     success: true,

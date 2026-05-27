@@ -13,6 +13,7 @@ import {
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
+import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import {
     getEffectiveTaskExtras,
     normalizeNestedTaskStatus,
@@ -190,6 +191,11 @@ export function MentorTaskView({
     );
     const createSubmission = useCreateSubmission();
     const uploadSubmissionDoc = useUploadSubmissionDocument();
+    const {
+        mutateAsync: triggerJumpstartAsync,
+        isPending: isTriggeringJumpstart,
+    } = useTriggerJumpstart();
+    const jumpstartTriggeredUsersRef = useRef<Set<string>>(new Set());
 
     const isUpdateMode = !!existingExtras;
     const isTaskAlreadyCompleted = normalizeNestedTaskStatus(task.status) === "completed";
@@ -420,6 +426,33 @@ export function MentorTaskView({
         }
 
         try {
+            let extrasAlreadyExistForUser = isUpdateMode;
+
+            // Trigger session creation on jump-start completion before save flow.
+            if (
+                roadmapId &&
+                targetUserId &&
+                !isUpdateMode &&
+                !jumpstartTriggeredUsersRef.current.has(targetUserId)
+            ) {
+                try {
+                    const response = await triggerJumpstartAsync({
+                        roadmapId,
+                        userId: targetUserId,
+                        nestedRoadMapItemId: itemId,
+                    });
+                    if (response?.success || response?.alreadyExists) {
+                        jumpstartTriggeredUsersRef.current.add(targetUserId);
+                        extrasAlreadyExistForUser = true;
+                    }
+                } catch (error) {
+                    console.warn(
+                        "[Jumpstart Trigger] Failed (non-blocking). Continuing save flow.",
+                        error,
+                    );
+                }
+            }
+
             const responsesArray = Object.entries(formData).map(([name, value]) => {
                 const type = getExtraType(name, value);
                 if (type === "SIGNATURE") {
@@ -466,7 +499,7 @@ export function MentorTaskView({
 
             // Also create/update extras for backward compatibility with progress tracking
             const extrasArray = responsesArray;
-            if (isUpdateMode) {
+            if (extrasAlreadyExistForUser) {
                 await updateExtras.mutateAsync({
                     roadMapId: roadmapId!,
                     payload: { extras: extrasArray },
@@ -1184,7 +1217,8 @@ export function MentorTaskView({
     const isSaving =
         createExtras.isPending ||
         updateExtras.isPending ||
-        createSubmission.isPending;
+        createSubmission.isPending ||
+        isTriggeringJumpstart;
 
     const isTaskCompleted =
         normalizeNestedTaskStatus(task.status) === "completed";

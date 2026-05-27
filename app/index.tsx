@@ -153,9 +153,6 @@ import {
             if (interestStatus === 'accepted' || isEmailVerified) {
                 return '/(unauthenticated)/set-password';
             }
-            if (interestStatus === 'pending' || interestStatus === 'new') {
-                return '/(unauthenticated)';
-            }
             if (interestStatus === 'rejected') {
                 return '/(unauthenticated)/application-rejected';
             }
