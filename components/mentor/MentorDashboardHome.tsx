@@ -57,7 +57,7 @@ const EXPLORE_TILES = [
   {
     icon: "analytics-outline",
     title: "Mentorship\nInsights",
-    route: "/(mentor)/(tabs)/insights",
+    route: "/(mentor)/(tabs)/sessions/insights",
   },
 ] as const;
 
