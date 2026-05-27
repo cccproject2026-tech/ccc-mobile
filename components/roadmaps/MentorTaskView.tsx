@@ -1,6 +1,11 @@
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 import {
+    useCreateSubmission,
+    useLatestSubmission,
+    useUploadSubmissionDocument,
+} from "@/hooks/roadmap/useTaskSubmissions";
+import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
     useRoadmapDocuments,
@@ -8,11 +13,6 @@ import {
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
-import {
-    useLatestSubmission,
-    useCreateSubmission,
-    useUploadSubmissionDocument,
-} from "@/hooks/roadmap/useTaskSubmissions";
 import {
     getEffectiveTaskExtras,
     normalizeNestedTaskStatus,
@@ -26,7 +26,7 @@ import {
 } from "@/lib/roadmap/taskCompletionTimestamps";
 
 import { SignatureModal } from "@/components/forms/SignatureModal";
-import { Extra, NestedRoadmap, Roadmap, TaskSubmission } from "@/lib/roadmap/types";
+import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
@@ -38,12 +38,12 @@ import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
-    Animated as RNAnimated,
     BackHandler,
     Image,
     Linking,
     Modal,
     Pressable,
+    Animated as RNAnimated,
     StyleSheet,
     Text,
     TextInput,
@@ -1486,7 +1486,7 @@ const styles = StyleSheet.create({
     },
     saveButtonText: {
         color: "#2563eb",
-        fontSize: 18,
+        fontSize: 14,
         fontWeight: "800",
         letterSpacing: 0.15,
     },
