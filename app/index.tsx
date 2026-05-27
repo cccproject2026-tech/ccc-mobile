@@ -1,7 +1,8 @@
 import { icons } from '@/constants/images';
+import { useOnboardingStore } from '@/stores';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import {
     Image,
@@ -129,6 +130,47 @@ import {
         const router = useRouter();
         const { bottom } = useSafeAreaInsets();
         const { width, height } = useWindowDimensions();
+        const {
+            interestStatus,
+            isEmailVerified,
+            isPasswordSet,
+            userId,
+            applicationId,
+            email,
+            interestData,
+            hasHydrated,
+        } = useOnboardingStore();
+        const hasSubmittedApplication = !!(
+            userId ||
+            applicationId ||
+            email ||
+            interestData
+        );
+
+        const resumePath = useMemo(() => {
+            if (!hasHydrated || !hasSubmittedApplication) return null;
+            if (isPasswordSet) return '/(unauthenticated)/login-form';
+            if (interestStatus === 'accepted' || isEmailVerified) {
+                return '/(unauthenticated)/set-password';
+            }
+            if (interestStatus === 'pending' || interestStatus === 'new') {
+                return '/(unauthenticated)';
+            }
+            if (interestStatus === 'rejected') {
+                return '/(unauthenticated)/application-rejected';
+            }
+            return null;
+        }, [
+            hasHydrated,
+            hasSubmittedApplication,
+            isPasswordSet,
+            interestStatus,
+            isEmailVerified,
+        ]);
+
+        if (resumePath) {
+            return <Redirect href={resumePath} />;
+        }
 
         const layout = useMemo(() => {
             const isNarrow = width < 360;

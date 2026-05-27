@@ -27,6 +27,7 @@ interface OnboardingState {
     | 'email-verify'
     | 'password'
     | 'complete';
+    hasHydrated: boolean;
 }
 
 interface OnboardingActions {
@@ -42,6 +43,7 @@ interface OnboardingActions {
     reset: () => void;
     /** Clears onboarding progress but keeps tutorial dismissed (e.g. logout). */
     resetOnLogout: () => void;
+    setHasHydrated: (hydrated: boolean) => void;
 }
 
 type OnboardingStore = OnboardingState & OnboardingActions;
@@ -56,6 +58,7 @@ const initialState: OnboardingState = {
     isPasswordSet: false,
     hasProfilePicture: false,
     currentStep: 'form',
+    hasHydrated: false,
 };
 
 export const useOnboardingStore = create<OnboardingStore>()(
@@ -109,6 +112,10 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 console.log('📍 Current step:', step);
             },
 
+            setHasHydrated: (hydrated) => {
+                set({ hasHydrated: hydrated });
+            },
+
             reset: () => {
                 set(initialState);
                 console.log('🔄 Onboarding store reset');
@@ -125,6 +132,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
                     isPasswordSet: false,
                     hasProfilePicture: false,
                     currentStep: 'form',
+                    hasHydrated: true,
                 });
                 console.log('🔄 Onboarding progress cleared on logout');
             },
@@ -142,7 +150,11 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 isPasswordSet: state.isPasswordSet,
                 hasProfilePicture: state.hasProfilePicture,
                 // Don't persist currentStep (UI state only)
+                // Don't persist hasHydrated (runtime only)
             }),
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
         }
     )
 );
