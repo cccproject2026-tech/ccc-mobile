@@ -173,3 +173,64 @@ export interface SetAvailabilityApiResponse {
     message: string;
     data: SetAvailabilityResponse;
 }
+
+// ─── Recurring availability (matches ccc-web / ccc-backend) ───────────────────
+
+export type AppointmentSlotPeriod = 'AM' | 'PM';
+
+export interface AppointmentAvailabilityTimeSlot {
+    startTime: string;
+    startPeriod: AppointmentSlotPeriod;
+    endTime: string;
+    endPeriod: AppointmentSlotPeriod;
+}
+
+export interface TemplateWeeklySlotRowDto {
+    date: string;
+    slots: AppointmentAvailabilityTimeSlot[];
+}
+
+export interface CreateRecurringAvailabilityPayload {
+    mentorId: string;
+    templateWeeklySlots: TemplateWeeklySlotRowDto[];
+    horizonDays?: number;
+    clearPersonalizations?: boolean;
+    meetingDuration?: number;
+    minSchedulingNoticeHours?: number;
+    maxBookingsPerDay?: number;
+    preferredPlatform?: string;
+}
+
+export interface UpdateMentorAvailabilitySettingsPayload {
+    meetingDuration?: number;
+    minSchedulingNoticeHours?: number;
+    maxBookingsPerDay?: number;
+    preferredPlatform?: string;
+}
+
+export interface PatchMentorAvailabilityDayPayload {
+    date: string;
+    slots: AppointmentAvailabilityTimeSlot[];
+    meetingDuration?: number;
+    minSchedulingNoticeHours?: number;
+    maxBookingsPerDay?: number;
+    preferredPlatform?: string;
+}
+
+export interface MentorAvailabilityDocument {
+    mentorId?: string;
+    weeklySlots?: WeeklySlot[];
+    recurringWeeklyPattern?: { weekday: number; rawSlots: AppointmentAvailabilityTimeSlot[] }[];
+    recurringHorizonDays?: number;
+    meetingDuration?: number;
+    minSchedulingNoticeHours?: number;
+    maxBookingsPerDay?: number;
+    preferredPlatform?: string;
+    templateWeeklySlots?: TemplateWeeklySlotRowDto[];
+}
+
+export interface ApiMessageResponse {
+    success: boolean;
+    message?: string;
+    data?: unknown;
+}

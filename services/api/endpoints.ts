@@ -109,6 +109,19 @@ export const ENDPOINTS = {
     GET_MONTHLY_AVAILABILITY: (mentorId: string, month: number, year: number) =>
       `/appointments/availability/${mentorId}/month?month=${month}&year=${year}`,
     SET_AVAILABILITY: "/appointments/availability",
+    CREATE_RECURRING_AVAILABILITY: "/appointments/availability/recurring",
+    PATCH_AVAILABILITY_DAY: (mentorId: string) =>
+      `/appointments/availability/${mentorId}/day`,
+    PATCH_AVAILABILITY_SETTINGS: (mentorId: string) =>
+      `/appointments/availability/${mentorId}/settings`,
+    MARK_DAY_UNAVAILABLE: (mentorId: string) =>
+      `/appointments/availability/${mentorId}/day/unavailable`,
+    MARK_DAY_AVAILABLE: (mentorId: string) =>
+      `/appointments/availability/${mentorId}/day/available`,
+    DELETE_AVAILABILITY_DAY: (mentorId: string, dateYmd: string) =>
+      `/appointments/availability/${mentorId}/day/${dateYmd.slice(0, 10)}`,
+    DELETE_AVAILABILITY_SLOT: (mentorId: string) =>
+      `/appointments/availability/${mentorId}/slot`,
     RESCHEDULE: (appointmentId: string) =>
       `/appointments/${appointmentId}/reschedule`,
     CANCEL: (appointmentId: string) =>

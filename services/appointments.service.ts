@@ -1,16 +1,21 @@
 import {
+  ApiMessageResponse,
   Appointment,
   AppointmentPlatform,
   AppointmentResponse,
   CreateAppointmentPayload,
+  CreateRecurringAvailabilityPayload,
   GetMonthlyAvailabilityApiResponse,
   GetWeeklyAvailabilityApiResponse,
+  MentorAvailabilityDocument,
   MonthlyAvailabilityDay,
+  PatchMentorAvailabilityDayPayload,
   SetAvailabilityApiResponse,
   SetAvailabilityPayload,
   SetAvailabilityResponse,
   SessionMode,
   UpdateAppointmentPayload,
+  UpdateMentorAvailabilitySettingsPayload,
   WeeklyAvailability,
 } from "../types/appointment.types";
 import { apiClient } from "./api/client";
@@ -121,7 +126,7 @@ export const appointmentService = {
   },
 
   /**
-   * Set/Update weekly availability for a mentor
+   * Set/Update weekly availability for a mentor (legacy bulk POST)
    */
   setAvailability: async (
     payload: SetAvailabilityPayload,
@@ -136,6 +141,91 @@ export const appointmentService = {
       console.error("Error setting availability:", error);
       throw error;
     }
+  },
+
+  createRecurringAvailability: async (
+    payload: CreateRecurringAvailabilityPayload,
+  ): Promise<ApiMessageResponse> => {
+    const response = await apiClient.post<ApiMessageResponse>(
+      ENDPOINTS.APPOINTMENTS.CREATE_RECURRING_AVAILABILITY,
+      payload,
+    );
+    return response.data;
+  },
+
+  patchAvailabilityDay: async (
+    mentorId: string,
+    body: PatchMentorAvailabilityDayPayload,
+  ): Promise<ApiMessageResponse> => {
+    const response = await apiClient.patch<ApiMessageResponse>(
+      ENDPOINTS.APPOINTMENTS.PATCH_AVAILABILITY_DAY(mentorId),
+      body,
+    );
+    return response.data;
+  },
+
+  patchAvailabilitySettings: async (
+    mentorId: string,
+    body: UpdateMentorAvailabilitySettingsPayload,
+  ): Promise<ApiMessageResponse> => {
+    const response = await apiClient.patch<ApiMessageResponse>(
+      ENDPOINTS.APPOINTMENTS.PATCH_AVAILABILITY_SETTINGS(mentorId),
+      body,
+    );
+    return response.data;
+  },
+
+  markAvailabilityDayUnavailable: async (
+    mentorId: string,
+    dateYmd: string,
+  ): Promise<ApiMessageResponse> => {
+    const response = await apiClient.post<ApiMessageResponse>(
+      ENDPOINTS.APPOINTMENTS.MARK_DAY_UNAVAILABLE(mentorId),
+      { date: dateYmd.slice(0, 10) },
+    );
+    return response.data;
+  },
+
+  markAvailabilityDayAvailable: async (
+    mentorId: string,
+    body: PatchMentorAvailabilityDayPayload,
+  ): Promise<ApiMessageResponse> => {
+    const response = await apiClient.post<ApiMessageResponse>(
+      ENDPOINTS.APPOINTMENTS.MARK_DAY_AVAILABLE(mentorId),
+      { ...body, date: body.date.slice(0, 10) },
+    );
+    return response.data;
+  },
+
+  deleteAvailabilityDay: async (
+    mentorId: string,
+    dateYmd: string,
+  ): Promise<ApiMessageResponse> => {
+    const response = await apiClient.delete<ApiMessageResponse>(
+      ENDPOINTS.APPOINTMENTS.DELETE_AVAILABILITY_DAY(mentorId, dateYmd),
+    );
+    return response.data;
+  },
+
+  deleteAvailabilitySlot: async (
+    mentorId: string,
+    payload: { slotId: string; date?: string },
+  ): Promise<ApiMessageResponse> => {
+    const response = await apiClient.delete<ApiMessageResponse>(
+      ENDPOINTS.APPOINTMENTS.DELETE_AVAILABILITY_SLOT(mentorId),
+      { data: payload },
+    );
+    return response.data;
+  },
+
+  getMentorAvailabilityDocument: async (
+    mentorId: string,
+  ): Promise<MentorAvailabilityDocument> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: MentorAvailabilityDocument;
+    }>(ENDPOINTS.APPOINTMENTS.GET_WEEKLY_AVAILABILITY(mentorId));
+    return response.data.data;
   },
 
   /**
