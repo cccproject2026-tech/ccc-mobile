@@ -220,10 +220,7 @@ export function useCompletionCelebration() {
 
   const handleBackToJourney = useCallback(() => {
     dismissCelebration();
-    router.back();
-    setTimeout(() => {
-      router.back();
-    }, 150);
+    router.replace("/(pastor)/(tabs)/roadmap" as any);
   }, [dismissCelebration, router]);
 
   return {
