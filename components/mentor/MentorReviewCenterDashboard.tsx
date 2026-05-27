@@ -23,7 +23,7 @@ export default function MentorReviewCenterDashboard() {
   const openPastor = useCallback(
     (pastorId: string, pastorName: string) => {
       router.push({
-        pathname: "/(mentor)/review-center/pastor",
+        pathname: "/(mentor)/(tabs)/review-center/pastor",
         params: { pastorId, pastorName },
       });
     },

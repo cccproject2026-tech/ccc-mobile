@@ -277,7 +277,7 @@ export default function MentorDashboardHome() {
 
               <Pressable
                 style={styles.reviewCenterLink}
-                onPress={() => router.push("/(mentor)/review-center" as any)}
+                onPress={() => router.push("/(mentor)/(tabs)/review-center" as any)}
                 accessibilityRole="button"
                 accessibilityLabel={`Review Center${pendingActionCount > 0 ? `, ${pendingActionCount} pending` : ""}`}
               >

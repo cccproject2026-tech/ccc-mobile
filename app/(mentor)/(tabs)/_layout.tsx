@@ -147,6 +147,9 @@ export default function MentorTabLayout() {
                     <Tabs.Screen name="search" options={{ href: null }} />
                     <Tabs.Screen name="voice-notes/index" options={{ href: null }} />
                     <Tabs.Screen name="voice-notes/detail" options={{ href: null }} />
+                    <Tabs.Screen name="review-center" options={{ href: null }} />
+                    <Tabs.Screen name="review-center/pastor" options={{ href: null }} />
+                    <Tabs.Screen name="review-center/list" options={{ href: null }} />
                 </Tabs>
             </AssessmentProvider>
         </RoadmapProgressProvider>

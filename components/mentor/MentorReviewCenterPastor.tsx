@@ -60,7 +60,7 @@ export default function MentorReviewCenterPastor() {
   const openBucket = useCallback(
     (bucket: ReviewDashboardBucket) => {
       router.push({
-        pathname: "/(mentor)/review-center/list",
+        pathname: "/(mentor)/(tabs)/review-center/list",
         params: {
           bucket,
           pastorId: pastorIdStr,
