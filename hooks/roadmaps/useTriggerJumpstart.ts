@@ -24,10 +24,29 @@ export const useTriggerJumpstart = () => {
     // POST /roadmaps/:roadmapId/extras must never be retried automatically.
     // If it fails (e.g. "Extras already exist"), the caller will handle it and still proceed to PATCH.
     retry: 0,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: mentorshipSessionKeys.all });
-      queryClient.invalidateQueries({ queryKey: pastorSessionKeys.all });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: mentorshipSessionKeys.all,
+        refetchType: "active",
+      });
+      queryClient.invalidateQueries({
+        queryKey: pastorSessionKeys.all,
+        refetchType: "active",
+      });
       queryClient.invalidateQueries({ queryKey: ["roadmaps"] });
+
+      // Backend may create Session 1 asynchronously right after jumpstart save.
+      // Re-fetch once more shortly after to surface the new session without manual app refresh.
+      setTimeout(() => {
+        queryClient.refetchQueries({
+          queryKey: pastorSessionKeys.list(variables.userId),
+          type: "all",
+        });
+        queryClient.refetchQueries({
+          queryKey: mentorshipSessionKeys.all,
+          type: "all",
+        });
+      }, 1500);
     },
   });
 };
