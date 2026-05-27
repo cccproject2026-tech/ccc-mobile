@@ -154,6 +154,8 @@ export const DASHBOARD_BUCKET_PRIORITY: Record<ReviewDashboardBucket, number> = 
 export interface ReviewPastorGroup {
   pastorId: string;
   pastorName: string;
+  profilePicture?: string | null;
+  profileImage?: string | null;
   counts: ReviewDashboardCounts;
   pendingActionCount: number;
   totalItems: number;

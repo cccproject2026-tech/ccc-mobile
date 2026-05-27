@@ -84,16 +84,21 @@ export default function MentorReviewCenterDashboard() {
             </Text>
           </View>
         ) : (
-          <Animated.View entering={FadeInUp.delay(50).springify()} style={styles.listCard}>
+          <Animated.View entering={FadeInUp.delay(50).springify()}>
             <Text style={styles.sectionLabel}>Your pastors</Text>
-            {pastorGroups.map((group, index) => (
-              <Animated.View key={group.pastorId} entering={FadeInUp.delay(80 + index * 40).springify()}>
-                <ReviewPastorRow
-                  group={group}
-                  onPress={() => openPastor(group.pastorId, group.pastorName)}
-                />
-              </Animated.View>
-            ))}
+            <View style={styles.pastorList}>
+              {pastorGroups.map((group, index) => (
+                <Animated.View
+                  key={group.pastorId}
+                  entering={FadeInUp.delay(80 + index * 40).springify()}
+                >
+                  <ReviewPastorRow
+                    group={group}
+                    onPress={() => openPastor(group.pastorId, group.pastorName)}
+                  />
+                </Animated.View>
+              ))}
+            </View>
           </Animated.View>
         )}
       </ScrollView>
@@ -164,12 +169,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
-  listCard: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    overflow: "hidden",
+  pastorList: {
+    gap: 12,
+    marginTop: 10,
   },
   sectionLabel: {
     color: "rgba(255,255,255,0.5)",
@@ -177,9 +179,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.6,
     textTransform: "uppercase",
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 4,
   },
   empty: {
     alignItems: "center",

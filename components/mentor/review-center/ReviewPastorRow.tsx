@@ -1,4 +1,6 @@
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import type { ReviewPastorGroup } from "@/lib/mentor/reviewCenter.types";
+import { resolveProfilePictureUrl } from "@/utils/avatarSource";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -29,17 +31,26 @@ function statLine(group: ReviewPastorGroup): string {
 
 export function ReviewPastorRow({ group, onPress }: Props) {
   const initial = group.pastorName.charAt(0).toUpperCase() || "P";
+  const hasPhoto = Boolean(resolveProfilePictureUrl(group));
 
   return (
     <Pressable
-      style={styles.row}
+      style={styles.card}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${group.pastorName}, ${statLine(group)}`}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initial}</Text>
-      </View>
+      {hasPhoto ? (
+        <UserAvatar
+          user={group}
+          size={44}
+          containerStyle={styles.avatarImage}
+        />
+      ) : (
+        <View style={styles.avatarFallback}>
+          <Text style={styles.avatarText}>{initial}</Text>
+        </View>
+      )}
       <View style={styles.info}>
         <View style={styles.nameRow}>
           <Text style={styles.name} numberOfLines={1}>
@@ -61,16 +72,22 @@ export function ReviewPastorRow({ group, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: {
+  card: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingVertical: 14,
     paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
   },
-  avatar: {
+  avatarImage: {
+    borderWidth: 1,
+    borderColor: "rgba(111,212,190,0.4)",
+  },
+  avatarFallback: {
     width: 44,
     height: 44,
     borderRadius: 22,

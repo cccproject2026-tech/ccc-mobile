@@ -507,9 +507,26 @@ export function useReviewCenterV2() {
     return computePendingActionCount(dashboardCounts);
   }, [dashboardCounts]);
 
+  const menteeAvatarById = useMemo(() => {
+    const map = new Map<string, { profilePicture?: string | null; profileImage?: string | null }>();
+    for (const m of mentees as any[]) {
+      const ids = uniqueNonEmpty([m?.id, m?._id]);
+      if (ids.length === 0) continue;
+      const avatar = {
+        profilePicture: m?.profilePicture ?? null,
+        profileImage: m?.profileImage ?? null,
+      };
+      for (const id of ids) map.set(String(id), avatar);
+    }
+    return map;
+  }, [mentees]);
+
   const pastorGroups = useMemo((): ReviewPastorGroup[] => {
-    return buildPastorGroups(allItems);
-  }, [allItems]);
+    return buildPastorGroups(allItems).map((group) => {
+      const avatar = menteeAvatarById.get(group.pastorId);
+      return avatar ? { ...group, ...avatar } : group;
+    });
+  }, [allItems, menteeAvatarById]);
   const badgeCounts = useMemo((): ReviewBadgeCounts => {
     const counts: ReviewBadgeCounts = { roadmaps: 0, assessments: 0 };
     for (const item of allItems) {
