@@ -600,15 +600,18 @@ export function MentorTaskView({
         const hasPendingFiles = (pendingFiles[extraName]?.length ?? 0) > 0;
         const hasServerFiles = docs.length > 0;
         const uploadButtonLabel = hasServerFiles || hasPendingFiles
-            ? "Upload another file"
-            : "Upload file";
+            ? "Add file"
+            : "Upload";
 
         return (
             <View style={{ marginBottom: 20 }}>
                 {!isReadOnly ? (
-                    <Pressable style={[styles.uploadButton, styles.uploadButtonWhite]} onPress={pickFile}>
-                        <Ionicons name="cloud-upload-outline" size={22} color="#2563eb" />
-                        <Text style={styles.uploadButtonText}>{uploadButtonLabel}</Text>
+                    <Pressable
+                        style={[styles.uploadButton, styles.uploadButtonWhite, styles.uploadActionButton]}
+                        onPress={pickFile}
+                    >
+                        <Ionicons name="cloud-upload-outline" size={18} color="rgba(255,255,255,0.9)" />
+                        <Text style={[styles.uploadButtonText, styles.uploadActionButtonText]}>{uploadButtonLabel}</Text>
                     </Pressable>
                 ) : null}
 
@@ -1461,14 +1464,19 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderRadius: 12,
+        paddingVertical: 13,
+        paddingHorizontal: 18,
+        borderRadius: 14,
         gap: 10,
-        backgroundColor: "#ffffff",
+        backgroundColor: "rgba(255,255,255,0.98)",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.18)",
-        marginTop: 6,
+        borderColor: "rgba(191,219,254,0.65)",
+        marginTop: 8,
+        shadowColor: "#0B3A63",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.22,
+        shadowRadius: 10,
+        elevation: 5,
     },
     saveButtonDisabled: {
         opacity: 0.7,
@@ -1478,9 +1486,9 @@ const styles = StyleSheet.create({
     },
     saveButtonText: {
         color: "#2563eb",
-        fontSize: 17,
-        fontWeight: "700",
-        letterSpacing: 0.2,
+        fontSize: 18,
+        fontWeight: "800",
+        letterSpacing: 0.15,
     },
     uploadButton: {
         display: 'flex',
@@ -1506,6 +1514,22 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '800',
         letterSpacing: 0.2,
+    },
+    uploadActionButton: {
+        alignSelf: "center",
+        paddingVertical: 7,
+        paddingHorizontal: 14,
+        borderRadius: 9,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.24)",
+        backgroundColor: "rgba(255,255,255,0.08)",
+        shadowOpacity: 0,
+        elevation: 0,
+    },
+    uploadActionButtonText: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "rgba(255,255,255,0.94)",
     },
     uploadedFilesContainer: {
         marginBottom: 20,
