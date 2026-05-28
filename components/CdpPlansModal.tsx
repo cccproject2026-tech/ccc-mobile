@@ -43,6 +43,10 @@ interface CdpPlansModalProps {
     onAddRecommendation?: (sectionId: string) => void;
     /** Mentor only: send CDP */
     onSendCdp?: () => void;
+    /** Mentor only: section already has sent CDP — read-only list */
+    isSectionLocked?: (sectionId: string) => boolean;
+    sendDisabled?: boolean;
+    sendButtonLabel?: string;
     /** Pastor only: download CDP as PDF */
     onDownloadCdp?: () => void;
 }
@@ -58,6 +62,9 @@ export default function CdpPlansModal({
     onUpdateRecommendation,
     onAddRecommendation,
     onSendCdp,
+    isSectionLocked,
+    sendDisabled = false,
+    sendButtonLabel = 'Send',
     onDownloadCdp,
 }: CdpPlansModalProps) {
     const [mentorActionMode, setMentorActionMode] = React.useState<'select' | 'edit'>('select');
@@ -113,6 +120,8 @@ export default function CdpPlansModal({
                                     totalRecommendations > 0 &&
                                     selectedForSection.length > 0 &&
                                     selectedForSection.length >= totalRecommendations;
+                                const sectionLocked =
+                                    mode === 'mentor' && (isSectionLocked?.(section.sectionId) ?? false);
 
                                 return (
                                     <View key={section.sectionId} style={styles.sectionBlock}>
@@ -142,7 +151,13 @@ export default function CdpPlansModal({
                                             </Text>
                                         )}
 
-                                        {mode === 'mentor' && (
+                                        {mode === 'mentor' && sectionLocked && (
+                                            <Text style={styles.sentBanner}>
+                                                CDP sent — showing recommendations shared with pastor
+                                            </Text>
+                                        )}
+
+                                        {mode === 'mentor' && !sectionLocked && (
                                             <View style={styles.controlsRow}>
                                                 <TouchableOpacity
                                                     style={[
@@ -217,7 +232,7 @@ export default function CdpPlansModal({
                                                 return (
                                                     <View key={`${section.sectionId}-${idx}`} style={styles.itemRow}>
                                                         <Text style={styles.star}>⭐</Text>
-                                                        {mode === 'mentor' && mentorActionMode === 'edit' && onUpdateRecommendation ? (
+                                                        {mode === 'mentor' && !sectionLocked && mentorActionMode === 'edit' && onUpdateRecommendation ? (
                                                             <TextInput
                                                                 value={item}
                                                                 onChangeText={(nextText) =>
@@ -231,7 +246,7 @@ export default function CdpPlansModal({
                                                                 placeholder="Edit recommendation"
                                                                 placeholderTextColor="rgba(255,255,255,0.5)"
                                                             />
-                                                        ) : mode === 'mentor' && onToggleRecommendation ? (
+                                                        ) : mode === 'mentor' && !sectionLocked && onToggleRecommendation ? (
                                                             <TouchableOpacity
                                                                 style={styles.itemTouch}
                                                                 onPress={() => onToggleRecommendation(section.sectionId, item)}
@@ -252,9 +267,24 @@ export default function CdpPlansModal({
                             </ScrollView>
 
                             <View style={styles.footer}>
-                                {mode === 'mentor' && onSendCdp ? (
-                                    <TouchableOpacity style={styles.primaryButton} onPress={onSendCdp} activeOpacity={0.85}>
-                                        <Text style={styles.primaryButtonText}>Send</Text>
+                                {mode === 'mentor' ? (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.primaryButton,
+                                            (sendDisabled || !onSendCdp) && styles.primaryButtonDisabled,
+                                        ]}
+                                        onPress={onSendCdp}
+                                        activeOpacity={0.85}
+                                        disabled={sendDisabled || !onSendCdp}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.primaryButtonText,
+                                                (sendDisabled || !onSendCdp) && styles.primaryButtonTextDisabled,
+                                            ]}
+                                        >
+                                            {sendButtonLabel}
+                                        </Text>
                                     </TouchableOpacity>
                                 ) : mode === 'pastor' ? (
                                     <TouchableOpacity
@@ -464,5 +494,18 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(15),
         fontWeight: '800',
         letterSpacing: -0.1,
+    },
+    primaryButtonDisabled: {
+        backgroundColor: 'rgba(255,255,255,0.35)',
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    primaryButtonTextDisabled: {
+        color: 'rgba(30, 58, 95, 0.55)',
+    },
+    sentBanner: {
+        color: 'rgba(167, 243, 208, 0.95)',
+        fontSize: getFontSize(12),
+        fontWeight: '600',
+        marginBottom: getSpacing(10),
     },
 });

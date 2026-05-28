@@ -174,38 +174,45 @@ export default function AnswerQuestionPage() {
     router.back();
   };
 
+  const sentCdpSectionIds = useMemo(() => {
+    const ids = new Set<string>();
+    submittedAnswers?.data?.sections?.forEach((section) => {
+      if (section.recommendations?.length) {
+        ids.add(section.sectionId);
+      }
+    });
+    return ids;
+  }, [submittedAnswers?.data?.sections]);
+
   const handleSendCdp = async (payload: {
     recommendations: Array<{
       sectionId: string;
       selectedItems: Array<{ level: number; text: string }>;
     }>;
   }) => {
-    console.log("[Send CDP] handleSendCdp called", {
-      targetUserId,
-      assessmentId,
-      sectionsCount: payload.recommendations?.length ?? 0,
-      payload,
-    });
-    // If no recommendations were selected, do not call the API or show success.
-    if (!payload.recommendations || payload.recommendations.length === 0) {
-      console.warn("[Send CDP] No sections with selected recommendations. Aborting send.");
+    if (!targetUserId || !assessmentId) {
+      return;
+    }
+
+    const pendingSections = (payload.recommendations ?? []).filter(
+      (section) =>
+        section.selectedItems.length > 0 && !sentCdpSectionIds.has(section.sectionId),
+    );
+
+    if (pendingSections.length === 0) {
       Alert.alert(
-        "No recommendations selected",
-        "Please select at least one recommendation before sending the CDP.",
+        sentCdpSectionIds.size > 0 ? "CDP already sent" : "No recommendations selected",
+        sentCdpSectionIds.size > 0
+          ? "Customized Development Plans were already sent for this pastor. You can review what was shared below."
+          : "Please select at least one recommendation before sending the CDP.",
       );
       return;
     }
-    if (!targetUserId || !assessmentId) {
-      console.warn("[Send CDP] Aborted: missing targetUserId or assessmentId", {
-        targetUserId,
-        assessmentId,
-      });
-      return;
-    }
+
     const id = assessmentId as string;
     const userId = targetUserId as string;
     try {
-      const apiPayloads = payload.recommendations.map((section) => ({
+      const apiPayloads = pendingSections.map((section) => ({
         assessmentId: id,
         payload: {
           userId,
@@ -213,20 +220,30 @@ export default function AnswerQuestionPage() {
           recommendations: section.selectedItems.map((item) => item.text),
         },
       }));
-      console.log("[Send CDP] Calling API for", apiPayloads.length, "section(s)", apiPayloads);
-      await Promise.all(
-        apiPayloads.map((p) => sendRecommendation(p)),
-      );
-      console.log("[Send CDP] All recommendations sent successfully");
+
+      await Promise.all(apiPayloads.map((p) => sendRecommendation(p)));
+
       setSuccessMessage("Customized Development Plans sent successfully.");
       setShowSuccessModal(true);
       setTimeout(() => router.back(), 2000);
-    } catch (error) {
-      console.error("[Send CDP] Failed to send recommendations:", error);
-      Alert.alert(
-        "Error",
-        "Failed to send recommendations. Please try again.",
-      );
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: string }).message === "string"
+          ? (error as { message: string }).message
+          : "";
+
+      if (message.toLowerCase().includes("already sent")) {
+        Alert.alert(
+          "CDP already sent",
+          "These recommendations were already sent to this pastor. Refresh to see the latest CDP.",
+        );
+        return;
+      }
+
+      Alert.alert("Error", "Failed to send recommendations. Please try again.");
     }
   };
 
@@ -344,9 +361,10 @@ export default function AnswerQuestionPage() {
               (recommendationLevel) => recommendationLevel.level === sectionScore,
             )?.items ?? [])
           : [];
+      const sentRecommendations = submittedSection.recommendations ?? [];
       const mentorVisibleRecommendations =
-        submittedSection.recommendations?.length
-          ? submittedSection.recommendations
+        sentRecommendations.length > 0
+          ? sentRecommendations
           : levelMatchedTemplateRecommendations;
 
       return {
@@ -432,6 +450,9 @@ export default function AnswerQuestionPage() {
           reviewMode={isViewMode && !!targetUserId}
           mentorReviewSections={mentorReviewSections}
           submittedSections={submittedAnswers?.data?.sections}
+          recommendationsSentByMentor={
+            submittedAnswers?.data?.recommendationsSentByMentor === true
+          }
           onSubmit={handleAssessmentSubmit}
           onClose={() => {
             router.back();

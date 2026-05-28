@@ -38,8 +38,11 @@ interface AssessmentQuestionsSectionProps {
      * Used only to decide if CDP is ready, so pastor doesn't see CDP based on template-level recommendations.
      */
     submittedSections?: Array<{
+        sectionId: string;
         recommendations?: string[];
     }>;
+    /** True when mentor has already sent CDP for this pastor (from answers API). */
+    recommendationsSentByMentor?: boolean;
     // Called when mentor sends Customized Development Plans (CDP)
     onSendCdp?: (payload: {
         recommendations: Array<{
@@ -64,6 +67,7 @@ export default function AssessmentQuestionsSection({
     submittedSections,
     onSendCdp,
     userRole,
+    recommendationsSentByMentor = false,
 }: AssessmentQuestionsSectionProps) {
     const previousResponse = useAssessmentStore(
         (state) => state.getDraft(assessmentId)
@@ -110,6 +114,55 @@ export default function AssessmentQuestionsSection({
     useEffect(() => {
         setEditableMentorSections(mentorReviewSections ?? []);
     }, [mentorReviewSections]);
+
+    const isSectionCdpSent = React.useCallback(
+        (sectionId: string) => {
+            const section = submittedSections?.find((s) => s.sectionId === sectionId);
+            return Array.isArray(section?.recommendations) && section.recommendations.length > 0;
+        },
+        [submittedSections],
+    );
+
+    /** Pre-select and lock sections that already have mentor-sent CDP from the API. */
+    useEffect(() => {
+        if (!reviewMode || !submittedSections?.length) return;
+
+        const sentSelections: Record<string, string[]> = {};
+        submittedSections.forEach((section) => {
+            if (section.recommendations?.length) {
+                sentSelections[section.sectionId] = [...section.recommendations];
+            }
+        });
+
+        if (Object.keys(sentSelections).length > 0) {
+            setSelectedRecommendations((prev) => ({ ...prev, ...sentSelections }));
+        }
+    }, [reviewMode, submittedSections]);
+
+    const allSectionsCdpSent = React.useMemo(() => {
+        if (recommendationsSentByMentor) return true;
+        if (!reviewMode || !editableMentorSections.length) return false;
+        return editableMentorSections.every((section) => isSectionCdpSent(section.sectionId));
+    }, [
+        recommendationsSentByMentor,
+        reviewMode,
+        editableMentorSections,
+        isSectionCdpSent,
+    ]);
+
+    const canSendCdp = React.useMemo(() => {
+        if (!reviewMode || allSectionsCdpSent) return false;
+        return editableMentorSections.some((section) => {
+            if (isSectionCdpSent(section.sectionId)) return false;
+            return (selectedRecommendations[section.sectionId]?.length ?? 0) > 0;
+        });
+    }, [
+        reviewMode,
+        allSectionsCdpSent,
+        editableMentorSections,
+        selectedRecommendations,
+        isSectionCdpSent,
+    ]);
 
     useEffect(() => {
         if (!openCdpOnLoad) return;
@@ -229,6 +282,7 @@ export default function AssessmentQuestionsSection({
 
     /** Toggle a CDP recommendation: add if not selected, remove if selected. */
     const toggleRecommendation = (sectionId: string, recommendationText: string) => {
+        if (isSectionCdpSent(sectionId)) return;
         setSelectedRecommendations(prev => {
             const list = prev[sectionId] ?? [];
             const isSelected = list.includes(recommendationText);
@@ -244,6 +298,7 @@ export default function AssessmentQuestionsSection({
         recommendationIndex: number,
         nextText: string,
     ) => {
+        if (isSectionCdpSent(sectionId)) return;
         const trimmedText = nextText;
         let previousText = '';
 
@@ -284,6 +339,7 @@ export default function AssessmentQuestionsSection({
     };
 
     const addRecommendationRow = (sectionId: string) => {
+        if (isSectionCdpSent(sectionId)) return;
         setEditableMentorSections((prev) =>
             prev.map((section) => {
                 if (section.sectionId !== sectionId) return section;
@@ -579,14 +635,16 @@ export default function AssessmentQuestionsSection({
                     mode={reviewMode ? 'mentor' : 'pastor'}
                     sections={editableMentorSections}
                     selectedRecommendations={reviewMode ? selectedRecommendations : undefined}
+                    isSectionLocked={reviewMode ? isSectionCdpSent : undefined}
                     onToggleRecommendation={reviewMode ? toggleRecommendation : undefined}
                     onUpdateRecommendation={reviewMode ? updateRecommendationText : undefined}
                     onAddRecommendation={reviewMode ? addRecommendationRow : undefined}
                     onSendCdp={
-                        reviewMode && onSendCdp && editableMentorSections
+                        reviewMode && onSendCdp && editableMentorSections && canSendCdp
                             ? () => {
                                   const payload = {
                                       recommendations: editableMentorSections
+                                          .filter((section) => !isSectionCdpSent(section.sectionId))
                                           .map((section) => {
                                               const selected = selectedRecommendations[section.sectionId] ?? [];
                                               return {
@@ -603,6 +661,10 @@ export default function AssessmentQuestionsSection({
                                   setShowCdpModal(false);
                               }
                             : undefined
+                    }
+                    sendDisabled={reviewMode ? !canSendCdp : false}
+                    sendButtonLabel={
+                        reviewMode && allSectionsCdpSent ? 'CDP already sent' : 'Send'
                     }
                     onDownloadCdp={!reviewMode ? handleDownloadCdp : undefined}
                 />
