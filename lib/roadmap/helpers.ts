@@ -93,6 +93,66 @@ export function getEffectiveTaskExtras(
     return extrasFromSavedItems(savedItems);
 }
 
+/** Saved extras include real form fields (not only Jumpstart completion marker). */
+export function hasSavableFormExtras(savedItems?: any[] | null): boolean {
+    if (!Array.isArray(savedItems)) return false;
+    return savedItems.some(
+        (item) => item?.name && item.type !== 'JUMPSTART_COMPLETE',
+    );
+}
+
+/**
+ * Whether submit should PATCH vs POST extras for this task.
+ * Nested tasks: roadmap-level Jumpstart fallback must not force PATCH on nested id
+ * unless roadmap-level extras already exist (backend: one extras row per user+roadmap).
+ */
+export function shouldUpdateTaskExtras(
+    hasNestedTaskId: boolean,
+    hasNestedSavableExtras: boolean,
+    extrasItems?: any[] | null,
+    roadmapLevelExtrasExist?: boolean,
+): boolean {
+    if (hasNestedSavableExtras) return true;
+    if (hasNestedTaskId && roadmapLevelExtrasExist) return true;
+    if (!hasNestedTaskId) return hasSavableFormExtras(extrasItems);
+    return false;
+}
+
+/** Mark tasks completed when pastor saved locally but progress API still lags. */
+export function applyLocalTaskCompletionOverrides(
+    roadmap: Roadmap,
+    localCompletionMs?: Record<string, number>,
+): Roadmap {
+    if (!localCompletionMs || !roadmap.roadmaps?.length) return roadmap;
+
+    const phaseId = String(roadmap._id ?? '').trim();
+    if (!phaseId) return roadmap;
+
+    let changed = false;
+    const roadmaps = roadmap.roadmaps.map((task) => {
+        if (!task?._id) return task;
+        const key = taskCompletionMapKey(phaseId, String(task._id));
+        const localMs = localCompletionMs[key];
+        if (!localMs || localMs <= 0) return task;
+        if (normalizeNestedTaskStatus(task.status) === 'completed') return task;
+        changed = true;
+        return { ...task, status: 'completed' as const };
+    });
+
+    if (!changed) return roadmap;
+
+    const withTasks = { ...roadmap, roadmaps };
+    const { completed, total } = getCompletionStats(withTasks);
+    let status = roadmap.status;
+    if (total > 0 && completed >= total) {
+        status = 'completed';
+    } else if (completed > 0) {
+        status = 'in-progress';
+    }
+
+    return { ...withTasks, status };
+}
+
 /** Last saved value per field name (ignores duplicate rows from repeated saves). */
 export function savedExtrasToFormValues(savedItems?: any[] | null): Record<string, any> {
     const values: Record<string, any> = {};

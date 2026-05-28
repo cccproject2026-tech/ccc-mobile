@@ -1104,7 +1104,12 @@ import {
 import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
-import { getEffectiveTaskExtras, savedExtrasToFormValues } from "@/lib/roadmap/helpers";
+import {
+    getEffectiveTaskExtras,
+    savedExtrasToFormValues,
+    shouldUpdateTaskExtras,
+} from "@/lib/roadmap/helpers";
+import { saveTaskRoadmapExtras } from "@/lib/roadmap/saveTaskExtras";
 import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
@@ -1212,8 +1217,13 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
     };
 
     /** Load existing extras from API */
-    const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } =
-        useRoadmapExtrasWithFallback(
+    const {
+        data: existingExtras,
+        isLoading: isLoadingExtras,
+        isFetching: isFetchingExtras,
+        hasNestedSavableExtras,
+        roadmapLevelExtrasExist,
+    } = useRoadmapExtrasWithFallback(
             isMongoObjectId(roadmapId) ? roadmapId : undefined,
             isMongoObjectId(itemId) ? itemId : undefined,
             isMongoObjectId(targetUserId) ? targetUserId : undefined,
@@ -1234,7 +1244,13 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
     } = useTriggerJumpstart();
     const jumpstartTriggeredUsersRef = useRef<Set<string>>(new Set());
     const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
-    const isUpdateMode = !!existingExtras;
+    const hasNestedTaskId = isMongoObjectId(itemId);
+    const isUpdateMode = shouldUpdateTaskExtras(
+        hasNestedTaskId,
+        hasNestedSavableExtras,
+        existingExtras?.extras,
+        roadmapLevelExtrasExist,
+    );
 
     // Submission history hooks
     const { data: latestSubmission } = useLatestSubmission(
@@ -1366,9 +1382,10 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         try {
             await ensureJumpstartTriggered();
 
-            const extrasAlreadyExistForUser =
-                !!currentUser?.id &&
-                (isUpdateMode || jumpstartTriggeredUsersRef.current.has(currentUser.id));
+            const usePatchForExtras =
+                isUpdateMode ||
+                roadmapLevelExtrasExist ||
+                jumpstartTriggeredUsersRef.current.has(currentUser.id);
 
             // Build responses payload
             const responsesArray = Object.entries(formData).map(([name, value]) => {
@@ -1384,46 +1401,46 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
             });
 
             const nestedExtraId = isMongoObjectId(itemId) ? itemId : undefined;
+            const pendingFilesSnapshot = { ...pendingFiles };
 
-            // 1️⃣ Create a new submission record (immutable)
-            const newSubmission = await createSubmission.mutateAsync({
+            // 1️⃣ Create a new submission record (immutable) when API exists
+            try {
+                const newSubmission = await createSubmission.mutateAsync({
+                    roadMapId: roadmapId!,
+                    nestedRoadMapItemId: nestedExtraId,
+                    submittedBy: currentUser.id,
+                    responses: responsesArray,
+                    resubmittedFromSubmissionId: latestSubmission?._id ?? null,
+                });
+
+                for (const [extraName, files] of Object.entries(pendingFilesSnapshot)) {
+                    for (const file of files) {
+                        await uploadSubmissionDoc.mutateAsync({
+                            submissionId: newSubmission._id,
+                            extraName,
+                            file,
+                        });
+                    }
+                }
+            } catch {
+                // Submission API not yet available — continue with extras fallback
+            }
+
+            // 2️⃣ Save extras for backward compatibility with progress tracking
+            await saveTaskRoadmapExtras({
+                isUpdateMode: usePatchForExtras,
                 roadMapId: roadmapId!,
+                userId: currentUser.id,
                 nestedRoadMapItemId: nestedExtraId,
-                submittedBy: currentUser.id,
-                responses: responsesArray,
-                resubmittedFromSubmissionId: latestSubmission?._id ?? null,
+                extras: responsesArray,
+                createExtras: (payload) => createExtras.mutateAsync(payload),
+                updateExtras: (vars) => updateExtras.mutateAsync(vars),
             });
 
-            // 2️⃣ Upload pending files to the new submission
-            for (const [extraName, files] of Object.entries(pendingFiles)) {
-                for (const file of files) {
-                    await uploadSubmissionDoc.mutateAsync({
-                        submissionId: newSubmission._id,
-                        extraName,
-                        file,
-                    });
-                }
-            }
+            setPendingFiles({});
 
-            // 3️⃣ Also save extras for backward compatibility with progress tracking
-            if (extrasAlreadyExistForUser) {
-                await updateExtras.mutateAsync({
-                    roadMapId: roadmapId!,
-                    payload: { extras: responsesArray },
-                    userId: currentUser.id,
-                    nestedRoadMapItemId: nestedExtraId,
-                }).catch(() => {});
-            } else {
-                await createExtras.mutateAsync({
-                    userId: currentUser.id,
-                    roadMapId: roadmapId!,
-                    nestedRoadMapItemId: nestedExtraId,
-                    extras: responsesArray,
-                }).catch(() => {});
-            }
-
-            // 4️⃣ Upload files to legacy extras endpoint too (backward compat)
-            for (const [extraName, files] of Object.entries(pendingFiles)) {
+            // 3️⃣ Upload files to legacy extras endpoint too (backward compat)
+            for (const [extraName, files] of Object.entries(pendingFilesSnapshot)) {
                 for (const file of files) {
                     await uploadDocument.mutateAsync({
                         roadMapId: roadmapId!,

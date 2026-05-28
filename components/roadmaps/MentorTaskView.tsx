@@ -19,7 +19,9 @@ import {
     normalizeNestedTaskStatus,
     parseRoadmapTimestampMs,
     savedExtrasToFormValues,
+    shouldUpdateTaskExtras,
 } from "@/lib/roadmap/helpers";
+import { saveTaskRoadmapExtras } from "@/lib/roadmap/saveTaskExtras";
 import {
     readTaskCompletionTimestamps,
     recordTaskCompletionTimestamp,
@@ -165,8 +167,13 @@ export function MentorTaskView({
     };
 
     /** Load existing extras from API */
-    const { data: existingExtras, isLoading: isLoadingExtras, isFetching: isFetchingExtras } =
-        useRoadmapExtrasWithFallback(
+    const {
+        data: existingExtras,
+        isLoading: isLoadingExtras,
+        isFetching: isFetchingExtras,
+        hasNestedSavableExtras,
+        roadmapLevelExtrasExist,
+    } = useRoadmapExtrasWithFallback(
             isValidObjectId(roadmapId) ? roadmapId : undefined,
             isValidObjectId(itemId) ? itemId : undefined,
             isValidObjectId(targetUserId) ? targetUserId : undefined,
@@ -197,7 +204,13 @@ export function MentorTaskView({
     } = useTriggerJumpstart();
     const jumpstartTriggeredUsersRef = useRef<Set<string>>(new Set());
 
-    const isUpdateMode = !!existingExtras;
+    const hasNestedTaskId = isValidObjectId(itemId);
+    const isUpdateMode = shouldUpdateTaskExtras(
+        hasNestedTaskId,
+        hasNestedSavableExtras,
+        existingExtras?.extras,
+        roadmapLevelExtrasExist,
+    );
     const isTaskAlreadyCompleted = normalizeNestedTaskStatus(task.status) === "completed";
 
     /**
@@ -426,13 +439,12 @@ export function MentorTaskView({
         }
 
         try {
-            let extrasAlreadyExistForUser = isUpdateMode;
-
             // Trigger session creation on jump-start completion before save flow.
             if (
                 roadmapId &&
                 targetUserId &&
                 !isUpdateMode &&
+                !roadmapLevelExtrasExist &&
                 !jumpstartTriggeredUsersRef.current.has(targetUserId)
             ) {
                 try {
@@ -443,7 +455,6 @@ export function MentorTaskView({
                     });
                     if (response?.success || response?.alreadyExists) {
                         jumpstartTriggeredUsersRef.current.add(targetUserId);
-                        extrasAlreadyExistForUser = true;
                     }
                 } catch (error) {
                     console.warn(
@@ -452,6 +463,12 @@ export function MentorTaskView({
                     );
                 }
             }
+
+            // Jumpstart POST in this same submit (or prior roadmap-level extras) → must PATCH form data.
+            const usePatchForExtras =
+                isUpdateMode ||
+                roadmapLevelExtrasExist ||
+                jumpstartTriggeredUsersRef.current.has(targetUserId);
 
             const responsesArray = Object.entries(formData).map(([name, value]) => {
                 const type = getExtraType(name, value);
@@ -491,6 +508,7 @@ export function MentorTaskView({
                 // Submission API not yet available — continue with extras fallback
             }
 
+            const pendingFilesSnapshot = { ...pendingFiles };
             setPendingFiles({});
 
             if (roadmapId && itemId && targetUserId) {
@@ -499,24 +517,18 @@ export function MentorTaskView({
 
             // Also create/update extras for backward compatibility with progress tracking
             const extrasArray = responsesArray;
-            if (extrasAlreadyExistForUser) {
-                await updateExtras.mutateAsync({
-                    roadMapId: roadmapId!,
-                    payload: { extras: extrasArray },
-                    userId: targetUserId!,
-                    nestedRoadMapItemId: itemId,
-                }).catch(() => {});
-            } else {
-                await createExtras.mutateAsync({
-                    userId: targetUserId!,
-                    roadMapId: roadmapId!,
-                    nestedRoadMapItemId: itemId,
-                    extras: extrasArray,
-                }).catch(() => {});
-            }
+            await saveTaskRoadmapExtras({
+                isUpdateMode: usePatchForExtras,
+                roadMapId: roadmapId!,
+                userId: targetUserId!,
+                nestedRoadMapItemId: itemId,
+                extras: extrasArray,
+                createExtras: (payload) => createExtras.mutateAsync(payload),
+                updateExtras: (vars) => updateExtras.mutateAsync(vars),
+            });
 
             // Upload files to legacy extras endpoint too
-            for (const [extraName, files] of Object.entries(pendingFiles)) {
+            for (const [extraName, files] of Object.entries(pendingFilesSnapshot)) {
                 for (const file of files) {
                     await uploadDocument.mutateAsync({
                         roadMapId: roadmapId!,

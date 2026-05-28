@@ -20,6 +20,7 @@ import {
 import { useTaskCompletionTimestamps } from "@/hooks/roadmap/useTaskCompletionTimestamps";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import {
+  applyLocalTaskCompletionOverrides,
   buildPastorCompletedJourneyTabs,
   comparePastorPhasesForFocus,
   flattenPastorCompletedTasks,
@@ -102,14 +103,22 @@ export default function PastorRoadmapIndex() {
   const { user } = useAuthStore();
   const { data: roadmaps, isLoading, isRefetching, refetch, error } = useRoadmaps("pastor");
 
-  const sortedRoadmaps = useMemo(() => {
+  const baseSortedRoadmaps = useMemo(() => {
     const list = [...(roadmaps ?? [])];
     list.sort((a, b) => comparePastorPhasesForFocus(a as Roadmap, b as Roadmap));
-    return list;
+    return list as Roadmap[];
   }, [roadmaps]);
 
   const { timestamps: completionTimestamps, reloadTimestamps } =
-    useTaskCompletionTimestamps(user?.id, sortedRoadmaps as Roadmap[]);
+    useTaskCompletionTimestamps(user?.id, baseSortedRoadmaps);
+
+  const sortedRoadmaps = useMemo(
+    () =>
+      baseSortedRoadmaps.map((r) =>
+        applyLocalTaskCompletionOverrides(r, completionTimestamps),
+      ),
+    [baseSortedRoadmaps, completionTimestamps],
+  );
 
   useFocusEffect(
     useCallback(() => {

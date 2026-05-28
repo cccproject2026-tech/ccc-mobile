@@ -11,7 +11,7 @@ import {
 } from "@/lib/roadmap/types";
 import { apiClient } from "@/services/api/client";
 import { ENDPOINTS } from "@/services/api/endpoints";
-import { resolveRoadmapDocumentUrl } from '@/lib/roadmap/helpers';
+import { hasSavableFormExtras, resolveRoadmapDocumentUrl } from '@/lib/roadmap/helpers';
 import { roadmapService } from '@/services/roadmap.service';
 import { useAuthStore } from "@/stores";
 import { UserRole } from "@/types";
@@ -80,8 +80,9 @@ export function mergeRoadmapWithProgress(
         }
 
         const stepsComplete =
-            nestedProgress.totalSteps > 0 &&
-            nestedProgress.completedSteps >= nestedProgress.totalSteps;
+            nestedProgress.status === 'completed' ||
+            (nestedProgress.totalSteps > 0 &&
+                nestedProgress.completedSteps >= nestedProgress.totalSteps);
         const resolvedStatus: 'not started' | 'in-progress' | 'completed' = stepsComplete
             ? 'completed'
             : mapProgressStatus(nestedProgress.status);
@@ -94,8 +95,9 @@ export function mergeRoadmapWithProgress(
     });
 
     const parentStepsComplete =
-        progressItem.totalSteps > 0 &&
-        progressItem.completedSteps >= progressItem.totalSteps;
+        progressItem.status === 'completed' ||
+        (progressItem.totalSteps > 0 &&
+            progressItem.completedSteps >= progressItem.totalSteps);
     const resolvedParentStatus: 'not started' | 'in-progress' | 'completed' = parentStepsComplete
         ? 'completed'
         : mapProgressStatus(progressItem.status);
@@ -280,21 +282,42 @@ export function useRoadmapExtrasWithFallback(
     userId?: string,
 ) {
     const nested = useRoadmapExtras(roadmapId, nestedRoadMapItemId, userId);
-    const hasNestedValues =
+    const hasNestedExtrasArray =
         Array.isArray(nested.data?.extras) && nested.data.extras.length > 0;
+    const hasNestedSavableExtras =
+        hasNestedExtrasArray && hasSavableFormExtras(nested.data?.extras);
+    const nestedOnlyNonFormMarkers =
+        hasNestedExtrasArray && !hasNestedSavableExtras;
     const root = useRoadmapExtras(
         roadmapId,
         undefined,
         userId,
-        { enabled: nested.isSuccess && !hasNestedValues },
+        {
+            enabled:
+                nested.isSuccess &&
+                (!hasNestedExtrasArray || nestedOnlyNonFormMarkers),
+        },
     );
 
-    const data = hasNestedValues ? nested.data : root.data;
-    const isLoading = nested.isLoading || (!hasNestedValues && root.isLoading);
-    const isFetching = nested.isFetching || (!hasNestedValues && root.isFetching);
+    const roadmapLevelExtrasExist =
+        root.isSuccess &&
+        Array.isArray(root.data?.extras) &&
+        root.data.extras.length > 0;
+
+    const data = hasNestedExtrasArray ? nested.data : root.data;
+    const isLoading = nested.isLoading || (!hasNestedExtrasArray && root.isLoading);
+    const isFetching = nested.isFetching || (!hasNestedExtrasArray && root.isFetching);
     const error = nested.error ?? root.error;
 
-    return { data, isLoading, isFetching, error, hasNestedValues };
+    return {
+        data,
+        isLoading,
+        isFetching,
+        error,
+        hasNestedValues: hasNestedExtrasArray,
+        hasNestedSavableExtras,
+        roadmapLevelExtrasExist,
+    };
 }
 
 export function useRoadmapExtras(
@@ -303,7 +326,6 @@ export function useRoadmapExtras(
     userId?: string,
     options?: { enabled?: boolean },
 ) {
-    console.log('useRoadmapExtras----->>>>>>>>>>>>>>', { roadmapId, nestedRoadMapItemId, userId });
     // Validate that roadmapId is a valid truthy string
     const isValidRoadmapId = !!roadmapId && typeof roadmapId === 'string' && roadmapId.trim() !== '';
 

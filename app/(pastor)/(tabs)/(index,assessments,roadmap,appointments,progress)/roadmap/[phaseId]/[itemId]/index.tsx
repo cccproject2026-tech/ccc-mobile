@@ -9,11 +9,16 @@ import { PhaseCompletionModal } from "@/components/roadmaps/celebration/PhaseCom
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { Colors } from "@/constants/Colors";
+import { useTaskCompletionTimestamps } from "@/hooks/roadmap/useTaskCompletionTimestamps";
 import { useRoadmap, useRoadmapComments, useRoadmapQueries, useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useCompletionCelebration } from "@/hooks/roadmap/useCompletionCelebration";
 import { useRoadmapMeta } from "@/hooks/roadmap/useRoadmapMeta";
 import { resolveRoadmapDetailTask } from "@/lib/roadmap/helpers";
-import { comparePastorPhasesForFocus } from "@/lib/roadmap/helpers";
+import {
+  applyLocalTaskCompletionOverrides,
+  comparePastorPhasesForFocus,
+} from "@/lib/roadmap/helpers";
+import { readTaskCompletionTimestamps } from "@/lib/roadmap/taskCompletionTimestamps";
 import type { NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
@@ -46,21 +51,42 @@ export default function PastorRoadmapItemDetail() {
 
   const { user } = useAuthStore();
   const targetUserId = user?.id;
-  const { data: roadmap, isLoading, error, refetch, isRefetching } = useRoadmap(phaseId);
+  const { data: roadmapRaw, isLoading, error, refetch, isRefetching } = useRoadmap(phaseId);
   const { data: comments } = useRoadmapComments(phaseId, targetUserId);
   const { data: queries } = useRoadmapQueries(phaseId, targetUserId);
+
+  const { data: allRoadmaps } = useRoadmaps("pastor");
+  const baseSortedRoadmaps = useMemo(() => {
+    const list = [...(allRoadmaps ?? [])];
+    list.sort((a, b) => comparePastorPhasesForFocus(a as Roadmap, b as Roadmap));
+    return list as Roadmap[];
+  }, [allRoadmaps]);
+
+  const { timestamps: completionTimestamps, reloadTimestamps } = useTaskCompletionTimestamps(
+    targetUserId,
+    baseSortedRoadmaps,
+  );
+
+  const roadmap = useMemo(
+    () =>
+      roadmapRaw
+        ? applyLocalTaskCompletionOverrides(roadmapRaw as Roadmap, completionTimestamps)
+        : roadmapRaw,
+    [roadmapRaw, completionTimestamps],
+  );
 
   const task = useMemo<NestedRoadmap | undefined>(
     () => resolveRoadmapDetailTask(roadmap, itemId),
     [itemId, roadmap],
   );
 
-  const { data: allRoadmaps } = useRoadmaps("pastor");
-  const sortedRoadmaps = useMemo(() => {
-    const list = [...(allRoadmaps ?? [])];
-    list.sort((a, b) => comparePastorPhasesForFocus(a as Roadmap, b as Roadmap));
-    return list as Roadmap[];
-  }, [allRoadmaps]);
+  const sortedRoadmaps = useMemo(
+    () =>
+      baseSortedRoadmaps.map((r) =>
+        applyLocalTaskCompletionOverrides(r, completionTimestamps),
+      ),
+    [baseSortedRoadmaps, completionTimestamps],
+  );
 
   const meta = useRoadmapMeta(roadmap as Roadmap | undefined, task);
 
@@ -73,18 +99,33 @@ export default function PastorRoadmapItemDetail() {
     handleBackToJourney,
   } = useCompletionCelebration();
 
-  const handleSaveSuccess = useCallback(() => {
+  const handleSaveSuccess = useCallback(async () => {
+    await reloadTimestamps();
+    const freshTimestamps = targetUserId
+      ? await readTaskCompletionTimestamps(targetUserId)
+      : {};
     const taskName = String((task as any)?.name || task?.title || "Task");
-    const triggered = triggerCelebration(
-      roadmap as Roadmap | undefined,
-      itemId,
-      taskName,
-      sortedRoadmaps,
+    const phase =
+      roadmapRaw != null
+        ? applyLocalTaskCompletionOverrides(roadmapRaw as Roadmap, freshTimestamps)
+        : undefined;
+    const phases = baseSortedRoadmaps.map((r) =>
+      applyLocalTaskCompletionOverrides(r, freshTimestamps),
     );
+    const triggered = triggerCelebration(phase, itemId, taskName, phases);
     if (!triggered) {
       router.back();
     }
-  }, [task, roadmap, itemId, sortedRoadmaps, triggerCelebration, router]);
+  }, [
+    task,
+    roadmapRaw,
+    itemId,
+    baseSortedRoadmaps,
+    targetUserId,
+    triggerCelebration,
+    router,
+    reloadTimestamps,
+  ]);
 
   const [activeTab, setActiveTab] = useState<"overview" | "comments" | "queries">("overview");
 
