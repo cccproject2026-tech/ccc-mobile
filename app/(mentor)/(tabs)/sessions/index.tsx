@@ -13,8 +13,7 @@ import { Colors } from "@/constants/Colors";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
-import { resolveSessionModeFromSources } from "@/utils/sessionMeetingMode";
-import type { SessionMode } from "@/types/appointment.types";
+import { resolveSessionModeForMentorshipSession } from "@/utils/sessionMeetingMode";
 import { menteesService } from "@/services/mentees.service";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
@@ -495,12 +494,7 @@ export default function SessionsScreen() {
     const apt = session.appointmentId
       ? appointmentById.get(String(session.appointmentId))
       : undefined;
-    const displayMode = resolveSessionModeFromSources({
-      sessionMode: apt?.sessionMode ?? session.sessionMode,
-      platform: apt?.platform,
-    });
-    const sessionMode: SessionMode =
-      displayMode === "IN_PERSON" ? "IN_PERSON" : "ONLINE";
+    const sessionMode = resolveSessionModeForMentorshipSession(session, apt);
     if (session.sessionMode === sessionMode) return session;
     return { ...session, sessionMode };
   }, [appointmentById]);

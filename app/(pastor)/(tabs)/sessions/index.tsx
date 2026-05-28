@@ -22,7 +22,7 @@ import {
   sessionTopicSubtitle,
 } from "@/constants/sessionTitles";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
-import { resolveSessionModeFromSources } from "@/utils/sessionMeetingMode";
+import { resolveSessionModeForMentorshipSession } from "@/utils/sessionMeetingMode";
 import type { SessionMode } from "@/types/appointment.types";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -61,7 +61,10 @@ export default function PastorSessionsScreen() {
 
   const { data: sessions = [], isLoading, isError, refetch, isRefetching } =
     usePastorSessions(pastorId);
-  const { appointments = [], refetch: refetchAppointments } = useAppointments({ userId: pastorId });
+  const { appointments = [], refetch: refetchAppointments } = useAppointments({
+    userId: pastorId,
+    futureOnly: false,
+  });
   const { mentors } = useAssignedMentors(pastorId ?? null);
 
   const mentorNameById = useMemo(() => {
@@ -78,12 +81,7 @@ export default function PastorSessionsScreen() {
       const mentorName = apt?.mentorId
         ? mentorNameById.get(String(apt.mentorId))
         : undefined;
-      const displayMode = resolveSessionModeFromSources({
-        sessionMode: apt?.sessionMode ?? s.sessionMode,
-        platform: apt?.platform,
-      });
-      const sessionMode: SessionMode =
-        displayMode === "IN_PERSON" ? "IN_PERSON" : "ONLINE";
+      const sessionMode = resolveSessionModeForMentorshipSession(s, apt);
 
       return {
         ...s,
