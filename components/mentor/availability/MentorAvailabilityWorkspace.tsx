@@ -777,34 +777,34 @@ export function MentorAvailabilityWorkspace({
               const isTodayCell = ymd === todayYmd;
 
               return (
-                <Pressable
-                  key={ymd}
-                  disabled={isPast}
-                  style={[
-                    styles.calCell,
-                    styles.calDay,
-                    isPast && styles.calPast,
-                    isTodayCell && styles.calToday,
-                    !isPast && c.unavailable && styles.calBlocked,
-                    !isPast && !c.unavailable && c.slots.length > 0 && styles.calOpen,
-                  ]}
-                  onPress={() => {
-                    if (blockSelectionMode) {
-                      setPendingBlockYmd(ymd);
-                    } else {
-                      openDayModal(ymd);
-                    }
-                  }}
-                >
-                  <Text style={styles.calDom}>{dom}</Text>
-                  {c.unavailable ? (
-                    <Text style={styles.calBadgeBlocked}>Off</Text>
-                  ) : c.slots.length > 0 ? (
-                    <Text style={styles.calBadgeOpen}>{c.slots.length}</Text>
-                  ) : (
-                    <Text style={styles.calBadgeTap}>Tap</Text>
-                  )}
-                </Pressable>
+                <View key={ymd} style={styles.calCell}>
+                  <Pressable
+                    disabled={isPast}
+                    style={[
+                      styles.calDay,
+                      isPast && styles.calPast,
+                      isTodayCell && styles.calToday,
+                      !isPast && c.unavailable && styles.calBlocked,
+                      !isPast && !c.unavailable && c.slots.length > 0 && styles.calOpen,
+                    ]}
+                    onPress={() => {
+                      if (blockSelectionMode) {
+                        setPendingBlockYmd(ymd);
+                      } else {
+                        openDayModal(ymd);
+                      }
+                    }}
+                  >
+                    <Text style={styles.calDom}>{dom}</Text>
+                    {c.unavailable ? (
+                      <Text style={styles.calBadgeBlocked}>Off</Text>
+                    ) : c.slots.length > 0 ? (
+                      <Text style={styles.calBadgeOpen}>{c.slots.length}</Text>
+                    ) : (
+                      <Text style={styles.calBadgeTap}>Tap</Text>
+                    )}
+                  </Pressable>
+                </View>
               );
             })}
           </View>
@@ -1132,9 +1132,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
   },
-  calGrid: { flexDirection: "row", flexWrap: "wrap" },
-  calCell: { width: "14.28%", aspectRatio: 1, padding: 2 },
+  calGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -3 },
+  calCell: { width: "14.28%", aspectRatio: 1, padding: 3 },
   calDay: {
+    flex: 1,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
