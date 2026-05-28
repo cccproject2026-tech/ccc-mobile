@@ -280,8 +280,12 @@ export function useRoadmapExtrasWithFallback(
     roadmapId: string | undefined,
     nestedRoadMapItemId?: string,
     userId?: string,
+    options?: { enabled?: boolean },
 ) {
-    const nested = useRoadmapExtras(roadmapId, nestedRoadMapItemId, userId);
+    const extrasEnabled = options?.enabled ?? true;
+    const nested = useRoadmapExtras(roadmapId, nestedRoadMapItemId, userId, {
+        enabled: extrasEnabled,
+    });
     const hasNestedExtrasArray =
         Array.isArray(nested.data?.extras) && nested.data.extras.length > 0;
     const hasNestedSavableExtras =
@@ -294,6 +298,7 @@ export function useRoadmapExtrasWithFallback(
         userId,
         {
             enabled:
+                extrasEnabled &&
                 nested.isSuccess &&
                 (!hasNestedExtrasArray || nestedOnlyNonFormMarkers),
         },
@@ -363,7 +368,10 @@ export function useRoadmapExtras(
                 finalUserId
             );
         },
-        enabled: isValidRoadmapId === true && (options?.enabled ?? true),
+        enabled:
+            isValidRoadmapId === true &&
+            !!validUserId &&
+            (options?.enabled ?? true),
         staleTime: 0,
         // gcTime: 1000 ,
     });

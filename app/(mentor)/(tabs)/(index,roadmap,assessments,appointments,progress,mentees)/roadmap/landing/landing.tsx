@@ -28,6 +28,7 @@ import {
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { useResubmittedTasks, type ResubmittedEntry } from "@/hooks/roadmap/useResubmittedTasks";
 import { formatRelativeTimestamp } from "@/utils/date";
+import { roadmapLibraryRouteParams } from "@/lib/roadmap/libraryMode";
 import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -358,25 +359,30 @@ export default function Landing() {
         return;
       }
 
+      const isLibrary = mainTab === "ROADMAP_LIBRARY";
+      const routeParams = {
+        ...roadmapLibraryRouteParams(isLibrary),
+        ...(selectedPastor
+          ? {
+              menteeId: selectedPastor.id,
+              menteeName: `${selectedPastor.firstName ?? ""} ${selectedPastor.lastName ?? ""}`.trim(),
+            }
+          : {}),
+      };
+
       if (roadmap.roadmaps.length === 1 && !roadmap.haveNextedRoadMaps) {
         router.push({
           pathname: `/(mentor)/roadmap/${roadmap._id}/${roadmap.roadmaps[0]._id}` as any,
-          params: {
-            menteeId: selectedPastor?.id,
-            menteeName: selectedPastor?.firstName + " " + selectedPastor?.lastName,
-          },
+          params: routeParams,
         });
       } else {
         router.push({
           pathname: `/(mentor)/roadmap/${roadmap._id}` as any,
-          params: {
-            menteeId: selectedPastor?.id,
-            menteeName: selectedPastor?.firstName + " " + selectedPastor?.lastName,
-          },
+          params: routeParams,
         });
       }
     },
-    [selectedPastor],
+    [selectedPastor, mainTab],
   );
 
   const displayData = useMemo(() => {
@@ -490,12 +496,13 @@ export default function Landing() {
           />
         );
       }
-      const cardData = getRoadmapCard(item.data);
       const isLibrary = mainTab === "ROADMAP_LIBRARY";
+      const cardData = getRoadmapCard(item.data);
       return (
         <View style={styles.cardPress}>
           <RoadmapCard
             data={cardData}
+            hideStatus={isLibrary}
             onPress={() => handleRoadmapPress(item.data)}
             showMenu={isLibrary}
             onMenuPress={isLibrary ? () => handleRoadmapMenuPress(item.data) : undefined}

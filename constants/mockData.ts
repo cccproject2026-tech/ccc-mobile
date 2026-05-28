@@ -724,13 +724,6 @@ export const PastorMenuItems: MenuItem[] = [
         route: "/(pastor)/(tabs)/profile/documents",
       },
       {
-        id: "assignments",
-        label: "Assignments",
-        icon: icons.assignment,
-        iconType: "image",
-        route: "/(pastor)/(tabs)/profile/assignments",
-      },
-      {
         id: "certificates",
         label: "Certificates",
         icon: icons.certificate,

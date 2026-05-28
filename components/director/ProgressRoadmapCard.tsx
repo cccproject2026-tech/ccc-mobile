@@ -37,6 +37,8 @@ interface Props {
   journeyProgress?: { completed: number; total: number };
   /** In-card journey CTA / completion (pastor list). Parent keeps navigation logic. */
   journeyGuidance?: RoadmapCardJourneyGuidance;
+  /** Hide status pill only (e.g. mentor roadmap library templates). */
+  hideStatus?: boolean;
 }
 
 export const RoadmapCard: React.FC<Props> = ({
@@ -49,6 +51,7 @@ export const RoadmapCard: React.FC<Props> = ({
     onToggleSelection,
     journeyProgress,
     journeyGuidance,
+    hideStatus,
 }) => {
     const isCompleted = data.status === 'completed';
     const hasProgress = data.taskProgress && !isCompleted;
@@ -87,10 +90,11 @@ export const RoadmapCard: React.FC<Props> = ({
                 accent: 'rgba(56, 189, 248, 0.45)',
             },
         } as const;
-        return data.status ? configs[data.status as keyof typeof configs] : null;
-    }, [data.status]);
+        if (hideStatus || !data.status) return null;
+        return configs[data.status as keyof typeof configs];
+    }, [data.status, hideStatus]);
 
-    const showCompletionTimeOnLeft = !!(data.completionTime && data.status);
+    const showCompletionTimeOnLeft = !!(data.completionTime && (data.status || hideStatus));
     const CardWrapper = onPress ? TouchableOpacity : View;
 
     const iconTintColor = useMemo(() => {
@@ -378,7 +382,7 @@ export const RoadmapCard: React.FC<Props> = ({
                             </View>
                         )}
 
-                        {data.completionTime && !data.status && (
+                        {data.completionTime && !showCompletionTimeOnLeft && (
                             <Text style={[
                                 styles.completionTimeText,
                                 !hasActions && styles.completionTimeTextNoActions

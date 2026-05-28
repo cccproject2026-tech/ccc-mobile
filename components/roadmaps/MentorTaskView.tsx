@@ -64,6 +64,8 @@ interface Props {
     userId?: string; // Target user (mentee)
     /** When provided, called after a successful save instead of showing the default modal + router.back(). */
     onSaveSuccess?: () => void;
+    /** Mentor browsing Roadmap Library templates — view-only, no save/submit. */
+    libraryPreview?: boolean;
 }
 
 export function MentorTaskView({
@@ -73,6 +75,7 @@ export function MentorTaskView({
     itemId,
     userId,
     onSaveSuccess,
+    libraryPreview = false,
 }: Props) {
     const router = useRouter();
     const { user: currentUser } = useAuthStore();
@@ -83,6 +86,8 @@ export function MentorTaskView({
     const isViewingPastor = Boolean(
         userId && currentUser?.id && String(userId) !== String(currentUser.id),
     );
+    const isLibraryPreview = libraryPreview === true;
+    const isPreviewMode = isViewingPastor || isLibraryPreview;
 
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [pendingFiles, setPendingFiles] = useState<Record<string, { id: string; uri: string; name: string; type: string }[]>>({});
@@ -177,6 +182,7 @@ export function MentorTaskView({
             isValidObjectId(roadmapId) ? roadmapId : undefined,
             isValidObjectId(itemId) ? itemId : undefined,
             isValidObjectId(targetUserId) ? targetUserId : undefined,
+            { enabled: !isLibraryPreview },
         );
 
     const effectiveExtras = useMemo(
@@ -188,7 +194,9 @@ export function MentorTaskView({
     const updateExtras = useUpdateRoadmapExtras();
     const uploadDocument = useUploadRoadmapDocument();
     const deleteDocument = useDeleteRoadmapDocument();
-    const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
+    const { data: assessmentProgress } = useAssessmentProgress(
+        isLibraryPreview ? undefined : targetUserId,
+    );
 
     // ── New submission-based state ──
     const { data: latestSubmission, error: submissionError } = useLatestSubmission(
@@ -232,7 +240,8 @@ export function MentorTaskView({
      * - Mentor is viewing a pastor's work (isViewingPastor)
      * - Task already has a submission AND we're not in resubmit mode
      */
-    const isReadOnly = isViewingPastor || (hasSubmission && !isResubmitting);
+    const isReadOnly =
+        isPreviewMode || (hasSubmission && !isResubmitting);
 
     const confirmDiscardResubmit = useCallback(() => {
         Alert.alert(
@@ -1251,7 +1260,7 @@ export function MentorTaskView({
                 )}
 
                 {/* Previously submitted — show action buttons (not edit) */}
-                {hasSubmission && !isResubmitting && !isViewingPastor && (
+                {hasSubmission && !isResubmitting && !isPreviewMode && (
                     <View style={styles.submissionActionsBanner}>
                         <View style={styles.submissionBannerHeader}>
                             <Ionicons name="checkmark-done-outline" size={18} color="#34d399" />
@@ -1328,7 +1337,7 @@ export function MentorTaskView({
                 }
 
                 {/* Submit / Resubmit button */}
-                {!isViewingPastor && !isReadOnly ? (
+                {!isPreviewMode && !isReadOnly ? (
                     <Pressable
                         style={[
                             styles.saveButton,
@@ -1401,7 +1410,7 @@ export function MentorTaskView({
                 </View>
             </Modal>
 
-            {!isViewingPastor ? (
+            {!isPreviewMode ? (
                 <SignatureModal
                     visible={signatureEditor.visible}
                     onClose={() => setSignatureEditor({ visible: false, fieldName: null })}
@@ -1413,7 +1422,7 @@ export function MentorTaskView({
                 />
             ) : null}
 
-            {!isViewingPastor ? (
+            {!isPreviewMode ? (
                 <SimpleSuccessModal
                     visible={showSuccessModal}
                     onClose={() => setShowSuccessModal(false)}

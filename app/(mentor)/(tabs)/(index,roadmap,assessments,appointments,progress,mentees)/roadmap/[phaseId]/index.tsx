@@ -11,6 +11,7 @@ import {
 import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
 import { useRoadmapMeta } from '@/hooks/roadmap/useRoadmapMeta';
 import { getTasks } from '@/lib/roadmap/helpers';
+import { isRoadmapLibraryMode, roadmapLibraryRouteParams } from '@/lib/roadmap/libraryMode';
 import { getTaskCard } from '@/lib/roadmap/mappers';
 import type { NestedRoadmap, Roadmap } from '@/lib/roadmap/types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
@@ -32,7 +33,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type TabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
 
 export default function RoadmapDetail() {
-    const { phaseId, menteeId, menteeName } = useLocalSearchParams<{ phaseId: string, menteeId?: string, menteeName?: string }>();
+    const { phaseId, menteeId, menteeName, libraryMode } = useLocalSearchParams<{
+        phaseId: string;
+        menteeId?: string;
+        menteeName?: string;
+        libraryMode?: string;
+    }>();
+    const isLibraryMode = isRoadmapLibraryMode(libraryMode);
     const { bottom } = useSafeAreaInsets();
     const { width } = useWindowDimensions();
 
@@ -42,9 +49,13 @@ export default function RoadmapDetail() {
     }, [width]);
     const maxWidth = useMemo(() => (width >= 520 ? 520 : undefined), [width]);
 
-    // Fetch single roadmap
-    const targetUserId = menteeId;
-    const { data: roadmap, isLoading, error, refetch } = useRoadmap(phaseId, targetUserId);
+    // Fetch single roadmap (library = template only, no mentee progress)
+    const targetUserId = isLibraryMode ? undefined : menteeId;
+    const { data: roadmap, isLoading, error, refetch } = useRoadmap(
+        phaseId,
+        targetUserId,
+        !isLibraryMode,
+    );
 
     const meta = useRoadmapMeta(roadmap as Roadmap | undefined);
 
@@ -247,14 +258,16 @@ export default function RoadmapDetail() {
                 <RoadmapSearchField value={search} onChangeText={setSearch} dense />
             </View>
 
-            <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth, marginBottom: 0 }]}>
-                <RoadmapTabStrip
-                    tabs={tabs}
-                    activeKey={activeTab}
-                    onChange={(key) => setActiveTab(key as TabKey)}
-                    scrollable
-                />
-            </View>
+            {!isLibraryMode && (
+                <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth, marginBottom: 0 }]}>
+                    <RoadmapTabStrip
+                        tabs={tabs}
+                        activeKey={activeTab}
+                        onChange={(key) => setActiveTab(key as TabKey)}
+                        scrollable
+                    />
+                </View>
+            )}
 
             {/* Content */}
             <ScrollView
@@ -274,10 +287,19 @@ export default function RoadmapDetail() {
                         return (
                             <Pressable
                                 key={task._id}
-                                onPress={() => router.push({pathname: `/(mentor)/roadmap/${phaseId}/${task._id}` as any, params: { menteeId: menteeId, menteeName: menteeName }})}
+                                onPress={() =>
+                                    router.push({
+                                        pathname: `/(mentor)/roadmap/${phaseId}/${task._id}` as any,
+                                        params: {
+                                            menteeId,
+                                            menteeName,
+                                            ...roadmapLibraryRouteParams(isLibraryMode),
+                                        },
+                                    })
+                                }
                                 style={styles.cardPress}
                             >
-                                <RoadmapCard data={cardData} />
+                                <RoadmapCard data={cardData} hideStatus={isLibraryMode} />
                             </Pressable>
                         );
                     })

@@ -7,6 +7,7 @@ import { MentorTaskView } from '@/components/roadmaps/MentorTaskView';
 import { useRoadmap, useRoadmapComments, useRoadmapQueries } from '@/hooks/roadmaps/useRoadmaps';
 import { useRoadmapMeta } from '@/hooks/roadmap/useRoadmapMeta';
 import { resolveRoadmapDetailTask } from '@/lib/roadmap/helpers';
+import { isRoadmapLibraryMode } from '@/lib/roadmap/libraryMode';
 import type { NestedRoadmap, Roadmap } from '@/lib/roadmap/types';
 import { useAuthStore } from '@/stores';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
@@ -17,18 +18,27 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 export default function ItemDetail() {
-    const { phaseId, itemId, menteeId, menteeName } = useLocalSearchParams<{ 
-        phaseId: string; 
+    const { phaseId, itemId, menteeId, menteeName, libraryMode } = useLocalSearchParams<{
+        phaseId: string;
         itemId: string;
         menteeId?: string;
         menteeName?: string;
+        libraryMode?: string;
     }>();
     const router = useRouter();
     const { user } = useAuthStore();
-    // Use menteeId if available (mentor viewing mentee), otherwise fallback to current user
-    const targetUserId = menteeId || user?.id;
+    const isLibraryMode = isRoadmapLibraryMode(libraryMode);
+    // Library = template preview; mentee flow uses pastor progress
+    const targetUserId = isLibraryMode ? undefined : menteeId || user?.id;
+    const headerTitle = isLibraryMode
+        ? "Roadmap Library"
+        : menteeName?.trim() || undefined;
     // Fetch parent roadmap
-    const { data: roadmap, isLoading, error } = useRoadmap(phaseId, targetUserId);
+    const { data: roadmap, isLoading, error } = useRoadmap(
+        phaseId,
+        targetUserId,
+        !isLibraryMode,
+    );
 
     const { data: comments } = useRoadmapComments(phaseId, targetUserId);
     const { data: queries } = useRoadmapQueries(phaseId, targetUserId);
@@ -45,6 +55,10 @@ export default function ItemDetail() {
     );
 
     const meta = useRoadmapMeta(roadmap as Roadmap | undefined, task);
+
+    const breadcrumb = isLibraryMode
+        ? `Roadmap Library > ${roadmap?.name ?? ""}`
+        : `My Mentee > ${menteeName ?? ""} > ${roadmap?.name ?? ""}`;
 
     // Get phase number
     const phaseNumber = useMemo(() => {
@@ -116,7 +130,7 @@ export default function ItemDetail() {
         return (
             <AppGradientBackground style={styles.container}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="mentor" showUserName customTitle={menteeName} />
+                    <TopBar role="mentor" showUserName customTitle={headerTitle} />
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -131,7 +145,7 @@ export default function ItemDetail() {
         return (
             <AppGradientBackground style={styles.container}>
                 <View style={styles.topBarWrapper}>
-                    <TopBar role="mentor" showUserName customTitle={menteeName} />
+                    <TopBar role="mentor" showUserName customTitle={headerTitle} />
                 </View>
                 <View style={styles.notFoundContainer}>
                     <Ionicons name="alert-circle" size={48} color="#fff" />
@@ -152,7 +166,7 @@ export default function ItemDetail() {
     return (
         <AppGradientBackground style={styles.container}>
             <View style={styles.topBarWrapper}>
-                <TopBar role="mentor" showUserName customTitle={menteeName} />
+                <TopBar role="mentor" showUserName customTitle={headerTitle} />
             </View>
 
             {/* Header */}
@@ -187,7 +201,7 @@ export default function ItemDetail() {
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
-                            My Mentee &gt; {menteeName} &gt; {roadmap?.name}
+                            {breadcrumb}
                         </Text>
                     </View>
                 </View>
@@ -217,6 +231,7 @@ export default function ItemDetail() {
                     </View>
                 </TouchableOpacity>
 
+                {!isLibraryMode && (
                 <TouchableOpacity
                     onPress={() =>
                         router.push({
@@ -260,7 +275,9 @@ export default function ItemDetail() {
                         ) : null}
                     </View>
                 </TouchableOpacity>
+                )}
 
+                {!isLibraryMode && (
                 <TouchableOpacity
                     onPress={() =>
                         router.push({
@@ -304,6 +321,7 @@ export default function ItemDetail() {
                         ) : null}
                     </View>
                 </TouchableOpacity>
+                )}
             </View>
 
             {/* Content */}
@@ -356,9 +374,11 @@ export default function ItemDetail() {
                     )}
                 </View>
 
-                <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
-                    <TaskStatusBadges task={task} variant="mentor" />
-                </View>
+                {!isLibraryMode && (
+                    <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
+                        <TaskStatusBadges task={task} variant="mentor" />
+                    </View>
+                )}
 
                 {/* Roadmap Section */}
                 <Text style={styles.sectionTitle}>Roadmap</Text>
@@ -382,6 +402,7 @@ export default function ItemDetail() {
                     phaseId={phaseId}
                     itemId={itemId}
                     userId={targetUserId}
+                    libraryPreview={isLibraryMode}
                 />
             </ScrollView>
 
