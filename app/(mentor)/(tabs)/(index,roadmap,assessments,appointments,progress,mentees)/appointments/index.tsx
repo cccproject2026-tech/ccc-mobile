@@ -1,4 +1,8 @@
-import GradientCalendar from "@/components/atom/calendar";
+import {
+  normalizeYmd,
+  ScheduleMonthCalendarFromSelection,
+} from "@/components/calendar/ScheduleMonthCalendar";
+import { localCalendarYmd } from "@/utils/availability/availability-recurring-utils";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import AppointmentCard, { MenuItem } from "@/components/director/AppointmentCard";
@@ -42,7 +46,10 @@ interface ResponseModalState {
 }
 
 const Appointments: React.FC = () => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = (() => {
+    const now = new Date();
+    return localCalendarYmd(now.getFullYear(), now.getMonth(), now.getDate());
+  })();
   const [selectedDate, setSelectedDate] = React.useState<string>(today);
   const [activeTab, setActiveTab] = React.useState<
     "appointments" | "availability"
@@ -261,6 +268,18 @@ const Appointments: React.FC = () => {
   ]);
 
   const selectedDateAppointments = formattedAppointments;
+
+  const appointmentCountByYmd = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!appointments) return map;
+    for (const apt of appointments) {
+      if (String(apt.status ?? "").trim().toLowerCase().startsWith("cancel")) continue;
+      const ymd = String(apt.meetingDate ?? "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) continue;
+      map.set(ymd, (map.get(ymd) ?? 0) + 1);
+    }
+    return map;
+  }, [appointments]);
 
   // Format getUpcomingAppointments appointments for display
   const upcomingAppointments = useMemo(() => {
@@ -495,20 +514,23 @@ const Appointments: React.FC = () => {
                     </View>
                   </View>
 
-                  {/* Calendar Component */}
-                  <View
-                    style={{
-                      minHeight: 400,
+                  <ScheduleMonthCalendarFromSelection
+                    selectedYmd={selectedDate}
+                    onSelectDay={(ymd) => {
+                      const normalized = normalizeYmd(ymd);
+                      if (normalized) setSelectedDate(normalized);
                     }}
-                  >
-                    <GradientCalendar
-                      selected={selectedDate}
-                      setSelected={setSelectedDate}
-                      showHeader={false}
-                      disablePastDates={false}
-                      markToday={false}
-                    />
-                  </View>
+                    getDayVariant={(ymd, { isToday, isSelected }) => {
+                      if (isSelected) return "selected";
+                      if (isToday) return "today";
+                      if ((appointmentCountByYmd.get(ymd) ?? 0) > 0) return "open";
+                      return "default";
+                    }}
+                    getDayBadge={(ymd) => {
+                      const count = appointmentCountByYmd.get(ymd) ?? 0;
+                      return count > 0 ? String(count) : null;
+                    }}
+                  />
                 </View>
 
                 {/* Selected Date Appointments */}

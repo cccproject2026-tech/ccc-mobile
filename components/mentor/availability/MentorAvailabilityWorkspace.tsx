@@ -5,6 +5,7 @@ import {
   MEETING_DURATION_OPTIONS,
   MIN_NOTICE_OPTIONS,
 } from "@/components/mentor/availability/constants";
+import { ScheduleMonthCalendar } from "@/components/calendar/ScheduleMonthCalendar";
 import { SlotRowEditor } from "@/components/mentor/availability/SlotRowEditor";
 import {
   useCreateRecurringAvailability,
@@ -328,20 +329,6 @@ export function MentorAvailabilityWorkspace({
     await Promise.all([refetchDoc(), refetchMonth()]);
     queryClient.invalidateQueries({ queryKey: ["monthly-availability"] });
   }, [refetchDoc, refetchMonth, queryClient]);
-
-  const daysInMonth = useMemo(
-    () => new Date(calYear, calMonth + 1, 0).getDate(),
-    [calYear, calMonth],
-  );
-  const firstDow = useMemo(
-    () => new Date(calYear, calMonth, 1).getDay(),
-    [calYear, calMonth],
-  );
-  const todayYmd = localCalendarYmd(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    new Date().getDate(),
-  );
 
   const selectedDayRow = useMemo(() => {
     if (!dayModalYmd) return undefined;
@@ -702,37 +689,6 @@ export function MentorAvailabilityWorkspace({
             Tap a future day to customize or block it.
           </Text>
 
-          <View style={styles.monthNav}>
-            <Pressable
-              style={styles.navBtn}
-              onPress={() => {
-                if (calMonth === 0) {
-                  setCalMonth(11);
-                  setCalYear(calYear - 1);
-                } else setCalMonth(calMonth - 1);
-              }}
-            >
-              <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.monthLabel}>
-              {new Date(calYear, calMonth, 1).toLocaleString("default", {
-                month: "long",
-                year: "numeric",
-              })}
-            </Text>
-            <Pressable
-              style={styles.navBtn}
-              onPress={() => {
-                if (calMonth === 11) {
-                  setCalMonth(0);
-                  setCalYear(calYear + 1);
-                } else setCalMonth(calMonth + 1);
-              }}
-            >
-              <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
-            </Pressable>
-          </View>
-
           <View style={styles.calActions}>
             {blockSelectionMode ? (
               <Text style={styles.blockHint}>Tap a future day to block</Text>
@@ -750,64 +706,37 @@ export function MentorAvailabilityWorkspace({
             </Pressable>
           </View>
 
-          {monthFetching ? (
-            <ActivityIndicator color="#8ec5eb" style={{ marginVertical: 8 }} />
-          ) : null}
-
-          <View style={styles.weekHeaderRow}>
-            {WEEKDAY_LABELS_SUN0.map((d) => (
-              <Text key={d} style={styles.weekHeader}>
-                {d.slice(0, 3)}
-              </Text>
-            ))}
-          </View>
-
-          <View style={styles.calGrid}>
-            {Array.from({ length: firstDow }).map((_, i) => (
-              <View key={`pad-${i}`} style={styles.calCell} />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const dom = i + 1;
-              const ymd = localCalendarYmd(calYear, calMonth, dom);
-              const row = findAvailabilityRowForYmd(monthRows, ymd);
-              const c = classifyDayOccurrence(row);
-              const isPast =
-                new Date(`${ymd}T23:59:59`) <
-                new Date(new Date().toDateString());
-              const isTodayCell = ymd === todayYmd;
-
-              return (
-                <View key={ymd} style={styles.calCell}>
-                  <Pressable
-                    disabled={isPast}
-                    style={[
-                      styles.calDay,
-                      isPast && styles.calPast,
-                      isTodayCell && styles.calToday,
-                      !isPast && c.unavailable && styles.calBlocked,
-                      !isPast && !c.unavailable && c.slots.length > 0 && styles.calOpen,
-                    ]}
-                    onPress={() => {
-                      if (blockSelectionMode) {
-                        setPendingBlockYmd(ymd);
-                      } else {
-                        openDayModal(ymd);
-                      }
-                    }}
-                  >
-                    <Text style={styles.calDom}>{dom}</Text>
-                    {c.unavailable ? (
-                      <Text style={styles.calBadgeBlocked}>Off</Text>
-                    ) : c.slots.length > 0 ? (
-                      <Text style={styles.calBadgeOpen}>{c.slots.length}</Text>
-                    ) : (
-                      <Text style={styles.calBadgeTap}>Tap</Text>
-                    )}
-                  </Pressable>
-                </View>
-              );
-            })}
-          </View>
+          <ScheduleMonthCalendar
+            year={calYear}
+            month={calMonth}
+            onMonthChange={(y, m) => {
+              setCalYear(y);
+              setCalMonth(m);
+            }}
+            disablePastDates
+            loading={monthFetching}
+            onSelectDay={(ymd) => {
+              if (blockSelectionMode) {
+                setPendingBlockYmd(ymd);
+              } else {
+                openDayModal(ymd);
+              }
+            }}
+            getDayVariant={(ymd, { isPast, isToday }) => {
+              if (isPast) return "past";
+              if (isToday) return "today";
+              const c = classifyDayOccurrence(findAvailabilityRowForYmd(monthRows, ymd));
+              if (c.unavailable) return "blocked";
+              if (c.slots.length > 0) return "open";
+              return "default";
+            }}
+            getDayBadge={(ymd) => {
+              const c = classifyDayOccurrence(findAvailabilityRowForYmd(monthRows, ymd));
+              if (c.unavailable) return "Off";
+              if (c.slots.length > 0) return String(c.slots.length);
+              return "Tap";
+            }}
+          />
         </View>
       </ScrollView>
 
@@ -1110,47 +1039,8 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { color: "#FFFFFF", fontWeight: "800", fontSize: 13 },
   btnDisabled: { opacity: 0.55 },
-  monthNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 4,
-  },
-  navBtn: {
-    padding: 8,
-    borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.08)",
-  },
-  monthLabel: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
   calActions: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
   blockHint: { color: "#fdecc8", fontSize: 12, fontWeight: "700" },
-  weekHeaderRow: { flexDirection: "row", marginTop: 8 },
-  weekHeader: {
-    flex: 1,
-    textAlign: "center",
-    color: "rgba(142,197,235,0.9)",
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  calGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -3 },
-  calCell: { width: "14.28%", aspectRatio: 1, padding: 3 },
-  calDay: {
-    flex: 1,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(255,255,255,0.04)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  calPast: { opacity: 0.3 },
-  calToday: { borderColor: "#8ec5eb", backgroundColor: "rgba(142,197,235,0.15)" },
-  calBlocked: { borderColor: "rgba(248,113,113,0.45)", backgroundColor: "rgba(239,68,68,0.12)" },
-  calOpen: { borderColor: "rgba(52,211,153,0.45)", backgroundColor: "rgba(16,185,129,0.1)" },
-  calDom: { color: "#FFFFFF", fontWeight: "800", fontSize: 13 },
-  calBadgeBlocked: { color: "#fecaca", fontSize: 9, fontWeight: "700" },
-  calBadgeOpen: { color: "#a7f3d0", fontSize: 9, fontWeight: "700" },
-  calBadgeTap: { color: "rgba(255,255,255,0.45)", fontSize: 9 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.55)",
