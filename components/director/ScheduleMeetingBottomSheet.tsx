@@ -88,7 +88,12 @@ export interface ScheduleMeetingBottomSheetProps {
     selectedTime?: TimeSlot;
   }) => void;
   /** Called after a successful schedule/reschedule. */
-  onCompleted?: (result: { appointmentId: string; mode: "schedule" | "reschedule" }) => void;
+  onCompleted?: (result: {
+    appointmentId: string;
+    mode: "schedule" | "reschedule";
+    meetingDate: string;
+    meetingLink?: string;
+  }) => void;
   /** Optional prefill to skip step 1. */
   initialPerson?: Mentor | null;
   /** Optional prefill for role tab. */
@@ -106,6 +111,8 @@ export interface ScheduleMeetingBottomSheetProps {
   disableOutsideClose?: boolean;
   showCancelButton?: boolean;
   onScheduleComplete?: () => void;
+  /** When scheduling from an assessment, links the appointment back to that assessment. */
+  assessmentId?: string;
 }
 const ScheduleMeetingBottomSheet = forwardRef<
   BottomSheetModal,
@@ -130,6 +137,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       disableOutsideClose = false,
       showCancelButton = true,
       onScheduleComplete,
+      assessmentId,
     },
     ref,
   ) => {
@@ -341,6 +349,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       settings,
       mentorAppointments,
       userAppointments,
+      assessmentId,
     });
 
     // Debug log only after mentorId is available
@@ -536,7 +545,12 @@ const ScheduleMeetingBottomSheet = forwardRef<
         }
 
         onScheduleComplete?.();
-        onCompleted?.({ appointmentId: result.appointmentId, mode });
+        onCompleted?.({
+          appointmentId: result.appointmentId,
+          mode,
+          meetingDate: result.meetingDate,
+          meetingLink: result.meetingLink,
+        });
 
         setShowSuccessModal(true);
         setTimeout(() => {

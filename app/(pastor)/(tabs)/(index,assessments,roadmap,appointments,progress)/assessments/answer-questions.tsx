@@ -11,7 +11,12 @@ import {
 } from "@/hooks/assessments/useSubmitAnswers";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
+import { saveAssessmentMeetingLink } from "@/lib/assessments/assessmentMeetings";
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
+import { appointmentKeys } from "@/hooks/appointments/useAppointments";
+import { appointmentService } from "@/services/appointments.service";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { useQueryClient } from "@tanstack/react-query";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
 import { useAuthStore } from "@/stores";
 import { useAssessmentStore } from "@/stores/assessment.store";
@@ -42,6 +47,7 @@ export default function AnswerQuestionPage() {
     scheduleMeeting,
   );
   const router = useRouter();
+  const queryClient = useQueryClient();
   // hasPreSurvey = false;
   const { user } = useAuthStore();
   // console.log('assessmentId',typeof hasPreSurvey, hasPreSurvey);
@@ -505,8 +511,30 @@ export default function AnswerQuestionPage() {
 
       <ScheduleMeetingBottomSheet
         ref={scheduleMeetingBottomSheetRef}
+        assessmentId={assessmentId as string}
         onClose={() => scheduleMeetingBottomSheetRef.current?.dismiss()}
         onSchedule={handleScheduleComplete}
+        onCompleted={async ({ appointmentId, meetingDate, meetingLink }) => {
+          let link = meetingLink;
+          if (!link) {
+            try {
+              const apt = await appointmentService.getAppointmentById(
+                appointmentId,
+              );
+              link = getAppointmentJoinUrl(apt) ?? undefined;
+            } catch {
+              // Link may appear on appointments list after refresh.
+            }
+          }
+          await saveAssessmentMeetingLink(assessmentId as string, {
+            appointmentId,
+            meetingDate,
+            meetingLink: link,
+          });
+          await queryClient.invalidateQueries({
+            queryKey: appointmentKeys.all,
+          });
+        }}
         colorScheme={{
           background: "#1E3A6F",
           text: "#FFFFFF",

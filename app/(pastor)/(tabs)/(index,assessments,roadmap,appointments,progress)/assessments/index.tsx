@@ -7,7 +7,10 @@ import {
   RoadmapTabStrip,
   SectionHeader,
 } from "@/components/ui/design-system";
+import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
+import { useAssessmentMeetingMap } from "@/hooks/assessments/useAssessmentMeetingMap";
+import { useAuthStore } from "@/stores";
 import type { Assessment } from "@/types/assessment.types";
 import { sharePdfFromHtml } from "@/utils/pdf";
 import { getFontSize, getIconSize, getSpacing } from "@/utils/responsive";
@@ -30,6 +33,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const meetingModes = ["Zoom", "Google Meet", "Teams", "Whatsapp", "Phone call"];
 export default function Survey() {
   const navigation = useNavigation();
+  const { user } = useAuthStore();
+  const { appointments = [] } = useAppointments({ userId: user?.id });
+  const { meetingMap } = useAssessmentMeetingMap(appointments);
+
   // CHANGED: Use assigned assessments instead of all assessments
   const {
     data: assessments,
@@ -147,6 +154,15 @@ export default function Survey() {
         viewMode: "true",
         openCdp: "true",
       },
+    });
+  };
+
+  const handleMeetingPress = (assessment: Assessment) => {
+    const meeting = meetingMap[assessment.id];
+    if (!meeting?.appointmentId) return;
+    router.push({
+      pathname: "/appointments/meeting-details",
+      params: { appointmentId: String(meeting.appointmentId) },
     });
   };
 
@@ -363,7 +379,9 @@ export default function Survey() {
                   <React.Fragment key={assessment.id}>
                     <AssessmentCard
                       data={assessment}
+                      meetingInfo={meetingMap[assessment.id] ?? null}
                       onPress={() => handleCardPress(assessment)}
+                      onMeetingPress={() => handleMeetingPress(assessment)}
                       onCustomizedPress={() => handleCustomizedPress(assessment)}
                       menuItems={[
                         {

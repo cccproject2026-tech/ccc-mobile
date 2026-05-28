@@ -1,5 +1,6 @@
 import ScheduleMeetingBottomSheet from "@/components/director/ScheduleMeetingBottomSheet";
 import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
+import type { AssessmentMeetingLink } from "@/lib/assessments/assessmentMeetings";
 import { Assessment } from "@/lib/assessments/types";
 import { useAuthStore } from "@/stores";
 import {
@@ -39,6 +40,7 @@ export default function AssessmentCard({
   onMeetingIconPress,
   onCustomizedPress,
   onMenuPress,
+  meetingInfo,
 }: {
   data: Assessment;
   onPress?: (data: Assessment) => void;
@@ -47,6 +49,7 @@ export default function AssessmentCard({
   onCustomizedPress?: () => void;
   onMenuPress?: () => void;
   menuItems?: MenuItem[];
+  meetingInfo?: AssessmentMeetingLink | null;
 }) {
   // iOS compression factors
   const fontCompress = isIOS ? 0.92 : 1;
@@ -82,7 +85,8 @@ export default function AssessmentCard({
   const handleReschedule = (appointment: any) => {
     scheduleMeetingBottomSheetRef.current?.present();
   };
-  console.log("AssessmentCard rendered with data:", JSON.stringify(data));
+  const hasScheduledMeeting = !!meetingInfo?.appointmentId;
+
   /* Change Meeting Mode Modal */
   const changeMeetingMode = () => (
     <Modal
@@ -429,27 +433,31 @@ export default function AssessmentCard({
           </View>
         )}
       </TouchableOpacity>
-      {/* Mentors use the assessment library without meeting CTAs on each card. */}
-      {user?.role !== "mentor" && (
-        <TouchableOpacity style={styles.meetingInner} onPress={onMeetingPress}>
-            <View style={styles.meetingLeft}>
-              <View style={styles.meetingIconWrap}>
-                <Ionicons name="calendar-outline" size={18} color="#6FD4BE" />
-              </View>
-              <View style={styles.meetingTextCol}>
+      {hasScheduledMeeting && (
+        <TouchableOpacity
+          style={styles.meetingInner}
+          onPress={() => onMeetingPress?.()}
+          activeOpacity={0.85}
+        >
+          <View style={styles.meetingLeft}>
+            <View style={styles.meetingIconWrap}>
+              <Ionicons name="calendar-outline" size={18} color="#6FD4BE" />
+            </View>
+            <View style={styles.meetingTextCol}>
+              <Text
+                style={[
+                  styles.meetingLabel,
+                  {
+                    fontSize: getFontSize(12.5 * fontCompress),
+                    lineHeight: getFontSize(16 * fontCompress),
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                Meeting scheduled on
+              </Text>
+              {meetingInfo?.meetingDate ? (
                 <Text
-                  style={[
-                    styles.meetingLabel,
-                    {
-                      fontSize: getFontSize(12.5 * fontCompress),
-                      lineHeight: getFontSize(16 * fontCompress),
-                    },
-                  ]}
-                  numberOfLines={1}
-                >
-                  Meeting scheduled on
-                </Text>
-                {/* <Text
                   style={[
                     styles.meetingDate,
                     {
@@ -459,11 +467,12 @@ export default function AssessmentCard({
                   ]}
                   numberOfLines={1}
                 >
-                  {data?.meetingDate || ""}
-                </Text> */}
-              </View>
+                  {formatDate(meetingInfo.meetingDate)}
+                </Text>
+              ) : null}
             </View>
-            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
         </TouchableOpacity>
       )}
       {changeMeetingMode()}

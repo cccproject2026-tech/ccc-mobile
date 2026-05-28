@@ -1,4 +1,6 @@
+import { assessmentMeetingNote } from "@/lib/assessments/assessmentMeetings";
 import { appointmentService } from "@/services/appointments.service";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import type {
   Appointment,
   AppointmentPlatform,
@@ -31,6 +33,8 @@ export type UseMeetingSchedulerParams = {
   settings?: WeeklyAvailability | null;
   mentorAppointments?: Appointment[];
   userAppointments?: Appointment[];
+  /** Tags the appointment for assessment list meeting links. */
+  assessmentId?: string;
 };
 
 export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
@@ -46,6 +50,7 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
     settings,
     mentorAppointments = [],
     userAppointments = [],
+    assessmentId,
   } = params;
 
   const {
@@ -57,7 +62,11 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
 
   const isSubmitting = isCreating || isRescheduling;
 
-  async function submit(): Promise<{ appointmentId: string }> {
+  async function submit(): Promise<{
+    appointmentId: string;
+    meetingDate: string;
+    meetingLink?: string;
+  }> {
     if (
       !currentUserId ||
       !selectedPerson?.id ||
@@ -107,8 +116,16 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
         startTime: selectedSlot.startTime,
         startPeriod: selectedSlot.startPeriod as any,
       });
-      return { appointmentId: res.id };
+      return {
+        appointmentId: res.id,
+        meetingDate: meetingDateIso,
+        meetingLink: getAppointmentJoinUrl(res) ?? undefined,
+      };
     }
+
+    const notes = assessmentId
+      ? assessmentMeetingNote(assessmentId)
+      : `Meeting with ${selectedPerson.name}`;
 
     const created = await createAppointmentAsync({
       userId: payloadUserId,
@@ -116,9 +133,13 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       meetingDate: meetingDateIso,
       platform,
       meetingLink: undefined,
-      notes: `Meeting with ${selectedPerson.name}`,
+      notes,
     });
-    return { appointmentId: created.id };
+    return {
+      appointmentId: created.id,
+      meetingDate: meetingDateIso,
+      meetingLink: getAppointmentJoinUrl(created) ?? undefined,
+    };
   }
 
   return { submit, isSubmitting };
