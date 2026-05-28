@@ -2,6 +2,7 @@ import CustomDrawerContent from '@/components/director/CustomDrawer';
 import { PastorMenuItems } from '@/constants/mockData';
 import { useAuthStore } from '@/stores/auth.store';
 import { useOnboardingStore } from '@/stores/onboarding.store';
+import { navigateToWelcomeCenter } from '@/utils/auth-navigation';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React, { useEffect } from 'react';
@@ -15,21 +16,24 @@ export default function PastorDrawerLayout() {
 
     useEffect(() => {
         if (!isAuthenticated || !user) {
-            console.log('⚠️ Not authenticated, redirecting to home');
-            router.replace('/');
+            console.log('⚠️ Not authenticated, redirecting to welcome');
+            navigateToWelcomeCenter();
             return;
         }
 
-        // Check if user has profile picture
         if (!hasProfilePicture) {
             console.log('📷 Profile incomplete, redirecting to profile upload');
 
-            // Small delay to ensure layout is mounted
-            setTimeout(() => {
-                router.replace('/(pastor)/profile-setup');
+            const timeoutId = setTimeout(() => {
+                const { isAuthenticated: authed, user: currentUser } =
+                    useAuthStore.getState();
+                if (authed && currentUser) {
+                    router.replace('/(pastor)/profile-setup');
+                }
             }, 100);
+            return () => clearTimeout(timeoutId);
         }
-    }, [isAuthenticated, user, hasProfilePicture]);
+    }, [isAuthenticated, user, hasProfilePicture, router]);
 
     return (
         <Drawer

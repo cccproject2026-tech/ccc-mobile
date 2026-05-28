@@ -9,6 +9,7 @@ import {
     SetPasswordRequest,
     VerifyOtpRequest,
 } from "@/types/auth.types";
+import { navigateToWelcomeCenter } from "@/utils/auth-navigation";
 import { markPastorMentorIntroStart } from "@/utils/pastorMentorIntro";
 import { storage } from "@/utils/storage";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -219,8 +220,7 @@ export const useLogout = () => {
 
         console.log("✅ Logout complete");
 
-        // Navigate to landing
-        router.replace("/(unauthenticated)");
+        navigateToWelcomeCenter();
       } catch (error) {
         console.error("❌ Error in logout onSuccess:", error);
       }

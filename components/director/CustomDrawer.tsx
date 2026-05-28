@@ -2,6 +2,7 @@ import { homeLayout, roadmapTheme } from "@/components/ui/design-system";
 import { Colors } from "@/constants/Colors";
 import { MenuItem } from "@/constants/mockData";
 import { useAuthStore } from "@/stores";
+import { navigateToWelcomeCenter } from "@/utils/auth-navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { LinearGradient } from "expo-linear-gradient";
@@ -87,7 +88,7 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
             props.navigation.closeDrawer();
             await logout();
             InteractionManager.runAfterInteractions(() => {
-              router.replace("/");
+              navigateToWelcomeCenter();
             });
           } catch {
             Alert.alert("Error", "Failed to log out. Please try again.");

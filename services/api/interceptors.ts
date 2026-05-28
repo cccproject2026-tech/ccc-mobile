@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/stores/auth.store";
+import { navigateToWelcomeCenter } from "@/utils/auth-navigation";
 import { storage } from "@/utils/storage";
 import { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { apiClient } from "./client";
@@ -171,8 +172,9 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
 
-        // Logout user
+        // Logout user and return to welcome center
         await useAuthStore.getState().logout();
+        navigateToWelcomeCenter();
 
         return Promise.reject(refreshError);
       } finally {

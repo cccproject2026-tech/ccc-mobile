@@ -28,6 +28,8 @@ interface OnboardingState {
     | 'password'
     | 'complete';
     hasHydrated: boolean;
+    /** Prevents welcome-screen resume redirects immediately after logout */
+    suppressOnboardingResume: boolean;
 }
 
 interface OnboardingActions {
@@ -43,6 +45,7 @@ interface OnboardingActions {
     reset: () => void;
     /** Clears onboarding progress but keeps tutorial dismissed (e.g. logout). */
     resetOnLogout: () => void;
+    clearOnboardingResumeSuppress: () => void;
     setHasHydrated: (hydrated: boolean) => void;
 }
 
@@ -59,6 +62,7 @@ const initialState: OnboardingState = {
     hasProfilePicture: false,
     currentStep: 'form',
     hasHydrated: false,
+    suppressOnboardingResume: false,
 };
 
 export const useOnboardingStore = create<OnboardingStore>()(
@@ -67,7 +71,12 @@ export const useOnboardingStore = create<OnboardingStore>()(
             ...initialState,
 
             setInterestData: (data) => {
-                set({ interestData: data, interestStatus: 'pending', email: data.email });
+                set({
+                    interestData: data,
+                    interestStatus: 'pending',
+                    email: data.email,
+                    suppressOnboardingResume: false,
+                });
                 console.log('📝 Interest data saved:', data.email);
             },
 
@@ -133,8 +142,13 @@ export const useOnboardingStore = create<OnboardingStore>()(
                     hasProfilePicture: false,
                     currentStep: 'form',
                     hasHydrated: true,
+                    suppressOnboardingResume: true,
                 });
                 console.log('🔄 Onboarding progress cleared on logout');
+            },
+
+            clearOnboardingResumeSuppress: () => {
+                set({ suppressOnboardingResume: false });
             },
         }),
         {

@@ -40,12 +40,8 @@ export const useAuthStore = create<AuthStore>()(
             logout: async () => {
                 try {
                     console.log('🔓 Logging out');
-                    // Set state FIRST so root layout and Stack.Protected see logged-out state immediately and redirect
+                    // Set state FIRST so root layout and Stack.Protected see logged-out state immediately
                     set({ user: null, isAuthenticated: false });
-                    console.log('✅ Logout complete');
-
-                    // Then clear all storage (async)
-                    await storage.clearAll();
 
                     try {
                         useOnboardingStore.getState().resetOnLogout();
@@ -53,6 +49,11 @@ export const useAuthStore = create<AuthStore>()(
                     } catch (err) {
                         console.warn('⚠️ Failed to reset onboarding store:', err);
                     }
+
+                    console.log('✅ Logout complete');
+
+                    // Then clear all storage (async)
+                    await storage.clearAll();
 
                     try {
                         await AsyncStorage.clear();

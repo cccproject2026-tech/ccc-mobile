@@ -139,6 +139,8 @@ import {
             email,
             interestData,
             hasHydrated,
+            suppressOnboardingResume,
+            clearOnboardingResumeSuppress,
         } = useOnboardingStore();
         const hasSubmittedApplication = !!(
             userId ||
@@ -148,6 +150,7 @@ import {
         );
 
         const resumePath = useMemo(() => {
+            if (suppressOnboardingResume) return null;
             if (!hasHydrated || !hasSubmittedApplication) return null;
             if (isPasswordSet) return '/(unauthenticated)/login-form';
             if (interestStatus === 'accepted' || isEmailVerified) {
@@ -158,6 +161,7 @@ import {
             }
             return null;
         }, [
+            suppressOnboardingResume,
             hasHydrated,
             hasSubmittedApplication,
             isPasswordSet,
@@ -185,10 +189,12 @@ import {
         }
 
         const handleGetStarted = () => {
+            clearOnboardingResumeSuppress();
             router.push('/get-started');
         };
 
         const handleLogin = () => {
+            clearOnboardingResumeSuppress();
             router.push('/(unauthenticated)/login-form');
         };
 

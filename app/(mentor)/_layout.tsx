@@ -4,6 +4,7 @@ import { useData } from "@/dataContext";
 import { useAuthStore } from '@/stores/auth.store';
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { Drawer } from 'expo-router/drawer';
+import { navigateToWelcomeCenter } from '@/utils/auth-navigation';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
@@ -18,18 +19,22 @@ export default function MentorDrawerLayout() {
         setCurrentScreenState("Mentor");
     }, [setCurrentScreenState]);
 
-    // Redirect to role selection when not authenticated (e.g. after logout)
+    // Redirect to welcome when not authenticated (e.g. after logout)
     useEffect(() => {
         if (!isAuthenticated || user?.role !== 'mentor') {
-            router.replace('/');
+            navigateToWelcomeCenter();
             return;
         }
 
-        // Check if mentor has profile picture and redirect to setup if incomplete.
         if (!hasProfilePicture) {
-            setTimeout(() => {
-                router.replace('/(mentor)/profile-setup');
+            const timeoutId = setTimeout(() => {
+                const { isAuthenticated: authed, user: currentUser } =
+                    useAuthStore.getState();
+                if (authed && currentUser?.role === 'mentor') {
+                    router.replace('/(mentor)/profile-setup');
+                }
             }, 100);
+            return () => clearTimeout(timeoutId);
         }
     }, [isAuthenticated, user?.role, router, hasProfilePicture]);
 
