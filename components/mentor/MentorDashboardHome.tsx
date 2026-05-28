@@ -279,12 +279,17 @@ export default function MentorDashboardHome() {
                 style={styles.reviewCenterLink}
                 onPress={() => router.push("/(mentor)/(tabs)/review-center" as any)}
                 accessibilityRole="button"
-                accessibilityLabel={`Review Center${pendingActionCount > 0 ? `, ${pendingActionCount} pending` : ""}`}
+                accessibilityLabel={`Review Center. Review pastor roadmaps, assessments, and submissions.${pendingActionCount > 0 ? ` ${pendingActionCount} pending.` : ""}`}
               >
                 <View style={styles.reviewCenterIconWrap}>
                   <Ionicons name="file-tray-full-outline" size={20} color="#fff" />
                 </View>
-                <Text style={styles.reviewCenterLinkText}>Review Center</Text>
+                <View style={styles.reviewCenterTextCol}>
+                  <Text style={styles.reviewCenterLinkText}>Review Center</Text>
+                  <Text style={styles.reviewCenterSubtext} numberOfLines={2}>
+                    Review pastor roadmaps, assessments, and submissions
+                  </Text>
+                </View>
                 {pendingActionCount > 0 ? (
                   <View style={styles.reviewCenterBadge}>
                     <Text style={styles.reviewCenterBadgeText}>{pendingActionCount}</Text>
@@ -615,11 +620,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  reviewCenterLinkText: {
+  reviewCenterTextCol: {
     flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  reviewCenterLinkText: {
     color: "#fff",
     fontSize: 14,
     fontWeight: "700",
+  },
+  reviewCenterSubtext: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 11,
+    lineHeight: 15,
   },
   reviewCenterBadge: {
     backgroundColor: "#EF4444",

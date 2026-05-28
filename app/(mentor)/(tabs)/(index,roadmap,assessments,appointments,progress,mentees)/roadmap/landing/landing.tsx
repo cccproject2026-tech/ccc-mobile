@@ -504,13 +504,12 @@ export default function Landing() {
             data={cardData}
             hideStatus={isLibrary}
             onPress={() => handleRoadmapPress(item.data)}
-            showMenu={isLibrary}
-            onMenuPress={isLibrary ? () => handleRoadmapMenuPress(item.data) : undefined}
+            showMenu={false}
           />
         </View>
       );
     },
-    [handleRoadmapPress, mainTab, handleRoadmapMenuPress, selectPastor],
+    [handleRoadmapPress, mainTab, selectPastor],
   );
 
   const listEmptyComponent = useCallback(() => {
