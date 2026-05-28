@@ -22,18 +22,20 @@ import type {
   PatchMentorAvailabilityDayPayload,
 } from "@/types/appointment.types";
 import { extractApiErrorMessage } from "@/utils/availability/api-error";
+import type { AvailabilityFormBaseline } from "@/utils/availability/availability-recurring-utils";
 import {
   WEEKDAY_LABELS_SUN0,
+  baselineFromAvailabilityBlob,
   buildTemplateWeeklySlotsFromRows,
   classifyDayOccurrence,
-  coerceNumber,
   digAvailabilityBlob,
   findAvailabilityRowForYmd,
   findOverlappingSlotPair,
   localCalendarYmd,
-  slotFromUnknown,
   slotSpanMinutes,
   utcReferenceYmdForWeekday,
+  weekPatternKeyFromRows,
+  weekRowsFromAvailabilityBlob,
 } from "@/utils/availability/availability-recurring-utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
@@ -109,6 +111,9 @@ export function MentorAvailabilityWorkspace({
 
   const [dayModalYmd, setDayModalYmd] = useState<string | null>(null);
   const [dayModalSlots, setDayModalSlots] = useState<AppointmentAvailabilityTimeSlot[]>([]);
+  const [savedBaseline, setSavedBaseline] = useState<AvailabilityFormBaseline | null>(
+    null,
+  );
 
   const showToast = useCallback((message: string, type: "success" | "error") => {
     Toast.show({
@@ -148,6 +153,14 @@ export function MentorAvailabilityWorkspace({
       showToast(msg ?? "Recurring availability saved.", "success");
       setConfirmClearOpen(false);
       setClearPersonalizations(false);
+      setSavedBaseline({
+        meetingDuration,
+        minNoticeHours,
+        maxBookingsPerDay,
+        preferredPlatform,
+        horizonDays,
+        weekPatternKey: weekPatternKeyFromRows(weekRows),
+      });
       onAvailabilitySaved?.();
     },
     onError: onMutationError,
@@ -156,6 +169,17 @@ export function MentorAvailabilityWorkspace({
   const patchSettings = usePatchAvailabilitySettings({
     onSuccess: (msg) => {
       showToast(msg ?? "Booking rules updated.", "success");
+      setSavedBaseline((prev) =>
+        prev
+          ? {
+              ...prev,
+              meetingDuration,
+              minNoticeHours,
+              maxBookingsPerDay,
+              preferredPlatform,
+            }
+          : prev,
+      );
       onAvailabilitySaved?.();
     },
     onError: onMutationError,
@@ -192,70 +216,21 @@ export function MentorAvailabilityWorkspace({
 
   const hydrateFromDoc = useCallback(() => {
     const blob = digAvailabilityBlob(weeklyDoc);
-    if (!blob) return;
+    const baseline = baselineFromAvailabilityBlob(blob);
 
-    setMeetingDuration(() => {
-      const parsed = coerceNumber(blob.meetingDuration, 60);
-      return parsed === 30 || parsed === 60 ? parsed : 60;
-    });
-    setMinNoticeHours(
-      coerceNumber(
-        blob.minSchedulingNoticeHours ?? blob.advanceNotice ?? blob.minNoticeHours,
-        2,
-      ),
-    );
-    setMaxBookingsPerDay(coerceNumber(blob.maxBookingsPerDay, 5));
-    if (typeof blob.preferredPlatform === "string" && blob.preferredPlatform.trim()) {
-      setPreferredPlatform(blob.preferredPlatform.trim().toLowerCase());
-    }
-    if (typeof blob.recurringHorizonDays === "number") {
-      setHorizonDays(Math.min(120, Math.max(7, blob.recurringHorizonDays)));
-    }
-
-    const applyTemplate = (rows: unknown[]) => {
-      const next = initialWeekRows();
-      for (const row of rows) {
-        if (!row || typeof row !== "object") continue;
-        const r = row as Record<string, unknown>;
-        const ds = typeof r.date === "string" ? r.date.slice(0, 10) : "";
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) continue;
-        const di = new Date(`${ds}T12:00:00.000Z`).getUTCDay();
-        const target = next.find((w) => w.dayIndexUtcSunday0 === di);
-        const slotsRaw = r.slots ?? r.rawSlots;
-        if (target && Array.isArray(slotsRaw) && slotsRaw.length > 0) {
-          target.enabled = true;
-          target.slots = slotsRaw.map(slotFromUnknown);
-        }
-      }
-      setWeekRows(next);
-    };
-
-    const tw = blob.templateWeeklySlots;
-    if (Array.isArray(tw) && tw.length > 0) {
-      applyTemplate(tw);
-      return;
-    }
-
-    const pattern = blob.recurringWeeklyPattern;
-    if (Array.isArray(pattern) && pattern.length > 0) {
-      const next = initialWeekRows();
-      for (const p of pattern) {
-        if (!p || typeof p !== "object") continue;
-        const row = p as { weekday?: number; rawSlots?: unknown[] };
-        const di = typeof row.weekday === "number" ? row.weekday : -1;
-        const target = next.find((w) => w.dayIndexUtcSunday0 === di);
-        if (target && Array.isArray(row.rawSlots) && row.rawSlots.length > 0) {
-          target.enabled = true;
-          target.slots = row.rawSlots.map(slotFromUnknown);
-        }
-      }
-      setWeekRows(next);
-    }
+    setMeetingDuration(baseline.meetingDuration);
+    setMinNoticeHours(baseline.minNoticeHours);
+    setMaxBookingsPerDay(baseline.maxBookingsPerDay);
+    setPreferredPlatform(baseline.preferredPlatform);
+    setHorizonDays(baseline.horizonDays);
+    setWeekRows(weekRowsFromAvailabilityBlob(blob));
+    setSavedBaseline(baseline);
   }, [weeklyDoc]);
 
   useEffect(() => {
+    if (docLoading) return;
     hydrateFromDoc();
-  }, [hydrateFromDoc]);
+  }, [docLoading, hydrateFromDoc]);
 
   const closeDayModal = () => {
     setDayModalYmd(null);
@@ -384,6 +359,40 @@ export function MentorAvailabilityWorkspace({
     patchDay.isPending || markAvailable.isPending || markUnavailable.isPending;
 
   const routineHasAny = weekRows.some((r) => r.enabled && r.slots.length > 0);
+
+  const currentWeekPatternKey = useMemo(
+    () => weekPatternKeyFromRows(weekRows),
+    [weekRows],
+  );
+
+  const rulesDirty = useMemo(() => {
+    if (!savedBaseline) return false;
+    return (
+      meetingDuration !== savedBaseline.meetingDuration ||
+      minNoticeHours !== savedBaseline.minNoticeHours ||
+      maxBookingsPerDay !== savedBaseline.maxBookingsPerDay ||
+      preferredPlatform !== savedBaseline.preferredPlatform
+    );
+  }, [
+    savedBaseline,
+    meetingDuration,
+    minNoticeHours,
+    maxBookingsPerDay,
+    preferredPlatform,
+  ]);
+
+  const scheduleDirty = useMemo(() => {
+    if (!savedBaseline) return false;
+    return (
+      currentWeekPatternKey !== savedBaseline.weekPatternKey ||
+      horizonDays !== savedBaseline.horizonDays ||
+      clearPersonalizations
+    );
+  }, [savedBaseline, currentWeekPatternKey, horizonDays, clearPersonalizations]);
+
+  const canSaveRules = rulesDirty && !patchSettings.isPending;
+  const canSaveRecurring =
+    scheduleDirty && !recurringBusy && !docLoading;
 
   if (!mentorId) {
     return (
@@ -658,9 +667,9 @@ export function MentorAvailabilityWorkspace({
             <Pressable
               style={[
                 styles.secondaryBtn,
-                patchSettings.isPending && styles.btnDisabled,
+                (!canSaveRules || patchSettings.isPending) && styles.btnDisabled,
               ]}
-              disabled={patchSettings.isPending}
+              disabled={!canSaveRules}
               onPress={saveSettingsOnly}
             >
               {patchSettings.isPending ? (
@@ -670,8 +679,11 @@ export function MentorAvailabilityWorkspace({
               )}
             </Pressable>
             <Pressable
-              style={[styles.primaryBtn, recurringBusy && styles.btnDisabled]}
-              disabled={recurringBusy || docLoading}
+              style={[
+                styles.primaryBtn,
+                (!canSaveRecurring || recurringBusy) && styles.btnDisabled,
+              ]}
+              disabled={!canSaveRecurring}
               onPress={saveRecurring}
             >
               {createRecurring.isPending ? (

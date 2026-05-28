@@ -169,6 +169,145 @@ export function buildTemplateWeeklySlotsFromRows(params: {
     }));
 }
 
+/** Stable string key for comparing weekly template patterns. */
+export function weekPatternKeyFromRows(
+  rows: Array<{
+    dayIndexUtcSunday0: number;
+    enabled: boolean;
+    slots: AppointmentAvailabilityTimeSlot[];
+  }>,
+): string {
+  const template = buildTemplateWeeklySlotsFromRows({ rows });
+  return JSON.stringify(
+    [...template]
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((d) => ({
+        date: d.date,
+        slots: d.slots.map((s) => ({
+          startTime: normalizeTimeToken(s.startTime),
+          startPeriod: toSlotPeriod(s.startPeriod),
+          endTime: normalizeTimeToken(s.endTime),
+          endPeriod: toSlotPeriod(s.endPeriod),
+        })),
+      })),
+  );
+}
+
+export type AvailabilityFormBaseline = {
+  meetingDuration: number;
+  minNoticeHours: number;
+  maxBookingsPerDay: number;
+  preferredPlatform: string;
+  horizonDays: number;
+  weekPatternKey: string;
+};
+
+export const DEFAULT_AVAILABILITY_BASELINE: AvailabilityFormBaseline = {
+  meetingDuration: 60,
+  minNoticeHours: 2,
+  maxBookingsPerDay: 5,
+  preferredPlatform: "zoom",
+  horizonDays: 60,
+  weekPatternKey: "[]",
+};
+
+export function weekRowsFromAvailabilityBlob(
+  blob: Record<string, unknown> | null,
+): Array<{
+  dayIndexUtcSunday0: number;
+  label: string;
+  enabled: boolean;
+  slots: AppointmentAvailabilityTimeSlot[];
+}> {
+  const next = WEEKDAY_LABELS_SUN0.map((label, idx) => ({
+    dayIndexUtcSunday0: idx,
+    label,
+    enabled: false,
+    slots: [] as AppointmentAvailabilityTimeSlot[],
+  }));
+
+  if (!blob) return next;
+
+  const applyTemplate = (rows: unknown[]) => {
+    for (const row of rows) {
+      if (!row || typeof row !== "object") continue;
+      const r = row as Record<string, unknown>;
+      const ds = typeof r.date === "string" ? r.date.slice(0, 10) : "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) continue;
+      const di = new Date(`${ds}T12:00:00.000Z`).getUTCDay();
+      const target = next.find((w) => w.dayIndexUtcSunday0 === di);
+      const slotsRaw = r.slots ?? r.rawSlots;
+      if (target && Array.isArray(slotsRaw) && slotsRaw.length > 0) {
+        target.enabled = true;
+        target.slots = slotsRaw.map(slotFromUnknown);
+      }
+    }
+  };
+
+  const tw = blob.templateWeeklySlots;
+  if (Array.isArray(tw) && tw.length > 0) {
+    applyTemplate(tw);
+    return next;
+  }
+
+  const pattern = blob.recurringWeeklyPattern;
+  if (Array.isArray(pattern) && pattern.length > 0) {
+    for (const p of pattern) {
+      if (!p || typeof p !== "object") continue;
+      const row = p as { weekday?: number; rawSlots?: unknown[] };
+      const di = typeof row.weekday === "number" ? row.weekday : -1;
+      const target = next.find((w) => w.dayIndexUtcSunday0 === di);
+      if (target && Array.isArray(row.rawSlots) && row.rawSlots.length > 0) {
+        target.enabled = true;
+        target.slots = row.rawSlots.map(slotFromUnknown);
+      }
+    }
+  }
+
+  return next;
+}
+
+export function baselineFromAvailabilityBlob(
+  blob: Record<string, unknown> | null,
+): AvailabilityFormBaseline {
+  const weekRows = weekRowsFromAvailabilityBlob(blob);
+  if (!blob) {
+    return {
+      ...DEFAULT_AVAILABILITY_BASELINE,
+      weekPatternKey: weekPatternKeyFromRows(weekRows),
+    };
+  }
+
+  const parsedDuration = coerceNumber(blob.meetingDuration, 60);
+  const meetingDuration =
+    parsedDuration === 30 || parsedDuration === 60 ? parsedDuration : 60;
+
+  let horizonDays = DEFAULT_AVAILABILITY_BASELINE.horizonDays;
+  if (typeof blob.recurringHorizonDays === "number") {
+    horizonDays = Math.min(120, Math.max(7, blob.recurringHorizonDays));
+  }
+
+  let preferredPlatform = DEFAULT_AVAILABILITY_BASELINE.preferredPlatform;
+  if (typeof blob.preferredPlatform === "string" && blob.preferredPlatform.trim()) {
+    preferredPlatform = blob.preferredPlatform.trim().toLowerCase();
+  }
+
+  return {
+    meetingDuration,
+    minNoticeHours: coerceNumber(
+      blob.minSchedulingNoticeHours ?? blob.advanceNotice ?? blob.minNoticeHours,
+      DEFAULT_AVAILABILITY_BASELINE.minNoticeHours,
+    ),
+    maxBookingsPerDay: coerceNumber(
+      blob.maxBookingsPerDay,
+      DEFAULT_AVAILABILITY_BASELINE.maxBookingsPerDay,
+    ),
+    preferredPlatform,
+    horizonDays,
+    weekPatternKey: weekPatternKeyFromRows(weekRows),
+  };
+}
+
 export function findAvailabilityRowForYmd(
   monthRows: unknown[],
   ymd: string,
