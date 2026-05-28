@@ -49,12 +49,16 @@ export function SlotRowEditor({ slot, onPatch, onRemove }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     gap: 8,
     marginBottom: 10,
   },
   timeChip: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "38%",
+    minWidth: 118,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -65,7 +69,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 10,
   },
-  timeText: { color: "#FFFFFF", fontWeight: "700", fontSize: 13 },
-  to: { color: "rgba(255,255,255,0.65)", fontWeight: "700" },
-  removeBtn: { padding: 8 },
+  timeText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 13,
+    flexShrink: 1,
+  },
+  to: { color: "rgba(255,255,255,0.65)", fontWeight: "700", paddingHorizontal: 2 },
+  removeBtn: {
+    padding: 8,
+    marginLeft: "auto",
+  },
 });

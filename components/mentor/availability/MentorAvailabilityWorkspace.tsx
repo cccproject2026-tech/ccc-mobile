@@ -44,15 +44,19 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 type WeekRow = {
@@ -89,11 +93,17 @@ type Props = {
   onAvailabilitySaved?: () => void;
 };
 
+const DAY_SHEET_MAX_WIDTH = 560;
+
 export function MentorAvailabilityWorkspace({
   mentorId,
   onAvailabilitySaved,
 }: Props) {
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const daySheetWidth = Math.min(DAY_SHEET_MAX_WIDTH, windowWidth);
+  const daySheetMaxHeight = Math.round(windowHeight * 0.9);
   const [weekRows, setWeekRows] = useState<WeekRow[]>(() => initialWeekRows());
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [horizonDays, setHorizonDays] = useState(60);
@@ -805,136 +815,171 @@ export function MentorAvailabilityWorkspace({
         </View>
       </Modal>
 
-      {/* Day modal */}
-      <Modal visible={Boolean(dayModalYmd)} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.dayModal}>
-            <View style={styles.dayModalHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.dayModalTitle}>Custom availability</Text>
-                {dayModalYmd ? (
-                  <Text style={styles.dayModalDate}>{formatYmdHeading(dayModalYmd)}</Text>
-                ) : null}
-              </View>
-              <Pressable onPress={closeDayModal} disabled={dayBusy}>
-                <Ionicons name="close" size={24} color="#FFFFFF" />
-              </Pressable>
-            </View>
+      {/* Day modal — bottom sheet with safe-area footer */}
+      <Modal
+        visible={Boolean(dayModalYmd)}
+        animationType="slide"
+        transparent
+        statusBarTranslucent
+        onRequestClose={closeDayModal}
+      >
+        <Pressable style={styles.sheetOverlay} onPress={closeDayModal}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={[
+              styles.daySheetAvoid,
+              { width: daySheetWidth, maxHeight: daySheetMaxHeight },
+            ]}
+          >
+            <Pressable
+              style={styles.dayModalSheet}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.daySheetHandle} />
 
-            <ScrollView style={styles.dayModalBody}>
-              {selectedDayClass.unavailable && dayModalSlots.length === 0 ? (
-                <Text style={styles.sectionSub}>
-                  This day is blocked. Add meeting hours below and save to reopen.
-                </Text>
-              ) : (
-                <Text style={styles.sectionSub}>
-                  Changes apply to this date only, not your weekly pattern.
-                </Text>
-              )}
-
-              {dayModalSlots.map((slot, idx) => (
-                <SlotRowEditor
-                  key={idx}
-                  slot={slot}
-                  onPatch={(patch) =>
-                    setDayModalSlots((prev) =>
-                      prev.map((s, j) => (j === idx ? { ...s, ...patch } : s)),
-                    )
-                  }
-                  onRemove={() =>
-                    setDayModalSlots((prev) => prev.filter((_, j) => j !== idx))
-                  }
-                />
-              ))}
-
-              <Pressable
-                style={styles.secondaryBtn}
-                onPress={() =>
-                  setDayModalSlots((prev) => [...prev, { ...DEFAULT_SLOT_WINDOW }])
-                }
-              >
-                <Ionicons name="add" size={16} color="#FFFFFF" />
-                <Text style={styles.secondaryBtnText}>Add window</Text>
-              </Pressable>
-            </ScrollView>
-
-            <View style={styles.dayModalFooter}>
-              {selectedDayClass.unavailable ? (
+              <View style={styles.dayModalHeader}>
+                <View style={styles.dayModalHeaderText}>
+                  <Text style={styles.dayModalTitle}>Custom availability</Text>
+                  {dayModalYmd ? (
+                    <Text style={styles.dayModalDate}>{formatYmdHeading(dayModalYmd)}</Text>
+                  ) : null}
+                </View>
                 <Pressable
-                  style={styles.secondaryBtn}
+                  onPress={closeDayModal}
                   disabled={dayBusy}
+                  style={styles.dayModalCloseBtn}
+                  hitSlop={8}
+                >
+                  <Ionicons name="close" size={22} color="#FFFFFF" />
+                </Pressable>
+              </View>
+
+              <ScrollView
+                style={styles.dayModalScroll}
+                contentContainerStyle={styles.dayModalScrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                bounces={false}
+              >
+                {selectedDayClass.unavailable && dayModalSlots.length === 0 ? (
+                  <Text style={styles.sectionSub}>
+                    This day is blocked. Add meeting hours below and save to reopen.
+                  </Text>
+                ) : (
+                  <Text style={styles.sectionSub}>
+                    Changes apply to this date only, not your weekly pattern.
+                  </Text>
+                )}
+
+                {dayModalSlots.map((slot, idx) => (
+                  <SlotRowEditor
+                    key={idx}
+                    slot={slot}
+                    onPatch={(patch) =>
+                      setDayModalSlots((prev) =>
+                        prev.map((s, j) => (j === idx ? { ...s, ...patch } : s)),
+                      )
+                    }
+                    onRemove={() =>
+                      setDayModalSlots((prev) => prev.filter((_, j) => j !== idx))
+                    }
+                  />
+                ))}
+
+                <Pressable
+                  style={[styles.secondaryBtn, styles.dayModalAddBtn]}
+                  onPress={() =>
+                    setDayModalSlots((prev) => [...prev, { ...DEFAULT_SLOT_WINDOW }])
+                  }
+                >
+                  <Ionicons name="add" size={16} color="#FFFFFF" />
+                  <Text style={styles.secondaryBtnText}>Add window</Text>
+                </Pressable>
+              </ScrollView>
+
+              <View
+                style={[
+                  styles.dayModalFooter,
+                  { paddingBottom: Math.max(insets.bottom, 16) },
+                ]}
+              >
+                {selectedDayClass.unavailable ? (
+                  <Pressable
+                    style={[styles.secondaryBtn, styles.dayModalFooterBtn]}
+                    disabled={dayBusy}
+                    onPress={() => {
+                      if (!dayModalYmd || dayModalSlots.length === 0) {
+                        showToast("Add at least one time window.", "error");
+                        return;
+                      }
+                      if (!validateSlotsForSave(dayModalSlots, "Day")) return;
+                      markAvailable.mutate({
+                        mentorId,
+                        body: { date: dayModalYmd, slots: dayModalSlots },
+                      });
+                    }}
+                  >
+                    <Text style={styles.secondaryBtnText}>Open for booking</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    style={[styles.secondaryBtn, styles.dayModalFooterBtn]}
+                    disabled={dayBusy}
+                    onPress={() => {
+                      if (!dayModalYmd) return;
+                      Alert.alert(
+                        "Block entire day?",
+                        "Pastors will not be able to book on this date.",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          {
+                            text: "Block",
+                            style: "destructive",
+                            onPress: () =>
+                              markUnavailable.mutate({
+                                mentorId,
+                                dateYmd: dayModalYmd,
+                              }),
+                          },
+                        ],
+                      );
+                    }}
+                  >
+                    <Text style={styles.secondaryBtnText}>Block entire day</Text>
+                  </Pressable>
+                )}
+
+                <Pressable
+                  style={[styles.primaryBtn, styles.dayModalFooterBtn]}
+                  disabled={dayBusy || !dayModalYmd}
                   onPress={() => {
-                    if (!dayModalYmd || dayModalSlots.length === 0) {
-                      showToast("Add at least one time window.", "error");
+                    if (!dayModalYmd) return;
+                    if (dayModalSlots.length === 0) {
+                      showToast("Add at least one time window or block the day.", "error");
                       return;
                     }
                     if (!validateSlotsForSave(dayModalSlots, "Day")) return;
-                    markAvailable.mutate({
-                      mentorId,
-                      body: { date: dayModalYmd, slots: dayModalSlots },
-                    });
+                    const body: PatchMentorAvailabilityDayPayload = {
+                      date: dayModalYmd,
+                      slots: dayModalSlots,
+                      meetingDuration,
+                      minSchedulingNoticeHours: minNoticeHours,
+                      maxBookingsPerDay,
+                      preferredPlatform,
+                    };
+                    patchDay.mutate({ mentorId, body });
                   }}
                 >
-                  <Text style={styles.secondaryBtnText}>Open for booking</Text>
+                  {patchDay.isPending ? (
+                    <ActivityIndicator color="#0E2A47" size="small" />
+                  ) : (
+                    <Text style={styles.primaryBtnText}>Save this day</Text>
+                  )}
                 </Pressable>
-              ) : (
-                <Pressable
-                  style={styles.secondaryBtn}
-                  disabled={dayBusy}
-                  onPress={() => {
-                    if (!dayModalYmd) return;
-                    Alert.alert(
-                      "Block entire day?",
-                      "Pastors will not be able to book on this date.",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Block",
-                          style: "destructive",
-                          onPress: () =>
-                            markUnavailable.mutate({
-                              mentorId,
-                              dateYmd: dayModalYmd,
-                            }),
-                        },
-                      ],
-                    );
-                  }}
-                >
-                  <Text style={styles.secondaryBtnText}>Block entire day</Text>
-                </Pressable>
-              )}
-
-              <Pressable
-                style={styles.primaryBtn}
-                disabled={dayBusy || !dayModalYmd}
-                onPress={() => {
-                  if (!dayModalYmd) return;
-                  if (dayModalSlots.length === 0) {
-                    showToast("Add at least one time window or block the day.", "error");
-                    return;
-                  }
-                  if (!validateSlotsForSave(dayModalSlots, "Day")) return;
-                  const body: PatchMentorAvailabilityDayPayload = {
-                    date: dayModalYmd,
-                    slots: dayModalSlots,
-                    meetingDuration,
-                    minSchedulingNoticeHours: minNoticeHours,
-                    maxBookingsPerDay,
-                    preferredPlatform,
-                  };
-                  patchDay.mutate({ mentorId, body });
-                }}
-              >
-                {patchDay.isPending ? (
-                  <ActivityIndicator color="#0E2A47" size="small" />
-                ) : (
-                  <Text style={styles.primaryBtnText}>Save this day</Text>
-                )}
-              </Pressable>
-            </View>
-          </View>
-        </View>
+              </View>
+            </Pressable>
+          </KeyboardAvoidingView>
+        </Pressable>
       </Modal>
     </>
   );
@@ -1057,29 +1102,77 @@ const styles = StyleSheet.create({
   confirmTitle: { color: "#FFFFFF", fontSize: 17, fontWeight: "800" },
   confirmBody: { color: "rgba(255,255,255,0.75)", marginTop: 8, lineHeight: 20 },
   confirmActions: { flexDirection: "row", gap: 10, marginTop: 16, flexWrap: "wrap" },
-  dayModal: {
+  sheetOverlay: {
     flex: 1,
-    marginTop: 48,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+  daySheetAvoid: {
+    alignSelf: "center",
+    width: "100%",
+  },
+  dayModalSheet: {
     backgroundColor: "#041f35",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",
+    overflow: "hidden",
+    maxHeight: "100%",
+  },
+  daySheetHandle: {
+    alignSelf: "center",
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.28)",
+    marginTop: 10,
+    marginBottom: 4,
   },
   dayModalHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.1)",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 12,
+  },
+  dayModalHeaderText: { flex: 1, minWidth: 0 },
+  dayModalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
   dayModalTitle: { color: "#FFFFFF", fontSize: 17, fontWeight: "800" },
   dayModalDate: { color: "rgba(255,255,255,0.7)", marginTop: 4, fontSize: 13 },
-  dayModalBody: { flex: 1, padding: 16 },
+  dayModalScroll: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  dayModalScrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 4,
+  },
+  dayModalAddBtn: {
+    alignSelf: "stretch",
+    justifyContent: "center",
+    marginTop: 4,
+  },
   dayModalFooter: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
     gap: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "#041f35",
+  },
+  dayModalFooterBtn: {
+    alignSelf: "stretch",
+    width: "100%",
+    justifyContent: "center",
   },
 });
