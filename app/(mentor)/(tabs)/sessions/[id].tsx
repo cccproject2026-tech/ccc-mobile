@@ -15,7 +15,13 @@ import {
   RecordingSheet,
 } from "@/components/voiceNotes";
 import { MENTOR_MEETING_UI } from "@/components/sessions/mentor/mentorSessionMeetingConfig";
+import { MeetingTranscriptChat } from "@/components/sessions/MeetingTranscriptChat";
 import { usePastorMeetingLayout } from "@/components/sessions/pastor/usePastorMeetingLayout";
+import {
+  normalizeTranscriptLineArray,
+  parseTranscriptStringToLines,
+  type TranscriptParseOptions,
+} from "@/lib/session/transcriptParse";
 import { Colors } from "@/constants/Colors";
 import {
     sessionOrdinalLabel,
@@ -146,209 +152,15 @@ type TranscriptSummaryApiResponse = {
   };
 };
 
-const parseTranscriptStringToLines = (
-  transcript: string,
-  opts?: { mentorName?: string; pastorName?: string },
-): (MentorshipTranscriptLine & { speaker?: string })[] => {
-  const raw = (transcript ?? "").replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
-  const lines = raw
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-
-  if (!lines.length) return [];
-
-  let currentRole: MentorshipTranscriptLine["role"] = "mentor";
-  let currentSpeaker: string | undefined;
-  const out: (MentorshipTranscriptLine & { speaker?: string })[] = [];
-
-  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-  const aliasesFor = (name: string) => {
-    const n = norm(name);
-    if (!n) return [] as string[];
-    const parts = n.split(" ").filter(Boolean);
-    const first = parts[0] ?? "";
-    const last = parts[parts.length - 1] ?? "";
-    const out: string[] = [];
-    if (n.length >= 2) out.push(n);
-    if (first.length >= 2) out.push(first);
-    // "first lastInitial" common shorthand
-    if (first && last) out.push(`${first} ${last[0]}`);
-    return Array.from(new Set(out));
+function transcriptParseOptionsForSession(
+  user: { firstName?: string; lastName?: string } | null | undefined,
+  pastorName?: string,
+): TranscriptParseOptions {
+  return {
+    mentorName: user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() : undefined,
+    pastorName: pastorName?.trim() || undefined,
   };
-
-  const mentorAliases = aliasesFor(opts?.mentorName ?? "");
-  const pastorAliases = aliasesFor(opts?.pastorName ?? "");
-
-  const roleFromSpeaker = (speaker: string): MentorshipTranscriptLine["role"] | null => {
-    const sNorm = norm(speaker);
-    if (!sNorm) return null;
-    const matches = (aliases: string[]) =>
-      aliases.some((a) => {
-        if (!a) return false;
-        return sNorm === a || sNorm.startsWith(`${a} `) || sNorm.endsWith(` ${a}`);
-      });
-    const mentorMatch = matches(mentorAliases);
-    const pastorMatch = matches(pastorAliases);
-    if (mentorMatch && pastorMatch) return null;
-    if (mentorMatch) return "mentor";
-    if (pastorMatch) return "pastor";
-    return null;
-  };
-
-  const speakerRoleMap = new Map<string, MentorshipTranscriptLine["role"]>();
-  const assignRoleForUnknownSpeaker = (speaker: string): MentorshipTranscriptLine["role"] => {
-    const key = norm(speaker);
-    const existing = speakerRoleMap.get(key);
-    if (existing) return existing;
-
-    const isMentorNamed = mentorAliases.length > 0;
-    const isPastorNamed = pastorAliases.length > 0;
-    const mentorMatched = roleFromSpeaker(speaker) === "mentor";
-    const pastorMatched = roleFromSpeaker(speaker) === "pastor";
-    if (isMentorNamed && !mentorMatched) {
-      speakerRoleMap.set(key, "pastor");
-      return "pastor";
-    }
-    if (isPastorNamed && !pastorMatched) {
-      speakerRoleMap.set(key, "mentor");
-      return "mentor";
-    }
-
-    // If we don't know who the speaker is, assign deterministically:
-    // first distinct speaker -> mentor, second -> pastor, then reuse.
-    const usedRoles = new Set(Array.from(speakerRoleMap.values()));
-    const nextRole: MentorshipTranscriptLine["role"] =
-      !usedRoles.has("mentor") ? "mentor" : !usedRoles.has("pastor") ? "pastor" : currentRole;
-
-    speakerRoleMap.set(key, nextRole);
-    return nextRole;
-  };
-
-  for (const line of lines) {
-    // Supports formats like:
-    // - "Mentor: hello"
-    // - "Pastor - hello"
-    // - "B mentor: hello"
-    // - "Bala's A55 pastor: hello"
-    const match =
-      /^(.+?)\b(mentor|pastor)\b\s*(?::|-)\s*(.*)$/i.exec(line) ||
-      /^(mentor|pastor)\b\s*(?::|-)?\s*(.*)$/i.exec(line);
-    if (match) {
-      const roleToken = (match.length === 4 ? match[2] : match[1])!;
-      const role = roleToken.toLowerCase() as MentorshipTranscriptLine["role"];
-      currentRole = role;
-      const speaker =
-        match.length === 4
-          ? `${match[1] ?? ""}${match[2] ?? ""}`.replace(/\s+/g, " ").trim()
-          : role === "mentor"
-            ? "Mentor"
-            : "Pastor";
-      currentSpeaker = speaker || currentSpeaker;
-      const text = (match.length === 4 ? match[3] : match[2] ?? "").trim();
-      if (text) out.push({ role, speaker: currentSpeaker, text });
-      continue;
-    }
-
-    // Support "Name: ..." lines (without mentor/pastor keywords)
-    const speakerMatch = /^([^:]{1,40})\s*:\s*(.+)$/.exec(line);
-    if (speakerMatch) {
-      const speaker = (speakerMatch[1] ?? "").trim();
-      const text = (speakerMatch[2] ?? "").trim();
-      const detected = roleFromSpeaker(speaker);
-      const role: MentorshipTranscriptLine["role"] =
-        detected ?? assignRoleForUnknownSpeaker(speaker);
-
-      currentRole = role;
-      currentSpeaker = speaker || currentSpeaker;
-      if (text) out.push({ role, speaker: currentSpeaker, text });
-      continue;
-    }
-
-    out.push({ role: currentRole, speaker: currentSpeaker, text: line });
-  }
-
-  return out;
-};
-
-const normalizeTranscriptLineArray = (
-  lines: (MentorshipTranscriptLine & { speaker?: string })[],
-  opts?: { mentorName?: string; pastorName?: string },
-): (MentorshipTranscriptLine & { speaker?: string })[] => {
-  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-  const aliasesFor = (name: string) => {
-    const n = norm(name);
-    if (!n) return [] as string[];
-    const parts = n.split(" ").filter(Boolean);
-    const first = parts[0] ?? "";
-    const last = parts[parts.length - 1] ?? "";
-    const out: string[] = [];
-    if (n.length >= 2) out.push(n);
-    if (first.length >= 2) out.push(first);
-    if (first && last) out.push(`${first} ${last[0]}`);
-    return Array.from(new Set(out));
-  };
-
-  const mentorAliases = aliasesFor(opts?.mentorName ?? "");
-  const pastorAliases = aliasesFor(opts?.pastorName ?? "");
-  const speakerRoleMap = new Map<string, MentorshipTranscriptLine["role"]>();
-
-  const roleFromSpeaker = (speaker: string): MentorshipTranscriptLine["role"] | null => {
-    const sNorm = norm(speaker);
-    if (!sNorm) return null;
-    const matches = (aliases: string[]) =>
-      aliases.some((a) => {
-        if (!a) return false;
-        return sNorm === a || sNorm.startsWith(`${a} `) || sNorm.endsWith(` ${a}`);
-      });
-    const mentorMatch = matches(mentorAliases);
-    const pastorMatch = matches(pastorAliases);
-    if (mentorMatch && pastorMatch) return null;
-    if (mentorMatch) return "mentor";
-    if (pastorMatch) return "pastor";
-    return null;
-  };
-
-  const assignRoleForUnknownSpeaker = (speaker: string): MentorshipTranscriptLine["role"] => {
-    const key = norm(speaker);
-    const existing = speakerRoleMap.get(key);
-    if (existing) return existing;
-    const isMentorNamed = mentorAliases.length > 0;
-    const isPastorNamed = pastorAliases.length > 0;
-    const mentorMatched = roleFromSpeaker(speaker) === "mentor";
-    const pastorMatched = roleFromSpeaker(speaker) === "pastor";
-    if (isMentorNamed && !mentorMatched) {
-      speakerRoleMap.set(key, "pastor");
-      return "pastor";
-    }
-    if (isPastorNamed && !pastorMatched) {
-      speakerRoleMap.set(key, "mentor");
-      return "mentor";
-    }
-    const usedRoles = new Set(Array.from(speakerRoleMap.values()));
-    const nextRole: MentorshipTranscriptLine["role"] = !usedRoles.has("mentor")
-      ? "mentor"
-      : !usedRoles.has("pastor")
-        ? "pastor"
-        : "pastor";
-    speakerRoleMap.set(key, nextRole);
-    return nextRole;
-  };
-
-  return lines
-    .map((line) => {
-      const rawText = (line?.text ?? "").trim();
-      if (!rawText) return null;
-      const speakerMatch = /^([^:]{1,40})\s*:\s*(.+)$/.exec(rawText);
-      const speaker = (line?.speaker ?? speakerMatch?.[1] ?? "").trim() || undefined;
-      const text = (speakerMatch?.[2] ?? rawText).trim();
-      const detectedRole = speaker ? roleFromSpeaker(speaker) : null;
-      const fallbackRole: MentorshipTranscriptLine["role"] = line?.role === "pastor" ? "pastor" : "mentor";
-      const role = detectedRole ?? (speaker ? assignRoleForUnknownSpeaker(speaker) : fallbackRole);
-      return { role, text, speaker };
-    })
-    .filter((line): line is MentorshipTranscriptLine & { speaker?: string } => !!line);
-};
+}
 
 const mapApiSummaryToUiSummary = (summary?: TranscriptSummary): MentorshipAiSummary => {
   const joinList = (items?: string[]) => (items?.length ? items.filter(Boolean).join("\n") : "");
@@ -431,102 +243,6 @@ const NoteCard = ({ title, value, icon }: { title: string; value?: string; icon?
         {hasContent ? value : "No notes yet."}
       </Text>
     </View>
-  );
-};
-
-const MeetingTranscript = ({
-  lines,
-  checkingForTranscript,
-  onRefresh,
-  refreshing,
-}: {
-  lines: { role: "mentor" | "pastor"; text: string; speaker?: string }[];
-  checkingForTranscript?: boolean;
-  onRefresh?: () => void;
-  refreshing?: boolean;
-}) => {
-  const hasContent = lines.some(line => line.text.trim());
-  
-  if (!hasContent) {
-    return (
-      <View style={transcriptStyles.emptyContainer}>
-        <Ionicons name="chatbubbles-outline" size={32} color="rgba(255,255,255,0.3)" />
-        <Text style={transcriptStyles.emptyText}>
-          {checkingForTranscript ? "Checking for transcript..." : "No transcript available yet"}
-        </Text>
-        <Text style={transcriptStyles.emptySubtext}>
-          {checkingForTranscript
-            ? "Please wait, we are fetching transcript and AI summary."
-            : "Transcript will appear after the meeting"}
-        </Text>
-        {!!onRefresh && (
-          <Pressable
-            onPress={onRefresh}
-            disabled={!!refreshing}
-            style={({ pressed }) => [
-              transcriptStyles.refreshButton,
-              (pressed || !!refreshing) && transcriptStyles.refreshButtonPressed,
-            ]}
-          >
-            <View style={transcriptStyles.refreshButtonContent}>
-              <Ionicons
-                name="refresh-outline"
-                size={16}
-                color={refreshing ? "rgba(255,255,255,0.6)" : "#FFFFFF"}
-              />
-              <Text
-                numberOfLines={1}
-                style={[transcriptStyles.refreshButtonText, refreshing && transcriptStyles.refreshButtonTextDisabled]}
-              >
-                {refreshing ? "Refreshing..." : "Refresh"}
-              </Text>
-            </View>
-          </Pressable>
-        )}
-      </View>
-    );
-  }
-
-  return (
-    <ScrollView
-      style={transcriptStyles.scroll}
-      contentContainerStyle={transcriptStyles.scrollContent}
-      showsVerticalScrollIndicator
-      nestedScrollEnabled
-    >
-      {lines.map((line, idx) => {
-        const isMentor = line.role === "mentor";
-        return (
-          <View
-            key={idx}
-            style={[
-              transcriptStyles.messageContainer,
-              isMentor ? transcriptStyles.messageLeft : transcriptStyles.messageRight,
-            ]}
-          >
-            <View style={[transcriptStyles.bubble, isMentor ? transcriptStyles.mentorBubble : transcriptStyles.pastorBubble]}>
-              <View style={transcriptStyles.roleRow}>
-                <Ionicons
-                  name={isMentor ? "person-outline" : "people-outline"}
-                  size={14}
-                  color="rgba(255,255,255,0.55)"
-                />
-                <Text style={transcriptStyles.role}>{isMentor ? "Mentor" : "Pastor"}</Text>
-              </View>
-              <Text style={transcriptStyles.text}>
-                {(() => {
-                  const speaker = line.speaker?.trim();
-                  const base = line.text.trim();
-                  if (!speaker) return base;
-                  if (/^(mentor|pastor)$/i.test(speaker)) return base;
-                  return `${speaker}: ${base}`;
-                })()}
-              </Text>
-            </View>
-          </View>
-        );
-      })}
-    </ScrollView>
   );
 };
 
@@ -1347,28 +1063,24 @@ export default function SessionDetailsScreen() {
             <View style={styles.conversationFrame}>
               <SessionTabs
                 transcript={
-                  <MeetingTranscript
+                  <MeetingTranscriptChat
+                    viewerRole="mentor"
                     lines={
                       (() => {
+                        const parseOpts = transcriptParseOptionsForSession(
+                          user,
+                          session?.pastorName,
+                        );
                         const t = typeof transcript === "string" ? transcript : "";
                         if (t.trim().length) {
-                          return parseTranscriptStringToLines(t, {
-                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
-                            pastorName: session?.pastorName,
-                          });
+                          return parseTranscriptStringToLines(t, parseOpts);
                         }
                         const apptTranscript = (appointment as any)?.transcript;
                         if (typeof apptTranscript === "string" && apptTranscript.trim().length) {
-                          return parseTranscriptStringToLines(apptTranscript, {
-                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
-                            pastorName: session?.pastorName,
-                          });
+                          return parseTranscriptStringToLines(apptTranscript, parseOpts);
                         }
                         if (Array.isArray(apptTranscript)) {
-                          return normalizeTranscriptLineArray(apptTranscript as any, {
-                            mentorName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : undefined,
-                            pastorName: session?.pastorName,
-                          });
+                          return normalizeTranscriptLineArray(apptTranscript as any, parseOpts);
                         }
                         return [];
                       })()
@@ -1648,40 +1360,6 @@ const noteStyles = StyleSheet.create({
   title: { color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   content: { color: "#FFFFFF", fontSize: 14, lineHeight: 21 },
   empty: { color: "rgba(255,255,255,0.35)", fontStyle: "italic" },
-});
-
-const transcriptStyles = StyleSheet.create({
-  emptyContainer: { alignItems: "center", padding: SPACING.xl, gap: SPACING.sm },
-  emptyText: { color: "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: "500" },
-  emptySubtext: { color: "rgba(255,255,255,0.3)", fontSize: 13 },
-  refreshButton: {
-    marginTop: SPACING.lg,
-    justifyContent: "center",
-    alignSelf: "center",
-    maxWidth: "100%",
-    backgroundColor: "rgba(255,255,255,0.16)",
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.sm,
-    minHeight: 38,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
-  },
-  refreshButtonPressed: { backgroundColor: "rgba(255,255,255,0.12)" },
-  refreshButtonContent: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
-  refreshButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", marginLeft: 8, flexShrink: 1 },
-  refreshButtonTextDisabled: { color: "rgba(255,255,255,0.6)" },
-  scroll: { maxHeight: 400 },
-  scrollContent: { paddingBottom: SPACING.md },
-  messageContainer: { marginBottom: SPACING.md, flexDirection: "row" },
-  messageLeft: { justifyContent: "flex-start" },
-  messageRight: { justifyContent: "flex-end" },
-  bubble: { borderRadius: 14, padding: SPACING.md, borderLeftWidth: 3, maxWidth: "88%" },
-  mentorBubble: { backgroundColor: "rgba(56, 189, 248, 0.12)", borderLeftColor: "#38BDF8" },
-  pastorBubble: { backgroundColor: "rgba(255,255,255,0.06)", borderLeftColor: "rgba(255,255,255,0.3)" },
-  roleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: SPACING.xs },
-  role: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.6)" },
-  text: { color: "rgba(255,255,255,0.9)", fontSize: 14, lineHeight: 22 },
 });
 
 const summaryStyles = StyleSheet.create({
