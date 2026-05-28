@@ -426,6 +426,7 @@ export default function MentorAssessmentsLibrary() {
               <React.Fragment key={item.id}>
                 <AssessmentCard
                   data={item}
+                  hideCompletionMeta={!selectedMentee}
                   onPress={handleOpenAssessment}
                   onMeetingPress={() => {}}
                   onMeetingIconPress={() => {}}

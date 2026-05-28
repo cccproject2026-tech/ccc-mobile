@@ -41,6 +41,7 @@ export default function AssessmentCard({
   onCustomizedPress,
   onMenuPress,
   meetingInfo,
+  hideCompletionMeta,
 }: {
   data: Assessment;
   onPress?: (data: Assessment) => void;
@@ -50,6 +51,8 @@ export default function AssessmentCard({
   onMenuPress?: () => void;
   menuItems?: MenuItem[];
   meetingInfo?: AssessmentMeetingLink | null;
+  /** Mentor assessment library — hide completed/submitted date lines on template cards. */
+  hideCompletionMeta?: boolean;
 }) {
   // iOS compression factors
   const fontCompress = isIOS ? 0.92 : 1;
@@ -340,7 +343,7 @@ export default function AssessmentCard({
                 </Text>
               </TouchableOpacity>
             )}
-            {data?.completedOn && (
+            {!hideCompletionMeta && data?.completedOn && (
               <View>
                 <Text
                   style={[
@@ -354,7 +357,8 @@ export default function AssessmentCard({
               </View>
             )}
 
-            {data?.status === "Submitted" &&
+            {!hideCompletionMeta &&
+              data?.status === "Submitted" &&
               (data?.completionDate || data?.completedOn || data?.createdAt) && (
                 <View style={{ marginTop: getSpacing(4 * spacingCompress) }}>
                   <Text
