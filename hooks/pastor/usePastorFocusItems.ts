@@ -22,6 +22,7 @@ import {
   getNestedTaskTitleById,
   getNextIncompleteNestedTaskId,
   isPastorPhaseInFocus,
+  resolveRoadmapThreadId,
 } from "@/lib/roadmap/helpers";
 import {
   MentorInfo,
@@ -208,41 +209,57 @@ export const usePastorFocusItems = () => {
     queryFn: async () => {
       const uid = user!.id;
       const feedback = await Promise.all(
-        roadmaps.map(async (roadmap) => {
-          try {
-            const [commentsThread, queries] = await Promise.all([
-              roadmapService.getRoadmapComments(roadmap._id, uid),
-              roadmapService.getRoadmapQueries(roadmap._id, uid),
-            ]);
+        roadmaps.flatMap((roadmap) => {
+          const nestedTasks = (roadmap.roadmaps ?? []).filter(Boolean);
+          const threadTargets =
+            nestedTasks.length > 0
+              ? nestedTasks.map((task) => ({
+                  threadId: resolveRoadmapThreadId(task._id, roadmap._id)!,
+                  label: `${roadmap.name} • ${task.name}`,
+                }))
+              : [
+                  {
+                    threadId: resolveRoadmapThreadId(undefined, roadmap._id)!,
+                    label: roadmap.name,
+                  },
+                ];
 
-            const raw = commentsThread as { comments?: RoadmapComment[]; Comments?: RoadmapComment[] };
-            const comments =
-              (Array.isArray(raw.comments) && raw.comments) ||
-              (Array.isArray(raw.Comments) && raw.Comments) ||
-              [];
+          return threadTargets.map(async ({ threadId, label }) => {
+            try {
+              const [commentsThread, queries] = await Promise.all([
+                roadmapService.getRoadmapComments(threadId, uid),
+                roadmapService.getRoadmapQueries(threadId, uid),
+              ]);
 
-            const flatQueries = (Array.isArray(queries) ? queries : []).flatMap((thread) =>
-              (thread.queries || []).map((query) => ({
-                ...query,
-                roadmapId: roadmap._id,
-                roadmapName: roadmap.name,
-              })),
-            );
+              const raw = commentsThread as { comments?: RoadmapComment[]; Comments?: RoadmapComment[] };
+              const comments =
+                (Array.isArray(raw.comments) && raw.comments) ||
+                (Array.isArray(raw.Comments) && raw.Comments) ||
+                [];
 
-            return {
-              roadmapId: roadmap._id,
-              roadmapName: roadmap.name,
-              comments,
-              queries: flatQueries,
-            };
-          } catch {
-            return {
-              roadmapId: roadmap._id,
-              roadmapName: roadmap.name,
-              comments: [] as RoadmapComment[],
-              queries: [] as (RoadmapQuery & { roadmapId: string; roadmapName: string })[],
-            };
-          }
+              const flatQueries = (Array.isArray(queries) ? queries : []).flatMap((thread) =>
+                (thread.queries || []).map((query) => ({
+                  ...query,
+                  roadmapId: threadId,
+                  roadmapName: label,
+                })),
+              );
+
+              return {
+                roadmapId: threadId,
+                roadmapName: label,
+                comments,
+                queries: flatQueries,
+              };
+            } catch {
+              return {
+                roadmapId: threadId,
+                roadmapName: label,
+                comments: [] as RoadmapComment[],
+                queries: [] as (RoadmapQuery & { roadmapId: string; roadmapName: string })[],
+              };
+            }
+          });
         }),
       );
 

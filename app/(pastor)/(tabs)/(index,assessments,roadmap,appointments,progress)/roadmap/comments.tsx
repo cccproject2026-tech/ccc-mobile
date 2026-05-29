@@ -24,6 +24,7 @@ import { icons } from "@/constants/images";
 import { useRoadmapComments } from "@/hooks/roadmaps/useRoadmaps";
 import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
+import { resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
 import { paramToString } from "@/utils/routerParams";
 
 
@@ -33,15 +34,22 @@ export default function CommentsScreen() {
     const { bottom } = useSafeAreaInsets();
     const { width } = useWindowDimensions();
 
-    const params = useLocalSearchParams<{ roadmapId?: string | string[] }>();
-    const phaseId = paramToString(params.roadmapId);
+    const params = useLocalSearchParams<{
+        roadmapId?: string | string[];
+        taskId?: string | string[];
+        phaseId?: string | string[];
+    }>();
+    const threadRoadmapId = resolveRoadmapThreadId(
+        paramToString(params.taskId) ?? paramToString(params.roadmapId),
+        paramToString(params.phaseId),
+    );
     const userId = user?.id;
 
     const horizontalPadding = Math.max(16, Math.min(24, Math.round(width * 0.05)));
     const maxWidth = width >= 520 ? 520 : undefined;
 
     const { data, isLoading, isError, error, refetch, isFetching } = useRoadmapComments(
-        phaseId,
+        threadRoadmapId,
         userId,
     );
     const comments = Array.isArray(data?.comments) ? data!.comments : [];
@@ -163,7 +171,7 @@ export default function CommentsScreen() {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>
-                            {!phaseId || !userId
+                            {!threadRoadmapId || !userId
                                 ? "Missing roadmap or user. Go back and open Comments from a roadmap task."
                                 : isLoading || isFetching
                                   ? "Loading..."

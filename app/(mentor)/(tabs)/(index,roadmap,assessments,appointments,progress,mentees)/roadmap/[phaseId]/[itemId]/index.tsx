@@ -6,7 +6,7 @@ import { TaskStatusBadges } from '@/components/roadmaps/TaskStatusBadges';
 import { MentorTaskView } from '@/components/roadmaps/MentorTaskView';
 import { useRoadmap, useRoadmapComments, useRoadmapQueries } from '@/hooks/roadmaps/useRoadmaps';
 import { useRoadmapMeta } from '@/hooks/roadmap/useRoadmapMeta';
-import { resolveRoadmapDetailTask } from '@/lib/roadmap/helpers';
+import { resolveRoadmapDetailTask, resolveRoadmapThreadId } from '@/lib/roadmap/helpers';
 import { isRoadmapLibraryMode } from '@/lib/roadmap/libraryMode';
 import type { NestedRoadmap, Roadmap } from '@/lib/roadmap/types';
 import { useAuthStore } from '@/stores';
@@ -44,8 +44,10 @@ export default function ItemDetail() {
         !isLibraryMode,
     );
 
-    const { data: comments } = useRoadmapComments(phaseId, targetUserId);
-    const { data: queries } = useRoadmapQueries(phaseId, targetUserId);
+    const threadRoadmapId = resolveRoadmapThreadId(itemId, phaseId);
+
+    const { data: comments } = useRoadmapComments(threadRoadmapId, targetUserId);
+    const { data: queries } = useRoadmapQueries(threadRoadmapId, targetUserId);
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -240,7 +242,12 @@ export default function ItemDetail() {
                     onPress={() =>
                         router.push({
                             pathname: '/(mentor)/roadmap/comments',
-                            params: { roadmapId: phaseId, userId: targetUserId },
+                            params: {
+                                roadmapId: threadRoadmapId,
+                                taskId: itemId,
+                                phaseId,
+                                userId: targetUserId,
+                            },
                         } as any)
                     }
                     activeOpacity={0.85}
@@ -286,7 +293,13 @@ export default function ItemDetail() {
                     onPress={() =>
                         router.push({
                             pathname: '/(mentor)/roadmap/queries',
-                            params: { taskId: task._id, roadmapId: phaseId, userId: targetUserId, menteeName: menteeName },
+                            params: {
+                                roadmapId: threadRoadmapId,
+                                taskId: itemId,
+                                phaseId,
+                                userId: targetUserId,
+                                menteeName: menteeName,
+                            },
                         } as any)
                     }
                     activeOpacity={0.85}

@@ -6,7 +6,9 @@ import {
     SectionHeader,
 } from '@/components/ui/design-system/index';
 import { roadmapTheme } from '@/components/ui/design-system/roadmapTheme';
+import { resolveRoadmapThreadId } from '@/lib/roadmap/helpers';
 import { useRoadmapQueries, useSubmitRoadmapQuery } from '@/hooks/roadmaps/useRoadmaps';
+import { paramToString } from '@/utils/routerParams';
 import { useAuthStore } from '@/stores/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -28,7 +30,15 @@ const PASTOR_QUERY_TABS = ["NEW", "ANSWERED", "PENDING"] as const;
 
 export default function QueriesScreen() {
     const router = useRouter();
-    const { roadmapId } = useLocalSearchParams<{ roadmapId: string }>();
+    const params = useLocalSearchParams<{
+        roadmapId?: string | string[];
+        taskId?: string | string[];
+        phaseId?: string | string[];
+    }>();
+    const threadRoadmapId = resolveRoadmapThreadId(
+        paramToString(params.taskId) ?? paramToString(params.roadmapId),
+        paramToString(params.phaseId),
+    );
     const { user } = useAuthStore();
     const { bottom } = useSafeAreaInsets();
     const { width } = useWindowDimensions();
@@ -36,7 +46,7 @@ export default function QueriesScreen() {
     const submitQuery = useSubmitRoadmapQuery();
 
     const { data: allQueries = [] } = useRoadmapQueries(
-        roadmapId,
+        threadRoadmapId,
         user?.id
     );
 
@@ -55,14 +65,14 @@ export default function QueriesScreen() {
     const handleSubmitQuery = async () => {
         if (!queryText.trim()) return;
 
-        if (!roadmapId || !user?.id) {
+        if (!threadRoadmapId || !user?.id) {
             Alert.alert('Error', 'Missing roadmap ID or user ID.');
             return;
         }
 
         try {
             await submitQuery.mutateAsync({
-                roadmapId,
+                roadmapId: threadRoadmapId,
                 payload: {
                     actualQueryText: queryText.trim(),
                     userId: user.id

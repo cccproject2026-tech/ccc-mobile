@@ -3,6 +3,8 @@ import TextAreaField from "@/components/build-components/text-area";
 import { primary_color } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useReplyRoadmapQuery, useRoadmapQueries } from "@/hooks/roadmaps/useRoadmaps";
+import { resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
+import { paramToString } from "@/utils/routerParams";
 import { RoadmapQuery } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,15 +21,19 @@ import {
 } from "react-native";
 
 export default function QueriesScreen() {
-  const { data: dataParam, roadmapId, userId } = useLocalSearchParams<{
+  const { data: dataParam, roadmapId, userId, taskId, phaseId } = useLocalSearchParams<{
     data?: string;
     roadmapId?: string;
     userId?: string;
+    taskId?: string;
+    phaseId?: string;
   }>();
   const data = dataParam ? JSON.parse(dataParam as string) : null;
   
-  // Get roadmapId and userId from params or parsed data
-  const finalRoadmapId = roadmapId || data?.roadmapId;
+  const finalRoadmapId = resolveRoadmapThreadId(
+    paramToString(taskId) || roadmapId || data?.taskId || data?.roadmapId,
+    paramToString(phaseId) || data?.phaseId,
+  );
   const menteeId = userId || data?.userId;
   
   const { user } = useAuthStore();

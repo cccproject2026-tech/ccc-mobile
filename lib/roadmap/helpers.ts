@@ -171,6 +171,32 @@ export function savedExtrasToFormValues(savedItems?: any[] | null): Record<strin
     return values;
 }
 
+/** True when `id` is a 24-char hex MongoDB ObjectId. */
+export function isMongoObjectId(id: string | undefined | null): id is string {
+    return (
+        typeof id === 'string' &&
+        id.trim() !== '' &&
+        id.length === 24 &&
+        /^[0-9a-fA-F]{24}$/.test(id)
+    );
+}
+
+/**
+ * Roadmap id for comments/queries API threads — one thread per nested task.
+ * Prefers the nested task id; falls back to the parent phase id for legacy callers.
+ */
+export function resolveRoadmapThreadId(
+    taskId?: string | null,
+    fallbackRoadmapId?: string | null,
+): string | undefined {
+    if (isMongoObjectId(taskId)) return taskId;
+    if (isMongoObjectId(fallbackRoadmapId)) return fallbackRoadmapId;
+    const task = taskId?.trim();
+    if (task) return task;
+    const fallback = fallbackRoadmapId?.trim();
+    return fallback || undefined;
+}
+
 /** Resolve the task row for the detail screen (handles single-roadmap / missing nested edge cases). */
 export function resolveRoadmapDetailTask(
     roadmap: Roadmap | undefined | null,

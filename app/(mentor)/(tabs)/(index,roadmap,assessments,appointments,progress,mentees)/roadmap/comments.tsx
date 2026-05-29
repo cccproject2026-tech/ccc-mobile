@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/design-system/index";
 import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
 import { useAddRoadmapComment, useRoadmapComments, useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
+import { resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
+import { paramToString } from "@/utils/routerParams";
 import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,10 +32,12 @@ export default function CommentsScreen() {
     const { user } = useAuthStore();
     const [commentText, setCommentText] = useState("");
 
-    const { data: dataParam, roadmapId, userId: menteeUserIdParam } = useLocalSearchParams<{
+    const { data: dataParam, roadmapId, userId: menteeUserIdParam, taskId, phaseId } = useLocalSearchParams<{
         data?: string;
         roadmapId?: string;
         userId?: string;
+        taskId?: string;
+        phaseId?: string;
     }>();
 
     let parsedData: Record<string, string> | null = null;
@@ -46,12 +50,15 @@ export default function CommentsScreen() {
     }
 
     /** Thread is stored under the pastor/mentee's userId, not the mentor's. */
-    const finalRoadmapId =
-        roadmapId ||
-        parsedData?.roadmapId ||
-        parsedData?._id ||
-        parsedData?.roadMapId ||
-        "";
+    const finalRoadmapId = resolveRoadmapThreadId(
+        paramToString(taskId) ||
+            roadmapId ||
+            parsedData?.taskId ||
+            parsedData?.roadmapId ||
+            parsedData?._id ||
+            parsedData?.roadMapId,
+        paramToString(phaseId) || parsedData?.phaseId,
+    ) ?? "";
 
     const threadUserId =
         menteeUserIdParam ||

@@ -13,6 +13,7 @@ import { sessionOrdinalLabel, sessionTopicLine } from "@/constants/sessionTitles
 import { format } from "date-fns";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
 import { mapWithConcurrency } from "@/utils/apiConcurrency";
 
 const MAX_ITEMS_PER_SECTION = 3;
@@ -289,55 +290,72 @@ export const useMentorFocusItems = () => {
         );
 
         for (const rid of roadmapIds) {
-          totalRoadmapCalls += 1;
-          if (totalRoadmapCalls > MAX_ROADMAPS_FOR_QUERIES_TOTAL) break;
-          scannedRoadmaps += 1;
-          if (sampleRoadmapIds.length < 4) sampleRoadmapIds.push(rid);
+          const phaseRoadmap = (roadmaps as any[]).find((r) => String(r?._id) === rid);
+          const nestedTasks = (phaseRoadmap?.roadmaps ?? []).filter(Boolean);
+          const phaseLabel = roadmapNameById.get(rid) ?? "Roadmap";
+          const threadTargets =
+            nestedTasks.length > 0
+              ? nestedTasks.map((task: any) => ({
+                  threadId: resolveRoadmapThreadId(String(task._id), rid)!,
+                  label: `${phaseLabel} • ${String(task.name ?? "Task")}`,
+                }))
+              : [{ threadId: resolveRoadmapThreadId(undefined, rid)!, label: phaseLabel }];
 
-          try {
-            const threads = await roadmapService.getRoadmapQueries(rid, pastorId);
-            const roadmapName = roadmapNameById.get(rid) ?? "Roadmap";
-            returnedThreads += (threads ?? []).length;
-            returnedQueries += (threads ?? []).reduce((acc: number, t: any) => acc + (Array.isArray(t?.queries) ? t.queries.length : 0), 0);
+          for (const { threadId, label: roadmapName } of threadTargets) {
+            totalRoadmapCalls += 1;
+            if (totalRoadmapCalls > MAX_ROADMAPS_FOR_QUERIES_TOTAL) break;
+            scannedRoadmaps += 1;
+            if (sampleRoadmapIds.length < 4) sampleRoadmapIds.push(threadId);
 
-            const pending = (threads ?? [])
-              .flatMap((t: any) => t?.queries ?? [])
-              .filter((q: any) => String(q?.status ?? "").toLowerCase() === "pending");
-            returnedPending += pending.length;
+            try {
+              const threads = await roadmapService.getRoadmapQueries(threadId, pastorId);
+              returnedThreads += (threads ?? []).length;
+              returnedQueries += (threads ?? []).reduce(
+                (acc: number, t: any) => acc + (Array.isArray(t?.queries) ? t.queries.length : 0),
+                0,
+              );
 
-            for (const q of pending) {
-              const qid = String(q?._id ?? q?.id ?? "");
-              if (!qid || seenQueryIds.has(qid)) continue;
-              seenQueryIds.add(qid);
+              const pending = (threads ?? [])
+                .flatMap((t: any) => t?.queries ?? [])
+                .filter((q: any) => String(q?.status ?? "").toLowerCase() === "pending");
+              returnedPending += pending.length;
 
-              const createdAt = q?.createdDate ?? q?.created_at ?? null;
-              const createdAtMs = toEpochMs(createdAt);
-              const createdAtFormatted = formatDateTime(createdAt);
+              for (const q of pending) {
+                const qid = String(q?._id ?? q?.id ?? "");
+                if (!qid || seenQueryIds.has(qid)) continue;
+                seenQueryIds.add(qid);
 
-              pastorQueryTemp.push({
-                item: {
-                  id: `pastor-query-${qid}`,
-                  title: "Pastor query",
-                  description:
-                    String(q?.actualQueryText ?? "").slice(0, 140) ||
-                    "Query needs response.",
-                  meta: `${roadmapName} • ${createdAtFormatted}`,
-                  accentColor: "#FB7185",
-                  route: {
-                    pathname: "/(mentor)/roadmap/queries",
-                    params: {
-                      roadmapId: rid,
-                      userId: pastorId,
-                      menteeName: pastorName,
+                const createdAt = q?.createdDate ?? q?.created_at ?? null;
+                const createdAtMs = toEpochMs(createdAt);
+                const createdAtFormatted = formatDateTime(createdAt);
+
+                pastorQueryTemp.push({
+                  item: {
+                    id: `pastor-query-${qid}`,
+                    title: "Pastor query",
+                    description:
+                      String(q?.actualQueryText ?? "").slice(0, 140) ||
+                      "Query needs response.",
+                    meta: `${roadmapName} • ${createdAtFormatted}`,
+                    accentColor: "#FB7185",
+                    route: {
+                      pathname: "/(mentor)/roadmap/queries",
+                      params: {
+                        roadmapId: threadId,
+                        userId: pastorId,
+                        menteeName: pastorName,
+                      },
                     },
                   },
-                },
-                sortAtMs: createdAtMs,
-              });
+                  sortAtMs: createdAtMs,
+                });
+              }
+            } catch {
+              continue;
             }
-          } catch {
-            continue;
           }
+
+          if (totalRoadmapCalls > MAX_ROADMAPS_FOR_QUERIES_TOTAL) break;
         }
 
         if (totalRoadmapCalls > MAX_ROADMAPS_FOR_QUERIES_TOTAL) break;

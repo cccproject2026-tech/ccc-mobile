@@ -13,7 +13,7 @@ import { useTaskCompletionTimestamps } from "@/hooks/roadmap/useTaskCompletionTi
 import { useRoadmap, useRoadmapComments, useRoadmapQueries, useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useCompletionCelebration } from "@/hooks/roadmap/useCompletionCelebration";
 import { useRoadmapMeta } from "@/hooks/roadmap/useRoadmapMeta";
-import { resolveRoadmapDetailTask } from "@/lib/roadmap/helpers";
+import { resolveRoadmapDetailTask, resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
 import {
   applyLocalTaskCompletionOverrides,
   comparePastorPhasesForFocus,
@@ -51,9 +51,11 @@ export default function PastorRoadmapItemDetail() {
 
   const { user } = useAuthStore();
   const targetUserId = user?.id;
+  const threadRoadmapId = resolveRoadmapThreadId(itemId, phaseId);
+
   const { data: roadmapRaw, isLoading, error, refetch, isRefetching } = useRoadmap(phaseId);
-  const { data: comments } = useRoadmapComments(phaseId, targetUserId);
-  const { data: queries } = useRoadmapQueries(phaseId, targetUserId);
+  const { data: comments } = useRoadmapComments(threadRoadmapId, targetUserId);
+  const { data: queries } = useRoadmapQueries(threadRoadmapId, targetUserId);
 
   const { data: allRoadmaps } = useRoadmaps("pastor");
   const baseSortedRoadmaps = useMemo(() => {
@@ -302,7 +304,10 @@ export default function PastorRoadmapItemDetail() {
               <Pressable
                 onPress={() => {
                   setActiveTab("comments");
-                  router.push({ pathname: "/(pastor)/roadmap/comments", params: { roadmapId: phaseId } } as any);
+                  router.push({
+                    pathname: "/(pastor)/roadmap/comments",
+                    params: { roadmapId: threadRoadmapId, taskId: itemId, phaseId },
+                  } as any);
                 }}
                 style={[styles.tabButton, activeTab === "comments" ? styles.tabActive : styles.tabInactive]}
               >
@@ -329,7 +334,10 @@ export default function PastorRoadmapItemDetail() {
               <Pressable
                 onPress={() => {
                   setActiveTab("queries");
-                  router.push({ pathname: "/(pastor)/roadmap/queries", params: { roadmapId: phaseId, taskId: task._id } } as any);
+                  router.push({
+                    pathname: "/(pastor)/roadmap/queries",
+                    params: { roadmapId: threadRoadmapId, taskId: itemId, phaseId },
+                  } as any);
                 }}
                 style={[styles.tabButton, activeTab === "queries" ? styles.tabActive : styles.tabInactive]}
               >

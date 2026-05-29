@@ -3,7 +3,7 @@ import ExpectedOutcomeModal from '@/components/director/ExpectedOutcomeModal';
 import TopBar from '@/components/director/TopBar';
 import { DynamicFormTask } from '@/components/roadmaps/DynamicFormTask';
 import { useRoadmap, useRoadmapComments, useRoadmapQueries } from '@/hooks/roadmaps/useRoadmaps';
-import { getEffectiveTaskExtras, getTasks } from '@/lib/roadmap/helpers';
+import { getEffectiveTaskExtras, getTasks, resolveRoadmapThreadId } from '@/lib/roadmap/helpers';
 import { NestedRoadmap } from '@/lib/roadmap/types';
 import { useAuthStore } from '@/stores';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
@@ -21,8 +21,10 @@ export default function ItemDetail() {
     const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
     const { user } = useAuthStore();
 
-    const { data: comments } = useRoadmapComments(phaseId, user?.id);
-    const { data: queries } = useRoadmapQueries(phaseId, user?.id);
+    const threadRoadmapId = resolveRoadmapThreadId(itemId, phaseId);
+
+    const { data: comments } = useRoadmapComments(threadRoadmapId, user?.id);
+    const { data: queries } = useRoadmapQueries(threadRoadmapId, user?.id);
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
     const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -240,7 +242,7 @@ export default function ItemDetail() {
                     onPress={() =>
                         router.push({
                             pathname: '/(mentor-tabs)/roadmap/comments',
-                            params: { roadmapId: phaseId },
+                            params: { roadmapId: threadRoadmapId, taskId: itemId, phaseId },
                         } as any)
                     }
                     style={[
@@ -280,7 +282,7 @@ export default function ItemDetail() {
                     onPress={() =>
                         router.push({
                             pathname: '/(mentor-tabs)/roadmap/queries',
-                            params: { taskId: task._id, roadmapId: phaseId },
+                            params: { roadmapId: threadRoadmapId, taskId: itemId, phaseId },
                         } as any)
                     }
                     style={[

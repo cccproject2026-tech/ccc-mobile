@@ -622,20 +622,28 @@ export function useAddRoadmapComment() {
             roadmapId: string;
             payload: AddCommentRequest;
         }) => roadmapService.addRoadmapComment(roadmapId, payload),
-        onSuccess: (data, variables) => {
+        onSuccess: (response, variables) => {
             console.log("✅ Roadmap comment added successfully");
 
-            // Invalidate relevant queries to refresh comments
+            const commentsQueryKey = roadmapKeys.comments(
+                variables.roadmapId,
+                variables.payload.userId,
+            );
+            const thread = response?.data;
+            if (thread && Array.isArray(thread.comments)) {
+                queryClient.setQueryData<RoadmapCommentsThread>(commentsQueryKey, {
+                    _id: thread._id,
+                    userId: thread.userId,
+                    roadMapId: thread.roadMapId,
+                    comments: thread.comments,
+                });
+            }
+
+            void queryClient.refetchQueries({ queryKey: commentsQueryKey });
             queryClient.invalidateQueries({
-                queryKey: roadmapKeys.detail(variables.roadmapId)
+                queryKey: roadmapKeys.detail(variables.roadmapId),
             });
-            queryClient.invalidateQueries({
-                queryKey: roadmapKeys.all
-            });
-            // Invalidate comments query
-            queryClient.invalidateQueries({
-                queryKey: roadmapKeys.comments(variables.roadmapId, variables.payload.userId)
-            });
+            queryClient.invalidateQueries({ queryKey: roadmapKeys.all });
             queryClient.invalidateQueries({
                 queryKey: ["pastor-focus-feedback"],
             });
@@ -667,6 +675,12 @@ export function useSubmitRoadmapQuery() {
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.all
             });
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.queries(variables.roadmapId, variables.payload.userId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["pastor-focus-feedback"],
+            });
         },
     });
 }
@@ -696,6 +710,9 @@ export function useReplyRoadmapQuery() {
             });
             queryClient.invalidateQueries({
                 queryKey: ["pastor-focus-feedback"],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [...roadmapKeys.all, "queries", variables.roadmapId],
             });
         },
     });
@@ -756,7 +773,7 @@ export function useRoadmapComments(
               : undefined;
 
     return useQuery<RoadmapCommentsThread>({
-        queryKey: ["roadmap-comments", rid, uid],
+        queryKey: roadmapKeys.comments(rid!, uid!),
         queryFn: () => roadmapService.getRoadmapComments(rid!, uid!),
         enabled: !!rid && !!uid,
         staleTime: 0,

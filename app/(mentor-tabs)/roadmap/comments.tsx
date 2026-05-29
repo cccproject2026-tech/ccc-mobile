@@ -3,6 +3,8 @@ import { Button } from "@/components/build-components";
 import TextAreaField from "@/components/build-components/text-area";
 import { primary_color } from "@/constants/Colors";
 import { useAddRoadmapComment, useRoadmapComments } from "@/hooks/roadmaps/useRoadmaps";
+import { resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
+import { paramToString } from "@/utils/routerParams";
 import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,9 +28,17 @@ export default function CommentsScreen() {
     const { user } = useAuthStore();
     const [commentText, setCommentText] = useState("");
 
-    const { roadmapId: phaseId } = useLocalSearchParams<{ roadmapId: string }>();
+    const params = useLocalSearchParams<{
+        roadmapId?: string | string[];
+        taskId?: string | string[];
+        phaseId?: string | string[];
+    }>();
+    const threadRoadmapId = resolveRoadmapThreadId(
+        paramToString(params.taskId) ?? paramToString(params.roadmapId),
+        paramToString(params.phaseId),
+    );
 
-    const { data, isLoading } = useRoadmapComments(phaseId, user?.id!);
+    const { data, isLoading } = useRoadmapComments(threadRoadmapId, user?.id!);
     const comments = data?.comments ?? [];
 
     const addCommentMutation = useAddRoadmapComment();
@@ -70,14 +80,14 @@ export default function CommentsScreen() {
             return;
         }
 
-        if (!phaseId || !user?.id) {
+        if (!threadRoadmapId || !user?.id) {
             Alert.alert("Error", "Missing required information");
             return;
         }
 
         try {
             await addCommentMutation.mutateAsync({
-                roadmapId: phaseId,
+                roadmapId: threadRoadmapId,
                 payload: {
                     text: commentText.trim(),
                     userId: user.id,
