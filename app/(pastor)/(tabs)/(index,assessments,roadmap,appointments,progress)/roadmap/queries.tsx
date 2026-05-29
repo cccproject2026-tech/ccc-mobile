@@ -34,6 +34,7 @@ export default function QueriesScreen() {
         roadmapId?: string | string[];
         taskId?: string | string[];
         phaseId?: string | string[];
+        tab?: string | string[];
     }>();
     const threadRoadmapId = resolveRoadmapThreadId(
         paramToString(params.taskId) ?? paramToString(params.roadmapId),
@@ -50,7 +51,13 @@ export default function QueriesScreen() {
         user?.id
     );
 
-    const [selectedTab, setSelectedTab] = useState<'NEW' | 'ANSWERED' | 'PENDING'>('NEW');
+    const initialTabParam = paramToString(params.tab)?.toUpperCase();
+    const [selectedTab, setSelectedTab] = useState<'NEW' | 'ANSWERED' | 'PENDING'>(() => {
+        if (initialTabParam === 'ANSWERED' || initialTabParam === 'PENDING') {
+            return initialTabParam;
+        }
+        return 'NEW';
+    });
     const [queryText, setQueryText] = useState('');
 
     const horizontalPadding = Math.max(16, Math.min(24, Math.round(width * 0.05)));

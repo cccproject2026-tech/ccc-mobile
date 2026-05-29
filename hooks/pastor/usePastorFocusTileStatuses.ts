@@ -86,6 +86,26 @@ function statusForFeedback(section?: PastorFocusSection): PastorFocusTileStatus 
   return { label: `${count} new`, variant: "pending" };
 }
 
+function statusForMentorFeedback(
+  comments?: PastorFocusSection,
+  queryReplies?: PastorFocusSection,
+): PastorFocusTileStatus {
+  const commentCount = comments?.items.length ?? 0;
+  const replyCount = queryReplies?.items.length ?? 0;
+  const total = commentCount + replyCount;
+
+  if (total === 0) return { label: "All clear", variant: "inProgress" };
+
+  const parts: string[] = [];
+  if (commentCount > 0) {
+    parts.push(commentCount === 1 ? "1 comment" : `${commentCount} comments`);
+  }
+  if (replyCount > 0) {
+    parts.push(replyCount === 1 ? "1 reply" : `${replyCount} replies`);
+  }
+  return { label: parts.join(", "), variant: "pending" };
+}
+
 export function usePastorFocusTileStatuses(
   sections: PastorFocusSection[],
 ): Record<string, PastorFocusTileStatus> {
@@ -101,7 +121,10 @@ export function usePastorFocusTileStatuses(
       "other-meetings": statusForOtherMeetings(byId.get("other-meetings")),
       roadmaps: statusForRoadmaps(byId.get("roadmaps")),
       assessments: statusForAssessments(byId.get("assessments")),
-      "mentor-feedback": statusForFeedback(byId.get("mentor-feedback")),
+      "mentor-feedback": statusForMentorFeedback(
+        byId.get("mentor-comments"),
+        byId.get("mentor-query-replies"),
+      ),
     };
   }, [sections]);
 }

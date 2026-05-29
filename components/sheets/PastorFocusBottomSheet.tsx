@@ -44,6 +44,7 @@ export interface PastorFocusSection {
 
 interface PastorFocusBottomSheetProps {
   title?: string;
+  subtitle?: string;
   sections: PastorFocusSection[];
   isLoading?: boolean;
   onClose?: () => void;
@@ -184,6 +185,7 @@ const PastorFocusBottomSheet = forwardRef<
   (
     {
       title = "Things to focus on",
+      subtitle = "Focus on these items first to keep your journey moving forward.",
       sections,
       isLoading = false,
       onClose,
@@ -263,9 +265,7 @@ const PastorFocusBottomSheet = forwardRef<
 
             <View style={styles.headerDivider} />
 
-            <Text style={styles.subtitle}>
-              Focus on these items first to keep your journey moving forward.
-            </Text>
+            <Text style={styles.subtitle}>{subtitle}</Text>
 
             {/* New Meeting CTA */}
             {!!onNewMeeting && (

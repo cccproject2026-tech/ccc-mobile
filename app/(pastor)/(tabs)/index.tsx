@@ -116,6 +116,13 @@ export default function PastorDashboard() {
   const [focusSheetSectionId, setFocusSheetSectionId] = useState<string | null>(null);
   const [focusSheetTitle, setFocusSheetTitle] = useState<string | undefined>(undefined);
 
+  const focusSheetSubtitle = useMemo(() => {
+    if (focusSheetSectionId === "mentor-feedback") {
+      return "Review mentor comments on your tasks and replies to questions you submitted.";
+    }
+    return undefined;
+  }, [focusSheetSectionId]);
+
   const displayedFocusSections = useMemo(() => {
     if (!focusSheetSectionId) return focusSections;
     if (focusSheetSectionId === "mentorship-sessions") {
@@ -127,6 +134,11 @@ export default function PastorDashboard() {
     }
     if (focusSheetSectionId === "other-meetings") {
       return focusSections.filter((s) => s.id === "other-meetings");
+    }
+    if (focusSheetSectionId === "mentor-feedback") {
+      return focusSections.filter(
+        (s) => s.id === "mentor-comments" || s.id === "mentor-query-replies",
+      );
     }
     return focusSections.filter((s) => s.id === focusSheetSectionId);
   }, [focusSheetSectionId, focusSections]);
@@ -408,7 +420,7 @@ export default function PastorDashboard() {
         icon: "chatbubble-outline" as const,
         line1: "Respond to",
         line2: "Mentor Comment",
-        sheetTitle: "Respond to Mentor Comments",
+        sheetTitle: "Respond to mentor comments and queries",
         sectionId: "mentor-feedback",
       },
     ],
@@ -484,15 +496,10 @@ export default function PastorDashboard() {
     (item: PastorFocusItem) => {
       pastorFocusSheetRef.current?.dismiss();
       setTimeout(() => {
-        const { pathname, params } = item.route;
-        const rid = params?.roadmapId;
-        if (pathname === "/roadmap/comments" && rid) {
-          router.push(
-            `/roadmap/comments?roadmapId=${encodeURIComponent(rid)}` as any,
-          );
-          return;
-        }
-        router.push({ pathname: pathname as any, params: params ?? {} });
+        router.push({
+          pathname: item.route.pathname as any,
+          params: item.route.params ?? {},
+        });
       }, 220);
     },
     [router],
@@ -787,6 +794,7 @@ export default function PastorDashboard() {
         ref={setPastorFocusSheetRef}
         sections={displayedFocusSections}
         title={focusSheetTitle}
+        subtitle={focusSheetSubtitle}
         isLoading={isLoading || isFocusLoading}
         onNewMeeting={
           focusSheetSectionId === "other-meetings"

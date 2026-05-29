@@ -488,9 +488,14 @@ export const usePastorFocusItems = () => {
         };
       });
 
-    const mentorFeedbackItems: PastorFocusItem[] = (feedbackQuery.data || [])
-      .flatMap((entry) => {
-        const commentItems = (entry.comments || [])
+    const threadRouteParams = (threadId: string) => ({
+      roadmapId: threadId,
+      taskId: threadId,
+    });
+
+    const mentorCommentItems: PastorFocusItem[] = (feedbackQuery.data || [])
+      .flatMap((entry) =>
+        (entry.comments || [])
           .filter((comment: RoadmapComment) =>
             isCommentMentorFeedbackForPastor(comment, user?.id),
           )
@@ -509,13 +514,21 @@ export const usePastorFocusItems = () => {
               sortKey: comment.addedDate,
               route: {
                 pathname: "/roadmap/comments",
-                params: { roadmapId: entry.roadmapId },
+                params: threadRouteParams(entry.roadmapId),
               },
             };
-          });
+          }),
+      )
+      .sort((a: any, b: any) => toTimestamp(b.sortKey) - toTimestamp(a.sortKey))
+      .slice(0, MAX_ITEMS_PER_SECTION);
 
-        const replyItems = (entry.queries || [])
-          .filter((query: RoadmapQuery & { roadmapId: string; roadmapName: string }) => query.status === "answered" && !!query.repliedAnswer)
+    const mentorQueryReplyItems: PastorFocusItem[] = (feedbackQuery.data || [])
+      .flatMap((entry) =>
+        (entry.queries || [])
+          .filter(
+            (query: RoadmapQuery & { roadmapId: string; roadmapName: string }) =>
+              query.status === "answered" && !!query.repliedAnswer,
+          )
           .map((query: RoadmapQuery & { roadmapId: string; roadmapName: string }) => ({
             id: `query-${query._id}`,
             title: `${getMentorName(query.repliedMentorId)} replied`,
@@ -525,14 +538,10 @@ export const usePastorFocusItems = () => {
             sortKey: query.repliedDate || query.createdDate,
             route: {
               pathname: "/roadmap/queries",
-              params: {
-                roadmapId: query.roadmapId,
-              },
+              params: { ...threadRouteParams(query.roadmapId), tab: "ANSWERED" },
             },
-          }));
-
-        return [...commentItems, ...replyItems];
-      })
+          })),
+      )
       .sort((a: any, b: any) => toTimestamp(b.sortKey) - toTimestamp(a.sortKey))
       .slice(0, MAX_ITEMS_PER_SECTION);
 
@@ -576,11 +585,18 @@ export const usePastorFocusItems = () => {
         items: assessmentItems,
       },
       {
-        id: "mentor-feedback",
-        title: "Respond to mentor comments",
+        id: "mentor-comments",
+        title: "Mentor comments",
         emptyMessage:
-          "No new mentor comments right now. When your mentor comments on your roadmap, it will appear here.",
-        items: mentorFeedbackItems,
+          "No new mentor comments right now. When your mentor comments on a roadmap task, it will appear here.",
+        items: mentorCommentItems,
+      },
+      {
+        id: "mentor-query-replies",
+        title: "Answered queries",
+        emptyMessage:
+          "No answered queries yet. When your mentor replies to a question you submitted, it will appear here.",
+        items: mentorQueryReplyItems,
       },
     ];
   }, [
