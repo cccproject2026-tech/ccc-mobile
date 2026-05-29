@@ -40,8 +40,8 @@ export const DASHBOARD_CARD_CONFIG: Record<
 
 /** Buckets that need mentor action (badge counts these). */
 export const ACTION_BUCKET_ORDER: ReviewDashboardBucket[] = [
-  "resubmitted_tasks",
   "new_roadmap_submissions",
+  "resubmitted_tasks",
   "new_assessments",
   "not_started",
 ];

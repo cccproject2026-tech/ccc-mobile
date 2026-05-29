@@ -9,7 +9,7 @@ import {
 } from "@/lib/mentor/reviewCenterPhaseSummary";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = {
@@ -94,12 +94,57 @@ export function ReviewPastorPhaseOverview({
     });
   };
 
+  const openPhaseRoadmap = useCallback(
+    (roadmapId: string) => {
+      const roadmap = assignedRoadmaps.find((r) => String(r._id) === roadmapId);
+      if (!roadmap?._id) return;
+
+      const params = {
+        menteeId: pastorId,
+        menteeName: pastorName,
+      };
+
+      const nested = roadmap.roadmaps ?? [];
+      if (nested.length === 1 && !roadmap.haveNextedRoadMaps && nested[0]?._id) {
+        router.push({
+          pathname: `/(mentor)/roadmap/${roadmap._id}/${nested[0]._id}` as any,
+          params,
+        });
+        return;
+      }
+
+      router.push({
+        pathname: `/(mentor)/roadmap/${roadmap._id}` as any,
+        params,
+      });
+    },
+    [assignedRoadmaps, pastorId, pastorName, router],
+  );
+
   const openFullAssessments = () => {
     router.push({
       pathname: "/(mentor)/assessments-v2" as any,
       params: { menteeId: pastorId },
     });
   };
+
+  const openAssessment = useCallback(
+    (item: ReviewItem) => {
+      if (!item.assessmentId) return;
+
+      router.push({
+        pathname: "/(mentor)/assessments/answer-questions" as any,
+        params: {
+          assessmentId: item.assessmentId,
+          viewMode: "true",
+          targetUserId: pastorId,
+          hasPreSurvey: "true",
+          scheduleMeeting: "false",
+        },
+      });
+    },
+    [pastorId, router],
+  );
 
   if (phaseSummaries.length === 0 && assessmentSummary.total === 0) {
     return null;
@@ -119,7 +164,7 @@ export function ReviewPastorPhaseOverview({
             <Ionicons name="map-outline" size={16} color="#38BDF8" />
           </View>
           <View style={styles.accordionTextBlock}>
-            <Text style={styles.sectionTitle}>Roadmap journey</Text>
+            <Text style={styles.sectionTitle}>Entire Roadmap journey</Text>
             <Text style={styles.accordionSubtitle}>
               {isExpanded
                 ? "Hide phase details"
@@ -141,39 +186,48 @@ export function ReviewPastorPhaseOverview({
         <>
           {phaseSummaries.map((phase) => (
             <View key={phase.roadmapId} style={styles.phaseCard}>
-              <View style={styles.phaseTop}>
-                <View style={styles.phaseIcon}>
-                  <Ionicons name="map-outline" size={16} color="#38BDF8" />
-                </View>
-                <View style={styles.phaseInfo}>
-                  <Text style={styles.phaseName} numberOfLines={2}>
-                    {phase.roadmapName}
-                  </Text>
-                  <View style={styles.phaseMeta}>
-                    <View
-                      style={[
-                        styles.statusPill,
-                        { borderColor: phaseStatusColor(phase.phaseStatus) },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusPillText,
-                          { color: phaseStatusColor(phase.phaseStatus) },
-                        ]}
-                      >
-                        {formatPhaseStatusLabel(phase.phaseStatus)}
-                      </Text>
+              <Pressable
+                style={styles.phaseCardPressable}
+                onPress={() => openPhaseRoadmap(phase.roadmapId)}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${phase.roadmapName} roadmap for ${pastorName}`}
+              >
+                <View style={styles.phaseCardContent}>
+                  <View style={styles.phaseTop}>
+                    <View style={styles.phaseIcon}>
+                      <Ionicons name="map-outline" size={16} color="#38BDF8" />
                     </View>
-                    <Text style={styles.taskCount}>
-                      {phase.counts.total} task{phase.counts.total === 1 ? "" : "s"}
-                    </Text>
+                    <View style={styles.phaseInfo}>
+                      <Text style={styles.phaseName} numberOfLines={2}>
+                        {phase.roadmapName}
+                      </Text>
+                      <View style={styles.phaseMeta}>
+                        <View
+                          style={[
+                            styles.statusPill,
+                            { borderColor: phaseStatusColor(phase.phaseStatus) },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.statusPillText,
+                              { color: phaseStatusColor(phase.phaseStatus) },
+                            ]}
+                          >
+                            {formatPhaseStatusLabel(phase.phaseStatus)}
+                          </Text>
+                        </View>
+                        <Text style={styles.taskCount}>
+                          {phase.counts.total} task{phase.counts.total === 1 ? "" : "s"}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
+                  <Text style={styles.breakdown} numberOfLines={2}>
+                    {taskBreakdown(phase)}
+                  </Text>
                 </View>
-              </View>
-              <Text style={styles.breakdown} numberOfLines={2}>
-                {taskBreakdown(phase)}
-              </Text>
+              </Pressable>
             </View>
           ))}
         </>
@@ -199,7 +253,7 @@ export function ReviewPastorPhaseOverview({
               <Ionicons name="clipboard-outline" size={16} color="#A78BFA" />
             </View>
             <View style={styles.accordionTextBlock}>
-              <Text style={styles.sectionTitle}>Assessments</Text>
+              <Text style={styles.sectionTitle}>All Assessments</Text>
               <Text style={styles.accordionSubtitle}>
                 {assessmentSummary.total} assigned
               </Text>
@@ -230,7 +284,13 @@ export function ReviewPastorPhaseOverview({
               </Text>
 
               {assignedAssessmentItems.map((item) => (
-                <View key={item.id} style={styles.assessmentItemRow}>
+                <Pressable
+                  key={item.id}
+                  style={styles.assessmentItemRow}
+                  onPress={() => openAssessment(item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${item.title} for ${pastorName}`}
+                >
                   <Text style={styles.assessmentItemTitle} numberOfLines={1}>
                     {item.title}
                   </Text>
@@ -241,7 +301,7 @@ export function ReviewPastorPhaseOverview({
                         ? "Reviewed"
                         : "Not started"}
                   </Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           ) : null}
@@ -314,7 +374,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
+  },
+  phaseCardPressable: {
     padding: 12,
+  },
+  phaseCardContent: {
     gap: 8,
   },
   assessmentCard: {
