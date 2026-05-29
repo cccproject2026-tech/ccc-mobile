@@ -39,23 +39,30 @@ export function useAppointmentCalendarSelection() {
   const [viewYear, setViewYear] = useState(todayParts.year);
   const [viewMonth, setViewMonth] = useState(todayParts.month);
 
-  // Recover from invalid persisted/hot-reload state (prevents "NaN undefined aN" in the pill).
+  const normalizedSelected = useMemo(
+    () => normalizeYmd(selectedDate) ?? today,
+    [selectedDate, today],
+  );
+
+  // Keep stored YMD canonical so the pill and grid never drift.
   useEffect(() => {
-    if (!normalizeYmd(selectedDate)) {
-      setSelectedDate(today);
-      setViewYear(todayParts.year);
-      setViewMonth(todayParts.month);
+    if (selectedDate !== normalizedSelected) {
+      setSelectedDate(normalizedSelected);
     }
-  }, [selectedDate, today, todayParts.month, todayParts.year]);
+  }, [normalizedSelected, selectedDate]);
 
   const visibleMonthYmd = useMemo(
     () => localCalendarYmd(viewYear, viewMonth, 1),
     [viewMonth, viewYear],
   );
 
+  const selectedDateLabel = useMemo(() => {
+    return formatYmdShortLabel(normalizedSelected) || formatYmdShortLabel(today);
+  }, [normalizedSelected, today]);
+
   const formatDisplayDate = useCallback(
-    (dateString: string) => formatYmdShortLabel(dateString) || "—",
-    [],
+    (dateString: string) => formatYmdShortLabel(dateString) || formatYmdShortLabel(today),
+    [today],
   );
 
   const isToday = useCallback(
@@ -80,24 +87,26 @@ export function useAppointmentCalendarSelection() {
   }, []);
 
   const jumpCalendarToSelected = useCallback(() => {
-    const parts = ymdParts(selectedDate);
+    const parts = ymdParts(normalizedSelected);
     if (!parts) return;
     setViewYear(parts.year);
     setViewMonth(parts.month);
-  }, [selectedDate]);
+  }, [normalizedSelected]);
 
   const dayVariantForMeetings = useCallback(
     (
       ymd: string,
       ctx: { isPast: boolean; isToday: boolean; isSelected: boolean },
       meetingCount: number,
-    ) => appointmentCalendarDayVariant(ymd, ctx, selectedDate, meetingCount),
-    [selectedDate],
+    ) =>
+      appointmentCalendarDayVariant(ymd, ctx, normalizedSelected, meetingCount),
+    [normalizedSelected],
   );
 
   return {
     today,
-    selectedDate,
+    selectedDate: normalizedSelected,
+    selectedDateLabel,
     visibleMonthYmd,
     viewYear,
     viewMonth,

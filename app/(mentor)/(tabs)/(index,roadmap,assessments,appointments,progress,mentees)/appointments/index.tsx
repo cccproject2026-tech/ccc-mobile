@@ -46,6 +46,7 @@ interface ResponseModalState {
 const Appointments: React.FC = () => {
   const {
     selectedDate,
+    selectedDateLabel,
     visibleMonthYmd,
     viewYear,
     viewMonth,
@@ -485,10 +486,10 @@ const Appointments: React.FC = () => {
                     <Pressable
                       style={styles.datePill}
                       accessibilityRole="button"
-                      accessibilityLabel={`Show ${formatDisplayDate(selectedDate)} on calendar`}
+                      accessibilityLabel={`Show ${selectedDateLabel} on calendar`}
                       onPress={jumpCalendarToSelected}
                     >
-                      <Text style={styles.datePillText}>{formatDisplayDate(selectedDate)}</Text>
+                      <Text style={styles.datePillText}>{selectedDateLabel}</Text>
                     </Pressable>
                   </View>
 

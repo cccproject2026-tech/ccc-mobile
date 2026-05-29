@@ -40,6 +40,7 @@ export type ScheduleMonthCalendarProps = {
 };
 
 const YMD_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const YMD_PARTS_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 /** Accepts YYYY-MM-DD or ISO datetime; returns YYYY-MM-DD or null. */
 export function normalizeYmd(value: string | undefined | null): string | null {
@@ -49,11 +50,18 @@ export function normalizeYmd(value: string | undefined | null): string | null {
   return YMD_PATTERN.test(head) ? head : null;
 }
 
+function parseYmdParts(ymd: string): { year: string; month: string; day: string } | null {
+  const m = YMD_PARTS_PATTERN.exec(ymd);
+  if (!m) return null;
+  return { year: m[1], month: m[2], day: m[3] };
+}
+
 function parseLocalYmd(ymd: string): Date {
   const normalized = normalizeYmd(ymd);
   if (!normalized) return new Date();
-  const m = YMD_PATTERN.exec(normalized)!;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const parts = parseYmdParts(normalized);
+  if (!parts) return new Date();
+  return new Date(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
 }
 
 function coerceViewYear(value: unknown): number {
@@ -80,33 +88,31 @@ function viewPartsFromYmd(ymd: string): { year: number; month: number } {
   };
 }
 
-/** Format YYYY-MM-DD (or ISO) for compact UI labels without UTC day-shift. */
+const MONTH_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+/** Format YYYY-MM-DD (or ISO) for compact UI labels — string-only (no Date/timezone). */
 export function formatYmdShortLabel(value: string | undefined | null): string {
   const ymd = normalizeYmd(value);
   if (!ymd) return "";
-  const d = parseLocalYmd(ymd);
-  if (!Number.isFinite(d.getTime())) return "";
-  const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const day = d.getDate();
-  const monthIndex = d.getMonth();
-  if (!Number.isFinite(day) || monthIndex < 0 || monthIndex > 11) return "";
-  const month = monthNames[monthIndex];
-  const year = String(d.getFullYear()).slice(-2);
-  if (!Number.isFinite(Number(year))) return "";
-  return `${day} ${month} ${year}`;
+  const parts = parseYmdParts(ymd);
+  if (!parts) return "";
+  const monthIndex = Number(parts.month) - 1;
+  const day = Number(parts.day);
+  if (monthIndex < 0 || monthIndex > 11 || day < 1 || day > 31) return "";
+  return `${day} ${MONTH_SHORT[monthIndex]} ${parts.year.slice(-2)}`;
 }
 
 export function ScheduleMonthCalendar({
