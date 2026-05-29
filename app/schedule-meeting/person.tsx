@@ -5,8 +5,8 @@ import { useScheduleMeetingStore, type SchedulePerson } from "@/stores/scheduleM
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useMentees } from "@/hooks/mentees/useMentees";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,31 +32,44 @@ export default function ScheduleMeetingPersonScreen() {
 
   const [search, setSearch] = useState("");
 
-  React.useEffect(() => {
-    reset();
-    setMode((mode as any) || "schedule");
-    setAppointmentId(appointmentId);
-    if (personData) {
-      try {
-        const parsed = JSON.parse(String(personData));
-        if (parsed?.id) {
-          setPerson({
-            id: String(parsed.id),
-            name: String(parsed.name || parsed.firstName || "Person"),
-            role: String(parsed.role || ""),
-            profilePicture: parsed.profilePicture,
-            profileImage: parsed.profileImage,
-          });
-          router.replace({
-            pathname: `${scheduleBase}/time` as any,
-            params: { drawerContext: params.drawerContext },
-          });
+  // Drawer screens are frozen between visits — reset draft each time this step is shown.
+  useFocusEffect(
+    useCallback(() => {
+      reset();
+      setMode((mode as any) || "schedule");
+      setAppointmentId(appointmentId);
+      if (personData) {
+        try {
+          const parsed = JSON.parse(String(personData));
+          if (parsed?.id) {
+            setPerson({
+              id: String(parsed.id),
+              name: String(parsed.name || parsed.firstName || "Person"),
+              role: String(parsed.role || ""),
+              profilePicture: parsed.profilePicture,
+              profileImage: parsed.profileImage,
+            });
+            router.replace({
+              pathname: `${scheduleBase}/time` as any,
+              params: { drawerContext: params.drawerContext },
+            });
+          }
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore
       }
-    }
-  }, [appointmentId, mode, params.drawerContext, personData, reset, scheduleBase, setAppointmentId, setMode, setPerson]);
+    }, [
+      appointmentId,
+      mode,
+      params.drawerContext,
+      personData,
+      reset,
+      scheduleBase,
+      setAppointmentId,
+      setMode,
+      setPerson,
+    ]),
+  );
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
 
@@ -134,7 +147,7 @@ export default function ScheduleMeetingPersonScreen() {
                 style={styles.personCard}
                 onPress={() => {
                   setPerson(p);
-                  router.push({
+                  router.replace({
                     pathname: `${scheduleBase}/time` as any,
                     params: { drawerContext: params.drawerContext },
                   });

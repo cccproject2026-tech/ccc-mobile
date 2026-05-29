@@ -4,42 +4,30 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import { useMeetingScheduler } from "@/hooks/appointments/useMeetingScheduler";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
-import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
+import { exitScheduleMeetingFlow } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-function appointmentsRouteForRole(role: string | undefined): string {
-  const r = String(role || "").toLowerCase();
-  if (r === "mentor") {
-    return "/(mentor)/(tabs)/(index,roadmap,assessments,appointments,progress,mentees)/appointments";
-  }
-  if (r === "director") return "/(director)/(tabs)/appointments";
-  return "/(pastor)/(tabs)/appointments";
-}
-
 export default function ScheduleMeetingConfirmScreen() {
   const { user } = useAuthStore();
-  const { drawerContext } = useLocalSearchParams<{ drawerContext?: string }>();
   const deviceTz = useMemo(() => getDeviceTimezone(), []);
-  const { draft, reset } = useScheduleMeetingStore();
+  const { draft } = useScheduleMeetingStore();
   const [isDone, setIsDone] = useState(false);
   const insets = useSafeAreaInsets();
-  const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
+
+  // Drawer freezes screens — clear "done" from the previous booking when re-entering.
+  useFocusEffect(
+    useCallback(() => {
+      setIsDone(false);
+    }, []),
+  );
 
   const canSubmit = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
-
-  useEffect(() => {
-    if (canSubmit) return;
-    router.replace({
-      pathname: `${scheduleBase}/person` as any,
-      params: { drawerContext },
-    });
-  }, [canSubmit, drawerContext, scheduleBase]);
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
   const availabilityOwnerId = isMentor ? user?.id : draft.person?.id;
@@ -122,11 +110,9 @@ export default function ScheduleMeetingConfirmScreen() {
                     text1: title,
                     text2: "Returning to your appointments…",
                   });
-                  reset();
-                  const dest = appointmentsRouteForRole(user?.role);
                   setTimeout(() => {
-                    router.replace(dest as any);
-                  }, 650);
+                    exitScheduleMeetingFlow(router, user?.role);
+                  }, 400);
                 } catch (e: any) {
                   const msg =
                     typeof e?.message === "string"

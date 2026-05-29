@@ -16,6 +16,7 @@ import {
 } from "@/hooks/appointments/useAppointments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { Mentor } from "@/hooks/mentors/useMentors";
+import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores/auth.store";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
@@ -389,7 +390,7 @@ const Appointments: React.FC = () => {
 
   // Handle new meeting button press
   const handleNewMeeting = () => {
-    router.push({ pathname: "/schedule-meeting/person", params: { mode: "schedule" } });
+    openScheduleMeeting(router, user?.role, { mode: "schedule" });
   };
 
   // Handle close bottom sheet

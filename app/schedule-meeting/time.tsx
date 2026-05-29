@@ -15,7 +15,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import type { TimeSlot as APITimeSlot } from "@/types/appointment.types";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,8 +29,17 @@ function ymdToday() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function pickDefaultDayYmd(availableDates: string[]): string {
+  if (availableDates.length === 0) return "";
+  const todayYmd = ymdToday();
+  if (availableDates.includes(todayYmd)) return todayYmd;
+  const nextUpcoming = [...availableDates].filter((d) => d >= todayYmd).sort()[0];
+  return nextUpcoming || [...availableDates].sort()[0];
+}
+
 export default function ScheduleMeetingTimeScreen() {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const { drawerContext } = useLocalSearchParams<{ drawerContext?: string }>();
   const { draft, setDay, setSlot, setPlatformLabel } = useScheduleMeetingStore();
   const insets = useSafeAreaInsets();
@@ -52,10 +62,38 @@ export default function ScheduleMeetingTimeScreen() {
   // - else pastor scheduling with mentor -> availability belongs to selected person (mentor)
   const availabilityOwnerId = isMentor ? user?.id : draft.person?.id;
 
-  // Track the visible calendar month, so monthly availability stays in sync with UI.
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
+
+  // Drawer keeps this screen mounted (freezeOnBlur). Re-sync calendar + refetch on each visit.
+  useFocusEffect(
+    useCallback(() => {
+      if (!availabilityOwnerId) return;
+
+      queryClient.invalidateQueries({
+        queryKey: ["monthly-availability", availabilityOwnerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["weekly-availability", availabilityOwnerId],
+      });
+
+      setSlot(null);
+
+      const ymd = useScheduleMeetingStore.getState().draft.selectedDayYmd;
+      if (ymd) {
+        const cal = calendarYearMonthFromYmd(ymd);
+        if (cal) {
+          setCurrentMonth(cal.month);
+          setCurrentYear(cal.year);
+          return;
+        }
+      }
+      const n = new Date();
+      setCurrentMonth(n.getMonth() + 1);
+      setCurrentYear(n.getFullYear());
+    }, [availabilityOwnerId, queryClient, setSlot]),
+  );
 
   // Weekly settings / saved slots (source of truth for meeting settings + raw saved blocks).
   const { availability: weeklyAvailability, isLoading: isLoadingWeekly, isError: isWeeklyError } = useWeeklyAvailability(
@@ -85,8 +123,7 @@ export default function ScheduleMeetingTimeScreen() {
       enabled: Boolean(availabilityOwnerId),
       // IMPORTANT: never show generated/fake availability in scheduling flow.
       allowDefaultForMentee: false,
-      // Month paging: avoid treating cached months as instantly stale (reduces flicker when navigating).
-      staleTimeMs: 60_000,
+      staleTimeMs: 0,
     },
   );
 
@@ -119,19 +156,11 @@ export default function ScheduleMeetingTimeScreen() {
   }, [mergedAvailability]);
 
   useEffect(() => {
-    // default date
-    if (!draft.selectedDayYmd && availableDates.length > 0) {
-      const todayYmd = ymdToday();
-      if (availableDates.includes(todayYmd)) {
-        setDay(todayYmd);
-        return;
-      }
+    if (availableDates.length === 0) return;
 
-      const nextUpcoming = [...availableDates]
-        .filter((d) => d >= todayYmd)
-        .sort()[0];
-
-      setDay(nextUpcoming || [...availableDates].sort()[0]);
+    const current = draft.selectedDayYmd;
+    if (!current || !availableDates.includes(current)) {
+      setDay(pickDefaultDayYmd(availableDates));
     }
   }, [availableDates, draft.selectedDayYmd, setDay]);
 
@@ -139,19 +168,6 @@ export default function ScheduleMeetingTimeScreen() {
     // reset time when day changes
     setSlot(null);
   }, [draft.selectedDayYmd, setSlot]);
-
-  useEffect(() => {
-    // Calendar shows one month; if the stored day is in another month, clear it so
-    // timeslots never show for the wrong month after paging.
-    const sel = draft.selectedDayYmd;
-    if (!sel) return;
-    const cal = calendarYearMonthFromYmd(sel);
-    if (!cal) return;
-    if (cal.month !== currentMonth || cal.year !== currentYear) {
-      setSlot(null);
-      setDay("");
-    }
-  }, [currentMonth, currentYear, draft.selectedDayYmd, setDay, setSlot]);
 
   const getTimeSlotsForDate = useCallback(
     (dateString: string) => {
@@ -175,6 +191,23 @@ export default function ScheduleMeetingTimeScreen() {
     () => (draft.selectedDayYmd ? getTimeSlotsForDate(draft.selectedDayYmd) : []),
     [draft.selectedDayYmd, getTimeSlotsForDate],
   );
+
+  // After a booking, cached dates can still list a day with zero remaining slots.
+  useEffect(() => {
+    if (!draft.selectedDayYmd || timeSlots.length > 0 || availableDates.length === 0) {
+      return;
+    }
+    const fallback = availableDates.find((d) => getTimeSlotsForDate(d).length > 0);
+    if (fallback && fallback !== draft.selectedDayYmd) {
+      setDay(fallback);
+    }
+  }, [
+    availableDates,
+    draft.selectedDayYmd,
+    getTimeSlotsForDate,
+    setDay,
+    timeSlots.length,
+  ]);
 
   const canContinue = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
 
@@ -302,6 +335,13 @@ export default function ScheduleMeetingTimeScreen() {
               onMonthChange={(m, y) => {
                 setCurrentMonth(m);
                 setCurrentYear(y);
+                const sel = draft.selectedDayYmd;
+                if (!sel) return;
+                const cal = calendarYearMonthFromYmd(sel);
+                if (cal && (cal.month !== m || cal.year !== y)) {
+                  setSlot(null);
+                  setDay("");
+                }
               }}
               showHeader={true}
               disablePastDates={true}
@@ -376,7 +416,7 @@ export default function ScheduleMeetingTimeScreen() {
               style={[styles.primaryBtn, !canContinue && styles.primaryBtnDisabled]}
               disabled={!canContinue}
               onPress={() =>
-                router.push({
+                router.replace({
                   pathname: `${scheduleBase}/confirm` as any,
                   params: { drawerContext },
                 })
