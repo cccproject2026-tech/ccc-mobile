@@ -1,19 +1,23 @@
-import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import {
   BottomSheetBackdrop,
+  BottomSheetBackgroundProps,
+  BottomSheetFlatList,
   BottomSheetModal,
-  BottomSheetScrollView,
   useBottomSheetModal,
 } from "@gorhom/bottom-sheet";
+import { LinearGradient } from "expo-linear-gradient";
 import { forwardRef, useCallback, useMemo } from "react";
 import {
   Animated,
+  ListRenderItem,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -50,6 +54,73 @@ interface PastorFocusBottomSheetProps {
   onClose?: () => void;
   onNewMeeting?: () => void;
   onSelectItem: (item: PastorFocusItem) => void;
+}
+
+type FocusListRow =
+  | {
+      type: "section-header";
+      key: string;
+      title: string;
+      count: number;
+      showCount: boolean;
+    }
+  | {
+      type: "item";
+      key: string;
+      item: PastorFocusItem;
+      isPrimary: boolean;
+      isLast: boolean;
+    }
+  | { type: "empty"; key: string; message: string }
+  | { type: "skeleton"; key: string }
+  | { type: "section-spacer"; key: string };
+
+function buildFocusListRows(
+  sections: PastorFocusSection[],
+  isLoading: boolean,
+): FocusListRow[] {
+  const rows: FocusListRow[] = [];
+
+  sections.forEach((section, sectionIndex) => {
+    rows.push({
+      type: "section-header",
+      key: `${section.id}-header`,
+      title: section.title,
+      count: section.items.length,
+      showCount: !isLoading && section.items.length > 0,
+    });
+
+    if (isLoading) {
+      rows.push({ type: "skeleton", key: `${section.id}-sk-0` });
+      rows.push({ type: "skeleton", key: `${section.id}-sk-1` });
+    } else if (section.items.length === 0) {
+      rows.push({
+        type: "empty",
+        key: `${section.id}-empty`,
+        message: section.emptyMessage,
+      });
+    } else {
+      section.items.forEach((item, index) => {
+        rows.push({
+          type: "item",
+          key: item.id,
+          item,
+          isPrimary: index === 0,
+          isLast: index === section.items.length - 1,
+        });
+      });
+    }
+
+    if (sectionIndex < sections.length - 1) {
+      rows.push({ type: "section-spacer", key: `${section.id}-spacer` });
+    }
+  });
+
+  return rows;
+}
+
+function focusListKeyExtractor(row: FocusListRow): string {
+  return row.key;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -195,8 +266,19 @@ const PastorFocusBottomSheet = forwardRef<
     ref,
   ) => {
     const { bottom } = useSafeAreaInsets();
+    const { height: windowHeight } = useWindowDimensions();
     const { dismiss } = useBottomSheetModal();
-    const snapPoints = useMemo(() => ["82%"], []);
+    const snapPoints = useMemo(() => ["90%"], []);
+    const sheetListHeight = useMemo(
+      () => Math.floor(windowHeight * 0.9),
+      [windowHeight],
+    );
+
+    const totalItems = sections.reduce((acc, s) => acc + s.items.length, 0);
+    const listRows = useMemo(
+      () => buildFocusListRows(sections, isLoading),
+      [sections, isLoading],
+    );
 
     const renderBackdrop = useCallback(
       (props: any) => (
@@ -211,112 +293,129 @@ const PastorFocusBottomSheet = forwardRef<
       [],
     );
 
-    // Total item count across all sections
-    const totalItems = sections.reduce((acc, s) => acc + s.items.length, 0);
+    const renderBackground = useCallback(
+      (props: BottomSheetBackgroundProps) => (
+        <LinearGradient
+          colors={[...Colors.appBgGradient]}
+          style={[props.style, styles.sheetBackground]}
+        />
+      ),
+      [],
+    );
 
-    return (
-      <BottomSheetModal
-        ref={ref}
-        snapPoints={snapPoints}
-        backdropComponent={renderBackdrop}
-        onDismiss={onClose}
-        enablePanDownToClose
-        handleComponent={null}
-        backgroundComponent={() => null}
-      >
-        <AppGradientBackground style={styles.sheetGradient}>
-        {/* Floating close button above the sheet */}
-        <View style={styles.floatingCloseWrap}>
-          <Pressable
-            style={styles.floatingCloseButton}
-            onPress={() => dismiss()}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="close" size={20} color="#FFFFFF" />
-          </Pressable>
-        </View>
-
-        {/* Drag indicator */}
-        <View style={styles.dragHandle} />
-
-        <BottomSheetScrollView
-          contentContainerStyle={[
-            styles.contentContainer,
-            { paddingBottom: bottom + 32 },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* ── Header ── */}
+    const renderListHeader = useCallback(
+      () => (
+        <View style={styles.listHeaderWrap}>
+          <View style={styles.dragHandle} />
           <View style={styles.headerBlock}>
-            <View style={styles.headerTopRow}>
-              <View style={styles.headerIconWrap}>
-                <Ionicons name="compass" size={18} color="#7EC8FF" />
-              </View>
-              {!isLoading && totalItems > 0 && (
+          <View style={styles.headerTopRow}>
+            <View style={styles.headerIconWrap}>
+              <Ionicons name="compass" size={18} color="#7EC8FF" />
+            </View>
+            <View style={styles.headerTopActions}>
+              {!isLoading && totalItems > 0 ? (
                 <View style={styles.countBadge}>
                   <Text style={styles.countBadgeText}>
                     {totalItems} item{totalItems !== 1 ? "s" : ""}
                   </Text>
                 </View>
-              )}
-            </View>
-
-            <Text style={styles.title}>{title}</Text>
-
-            <View style={styles.headerDivider} />
-
-            <Text style={styles.subtitle}>{subtitle}</Text>
-
-            {/* New Meeting CTA */}
-            {!!onNewMeeting && (
-              <TouchableOpacity
-                style={styles.newMeetingButton}
-                onPress={onNewMeeting}
-                activeOpacity={0.82}
+              ) : null}
+              <Pressable
+                style={styles.inlineCloseButton}
+                onPress={() => dismiss()}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <View style={styles.newMeetingIconWrap}>
-                  <Ionicons name="add" size={16} color="#FFFFFF" />
-                </View>
-                <Text style={styles.newMeetingButtonText}>Schedule New Meeting</Text>
-              </TouchableOpacity>
-            )}
+                <Ionicons name="close" size={20} color="#FFFFFF" />
+              </Pressable>
+            </View>
           </View>
 
-          {/* ── Sections ── */}
-          {sections.map((section, sectionIndex) => (
-            <View key={section.id} style={styles.section}>
-              {/* Section header */}
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-                {!isLoading && section.items.length > 0 && (
-                  <View style={styles.sectionCount}>
-                    <Text style={styles.sectionCountText}>
-                      {section.items.length}
-                    </Text>
-                  </View>
-                )}
-              </View>
+          <Text style={styles.title}>{title}</Text>
+          <View style={styles.headerDivider} />
+          <Text style={styles.subtitle}>{subtitle}</Text>
 
-              {/* Items */}
-              {isLoading ? (
-                [0, 1].map((i) => <SkeletonRow key={`${section.id}-sk-${i}`} id={i} />)
-              ) : section.items.length === 0 ? (
-                <EmptyCard message={section.emptyMessage} />
-              ) : (
-                section.items.map((item, index) => (
-                  <FocusItemCard
-                    key={item.id}
-                    item={item}
-                    isPrimary={index === 0}
-                    isLast={index === section.items.length - 1}
-                    onPress={() => onSelectItem(item)}
-                  />
-                ))
-              )}
+          {!!onNewMeeting && (
+            <TouchableOpacity
+              style={styles.newMeetingButton}
+              onPress={onNewMeeting}
+              activeOpacity={0.82}
+            >
+              <View style={styles.newMeetingIconWrap}>
+                <Ionicons name="add" size={16} color="#FFFFFF" />
+              </View>
+              <Text style={styles.newMeetingButtonText}>Schedule New Meeting</Text>
+            </TouchableOpacity>
+          )}
+          </View>
+        </View>
+      ),
+      [dismiss, isLoading, onNewMeeting, subtitle, title, totalItems],
+    );
+
+    const renderRow: ListRenderItem<FocusListRow> = useCallback(
+      ({ item: row }) => {
+        if (row.type === "section-header") {
+          return (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{row.title}</Text>
+              {row.showCount ? (
+                <View style={styles.sectionCount}>
+                  <Text style={styles.sectionCountText}>{row.count}</Text>
+                </View>
+              ) : null}
             </View>
-          ))}
-        </BottomSheetScrollView>
-        </AppGradientBackground>
+          );
+        }
+
+        if (row.type === "section-spacer") {
+          return <View style={styles.sectionSpacer} />;
+        }
+
+        if (row.type === "skeleton") {
+          return <SkeletonRow id={row.key} />;
+        }
+
+        if (row.type === "empty") {
+          return <EmptyCard message={row.message} />;
+        }
+
+        return (
+          <FocusItemCard
+            item={row.item}
+            isPrimary={row.isPrimary}
+            isLast={row.isLast}
+            onPress={() => onSelectItem(row.item)}
+          />
+        );
+      },
+      [onSelectItem],
+    );
+
+    return (
+      <BottomSheetModal
+        ref={ref}
+        snapPoints={snapPoints}
+        enableDynamicSizing={false}
+        backdropComponent={renderBackdrop}
+        backgroundComponent={renderBackground}
+        onDismiss={onClose}
+        enablePanDownToClose
+        handleComponent={null}
+      >
+        <BottomSheetFlatList<FocusListRow>
+          data={listRows}
+          keyExtractor={focusListKeyExtractor}
+          renderItem={renderRow}
+          ListHeaderComponent={renderListHeader}
+          style={[styles.list, { height: sheetListHeight }]}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: bottom + 56 },
+          ]}
+          showsVerticalScrollIndicator
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+        />
       </BottomSheetModal>
     );
   },
@@ -330,11 +429,33 @@ const CARD_RADIUS = 18;
 const ACCENT = "#3A88E5";
 
 const styles = StyleSheet.create({
-  // ── Sheet shell (matches pastor home `Colors.appBgGradient`) ──
-  sheetGradient: {
+  sheetBackground: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    overflow: "hidden",
+  },
+  list: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  },
+  listContent: {
+    paddingHorizontal: 18,
+    paddingTop: 4,
+  },
+  listHeaderWrap: {
+    paddingTop: 8,
+  },
+  sectionSpacer: {
+    height: 20,
+  },
+  inlineCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(15, 59, 92, 0.72)",
+    borderWidth: 1,
+    borderColor: "rgba(220, 236, 255, 0.28)",
   },
   dragHandle: {
     alignSelf: "center",
@@ -345,32 +466,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 4,
   },
-  contentContainer: {
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    gap: 20,
-  },
-
-  // ── Floating close ──
-  floatingCloseWrap: {
-    position: "absolute",
-    top: -52,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    zIndex: 99,
-  },
-  floatingCloseButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(15, 59, 92, 0.92)",
-    borderWidth: 1,
-    borderColor: "rgba(220, 236, 255, 0.28)",
-  },
-
   // ── Header block ──
   headerBlock: {
     gap: 8,
@@ -380,6 +475,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  headerTopActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   headerIconWrap: {
     width: 34,
@@ -453,14 +553,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
 
-  // ── Section ──
-  section: {
-    gap: 10,
-  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginTop: 16,
+    marginBottom: 10,
   },
   sectionTitle: {
     color: "#C8DEFF",
@@ -486,8 +584,9 @@ const styles = StyleSheet.create({
   // ── Timeline ──
   itemRow: {
     flexDirection: "row",
-    alignItems: "stretch",
+    alignItems: "flex-start",
     gap: 12,
+    marginBottom: 10,
   },
   timelineColumn: {
     width: 20,
@@ -520,10 +619,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   timelineLine: {
-    flex: 1,
     width: 2,
+    minHeight: 32,
+    flexGrow: 1,
+    alignSelf: "stretch",
     marginTop: 6,
-    marginBottom: -4,
+    marginBottom: 4,
     backgroundColor: "rgba(130, 180, 230, 0.22)",
     borderRadius: 1,
   },
