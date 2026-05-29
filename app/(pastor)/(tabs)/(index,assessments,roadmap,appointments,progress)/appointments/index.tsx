@@ -1,10 +1,11 @@
-import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
 // Scheduling now uses full-screen pages under /schedule-meeting
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
+import { ScheduleMonthCalendarFromSelection } from "@/components/calendar/ScheduleMonthCalendar";
+import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import {
@@ -27,8 +28,18 @@ import { ActivityIndicator, Alert, Dimensions, Image, Modal, Pressable, ScrollVi
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Appointments = () => {
-  const today = new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = React.useState<string>(today);
+  const {
+    selectedDate,
+    visibleMonthYmd,
+    viewYear,
+    viewMonth,
+    formatDisplayDate,
+    isToday,
+    onSelectCalendarDay,
+    onCalendarMonthChange,
+    jumpCalendarToSelected,
+    dayVariantForMeetings,
+  } = useAppointmentCalendarSelection();
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
@@ -44,8 +55,17 @@ const Appointments = () => {
 
   const { user } = useAuthStore();
 
-  // ✅ Move state declaration BEFORE the hook
   const [rescheduleData, setRescheduleData] = React.useState<Appointment | null>(null);
+
+  const {
+    appointments,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    getAppointmentsByDate,
+    getUpcomingAppointments,
+  } = useAppointments({ userId: user?.id });
 
   if (!user?.id) {
     return (
@@ -58,16 +78,15 @@ const Appointments = () => {
     );
   }
 
-  // Fetch appointments
-  const {
-    appointments,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    getAppointmentsByDate,
-    getUpcomingAppointments,
-  } = useAppointments({ userId: user.id });
+  const appointmentCountByYmd = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const apt of appointments ?? []) {
+      const ymd = String(apt.meetingDate ?? "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) continue;
+      map.set(ymd, (map.get(ymd) ?? 0) + 1);
+    }
+    return map;
+  }, [appointments]);
 
   // Fetch assigned mentors
   const { mentors: assignedMentors, isLoading: isLoadingMentors } = useAssignedMentors(user.id);
@@ -139,20 +158,6 @@ const Appointments = () => {
       ...(deviceTz.timeZone ? { timeZone: deviceTz.timeZone } : {}),
     });
   }, [deviceTz.timeZone]);
-
-  const formatDisplayDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const month = monthNames[date.getMonth()];
-    const year = date.getFullYear().toString().slice(-2);
-    return `${day} ${month} ${year}`;
-  };
-
-  const isToday = (dateString: string) => {
-    return dateString === today;
-  };
 
   const selectedDateAppointments = getAppointmentsByDate(selectedDate);
   const uniqueSelectedDateAppointments = selectedDateAppointments.filter(
@@ -274,19 +279,6 @@ const Appointments = () => {
     }
   };
 
-  if (isLoading || isLoadingMentors) {
-    return (
-      <LinearGradient
-        colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
-      >
-        <Text style={{ color: 'white', fontSize: 18 }}>
-          {isLoading ? 'Loading appointments...' : 'Loading mentors...'}
-        </Text>
-      </LinearGradient>
-    );
-  }
-
   if (isError) {
     return (
       <LinearGradient
@@ -349,18 +341,32 @@ const Appointments = () => {
                         </Text>
                       </View>
                     </View>
-                    <View style={styles.datePill}>
+                    <Pressable
+                      style={styles.datePill}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Show ${formatDisplayDate(selectedDate)} on calendar`}
+                      onPress={jumpCalendarToSelected}
+                    >
                       <Text style={styles.datePillText}>{formatDisplayDate(selectedDate)}</Text>
-                    </View>
+                    </Pressable>
                   </View>
 
                   <View style={{ minHeight: 400 }}>
-                    <GradientCalendar
-                      selected={selectedDate}
-                      setSelected={setSelectedDate}
-                      showHeader={false}
+                    <ScheduleMonthCalendarFromSelection
+                      selectedYmd={selectedDate}
+                      visibleMonthYmd={visibleMonthYmd}
+                      viewYear={viewYear}
+                      viewMonth={viewMonth}
+                      onSelectDay={onSelectCalendarDay}
+                      onMonthChange={onCalendarMonthChange}
                       disablePastDates={true}
-                      markToday={false}
+                      getDayVariant={(ymd, ctx) =>
+                        dayVariantForMeetings(ymd, ctx, appointmentCountByYmd.get(ymd) ?? 0)
+                      }
+                      getDayBadge={(ymd) => {
+                        const count = appointmentCountByYmd.get(ymd) ?? 0;
+                        return count > 0 ? String(count) : null;
+                      }}
                     />
                   </View>
                 </View>

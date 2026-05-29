@@ -1,10 +1,11 @@
-import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
 import ScheduleMeetingBottomSheet from "@/components/director/ScheduleMeetingBottomSheet";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
+import { ScheduleMonthCalendarFromSelection } from "@/components/calendar/ScheduleMonthCalendar";
+import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
@@ -37,8 +38,18 @@ interface ResponseModalState {
 }
 
 const Appointments: React.FC = () => {
-  const today = new Date().toISOString().split("T")[0];
-  const [selectedDate, setSelectedDate] = React.useState<string>(today);
+  const {
+    selectedDate,
+    visibleMonthYmd,
+    viewYear,
+    viewMonth,
+    formatDisplayDate,
+    isToday,
+    onSelectCalendarDay,
+    onCalendarMonthChange,
+    jumpCalendarToSelected,
+    dayVariantForMeetings,
+  } = useAppointmentCalendarSelection();
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const router = useRouter();
   const [responseModal, setResponseModal] = React.useState<ResponseModalState>({
@@ -89,30 +100,6 @@ const Appointments: React.FC = () => {
     }
   }, [openSheet]);
 
-  // Helper function to format date for display (US format)
-  const formatDisplayDate = React.useCallback((dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    const month = monthNames[date.getMonth()];
-    const year = date.getFullYear().toString().slice(-2);
-
-    return `${day} ${month} ${year}`;
-  }, []);
-
   // Helper function to format time for display (US EST format)
   const formatTime = React.useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -155,14 +142,6 @@ const Appointments: React.FC = () => {
         return "Zoom";
     }
   }, []);
-
-  // Helper function to check if date is today
-  const isToday = React.useCallback(
-    (dateString: string) => {
-      return dateString === today;
-    },
-    [today],
-  );
 
   // Get mentee name from userId
   const getMenteeName = React.useCallback(
@@ -214,6 +193,16 @@ const Appointments: React.FC = () => {
   ]);
 
   const selectedDateAppointments = formattedAppointments;
+
+  const appointmentCountByYmd = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const apt of appointments ?? []) {
+      const ymd = String(apt.meetingDate ?? "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) continue;
+      map.set(ymd, (map.get(ymd) ?? 0) + 1);
+    }
+    return map;
+  }, [appointments]);
 
   const handleViewDetails = (appointment: any) => {
     console.log("View details", appointment);
@@ -366,31 +355,20 @@ const Appointments: React.FC = () => {
                       minHeight: 400,
                     }}
                   >
-                    <GradientCalendar
-                      selected={selectedDate}
-                      setSelected={setSelectedDate}
-                      recurringAvailability={{
-                        type: "weekly",
-                        daysOfWeek: [1, 2, 3, 4, 5, 6],
+                    <ScheduleMonthCalendarFromSelection
+                      selectedYmd={selectedDate}
+                      visibleMonthYmd={visibleMonthYmd}
+                      viewYear={viewYear}
+                      viewMonth={viewMonth}
+                      onSelectDay={onSelectCalendarDay}
+                      onMonthChange={onCalendarMonthChange}
+                      getDayVariant={(ymd, ctx) =>
+                        dayVariantForMeetings(ymd, ctx, appointmentCountByYmd.get(ymd) ?? 0)
+                      }
+                      getDayBadge={(ymd) => {
+                        const count = appointmentCountByYmd.get(ymd) ?? 0;
+                        return count > 0 ? String(count) : null;
                       }}
-                      unavailableDates={[
-                        "2025-10-30",
-                        "2025-10-22",
-                        "2025-10-25",
-                      ]}
-                      availableDates={[
-                        today,
-                        "2025-10-20",
-                        "2025-10-21",
-                        "2025-10-23",
-                        "2025-10-24",
-                        "2025-10-27",
-                        "2025-10-28",
-                        "2025-10-29",
-                      ]}
-                      showHeader={false}
-                      disablePastDates={true}
-                      markToday={false}
                     />
                   </View>
                 </View>

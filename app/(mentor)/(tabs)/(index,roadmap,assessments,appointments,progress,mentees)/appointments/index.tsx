@@ -1,8 +1,5 @@
-import {
-  normalizeYmd,
-  ScheduleMonthCalendarFromSelection,
-} from "@/components/calendar/ScheduleMonthCalendar";
-import { localCalendarYmd } from "@/utils/availability/availability-recurring-utils";
+import { ScheduleMonthCalendarFromSelection } from "@/components/calendar/ScheduleMonthCalendar";
+import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
 import AppointmentCard, { MenuItem } from "@/components/director/AppointmentCard";
@@ -47,11 +44,18 @@ interface ResponseModalState {
 }
 
 const Appointments: React.FC = () => {
-  const today = (() => {
-    const now = new Date();
-    return localCalendarYmd(now.getFullYear(), now.getMonth(), now.getDate());
-  })();
-  const [selectedDate, setSelectedDate] = React.useState<string>(today);
+  const {
+    selectedDate,
+    visibleMonthYmd,
+    viewYear,
+    viewMonth,
+    formatDisplayDate,
+    isToday,
+    onSelectCalendarDay,
+    onCalendarMonthChange,
+    jumpCalendarToSelected,
+    dayVariantForMeetings,
+  } = useAppointmentCalendarSelection();
   const [activeTab, setActiveTab] = React.useState<
     "appointments" | "availability"
   >("appointments");
@@ -129,30 +133,6 @@ const Appointments: React.FC = () => {
     }
   }, [openSheet]);
 
-  // Helper function to format date for display (US format)
-  const formatDisplayDate = React.useCallback((dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    const month = monthNames[date.getMonth()];
-    const year = date.getFullYear().toString().slice(-2);
-
-    return `${day} ${month} ${year}`;
-  }, []);
-
   // Helper function to format time for display (device timezone)
   const formatTime = React.useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -195,14 +175,6 @@ const Appointments: React.FC = () => {
         return "Zoom";
     }
   }, []);
-
-  // Helper function to check if date is today
-  const isToday = React.useCallback(
-    (dateString: string) => {
-      return dateString === today;
-    },
-    [today],
-  );
 
   // Get mentee name from userId
   const getMenteeName = React.useCallback(
@@ -341,9 +313,9 @@ const Appointments: React.FC = () => {
   };
 
   const handleReschedule = (appointment: any) => {
-    router.push({
-      pathname: "/schedule-meeting/person",
-      params: { mode: "reschedule", appointmentId: String(appointment.id) },
+    openScheduleMeeting(router, user?.role, {
+      mode: "reschedule",
+      appointmentId: String(appointment.id),
     });
   };
 
@@ -510,23 +482,26 @@ const Appointments: React.FC = () => {
                         </Text>
                       </View>
                     </View>
-                    <View style={styles.datePill}>
+                    <Pressable
+                      style={styles.datePill}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Show ${formatDisplayDate(selectedDate)} on calendar`}
+                      onPress={jumpCalendarToSelected}
+                    >
                       <Text style={styles.datePillText}>{formatDisplayDate(selectedDate)}</Text>
-                    </View>
+                    </Pressable>
                   </View>
 
                   <ScheduleMonthCalendarFromSelection
                     selectedYmd={selectedDate}
-                    onSelectDay={(ymd) => {
-                      const normalized = normalizeYmd(ymd);
-                      if (normalized) setSelectedDate(normalized);
-                    }}
-                    getDayVariant={(ymd, { isToday, isSelected }) => {
-                      if (isSelected) return "selected";
-                      if (isToday) return "today";
-                      if ((appointmentCountByYmd.get(ymd) ?? 0) > 0) return "open";
-                      return "default";
-                    }}
+                    visibleMonthYmd={visibleMonthYmd}
+                    viewYear={viewYear}
+                    viewMonth={viewMonth}
+                    onSelectDay={onSelectCalendarDay}
+                    onMonthChange={onCalendarMonthChange}
+                    getDayVariant={(ymd, ctx) =>
+                      dayVariantForMeetings(ymd, ctx, appointmentCountByYmd.get(ymd) ?? 0)
+                    }
                     getDayBadge={(ymd) => {
                       const count = appointmentCountByYmd.get(ymd) ?? 0;
                       return count > 0 ? String(count) : null;

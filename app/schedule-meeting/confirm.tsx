@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import { useMeetingScheduler } from "@/hooks/appointments/useMeetingScheduler";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
+import { useWeeklyAvailability } from "@/hooks/mentors/useMentorsAvailability";
 import { exitScheduleMeetingFlow } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
 import { router, useFocusEffect } from "expo-router";
@@ -39,6 +40,14 @@ export default function ScheduleMeetingConfirmScreen() {
     userId: isMentor ? draft.person?.id : user?.id,
   });
 
+  const { availability: weeklyAvailability } = useWeeklyAvailability(
+    availabilityOwnerId || null,
+    {
+      enabled: Boolean(availabilityOwnerId),
+      role: "mentor",
+    },
+  );
+
   const existingAppointment = useMemo(() => {
     if (!draft.appointmentId) return null;
     // Find from either list (best-effort)
@@ -55,7 +64,7 @@ export default function ScheduleMeetingConfirmScreen() {
     selectedDayYmd: draft.selectedDayYmd,
     selectedSlot: draft.selectedSlot,
     meetingOptionLabel: draft.meetingOptionLabel,
-    settings: undefined,
+    settings: weeklyAvailability ?? undefined,
     mentorAppointments,
     userAppointments,
   });

@@ -13,7 +13,8 @@ import {
 import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
-import type { TimeSlot as APITimeSlot } from "@/types/appointment.types";
+import type { TimeSlot as APITimeSlot, WeeklyAvailability } from "@/types/appointment.types";
+import { filterSlotsByMinNotice } from "@/utils/appointments/validation";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -169,6 +170,13 @@ export default function ScheduleMeetingTimeScreen() {
     setSlot(null);
   }, [draft.selectedDayYmd, setSlot]);
 
+  const schedulingSettings = useMemo((): WeeklyAvailability | null => {
+    if (!weeklyAvailability) return null;
+    return weeklyAvailability as WeeklyAvailability;
+  }, [weeklyAvailability]);
+
+  const minNoticeHours = schedulingSettings?.minSchedulingNoticeHours ?? 0;
+
   const getTimeSlotsForDate = useCallback(
     (dateString: string) => {
       if (!mergedAvailability?.length) {
@@ -177,14 +185,15 @@ export default function ScheduleMeetingTimeScreen() {
       const dayData = (mergedAvailability as any[]).find(
         (d) => toDateString(String(d?.date ?? "")) === dateString,
       ) as any;
-      const slots: APITimeSlot[] = dayData ? slotsFromWeeklyOrMonthlyDay(dayData) : [];
+      const raw: APITimeSlot[] = dayData ? slotsFromWeeklyOrMonthlyDay(dayData) : [];
+      const slots = filterSlotsByMinNotice(dateString, raw, schedulingSettings);
       return slots.map((slot: APITimeSlot, idx: number) => ({
         id: slot._id || `${dateString}-${idx}`,
         label: formatTimeSlot(slot),
         apiSlot: slot,
       }));
     },
-    [mergedAvailability],
+    [mergedAvailability, schedulingSettings],
   );
 
   const timeSlots = useMemo(
@@ -335,13 +344,6 @@ export default function ScheduleMeetingTimeScreen() {
               onMonthChange={(m, y) => {
                 setCurrentMonth(m);
                 setCurrentYear(y);
-                const sel = draft.selectedDayYmd;
-                if (!sel) return;
-                const cal = calendarYearMonthFromYmd(sel);
-                if (cal && (cal.month !== m || cal.year !== y)) {
-                  setSlot(null);
-                  setDay("");
-                }
               }}
               showHeader={true}
               disablePastDates={true}
@@ -362,8 +364,17 @@ export default function ScheduleMeetingTimeScreen() {
           ) : null}
 
           <Text style={styles.sectionTitle}>Available times</Text>
+          {minNoticeHours > 0 ? (
+            <Text style={styles.noticeHint}>
+              Slots must start at least {minNoticeHours} hour{minNoticeHours === 1 ? "" : "s"} from now.
+            </Text>
+          ) : null}
           {timeSlots.length === 0 ? (
-            <Text style={styles.subtle}>No slots for this date.</Text>
+            <Text style={styles.subtle}>
+              {minNoticeHours > 0
+                ? "No bookable slots for this date (notice period or availability)."
+                : "No slots for this date."}
+            </Text>
           ) : (
             <View style={styles.slotGrid}>
               {timeSlots.map((s) => {
@@ -473,6 +484,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionTitle: { marginTop: 14, color: "#FFFFFF", fontWeight: "900" },
+  noticeHint: {
+    marginTop: 6,
+    color: "rgba(255,255,255,0.65)",
+    fontWeight: "600",
+    fontSize: 12,
+  },
   slotGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 },
   slot: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.25)", backgroundColor: "rgba(255,255,255,0.06)" },
   slotSelected: { backgroundColor: "#FFFFFF", borderColor: "#FFFFFF" },

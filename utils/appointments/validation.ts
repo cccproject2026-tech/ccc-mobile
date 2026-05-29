@@ -1,3 +1,4 @@
+import { appointmentService } from "@/services/appointments.service";
 import type {
   Appointment,
   WeeklyAvailability,
@@ -108,4 +109,28 @@ export function ymdFromSelectedDate(selectedDate: string): string {
 
 /** Narrow helper type used by the schedulers today. */
 export type SlotLike = Pick<TimeSlot, "startTime" | "startPeriod">;
+
+/** True when the slot start is at least `minHours` after now. */
+export function isSlotWithinMinNotice(
+  dayYmd: string,
+  slot: SlotLike,
+  minHours: number,
+): boolean {
+  if (!minHours || minHours <= 0) return true;
+  if (!dayYmd || !slot?.startTime) return false;
+  const meetingDateIso = appointmentService.createMeetingDate(dayYmd, slot);
+  const hoursNotice =
+    (new Date(meetingDateIso).getTime() - Date.now()) / (1000 * 60 * 60);
+  return hoursNotice >= minHours;
+}
+
+export function filterSlotsByMinNotice(
+  dayYmd: string,
+  slots: TimeSlot[],
+  settings?: WeeklyAvailability | null,
+): TimeSlot[] {
+  const min = settings?.minSchedulingNoticeHours;
+  if (!min || min <= 0) return slots;
+  return slots.filter((s) => isSlotWithinMinNotice(dayYmd, s, min));
+}
 

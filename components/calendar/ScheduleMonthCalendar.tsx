@@ -3,7 +3,7 @@ import {
   localCalendarYmd,
 } from "@/utils/availability/availability-recurring-utils";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -78,6 +78,35 @@ function viewPartsFromYmd(ymd: string): { year: number; month: number } {
     year: d.getFullYear(),
     month: d.getMonth(),
   };
+}
+
+/** Format YYYY-MM-DD (or ISO) for compact UI labels without UTC day-shift. */
+export function formatYmdShortLabel(value: string | undefined | null): string {
+  const ymd = normalizeYmd(value);
+  if (!ymd) return "";
+  const d = parseLocalYmd(ymd);
+  if (!Number.isFinite(d.getTime())) return "";
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const day = d.getDate();
+  const monthIndex = d.getMonth();
+  if (!Number.isFinite(day) || monthIndex < 0 || monthIndex > 11) return "";
+  const month = monthNames[monthIndex];
+  const year = String(d.getFullYear()).slice(-2);
+  if (!Number.isFinite(Number(year))) return "";
+  return `${day} ${month} ${year}`;
 }
 
 export function ScheduleMonthCalendar({
@@ -211,9 +240,12 @@ export function ScheduleMonthCalendar({
   );
 }
 
-/** Uncontrolled month view synced to the selected date string. */
+/** Month grid — visible month and selection are fully driven by parent props (no hidden state). */
 export function ScheduleMonthCalendarFromSelection({
   selectedYmd,
+  visibleMonthYmd,
+  viewYear: viewYearProp,
+  viewMonth: viewMonthProp,
   onSelectDay,
   onMonthChange,
   disablePastDates,
@@ -223,33 +255,35 @@ export function ScheduleMonthCalendarFromSelection({
   getDayBadge,
 }: Omit<ScheduleMonthCalendarProps, "year" | "month" | "onMonthChange"> & {
   onMonthChange?: (year: number, month: number) => void;
+  /** Which month to display; parent updates when user picks a day, taps pill, or swipes months. */
+  visibleMonthYmd?: string;
+  /** Preferred: explicit calendar month (0-indexed). Avoids snapping back to selected day’s month. */
+  viewYear?: number;
+  viewMonth?: number;
 }) {
-  const [year, setYear] = useState(() => {
-    const ymd = normalizeYmd(selectedYmd);
-    return ymd ? viewPartsFromYmd(ymd).year : new Date().getFullYear();
-  });
-  const [month, setMonth] = useState(() => {
-    const ymd = normalizeYmd(selectedYmd);
-    return ymd ? viewPartsFromYmd(ymd).month : new Date().getMonth();
-  });
-
-  useEffect(() => {
-    const ymd = normalizeYmd(selectedYmd);
-    if (!ymd) return;
-    const parts = viewPartsFromYmd(ymd);
-    setYear(parts.year);
-    setMonth(parts.month);
-  }, [selectedYmd]);
+  const fallbackAnchor = localCalendarYmd(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1,
+  );
+  const anchorYmd =
+    normalizeYmd(visibleMonthYmd) ?? fallbackAnchor;
+  const derived = viewPartsFromYmd(anchorYmd);
+  const year =
+    typeof viewYearProp === "number" && Number.isFinite(viewYearProp)
+      ? coerceViewYear(viewYearProp)
+      : derived.year;
+  const month =
+    typeof viewMonthProp === "number" && Number.isFinite(viewMonthProp)
+      ? coerceViewMonth(viewMonthProp)
+      : derived.month;
+  const normalizedSelected = normalizeYmd(selectedYmd) ?? "";
 
   const handleMonthChange = (y: number, m: number) => {
     const safeYear = coerceViewYear(y);
     const safeMonth = coerceViewMonth(m);
-    setYear(safeYear);
-    setMonth(safeMonth);
     onMonthChange?.(safeYear, safeMonth);
   };
-
-  const normalizedSelected = normalizeYmd(selectedYmd) ?? "";
 
   return (
     <ScheduleMonthCalendar
@@ -265,6 +299,21 @@ export function ScheduleMonthCalendarFromSelection({
       getDayBadge={getDayBadge}
     />
   );
+}
+
+/** Default day-variant styling: selected wins; de-emphasize "today" when another day is selected. */
+export function appointmentCalendarDayVariant(
+  ymd: string,
+  ctx: { isPast: boolean; isToday: boolean; isSelected: boolean },
+  selectedYmd: string,
+  meetingCount = 0,
+): DayCellVariant {
+  if (ctx.isSelected) return "selected";
+  const selected = normalizeYmd(selectedYmd);
+  const showTodayRing = ctx.isToday && (!selected || selected === ymd);
+  if (showTodayRing) return "today";
+  if (meetingCount > 0) return "open";
+  return "default";
 }
 
 const styles = StyleSheet.create({
