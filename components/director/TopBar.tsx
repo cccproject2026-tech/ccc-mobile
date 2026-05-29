@@ -3,10 +3,11 @@ import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconBu
 import { useNotifications } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores';
 import { getRoleNotificationRoute } from '@/utils/notifications';
+import { getReturnToParam, safeGoBack } from '@/utils/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,6 +51,8 @@ const TopBar: React.FC<Props> = ({
     const { top } = useSafeAreaInsets();
     const navigation = useNavigation();
     const router = useRouter();
+    const routeParams = useLocalSearchParams();
+    const returnTo = getReturnToParam(routeParams as { returnTo?: string | string[] });
     const { user, isAuthenticated } = useAuthStore();
     const { data: notificationItems } = useNotifications(user?.id);
     const showSearchIcon = !!isAuthenticated && showSearch;
@@ -84,7 +87,7 @@ const TopBar: React.FC<Props> = ({
         if (onPressBack) {
             onPressBack();
         } else {
-            router.back();
+            safeGoBack(router, { returnTo });
         }
     };
 

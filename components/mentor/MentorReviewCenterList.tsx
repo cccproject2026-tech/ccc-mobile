@@ -1,6 +1,7 @@
 import { ReviewListRow } from "@/components/mentor/review-center/ReviewListRow";
 import { ReviewRoadmapSectionHeader } from "@/components/mentor/review-center/ReviewRoadmapSectionHeader";
 import { DASHBOARD_CARD_CONFIG } from "@/components/mentor/review-center/ReviewDashboardCard";
+import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
 import {
   filterItemsByBucket,
@@ -72,6 +73,14 @@ export default function MentorReviewCenterList() {
     Array.isArray(pastorNameParam) ? pastorNameParam[0] : pastorNameParam ?? "",
   ).trim();
 
+  const listFallback = pastorId
+    ? ({
+        pathname: "/(mentor)/(tabs)/review-center/pastor",
+        params: { pastorId, pastorName },
+      } as const)
+    : ("/(mentor)/(tabs)/review-center" as const);
+
+  const { handleBack, appendReturnToParams } = useNavigationBack(listFallback);
   const { allItems, markAsSeen, isLoading } = useReviewCenterV2();
 
   const listItems = useMemo(() => {
@@ -141,27 +150,27 @@ export default function MentorReviewCenterList() {
       if (item.type === "roadmap" && item.roadmapId && item.nestedRoadMapItemId) {
         router.push({
           pathname: "/(mentor)/roadmap/[phaseId]/[itemId]" as any,
-          params: {
+          params: appendReturnToParams({
             phaseId: item.roadmapId,
             itemId: item.nestedRoadMapItemId,
             menteeId: item.pastorId,
             menteeName: item.pastorName,
-          },
+          }),
         });
       } else if (item.type === "assessment" && item.assessmentId) {
         router.push({
           pathname: "/(mentor)/assessments/answer-questions" as any,
-          params: {
+          params: appendReturnToParams({
             assessmentId: item.assessmentId,
             viewMode: "true",
             targetUserId: item.pastorId,
             hasPreSurvey: "true",
             scheduleMeeting: "false",
-          },
+          }),
         });
       }
     },
-    [markAsSeen, router],
+    [markAsSeen, router, appendReturnToParams],
   );
 
   const renderRow = useCallback(
@@ -192,7 +201,7 @@ export default function MentorReviewCenterList() {
   return (
     <LinearGradient colors={["#0F3B5C", "#1A4F7A", "#2389C2"]} style={styles.root}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+        <Pressable onPress={handleBack} style={styles.backButton} hitSlop={12}>
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
         <View style={styles.headerTextBlock}>

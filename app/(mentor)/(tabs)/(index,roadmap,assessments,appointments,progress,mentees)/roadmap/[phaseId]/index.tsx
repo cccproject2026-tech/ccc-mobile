@@ -14,6 +14,7 @@ import { getTasks } from '@/lib/roadmap/helpers';
 import { isRoadmapLibraryMode, roadmapLibraryRouteParams } from '@/lib/roadmap/libraryMode';
 import { getTaskCard } from '@/lib/roadmap/mappers';
 import type { NestedRoadmap, Roadmap } from '@/lib/roadmap/types';
+import { useNavigationBack } from '@/hooks/navigation/useNavigationBack';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -40,6 +41,9 @@ export default function RoadmapDetail() {
         libraryMode?: string;
     }>();
     const isLibraryMode = isRoadmapLibraryMode(libraryMode);
+    const { handleBack, appendReturnToParams } = useNavigationBack(
+        '/(mentor)/(tabs)/roadmap/landing/landing' as const,
+    );
     const { bottom } = useSafeAreaInsets();
     const { width } = useWindowDimensions();
 
@@ -213,7 +217,7 @@ export default function RoadmapDetail() {
             <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth }]}>
                 <View style={styles.headerRow}>
                     <TouchableOpacity
-                        onPress={() => router.back()}
+                        onPress={handleBack}
                         style={styles.backBtn}
                     >
                         <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -290,11 +294,11 @@ export default function RoadmapDetail() {
                                 onPress={() =>
                                     router.push({
                                         pathname: `/(mentor)/roadmap/${phaseId}/${task._id}` as any,
-                                        params: {
-                                            menteeId,
-                                            menteeName,
+                                        params: appendReturnToParams({
+                                            menteeId: menteeId as string | undefined,
+                                            menteeName: menteeName as string | undefined,
                                             ...roadmapLibraryRouteParams(isLibraryMode),
-                                        },
+                                        }),
                                     })
                                 }
                                 style={styles.cardPress}

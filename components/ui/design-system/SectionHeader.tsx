@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { getReturnToParam, safeGoBack } from "@/utils/navigation";
 import React from "react";
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { roadmapTheme } from "./roadmapTheme";
@@ -40,9 +41,11 @@ export function SectionHeader({
   headerRight,
 }: Props) {
   const navigation = useNavigation();
+  const routeParams = useLocalSearchParams();
+  const returnTo = getReturnToParam(routeParams as { returnTo?: string | string[] });
   const isCompact = variant === "compact";
   const canGoBack = navigation.canGoBack();
-  const showBack = !!showBackButton && (!!alwaysShowBack || canGoBack);
+  const showBack = !!showBackButton && (!!alwaysShowBack || canGoBack || !!returnTo);
   const hasTopRow = showBack || !!headerRight;
 
   const handleBack = () => {
@@ -50,7 +53,7 @@ export function SectionHeader({
       onBackPress();
       return;
     }
-    if (navigation.canGoBack()) router.back();
+    safeGoBack(router, { returnTo });
   };
 
   const titleBlock = (

@@ -3,6 +3,7 @@ import {
   ReviewDashboardCard,
 } from "@/components/mentor/review-center/ReviewDashboardCard";
 import { ReviewPastorPhaseOverview } from "@/components/mentor/review-center/ReviewPastorPhaseOverview";
+import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
 import {
   computeDashboardCounts,
@@ -12,7 +13,7 @@ import {
 } from "@/lib/mentor/reviewCenter.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
@@ -26,7 +27,6 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function MentorReviewCenterPastor() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { pastorId, pastorName: pastorNameParam } = useLocalSearchParams<{
     pastorId?: string;
@@ -35,6 +35,9 @@ export default function MentorReviewCenterPastor() {
 
   const pastorIdStr = String(pastorId ?? "");
   const { allItems, pastorGroups, isLoading } = useReviewCenterV2();
+  const { handleBack, currentReturnTo, pushWithReturn } = useNavigationBack(
+    "/(mentor)/(tabs)/review-center" as const,
+  );
 
   const pastorName = useMemo(() => {
     if (pastorNameParam) return String(pastorNameParam);
@@ -59,7 +62,7 @@ export default function MentorReviewCenterPastor() {
 
   const openBucket = useCallback(
     (bucket: ReviewDashboardBucket) => {
-      router.push({
+      pushWithReturn({
         pathname: "/(mentor)/(tabs)/review-center/list",
         params: {
           bucket,
@@ -68,7 +71,7 @@ export default function MentorReviewCenterPastor() {
         },
       });
     },
-    [router, pastorIdStr, pastorName],
+    [pushWithReturn, pastorIdStr, pastorName],
   );
 
   if (isLoading) {
@@ -84,7 +87,7 @@ export default function MentorReviewCenterPastor() {
   return (
     <LinearGradient colors={["#0F3B5C", "#1A4F7A", "#2389C2"]} style={styles.root}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+        <Pressable onPress={handleBack} style={styles.backButton} hitSlop={12}>
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
         <View style={styles.headerTextBlock}>
@@ -111,6 +114,7 @@ export default function MentorReviewCenterPastor() {
             pastorId={pastorIdStr}
             pastorName={pastorName}
             pastorItems={pastorItems}
+            returnTo={currentReturnTo}
           />
         </Animated.View>
 

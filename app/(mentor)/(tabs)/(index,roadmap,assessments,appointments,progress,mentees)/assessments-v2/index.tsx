@@ -9,6 +9,7 @@ import { useDeleteAssessment } from "@/hooks/assessments";
 import { useMenteeAssessments } from "@/hooks/assessments/useMenteeAssessments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { Assessment } from "@/lib/assessments/types";
+import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -32,6 +33,9 @@ import { MentorLibraryStripHint } from "@/components/mentor/MentorSurveyContextH
 export default function MentorAssessmentsLibrary() {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
+  const { handleBack, appendReturnToParams } = useNavigationBack(
+    "/(mentor)/(tabs)/assessments-v2" as const,
+  );
   const { menteeId } = useLocalSearchParams<{ menteeId?: string }>();
 
   const [search, setSearch] = useState("");
@@ -134,13 +138,15 @@ export default function MentorAssessmentsLibrary() {
   }, [searchedAssessments, tabs]);
 
   const handleOpenAssessment = (assessment: Assessment) => {
-    const params: { assessmentId: string; menteeId?: string; assessmentStatus?: string } = {
+    const params = appendReturnToParams({
       assessmentId: assessment.id,
-    };
-    if (selectedMentee) {
-      params.menteeId = selectedMentee;
-      params.assessmentStatus = assessment.status;
-    }
+      ...(selectedMentee
+        ? {
+            menteeId: selectedMentee,
+            assessmentStatus: assessment.status,
+          }
+        : {}),
+    });
     if (assessment.type === "CMA") {
       router.push({
         pathname: "/(mentor)/assessments/cma-survey-page" as any,
@@ -161,12 +167,12 @@ export default function MentorAssessmentsLibrary() {
     }
     router.push({
       pathname: "/(mentor)/assessments/answer-questions" as any,
-      params: {
+      params: appendReturnToParams({
         assessmentId: assessment.id,
         viewMode: "true",
         targetUserId: selectedMentee,
         openCdp: "true",
-      },
+      }),
     });
   };
 
@@ -234,7 +240,7 @@ export default function MentorAssessmentsLibrary() {
           style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
         >
           <Pressable
-            onPress={() => router.back()}
+            onPress={handleBack}
             hitSlop={10}
             style={{ paddingRight: 8 }}
           >

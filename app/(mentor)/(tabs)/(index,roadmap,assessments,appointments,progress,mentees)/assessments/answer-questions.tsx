@@ -12,6 +12,7 @@ import {
 } from "@/hooks/assessments/useSubmitAnswers";
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
+import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useAuthStore } from "@/stores";
 import { useAssessmentStore } from "@/stores/assessment.store";
 import { ApiAssessment } from "@/types/assessment.types";
@@ -48,6 +49,7 @@ export default function AnswerQuestionPage() {
     targetUserId,
   );
   const router = useRouter();
+  const { handleBack } = useNavigationBack("/(mentor)/(tabs)/assessments-v2" as const);
   const { user } = useAuthStore();
 
   // Determine the user ID to fetch answers for: passed targetUserId (mentee) or current user (if fallback)
@@ -412,7 +414,7 @@ export default function AnswerQuestionPage() {
           Failed to load assessment
         </Text>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={handleBack}
           style={{ marginTop: 16 }}
         >
           <Text style={{ color: "#fff", textDecorationLine: "underline" }}>
@@ -428,7 +430,13 @@ export default function AnswerQuestionPage() {
       {showPreSurvey ? (
         <TopBar role="mentor" showUserName showNotifications />
       ) : (
-        <TopBar role="mentor" showDrawer={false} showBackButton showNotifications={false} />
+        <TopBar
+          role="mentor"
+          showDrawer={false}
+          showBackButton
+          showNotifications={false}
+          onPressBack={handleBack}
+        />
       )}
 
       {showPreSurvey ? (
@@ -504,7 +512,7 @@ export default function AnswerQuestionPage() {
         onClose={() => {
           setShowSuccessModal(false);
           if (isViewMode || targetUserId) {
-            router.back();
+            handleBack();
           } else {
             router.push({
               pathname: "/assessments/survey-guidelines",

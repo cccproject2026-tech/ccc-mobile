@@ -1,4 +1,5 @@
 import { ReviewPastorRow } from "@/components/mentor/review-center/ReviewPastorRow";
+import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,6 +20,7 @@ export default function MentorReviewCenterDashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { pastorGroups, pendingActionCount, isLoading } = useReviewCenterV2();
+  const { handleBack } = useNavigationBack("/(mentor)/(tabs)" as const);
 
   const openPastor = useCallback(
     (pastorId: string, pastorName: string) => {
@@ -45,7 +47,7 @@ export default function MentorReviewCenterDashboard() {
     <LinearGradient colors={["#0F3B5C", "#1A4F7A", "#2389C2"]} style={styles.root}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={handleBack}
           style={styles.backButton}
           hitSlop={12}
           accessibilityRole="button"

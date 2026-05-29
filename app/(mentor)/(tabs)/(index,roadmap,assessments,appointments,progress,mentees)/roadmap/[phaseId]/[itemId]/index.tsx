@@ -10,6 +10,7 @@ import { resolveRoadmapDetailTask } from '@/lib/roadmap/helpers';
 import { isRoadmapLibraryMode } from '@/lib/roadmap/libraryMode';
 import type { NestedRoadmap, Roadmap } from '@/lib/roadmap/types';
 import { useAuthStore } from '@/stores';
+import { useNavigationBack } from '@/hooks/navigation/useNavigationBack';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -26,6 +27,9 @@ export default function ItemDetail() {
         libraryMode?: string;
     }>();
     const router = useRouter();
+    const { handleBack } = useNavigationBack(
+        `/(mentor)/roadmap/${phaseId}` as const,
+    );
     const { user } = useAuthStore();
     const isLibraryMode = isRoadmapLibraryMode(libraryMode);
     // Library = template preview; mentee flow uses pastor progress
@@ -153,7 +157,7 @@ export default function ItemDetail() {
                         {error ? 'Failed to load task' : 'Task not found'}
                     </Text>
                     <TouchableOpacity
-                        onPress={() => router.back()}
+                        onPress={handleBack}
                         style={{ marginTop: 20, padding: 12, backgroundColor: '#264387', borderRadius: 8 }}
                     >
                         <Text style={{ color: '#fff', fontWeight: '600' }}>Go Back</Text>
@@ -173,7 +177,7 @@ export default function ItemDetail() {
             <View style={styles.headerContainer}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity
-                        onPress={() => router.back()}
+                        onPress={handleBack}
                         style={{ marginRight: getSpacing(8) }}
                     >
                         <Ionicons name="chevron-back" size={28} color="#fff" />

@@ -7,6 +7,7 @@ import {
   formatPhaseStatusLabel,
   type ReviewRoadmapPhaseSummary,
 } from "@/lib/mentor/reviewCenterPhaseSummary";
+import { appendReturnTo } from "@/utils/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
@@ -16,6 +17,8 @@ type Props = {
   pastorId: string;
   pastorName: string;
   pastorItems: ReviewItem[];
+  /** Current review-center screen href — passed to child routes for back navigation. */
+  returnTo?: string;
 };
 
 function phaseStatusColor(status: ReviewRoadmapPhaseSummary["phaseStatus"]): string {
@@ -44,6 +47,7 @@ export function ReviewPastorPhaseOverview({
   pastorId,
   pastorName,
   pastorItems,
+  returnTo = "",
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAssessmentExpanded, setIsAssessmentExpanded] = useState(false);
@@ -87,10 +91,16 @@ export function ReviewPastorPhaseOverview({
     [pastorItems],
   );
 
+  const withReturn = useCallback(
+    (params: Record<string, string | undefined>) =>
+      returnTo ? appendReturnTo(params, returnTo) : params,
+    [returnTo],
+  );
+
   const openFullRoadmap = () => {
     router.push({
       pathname: "/(mentor)/roadmap/landing/landing" as any,
-      params: { menteeId: pastorId },
+      params: withReturn({ menteeId: pastorId }),
     });
   };
 
@@ -99,10 +109,10 @@ export function ReviewPastorPhaseOverview({
       const roadmap = assignedRoadmaps.find((r) => String(r._id) === roadmapId);
       if (!roadmap?._id) return;
 
-      const params = {
+      const params = withReturn({
         menteeId: pastorId,
         menteeName: pastorName,
-      };
+      });
 
       const nested = roadmap.roadmaps ?? [];
       if (nested.length === 1 && !roadmap.haveNextedRoadMaps && nested[0]?._id) {
@@ -118,13 +128,13 @@ export function ReviewPastorPhaseOverview({
         params,
       });
     },
-    [assignedRoadmaps, pastorId, pastorName, router],
+    [assignedRoadmaps, pastorId, pastorName, router, withReturn],
   );
 
   const openFullAssessments = () => {
     router.push({
       pathname: "/(mentor)/assessments-v2" as any,
-      params: { menteeId: pastorId },
+      params: withReturn({ menteeId: pastorId }),
     });
   };
 
@@ -134,16 +144,16 @@ export function ReviewPastorPhaseOverview({
 
       router.push({
         pathname: "/(mentor)/assessments/answer-questions" as any,
-        params: {
+        params: withReturn({
           assessmentId: item.assessmentId,
           viewMode: "true",
           targetUserId: pastorId,
           hasPreSurvey: "true",
           scheduleMeeting: "false",
-        },
+        }),
       });
     },
-    [pastorId, router],
+    [pastorId, router, withReturn],
   );
 
   if (phaseSummaries.length === 0 && assessmentSummary.total === 0) {

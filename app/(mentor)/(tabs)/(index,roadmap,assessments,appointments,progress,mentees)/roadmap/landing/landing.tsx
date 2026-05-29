@@ -27,6 +27,7 @@ import {
 } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { useResubmittedTasks, type ResubmittedEntry } from "@/hooks/roadmap/useResubmittedTasks";
+import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { formatRelativeTimestamp } from "@/utils/date";
 import { roadmapLibraryRouteParams } from "@/lib/roadmap/libraryMode";
 import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
@@ -66,6 +67,9 @@ const STATUS_TABS: { key: StatusTabKey; label: string }[] = [
 
 export default function Landing() {
   const { menteeId } = useLocalSearchParams<{ menteeId?: string; menteeName?: string }>();
+  const { handleBack, returnToFromRoute, appendReturnToParams } = useNavigationBack(
+    "/(mentor)/(tabs)/roadmap/landing/landing" as const,
+  );
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [selectedRoadmapForMenu, setSelectedRoadmapForMenu] = useState<Roadmap | null>(null);
   const [isRoadmapModalVisible, setIsRoadmapModalVisible] = useState(false);
@@ -360,7 +364,7 @@ export default function Landing() {
       }
 
       const isLibrary = mainTab === "ROADMAP_LIBRARY";
-      const routeParams = {
+      const routeParams = appendReturnToParams({
         ...roadmapLibraryRouteParams(isLibrary),
         ...(selectedPastor
           ? {
@@ -368,7 +372,7 @@ export default function Landing() {
               menteeName: `${selectedPastor.firstName ?? ""} ${selectedPastor.lastName ?? ""}`.trim(),
             }
           : {}),
-      };
+      });
 
       if (roadmap.roadmaps.length === 1 && !roadmap.haveNextedRoadMaps) {
         router.push({
@@ -382,7 +386,7 @@ export default function Landing() {
         });
       }
     },
-    [selectedPastor, mainTab],
+    [selectedPastor, mainTab, appendReturnToParams],
   );
 
   const displayData = useMemo(() => {
@@ -654,8 +658,12 @@ export default function Landing() {
     <View style={styles.headerBlock}>
       <RoadmapNavRow
         onBack={() => {
+          if (returnToFromRoute) {
+            handleBack();
+            return;
+          }
           if (selectedPastor) clearPastor();
-          else router.back();
+          else handleBack();
         }}
         pillLabel="Revitalization Roadmap"
       />

@@ -6,6 +6,7 @@ import { AssessmentCard, GuidelinesPoints } from "@/components/build-components"
 import AssessmentFlowHeader from "@/components/mentor";
 import { MentorSurveyContextHint } from "@/components/mentor/MentorSurveyContextHint";
 import { useAssessment, useDeleteAssessment } from "@/hooks/assessments";
+import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { ApiAssessment, Assessment } from "@/lib/assessments/types";
 import { useAuthStore } from "@/stores";
 import { getFontSize } from "@/utils/responsive";
@@ -81,6 +82,9 @@ export default function PmpSurvey() {
   const assessmentId = params.assessmentId as string;
   const menteeId = params.menteeId as string | undefined;
   const assessmentStatus = params.assessmentStatus as string | undefined;
+  const { handleBack, appendReturnToParams } = useNavigationBack(
+    "/(mentor)/(tabs)/assessments-v2" as const,
+  );
 
   const canViewResponses =
     isMentor &&
@@ -131,7 +135,7 @@ export default function PmpSurvey() {
   };
   const handleDeleteSuccessModalClose = () => {
     setShowDeleteSuccessModal(false);
-    router.back();
+    handleBack();
   };
 
   if (loading) {
@@ -152,7 +156,7 @@ export default function PmpSurvey() {
         <Text style={styles.errorTitle}>
           {error || "Assessment not found"}
         </Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
+        <TouchableOpacity onPress={handleBack} style={styles.backLink}>
           <Text style={styles.backLinkText}>Go Back</Text>
         </TouchableOpacity>
       </AppGradientBackground>
@@ -241,11 +245,11 @@ export default function PmpSurvey() {
                 onPress={() => {
                   router.push({
                     pathname: "/(mentor)/assessments/answer-questions" as any,
-                    params: {
+                    params: appendReturnToParams({
                       assessmentId: assessment._id,
                       viewMode: "true",
                       targetUserId: menteeId,
-                    },
+                    }),
                   });
                 }}
               />

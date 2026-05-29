@@ -1,7 +1,7 @@
 import TopBar from "@/components/director/TopBar";
+import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -25,7 +25,7 @@ export default function AssessmentFlowHeader({
   onMenuPress,
   showMenu = false,
 }: Props) {
-  const router = useRouter();
+  const { handleBack } = useNavigationBack();
 
   return (
     <>
@@ -37,7 +37,7 @@ export default function AssessmentFlowHeader({
       <View style={styles.headerContainer}>
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={handleBack}
             style={styles.backButton}
             hitSlop={10}
           >
