@@ -46,6 +46,28 @@ export default function ScheduleMeetingTimeScreen() {
   const insets = useSafeAreaInsets();
   const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
 
+  const handleBack = useCallback(() => {
+    router.replace({
+      pathname: `${scheduleBase}/person` as any,
+      params: {
+        drawerContext,
+        mode: draft.mode,
+        appointmentId: draft.appointmentId,
+        preserveDraft: "1",
+      },
+    });
+  }, [drawerContext, draft.appointmentId, draft.mode, scheduleBase]);
+
+  const topBar = (
+    <TopBar
+      role={String(user?.role || "pastor")}
+      showUserName
+      showDrawer={false}
+      showBackButton
+      onPressBack={handleBack}
+    />
+  );
+
   const hasPerson = Boolean(draft.person?.id);
 
   useEffect(() => {
@@ -255,7 +277,7 @@ export default function ScheduleMeetingTimeScreen() {
   if (showBlockingLoader) {
     return (
       <AppGradientBackground style={{ flex: 1 }}>
-        <TopBar role={String(user?.role || "pastor")} showUserName />
+        {topBar}
         <View style={styles.center}>
           <ActivityIndicator color="#FFFFFF" />
           <Text style={styles.subtle}>Loading availability…</Text>
@@ -267,7 +289,7 @@ export default function ScheduleMeetingTimeScreen() {
   if (weeklyFatalError) {
     return (
       <AppGradientBackground style={{ flex: 1 }}>
-        <TopBar role={String(user?.role || "pastor")} showUserName />
+        {topBar}
         <View style={styles.center}>
           <Text style={styles.title}>Unable to load availability</Text>
           <Text style={styles.subtle}>Please try again.</Text>
@@ -281,7 +303,7 @@ export default function ScheduleMeetingTimeScreen() {
 
   return (
     <AppGradientBackground style={{ flex: 1 }}>
-      <TopBar role={String(user?.role || "pastor")} showUserName />
+      {topBar}
       <View style={styles.container}>
         <ScrollView
           style={{ flex: 1 }}
@@ -420,7 +442,7 @@ export default function ScheduleMeetingTimeScreen() {
 
         <View style={[styles.footerOuter, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
           <View style={styles.footerBar}>
-            <Pressable style={styles.secondaryBtn} onPress={() => router.back()}>
+            <Pressable style={styles.secondaryBtn} onPress={handleBack}>
               <Text style={styles.secondaryText}>Back</Text>
             </Pressable>
             <Pressable

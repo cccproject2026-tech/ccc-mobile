@@ -3,7 +3,10 @@ import TopBar from "@/components/director/TopBar";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore, type SchedulePerson } from "@/stores/scheduleMeeting.store";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
-import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
+import {
+  exitScheduleMeetingFlow,
+  getScheduleMeetingBase,
+} from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
@@ -20,7 +23,7 @@ export default function ScheduleMeetingPersonScreen() {
     appointmentId?: string;
     personData?: string;
   }>();
-  const params = useLocalSearchParams<{ drawerContext?: string }>();
+  const params = useLocalSearchParams<{ drawerContext?: string; preserveDraft?: string }>();
   const scheduleBase = getScheduleMeetingBase(params.drawerContext, user?.role);
 
   const {
@@ -32,10 +35,13 @@ export default function ScheduleMeetingPersonScreen() {
 
   const [search, setSearch] = useState("");
 
-  // Drawer screens are frozen between visits — reset draft each time this step is shown.
+  // Drawer screens are frozen between visits — reset when starting a new flow (not when backing from time).
   useFocusEffect(
     useCallback(() => {
-      reset();
+      const keepDraft = String(params.preserveDraft ?? "") === "1";
+      if (!keepDraft) {
+        reset();
+      }
       setMode((mode as any) || "schedule");
       setAppointmentId(appointmentId);
       if (personData) {
@@ -62,6 +68,7 @@ export default function ScheduleMeetingPersonScreen() {
       appointmentId,
       mode,
       params.drawerContext,
+      params.preserveDraft,
       personData,
       reset,
       scheduleBase,
@@ -110,9 +117,19 @@ export default function ScheduleMeetingPersonScreen() {
 
   const loading = isMentor ? isLoadingMentees : isLoadingMentors;
 
+  const handleBack = useCallback(() => {
+    exitScheduleMeetingFlow(router, user?.role);
+  }, [router, user?.role]);
+
   return (
     <AppGradientBackground style={{ flex: 1 }}>
-      <TopBar role={String(user?.role || "pastor")} showUserName />
+      <TopBar
+        role={String(user?.role || "pastor")}
+        showUserName
+        showDrawer={false}
+        showBackButton
+        onPressBack={handleBack}
+      />
       <KeyboardSafeContainer mode="avoid" style={styles.container}>
         <Text style={styles.title}>Pick person</Text>
         <Text style={styles.subtitle}>Select who you want to meet with.</Text>

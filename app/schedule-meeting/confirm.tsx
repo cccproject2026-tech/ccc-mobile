@@ -5,9 +5,12 @@ import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import { useMeetingScheduler } from "@/hooks/appointments/useMeetingScheduler";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useWeeklyAvailability } from "@/hooks/mentors/useMentorsAvailability";
-import { exitScheduleMeetingFlow } from "@/lib/scheduling/scheduleMeetingNavigation";
+import {
+  exitScheduleMeetingFlow,
+  getScheduleMeetingBase,
+} from "@/lib/scheduling/scheduleMeetingNavigation";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
@@ -16,10 +19,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ScheduleMeetingConfirmScreen() {
   const { user } = useAuthStore();
+  const { drawerContext } = useLocalSearchParams<{ drawerContext?: string }>();
   const deviceTz = useMemo(() => getDeviceTimezone(), []);
   const { draft } = useScheduleMeetingStore();
   const [isDone, setIsDone] = useState(false);
   const insets = useSafeAreaInsets();
+  const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
+
+  const handleBack = useCallback(() => {
+    router.replace({
+      pathname: `${scheduleBase}/time` as any,
+      params: { drawerContext },
+    });
+  }, [drawerContext, scheduleBase]);
 
   // Drawer freezes screens — clear "done" from the previous booking when re-entering.
   useFocusEffect(
@@ -73,7 +85,13 @@ export default function ScheduleMeetingConfirmScreen() {
 
   return (
     <AppGradientBackground style={{ flex: 1 }}>
-      <TopBar role={String(user?.role || "pastor")} showUserName />
+      <TopBar
+        role={String(user?.role || "pastor")}
+        showUserName
+        showDrawer={false}
+        showBackButton
+        onPressBack={handleBack}
+      />
       <View style={styles.container}>
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
           <Text style={styles.title}>Confirm meeting</Text>
@@ -102,7 +120,7 @@ export default function ScheduleMeetingConfirmScreen() {
 
         <View style={[styles.footerOuter, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
           <View style={styles.footerBar}>
-            <Pressable style={styles.secondaryBtn} onPress={() => router.back()} disabled={isSubmitting || isDone}>
+            <Pressable style={styles.secondaryBtn} onPress={handleBack} disabled={isSubmitting || isDone}>
               <Text style={styles.secondaryText}>Back</Text>
             </Pressable>
             <Pressable
