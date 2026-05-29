@@ -1,8 +1,5 @@
 import {
   DEFAULT_SLOT_WINDOW,
-  HORIZON_PRESETS,
-  MAX_BOOKINGS_OPTIONS,
-  MEETING_DURATION_OPTIONS,
   MIN_NOTICE_OPTIONS,
 } from "@/components/mentor/availability/constants";
 import { ScheduleMonthCalendar } from "@/components/calendar/ScheduleMonthCalendar";
@@ -12,7 +9,6 @@ import {
   useMarkAvailabilityDayAvailable,
   useMarkAvailabilityDayUnavailable,
   usePatchAvailabilityDay,
-  usePatchAvailabilitySettings,
 } from "@/hooks/mentors/useMentorAvailabilityRecurring";
 import {
   useMonthlyAvailability,
@@ -95,6 +91,21 @@ type Props = {
 
 const DAY_SHEET_MAX_WIDTH = 560;
 
+function formatMinNoticeLabel(hours: number): string {
+  const preset = MIN_NOTICE_OPTIONS.find((o) => o.hours === hours);
+  if (preset) return preset.label;
+  if (hours <= 0) return "Same day";
+  if (hours === 1) return "1 hour";
+  return `${hours} hours`;
+}
+
+function minNoticeBookingPhrase(hours: number): string {
+  if (hours <= 0) {
+    return "on the same day as the meeting (with enough lead time for the chosen slot)";
+  }
+  return `at least ${formatMinNoticeLabel(hours).toLowerCase()} before the meeting starts`;
+}
+
 export function MentorAvailabilityWorkspace({
   mentorId,
   onAvailabilitySaved,
@@ -107,8 +118,6 @@ export function MentorAvailabilityWorkspace({
   const [weekRows, setWeekRows] = useState<WeekRow[]>(() => initialWeekRows());
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [horizonDays, setHorizonDays] = useState(60);
-  const [clearPersonalizations, setClearPersonalizations] = useState(false);
-  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const [meetingDuration, setMeetingDuration] = useState(60);
   const [minNoticeHours, setMinNoticeHours] = useState(2);
@@ -162,8 +171,6 @@ export function MentorAvailabilityWorkspace({
   const createRecurring = useCreateRecurringAvailability({
     onSuccess: (msg) => {
       showToast(msg ?? "Recurring availability saved.", "success");
-      setConfirmClearOpen(false);
-      setClearPersonalizations(false);
       setSavedBaseline({
         meetingDuration,
         minNoticeHours,
@@ -172,25 +179,6 @@ export function MentorAvailabilityWorkspace({
         horizonDays,
         weekPatternKey: weekPatternKeyFromRows(weekRows),
       });
-      onAvailabilitySaved?.();
-    },
-    onError: onMutationError,
-  });
-
-  const patchSettings = usePatchAvailabilitySettings({
-    onSuccess: (msg) => {
-      showToast(msg ?? "Booking rules updated.", "success");
-      setSavedBaseline((prev) =>
-        prev
-          ? {
-              ...prev,
-              meetingDuration,
-              minNoticeHours,
-              maxBookingsPerDay,
-              preferredPlatform,
-            }
-          : prev,
-      );
       onAvailabilitySaved?.();
     },
     onError: onMutationError,
@@ -276,7 +264,7 @@ export function MentorAvailabilityWorkspace({
     return true;
   };
 
-  const submitRecurring = async (withClear: boolean) => {
+  const submitRecurring = async () => {
     const templateWeeklySlots = buildTemplateWeeklySlotsFromRows({ rows: weekRows });
     if (templateWeeklySlots.length === 0) {
       showToast("Enable at least one weekday and add at least one time window.", "error");
@@ -307,7 +295,6 @@ export function MentorAvailabilityWorkspace({
       mentorId,
       templateWeeklySlots,
       horizonDays: Math.min(120, Math.max(7, horizonDays)),
-      ...(withClear ? { clearPersonalizations: true as const } : {}),
       meetingDuration,
       minSchedulingNoticeHours: minNoticeHours,
       maxBookingsPerDay,
@@ -316,23 +303,7 @@ export function MentorAvailabilityWorkspace({
   };
 
   const saveRecurring = () => {
-    if (clearPersonalizations) {
-      setConfirmClearOpen(true);
-      return;
-    }
-    void submitRecurring(false);
-  };
-
-  const saveSettingsOnly = () => {
-    patchSettings.mutate({
-      mentorId,
-      body: {
-        meetingDuration,
-        minSchedulingNoticeHours: minNoticeHours,
-        maxBookingsPerDay,
-        preferredPlatform,
-      },
-    });
+    void submitRecurring();
   };
 
   const onRefresh = useCallback(async () => {
@@ -350,8 +321,7 @@ export function MentorAvailabilityWorkspace({
     [selectedDayRow],
   );
 
-  const recurringBusy =
-    createRecurring.isPending || patchSettings.isPending;
+  const recurringBusy = createRecurring.isPending;
   const dayBusy =
     patchDay.isPending || markAvailable.isPending || markUnavailable.isPending;
 
@@ -362,32 +332,14 @@ export function MentorAvailabilityWorkspace({
     [weekRows],
   );
 
-  const rulesDirty = useMemo(() => {
-    if (!savedBaseline) return false;
-    return (
-      meetingDuration !== savedBaseline.meetingDuration ||
-      minNoticeHours !== savedBaseline.minNoticeHours ||
-      maxBookingsPerDay !== savedBaseline.maxBookingsPerDay ||
-      preferredPlatform !== savedBaseline.preferredPlatform
-    );
-  }, [
-    savedBaseline,
-    meetingDuration,
-    minNoticeHours,
-    maxBookingsPerDay,
-    preferredPlatform,
-  ]);
-
   const scheduleDirty = useMemo(() => {
     if (!savedBaseline) return false;
     return (
       currentWeekPatternKey !== savedBaseline.weekPatternKey ||
-      horizonDays !== savedBaseline.horizonDays ||
-      clearPersonalizations
+      horizonDays !== savedBaseline.horizonDays
     );
-  }, [savedBaseline, currentWeekPatternKey, horizonDays, clearPersonalizations]);
+  }, [savedBaseline, currentWeekPatternKey, horizonDays]);
 
-  const canSaveRules = rulesDirty && !patchSettings.isPending;
   const canSaveRecurring =
     scheduleDirty && !recurringBusy && !docLoading;
 
@@ -415,7 +367,7 @@ export function MentorAvailabilityWorkspace({
         <View style={styles.introCard}>
           <Text style={styles.introTitle}>Your availability</Text>
           <Text style={styles.introSub}>
-            Set a repeating weekly pattern, booking rules, then tap calendar dates for one-off changes.
+            Set a repeating weekly pattern, then tap calendar dates for one-off changes.
           </Text>
         </View>
 
@@ -565,131 +517,67 @@ export function MentorAvailabilityWorkspace({
           })}
         </View>
 
-        {/* Step 2 — Booking rules */}
+        {/* Step 2 — Booking rules (read-only) */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Step 2 — Booking rules</Text>
           <Text style={styles.sectionSub}>
-            Defaults for all meetings unless you override a specific day.
+            How far ahead people can book, and how soon before a meeting they must schedule.
           </Text>
 
-          <Text style={styles.fieldLabel}>Meeting length</Text>
-          <View style={styles.chipRow}>
-            {MEETING_DURATION_OPTIONS.map((d) => (
-              <Pressable
-                key={d}
-                style={[styles.chip, meetingDuration === d && styles.chipActive]}
-                onPress={() => setMeetingDuration(d)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    meetingDuration === d && styles.chipTextActive,
-                  ]}
-                >
-                  {d} min
-                </Text>
-              </Pressable>
-            ))}
+          <View style={styles.rulesInfoBox}>
+            <Ionicons name="information-circle-outline" size={18} color="rgba(142,197,235,0.95)" />
+            <Text style={styles.rulesInfoText}>
+              These settings apply to every meeting booked on your calendar. You can still
+              change your weekly hours in Step 1 and adjust individual days in Step 3.
+            </Text>
           </View>
 
-          <Text style={styles.fieldLabel}>Minimum notice (hours)</Text>
-          <View style={styles.chipRow}>
-            {MIN_NOTICE_OPTIONS.map((o) => (
-              <Pressable
-                key={o.hours}
-                style={[styles.chip, minNoticeHours === o.hours && styles.chipActive]}
-                onPress={() => setMinNoticeHours(o.hours)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    minNoticeHours === o.hours && styles.chipTextActive,
-                  ]}
-                >
-                  {o.label}
-                </Text>
-              </Pressable>
-            ))}
+          <View style={styles.ruleExplainCard}>
+            <View style={styles.ruleExplainHeader}>
+              <View style={styles.ruleIconWrap}>
+                <Ionicons name="time-outline" size={20} color="#FFFFFF" />
+              </View>
+              <View style={styles.ruleExplainHeaderText}>
+                <Text style={styles.ruleExplainTitle}>Minimum notice</Text>
+                <Text style={styles.ruleExplainValue}>{formatMinNoticeLabel(minNoticeHours)}</Text>
+              </View>
+            </View>
+            <Text style={styles.ruleExplainBody}>
+              Bookings must be made {minNoticeBookingPhrase(minNoticeHours)}. Time slots inside
+              that window are hidden so last-minute meetings cannot be scheduled.
+            </Text>
           </View>
 
-          <Text style={styles.fieldLabel}>Max meetings per day</Text>
-          <View style={styles.chipRow}>
-            {MAX_BOOKINGS_OPTIONS.map((n) => (
-              <Pressable
-                key={n}
-                style={[styles.chip, maxBookingsPerDay === n && styles.chipActive]}
-                onPress={() => setMaxBookingsPerDay(n)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    maxBookingsPerDay === n && styles.chipTextActive,
-                  ]}
-                >
-                  {n}
-                </Text>
-              </Pressable>
-            ))}
+          <View style={styles.ruleExplainCard}>
+            <View style={styles.ruleExplainHeader}>
+              <View style={styles.ruleIconWrap}>
+                <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
+              </View>
+              <View style={styles.ruleExplainHeaderText}>
+                <Text style={styles.ruleExplainTitle}>How far ahead people can book</Text>
+                <Text style={styles.ruleExplainValue}>{horizonDays} days</Text>
+              </View>
+            </View>
+            <Text style={styles.ruleExplainBody}>
+              Open dates only show through the next {horizonDays} days. After that, your calendar
+              will not offer new bookings until those dates move inside the window.
+            </Text>
           </View>
 
-          <Text style={styles.fieldLabel}>Horizon (days ahead)</Text>
-          <View style={styles.chipRow}>
-            {HORIZON_PRESETS.map((h) => (
-              <Pressable
-                key={h.days}
-                style={[styles.chip, horizonDays === h.days && styles.chipActive]}
-                onPress={() => setHorizonDays(h.days)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    horizonDays === h.days && styles.chipTextActive,
-                  ]}
-                >
-                  {h.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <View style={styles.clearRow}>
-            <Text style={styles.clearLabel}>Clear single-day edits on save</Text>
-            <Switch
-              value={clearPersonalizations}
-              onValueChange={setClearPersonalizations}
-            />
-          </View>
-
-          <View style={styles.actionRow}>
-            <Pressable
-              style={[
-                styles.secondaryBtn,
-                (!canSaveRules || patchSettings.isPending) && styles.btnDisabled,
-              ]}
-              disabled={!canSaveRules}
-              onPress={saveSettingsOnly}
-            >
-              {patchSettings.isPending ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.secondaryBtnText}>Save rules only</Text>
-              )}
-            </Pressable>
-            <Pressable
-              style={[
-                styles.primaryBtn,
-                (!canSaveRecurring || recurringBusy) && styles.btnDisabled,
-              ]}
-              disabled={!canSaveRecurring}
-              onPress={saveRecurring}
-            >
-              {createRecurring.isPending ? (
-                <ActivityIndicator color="#0E2A47" size="small" />
-              ) : (
-                <Text style={styles.primaryBtnText}>Save repeating schedule</Text>
-              )}
-            </Pressable>
-          </View>
+          <Pressable
+            style={[
+              styles.primaryBtn,
+              (!canSaveRecurring || recurringBusy) && styles.btnDisabled,
+            ]}
+            disabled={!canSaveRecurring}
+            onPress={saveRecurring}
+          >
+            {createRecurring.isPending ? (
+              <ActivityIndicator color="#0E2A47" size="small" />
+            ) : (
+              <Text style={styles.primaryBtnText}>Save repeating schedule</Text>
+            )}
+          </Pressable>
         </View>
 
         {/* Step 3 — Calendar */}
@@ -749,36 +637,6 @@ export function MentorAvailabilityWorkspace({
           />
         </View>
       </ScrollView>
-
-      {/* Confirm clear personalizations */}
-      <Modal visible={confirmClearOpen} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmCard}>
-            <Text style={styles.confirmTitle}>Clear single-day edits?</Text>
-            <Text style={styles.confirmBody}>
-              This removes all calendar overrides and reapplies only your repeating weekly pattern.
-            </Text>
-            <View style={styles.confirmActions}>
-              <Pressable
-                style={styles.secondaryBtn}
-                disabled={createRecurring.isPending}
-                onPress={() => setConfirmClearOpen(false)}
-              >
-                <Text style={styles.secondaryBtnText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={styles.primaryBtn}
-                disabled={createRecurring.isPending}
-                onPress={() => void submitRecurring(true)}
-              >
-                <Text style={styles.primaryBtnText}>
-                  {createRecurring.isPending ? "Saving…" : "Save & clear"}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Block day confirm */}
       <Modal visible={Boolean(pendingBlockYmd)} transparent animationType="fade">
@@ -1040,6 +898,65 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 12,
     marginTop: 6,
+  },
+  rulesInfoBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(142,197,235,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(142,197,235,0.28)",
+  },
+  rulesInfoText: {
+    flex: 1,
+    color: "rgba(255,255,255,0.88)",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "600",
+  },
+  ruleExplainCard: {
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(0,0,0,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    gap: 8,
+  },
+  ruleExplainHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  ruleIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  ruleExplainHeaderText: { flex: 1, minWidth: 0 },
+  ruleExplainTitle: {
+    color: "rgba(255,255,255,0.72)",
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  ruleExplainValue: {
+    marginTop: 2,
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 16,
+  },
+  ruleExplainBody: {
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "600",
+    paddingLeft: 52,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
