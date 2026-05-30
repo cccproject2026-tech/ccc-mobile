@@ -97,9 +97,36 @@ function parseGoogleCalendarQueryParams(
   return { outcome: 'unknown' };
 }
 
+export function parseOAuthParamsFromUrl(url: string): {
+  googleCalendar?: string;
+  reason?: string;
+} {
+  try {
+    const qIndex = url.indexOf('?');
+    const query = qIndex >= 0 ? url.slice(qIndex + 1) : '';
+    const sp = new URLSearchParams(query);
+    const googleCalendar = sp.get('googleCalendar') ?? undefined;
+    const reasonRaw = sp.get('reason');
+    const reason =
+      reasonRaw && reasonRaw.trim()
+        ? (() => {
+            try {
+              return decodeURIComponent(reasonRaw.replace(/\+/g, ' '));
+            } catch {
+              return reasonRaw;
+            }
+          })()
+        : undefined;
+    return { googleCalendar, reason };
+  } catch {
+    return {};
+  }
+}
+
 export const googleCalendarService = {
   getGoogleCalendarAuthUrl,
   getGoogleCalendarStatus,
   unwrapGoogleOAuthRedirectUrl,
   parseGoogleCalendarOAuthReturnUrl,
+  parseOAuthParamsFromUrl,
 };

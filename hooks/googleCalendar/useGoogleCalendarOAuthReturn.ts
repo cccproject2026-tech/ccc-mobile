@@ -1,102 +1,56 @@
-import {
-  invalidateAfterGoogleCalendarOAuth,
-  refreshGoogleCalendarStatus,
-} from '@/hooks/googleCalendar/useGoogleCalendarStatus';
-import {
-  parseGoogleCalendarOAuthReturnUrl,
-} from '@/services/googleCalendar.service';
-import { useAuthStore } from '@/stores/auth.store';
-import { useQueryClient } from '@tanstack/react-query';
+import { parseOAuthParamsFromUrl } from '@/services/googleCalendar.service';
 import * as Linking from 'expo-linking';
-import { useCallback, useEffect, useRef } from 'react';
-import Toast from 'react-native-toast-message';
+import { router } from 'expo-router';
+import { useCallback, useEffect } from 'react';
 
 const handledUrls = new Set<string>();
 
 function shouldHandleGoogleCalendarUrl(url: string): boolean {
-  if (!url.includes('googleCalendar=')) return false;
+  return url.includes('googleCalendar=');
+}
+
+/** Route OAuth deep links to the dedicated handler screen (avoids +not-found flash). */
+export function routeGoogleCalendarOAuthReturn(url: string): boolean {
+  if (!shouldHandleGoogleCalendarUrl(url)) return false;
+  if (handledUrls.has(url)) return true;
+  handledUrls.add(url);
+
+  router.replace({
+    pathname: '/oauth/google-calendar',
+    params: parseOAuthParamsFromUrl(url),
+  } as any);
   return true;
 }
 
-async function processOAuthReturnUrl(
-  url: string,
-  userId: string,
-  queryClient: ReturnType<typeof useQueryClient>,
-  onConnectionSynced?: () => void,
-) {
-  if (!shouldHandleGoogleCalendarUrl(url)) return;
-  if (handledUrls.has(url)) return;
-  handledUrls.add(url);
-
-  const parsed = parseGoogleCalendarOAuthReturnUrl(url);
-  if (parsed.outcome === 'unknown') return;
-
-  if (parsed.outcome === 'linked') {
-    try {
-      await invalidateAfterGoogleCalendarOAuth(queryClient, userId);
-      onConnectionSynced?.();
-    } catch {
-      // Keep UI usable if refresh fails.
-    }
-    Toast.show({
-      type: 'floating',
-      text1: 'Google Calendar connected.',
-      visibilityTime: 4500,
-    });
-    return;
-  }
-
-  if (parsed.outcome === 'error') {
-    Toast.show({
-      type: 'floating',
-      text1: parsed.reason ? `Google Calendar: ${parsed.reason}` : 'Google Calendar linking failed.',
-      visibilityTime: 6000,
-    });
-  }
-}
-
 /**
- * Listens for OAuth return URLs (cold start, background, foreground).
- * Matches ccc-web post-OAuth invalidation + toast behavior.
+ * Listens for OAuth return deep links (cold start, background, foreground)
+ * and routes them to `/oauth/google-calendar` for processing.
  */
-export function useGoogleCalendarOAuthReturn(options?: { onConnectionSynced?: () => void }) {
-  const queryClient = useQueryClient();
-  const userId = useAuthStore((s) => s.user?.id)?.trim() ?? '';
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const onConnectionSyncedRef = useRef(options?.onConnectionSynced);
-  onConnectionSyncedRef.current = options?.onConnectionSynced;
-
-  const handleUrl = useCallback(
-    async (url: string | null) => {
-      if (!url || !isAuthenticated || !userId) return;
-      await processOAuthReturnUrl(url, userId, queryClient, () =>
-        onConnectionSyncedRef.current?.(),
-      );
-    },
-    [isAuthenticated, queryClient, userId],
-  );
+export function useGoogleCalendarOAuthReturn() {
+  const handleUrl = useCallback((url: string | null) => {
+    if (!url) return;
+    routeGoogleCalendarOAuthReturn(url);
+  }, []);
 
   useEffect(() => {
-    if (!isAuthenticated || !userId) return;
-
     void Linking.getInitialURL().then(handleUrl);
 
     const subscription = Linking.addEventListener('url', (event) => {
-      void handleUrl(event.url);
+      handleUrl(event.url);
     });
 
     return () => subscription.remove();
-  }, [handleUrl, isAuthenticated, userId]);
+  }, [handleUrl]);
 }
 
-/** Call after WebBrowser.openAuthSessionAsync returns success. */
+/** Used when WebBrowser returns in-app without a full deep-link navigation. */
 export async function handleGoogleCalendarOAuthSessionResult(
   resultUrl: string,
-  userId: string,
-  queryClient: ReturnType<typeof useQueryClient>,
-  onConnectionSynced?: () => void,
-) {
-  await processOAuthReturnUrl(resultUrl, userId, queryClient, onConnectionSynced);
+): Promise<void> {
+  routeGoogleCalendarOAuthReturn(resultUrl);
 }
 
-export { refreshGoogleCalendarStatus, invalidateAfterGoogleCalendarOAuth };
+export {
+  invalidateAfterGoogleCalendarOAuth,
+  refreshGoogleCalendarStatus,
+} from '@/hooks/googleCalendar/useGoogleCalendarStatus';

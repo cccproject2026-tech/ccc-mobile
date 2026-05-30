@@ -90,8 +90,13 @@ export interface RefreshTokenRequest {
 }
 
 export interface RefreshTokenResponse {
-    accessToken: string;
-    refreshToken: string;
+    success: boolean;
+    message: string;
+    data: {
+        accessToken: string;
+        refreshToken: string;
+        user?: User;
+    };
 }
 
 // Forgot password

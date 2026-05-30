@@ -7,8 +7,9 @@ import { getGoogleCalendarAuthUrl } from '@/services/googleCalendar.service';
 import { useAuthStore } from '@/stores/auth.store';
 import type { GoogleCalendarStatus } from '@/types/googleCalendar.types';
 import { extractApiErrorMessage } from '@/utils/availability/api-error';
+import { saveGoogleCalendarOAuthReturnPath } from '@/utils/google-calendar/oauthReturnPath';
 import { Ionicons } from '@expo/vector-icons';
-import { useQueryClient } from '@tanstack/react-query';
+import { usePathname } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -41,12 +42,11 @@ export default function GoogleCalendarConnectButton({
   onConnectionSynced,
   onStatusChange,
 }: Props) {
-  const queryClient = useQueryClient();
+  const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const userId = useAuthStore((s) => s.user?.id)?.trim() ?? '';
 
   const [pending, setPending] = useState(false);
-  const [syncingAfterRedirect, setSyncingAfterRedirect] = useState(false);
   const [errorHint, setErrorHint] = useState<string | null>(null);
 
   const {
@@ -64,6 +64,7 @@ export default function GoogleCalendarConnectButton({
     setErrorHint(null);
     setPending(true);
     try {
+      await saveGoogleCalendarOAuthReturnPath(pathname);
       const url = await getGoogleCalendarAuthUrl();
       if (!url) {
         setErrorHint(
@@ -76,17 +77,8 @@ export default function GoogleCalendarConnectButton({
       const result = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
 
       if (result.type === 'success' && result.url) {
-        setSyncingAfterRedirect(true);
-        try {
-          await handleGoogleCalendarOAuthSessionResult(
-            result.url,
-            userId,
-            queryClient,
-            onConnectionSynced,
-          );
-        } finally {
-          setSyncingAfterRedirect(false);
-        }
+        await handleGoogleCalendarOAuthSessionResult(result.url);
+        onConnectionSynced?.();
         return;
       }
 
@@ -109,7 +101,7 @@ export default function GoogleCalendarConnectButton({
     } finally {
       setPending(false);
     }
-  }, [onConnectionSynced, queryClient, userId]);
+  }, [onConnectionSynced, pathname, userId]);
 
   const statusCopy = (() => {
     if (calendarStatus === 'expired') return { icon: '⚠', text: 'Reconnect Google Calendar' };
@@ -154,7 +146,7 @@ export default function GoogleCalendarConnectButton({
               {new Date(calendarConnectionStatus.lastSyncAt).toLocaleString()}
             </Text>
           ) : null}
-          <Pressable onPress={startOAuth} disabled={pending || syncingAfterRedirect}>
+          <Pressable onPress={startOAuth} disabled={pending}>
             <Text style={[styles.reconnectLink, isDark && styles.reconnectLinkDark]}>
               Reconnect
             </Text>
@@ -164,19 +156,15 @@ export default function GoogleCalendarConnectButton({
         <Pressable
           style={[styles.button, buttonStyle, containerStyle]}
           onPress={startOAuth}
-          disabled={pending || syncingAfterRedirect}
+          disabled={pending}
         >
-          {pending || syncingAfterRedirect ? (
+          {pending ? (
             <ActivityIndicator size="small" color={isDark ? '#d9ebf8' : '#0B1C58'} />
           ) : (
             <Ionicons name="logo-google" size={14} color={isDark ? '#d9ebf8' : '#0B1C58'} />
           )}
           <Text style={[styles.buttonText, isDark && styles.textLight]}>
-            {syncingAfterRedirect
-              ? 'Refreshing calendar status…'
-              : pending
-                ? 'Opening Google…'
-                : dynamicLabel}
+            {pending ? 'Opening Google…' : dynamicLabel}
           </Text>
         </Pressable>
       )}

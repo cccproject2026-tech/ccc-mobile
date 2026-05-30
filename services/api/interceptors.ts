@@ -11,6 +11,25 @@ let failedQueue: Array<{
   reject: (error: any) => void;
 }> = [];
 
+/** Backend wraps tokens as `{ success, data: { accessToken, refreshToken } }`. */
+function extractTokensFromRefreshResponse(body: unknown): {
+  accessToken?: string;
+  refreshToken?: string;
+} {
+  if (!body || typeof body !== "object") return {};
+  const root = body as Record<string, unknown>;
+  const nested =
+    root.data && typeof root.data === "object"
+      ? (root.data as Record<string, unknown>)
+      : root;
+  return {
+    accessToken:
+      typeof nested.accessToken === "string" ? nested.accessToken : undefined,
+    refreshToken:
+      typeof nested.refreshToken === "string" ? nested.refreshToken : undefined,
+  };
+}
+
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -148,7 +167,8 @@ apiClient.interceptors.response.use(
           refreshToken,
         });
 
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        const { accessToken, refreshToken: newRefreshToken } =
+          extractTokensFromRefreshResponse(response.data);
 
         if (!accessToken || !newRefreshToken) {
           throw new Error("Refresh response missing tokens");

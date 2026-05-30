@@ -93,6 +93,11 @@ function RootLayoutNav() {
         <Stack.Screen name="schedule-meeting" />
       </Stack.Protected>
 
+      <Stack.Screen
+        name="oauth/google-calendar"
+        options={{ headerShown: false, animation: "none" }}
+      />
+
       <Stack.Screen name="+not-found" />
     </Stack>
   );

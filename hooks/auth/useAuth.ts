@@ -242,7 +242,11 @@ export const useRefreshToken = () => {
       console.log("✅ Token refreshed successfully");
 
       try {
-        const { accessToken, refreshToken } = response;
+        const { accessToken, refreshToken } = response.data;
+
+        if (!accessToken || !refreshToken) {
+          throw new Error("Refresh response missing tokens");
+        }
 
         // Store new tokens in secure storage
         await storage.setTokens(accessToken, refreshToken);
