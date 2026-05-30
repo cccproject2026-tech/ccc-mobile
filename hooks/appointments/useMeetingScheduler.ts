@@ -1,17 +1,22 @@
-import { assessmentMeetingNote } from "@/lib/assessments/assessmentMeetings";
-import { appointmentService } from "@/services/appointments.service";
-import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { assessmentMeetingNote } from '@/lib/assessments/assessmentMeetings';
+import { appointmentService } from '@/services/appointments.service';
 import type {
   Appointment,
-  AppointmentPlatform,
   TimeSlot as APITimeSlot,
   WeeklyAvailability,
-} from "@/types/appointment.types";
-import { labelToPlatform } from "@/utils/appointments/platform";
-import { validateSchedule } from "@/utils/appointments/validation";
-import { useCreateAppointment } from "./useCreateAppointment";
+} from '@/types/appointment.types';
+import {
+  extractGoogleCalendarCreateOutcome,
+  googleCalendarSuccessHintFromCreateResponse,
+} from '@/utils/google-calendar/google-calendar-scheduling';
+import { getAppointmentJoinUrl } from '@/utils/meetingLinkDetails';
+import { labelToPlatform } from '@/utils/appointments/platform';
+import { validateSchedule } from '@/utils/appointments/validation';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useCreateAppointment } from './useCreateAppointment';
 
-export type SchedulerMode = "schedule" | "reschedule";
+export type SchedulerMode = 'schedule' | 'reschedule';
 
 export type SchedulerPerson = {
   id: string;
@@ -37,6 +42,14 @@ export type UseMeetingSchedulerParams = {
   assessmentId?: string;
 };
 
+export type MeetingSchedulerSubmitResult = {
+  appointmentId: string;
+  meetingDate: string;
+  meetingLink?: string;
+  googleCalendarSuccessHint?: string;
+  googleCalendarSyncWarnings: string[];
+};
+
 export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
   const {
     mode,
@@ -53,27 +66,23 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
     assessmentId,
   } = params;
 
+  const queryClient = useQueryClient();
+  const [isBooking, setIsBooking] = useState(false);
   const {
-    createAppointmentAsync,
     rescheduleAppointmentAsync,
-    isCreating,
     isRescheduling,
   } = useCreateAppointment();
 
-  const isSubmitting = isCreating || isRescheduling;
+  const isSubmitting = isBooking || isRescheduling;
 
-  async function submit(): Promise<{
-    appointmentId: string;
-    meetingDate: string;
-    meetingLink?: string;
-  }> {
+  async function submit(): Promise<MeetingSchedulerSubmitResult> {
     if (
       !currentUserId ||
       !selectedPerson?.id ||
       !selectedSlot?.startTime ||
       !selectedDayYmd
     ) {
-      throw new Error("Missing required details.");
+      throw new Error('Missing required details.');
     }
 
     const meetingDateIso = appointmentService.createMeetingDate(
@@ -95,20 +104,22 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       throw err;
     }
 
-    const platform = labelToPlatform(meetingOptionLabel) as AppointmentPlatform;
+    const platform = labelToPlatform(meetingOptionLabel);
 
-    const isMentorUser =
-      String(currentUserRole || "").toLowerCase() === "mentor";
+    const roleLower = String(currentUserRole || '').toLowerCase();
+    const isMentorUser = roleLower === 'mentor';
 
-    // Preserve backend participant contract:
-    // - mentorId must be the mentor user id
-    // - userId must be the pastor/mentee/director user id
     const payloadMentorId = isMentorUser ? currentUserId : selectedPerson.id;
     const payloadUserId = isMentorUser ? selectedPerson.id : currentUserId;
 
-    if (mode === "reschedule") {
+    const initiatorRole =
+      roleLower === 'mentor' || roleLower === 'director' || roleLower === 'pastor'
+        ? roleLower
+        : undefined;
+
+    if (mode === 'reschedule') {
       if (!existingAppointment?.id) {
-        throw new Error("Missing appointment to reschedule.");
+        throw new Error('Missing appointment to reschedule.');
       }
       const res = await rescheduleAppointmentAsync({
         appointmentId: existingAppointment.id,
@@ -120,6 +131,7 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
         appointmentId: res.id,
         meetingDate: meetingDateIso,
         meetingLink: getAppointmentJoinUrl(res) ?? undefined,
+        googleCalendarSyncWarnings: [],
       };
     }
 
@@ -127,21 +139,40 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       ? assessmentMeetingNote(assessmentId)
       : `Meeting with ${selectedPerson.name}`;
 
-    const created = await createAppointmentAsync({
+    const createPayload = {
       userId: payloadUserId,
       mentorId: payloadMentorId,
       meetingDate: meetingDateIso,
       platform,
       meetingLink: undefined,
       notes,
-    });
-    return {
-      appointmentId: created.id,
-      meetingDate: meetingDateIso,
-      meetingLink: getAppointmentJoinUrl(created) ?? undefined,
+      ...(initiatorRole ? { initiatorRole } : {}),
     };
+
+    setIsBooking(true);
+    try {
+      const rawResponse = await appointmentService.createAppointmentRaw(createPayload);
+      const outcome = extractGoogleCalendarCreateOutcome(rawResponse);
+      const gHint = googleCalendarSuccessHintFromCreateResponse(rawResponse);
+
+      await queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      await queryClient.invalidateQueries({ queryKey: ['weekly-availability'] });
+      await queryClient.invalidateQueries({ queryKey: ['monthly-availability'] });
+
+      const data = rawResponse.data;
+      const created = (Array.isArray(data) ? data[0] : data) as Appointment;
+
+      return {
+        appointmentId: created.id,
+        meetingDate: meetingDateIso,
+        meetingLink: getAppointmentJoinUrl(created) ?? undefined,
+        googleCalendarSuccessHint: gHint,
+        googleCalendarSyncWarnings: outcome.warnings,
+      };
+    } finally {
+      setIsBooking(false);
+    }
   }
 
   return { submit, isSubmitting };
 }
-

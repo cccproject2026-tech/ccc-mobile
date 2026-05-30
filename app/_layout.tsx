@@ -2,6 +2,7 @@ import { FloatingToast } from '@/components/atom/toast';
 import AppNotificationsProvider from '@/components/providers/AppNotificationsProvider';
 import { DataProvider } from '@/dataContext';
 import "@/global.css";
+import { useGoogleCalendarOAuthReturn } from '@/hooks/googleCalendar/useGoogleCalendarOAuthReturn';
 import '@/services/api/interceptors';
 import { useAuthStore } from '@/stores/auth.store';
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -35,6 +36,11 @@ const TransparentNavTheme = {
     background: "transparent",
   },
 };
+
+function GoogleCalendarOAuthListener() {
+  useGoogleCalendarOAuthReturn();
+  return null;
+}
 
 function RootLayoutNav() {
   const { isAuthenticated, user } = useAuthStore();
@@ -103,6 +109,7 @@ export default function RootLayout() {
                 <AppNotificationsProvider>
                   <ThemeProvider value={TransparentNavTheme}>
                     <AppGradientBackground>
+                      <GoogleCalendarOAuthListener />
                       <RootLayoutNav />
                     </AppGradientBackground>
                   </ThemeProvider>

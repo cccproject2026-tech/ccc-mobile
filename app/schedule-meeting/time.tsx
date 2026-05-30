@@ -1,4 +1,5 @@
 import GradientCalendar from "@/components/atom/calendar";
+import GoogleCalendarConnectButton from "@/components/GoogleCalendarConnectButton";
 import TopBar from "@/components/director/TopBar";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import {
@@ -11,9 +12,11 @@ import {
   useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
 import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
+import { appointmentService } from "@/services/appointments.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import type { TimeSlot as APITimeSlot, WeeklyAvailability } from "@/types/appointment.types";
+import { filterTimeSlotsAgainstGoogleCalendar } from "@/utils/google-calendar/google-calendar-scheduling";
 import { filterSlotsByMinNotice } from "@/utils/appointments/validation";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
@@ -80,10 +83,19 @@ export default function ScheduleMeetingTimeScreen() {
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
 
-  // Availability owner:
-  // - if logged in as mentor scheduling with pastor -> availability belongs to current mentor (user.id)
-  // - else pastor scheduling with mentor -> availability belongs to selected person (mentor)
+  // Availability owner (mentor hosting the grid).
   const availabilityOwnerId = isMentor ? user?.id : draft.person?.id;
+  // Booker whose Google calendar may also block slots.
+  const participantUserId = isMentor ? draft.person?.id : user?.id;
+
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
+  const [calendarSlotSyncLoading, setCalendarSlotSyncLoading] = useState(false);
+  const [calendarSlotSyncError, setCalendarSlotSyncError] = useState<string | null>(null);
+  const [calendarConnectBanners, setCalendarConnectBanners] = useState<string[]>([]);
+  const [calendarBusyStripped, setCalendarBusyStripped] = useState(0);
+  const [googleFilteredSlots, setGoogleFilteredSlots] = useState<
+    { id: string; label: string; apiSlot: APITimeSlot }[] | null
+  >(null);
 
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
@@ -223,9 +235,78 @@ export default function ScheduleMeetingTimeScreen() {
     [draft.selectedDayYmd, getTimeSlotsForDate],
   );
 
+  const meetingDurationMinutes = schedulingSettings?.meetingDuration ?? 60;
+
+  useEffect(() => {
+    if (!availabilityOwnerId || !draft.selectedDayYmd || timeSlots.length === 0) {
+      setGoogleFilteredSlots(null);
+      setCalendarConnectBanners([]);
+      setCalendarBusyStripped(0);
+      setCalendarSlotSyncError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setCalendarSlotSyncLoading(true);
+    setCalendarSlotSyncError(null);
+
+    void (async () => {
+      const rawApiSlots = timeSlots.map((s) => s.apiSlot);
+      const result = await filterTimeSlotsAgainstGoogleCalendar({
+        meetingDateYmd: draft.selectedDayYmd,
+        rawSlots: rawApiSlots,
+        availabilityMentorUserId: availabilityOwnerId,
+        availabilityParticipantUserId: participantUserId,
+        meetingDurationMinutes,
+        fetchMergedAvailability: (mentorUserId, params) =>
+          appointmentService.getMergedAvailability(mentorUserId, params),
+      });
+
+      if (cancelled) return;
+
+      const filtered = timeSlots.filter((row) =>
+        result.slots.some((slot) => slot._id === row.apiSlot._id || (
+          slot.startTime === row.apiSlot.startTime &&
+          slot.startPeriod === row.apiSlot.startPeriod
+        )),
+      );
+
+      setGoogleFilteredSlots(filtered);
+      setCalendarConnectBanners(
+        googleCalendarConnected
+          ? result.connectGoogleBanners.filter(
+              (msg) => !/link google calendar|avoid double-booking/i.test(msg),
+            )
+          : result.connectGoogleBanners,
+      );
+      setCalendarBusyStripped(result.strippedCount);
+      setCalendarSlotSyncError(result.error ?? null);
+      setCalendarSlotSyncLoading(false);
+
+      if (draft.selectedSlot && !filtered.some((s) => s.apiSlot._id === draft.selectedSlot?._id)) {
+        setSlot(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    availabilityOwnerId,
+    draft.selectedDayYmd,
+    draft.selectedSlot,
+    googleCalendarConnected,
+    meetingDurationMinutes,
+    participantUserId,
+    setSlot,
+    timeSlots,
+  ]);
+
+  const displayTimeSlots = googleFilteredSlots ?? timeSlots;
+
   // After a booking, cached dates can still list a day with zero remaining slots.
   useEffect(() => {
-    if (!draft.selectedDayYmd || timeSlots.length > 0 || availableDates.length === 0) {
+    if (!draft.selectedDayYmd || displayTimeSlots.length > 0 || availableDates.length === 0) {
       return;
     }
     const fallback = availableDates.find((d) => getTimeSlotsForDate(d).length > 0);
@@ -235,9 +316,9 @@ export default function ScheduleMeetingTimeScreen() {
   }, [
     availableDates,
     draft.selectedDayYmd,
+    displayTimeSlots.length,
     getTimeSlotsForDate,
     setDay,
-    timeSlots.length,
   ]);
 
   const canContinue = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
@@ -315,6 +396,23 @@ export default function ScheduleMeetingTimeScreen() {
             Meeting with {draft.person?.name}
           </Text>
 
+          <View style={styles.googleCalendarSection}>
+            <GoogleCalendarConnectButton
+              variant="dark"
+              onStatusChange={(status) => setGoogleCalendarConnected(status === "connected")}
+              onConnectionSynced={() => {
+                queryClient.invalidateQueries({ queryKey: ["weekly-availability"] });
+                queryClient.invalidateQueries({ queryKey: ["monthly-availability"] });
+              }}
+            />
+          </View>
+
+          {calendarConnectBanners.map((msg) => (
+            <Text key={msg.slice(0, 80)} style={styles.calendarBanner}>
+              {msg}
+            </Text>
+          ))}
+
           <View style={styles.quickDatesRow}>
             <Pressable
               style={[
@@ -386,20 +484,36 @@ export default function ScheduleMeetingTimeScreen() {
           ) : null}
 
           <Text style={styles.sectionTitle}>Available times</Text>
+          {calendarSlotSyncLoading ? (
+            <View style={styles.syncRow}>
+              <ActivityIndicator color="#8ec5eb" size="small" />
+              <Text style={styles.syncText}>Syncing Google Calendar availability…</Text>
+            </View>
+          ) : null}
+          {calendarSlotSyncError ? (
+            <Text style={styles.calendarError}>
+              {calendarSlotSyncError} Time slots cannot be validated until calendar access works.
+            </Text>
+          ) : null}
+          {calendarBusyStripped > 0 ? (
+            <Text style={styles.calendarBanner}>
+              Some times are hidden due to conflicting Google Calendar events.
+            </Text>
+          ) : null}
           {minNoticeHours > 0 ? (
             <Text style={styles.noticeHint}>
               Slots must start at least {minNoticeHours} hour{minNoticeHours === 1 ? "" : "s"} from now.
             </Text>
           ) : null}
-          {timeSlots.length === 0 ? (
+          {displayTimeSlots.length === 0 ? (
             <Text style={styles.subtle}>
               {minNoticeHours > 0
-                ? "No bookable slots for this date (notice period or availability)."
+                ? "No bookable slots for this date (notice period, availability, or calendar conflicts)."
                 : "No slots for this date."}
             </Text>
           ) : (
             <View style={styles.slotGrid}>
-              {timeSlots.map((s) => {
+              {displayTimeSlots.map((s) => {
                 const selected = draft.selectedSlot?._id === s.apiSlot._id;
                 return (
                   <Pressable
@@ -468,6 +582,27 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
   title: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
   subtitle: { marginTop: 6, color: "rgba(255,255,255,0.75)", fontWeight: "700" },
+  googleCalendarSection: { marginTop: 12, marginBottom: 4 },
+  calendarBanner: {
+    color: "#fef3c7",
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  calendarError: {
+    color: "#fef3c7",
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: 8,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.35)",
+    backgroundColor: "rgba(245, 158, 11, 0.1)",
+  },
+  syncRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  syncText: { color: "#8ec5eb", fontSize: 12, fontWeight: "700" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 24 },
   subtle: { color: "rgba(255,255,255,0.75)", fontWeight: "600" },
   primary: { marginTop: 12, backgroundColor: "#FFFFFF", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },

@@ -1,4 +1,5 @@
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
+import GoogleCalendarScheduleBanner from "@/components/GoogleCalendarScheduleBanner";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
 // Scheduling now uses full-screen pages under /schedule-meeting
@@ -318,6 +319,10 @@ const Appointments = () => {
               showNewMeeting={true}
               onNewMeetingPress={handleNewMeeting}
             />
+
+            <View style={{ paddingHorizontal: 16 }}>
+              <GoogleCalendarScheduleBanner />
+            </View>
 
             <ScrollView
               style={{ flex: 1 }}

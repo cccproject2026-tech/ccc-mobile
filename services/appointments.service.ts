@@ -239,13 +239,40 @@ export const appointmentService = {
         ENDPOINTS.APPOINTMENTS.CREATE,
         payload,
       );
-      return Array.isArray(response.data.data)
-        ? response.data.data[0]
-        : response.data.data;
+      const raw = response.data.data;
+      const appointment = Array.isArray(raw) ? raw[0] : raw;
+      return appointment as Appointment;
     } catch (error) {
       console.error("Error creating appointment:", error);
       throw error;
     }
+  },
+
+  /** Raw create response envelope (includes Google Calendar sync metadata). */
+  createAppointmentRaw: async (
+    payload: CreateAppointmentPayload,
+  ): Promise<{ data: unknown; message?: string; success?: boolean }> => {
+    const response = await apiClient.post<{
+      data: unknown;
+      message?: string;
+      success?: boolean;
+    }>(ENDPOINTS.APPOINTMENTS.CREATE, payload);
+    return response.data;
+  },
+
+  /**
+   * Merged CCC availability + Google Free/Busy for slot filtering.
+   * GET `/availability/:mentorUserId?from=&to=&participantUserId=`
+   */
+  getMergedAvailability: async (
+    mentorUserId: string,
+    params: { from: string; to: string; participantUserId?: string },
+  ): Promise<unknown> => {
+    const response = await apiClient.get<{ data: unknown }>(
+      ENDPOINTS.AVAILABILITY.MERGED(mentorUserId),
+      { params },
+    );
+    return response.data;
   },
 
   /**

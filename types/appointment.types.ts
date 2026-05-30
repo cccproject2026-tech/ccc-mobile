@@ -16,6 +16,12 @@ export interface CreateAppointmentPayload {
     notes?: string; // OPTIONAL
     sessionMode?: SessionMode; // OPTIONAL (defaults to ONLINE on older flows)
     meetingLocation?: string; // OPTIONAL (in-person location)
+    /** Host-initiated flow role (mentor, director, pastor, …). */
+    initiatorRole?: string;
+    /**
+     * Mongo id whose Google Calendar receives the non-mentor event when `userId` is not that person.
+     */
+    googleCalendarNonMentorUserId?: string;
 }
 
 export interface UpdateAppointmentPayload {
@@ -61,6 +67,9 @@ export interface Appointment {
     };
     createdAt?: string;
     updatedAt?: string;
+    mentorGoogleCalendarEventId?: string | null;
+    userGoogleCalendarEventId?: string | null;
+    googleCalendarSyncWarnings?: string[];
 }
 
 export interface AppointmentResponse {

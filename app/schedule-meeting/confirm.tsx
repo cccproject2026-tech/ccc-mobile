@@ -128,14 +128,22 @@ export default function ScheduleMeetingConfirmScreen() {
               disabled={isSubmitting || isDone}
               onPress={async () => {
                 try {
-                  await submit();
+                  const result = await submit();
                   setIsDone(true);
-                  const title =
+                  const baseTitle =
                     draft.mode === "reschedule" ? "Meeting rescheduled" : "Meeting scheduled";
+                  const warningSuffix =
+                    result.googleCalendarSyncWarnings.length > 0
+                      ? ` Note: ${result.googleCalendarSyncWarnings.join(" · ")}`
+                      : "";
+                  const text1 = result.googleCalendarSuccessHint
+                    ? `${baseTitle}. ${result.googleCalendarSuccessHint}${warningSuffix}`
+                    : `${baseTitle}${warningSuffix}`;
                   Toast.show({
                     type: "floating",
-                    text1: title,
+                    text1,
                     text2: "Returning to your appointments…",
+                    visibilityTime: result.googleCalendarSyncWarnings.length > 0 ? 9000 : 4500,
                   });
                   setTimeout(() => {
                     exitScheduleMeetingFlow(router, user?.role);

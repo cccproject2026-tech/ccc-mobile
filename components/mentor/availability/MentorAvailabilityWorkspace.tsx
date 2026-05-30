@@ -1,3 +1,4 @@
+import GoogleCalendarConnectButton from "@/components/GoogleCalendarConnectButton";
 import {
   DEFAULT_SLOT_WINDOW,
   MIN_NOTICE_OPTIONS,
@@ -368,6 +369,18 @@ export function MentorAvailabilityWorkspace({
           <Text style={styles.introTitle}>Your availability</Text>
           <Text style={styles.introSub}>
             Set a repeating weekly pattern, then tap calendar dates for one-off changes.
+          </Text>
+        </View>
+
+        <View style={styles.googleCalendarCard}>
+          <GoogleCalendarConnectButton
+            variant="dark"
+            onConnectionSynced={() => {
+              void onRefresh();
+            }}
+          />
+          <Text style={styles.googleCalendarHint}>
+            Link Google Calendar so external busy times block bookings and open slots sync to your calendar.
           </Text>
         </View>
 
@@ -858,6 +871,20 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 13,
     lineHeight: 18,
+  },
+  googleCalendarCard: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    gap: 8,
+  },
+  googleCalendarHint: {
+    color: "rgba(255,255,255,0.68)",
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: "600",
   },
   loadingBlock: { alignItems: "center", paddingVertical: 24, gap: 10 },
   loadingText: { color: "rgba(255,255,255,0.8)", fontWeight: "600" },

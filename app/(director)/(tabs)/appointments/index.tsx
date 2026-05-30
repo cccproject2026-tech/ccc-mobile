@@ -1,5 +1,6 @@
 import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
+import GoogleCalendarScheduleBanner from "@/components/GoogleCalendarScheduleBanner";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
 import ScheduleMeetingBottomSheet, {
@@ -276,6 +277,10 @@ const Appointments: React.FC = () => {
               showNewMeeting={true}
               onNewMeetingPress={handleNewMeeting}
             />
+
+            <View style={{ paddingHorizontal: 16 }}>
+              <GoogleCalendarScheduleBanner />
+            </View>
 
             {/* Tab Switcher */}
             <View style={styles.tabContainer}>

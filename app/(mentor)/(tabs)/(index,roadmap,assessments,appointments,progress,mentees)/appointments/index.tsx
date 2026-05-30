@@ -1,4 +1,5 @@
 import { ScheduleMonthCalendarFromSelection } from "@/components/calendar/ScheduleMonthCalendar";
+import GoogleCalendarScheduleBanner from "@/components/GoogleCalendarScheduleBanner";
 import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
@@ -420,6 +421,10 @@ const Appointments: React.FC = () => {
               showNewMeeting={true}
               onNewMeetingPress={handleNewMeeting}
             />
+
+            <View style={{ paddingHorizontal: 16 }}>
+              <GoogleCalendarScheduleBanner />
+            </View>
 
             {/* Tab Switcher */}
             <View style={styles.tabContainer}>

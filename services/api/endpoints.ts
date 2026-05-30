@@ -12,6 +12,11 @@ export const ENDPOINTS = {
     REFRESH_TOKEN: "/auth/refresh-token",
     LOGOUT: "/auth/logout",
     CHECK_ONBOARDING_STATUS: "/auth/check-onboarding-status",
+    GOOGLE: "/auth/google",
+  },
+
+  GOOGLE_CALENDAR: {
+    STATUS: "/google-calendar/status",
   },
 
   // Users
@@ -96,6 +101,10 @@ export const ENDPOINTS = {
         : "/microgrant/applications",
     GET_APPLICATION: (applicationId: string) =>
       `/microgrant/application/${applicationId}`,
+  },
+
+  AVAILABILITY: {
+    MERGED: (mentorUserId: string) => `/availability/${mentorUserId}`,
   },
 
   APPOINTMENTS: {
