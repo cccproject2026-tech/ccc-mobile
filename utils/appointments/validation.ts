@@ -23,6 +23,8 @@ export type ValidateScheduleParams = {
   settings?: WeeklyAvailability | null;
   mentorAppointments?: Appointment[];
   userAppointments?: Appointment[];
+  /** Reschedule: ignore the appointment being moved. */
+  excludeAppointmentId?: string;
 };
 
 function isCancelledStatus(status: unknown) {
@@ -31,6 +33,47 @@ function isCancelledStatus(status: unknown) {
     normalized === "cancelled" ||
     normalized === "canceled" ||
     normalized.startsWith("cancel")
+  );
+}
+
+/** True when the booker already has a non-cancelled appointment at this ISO start time. */
+export function isUserBookedAtMeetingIso(
+  meetingDateIso: string,
+  userAppointments: Appointment[],
+  excludeAppointmentId?: string,
+): boolean {
+  if (!meetingDateIso || !userAppointments.length) return false;
+  return userAppointments.some((apt) => {
+    if (excludeAppointmentId && String(apt.id) === String(excludeAppointmentId)) {
+      return false;
+    }
+    if (isCancelledStatus(apt.status)) return false;
+    return String(apt.meetingDate) === String(meetingDateIso);
+  });
+}
+
+/** True when the booker already has a non-cancelled appointment at this slot start. */
+export function isUserBookedAtSlot(
+  dayYmd: string,
+  slot: SlotLike,
+  userAppointments: Appointment[],
+  excludeAppointmentId?: string,
+): boolean {
+  if (!dayYmd || !slot?.startTime || !userAppointments.length) return false;
+  const meetingDateIso = appointmentService.createMeetingDate(dayYmd, slot);
+  return isUserBookedAtMeetingIso(meetingDateIso, userAppointments, excludeAppointmentId);
+}
+
+/** Drop slots that would fail the confirm-step overlap check for the booker. */
+export function filterSlotsByUserOverlap(
+  dayYmd: string,
+  slots: TimeSlot[],
+  userAppointments: Appointment[],
+  excludeAppointmentId?: string,
+): TimeSlot[] {
+  if (!slots.length || !userAppointments.length) return slots;
+  return slots.filter(
+    (s) => !isUserBookedAtSlot(dayYmd, s, userAppointments, excludeAppointmentId),
   );
 }
 
@@ -43,6 +86,7 @@ export function validateSchedule(
     settings,
     mentorAppointments = [],
     userAppointments = [],
+    excludeAppointmentId,
   } = params;
 
   if (!meetingDateIso || !meetingDayYmd) {
@@ -86,12 +130,8 @@ export function validateSchedule(
     }
   }
 
-  // 3) Overlap
-  const hasOverlap = userAppointments.some((apt) => {
-    if (isCancelledStatus(apt.status)) return false;
-    return String(apt.meetingDate) === String(meetingDateIso);
-  });
-  if (hasOverlap) {
+  // 3) Overlap (booker already has another appointment at this exact start time)
+  if (isUserBookedAtMeetingIso(meetingDateIso, userAppointments, excludeAppointmentId)) {
     return {
       code: "overlap",
       title: "Schedule conflict",

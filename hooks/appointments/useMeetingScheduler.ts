@@ -96,6 +96,8 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       settings,
       mentorAppointments,
       userAppointments,
+      excludeAppointmentId:
+        mode === "reschedule" ? existingAppointment?.id : undefined,
     });
     if (issue) {
       const err = new Error(issue.message);

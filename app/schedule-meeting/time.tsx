@@ -11,13 +11,18 @@ import {
   useMonthlyAvailability,
   useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
+import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { appointmentService } from "@/services/appointments.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import type { TimeSlot as APITimeSlot, WeeklyAvailability } from "@/types/appointment.types";
 import { filterTimeSlotsAgainstGoogleCalendar } from "@/utils/google-calendar/google-calendar-scheduling";
-import { filterSlotsByMinNotice } from "@/utils/appointments/validation";
+import {
+  filterSlotsByMinNotice,
+  filterSlotsByUserOverlap,
+  isUserBookedAtSlot,
+} from "@/utils/appointments/validation";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -95,6 +100,15 @@ export default function ScheduleMeetingTimeScreen() {
   // Booker whose Google calendar may also block slots.
   const participantUserId = isMentor ? draft.person?.id : user?.id;
 
+  // Booker whose existing appointments block duplicate slot picks.
+  const overlapUserId = isMentor ? draft.person?.id : user?.id;
+  const { appointments: userAppointments } = useAppointments({
+    userId: overlapUserId || undefined,
+  });
+
+  const excludeAppointmentId =
+    draft.mode === "reschedule" ? draft.appointmentId : undefined;
+
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
   const [calendarSlotSyncLoading, setCalendarSlotSyncLoading] = useState(false);
   const [calendarSlotSyncError, setCalendarSlotSyncError] = useState<string | null>(null);
@@ -119,6 +133,11 @@ export default function ScheduleMeetingTimeScreen() {
       queryClient.invalidateQueries({
         queryKey: ["weekly-availability", availabilityOwnerId],
       });
+      if (overlapUserId) {
+        queryClient.invalidateQueries({
+          queryKey: ["appointments", "user", overlapUserId],
+        });
+      }
 
       setSlot(null);
 
@@ -134,7 +153,7 @@ export default function ScheduleMeetingTimeScreen() {
       const n = new Date();
       setCurrentMonth(n.getMonth() + 1);
       setCurrentYear(n.getFullYear());
-    }, [availabilityOwnerId, queryClient, setSlot]),
+    }, [availabilityOwnerId, overlapUserId, queryClient, setSlot]),
   );
 
   // Weekly settings / saved slots (source of truth for meeting settings + raw saved blocks).
@@ -198,11 +217,17 @@ export default function ScheduleMeetingTimeScreen() {
       const key = toDateString(String(day?.date ?? ""));
       if (!key || key < todayYmd) continue;
       const slots = slotsFromWeeklyOrMonthlyDay(day);
-      const bookable = filterSlotsByMinNotice(key, slots, schedulingSettings);
+      const afterNotice = filterSlotsByMinNotice(key, slots, schedulingSettings);
+      const bookable = filterSlotsByUserOverlap(
+        key,
+        afterNotice,
+        userAppointments,
+        excludeAppointmentId,
+      );
       if (bookable.length > 0) set.add(key);
     }
     return Array.from(set).sort();
-  }, [mergedAvailability, schedulingSettings]);
+  }, [mergedAvailability, schedulingSettings, userAppointments, excludeAppointmentId]);
 
   const minNoticeHours = schedulingSettings?.minSchedulingNoticeHours ?? 0;
 
@@ -215,14 +240,20 @@ export default function ScheduleMeetingTimeScreen() {
         (d) => toDateString(String(d?.date ?? "")) === dateString,
       ) as any;
       const raw: APITimeSlot[] = dayData ? slotsFromWeeklyOrMonthlyDay(dayData) : [];
-      const slots = filterSlotsByMinNotice(dateString, raw, schedulingSettings);
+      const afterNotice = filterSlotsByMinNotice(dateString, raw, schedulingSettings);
+      const slots = filterSlotsByUserOverlap(
+        dateString,
+        afterNotice,
+        userAppointments,
+        excludeAppointmentId,
+      );
       return slots.map((slot: APITimeSlot, idx: number) => ({
         id: slot._id || `${dateString}-${idx}`,
         label: formatTimeSlot(slot),
         apiSlot: slot,
       }));
     },
-    [mergedAvailability, schedulingSettings],
+    [mergedAvailability, schedulingSettings, userAppointments, excludeAppointmentId],
   );
 
   const selectNearestBookableDay = useCallback(
@@ -354,6 +385,52 @@ export default function ScheduleMeetingTimeScreen() {
   ]);
 
   const displayTimeSlots = googleFilteredSlots ?? timeSlots;
+
+  const userConflictStrippedCount = useMemo(() => {
+    if (!draft.selectedDayYmd || !mergedAvailability?.length) return 0;
+    const dayData = (mergedAvailability as any[]).find(
+      (d) => toDateString(String(d?.date ?? "")) === draft.selectedDayYmd,
+    ) as any;
+    const raw: APITimeSlot[] = dayData ? slotsFromWeeklyOrMonthlyDay(dayData) : [];
+    const afterNotice = filterSlotsByMinNotice(
+      draft.selectedDayYmd,
+      raw,
+      schedulingSettings,
+    );
+    const afterOverlap = filterSlotsByUserOverlap(
+      draft.selectedDayYmd,
+      afterNotice,
+      userAppointments,
+      excludeAppointmentId,
+    );
+    return afterNotice.length - afterOverlap.length;
+  }, [
+    draft.selectedDayYmd,
+    excludeAppointmentId,
+    mergedAvailability,
+    schedulingSettings,
+    userAppointments,
+  ]);
+
+  useEffect(() => {
+    if (!draft.selectedDayYmd || !draft.selectedSlot) return;
+    if (
+      isUserBookedAtSlot(
+        draft.selectedDayYmd,
+        draft.selectedSlot,
+        userAppointments,
+        excludeAppointmentId,
+      )
+    ) {
+      setSlot(null);
+    }
+  }, [
+    draft.selectedDayYmd,
+    draft.selectedSlot,
+    excludeAppointmentId,
+    setSlot,
+    userAppointments,
+  ]);
 
   // Selected day had slots locally but none remain after sync — try the next bookable date.
   useEffect(() => {
@@ -497,6 +574,11 @@ export default function ScheduleMeetingTimeScreen() {
           {calendarBusyStripped > 0 ? (
             <Text style={styles.calendarBanner}>
               Some times are hidden due to conflicting Google Calendar events.
+            </Text>
+          ) : null}
+          {userConflictStrippedCount > 0 ? (
+            <Text style={styles.calendarBanner}>
+              Some times are hidden because you already have a meeting at those times.
             </Text>
           ) : null}
           {minNoticeHours > 0 ? (
