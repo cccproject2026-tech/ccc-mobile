@@ -4,7 +4,7 @@ import { notificationsService } from "@/services/notifications.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { CombinedProfile, Notification, UpdateProfileData } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getNotificationId } from "@/utils/notifications";
+import { getNotificationId, sortNotificationsByRecent } from "@/utils/notifications";
 import { syncAuthUserProfile } from "@/utils/syncAuthUserProfile";
 import { useProgress } from "../progress/useProgress";
 
@@ -383,12 +383,14 @@ export const useNotifications = (userId?: string) => {
         notificationsService.getReadNotificationIds(userId!),
       ]);
 
-      return notifications.map((notification) => ({
-        ...notification,
-        read:
-          !!notification.read ||
-          locallyReadIds.includes(getNotificationId(notification)),
-      }));
+      return sortNotificationsByRecent(
+        notifications.map((notification) => ({
+          ...notification,
+          read:
+            !!notification.read ||
+            locallyReadIds.includes(getNotificationId(notification)),
+        })),
+      );
     },
     enabled: !!userId,
     staleTime: 2000, // 2 seconds (was 5 minutes)

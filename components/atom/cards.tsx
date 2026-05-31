@@ -127,9 +127,9 @@ export const NotificationCard = ({
         <Text style={styles.notificationDescription}>
           {data.description}
         </Text>
-        {!!data.time && (
+        {!!(data.timeLabel || data.time) && (
           <Text style={styles.notificationTimeInline}>
-            {formatNotificationDate(data.time)}
+            {data.timeLabel || formatNotificationDate(data.time)}
           </Text>
         )}
       </View>
