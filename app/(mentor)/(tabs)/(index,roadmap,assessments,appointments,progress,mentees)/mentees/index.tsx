@@ -2,8 +2,8 @@ import {
   MentorDetailedCard,
   MentorShortCard,
 } from "@/components/build-components"
-import { TabSwitcher } from "@/components/director/TabSwitcher"
 import MenteeMenuBottomSheet, { MenteeMenuBottomSheetRef } from "@/components/mentor/MenteeMenuBottomSheet"
+import { RoadmapSearchField, RoadmapTabStrip } from "@/components/ui/design-system"
 import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Colors } from "@/constants/Colors"
 import { icons } from "@/constants/images"
@@ -11,7 +11,7 @@ import { useMentees } from "@/hooks/mentees/useMentees"
 import { getAvatarSource } from "@/utils/avatarSource"
 import { useAuthStore } from "@/stores"
 import { Mentee } from "@/types/mentee.types"
-import { Feather, Ionicons } from "@expo/vector-icons"
+import { Feather } from "@expo/vector-icons"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
 import { LinearGradient } from "expo-linear-gradient"
 import { Stack, router } from "expo-router"
@@ -23,7 +23,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native"
@@ -38,11 +37,7 @@ const MENTEE_PROGRESS_ROUTE =
 export default function MyMentees() {
   const [listToggle, setListToggle] = useState(false)
   const [searchText, setSearchText] = useState("")
-  const [activeTab, setActiveTab] = useState<
-    "ALL" | "IN_PROGRESS" | "COMPLETED"
-  >("ALL")
-  const [showPhaseDropdown, setShowPhaseDropdown] = useState(false)
-  const [selectedPhase, setSelectedPhase] = useState("Self Revitalization")
+  const [activeTab, setActiveTab] = useState<"all" | "in-progress" | "completed">("all")
   const [showMap, setShowMap] = useState(false)
   const [mapRegion] = useState({
     latitude: 37.78825,
@@ -51,9 +46,6 @@ export default function MyMentees() {
     longitudeDelta: 0.0421,
   })
 
-  const [expandedSection, setExpandedSection] = useState<"PHASE" | "STATE" | "CONFERENCE">("PHASE")
-  const [selectedState, setSelectedState] = useState<string | null>(null)
-  const [selectedConference, setSelectedConference] = useState<string | null>(null)
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null)
   const { user } = useAuthStore()
   // Only show mentees assigned to this mentor (not all pastors)
@@ -87,9 +79,9 @@ export default function MyMentees() {
     }
 
     // Filter by tab (note: API doesn't provide isCompleted, so this may not work until API is updated)
-    if (activeTab === "COMPLETED") {
+    if (activeTab === "completed") {
       filtered = filtered.filter((mentee) => mentee.hasCompleted === true)
-    } else if (activeTab === "IN_PROGRESS") {
+    } else if (activeTab === "in-progress") {
       filtered = filtered.filter((mentee) => mentee.hasCompleted !== true)
     }
 
@@ -100,9 +92,9 @@ export default function MyMentees() {
 
 
   const tabData = [
-    { key: "ALL", label: "All" },
-    { key: "IN_PROGRESS", label: "In Progress" },
-    { key: "COMPLETED", label: "Completed" },
+    { key: "all", label: "All" },
+    { key: "in-progress", label: "In Progress" },
+    { key: "completed", label: "Completed" },
   ]
 
   const handleMenuPress = (mentee: Mentee) => {
@@ -211,31 +203,19 @@ export default function MyMentees() {
       {/* Separator */}
       <View className="h-[0.5px] bg-white/30 mt-1" />
 
-      {/* Search Section */}
-      <View style={styles.searchContainer} className="mt-4">
-        <View style={styles.searchBox}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search"
-            placeholderTextColor="white"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-          <Ionicons
-            name="search"
-            size={20}
-            color="rgba(255, 255, 255, 0.6)"
-            style={styles.searchIcon}
-          />
-        </View>
-      </View>
-
-      {/* Tabs */}
-      <View style={{ paddingHorizontal: 6, marginBottom: 12 }}>
-        <TabSwitcher
+      {/* Search + tabs */}
+      <View style={styles.controlsWrap}>
+        <RoadmapSearchField
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholder="Search mentees"
+          dense
+        />
+        <RoadmapTabStrip
           tabs={tabData}
-          activeTab={activeTab}
-          onChange={(key: string) => setActiveTab(key as any)}
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as typeof activeTab)}
+          scrollable
         />
       </View>
 
@@ -313,149 +293,6 @@ export default function MyMentees() {
 
       {/* Separator */}
       <View className="h-[0.5px] bg-white/20 mx-14 mb-4" />
-
-      {/* phase select dropdown */}
-      <View style={styles.filtersRow}>
-        <Text style={styles.filtersLabel}>Filters</Text>
-        <View style={{ position: "relative" }}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setShowPhaseDropdown((prev) => !prev)}
-            style={styles.phasePill}
-          >
-            <Text style={styles.phasePillText}>
-              Phase :{" "}
-              <Text style={{ fontWeight: "700" }}>
-                {selectedPhase}
-              </Text>
-            </Text>
-            <Ionicons
-              name={showPhaseDropdown ? "chevron-up" : "chevron-down"}
-              size={16}
-              color="#fff"
-            />
-          </TouchableOpacity>
-
-          {showPhaseDropdown && (
-            <View style={styles.dropdownMenu}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.sectionHeader}
-                onPress={() => setExpandedSection("PHASE")}
-              >
-                <Text style={styles.sectionTitle}>Phase</Text>
-                <View style={styles.chevronPill}>
-                  <Ionicons name={expandedSection === "PHASE" ? "chevron-up" : "chevron-down"} size={14} color="#1A4882" />
-                </View>
-              </TouchableOpacity>
-
-              {expandedSection === "PHASE" && (
-                <View style={styles.sectionBody}>
-                  {[
-                    "Self Revitalization",
-                    "Church Empowerment",
-                    "Community Revitalization and Multiplication",
-                  ].map(option => (
-                    <TouchableOpacity
-                      key={option}
-                      style={styles.optionRow}
-                      onPress={() => setSelectedPhase(option)}
-                    >
-                      <View style={styles.radioOuter}>
-                        {selectedPhase === option && <View style={styles.radioInner} />}
-                      </View>
-                      <Text style={styles.optionText}>{option}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-              <View style={styles.sectionDivider} />
-
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.sectionHeader}
-                onPress={() => setExpandedSection("STATE")}
-              >
-                <Text style={styles.sectionTitle}>State</Text>
-                <View style={styles.chevronPill}>
-                  <Ionicons name={expandedSection === "STATE" ? "chevron-up" : "chevron-down"} size={14} color="#1A4882" />
-                </View>
-              </TouchableOpacity>
-
-              {expandedSection === "STATE" && (
-                <View style={styles.sectionBody}>
-                  {[
-                    "North American",
-                    "Canada",
-                    "Mexico",
-                    "Brazil",
-                  ].map(option => (
-                    <TouchableOpacity
-                      key={option}
-                      style={styles.optionRow}
-                      onPress={() => setSelectedState(option)}
-                    >
-                      <View style={styles.radioOuter}>
-                        {selectedState === option && <View style={styles.radioInner} />}
-                      </View>
-                      <Text style={styles.optionText}>{option}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-              <View style={styles.sectionDivider} />
-
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.sectionHeader}
-                onPress={() => setExpandedSection("CONFERENCE")}
-              >
-                <Text style={styles.sectionTitle}>Conference</Text>
-                <View style={styles.chevronPill}>
-                  <Ionicons name={expandedSection === "CONFERENCE" ? "chevron-up" : "chevron-down"} size={14} color="#1A4882" />
-                </View>
-              </TouchableOpacity>
-
-              {expandedSection === "CONFERENCE" && (
-                <View style={styles.sectionBody}>
-                  {[
-                    "East Zone",
-                    "West Zone",
-                    "North Zone",
-                  ].map(option => (
-                    <TouchableOpacity
-                      key={option}
-                      style={styles.optionRow}
-                      onPress={() => setSelectedConference(option)}
-                    >
-                      <View style={styles.radioOuter}>
-                        {selectedConference === option && <View style={styles.radioInner} />}
-                      </View>
-                      <Text style={styles.optionText}>{option}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-              <View style={styles.sectionDivider} />
-
-              <TouchableOpacity
-                style={[styles.optionRow, { paddingVertical: 12 }]}
-                onPress={() => {
-                  setSelectedPhase("Self Revitalization")
-                  setSelectedState(null)
-                  setSelectedConference(null)
-                }}
-              >
-                <View style={styles.radioOuter} />
-                <Text style={styles.optionText}>Clear Sort</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
 
       {showMap && (
         <View style={{ marginHorizontal: 16, marginTop: 12, marginBottom: 24, borderRadius: 10, overflow: "hidden", height: 410 }}>
@@ -642,28 +479,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 4,
   },
-  searchContainer: {
+  controlsWrap: {
     marginHorizontal: 16,
-    marginBottom: 20,
-  },
-  searchBox: {
-    backgroundColor: "#14517D",
-    borderRadius: 10,
-    height: 45,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    color: "white",
-    fontSize: 16,
-    fontWeight: "400",
+    marginTop: 16,
+    marginBottom: 8,
+    gap: 4,
   },
   quickAccessContainer: {
     marginHorizontal: 16,
@@ -712,106 +532,5 @@ const styles = StyleSheet.create({
   },
   detailedMentorCard: {
     marginBottom: 12,
-  },
-  filtersRow: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 10,
-  },
-  filtersLabel: {
-    color: "white",
-    fontWeight: "700",
-    fontSize: 14,
-    marginRight: 6,
-  },
-  phasePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.6)",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 18,
-  },
-  phasePillText: {
-    color: "white",
-    fontSize: 14,
-  },
-  dropdownMenu: {
-    position: "absolute",
-    top: 40,
-    right: 0,
-    backgroundColor: "#EAF1F7",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#D2E2F0",
-    paddingVertical: 8,
-    minWidth: 300,
-    zIndex: 20,
-    overflow: "hidden",
-  },
-  sectionHeader: {
-    backgroundColor: "#F2F7FB",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  sectionTitle: {
-    color: "#1A4882",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  chevronPill: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#9EC1DF",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#ffffff",
-  },
-  sectionBody: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  optionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 8,
-  },
-  optionText: {
-    color: "#1A4882",
-    fontSize: 14,
-    flexShrink: 1,
-  },
-  radioOuter: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: "#9EC1DF",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  radioInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#1A4882",
-  },
-  sectionDivider: {
-    height: 1,
-    backgroundColor: "#D2E2F0",
   },
 })
