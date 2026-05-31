@@ -9,7 +9,8 @@ export type MeetingValidationIssueCode =
   | "missing_required"
   | "min_notice"
   | "max_bookings_per_day"
-  | "overlap";
+  | "overlap"
+  | "mentor_slot_taken";
 
 export type MeetingValidationIssue = {
   code: MeetingValidationIssueCode;
@@ -36,20 +37,38 @@ function isCancelledStatus(status: unknown) {
   );
 }
 
-/** True when the booker already has a non-cancelled appointment at this ISO start time. */
-export function isUserBookedAtMeetingIso(
+/** True when a non-cancelled appointment already exists at this ISO start time. */
+export function isBookedAtMeetingIso(
   meetingDateIso: string,
-  userAppointments: Appointment[],
+  appointments: Appointment[],
   excludeAppointmentId?: string,
 ): boolean {
-  if (!meetingDateIso || !userAppointments.length) return false;
-  return userAppointments.some((apt) => {
+  if (!meetingDateIso || !appointments.length) return false;
+  return appointments.some((apt) => {
     if (excludeAppointmentId && String(apt.id) === String(excludeAppointmentId)) {
       return false;
     }
     if (isCancelledStatus(apt.status)) return false;
     return String(apt.meetingDate) === String(meetingDateIso);
   });
+}
+
+/** True when the booker already has a non-cancelled appointment at this ISO start time. */
+export function isUserBookedAtMeetingIso(
+  meetingDateIso: string,
+  userAppointments: Appointment[],
+  excludeAppointmentId?: string,
+): boolean {
+  return isBookedAtMeetingIso(meetingDateIso, userAppointments, excludeAppointmentId);
+}
+
+/** True when the mentor already has a booking at this ISO start time. */
+export function isMentorSlotTakenAtMeetingIso(
+  meetingDateIso: string,
+  mentorAppointments: Appointment[],
+  excludeAppointmentId?: string,
+): boolean {
+  return isBookedAtMeetingIso(meetingDateIso, mentorAppointments, excludeAppointmentId);
 }
 
 /** True when the booker already has a non-cancelled appointment at this slot start. */
@@ -64,7 +83,19 @@ export function isUserBookedAtSlot(
   return isUserBookedAtMeetingIso(meetingDateIso, userAppointments, excludeAppointmentId);
 }
 
-/** Drop slots that would fail the confirm-step overlap check for the booker. */
+/** True when the mentor's slot is already booked at this start time. */
+export function isMentorSlotTaken(
+  dayYmd: string,
+  slot: SlotLike,
+  mentorAppointments: Appointment[],
+  excludeAppointmentId?: string,
+): boolean {
+  if (!dayYmd || !slot?.startTime || !mentorAppointments.length) return false;
+  const meetingDateIso = appointmentService.createMeetingDate(dayYmd, slot);
+  return isMentorSlotTakenAtMeetingIso(meetingDateIso, mentorAppointments, excludeAppointmentId);
+}
+
+/** Drop slots the booker already has at the same start time. */
 export function filterSlotsByUserOverlap(
   dayYmd: string,
   slots: TimeSlot[],
@@ -74,6 +105,41 @@ export function filterSlotsByUserOverlap(
   if (!slots.length || !userAppointments.length) return slots;
   return slots.filter(
     (s) => !isUserBookedAtSlot(dayYmd, s, userAppointments, excludeAppointmentId),
+  );
+}
+
+/** Drop slots the mentor already has booked (matches backend "already booked"). */
+export function filterSlotsByMentorBookings(
+  dayYmd: string,
+  slots: TimeSlot[],
+  mentorAppointments: Appointment[],
+  excludeAppointmentId?: string,
+): TimeSlot[] {
+  if (!slots.length || !mentorAppointments.length) return slots;
+  return slots.filter(
+    (s) => !isMentorSlotTaken(dayYmd, s, mentorAppointments, excludeAppointmentId),
+  );
+}
+
+/** Drop slots blocked by either the booker or the mentor calendar. */
+export function filterSlotsByExistingBookings(
+  dayYmd: string,
+  slots: TimeSlot[],
+  userAppointments: Appointment[],
+  mentorAppointments: Appointment[],
+  excludeAppointmentId?: string,
+): TimeSlot[] {
+  const afterUser = filterSlotsByUserOverlap(
+    dayYmd,
+    slots,
+    userAppointments,
+    excludeAppointmentId,
+  );
+  return filterSlotsByMentorBookings(
+    dayYmd,
+    afterUser,
+    mentorAppointments,
+    excludeAppointmentId,
   );
 }
 
@@ -136,6 +202,15 @@ export function validateSchedule(
       code: "overlap",
       title: "Schedule conflict",
       message: "You already have another appointment scheduled at this time.",
+    };
+  }
+
+  // 4) Mentor slot already taken (matches POST /appointments rejection)
+  if (isMentorSlotTakenAtMeetingIso(meetingDateIso, mentorAppointments, excludeAppointmentId)) {
+    return {
+      code: "mentor_slot_taken",
+      title: "Slot unavailable",
+      message: "This time slot is already booked.",
     };
   }
 
