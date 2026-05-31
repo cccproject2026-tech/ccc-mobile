@@ -26,7 +26,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -122,39 +122,68 @@ export default function ScheduleMeetingTimeScreen() {
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
 
+  const prevAvailabilityOwnerRef = useRef<string | null>(null);
+
   // Drawer keeps this screen mounted (freezeOnBlur). Re-sync calendar + refetch on each visit.
   useFocusEffect(
     useCallback(() => {
       if (!availabilityOwnerId) return;
 
-      queryClient.invalidateQueries({
-        queryKey: ["monthly-availability", availabilityOwnerId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["weekly-availability", availabilityOwnerId],
-      });
-      if (overlapUserId) {
-        queryClient.invalidateQueries({
-          queryKey: ["appointments", "user", overlapUserId],
-        });
-      }
-
+      setGoogleFilteredSlots(null);
+      setCalendarSlotSyncLoading(false);
+      setCalendarSlotSyncError(null);
+      setCalendarConnectBanners([]);
+      setCalendarBusyStripped(0);
       setSlot(null);
 
-      const ymd = useScheduleMeetingStore.getState().draft.selectedDayYmd;
+      const draftState = useScheduleMeetingStore.getState().draft;
+      const ymd = draftState.selectedDayYmd;
+      const n = new Date();
+      let month = n.getMonth() + 1;
+      let year = n.getFullYear();
+
       if (ymd) {
         const cal = calendarYearMonthFromYmd(ymd);
         if (cal) {
-          setCurrentMonth(cal.month);
-          setCurrentYear(cal.year);
-          return;
+          month = cal.month;
+          year = cal.year;
         }
       }
+
+      setCurrentMonth(month);
+      setCurrentYear(year);
+
+      void queryClient.refetchQueries({
+        queryKey: ["weekly-availability", availabilityOwnerId],
+      });
+      void queryClient.refetchQueries({
+        queryKey: ["monthly-availability", availabilityOwnerId, month, year],
+      });
+      if (overlapUserId) {
+        void queryClient.refetchQueries({
+          queryKey: ["appointments", "user", overlapUserId],
+        });
+      }
+    }, [availabilityOwnerId, overlapUserId, queryClient, setSlot]),
+  );
+
+  // New person / second booking in a row — drop stale month + slot sync from the prior session.
+  useEffect(() => {
+    if (!availabilityOwnerId) return;
+    const ownerChanged = prevAvailabilityOwnerRef.current !== availabilityOwnerId;
+    prevAvailabilityOwnerRef.current = availabilityOwnerId;
+    if (!ownerChanged) return;
+
+    setGoogleFilteredSlots(null);
+    setCalendarSlotSyncLoading(false);
+    setCalendarSlotSyncError(null);
+
+    if (!draft.selectedDayYmd) {
       const n = new Date();
       setCurrentMonth(n.getMonth() + 1);
       setCurrentYear(n.getFullYear());
-    }, [availabilityOwnerId, overlapUserId, queryClient, setSlot]),
-  );
+    }
+  }, [availabilityOwnerId, draft.selectedDayYmd]);
 
   // Weekly settings / saved slots (source of truth for meeting settings + raw saved blocks).
   const { availability: weeklyAvailability, isLoading: isLoadingWeekly, isError: isWeeklyError } = useWeeklyAvailability(
@@ -170,7 +199,7 @@ export default function ScheduleMeetingTimeScreen() {
   // This endpoint also applies backend constraints (min notice / max bookings per day).
   const {
     availability: monthlyAvailability,
-    isFetching: isFetchingMonthly,
+    isLoading: isLoadingMonthly,
     isError: isMonthlyError,
   } = useMonthlyAvailability(
     {
@@ -184,9 +213,12 @@ export default function ScheduleMeetingTimeScreen() {
       enabled: Boolean(availabilityOwnerId),
       // IMPORTANT: never show generated/fake availability in scheduling flow.
       allowDefaultForMentee: false,
-      staleTimeMs: 0,
+      staleTimeMs: 2000,
     },
   );
+
+  /** Only block the calendar when this month has never loaded — not on background refetch. */
+  const showMonthLoadingOverlay = isLoadingMonthly;
 
   const settings = weeklyAvailability;
   const weeklySlots = weeklyAvailability?.weeklySlots ?? [];
@@ -277,7 +309,7 @@ export default function ScheduleMeetingTimeScreen() {
 
   // If this month has no bookable days left, walk forward until we find some.
   useEffect(() => {
-    if (isLoadingWeekly || isFetchingMonthly) return;
+    if (isLoadingWeekly || isLoadingMonthly) return;
     if (availableDates.length > 0) return;
 
     const today = new Date();
@@ -292,7 +324,7 @@ export default function ScheduleMeetingTimeScreen() {
     availableDates.length,
     currentMonth,
     currentYear,
-    isFetchingMonthly,
+    isLoadingMonthly,
     isLoadingWeekly,
   ]);
 
@@ -372,6 +404,7 @@ export default function ScheduleMeetingTimeScreen() {
 
     return () => {
       cancelled = true;
+      setCalendarSlotSyncLoading(false);
     };
   }, [
     availabilityOwnerId,
@@ -545,7 +578,7 @@ export default function ScheduleMeetingTimeScreen() {
               disablePastDates={true}
               markToday={true}
             />
-            {isFetchingMonthly ? (
+            {showMonthLoadingOverlay ? (
               <View style={styles.calendarLoadingOverlay} pointerEvents="none">
                 <ActivityIndicator color="#FFFFFF" />
                 <Text style={styles.calendarLoadingText}>Loading {visibleMonthLabel}…</Text>
