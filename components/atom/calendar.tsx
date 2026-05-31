@@ -253,7 +253,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
       };
     }
 
-    if (selected && marked[selected]) {
+    if (selected && marked[selected] && isDateAvailable(selected)) {
       marked[selected] = {
         ...marked[selected],
         customStyles: {

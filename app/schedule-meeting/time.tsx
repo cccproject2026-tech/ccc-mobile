@@ -33,12 +33,19 @@ function ymdToday() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function pickDefaultDayYmd(availableDates: string[]): string {
-  if (availableDates.length === 0) return "";
+/** First upcoming date that still has at least one bookable slot (min-notice applied). */
+function pickNearestBookableDay(
+  availableDates: string[],
+  hasBookableSlots: (ymd: string) => boolean,
+  skipYmd?: string,
+): string {
   const todayYmd = ymdToday();
-  if (availableDates.includes(todayYmd)) return todayYmd;
-  const nextUpcoming = [...availableDates].filter((d) => d >= todayYmd).sort()[0];
-  return nextUpcoming || [...availableDates].sort()[0];
+  const ordered = [...availableDates].filter((d) => d >= todayYmd).sort();
+  for (const ymd of ordered) {
+    if (skipYmd && ymd === skipYmd) continue;
+    if (hasBookableSlots(ymd)) return ymd;
+  }
+  return ordered.find((d) => d !== skipYmd) || "";
 }
 
 export default function ScheduleMeetingTimeScreen() {
@@ -178,36 +185,24 @@ export default function ScheduleMeetingTimeScreen() {
     );
   }, [currentMonth, currentYear, monthlyAvailability, weeklySlots]);
 
-  const availableDates = useMemo(() => {
-    if (!mergedAvailability?.length) return [];
-    const set = new Set<string>();
-    for (const day of mergedAvailability as any[]) {
-      const key = toDateString(String(day?.date ?? ""));
-      if (!key) continue;
-      const slots = slotsFromWeeklyOrMonthlyDay(day);
-      if (slots.length > 0) set.add(key);
-    }
-    return Array.from(set).sort();
-  }, [mergedAvailability]);
-
-  useEffect(() => {
-    if (availableDates.length === 0) return;
-
-    const current = draft.selectedDayYmd;
-    if (!current || !availableDates.includes(current)) {
-      setDay(pickDefaultDayYmd(availableDates));
-    }
-  }, [availableDates, draft.selectedDayYmd, setDay]);
-
-  useEffect(() => {
-    // reset time when day changes
-    setSlot(null);
-  }, [draft.selectedDayYmd, setSlot]);
-
   const schedulingSettings = useMemo((): WeeklyAvailability | null => {
     if (!weeklyAvailability) return null;
     return weeklyAvailability as WeeklyAvailability;
   }, [weeklyAvailability]);
+
+  const availableDates = useMemo(() => {
+    if (!mergedAvailability?.length) return [];
+    const todayYmd = ymdToday();
+    const set = new Set<string>();
+    for (const day of mergedAvailability as any[]) {
+      const key = toDateString(String(day?.date ?? ""));
+      if (!key || key < todayYmd) continue;
+      const slots = slotsFromWeeklyOrMonthlyDay(day);
+      const bookable = filterSlotsByMinNotice(key, slots, schedulingSettings);
+      if (bookable.length > 0) set.add(key);
+    }
+    return Array.from(set).sort();
+  }, [mergedAvailability, schedulingSettings]);
 
   const minNoticeHours = schedulingSettings?.minSchedulingNoticeHours ?? 0;
 
@@ -229,6 +224,62 @@ export default function ScheduleMeetingTimeScreen() {
     },
     [mergedAvailability, schedulingSettings],
   );
+
+  const selectNearestBookableDay = useCallback(
+    (skipYmd?: string) => {
+      if (availableDates.length === 0) return;
+      const next = pickNearestBookableDay(
+        availableDates,
+        (ymd) => getTimeSlotsForDate(ymd).length > 0,
+        skipYmd,
+      );
+      if (!next || next === draft.selectedDayYmd) return;
+      setDay(next);
+      const cal = calendarYearMonthFromYmd(next);
+      if (cal) {
+        setCurrentMonth(cal.month);
+        setCurrentYear(cal.year);
+      }
+    },
+    [availableDates, draft.selectedDayYmd, getTimeSlotsForDate, setDay],
+  );
+
+  // If this month has no bookable days left, walk forward until we find some.
+  useEffect(() => {
+    if (isLoadingWeekly || isFetchingMonthly) return;
+    if (availableDates.length > 0) return;
+
+    const today = new Date();
+    const monthsAhead =
+      (currentYear - today.getFullYear()) * 12 + (currentMonth - 1 - today.getMonth());
+    if (monthsAhead >= 12) return;
+
+    const next = new Date(currentYear, currentMonth, 1);
+    setCurrentMonth(next.getMonth() + 1);
+    setCurrentYear(next.getFullYear());
+  }, [
+    availableDates.length,
+    currentMonth,
+    currentYear,
+    isFetchingMonthly,
+    isLoadingWeekly,
+  ]);
+
+  useEffect(() => {
+    if (availableDates.length === 0) return;
+
+    const todayYmd = ymdToday();
+    const current = draft.selectedDayYmd;
+    const invalid = !current || current < todayYmd || !availableDates.includes(current);
+    if (invalid) {
+      selectNearestBookableDay();
+    }
+  }, [availableDates, draft.selectedDayYmd, selectNearestBookableDay]);
+
+  useEffect(() => {
+    // reset time when day changes
+    setSlot(null);
+  }, [draft.selectedDayYmd, setSlot]);
 
   const timeSlots = useMemo(
     () => (draft.selectedDayYmd ? getTimeSlotsForDate(draft.selectedDayYmd) : []),
@@ -304,44 +355,35 @@ export default function ScheduleMeetingTimeScreen() {
 
   const displayTimeSlots = googleFilteredSlots ?? timeSlots;
 
-  // After a booking, cached dates can still list a day with zero remaining slots.
+  // Selected day had slots locally but none remain after sync — try the next bookable date.
   useEffect(() => {
-    if (!draft.selectedDayYmd || displayTimeSlots.length > 0 || availableDates.length === 0) {
+    if (calendarSlotSyncLoading || availableDates.length === 0) return;
+    if (displayTimeSlots.length > 0) return;
+
+    const current = draft.selectedDayYmd;
+    if (!current) {
+      selectNearestBookableDay();
       return;
     }
-    const fallback = availableDates.find((d) => getTimeSlotsForDate(d).length > 0);
-    if (fallback && fallback !== draft.selectedDayYmd) {
-      setDay(fallback);
+
+    if (timeSlots.length === 0) {
+      const todayYmd = ymdToday();
+      const invalid = current < todayYmd || !availableDates.includes(current);
+      if (invalid) selectNearestBookableDay();
+      return;
     }
+
+    selectNearestBookableDay(current);
   }, [
-    availableDates,
-    draft.selectedDayYmd,
+    availableDates.length,
+    calendarSlotSyncLoading,
     displayTimeSlots.length,
-    getTimeSlotsForDate,
-    setDay,
+    draft.selectedDayYmd,
+    selectNearestBookableDay,
+    timeSlots.length,
   ]);
 
   const canContinue = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
-
-  const today = ymdToday();
-  const tomorrow = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  }, []);
-
-  const inThisWeek = useMemo(() => {
-    const start = new Date(`${today}T00:00:00`);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 7);
-    return availableDates.find((ymd) => {
-      const d = new Date(`${ymd}T00:00:00`);
-      return d >= start && d <= end;
-    });
-  }, [availableDates, today]);
 
   const visibleMonthLabel = useMemo(() => {
     const d = new Date(currentYear, currentMonth - 1, 1);
@@ -412,49 +454,6 @@ export default function ScheduleMeetingTimeScreen() {
               {msg}
             </Text>
           ))}
-
-          <View style={styles.quickDatesRow}>
-            <Pressable
-              style={[
-                styles.chip,
-                draft.selectedDayYmd === today && styles.chipSelected,
-                !availableDates.includes(today) && styles.chipDisabled,
-              ]}
-              disabled={!availableDates.includes(today)}
-              onPress={() => setDay(today)}
-            >
-              <Text style={[styles.chipText, draft.selectedDayYmd === today && styles.chipTextSelected]}>
-                Today
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.chip,
-                draft.selectedDayYmd === tomorrow && styles.chipSelected,
-                !availableDates.includes(tomorrow) && styles.chipDisabled,
-              ]}
-              disabled={!availableDates.includes(tomorrow)}
-              onPress={() => setDay(tomorrow)}
-            >
-              <Text style={[styles.chipText, draft.selectedDayYmd === tomorrow && styles.chipTextSelected]}>
-                Tomorrow
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.chip,
-                styles.chipGrow,
-                inThisWeek && draft.selectedDayYmd === inThisWeek && styles.chipSelected,
-                !inThisWeek && styles.chipDisabled,
-              ]}
-              disabled={!inThisWeek}
-              onPress={() => inThisWeek && setDay(inThisWeek)}
-            >
-              <Text style={[styles.chipText, inThisWeek && draft.selectedDayYmd === inThisWeek && styles.chipTextSelected]}>
-                This week
-              </Text>
-            </Pressable>
-          </View>
 
           <View style={styles.calendarCard}>
             <GradientCalendar
@@ -607,14 +606,8 @@ const styles = StyleSheet.create({
   subtle: { color: "rgba(255,255,255,0.75)", fontWeight: "600" },
   primary: { marginTop: 12, backgroundColor: "#FFFFFF", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
   primaryText: { color: "#1E3A6F", fontWeight: "900" },
-  quickDatesRow: { flexDirection: "row", gap: 10, marginTop: 14, marginBottom: 12 },
-  chip: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.14)" },
-  chipGrow: { flex: 1, alignItems: "center" },
-  chipDisabled: { opacity: 0.45 },
-  chipText: { color: "#FFFFFF", fontWeight: "900", fontSize: 12 },
-  chipSelected: { backgroundColor: "#FFFFFF", borderColor: "#FFFFFF" },
-  chipTextSelected: { color: "#1E3A6F" },
   calendarCard: {
+    marginTop: 12,
     borderRadius: 16,
     overflow: "hidden",
     borderWidth: 0,
