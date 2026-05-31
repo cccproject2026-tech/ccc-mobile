@@ -4,8 +4,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore, type SchedulePerson } from "@/stores/scheduleMeeting.store";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import {
-  exitScheduleMeetingFlow,
   getScheduleMeetingBase,
+  leaveScheduleMeetingPersonStep,
 } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -118,7 +118,7 @@ export default function ScheduleMeetingPersonScreen() {
   const loading = isMentor ? isLoadingMentees : isLoadingMentors;
 
   const handleBack = useCallback(() => {
-    exitScheduleMeetingFlow(router, user?.role);
+    leaveScheduleMeetingPersonStep(router, user?.role);
   }, [router, user?.role]);
 
   return (

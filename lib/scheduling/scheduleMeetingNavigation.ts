@@ -1,13 +1,12 @@
-import type { Router } from "expo-router";
+import type { Href, Router } from "expo-router";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
+import { safeGoBack } from "@/utils/navigation";
 
 export type ScheduleMeetingMode = "schedule" | "reschedule";
 
-function appointmentsRouteForRole(role: string | undefined): string {
+function appointmentsRouteForRole(role: string | undefined): Href {
   const r = String(role ?? "").toLowerCase();
-  if (r === "mentor") {
-    return "/(mentor)/(tabs)/(index,roadmap,assessments,appointments,progress,mentees)/appointments";
-  }
+  if (r === "mentor") return "/(mentor)/(tabs)/appointments";
   if (r === "director") return "/(director)/(tabs)/appointments";
   return "/(pastor)/(tabs)/appointments";
 }
@@ -50,12 +49,22 @@ export function openScheduleMeeting(
   } as never);
 }
 
-/** Leave the scheduler and return to the role's appointments list. */
+/** Back from the first scheduler screen — restore the screen that opened the flow. */
+export function leaveScheduleMeetingPersonStep(
+  router: Router,
+  role: string | undefined,
+): void {
+  safeGoBack(router, { fallback: appointmentsRouteForRole(role) });
+  // Reset after leaving so confirm/time screens don't react to an empty draft while still mounted.
+  setTimeout(() => useScheduleMeetingStore.getState().reset(), 0);
+}
+
+/** Leave the scheduler after booking — always returns to the role's appointments list. */
 export function exitScheduleMeetingFlow(
   router: Router,
   role: string | undefined,
 ): void {
-  router.replace(appointmentsRouteForRole(role) as never);
+  router.replace(appointmentsRouteForRole(role));
   // Reset after leaving so confirm/time screens don't react to an empty draft while still mounted.
   setTimeout(() => useScheduleMeetingStore.getState().reset(), 0);
 }
