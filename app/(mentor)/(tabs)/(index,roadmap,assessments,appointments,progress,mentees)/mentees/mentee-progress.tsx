@@ -1,4 +1,3 @@
-import PMPBottomSheet from "@/components/director/PMPBottomSheet";
 import { ProgressAssessmentCard } from "@/components/director/ProgressAssessmentCard";
 import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarChart";
 import { ProgressPieChart } from "@/components/director/ProgressPieChart";
@@ -13,14 +12,11 @@ import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { comparePastorPhasesForHome } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { useAuthStore } from "@/stores";
-import { sharePdfFromHtml } from "@/utils/pdf";
-import { Ionicons } from "@expo/vector-icons";
-import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { RoadmapTabStrip } from "@/components/ui/design-system";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RefreshControl, ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -52,7 +48,6 @@ export default function MenteeProgressScreen() {
   const { menteeId } = useLocalSearchParams<{ menteeId?: string }>();
   const { user } = useAuthStore();
   const { bottom } = useSafeAreaInsets();
-  const pmpSheetRef = useRef<BottomSheetModal>(null);
 
   const [roadmapTabs, setRoadmapTabs] = useState<TabKey>("All");
   const [assessmentTabs, setAssessmentTabs] = useState<TabKey>("All");
@@ -162,62 +157,20 @@ export default function MenteeProgressScreen() {
     ]);
   }, [refetchAssessments, refetchProgress, refetchRoadmaps]);
 
-  const closePMPSheet = useCallback(() => pmpSheetRef.current?.dismiss(), []);
-  const openPMPSheet = useCallback(() => pmpSheetRef.current?.present(), []);
+  const handleAssessmentCdpPress = useCallback((assessment: any) => {
+    const assessmentId = assessment?.id || assessment?.assessmentId || assessment?._id;
+    if (!assessmentId || !menteeId) return;
 
-  const handlePmpNext = useCallback(() => {
-    closePMPSheet();
     router.push({
-      pathname: "/progress/report",
+      pathname: "/(mentor)/assessments/answer-questions" as any,
       params: {
-        userName: menteeName,
-        completedDate: new Date().toLocaleDateString("en-GB"),
-        assessmentTitle: "Recommendations",
+        assessmentId: String(assessmentId),
+        viewMode: "true",
+        targetUserId: menteeId,
+        openCdp: "true",
       },
     });
-  }, [closePMPSheet, menteeName]);
-
-  const handlePmpDownload = useCallback(async () => {
-    closePMPSheet();
-
-    const plans = [
-      "Schedule 1-on-1 with a mentor",
-      "Take trauma survey (via Claritysoft)",
-      "Identify areas of stress/anxiety",
-      "Family Wellbeing survey",
-      "Collaborate on a healing plan",
-      "Collaborate on a physical Exercise plan",
-      "Establish a prayer covenant/partnership",
-      "Finalize a growth plan",
-    ];
-
-    const listHtml = plans.map((t) => `<li>${t}</li>`).join("");
-
-    const html = `
-      <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <style>
-            body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial; padding: 24px; color: #0f172a; }
-            h1 { font-size: 18px; margin: 0 0 10px; color: #1e3a8a; }
-            h2 { font-size: 16px; margin: 18px 0 10px; border-bottom: 2px solid #1e3a8a; padding-bottom: 6px; color: #1e3a8a; }
-            ul { margin: 0; padding-left: 18px; }
-            li { margin: 0 0 8px; line-height: 1.35; }
-          </style>
-        </head>
-        <body>
-          <h1>Recommendations</h1>
-          <h2>Section 1 - Personal Well-Being</h2>
-          <ul>${listHtml}</ul>
-        </body>
-      </html>
-    `;
-
-    await sharePdfFromHtml({
-      html,
-      fileName: `${menteeName.replace(/\s+/g, "_") || "Recommendations"}_Report.pdf`,
-    });
-  }, [closePMPSheet, menteeName]);
+  }, [menteeId]);
 
   const handleRoadmapPress = useCallback((roadmapId: string) => {
     if (!menteeId) return;
@@ -415,7 +368,7 @@ export default function MenteeProgressScreen() {
                     <ProgressAssessmentCard
                       data={assessment as any}
                       onPress={() => handleAssessmentPress(assessment)}
-                      onDevelopmentPlanPress={openPMPSheet}
+                      onDevelopmentPlanPress={() => handleAssessmentCdpPress(assessment)}
                     />
                   </View>
                 ))
@@ -431,13 +384,6 @@ export default function MenteeProgressScreen() {
 
         </ScrollView>
       </View>
-
-      <PMPBottomSheet
-        ref={pmpSheetRef}
-        onClose={closePMPSheet}
-        onNext={handlePmpNext}
-        onDownload={handlePmpDownload}
-      />
     </AppGradientBackground>
   );
 }
