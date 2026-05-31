@@ -28,7 +28,9 @@ export default function ItemDetail() {
     }>();
     const router = useRouter();
     const { handleBack } = useNavigationBack(
-        `/(mentor)/roadmap/${phaseId}` as const,
+        phaseId
+            ? (`/(mentor)/roadmap/${phaseId}` as const)
+            : ('/(mentor)/roadmap/landing/landing' as const),
     );
     const { user } = useAuthStore();
     const isLibraryMode = isRoadmapLibraryMode(libraryMode);

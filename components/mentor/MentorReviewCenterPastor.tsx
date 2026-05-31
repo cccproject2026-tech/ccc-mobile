@@ -5,6 +5,7 @@ import {
 import { ReviewPastorPhaseOverview } from "@/components/mentor/review-center/ReviewPastorPhaseOverview";
 import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
+import { buildReviewCenterPastorHref } from "@/lib/navigation/reviewCenterNavigation";
 import {
   computeDashboardCounts,
   computePendingActionCount,
@@ -35,8 +36,13 @@ export default function MentorReviewCenterPastor() {
 
   const pastorIdStr = String(pastorId ?? "");
   const { allItems, pastorGroups, isLoading } = useReviewCenterV2();
-  const { handleBack, currentReturnTo, pushWithReturn } = useNavigationBack(
+  const { handleBack, pushWithReturn } = useNavigationBack(
     "/(mentor)/(tabs)/review-center" as const,
+  );
+
+  const reviewCenterReturnTo = useMemo(
+    () => buildReviewCenterPastorHref(pastorIdStr, String(pastorNameParam ?? "")),
+    [pastorIdStr, pastorNameParam],
   );
 
   const pastorName = useMemo(() => {
@@ -114,7 +120,7 @@ export default function MentorReviewCenterPastor() {
             pastorId={pastorIdStr}
             pastorName={pastorName}
             pastorItems={pastorItems}
-            returnTo={currentReturnTo}
+            returnTo={reviewCenterReturnTo}
           />
         </Animated.View>
 

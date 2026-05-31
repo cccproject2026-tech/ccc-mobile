@@ -68,7 +68,7 @@ const STATUS_TABS: { key: StatusTabKey; label: string }[] = [
 export default function Landing() {
   const { menteeId } = useLocalSearchParams<{ menteeId?: string; menteeName?: string }>();
   const { handleBack, returnToFromRoute, appendReturnToParams } = useNavigationBack(
-    "/(mentor)/(tabs)/roadmap/landing/landing" as const,
+    "/(mentor)/roadmap/landing/landing" as const,
   );
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [selectedRoadmapForMenu, setSelectedRoadmapForMenu] = useState<Roadmap | null>(null);

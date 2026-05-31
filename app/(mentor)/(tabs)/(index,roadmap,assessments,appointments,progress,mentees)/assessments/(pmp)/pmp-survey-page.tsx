@@ -83,7 +83,7 @@ export default function PmpSurvey() {
   const menteeId = params.menteeId as string | undefined;
   const assessmentStatus = params.assessmentStatus as string | undefined;
   const { handleBack, appendReturnToParams } = useNavigationBack(
-    "/(mentor)/(tabs)/assessments-v2" as const,
+    "/(mentor)/assessments-v2" as const,
   );
 
   const canViewResponses =

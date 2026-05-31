@@ -4,6 +4,10 @@ import { DASHBOARD_CARD_CONFIG } from "@/components/mentor/review-center/ReviewD
 import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
 import {
+  buildReviewCenterListHref,
+} from "@/lib/navigation/reviewCenterNavigation";
+import { appendReturnTo } from "@/utils/navigation";
+import {
   filterItemsByBucket,
   filterItemsByPastor,
   groupReviewItemsByRoadmap,
@@ -80,7 +84,21 @@ export default function MentorReviewCenterList() {
       } as const)
     : ("/(mentor)/(tabs)/review-center" as const);
 
-  const { handleBack, appendReturnToParams } = useNavigationBack(listFallback);
+  const listReturnTo = useMemo(
+    () =>
+      pastorId
+        ? buildReviewCenterListHref(bucket, pastorId, pastorName)
+        : buildReviewCenterListHref(bucket),
+    [bucket, pastorId, pastorName],
+  );
+
+  const { handleBack } = useNavigationBack(listFallback);
+
+  const appendReturnToParams = useCallback(
+    (nextParams: Record<string, string | undefined>) =>
+      appendReturnTo(nextParams, listReturnTo),
+    [listReturnTo],
+  );
   const { allItems, markAsSeen, isLoading } = useReviewCenterV2();
 
   const listItems = useMemo(() => {

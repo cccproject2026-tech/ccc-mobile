@@ -42,7 +42,7 @@ export default function RoadmapDetail() {
     }>();
     const isLibraryMode = isRoadmapLibraryMode(libraryMode);
     const { handleBack, appendReturnToParams } = useNavigationBack(
-        '/(mentor)/(tabs)/roadmap/landing/landing' as const,
+        '/(mentor)/roadmap/landing/landing' as const,
     );
     const { bottom } = useSafeAreaInsets();
     const { width } = useWindowDimensions();

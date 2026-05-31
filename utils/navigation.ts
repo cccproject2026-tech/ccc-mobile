@@ -4,6 +4,29 @@ export type ReturnToParams = {
   returnTo?: string | string[];
 };
 
+const MENTOR_TABS_GROUPED_PREFIX = "/(mentor)/(tabs)";
+
+/** Expand tab-relative paths (e.g. `/review-center/pastor`) to full Expo Router hrefs. */
+export function normalizeReturnToHref(href?: string | null): string | undefined {
+  const trimmed = String(href ?? "").trim();
+  if (!trimmed) return undefined;
+  if (trimmed.startsWith("/(")) return trimmed;
+
+  const qIndex = trimmed.indexOf("?");
+  const path = qIndex >= 0 ? trimmed.slice(0, qIndex) : trimmed;
+  const query = qIndex >= 0 ? trimmed.slice(qIndex) : "";
+
+  if (
+    path.startsWith("/review-center") ||
+    path.startsWith("/roadmap") ||
+    path.startsWith("/assessments")
+  ) {
+    return `${MENTOR_TABS_GROUPED_PREFIX}${path}${query}`;
+  }
+
+  return trimmed;
+}
+
 /** Read `returnTo` route param (href to restore when leaving a cross-stack screen). */
 export function getReturnToParam(params: ReturnToParams): string | undefined {
   const raw = params.returnTo;
@@ -29,7 +52,8 @@ export function buildReturnTo(
   }
 
   const query = qs.toString();
-  return query ? `${pathname}?${query}` : pathname;
+  const href = query ? `${pathname}?${query}` : pathname;
+  return normalizeReturnToHref(href) ?? href;
 }
 
 /** Attach `returnTo` when pushing into another stack so back can restore the prior screen. */
@@ -49,19 +73,21 @@ export function safeGoBack(
   router: Router,
   options?: { fallback?: Href; returnTo?: string },
 ): void {
-  const returnTo = options?.returnTo?.trim();
+  const returnTo = normalizeReturnToHref(options?.returnTo);
 
   if (returnTo) {
-    if (typeof router.dismissTo === "function") {
-      router.dismissTo(returnTo as Href);
-      return;
-    }
-    router.push(returnTo as Href);
+    router.replace(returnTo as Href);
     return;
   }
 
   if (router.canGoBack()) {
     router.back();
+    return;
+  }
+
+  const fallback = normalizeReturnToHref(String(options?.fallback ?? ""));
+  if (fallback) {
+    router.replace(fallback as Href);
     return;
   }
 

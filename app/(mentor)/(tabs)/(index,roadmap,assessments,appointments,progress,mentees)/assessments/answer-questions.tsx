@@ -49,7 +49,7 @@ export default function AnswerQuestionPage() {
     targetUserId,
   );
   const router = useRouter();
-  const { handleBack } = useNavigationBack("/(mentor)/(tabs)/assessments-v2" as const);
+  const { handleBack } = useNavigationBack("/(mentor)/assessments-v2" as const);
   const { user } = useAuthStore();
 
   // Determine the user ID to fetch answers for: passed targetUserId (mentee) or current user (if fallback)
