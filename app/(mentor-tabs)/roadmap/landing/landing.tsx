@@ -6,7 +6,7 @@ import SearchBar from "@/components/director/SearchBar";
 import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
-import { getCardStatus } from "@/lib/roadmap/helpers";
+import { getCardStatus, getSingleNestedTaskId } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { Roadmap, RoadmapCardStatus } from "@/lib/roadmap/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,9 +34,9 @@ export default function Landing() {
         }
 
         // Navigate to roadmap detail - using dynamic routes
-        if (roadmap.roadmaps.length === 1 && !roadmap.haveNextedRoadMaps) {
-            // Single task - go directly to task
-            router.push(`/(mentor-tabs)/roadmap/${roadmap._id}/${roadmap.roadmaps[0]._id}` as any);
+        const singleTaskId = getSingleNestedTaskId(roadmap);
+        if (singleTaskId) {
+            router.push(`/(mentor-tabs)/roadmap/${roadmap._id}/${singleTaskId}` as any);
         } else {
             // Multiple tasks - show task list
             router.push(`/(mentor-tabs)/roadmap/${roadmap._id}` as any);

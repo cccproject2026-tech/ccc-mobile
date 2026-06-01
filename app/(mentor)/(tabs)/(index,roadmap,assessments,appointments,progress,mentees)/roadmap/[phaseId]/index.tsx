@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/design-system/index';
 import { useRoadmap } from '@/hooks/roadmaps/useRoadmaps';
 import { useRoadmapMeta } from '@/hooks/roadmap/useRoadmapMeta';
-import { getTasks } from '@/lib/roadmap/helpers';
+import { getSingleNestedTaskId, getTasks } from '@/lib/roadmap/helpers';
 import { isRoadmapLibraryMode, roadmapLibraryRouteParams } from '@/lib/roadmap/libraryMode';
 import { getTaskCard } from '@/lib/roadmap/mappers';
 import type { NestedRoadmap, Roadmap } from '@/lib/roadmap/types';
@@ -18,7 +18,7 @@ import { useNavigationBack } from '@/hooks/navigation/useNavigationBack';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Pressable,
@@ -139,6 +139,28 @@ export default function RoadmapDetail() {
         [],
     );
 
+    const singleTaskId = useMemo(() => getSingleNestedTaskId(roadmap), [roadmap]);
+
+    useEffect(() => {
+        if (!roadmap || !singleTaskId || isLibraryMode) return;
+        router.replace({
+            pathname: `/(mentor)/roadmap/${phaseId}/${singleTaskId}` as any,
+            params: appendReturnToParams({
+                menteeId: menteeId as string | undefined,
+                menteeName: menteeName as string | undefined,
+                ...roadmapLibraryRouteParams(isLibraryMode),
+            }),
+        });
+    }, [
+        roadmap,
+        singleTaskId,
+        phaseId,
+        menteeId,
+        menteeName,
+        isLibraryMode,
+        appendReturnToParams,
+    ]);
+
     const filteredTasks = useMemo(() => {
         if (!roadmap) return [];
 
@@ -169,8 +191,8 @@ export default function RoadmapDetail() {
         });
     }, [roadmap, activeTab, allTasks, search]);
 
-    // Loading state
-    if (isLoading) {
+    // Loading state (or redirecting single-task phases straight to task detail)
+    if (isLoading || (!isLibraryMode && singleTaskId && roadmap)) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
                 <View style={{ paddingBottom: 10 }}>
@@ -287,7 +309,7 @@ export default function RoadmapDetail() {
             >
                 {filteredTasks.length > 0 ? (
                     filteredTasks.map(task => {
-                        const cardData = getTaskCard(task);
+                        const cardData = { ...getTaskCard(task), phaseLabel: undefined };
                         return (
                             <Pressable
                                 key={task._id}

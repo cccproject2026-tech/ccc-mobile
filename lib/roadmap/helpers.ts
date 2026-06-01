@@ -569,6 +569,16 @@ export function isSingleTask(roadmap: Roadmap): boolean {
     return !roadmap?.haveNextedRoadMaps || !roadmap?.roadmaps || roadmap.roadmaps.length === 0;
 }
 
+/** When a phase has exactly one nested task, return its id for direct navigation. */
+export function getSingleNestedTaskId(
+    roadmap: Roadmap | null | undefined,
+): string | undefined {
+    const nested = (roadmap?.roadmaps ?? []).filter((task) => task != null);
+    if (nested.length !== 1) return undefined;
+    const id = nested[0]?._id;
+    return id != null && String(id).length > 0 ? String(id) : undefined;
+}
+
 /**
  * Get phase number from phase string
  * e.g., "Phase 1" -> 1

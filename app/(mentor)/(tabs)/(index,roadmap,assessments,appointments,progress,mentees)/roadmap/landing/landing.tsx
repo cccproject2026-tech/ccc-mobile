@@ -23,6 +23,7 @@ import {
   flattenPastorCompletedTasks,
   getCardStatus,
   getPhaseNumber,
+  getSingleNestedTaskId,
   type PastorCompletedTaskItem,
 } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
@@ -374,9 +375,10 @@ export default function Landing() {
           : {}),
       });
 
-      if (roadmap.roadmaps.length === 1 && !roadmap.haveNextedRoadMaps) {
+      const singleTaskId = getSingleNestedTaskId(roadmap);
+      if (singleTaskId) {
         router.push({
-          pathname: `/(mentor)/roadmap/${roadmap._id}/${roadmap.roadmaps[0]._id}` as any,
+          pathname: `/(mentor)/roadmap/${roadmap._id}/${singleTaskId}` as any,
           params: routeParams,
         });
       } else {

@@ -9,7 +9,7 @@ import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessmen
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { useProgress } from "@/hooks/progress/useProgress";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
-import { comparePastorPhasesForHome } from "@/lib/roadmap/helpers";
+import { comparePastorPhasesForHome, getSingleNestedTaskId } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { useAuthStore } from "@/stores";
 import { RoadmapTabStrip } from "@/components/ui/design-system";
@@ -172,18 +172,29 @@ export default function MenteeProgressScreen() {
     });
   }, [menteeId]);
 
-  const handleRoadmapPress = useCallback((roadmapId: string) => {
-    if (!menteeId) return;
+  const handleRoadmapPress = useCallback(
+    (roadmapId: string) => {
+      if (!menteeId) return;
 
-    router.push({
-      pathname: "/(mentor)/roadmap/[phaseId]" as any,
-      params: {
-        phaseId: roadmapId,
-        menteeId,
-        menteeName,
-      },
-    });
-  }, [menteeId, menteeName]);
+      const roadmap = roadmaps?.find((r) => r._id === roadmapId);
+      const singleTaskId = roadmap ? getSingleNestedTaskId(roadmap) : undefined;
+      const params = { menteeId, menteeName };
+
+      if (singleTaskId) {
+        router.push({
+          pathname: `/(mentor)/roadmap/${roadmapId}/${singleTaskId}` as any,
+          params,
+        });
+        return;
+      }
+
+      router.push({
+        pathname: "/(mentor)/roadmap/[phaseId]" as any,
+        params: { phaseId: roadmapId, ...params },
+      });
+    },
+    [menteeId, menteeName, roadmaps],
+  );
 
   const handleAssessmentPress = useCallback((assessment: any) => {
     if (!assessment?.id) return;

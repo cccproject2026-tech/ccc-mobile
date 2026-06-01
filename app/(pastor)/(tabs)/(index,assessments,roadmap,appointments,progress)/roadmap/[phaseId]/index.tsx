@@ -202,7 +202,7 @@ export default function PastorRoadmapDetail() {
             </View>
           ) : (
             filtered.map((t) => {
-              const cardData = getTaskCard(t);
+              const cardData = { ...getTaskCard(t), phaseLabel: undefined };
               return (
                 <Pressable key={String(t._id)} onPress={() => handleOpenTask(String(t._id))} style={styles.cardPress}>
                   <RoadmapCard data={cardData as any} />

@@ -7,6 +7,7 @@ import {
   formatPhaseStatusLabel,
   type ReviewRoadmapPhaseSummary,
 } from "@/lib/mentor/reviewCenterPhaseSummary";
+import { getSingleNestedTaskId } from "@/lib/roadmap/helpers";
 import { appendReturnTo } from "@/utils/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -114,10 +115,10 @@ export function ReviewPastorPhaseOverview({
         menteeName: pastorName,
       });
 
-      const nested = roadmap.roadmaps ?? [];
-      if (nested.length === 1 && !roadmap.haveNextedRoadMaps && nested[0]?._id) {
+      const singleTaskId = getSingleNestedTaskId(roadmap);
+      if (singleTaskId) {
         router.push({
-          pathname: `/(mentor)/roadmap/${roadmap._id}/${nested[0]._id}` as any,
+          pathname: `/(mentor)/roadmap/${roadmap._id}/${singleTaskId}` as any,
           params,
         });
         return;
