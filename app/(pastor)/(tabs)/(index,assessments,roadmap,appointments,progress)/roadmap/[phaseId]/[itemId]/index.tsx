@@ -10,7 +10,12 @@ import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
 import { Colors } from "@/constants/Colors";
 import { useTaskCompletionTimestamps } from "@/hooks/roadmap/useTaskCompletionTimestamps";
-import { useRoadmap, useRoadmapComments, useRoadmapQueries, useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import {
+  useAssignedRoadmapsSnapshot,
+  useRoadmap,
+  useRoadmapComments,
+  useRoadmapQueries,
+} from "@/hooks/roadmaps/useRoadmaps";
 import { useCompletionCelebration } from "@/hooks/roadmap/useCompletionCelebration";
 import { useRoadmapMeta } from "@/hooks/roadmap/useRoadmapMeta";
 import { resolveRoadmapDetailTask, resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
@@ -22,6 +27,7 @@ import { readTaskCompletionTimestamps } from "@/lib/roadmap/taskCompletionTimest
 import type { NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
+import { useStableFocusRefetch } from "@/hooks/roadmaps/useStableFocusRefetch";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -53,13 +59,16 @@ export default function PastorRoadmapItemDetail() {
   const targetUserId = user?.id;
   const threadRoadmapId = resolveRoadmapThreadId(itemId, phaseId);
 
-  const { data: roadmapRaw, isLoading, error, refetch, isRefetching } = useRoadmap(phaseId);
+  const { data: roadmapRaw, isLoading, error, refetch, refetchLight, isRefetching } = useRoadmap(
+    phaseId,
+    targetUserId,
+  );
   const { data: comments } = useRoadmapComments(threadRoadmapId, targetUserId);
   const { data: queries } = useRoadmapQueries(threadRoadmapId, targetUserId);
 
-  const { data: allRoadmaps } = useRoadmaps("pastor");
+  const allRoadmaps = useAssignedRoadmapsSnapshot();
   const baseSortedRoadmaps = useMemo(() => {
-    const list = [...(allRoadmaps ?? [])];
+    const list = [...allRoadmaps];
     list.sort((a, b) => comparePastorPhasesForFocus(a as Roadmap, b as Roadmap));
     return list as Roadmap[];
   }, [allRoadmaps]);
@@ -91,6 +100,14 @@ export default function PastorRoadmapItemDetail() {
   );
 
   const meta = useRoadmapMeta(roadmap as Roadmap | undefined, task);
+
+  useStableFocusRefetch(
+    () => {
+      reloadTimestamps();
+      void (refetchLight?.() ?? refetch());
+    },
+    `roadmap-task-${phaseId ?? ""}-${itemId ?? ""}`,
+  );
 
   const {
     celebration,

@@ -93,6 +93,160 @@ export function getEffectiveTaskExtras(
     return extrasFromSavedItems(savedItems);
 }
 
+/** True when every task extra is an ASSESSMENT link (completion is owned by backend progress). */
+export function isAssessmentOnlyTask(extras: Extra[]): boolean {
+    return extras.length > 0 && extras.every((extra) => extra.type === 'ASSESSMENT');
+}
+
+/** Normalize API ids that may arrive as strings or populated objects. */
+export function normalizeMongoId(value: unknown): string {
+    if (value == null) return '';
+    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'object') {
+        const obj = value as { _id?: unknown; $oid?: unknown };
+        if (typeof obj._id === 'string') return obj._id.trim();
+        if (typeof obj.$oid === 'string') return obj.$oid.trim();
+        if (obj._id != null) return normalizeMongoId(obj._id);
+    }
+    return String(value).trim();
+}
+
+export type AssessmentAnswerSectionSlice = {
+    sectionId?: string;
+    layers?: unknown[];
+    recommendations?: string[];
+};
+
+/** Pastor all sections answered → submitted; any mentor CDP → completed (matches backend). */
+export function deriveAssessmentTaskStatusFromAnswers(
+    sections: AssessmentAnswerSectionSlice[] | undefined | null,
+    expectedSectionCount?: number,
+): 'submitted' | 'completed' | null {
+    if (!sections?.length) return null;
+
+    const hasAnyCdp = sections.some(
+        (s) => Array.isArray(s.recommendations) && s.recommendations.length > 0,
+    );
+    if (hasAnyCdp) return 'completed';
+
+    const expected =
+        typeof expectedSectionCount === 'number' && expectedSectionCount > 0
+            ? expectedSectionCount
+            : sections.length;
+
+    const sectionsWithAnswers = sections.filter(
+        (s) => Array.isArray(s.layers) && s.layers.length > 0,
+    );
+    if (sectionsWithAnswers.length < expected) return null;
+
+    return 'submitted';
+}
+
+/**
+ * When progress lags, derive submitted/completed from assessment answers (source of truth for CDP).
+ */
+export function applyAssessmentAnswerStatusOverlay(
+    roadmap: Roadmap,
+    answersByAssessmentId: Record<string, AssessmentAnswerSectionSlice[] | undefined>,
+): Roadmap {
+    if (!roadmap.roadmaps?.length) return roadmap;
+
+    let changed = false;
+    const roadmaps = roadmap.roadmaps.map((task) => {
+        if (!task?._id) return task;
+
+        const current = normalizeNestedTaskStatus(task.status);
+        if (current === 'completed') return task;
+
+        const defExtras = collectDefinitionExtras(task, roadmap);
+        if (!isAssessmentOnlyTask(defExtras)) return task;
+
+        const assessmentId = normalizeMongoId(defExtras[0]?.assessmentId);
+        if (!assessmentId) return task;
+
+        const derived = deriveAssessmentTaskStatusFromAnswers(
+            answersByAssessmentId[assessmentId],
+        );
+        if (!derived || current === derived) return task;
+
+        changed = true;
+        return { ...task, status: derived };
+    });
+
+    if (!changed) return roadmap;
+
+    const withTasks = { ...roadmap, roadmaps };
+    const { completed, total } = getCompletionStats(withTasks);
+    let status = roadmap.status;
+    if (total > 0 && completed >= total) {
+        status = 'completed';
+    } else if (completed > 0 || roadmaps.some((t) => normalizeNestedTaskStatus(t?.status) === 'submitted')) {
+        status = 'in-progress';
+    }
+    return { ...withTasks, status };
+}
+
+/** Backend writes this marker on roadmap extras when CDP fully completes an assessment task. */
+export function isSystemAssessmentCompletionExtra(extra: unknown): boolean {
+    if (!extra || typeof extra !== 'object') return false;
+    const item = extra as { type?: string; trigger?: string; completedBy?: string };
+    return (
+        item.type === 'ASSESSMENT' &&
+        (item.trigger === 'mentor_cdp_complete' || item.completedBy === 'system')
+    );
+}
+
+/**
+ * Overlay task completion from saved roadmap extras (backend-written after CDP).
+ * Used when progress nested steps lag behind extras completion.
+ */
+export function applyBackendAssessmentCompletionFromExtras(
+    roadmap: Roadmap,
+    extrasByTaskId: Record<string, { extras?: unknown[] } | undefined>,
+): Roadmap {
+    if (!roadmap.roadmaps?.length) return roadmap;
+
+    let changed = false;
+    const roadmaps = roadmap.roadmaps.map((task) => {
+        if (!task?._id) return task;
+        if (normalizeNestedTaskStatus(task.status) === 'completed') return task;
+
+        const defExtras = collectDefinitionExtras(task, roadmap);
+        if (!isAssessmentOnlyTask(defExtras)) return task;
+
+        const assessmentIds = defExtras
+            .map((e) => normalizeMongoId(e.assessmentId))
+            .filter(Boolean);
+        if (assessmentIds.length === 0) return task;
+
+        const saved = extrasByTaskId[normalizeMongoId(task._id)]?.extras ?? [];
+        const systemCompletedIds = new Set(
+            saved
+                .filter(isSystemAssessmentCompletionExtra)
+                .map((e) => normalizeMongoId((e as { assessmentId?: unknown }).assessmentId))
+                .filter(Boolean),
+        );
+
+        const allComplete = assessmentIds.every((id) => systemCompletedIds.has(id));
+        if (!allComplete) return task;
+
+        changed = true;
+        return { ...task, status: 'completed' as const };
+    });
+
+    if (!changed) return roadmap;
+
+    const withTasks = { ...roadmap, roadmaps };
+    const { completed, total } = getCompletionStats(withTasks);
+    let status = roadmap.status;
+    if (total > 0 && completed >= total) {
+        status = 'completed';
+    } else if (completed > 0) {
+        status = 'in-progress';
+    }
+    return { ...withTasks, status };
+}
+
 /** Saved extras include real form fields (not only Jumpstart completion marker). */
 export function hasSavableFormExtras(savedItems?: any[] | null): boolean {
     if (!Array.isArray(savedItems)) return false;
@@ -247,14 +401,16 @@ export function getCardStatus(roadmap: Roadmap | NestedRoadmap | undefined | nul
         }
     }
 
+    const normalized = normalizeNestedTaskStatus(roadmap.status);
     const statusMap: Record<string, RoadmapCardStatus> = {
         'not started': 'initial',
         'in-progress': 'in-progress',
         'completed': 'completed',
+        'submitted': 'submitted',
         'blocked': 'in-progress',
     };
 
-    return statusMap[roadmap.status] || 'initial';
+    return statusMap[normalized] || 'initial';
 }
 
 /**
@@ -296,6 +452,7 @@ export function normalizeNestedTaskStatus(
         return 'not started';
     if (raw === 'completed' || raw === 'complete' || raw === 'done')
         return 'completed';
+    if (raw === 'submitted') return 'submitted';
     if (raw === 'blocked') return 'blocked';
     return 'not started';
 }
@@ -428,13 +585,11 @@ export function getPhaseNumber(phaseString: string): number | undefined {
  * Handles formats like: "1 month", "2-3 months", "4 weeks"
  */
 export function parseDurationMonths(duration: string): { min: number; max: number } {
-    console.log("duration:----->>>>>>>>>>>>>>parseDurationMonths", duration);
     if (!duration) return { min: 1, max: 1 };
 
     // Match numbers, optionally separated by hyphen/dash, optionally followed by unit
     // Handles: "10-12", "1 month", "2-3 months", "4 weeks"
     const match = duration.match(/(\d+)(?:\s*[-–]\s*(\d+))?(?:\s*(month|week))?/i);
-    console.log("match:----->>>>>>>>>>>>>>parseDurationMonths", match);
     if (match) {
         const min = parseInt(match[1], 10);
         const max = match[2] ? parseInt(match[2], 10) : min;

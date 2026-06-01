@@ -5,7 +5,7 @@ export interface NestedRoadmapProgress {
     completedSteps: number;
     totalSteps: number;
     progressPercentage: number;
-    status: 'not_started' | 'in_progress' | 'completed';
+    status: 'not_started' | 'in_progress' | 'submitted' | 'completed';
 }
 
 export interface RoadmapProgress {
@@ -13,7 +13,7 @@ export interface RoadmapProgress {
     completedSteps: number;
     totalSteps: number;
     progressPercentage: number;
-    status: 'not_started' | 'in_progress' | 'completed';
+    status: 'not_started' | 'in_progress' | 'submitted' | 'completed';
     nestedRoadmaps?: NestedRoadmapProgress[];
 }
 

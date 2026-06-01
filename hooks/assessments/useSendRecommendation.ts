@@ -1,3 +1,5 @@
+import { roadmapKeys } from "@/hooks/roadmaps/useRoadmaps";
+import { progressKeys } from "@/hooks/progress/useProgress";
 import { assessmentService } from "@/services/assessment.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -34,6 +36,15 @@ export const useSendRecommendation = () => {
       });
       queryClient.invalidateQueries({
         queryKey: ["answers", variables.assessmentId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["answers", variables.assessmentId, variables.payload.userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: progressKeys.user(variables.payload.userId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: roadmapKeys.all,
       });
     },
 

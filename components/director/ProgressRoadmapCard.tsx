@@ -89,6 +89,11 @@ export const RoadmapCard: React.FC<Props> = ({
                 bg: 'rgba(56, 189, 248, 0.16)', // sky
                 accent: 'rgba(56, 189, 248, 0.45)',
             },
+            'submitted': {
+                text: 'Submitted',
+                bg: 'rgba(251, 191, 36, 0.20)', // amber
+                accent: 'rgba(251, 191, 36, 0.55)',
+            },
         } as const;
         if (hideStatus || !data.status) return null;
         return configs[data.status as keyof typeof configs];
@@ -107,6 +112,7 @@ export const RoadmapCard: React.FC<Props> = ({
         if (data.status === 'due') return 'rgba(59, 130, 246, 0.82)'; // blue (same as in-progress)
         if (data.status === 'in-progress') return 'rgba(59, 130, 246, 0.82)'; // blue
         if (data.status === 'initial') return 'rgba(56, 189, 248, 0.80)'; // sky
+        if (data.status === 'submitted') return 'rgba(251, 191, 36, 0.85)'; // amber
         return 'rgba(255,255,255,0.55)';
     }, [data.status]);
 

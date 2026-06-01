@@ -16,6 +16,7 @@ import {
 import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import {
     getEffectiveTaskExtras,
+    isAssessmentOnlyTask,
     normalizeNestedTaskStatus,
     parseRoadmapTimestampMs,
     savedExtrasToFormValues,
@@ -438,6 +439,59 @@ export function MentorTaskView({
         if (name == "Church Ministry Survey") return "CMA";
         return name;
     };
+
+    const hasSubmittedAssessmentAnswers = useCallback(
+        (linkedAssessmentId?: string) => {
+            if (!linkedAssessmentId) return false;
+            const item = assessmentProgress?.items?.find(
+                (entry: { assessmentId?: string; status?: string }) =>
+                    entry.assessmentId === linkedAssessmentId,
+            );
+            return (
+                item?.status === "completed" || item?.status === "in_progress"
+            );
+        },
+        [assessmentProgress?.items],
+    );
+
+    const navigateToLinkedAssessment = useCallback(
+        (extra: Extra) => {
+            const linkedAssessmentId = extra.assessmentId;
+            if (!linkedAssessmentId) return;
+
+            if (isPreviewMode) {
+                router.push({
+                    pathname: "/assessments/answer-questions",
+                    params: {
+                        assessmentId: linkedAssessmentId,
+                        viewMode: "true",
+                        hasPreSurvey: "false",
+                        targetUserId: targetUserId ?? "",
+                    },
+                });
+                return;
+            }
+
+            if (hasSubmittedAssessmentAnswers(linkedAssessmentId)) {
+                router.push({
+                    pathname: "/assessments/answer-questions",
+                    params: {
+                        assessmentId: linkedAssessmentId,
+                        viewMode: "true",
+                        hasPreSurvey: "false",
+                    },
+                });
+                return;
+            }
+
+            router.push({
+                pathname: "/assessments/survey-guidelines",
+                params: { assessmentId: linkedAssessmentId },
+            });
+        },
+        [hasSubmittedAssessmentAnswers, isPreviewMode, router, targetUserId],
+    );
+
     /** Save progress — always creates a NEW submission record (never PATCH). */
     const handleSubmit = async () => {
         if (isReadOnly) return;
@@ -1049,27 +1103,19 @@ export function MentorTaskView({
                     </View>
                 );
 
-            case "ASSESSMENT":
-                const isSpecificAssessmentCompleted = assessmentProgress?.items?.some(
-                    (item: any) => item.assessmentId === extra.assessmentId && item.status === 'completed'
+            case "ASSESSMENT": {
+                const linkedAssessmentId = extra.assessmentId;
+                const hasSubmittedAnswers = hasSubmittedAssessmentAnswers(linkedAssessmentId);
+                const scheduleMeetingAfter = extra.checkboxes?.some(
+                    (cb) => cb.name === "Schedule Meeting after the Assessment",
                 );
 
-                if (isSpecificAssessmentCompleted) {
+                if (hasSubmittedAnswers) {
                     return (
                         <View key={id} style={styles.fieldContainer}>
                             <TouchableOpacity
                                 style={styles.centeredLinkButton}
-                                onPress={() => {
-                                    router.push({
-                                        pathname: "/assessments/answer-questions",
-                                        params: {
-                                            assessmentId: extra.assessmentId,
-                                            viewMode: "true",
-                                            hasPreSurvey: "false",
-                                            targetUserId: targetUserId
-                                        }
-                                    });
-                                }}
+                                onPress={() => navigateToLinkedAssessment(extra)}
                             >
                                 <View style={styles.linkRow}>
                                     <View style={styles.linkIcon}>
@@ -1100,17 +1146,15 @@ export function MentorTaskView({
                         <Pressable
                             style={styles.centeredLinkButton}
                             onPress={() => {
-                                if (extra.assessmentId) {
-                                    router.push({
-                                        pathname: "/assessments/answer-questions",
-                                        params: {
-                                            assessmentId: extra.assessmentId,
-                                            viewMode: "true", // Force view mode for mentor
-                                            hasPreSurvey: "false",
-                                            targetUserId: targetUserId
-                                        }
-                                    });
+                                if (!linkedAssessmentId) return;
+                                if (isPreviewMode) {
+                                    navigateToLinkedAssessment(extra);
+                                    return;
                                 }
+                                router.push({
+                                    pathname: "/assessments/survey-guidelines",
+                                    params: { assessmentId: linkedAssessmentId },
+                                });
                             }}
                         >
                             <View style={styles.linkRow}>
@@ -1119,17 +1163,26 @@ export function MentorTaskView({
                                 </View>
                                 <View style={styles.linkTextWrap}>
                                     <Text style={styles.linkTitle} numberOfLines={2}>
-                                        View {getExtraName(extra.name)} Survey
+                                        Take {getExtraName(extra.name)} Survey
                                     </Text>
                                     <Text style={styles.linkSubtitle} numberOfLines={1}>
-                                        Review the submitted answers
+                                        Read guidelines and start your assessment
                                     </Text>
                                 </View>
                                 <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.85)" />
                             </View>
                         </Pressable>
+                        {scheduleMeetingAfter && (
+                            <View style={[styles.checkboxRow, { marginTop: 12 }]}>
+                                <Ionicons name="information-circle-outline" size={20} color="#fff" />
+                                <Text style={styles.checkboxLabel}>
+                                    Please schedule a meeting with your mentor after completing this assessment.
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 );
+            }
 
             case "SIGNATURE": {
                 const signatureValue = formData[extra.name] || null;
@@ -1235,6 +1288,8 @@ export function MentorTaskView({
 
     if (effectiveExtras.length === 0) return null;
 
+    const hasOnlyAssessments = isAssessmentOnlyTask(effectiveExtras);
+
     const isSaving =
         createExtras.isPending ||
         updateExtras.isPending ||
@@ -1243,6 +1298,12 @@ export function MentorTaskView({
 
     const isTaskCompleted =
         normalizeNestedTaskStatus(task.status) === "completed";
+
+    const showSaveProgress =
+        !isPreviewMode &&
+        !isReadOnly &&
+        !isTaskCompleted &&
+        !hasOnlyAssessments;
 
     return (
         <>
@@ -1337,7 +1398,7 @@ export function MentorTaskView({
                 }
 
                 {/* Submit / Resubmit button */}
-                {!isPreviewMode && !isReadOnly ? (
+                {showSaveProgress ? (
                     <Pressable
                         style={[
                             styles.saveButton,

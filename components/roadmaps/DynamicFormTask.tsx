@@ -1106,6 +1106,8 @@ import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
 import {
     getEffectiveTaskExtras,
+    isAssessmentOnlyTask,
+    normalizeNestedTaskStatus,
     savedExtrasToFormValues,
     shouldUpdateTaskExtras,
 } from "@/lib/roadmap/helpers";
@@ -2232,7 +2234,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
 
     if (effectiveExtras.length === 0) return null;
 
-    const hasOnlyAssessments = effectiveExtras.every((extra: any) => extra.type === 'ASSESSMENT');
+    const hasOnlyAssessments = isAssessmentOnlyTask(effectiveExtras);
 
     const isSaving =
         createExtras.isPending ||
@@ -2244,7 +2246,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
     const scheduledMeeting = task.meetings?.find(
         (m) => !String(m?.status ?? '').trim().toLowerCase().startsWith('cancel'),
     );
-    const isTaskCompleted = task.status === 'completed';
+    const isTaskCompleted = normalizeNestedTaskStatus(task.status) === 'completed';
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -2278,7 +2280,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
 
                 {effectiveExtras.map((extra, index) => renderExtra(extra, index))}
 
-                {!isMentorView && !hasOnlyAssessments && (
+                {!isMentorView && !hasOnlyAssessments && !isTaskCompleted && (
                     <Pressable
                         style={[
                             styles.signButton,

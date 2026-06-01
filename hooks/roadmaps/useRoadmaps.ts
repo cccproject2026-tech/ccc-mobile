@@ -11,13 +11,24 @@ import {
 } from "@/lib/roadmap/types";
 import { apiClient } from "@/services/api/client";
 import { ENDPOINTS } from "@/services/api/endpoints";
-import { hasSavableFormExtras, resolveRoadmapDocumentUrl } from '@/lib/roadmap/helpers';
+import {
+    applyAssessmentAnswerStatusOverlay,
+    applyBackendAssessmentCompletionFromExtras,
+    AssessmentAnswerSectionSlice,
+    collectDefinitionExtras,
+    hasSavableFormExtras,
+    isAssessmentOnlyTask,
+    normalizeMongoId,
+    normalizeNestedTaskStatus,
+    resolveRoadmapDocumentUrl,
+} from '@/lib/roadmap/helpers';
+import { assessmentService } from '@/services/assessment.service';
 import { roadmapService } from '@/services/roadmap.service';
 import { useAuthStore } from "@/stores";
 import { UserRole } from "@/types";
 import { RoadmapProgress } from "@/types/progress.types";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMutation, useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { progressKeys, useProgress } from "../progress/useProgress";
 
 // ============================================
@@ -44,14 +55,38 @@ export const roadmapKeys = {
  * Maps progress status to roadmap status with proper type safety
  */
 function mapProgressStatus(
-    progressStatus: 'not_started' | 'in_progress' | 'completed'
-): 'not started' | 'in-progress' | 'completed' {
-    const statusMap = {
-        'not_started': 'not started' as const,
-        'in_progress': 'in-progress' as const,
-        'completed': 'completed' as const,
-    };
-    return statusMap[progressStatus];
+    progressStatus: string | undefined | null,
+): 'not started' | 'in-progress' | 'completed' | 'submitted' {
+    const raw = String(progressStatus ?? '').toLowerCase().replace(/_/g, '-');
+    if (raw === 'completed' || raw === 'complete') return 'completed';
+    if (raw === 'submitted') return 'submitted';
+    if (raw === 'in-progress' || raw === 'in progress') return 'in-progress';
+    return 'not started';
+}
+
+function resolveNestedTotalSteps(
+    nestedRoadmap: NestedRoadmap,
+    nestedProgress: { totalSteps?: number },
+): number {
+    if (typeof nestedProgress.totalSteps === 'number' && nestedProgress.totalSteps > 0) {
+        return nestedProgress.totalSteps;
+    }
+    const templateSteps = collectDefinitionExtras(nestedRoadmap).length;
+    return templateSteps > 0 ? templateSteps : 1;
+}
+
+function resolveNestedProgressEntry(
+    nestedRoadmaps: RoadmapProgress['nestedRoadmaps'],
+    nestedId: string,
+) {
+    if (!nestedRoadmaps?.length || !nestedId) return undefined;
+    return nestedRoadmaps.find((np) => {
+        if (!np) return false;
+        const progressId = normalizeMongoId(
+            np.nestedRoadmapId ?? (np as { id?: unknown }).id,
+        );
+        return progressId === nestedId;
+    });
 }
 
 /**
@@ -71,43 +106,296 @@ export function mergeRoadmapWithProgress(
     const updatedNestedRoadmaps = roadmap.roadmaps.map((nestedRoadmap) => {
         if (!nestedRoadmap) return nestedRoadmap;
 
-        const nestedProgress = progressItem.nestedRoadmaps?.find(
-            (np) => np && np.nestedRoadmapId === nestedRoadmap._id
+        const nestedId = normalizeMongoId(nestedRoadmap._id);
+        const nestedProgress = resolveNestedProgressEntry(
+            progressItem.nestedRoadmaps,
+            nestedId,
         );
 
         if (!nestedProgress) {
             return nestedRoadmap;
         }
 
+        const effectiveTotal = resolveNestedTotalSteps(nestedRoadmap, nestedProgress);
         const stepsComplete =
             nestedProgress.status === 'completed' ||
-            (nestedProgress.totalSteps > 0 &&
-                nestedProgress.completedSteps >= nestedProgress.totalSteps);
-        const resolvedStatus: 'not started' | 'in-progress' | 'completed' = stepsComplete
-            ? 'completed'
-            : mapProgressStatus(nestedProgress.status);
+            (effectiveTotal > 0 &&
+                nestedProgress.completedSteps >= effectiveTotal);
+        const mappedStatus = mapProgressStatus(nestedProgress.status);
+        const resolvedStatus: 'not started' | 'in-progress' | 'completed' | 'submitted' =
+            stepsComplete
+                ? 'completed'
+                : mappedStatus === 'submitted'
+                  ? 'submitted'
+                  : nestedProgress.completedSteps > 0
+                    ? 'in-progress'
+                    : mappedStatus;
 
         return {
             ...nestedRoadmap,
             status: resolvedStatus,
-            totalSteps: nestedProgress.totalSteps,
+            totalSteps: effectiveTotal,
         } as NestedRoadmap;
     });
 
+    const parentEffectiveTotal =
+        progressItem.totalSteps > 0
+            ? progressItem.totalSteps
+            : updatedNestedRoadmaps.reduce(
+                  (sum, nested) => sum + resolveNestedTotalSteps(nested, { totalSteps: 0 }),
+                  0,
+              ) || 1;
     const parentStepsComplete =
         progressItem.status === 'completed' ||
-        (progressItem.totalSteps > 0 &&
-            progressItem.completedSteps >= progressItem.totalSteps);
-    const resolvedParentStatus: 'not started' | 'in-progress' | 'completed' = parentStepsComplete
-        ? 'completed'
-        : mapProgressStatus(progressItem.status);
+        (parentEffectiveTotal > 0 &&
+            progressItem.completedSteps >= parentEffectiveTotal);
+    const resolvedParentStatus: 'not started' | 'in-progress' | 'completed' | 'submitted' =
+        parentStepsComplete
+            ? 'completed'
+            : mapProgressStatus(progressItem.status);
 
     // Return roadmap with updated status and nested roadmaps
     return {
         ...roadmap,
         status: resolvedParentStatus,
-        totalSteps: progressItem.totalSteps,
+        totalSteps: parentEffectiveTotal,
         roadmaps: updatedNestedRoadmaps,
+    };
+}
+
+type AssessmentExtrasTarget = {
+    roadMapId: string;
+    task: NestedRoadmap;
+};
+
+type AssessmentAnswerTarget = {
+    assessmentId: string;
+};
+
+function collectAssessmentOnlyTaskAssessmentIds(
+    roadmaps: Roadmap | Roadmap[] | undefined | null,
+): AssessmentAnswerTarget[] {
+    const list = Array.isArray(roadmaps) ? roadmaps : roadmaps ? [roadmaps] : [];
+    const ids = new Set<string>();
+
+    for (const roadmap of list) {
+        for (const task of roadmap.roadmaps ?? []) {
+            if (!task?._id) continue;
+            const defExtras = collectDefinitionExtras(task, roadmap);
+            if (!isAssessmentOnlyTask(defExtras)) continue;
+            const assessmentId = normalizeMongoId(defExtras[0]?.assessmentId);
+            if (assessmentId) ids.add(assessmentId);
+        }
+    }
+
+    return [...ids].map((assessmentId) => ({ assessmentId }));
+}
+
+function collectIncompleteAssessmentOnlyTasks(
+    roadmaps: Roadmap | Roadmap[] | undefined | null,
+): AssessmentExtrasTarget[] {
+    const list = Array.isArray(roadmaps) ? roadmaps : roadmaps ? [roadmaps] : [];
+    const targets: AssessmentExtrasTarget[] = [];
+
+    for (const roadmap of list) {
+        const roadMapId = normalizeMongoId(roadmap._id);
+        if (!roadMapId) continue;
+
+        for (const task of roadmap.roadmaps ?? []) {
+            if (!task?._id) continue;
+            const defExtras = collectDefinitionExtras(task, roadmap);
+            if (!isAssessmentOnlyTask(defExtras)) continue;
+            if (normalizeNestedTaskStatus(task.status) === 'completed') continue;
+            targets.push({ roadMapId, task });
+        }
+    }
+
+    return targets;
+}
+
+function applyAssessmentExtrasOverlay(
+    roadmaps: Roadmap | Roadmap[] | undefined | null,
+    extrasByPhaseAndTask: Map<string, Record<string, { extras?: unknown[] }>>,
+): Roadmap | Roadmap[] | undefined | null {
+    if (!roadmaps) return roadmaps;
+
+    const applyOne = (roadmap: Roadmap): Roadmap => {
+        const phaseId = normalizeMongoId(roadmap._id);
+        const extrasByTaskId = extrasByPhaseAndTask.get(phaseId);
+        if (!extrasByTaskId || Object.keys(extrasByTaskId).length === 0) {
+            return roadmap;
+        }
+        return applyBackendAssessmentCompletionFromExtras(roadmap, extrasByTaskId);
+    };
+
+    if (Array.isArray(roadmaps)) {
+        return roadmaps.map(applyOne);
+    }
+    return applyOne(roadmaps);
+}
+
+/** Fetch saved extras for assessment-only tasks and overlay backend CDP completion. */
+function useAssessmentExtrasCompletionOverlay(
+    roadmaps: Roadmap | Roadmap[] | undefined | null,
+    userId: string | undefined,
+    enabled: boolean,
+) {
+    const queryClient = useQueryClient();
+    const targets = useMemo(
+        () => collectIncompleteAssessmentOnlyTasks(roadmaps),
+        [roadmaps],
+    );
+    const targetsKey = useMemo(
+        () =>
+            targets
+                .map(
+                    (t) =>
+                        `${t.roadMapId}:${normalizeMongoId(t.task._id)}`,
+                )
+                .sort()
+                .join('|'),
+        [targets],
+    );
+
+    const assessmentExtrasQueries = useQueries({
+        queries: targets.map(({ roadMapId, task }) => ({
+            queryKey: roadmapKeys.extras(
+                roadMapId,
+                normalizeMongoId(task._id),
+                userId || '',
+            ),
+            queryFn: () =>
+                roadmapService.getRoadmapExtras(
+                    roadMapId,
+                    normalizeMongoId(task._id),
+                    userId,
+                ),
+            enabled: enabled && !!userId && !!roadMapId && !!task._id,
+            staleTime: 60_000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+        })),
+    });
+
+    const extrasDataVersion = assessmentExtrasQueries
+        .map((q) => `${q.dataUpdatedAt}:${q.fetchStatus}`)
+        .join('|');
+
+    const roadmapsWithAssessmentCompletion = useMemo(() => {
+        if (!roadmaps || targets.length === 0) return roadmaps;
+
+        const extrasByPhaseAndTask = new Map<string, Record<string, { extras?: unknown[] }>>();
+        targets.forEach(({ roadMapId, task }, index) => {
+            const queryResult = assessmentExtrasQueries[index];
+            if (!queryResult?.data) return;
+            const phaseId = normalizeMongoId(roadMapId);
+            const taskId = normalizeMongoId(task._id);
+            if (!extrasByPhaseAndTask.has(phaseId)) {
+                extrasByPhaseAndTask.set(phaseId, {});
+            }
+            extrasByPhaseAndTask.get(phaseId)![taskId] = queryResult.data;
+        });
+
+        if (extrasByPhaseAndTask.size === 0) return roadmaps;
+        return applyAssessmentExtrasOverlay(roadmaps, extrasByPhaseAndTask);
+    }, [roadmaps, targets, extrasDataVersion]);
+
+    const refetchAssessmentExtras = useCallback(async () => {
+        if (!targets.length) return;
+        await Promise.all(
+            targets.map(({ roadMapId, task }) =>
+                queryClient.refetchQueries({
+                    queryKey: roadmapKeys.extras(
+                        roadMapId,
+                        normalizeMongoId(task._id),
+                        userId || '',
+                    ),
+                }),
+            ),
+        );
+    }, [queryClient, userId, targets, targetsKey]);
+
+    const isAssessmentExtrasFetching = assessmentExtrasQueries.some((q) => q.isFetching);
+
+    return {
+        data: roadmapsWithAssessmentCompletion,
+        refetchAssessmentExtras,
+        isAssessmentExtrasFetching,
+    };
+}
+
+/** submitted / completed from assessment answers when progress or extras lag behind CDP. */
+function useAssessmentAnswerStatusOverlay(
+    roadmaps: Roadmap | Roadmap[] | undefined | null,
+    userId: string | undefined,
+    enabled: boolean,
+) {
+    const queryClient = useQueryClient();
+    const targets = useMemo(
+        () => collectAssessmentOnlyTaskAssessmentIds(roadmaps),
+        [roadmaps],
+    );
+
+    const answerQueries = useQueries({
+        queries: targets.map(({ assessmentId }) => ({
+            queryKey: ['answers', assessmentId, userId || ''],
+            queryFn: async () => {
+                const res = await assessmentService.fetchAnswers(
+                    assessmentId,
+                    userId!,
+                );
+                return res?.data?.sections as AssessmentAnswerSectionSlice[] | undefined;
+            },
+            enabled: enabled && !!userId && !!assessmentId,
+            staleTime: 30_000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+        })),
+    });
+
+    const answersVersion = answerQueries
+        .map((q) => `${q.dataUpdatedAt}:${q.fetchStatus}`)
+        .join('|');
+
+    const roadmapsWithAnswerStatus = useMemo(() => {
+        if (!roadmaps || targets.length === 0) return roadmaps;
+
+        const answersByAssessmentId: Record<string, AssessmentAnswerSectionSlice[] | undefined> =
+            {};
+        targets.forEach(({ assessmentId }, index) => {
+            const sections = answerQueries[index]?.data;
+            if (sections?.length) {
+                answersByAssessmentId[assessmentId] = sections;
+            }
+        });
+
+        if (Object.keys(answersByAssessmentId).length === 0) return roadmaps;
+
+        if (Array.isArray(roadmaps)) {
+            return roadmaps.map((r) =>
+                applyAssessmentAnswerStatusOverlay(r, answersByAssessmentId),
+            );
+        }
+        return applyAssessmentAnswerStatusOverlay(roadmaps, answersByAssessmentId);
+    }, [roadmaps, targets, answersVersion]);
+
+    const refetchAssessmentAnswers = useCallback(async () => {
+        if (!targets.length || !userId) return;
+        await Promise.all(
+            targets.map(({ assessmentId }) =>
+                queryClient.invalidateQueries({
+                    queryKey: ['answers', assessmentId, userId],
+                }),
+            ),
+        );
+    }, [queryClient, targets, userId]);
+
+    const isAssessmentAnswersFetching = answerQueries.some((q) => q.isFetching);
+
+    return {
+        data: roadmapsWithAnswerStatus,
+        refetchAssessmentAnswers,
+        isAssessmentAnswersFetching,
     };
 }
 
@@ -143,15 +431,22 @@ export const useAssignedRoadmaps = (userId?: string) => {
         data: progressData,
         isLoading: isProgressLoading,
         isError: isProgressError,
-        error: progressError
+        error: progressError,
+        refetch: refetchProgress,
+        isFetching: isProgressFetching,
     } = useProgress(targetUserId);
 
-    // Extract assigned roadmap IDs
-    const assignedRoadmapIds = progressData?.roadmaps.items.map(item => item.roadMapId) || [];
+    // Extract assigned roadmap IDs (sorted key avoids duplicate fetches when API order changes)
+    const assignedRoadmapIdsKey = useMemo(() => {
+        const ids = (progressData?.roadmaps.items ?? [])
+            .map((item) => normalizeMongoId(item.roadMapId))
+            .filter(Boolean);
+        return [...new Set(ids)].sort().join(',');
+    }, [progressData?.roadmaps.items]);
 
     // Then fetch all roadmaps, but only when we have the progress data
     const roadmapsQuery = useQuery({
-        queryKey: roadmapKeys.assigned(assignedRoadmapIds.join(',')),
+        queryKey: roadmapKeys.assigned(assignedRoadmapIdsKey),
         queryFn: async () => {
             const response = await apiClient.get(ENDPOINTS.ROADMAPS.GET_ALL);
 
@@ -162,15 +457,18 @@ export const useAssignedRoadmaps = (userId?: string) => {
             const allRoadmaps = response.data.data as Roadmap[];
 
             // Filter to only assigned roadmaps
-            const assignedRoadmaps = allRoadmaps.filter(roadmap =>
-                assignedRoadmapIds.includes(roadmap._id)
+            const assignedIdSet = new Set(
+                assignedRoadmapIdsKey.split(',').filter(Boolean),
+            );
+            const assignedRoadmaps = allRoadmaps.filter((roadmap) =>
+                assignedIdSet.has(normalizeMongoId(roadmap._id)),
             );
 
             return assignedRoadmaps;
         },
-        enabled: !!progressData && assignedRoadmapIds.length > 0,
-        staleTime: 0,
-        // gcTime: 1000 ,
+        enabled: !!progressData && assignedRoadmapIdsKey.length > 0,
+        staleTime: 60_000,
+        refetchOnWindowFocus: false,
         retry: 1,
     });
 
@@ -182,26 +480,63 @@ export const useAssignedRoadmaps = (userId?: string) => {
 
         const merged = roadmapsQuery.data.map((roadmap) => {
             const progressItem = progressData?.roadmaps?.items?.find(
-                (p) => p && p.roadMapId === roadmap._id
+                (p) => p && normalizeMongoId(p.roadMapId) === normalizeMongoId(roadmap._id),
             );
             return mergeRoadmapWithProgress(roadmap, progressItem);
         });
         return merged;
     }, [roadmapsQuery.data, progressData]);
 
+    const {
+        data: roadmapsWithAnswerStatus,
+        refetchAssessmentAnswers,
+        isAssessmentAnswersFetching,
+    } = useAssessmentAnswerStatusOverlay(
+        roadmapsWithProgress,
+        targetUserId,
+        !!roadmapsWithProgress?.length,
+    );
+
+    const refetch = useCallback(async () => {
+        await Promise.all([
+            refetchProgress(),
+            roadmapsQuery.refetch(),
+            refetchAssessmentAnswers(),
+        ]);
+    }, [refetchProgress, roadmapsQuery.refetch, refetchAssessmentAnswers]);
+
     return {
-        data: roadmapsWithProgress,
+        data: (roadmapsWithAnswerStatus ?? roadmapsWithProgress) as Roadmap[],
         isLoading: isProgressLoading || roadmapsQuery.isLoading,
         isError: isProgressError || roadmapsQuery.isError,
         error: progressError || roadmapsQuery.error,
-        refetch: roadmapsQuery.refetch,
-        isRefetching: roadmapsQuery.isRefetching,
-        // Additional state for granular control
+        refetch,
+        isRefetching:
+            isProgressFetching ||
+            roadmapsQuery.isRefetching ||
+            isAssessmentAnswersFetching,
         progressData,
         isProgressLoading,
         isRoadmapsLoading: roadmapsQuery.isLoading,
     };
 };
+
+/** Read assigned roadmaps from React Query cache without starting a new fetch chain. */
+export function useAssignedRoadmapsSnapshot(): Roadmap[] {
+    const queryClient = useQueryClient();
+
+    return useSyncExternalStore(
+        (onStoreChange) => queryClient.getQueryCache().subscribe(onStoreChange),
+        () => {
+            const entries = queryClient.getQueriesData<Roadmap[]>({
+                queryKey: [...roadmapKeys.all, 'assigned'],
+            });
+            const hit = entries.find(([, data]) => Array.isArray(data) && data.length > 0);
+            return hit?.[1] ?? [];
+        },
+        () => [],
+    );
+}
 
 // ============================================
 // SMART HOOK - AUTO-DETECTS USER ROLE
@@ -232,17 +567,17 @@ export function useRoadmaps(userRole?: UserRole, userId?: string) {
 // FETCH SINGLE ROADMAP BY ID WITH PROGRESS
 // ============================================
 export function useRoadmap(roadmapId: string | undefined, userId?: string, includeProgress: boolean = true) {
-    const { data: progressData } = useProgress(userId);
+    const {
+        data: progressData,
+        refetch: refetchProgress,
+        isFetching: isProgressFetching,
+    } = useProgress(userId);
 
     const roadmapQuery = useQuery<Roadmap>({
         queryKey: roadmapKeys.detail(roadmapId || ''),
-        queryFn: async () => {
-            console.log("📤 Fetching roadmap:", roadmapId);
-            const roadmap = await roadmapService.getRoadmapById(roadmapId!);
-            console.log("📥 Roadmap fetched:", roadmap);
-            return roadmap;
-        },
-        staleTime: 0,
+        queryFn: () => roadmapService.getRoadmapById(roadmapId!),
+        staleTime: 30_000,
+        refetchOnWindowFocus: false,
         enabled: !!roadmapId,
         retry: 1,
     });
@@ -254,15 +589,61 @@ export function useRoadmap(roadmapId: string | undefined, userId?: string, inclu
         }
 
         const progressItem = progressData?.roadmaps?.items?.find(
-            (p) => p && p.roadMapId === roadmapQuery.data._id
+            (p) => p && normalizeMongoId(p.roadMapId) === normalizeMongoId(roadmapQuery.data._id),
         );
 
         return mergeRoadmapWithProgress(roadmapQuery.data, progressItem);
     }, [roadmapQuery.data, progressData, includeProgress]);
 
+    const {
+        data: roadmapWithAssessmentCompletion,
+        refetchAssessmentExtras,
+        isAssessmentExtrasFetching,
+    } = useAssessmentExtrasCompletionOverlay(
+        roadmapWithProgress,
+        userId,
+        !!includeProgress && !!roadmapWithProgress,
+    );
+
+    const {
+        data: roadmapWithAnswerStatus,
+        refetchAssessmentAnswers,
+        isAssessmentAnswersFetching,
+    } = useAssessmentAnswerStatusOverlay(
+        roadmapWithAssessmentCompletion ?? roadmapWithProgress,
+        userId,
+        !!includeProgress && !!(roadmapWithAssessmentCompletion ?? roadmapWithProgress),
+    );
+
+    const mergedRoadmap =
+        (roadmapWithAnswerStatus ??
+            roadmapWithAssessmentCompletion ??
+            roadmapWithProgress) as Roadmap | undefined;
+
+    /** Light refresh (focus): progress + template only; extras stay cached up to staleTime. */
+    const refetchLight = useCallback(async () => {
+        await Promise.all([refetchProgress(), roadmapQuery.refetch()]);
+    }, [refetchProgress, roadmapQuery.refetch]);
+
+    /** Pull-to-refresh: also refresh assessment extras used for CDP completion overlay. */
+    const refetch = useCallback(async () => {
+        await Promise.all([
+            refetchLight(),
+            refetchAssessmentExtras(),
+            refetchAssessmentAnswers(),
+        ]);
+    }, [refetchLight, refetchAssessmentExtras, refetchAssessmentAnswers]);
+
     return {
         ...roadmapQuery,
-        data: roadmapWithProgress,
+        data: mergedRoadmap,
+        refetch,
+        refetchLight,
+        isRefetching:
+            isProgressFetching ||
+            roadmapQuery.isRefetching ||
+            isAssessmentExtrasFetching ||
+            isAssessmentAnswersFetching,
     };
 }
 

@@ -70,10 +70,9 @@ export const useProgress = (userId?: string) => {
             return progressData;
         },
         enabled: !!targetUserId,
-        staleTime: 0,
-        // gcTime: 1000 * 60 * 10, // 10 minutes cache retention
+        staleTime: 60_000,
         retry: 1,
-        refetchOnWindowFocus: true, // Refetch when user comes back to the app
+        refetchOnWindowFocus: false,
     });
 };
 
@@ -253,10 +252,9 @@ export const useProgressByUserId = (userId: string | undefined) => {
             return progressData;
         },
         enabled: !!userId,
-        staleTime: 0,
-        // gcTime: 1000 * 60 * 10, // 10 minutes cache retention
+        staleTime: 60_000,
         retry: 1,
-        refetchOnWindowFocus: true, // Refetch when user comes back to the app
+        refetchOnWindowFocus: false,
     });
 };
 

@@ -81,13 +81,17 @@ export function transformPreSurveyToPayload(
 
 
 export function transformSubmittedAnswersToStore(
-    submittedAnswers: SubmittedAnswersResponse,
+    submittedAnswers: SubmittedAnswersResponse | null | undefined,
     assessment: Assessment,
     apiAssessment: ApiAssessment
 ): {
     preSurveyAnswers: Record<string, string>;
     sectionAnswers: Record<number, Record<string, string>>;
 } {
+    if (!submittedAnswers?.sections) {
+        return { preSurveyAnswers: {}, sectionAnswers: {} };
+    }
+
     // Transform pre-survey answers
     const preSurveyAnswers: Record<string, string> = {};
     if (submittedAnswers.preSurveyAnswers && assessment.preSurvey) {

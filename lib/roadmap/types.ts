@@ -206,7 +206,7 @@ export interface Roadmap {
     name: string;
     roadMapDetails: string;
     description: string;
-    status: 'not started' | 'in-progress' | 'completed' | 'blocked';
+    status: 'not started' | 'in-progress' | 'completed' | 'submitted' | 'blocked';
     duration: string;
     startDate: string;
     endDate: string;
@@ -233,7 +233,7 @@ export interface NestedRoadmap {
     name: string;
     roadMapDetails: string;
     description: string;
-    status: 'not started' | 'in-progress' | 'completed' | 'blocked';
+    status: 'not started' | 'in-progress' | 'completed' | 'submitted' | 'blocked';
     duration: string;
     imageUrl: string;
     meetings: any[];
@@ -285,7 +285,7 @@ export interface ExtraCheckbox {
 
 // ============= UI TYPES =============
 
-export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due';
+export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due' | 'submitted';
 
 export interface RoadmapCardData {
     image?: string | number;

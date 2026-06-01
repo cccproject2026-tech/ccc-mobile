@@ -13,7 +13,9 @@ import { useRoadmapMeta } from "@/hooks/roadmap/useRoadmapMeta";
 import { getTasks } from "@/lib/roadmap/helpers";
 import { getTaskCard } from "@/lib/roadmap/mappers";
 import type { NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
+import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
+import { useStableFocusRefetch } from "@/hooks/roadmaps/useStableFocusRefetch";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -38,8 +40,19 @@ export default function PastorRoadmapDetail() {
   const { bottom } = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
+  const { user } = useAuthStore();
 
-  const { data: roadmap, isLoading, error, refetch, isRefetching } = useRoadmap(phaseId);
+  const { data: roadmap, isLoading, error, refetch, refetchLight, isRefetching } = useRoadmap(
+    phaseId,
+    user?.id,
+  );
+
+  useStableFocusRefetch(
+    () => {
+      void (refetchLight?.() ?? refetch());
+    },
+    `roadmap-phase-${phaseId ?? ""}`,
+  );
 
   const meta = useRoadmapMeta(roadmap as Roadmap | undefined);
 

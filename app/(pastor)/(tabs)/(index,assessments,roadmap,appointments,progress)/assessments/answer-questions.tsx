@@ -164,16 +164,26 @@ export default function AnswerQuestionPage() {
   >(undefined);
   // Load submitted answers into store (ONLY for view mode)
   useEffect(() => {
-    if (isViewMode && submittedAnswers && assessment && data && user?.id) {
-      const transformed = transformSubmittedAnswersToStore(
-        submittedAnswers.data,
-        assessment,
-        data,
-      );
-
-      // For view mode, keep transformed answers in local state and avoid touching the draft
-      setViewSectionAnswers(transformed.sectionAnswers);
+    const answerDoc = submittedAnswers?.data;
+    if (
+      !isViewMode ||
+      isLoadingSubmitted ||
+      !answerDoc?.sections ||
+      !assessment ||
+      !data ||
+      !user?.id
+    ) {
+      return;
     }
+
+    const transformed = transformSubmittedAnswersToStore(
+      answerDoc,
+      assessment,
+      data,
+    );
+
+    // For view mode, keep transformed answers in local state and avoid touching the draft
+    setViewSectionAnswers(transformed.sectionAnswers);
   }, [
     isViewMode,
     submittedAnswers,

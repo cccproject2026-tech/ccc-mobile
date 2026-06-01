@@ -44,7 +44,8 @@ import {
   markPastorJourneyWelcomeSeen,
 } from "@/utils/pastorJourneyWelcome";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { useStableFocusRefetch } from "@/hooks/roadmaps/useStableFocusRefetch";
+import { router } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -120,10 +121,12 @@ export default function PastorRoadmapIndex() {
     [baseSortedRoadmaps, completionTimestamps],
   );
 
-  useFocusEffect(
-    useCallback(() => {
+  useStableFocusRefetch(
+    () => {
       reloadTimestamps();
-    }, [reloadTimestamps]),
+      void refetch();
+    },
+    `roadmap-tab-${user?.id ?? ""}`,
   );
 
   useEffect(() => {
