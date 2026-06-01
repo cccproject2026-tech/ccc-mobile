@@ -1,19 +1,14 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, View, ViewStyle } from "react-native";
+import React, { forwardRef, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+  type ViewStyle,
+} from "react-native";
 
-export default function TextAreaField({
-  label = "Comments",
-  numberOfLines = 4,
-  maxLength,
-  inputClassName = ``,
-  containerClass = ``,
-  boxClass = ``,
-  inputClass,
-  editable = true,
-  value,
-  onChangeText,
-  containerStyle = {}
-}: {
+export type TextAreaFieldProps = {
   label?: string;
   numberOfLines?: number;
   maxLength?: number;
@@ -24,8 +19,27 @@ export default function TextAreaField({
   editable?: boolean;
   value?: string;
   onChangeText?: (text: string) => void;
-  containerStyle?: ViewStyle
-}) {
+  containerStyle?: ViewStyle;
+} & Pick<TextInputProps, "blurOnSubmit" | "returnKeyType">;
+
+const TextAreaField = forwardRef<TextInput, TextAreaFieldProps>(function TextAreaField(
+  {
+    label = "Comments",
+    numberOfLines = 4,
+    maxLength,
+    inputClassName = ``,
+    containerClass = ``,
+    boxClass = ``,
+    inputClass,
+    editable = true,
+    value,
+    onChangeText,
+    containerStyle = {},
+    blurOnSubmit = false,
+    returnKeyType = "default",
+  },
+  ref,
+) {
   const [focused, setFocused] = useState(false);
 
   return (
@@ -36,6 +50,7 @@ export default function TextAreaField({
       >
         {!focused && !value && <Text style={styles.label}>{label}</Text>}
         <TextInput
+          ref={ref}
           style={styles.input}
           className={inputClassName}
           value={value}
@@ -48,11 +63,15 @@ export default function TextAreaField({
           maxLength={maxLength}
           placeholderTextColor="rgba(255,255,255,0.5)"
           textAlignVertical="top"
+          blurOnSubmit={blurOnSubmit}
+          returnKeyType={returnKeyType}
         />
       </View>
     </View>
   );
-}
+});
+
+export default TextAreaField;
 
 const styles = StyleSheet.create({
   container: {

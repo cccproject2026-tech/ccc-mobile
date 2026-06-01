@@ -9,16 +9,18 @@ import { RoadmapComment } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
     FlatList,
     Image,
+    Keyboard,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
@@ -27,6 +29,12 @@ export default function CommentsScreen() {
     const router = useRouter();
     const { user } = useAuthStore();
     const [commentText, setCommentText] = useState("");
+    const commentInputRef = useRef<TextInput>(null);
+
+    const dismissCommentKeyboard = () => {
+        commentInputRef.current?.blur();
+        Keyboard.dismiss();
+    };
 
     const params = useLocalSearchParams<{
         roadmapId?: string | string[];
@@ -85,6 +93,8 @@ export default function CommentsScreen() {
             return;
         }
 
+        dismissCommentKeyboard();
+
         try {
             await addCommentMutation.mutateAsync({
                 roadmapId: threadRoadmapId,
@@ -96,6 +106,7 @@ export default function CommentsScreen() {
             });
 
             setCommentText("");
+            dismissCommentKeyboard();
         } catch (error) {
             console.error("Error adding comment:", error);
             Alert.alert("Error", "Failed to add comment. Please try again.");
@@ -170,11 +181,14 @@ export default function CommentsScreen() {
                     {/* Comment Input Section */}
                     <View style={styles.inputSection}>
                         <TextAreaField
+                            ref={commentInputRef}
                             label="Add a comment..."
                             value={commentText}
                             onChangeText={setCommentText}
                             inputClass={{ backgroundColor: primary_color }}
                             numberOfLines={4}
+                            blurOnSubmit
+                            returnKeyType="done"
                         />
                         <View style={styles.submitButtonContainer}>
                             <Button
