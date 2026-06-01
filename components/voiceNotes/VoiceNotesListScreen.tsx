@@ -121,7 +121,10 @@ export function VoiceNotesListScreen({ detailRoutePath }: VoiceNotesListScreenPr
     >
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.header}>
-          <View>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
+          </Pressable>
+          <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Voice Notes</Text>
             <Text style={styles.headerSubtitle}>
               Record or upload audio for AI analysis
@@ -206,9 +209,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
+    gap: 12,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerContent: {
+    flex: 1,
   },
   headerTitle: {
     color: "#fff",
