@@ -5,11 +5,16 @@ import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import { useMeetingScheduler } from "@/hooks/appointments/useMeetingScheduler";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useWeeklyAvailability } from "@/hooks/mentors/useMentorsAvailability";
+import { appointmentKeys } from "@/hooks/appointments/useAppointments";
 import {
   exitScheduleMeetingFlow,
   getScheduleMeetingBase,
 } from "@/lib/scheduling/scheduleMeetingNavigation";
+import { saveAssessmentMeetingLink } from "@/lib/assessments/assessmentMeetings";
+import { appointmentService } from "@/services/appointments.service";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -17,21 +22,39 @@ import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+function formatMeetingDateLabel(dateString: string): string {
+  const date = new Date(dateString);
+  const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  const year = date.getFullYear().toString().slice(-2);
+  return `${date.getDate()} ${monthNames[date.getMonth()]} ${year}`;
+}
+
 export default function ScheduleMeetingConfirmScreen() {
   const { user } = useAuthStore();
-  const { drawerContext } = useLocalSearchParams<{ drawerContext?: string }>();
+  const queryClient = useQueryClient();
+  const { drawerContext, assessmentId } = useLocalSearchParams<{
+    drawerContext?: string;
+    assessmentId?: string;
+  }>();
   const deviceTz = useMemo(() => getDeviceTimezone(), []);
   const { draft } = useScheduleMeetingStore();
   const [isDone, setIsDone] = useState(false);
   const insets = useSafeAreaInsets();
   const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
+  const isAssessmentFlow = Boolean(assessmentId);
 
   const handleBack = useCallback(() => {
     router.replace({
       pathname: `${scheduleBase}/time` as any,
-      params: { drawerContext },
+      params: {
+        drawerContext,
+        ...(assessmentId ? { assessmentId } : {}),
+      },
     });
-  }, [drawerContext, scheduleBase]);
+  }, [assessmentId, drawerContext, scheduleBase]);
 
   // Drawer freezes screens — clear "done" from the previous booking when re-entering.
   useFocusEffect(
@@ -79,6 +102,7 @@ export default function ScheduleMeetingConfirmScreen() {
     settings: weeklyAvailability ?? undefined,
     mentorAppointments,
     userAppointments,
+    assessmentId: assessmentId as string | undefined,
   });
 
   if (!canSubmit) return null;
@@ -139,14 +163,49 @@ export default function ScheduleMeetingConfirmScreen() {
                   const text1 = result.googleCalendarSuccessHint
                     ? `${baseTitle}. ${result.googleCalendarSuccessHint}${warningSuffix}`
                     : `${baseTitle}${warningSuffix}`;
+                  const meetingTimeLabel = draft.selectedSlot
+                    ? `${draft.selectedSlot.startTime} ${draft.selectedSlot.startPeriod}`
+                    : "";
+                  const meetingMessage =
+                    isAssessmentFlow && draft.selectedDayYmd
+                      ? `Meeting scheduled on ${formatMeetingDateLabel(draft.selectedDayYmd)} at ${meetingTimeLabel}`
+                      : undefined;
+
+                  if (isAssessmentFlow && assessmentId) {
+                    let link = result.meetingLink;
+                    if (!link) {
+                      try {
+                        const apt = await appointmentService.getAppointmentById(
+                          result.appointmentId,
+                        );
+                        link = getAppointmentJoinUrl(apt) ?? undefined;
+                      } catch {
+                        // Link may appear on the guidelines screen after refresh.
+                      }
+                    }
+                    await saveAssessmentMeetingLink(assessmentId, {
+                      appointmentId: result.appointmentId,
+                      meetingDate: result.meetingDate,
+                      meetingLink: link,
+                    });
+                    await queryClient.invalidateQueries({
+                      queryKey: appointmentKeys.all,
+                    });
+                  }
+
                   Toast.show({
                     type: "floating",
                     text1,
-                    text2: "Returning to your appointments…",
+                    text2: isAssessmentFlow
+                      ? "Returning to your assessment…"
+                      : "Returning to your appointments…",
                     visibilityTime: result.googleCalendarSyncWarnings.length > 0 ? 9000 : 4500,
                   });
                   setTimeout(() => {
-                    exitScheduleMeetingFlow(router, user?.role);
+                    exitScheduleMeetingFlow(router, user?.role, {
+                      assessmentId: isAssessmentFlow ? assessmentId : undefined,
+                      message: meetingMessage,
+                    });
                   }, 400);
                 } catch (e: any) {
                   const msg =

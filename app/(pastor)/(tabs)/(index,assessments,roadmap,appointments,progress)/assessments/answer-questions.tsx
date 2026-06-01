@@ -1,7 +1,6 @@
 import AssessmentQuestionsSection from "@/components/AnswerQuestionSection";
 import PreSurveySection from "@/components/PreSurveySection";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
-import ScheduleMeetingBottomSheet from "@/components/director/ScheduleMeetingBottomSheet";
 import TopBar from "@/components/director/TopBar";
 import { useAssessment } from "@/hooks/assessments";
 import { useFetchAnswers } from "@/hooks/assessments/useFetchAnswers";
@@ -11,18 +10,14 @@ import {
 } from "@/hooks/assessments/useSubmitAnswers";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
-import { saveAssessmentMeetingLink } from "@/lib/assessments/assessmentMeetings";
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
-import { appointmentKeys } from "@/hooks/appointments/useAppointments";
-import { appointmentService } from "@/services/appointments.service";
-import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
-import { useQueryClient } from "@tanstack/react-query";
+import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
+import { buildReturnTo } from "@/utils/navigation";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
 import { useAuthStore } from "@/stores";
 import { useAssessmentStore } from "@/stores/assessment.store";
 import { ApiAssessment } from "@/types/assessment.types";
 import { Ionicons } from "@expo/vector-icons";
-import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -47,7 +42,6 @@ export default function AnswerQuestionPage() {
     scheduleMeeting,
   );
   const router = useRouter();
-  const queryClient = useQueryClient();
   // hasPreSurvey = false;
   const { user } = useAuthStore();
   // console.log('assessmentId',typeof hasPreSurvey, hasPreSurvey);
@@ -200,7 +194,6 @@ export default function AnswerQuestionPage() {
     hasPreSurvey !== "true" || !!previousResponse?.preSurveyAnswers,
   );
 
-  const scheduleMeetingBottomSheetRef = useRef<BottomSheetModal>(null);
 
   const showPreSurvey =
     hasPreSurvey === "true" &&
@@ -316,7 +309,12 @@ export default function AnswerQuestionPage() {
   const handleScheduleMeeting = () => {
     setShowModal(false);
     setTimeout(() => {
-      scheduleMeetingBottomSheetRef.current?.present();
+      openScheduleMeeting(router, user?.role, {
+        assessmentId: assessmentId as string,
+        returnTo: buildReturnTo("/assessments/survey-guidelines", {
+          assessmentId: assessmentId as string,
+        }),
+      });
     }, 300);
   };
 
@@ -352,46 +350,6 @@ export default function AnswerQuestionPage() {
   }, [assessment, data?.sections, submittedAnswers?.data?.sections]);
 
   const submittedSections = submittedAnswers?.data?.sections || [];
-
-  const handleScheduleComplete = (data: any) => {
-    const formatDate = (dateString: string) => {
-      const date = new Date(dateString);
-      const day = date.getDate();
-      const monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-      const month = monthNames[date.getMonth()];
-      const year = date.getFullYear().toString().slice(-2);
-      return `${day} ${month} ${year}`;
-    };
-
-    setSuccessMessage(
-      `Meeting scheduled with ${data.selectedMentor.name} on ${formatDate(data.selectedDate)} at ${data.selectedTime.label}`,
-    );
-    // Set the message for the guidelines page
-    setShowSuccessModal(true);
-
-    setTimeout(() => {
-      router.replace({
-        pathname: "/assessments/survey-guidelines",
-        params: {
-          assessmentId,
-          message: `Meeting scheduled on ${formatDate(data.selectedDate)} at ${data.selectedTime.label}`,
-        },
-      });
-    }, 2000);
-  };
 
   // Loading state
   if (
@@ -518,42 +476,6 @@ export default function AnswerQuestionPage() {
           </View>
         </View>
       </Modal>
-
-      <ScheduleMeetingBottomSheet
-        ref={scheduleMeetingBottomSheetRef}
-        assessmentId={assessmentId as string}
-        onClose={() => scheduleMeetingBottomSheetRef.current?.dismiss()}
-        onSchedule={handleScheduleComplete}
-        onCompleted={async ({ appointmentId, meetingDate, meetingLink }) => {
-          let link = meetingLink;
-          if (!link) {
-            try {
-              const apt = await appointmentService.getAppointmentById(
-                appointmentId,
-              );
-              link = getAppointmentJoinUrl(apt) ?? undefined;
-            } catch {
-              // Link may appear on appointments list after refresh.
-            }
-          }
-          await saveAssessmentMeetingLink(assessmentId as string, {
-            appointmentId,
-            meetingDate,
-            meetingLink: link,
-          });
-          await queryClient.invalidateQueries({
-            queryKey: appointmentKeys.all,
-          });
-        }}
-        colorScheme={{
-          background: "#1E3A6F",
-          text: "#FFFFFF",
-          accent: "#FFC107",
-          cardBackground: "rgba(255, 255, 255, 0.1)",
-        }}
-        mode={undefined}
-        disableOutsideClose={true}
-      />
 
       <SimpleSuccessModal
         visible={showSuccessModal}

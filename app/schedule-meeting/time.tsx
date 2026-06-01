@@ -12,7 +12,11 @@ import {
   useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
-import { getScheduleMeetingBase } from "@/lib/scheduling/scheduleMeetingNavigation";
+import {
+  buildScheduleFlowParams,
+  getScheduleMeetingBase,
+} from "@/lib/scheduling/scheduleMeetingNavigation";
+import { getReturnToParam } from "@/utils/navigation";
 import { appointmentService } from "@/services/appointments.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
@@ -57,22 +61,36 @@ function pickNearestBookableDay(
 export default function ScheduleMeetingTimeScreen() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const { drawerContext } = useLocalSearchParams<{ drawerContext?: string }>();
+  const routeParams = useLocalSearchParams<{
+    drawerContext?: string;
+    assessmentId?: string;
+    returnTo?: string;
+  }>();
+  const { drawerContext, assessmentId } = routeParams;
   const { draft, setDay, setSlot, setPlatformLabel } = useScheduleMeetingStore();
   const insets = useSafeAreaInsets();
   const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
+  const flowParams = useMemo(
+    () =>
+      buildScheduleFlowParams({
+        drawerContext,
+        assessmentId,
+        returnTo: getReturnToParam(routeParams),
+      }),
+    [assessmentId, drawerContext, routeParams.returnTo],
+  );
 
   const handleBack = useCallback(() => {
     router.replace({
       pathname: `${scheduleBase}/person` as any,
       params: {
-        drawerContext,
+        ...flowParams,
         mode: draft.mode,
         appointmentId: draft.appointmentId,
         preserveDraft: "1",
       },
     });
-  }, [drawerContext, draft.appointmentId, draft.mode, scheduleBase]);
+  }, [draft.appointmentId, draft.mode, flowParams, scheduleBase]);
 
   const topBar = (
     <TopBar
@@ -90,9 +108,9 @@ export default function ScheduleMeetingTimeScreen() {
     if (hasPerson) return;
     router.replace({
       pathname: `${scheduleBase}/person` as any,
-      params: { drawerContext },
+      params: flowParams,
     });
-  }, [drawerContext, hasPerson, scheduleBase]);
+  }, [flowParams, hasPerson, scheduleBase]);
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
 
@@ -697,7 +715,7 @@ export default function ScheduleMeetingTimeScreen() {
               onPress={() =>
                 router.replace({
                   pathname: `${scheduleBase}/confirm` as any,
-                  params: { drawerContext },
+                  params: flowParams,
                 })
               }
             >

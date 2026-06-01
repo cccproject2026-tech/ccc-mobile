@@ -4,9 +4,11 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore, type SchedulePerson } from "@/stores/scheduleMeeting.store";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import {
+  buildScheduleFlowParams,
   getScheduleMeetingBase,
   leaveScheduleMeetingPersonStep,
 } from "@/lib/scheduling/scheduleMeetingNavigation";
+import { getReturnToParam } from "@/utils/navigation";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
@@ -23,8 +25,22 @@ export default function ScheduleMeetingPersonScreen() {
     appointmentId?: string;
     personData?: string;
   }>();
-  const params = useLocalSearchParams<{ drawerContext?: string; preserveDraft?: string }>();
+  const params = useLocalSearchParams<{
+    drawerContext?: string;
+    preserveDraft?: string;
+    assessmentId?: string;
+    returnTo?: string;
+  }>();
   const scheduleBase = getScheduleMeetingBase(params.drawerContext, user?.role);
+  const flowParams = useMemo(
+    () =>
+      buildScheduleFlowParams({
+        drawerContext: params.drawerContext,
+        assessmentId: params.assessmentId,
+        returnTo: getReturnToParam(params),
+      }),
+    [params.assessmentId, params.drawerContext, params.returnTo],
+  );
 
   const {
     setMode,
@@ -57,7 +73,7 @@ export default function ScheduleMeetingPersonScreen() {
             });
             router.replace({
               pathname: `${scheduleBase}/time` as any,
-              params: { drawerContext: params.drawerContext },
+              params: flowParams,
             });
           }
         } catch {
@@ -66,6 +82,7 @@ export default function ScheduleMeetingPersonScreen() {
       }
     }, [
       appointmentId,
+      flowParams,
       mode,
       params.drawerContext,
       params.preserveDraft,
@@ -118,8 +135,8 @@ export default function ScheduleMeetingPersonScreen() {
   const loading = isMentor ? isLoadingMentees : isLoadingMentors;
 
   const handleBack = useCallback(() => {
-    leaveScheduleMeetingPersonStep(router, user?.role);
-  }, [router, user?.role]);
+    leaveScheduleMeetingPersonStep(router, user?.role, getReturnToParam(params));
+  }, [params, router, user?.role]);
 
   return (
     <AppGradientBackground style={{ flex: 1 }}>
@@ -166,7 +183,7 @@ export default function ScheduleMeetingPersonScreen() {
                   setPerson(p);
                   router.replace({
                     pathname: `${scheduleBase}/time` as any,
-                    params: { drawerContext: params.drawerContext },
+                    params: flowParams,
                   });
                 }}
               >
