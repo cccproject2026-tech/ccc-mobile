@@ -4,6 +4,7 @@ import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { useAssessment, useUpdateAssessmentInstructions } from "@/hooks/assessments";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
