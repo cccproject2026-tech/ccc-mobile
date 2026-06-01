@@ -2,6 +2,7 @@ import TopBar from "@/components/director/TopBar";
 import { useAssessment } from "@/hooks/assessments";
 import { useFetchAnswers } from "@/hooks/assessments/useFetchAnswers";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
+import { deriveAssessmentTaskStatusFromAnswers } from "@/lib/roadmap/helpers";
 import { useAuthStore } from "@/stores";
 import { useAssessmentStore } from "@/stores/assessment.store";
 import { ApiAssessment } from "@/types/assessment.types";
@@ -56,43 +57,62 @@ export default function SurveyGuidelinesPage() {
   // Do NOT write submitted answers into the draft here. The store always persists status as "Not Started",
   // which would make the app show "Continue Assessment" when the user reopens. Rely on API for completed state.
 
+  const answerFlowStatus = useMemo(
+    () =>
+      deriveAssessmentTaskStatusFromAnswers(
+        submittedAnswers?.data?.sections,
+        data?.sections?.length ?? assessment?.sections?.length,
+      ),
+    [submittedAnswers?.data?.sections, data?.sections?.length, assessment?.sections?.length],
+  );
+
   // Determine submission state: API answers always take priority over drafts
   const submissionState = useMemo(() => {
-    // If answers exist in API → assessment is completed
-    if (submittedAnswers?.data?.sections && submittedAnswers.data.sections.length > 0) {
+    if (answerFlowStatus === "completed") {
       return {
         preSurveySubmitted: true,
         answersSubmitted: true,
         isFullyCompleted: true,
+        awaitingCdp: false,
         hasLocalDraft: false,
       };
     }
 
-    // While API is loading, do NOT rely on draft
+    if (answerFlowStatus === "submitted") {
+      return {
+        preSurveySubmitted: true,
+        answersSubmitted: true,
+        isFullyCompleted: false,
+        awaitingCdp: true,
+        hasLocalDraft: false,
+      };
+    }
+
     if (!submittedAnswers) {
       return {
         preSurveySubmitted: false,
         answersSubmitted: false,
         isFullyCompleted: false,
+        awaitingCdp: false,
         hasLocalDraft: false,
       };
     }
 
-    // Only treat draft as in-progress when answers truly do not exist
     return {
       preSurveySubmitted: false,
       answersSubmitted: false,
       isFullyCompleted: false,
+      awaitingCdp: false,
       hasLocalDraft: !!draftResponse,
     };
-  }, [submittedAnswers, draftResponse]);
+  }, [answerFlowStatus, submittedAnswers, draftResponse]);
 
   // Clear any stale drafts once API confirms answers exist
   useEffect(() => {
-    if (submittedAnswers?.data?.sections && submittedAnswers.data.sections.length > 0) {
+    if (answerFlowStatus === "submitted" || answerFlowStatus === "completed") {
       clearDraft(assessmentId as string);
     }
-  }, [submittedAnswers, clearDraft, assessmentId]);
+  }, [answerFlowStatus, clearDraft, assessmentId]);
 
   // Refetch both assessment and answers when screen gains focus so reopening shows correct state (Repeat + View response)
   useFocusEffect(
@@ -183,15 +203,11 @@ export default function SurveyGuidelinesPage() {
 
   // Button text logic
   const getButtonText = () => {
-    if (submissionState.isFullyCompleted) {
-      return null; // Show repeat + view response buttons
+    if (submissionState.isFullyCompleted || submissionState.awaitingCdp) {
+      return null;
     }
 
-    if (
-      submissionState.preSurveySubmitted ||
-      submissionState.answersSubmitted ||
-      submissionState.hasLocalDraft
-    ) {
+    if (submissionState.hasLocalDraft) {
       return "Continue Assessment";
     }
 
@@ -296,12 +312,25 @@ export default function SurveyGuidelinesPage() {
               <Text style={styles.dueDate}>Due: {assessment.dueDate}</Text>
             )}
             {submissionState.isFullyCompleted &&
-              submittedAnswers?.data?.createdAt && (
+              (submittedAnswers?.data?.updatedAt ||
+                submittedAnswers?.data?.createdAt) && (
                 <Text style={styles.completedDate}>
                   Completed on:{" "}
-                  {new Date(submittedAnswers.data.createdAt).toLocaleDateString(
-                    "en-GB",
-                  )}
+                  {new Date(
+                    submittedAnswers.data.updatedAt ||
+                      submittedAnswers.data.createdAt,
+                  ).toLocaleDateString("en-GB")}
+                </Text>
+              )}
+            {submissionState.awaitingCdp &&
+              (submittedAnswers?.data?.updatedAt ||
+                submittedAnswers?.data?.createdAt) && (
+                <Text style={styles.completedDate}>
+                  Submitted on:{" "}
+                  {new Date(
+                    submittedAnswers.data.updatedAt ||
+                      submittedAnswers.data.createdAt,
+                  ).toLocaleDateString("en-GB")}
                 </Text>
               )}
           </View>
@@ -347,17 +376,19 @@ export default function SurveyGuidelinesPage() {
         )}
 
         {/* Action Buttons */}
-        {submissionState.isFullyCompleted || message ? (
+        {submissionState.isFullyCompleted || submissionState.awaitingCdp || message ? (
           <View style={styles.completedButtonContainer}>
-            <TouchableOpacity
-              style={styles.repeatButton}
-              onPress={handleRepeatSurvey}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.repeatButtonText}>
-                Repeat {assessment.type} Survey
-              </Text>
-            </TouchableOpacity>
+            {submissionState.isFullyCompleted && (
+              <TouchableOpacity
+                style={styles.repeatButton}
+                onPress={handleRepeatSurvey}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.repeatButtonText}>
+                  Repeat {assessment.type} Survey
+                </Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.viewResponseButton}
               onPress={handleViewResponse}
@@ -365,6 +396,26 @@ export default function SurveyGuidelinesPage() {
             >
               <Text style={styles.viewResponseButtonText}>View Response</Text>
             </TouchableOpacity>
+            {submissionState.isFullyCompleted && (
+              <TouchableOpacity
+                style={styles.viewResponseButton}
+                onPress={() =>
+                  router.push({
+                    pathname: "/assessments/answer-questions",
+                    params: {
+                      assessmentId,
+                      viewMode: "true",
+                      openCdp: "true",
+                    },
+                  })
+                }
+                activeOpacity={0.8}
+              >
+                <Text style={styles.viewResponseButtonText}>
+                  Customized Development Plans
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           <TouchableOpacity

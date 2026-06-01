@@ -12,6 +12,10 @@ export interface Assessment {
   sections: AssessmentSection[];
   completedOn?: string;
   createdAt?: string;
+  isInProgress?: boolean;
+  progressPercentage?: number;
+  completedSections?: number;
+  totalSections?: number;
 }
 
 export interface PreSurveyQuestion {

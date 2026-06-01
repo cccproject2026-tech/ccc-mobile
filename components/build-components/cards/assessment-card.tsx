@@ -39,6 +39,7 @@ export default function AssessmentCard({
   onMeetingPress,
   onMeetingIconPress,
   onCustomizedPress,
+  onViewResponsePress,
   onMenuPress,
   meetingInfo,
   hideCompletionMeta,
@@ -48,6 +49,7 @@ export default function AssessmentCard({
   onMeetingPress?: () => void;
   onMeetingIconPress?: () => void;
   onCustomizedPress?: () => void;
+  onViewResponsePress?: () => void;
   onMenuPress?: () => void;
   menuItems?: MenuItem[];
   meetingInfo?: AssessmentMeetingLink | null;
@@ -89,6 +91,13 @@ export default function AssessmentCard({
     scheduleMeetingBottomSheetRef.current?.present();
   };
   const hasScheduledMeeting = !!meetingInfo?.appointmentId;
+
+  const statusColor =
+    data?.status === "Due" || data?.status === "Submitted"
+      ? "#EAB308"
+      : data?.status === "Completed"
+        ? "#6FD4BE"
+        : "rgba(255,255,255,0.92)";
 
   /* Change Meeting Mode Modal */
   const changeMeetingMode = () => (
@@ -332,10 +341,7 @@ export default function AssessmentCard({
                     style={{
                       fontSize: getFontSize(13 * fontCompress),
                       fontWeight: "500",
-                      color:
-                        data?.status === "Due"
-                          ? "#EAB308"
-                          : "rgba(255,255,255,0.92)",
+                      color: statusColor,
                     }}
                   >
                     {data?.status}
@@ -343,7 +349,9 @@ export default function AssessmentCard({
                 </Text>
               </TouchableOpacity>
             )}
-            {!hideCompletionMeta && data?.completedOn && (
+            {!hideCompletionMeta &&
+              data?.status === "Completed" &&
+              data?.completedOn && (
               <View>
                 <Text
                   style={[
@@ -395,13 +403,43 @@ export default function AssessmentCard({
                       },
                     ]}
                   >
-                    Start Now
+                    {data?.isInProgress ? "Continue Assessment" : "Start Now"}
                   </Text>
                 </TouchableOpacity>
               )}
+
+            {user?.role === "pastor" && data?.status === "Submitted" && (
+              <TouchableOpacity
+                style={[
+                  styles.primaryBtn,
+                  {
+                    paddingVertical: getSpacing(9 * spacingCompress),
+                    marginVertical: getSpacing(8 * spacingCompress),
+                    width: "72%",
+                  },
+                ]}
+                onPress={() =>
+                  onViewResponsePress
+                    ? onViewResponsePress()
+                    : onPress && onPress(data)
+                }
+              >
+                <Text
+                  style={[
+                    styles.primaryBtnText,
+                    {
+                      fontSize: getFontSize(15 * fontCompress),
+                      lineHeight: getFontSize(20 * fontCompress),
+                    },
+                  ]}
+                >
+                  View Response
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-        {data?.type === "PMP" && (
+        {(data?.type === "PMP" || data?.type === "CMA") && (
           <View style={styles.footerPad}>
             {data?.status === "Completed" ? (
               <TouchableOpacity

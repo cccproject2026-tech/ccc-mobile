@@ -15,6 +15,11 @@ export interface Assessment {
     preSurvey?: PreSurveyQuestion[];
     sections: AssessmentSection[];
     completedOn?: string;
+    /** Pastor started but has not submitted all sections yet. */
+    isInProgress?: boolean;
+    progressPercentage?: number;
+    completedSections?: number;
+    totalSections?: number;
 }
 
 export interface PreSurveyQuestion {
@@ -219,4 +224,5 @@ export interface SubmittedAnswersResponse {
         _id: string;
     }>;
     createdAt: string;
+    updatedAt?: string;
 }

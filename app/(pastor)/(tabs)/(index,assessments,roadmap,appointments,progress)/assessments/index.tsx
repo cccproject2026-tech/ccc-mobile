@@ -146,6 +146,16 @@ export default function Survey() {
     });
   };
 
+  const handleViewResponse = (assessment: Assessment) => {
+    router.push({
+      pathname: "/assessments/answer-questions",
+      params: {
+        assessmentId: assessment.id,
+        viewMode: "true",
+      },
+    });
+  };
+
   const handleCustomizedPress = (assessment: Assessment) => {
     router.push({
       pathname: "/assessments/answer-questions",
@@ -382,6 +392,7 @@ export default function Survey() {
                       meetingInfo={meetingMap[assessment.id] ?? null}
                       onPress={() => handleCardPress(assessment)}
                       onMeetingPress={() => handleMeetingPress(assessment)}
+                      onViewResponsePress={() => handleViewResponse(assessment)}
                       onCustomizedPress={() => handleCustomizedPress(assessment)}
                       menuItems={[
                         {

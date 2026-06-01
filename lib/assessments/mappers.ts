@@ -24,7 +24,6 @@ export function mapApiToFrontend(apiAssessment: ApiAssessment): Assessment {
         guidelines: apiAssessment.instructions || [],
         preSurvey: apiAssessment.preSurvey?.map(mapPreSurveyQuestion),
         sections: apiAssessment.sections?.map(mapApiSection) || [],
-        completedOn: apiAssessment.updatedAt,
     };
 }
 

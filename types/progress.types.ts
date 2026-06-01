@@ -22,7 +22,7 @@ export interface AssessmentProgress {
     completedSections: number;
     totalSections: number;
     progressPercentage: number;
-    status: 'not_started' | 'in_progress' | 'completed';
+    status: 'not_started' | 'in_progress' | 'submitted' | 'completed';
 }
 
 export interface ProgressData {
