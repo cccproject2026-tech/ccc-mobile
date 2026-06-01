@@ -6,6 +6,10 @@ import {
   extractMergedGoogleBundle,
   mergeBusyIntervals,
 } from '@/utils/availability/merged-availability';
+import {
+  GOOGLE_CALENDAR_COPY,
+  shortenGoogleCalendarMessage,
+} from '@/utils/google-calendar/display-messages';
 
 const DEFAULT_DURATION_MIN = 60;
 
@@ -121,7 +125,7 @@ export async function filterTimeSlotsAgainstGoogleCalendar(options: {
     const message =
       e && typeof e === 'object' && 'message' in e && typeof (e as { message: unknown }).message === 'string'
         ? (e as { message: string }).message
-        : 'Could not refresh Google Calendar';
+        : GOOGLE_CALENDAR_COPY.refreshFailed;
     return {
       slots: options.rawSlots,
       skipped: false,
@@ -156,16 +160,16 @@ export function extractGoogleCalendarCreateOutcome(resBody: unknown): {
   const userIdRaw = data.userGoogleCalendarEventId;
 
   const successHints: string[] = [];
-  const addIf = (id: unknown, role: string) => {
+  const addIf = (id: unknown) => {
     if (typeof id === 'string' && id.trim()) {
-      successHints.push(`${role} Google Calendar event created.`);
+      successHints.push(GOOGLE_CALENDAR_COPY.synced);
     }
   };
-  addIf(mentorIdRaw, 'Mentor');
-  addIf(userIdRaw, 'Participant');
+  addIf(mentorIdRaw);
+  addIf(userIdRaw);
 
   if (!successHints.length && (data.googleCalendarHtmlLink ?? data.googleCalendarEventId)) {
-    successHints.push('Event created in Google Calendar.');
+    successHints.push(GOOGLE_CALENDAR_COPY.synced);
   }
 
   return {
@@ -180,8 +184,7 @@ export function extractGoogleCalendarCreateOutcome(resBody: unknown): {
 
 export function googleCalendarSuccessHintFromCreateResponse(resBody: unknown): string | undefined {
   const { successHints } = extractGoogleCalendarCreateOutcome(resBody);
-  const primary = successHints.join(' ').trim();
-  if (primary.length) return primary;
+  if (successHints.length) return GOOGLE_CALENDAR_COPY.synced;
 
   const body = asPayloadRecord(resBody);
   const data = asPayloadRecord(body.data);
@@ -192,7 +195,9 @@ export function googleCalendarSuccessHintFromCreateResponse(resBody: unknown): s
         ? body.message
         : '';
   const m = msg.toLowerCase();
-  if (m.includes('google') && m.includes('calendar')) return msg;
+  if (m.includes('google') && m.includes('calendar')) {
+    return shortenGoogleCalendarMessage(msg);
+  }
 
   return undefined;
 }

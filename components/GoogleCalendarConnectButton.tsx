@@ -7,6 +7,10 @@ import { getGoogleCalendarAuthUrl } from '@/services/googleCalendar.service';
 import { useAuthStore } from '@/stores/auth.store';
 import type { GoogleCalendarStatus } from '@/types/googleCalendar.types';
 import { extractApiErrorMessage } from '@/utils/availability/api-error';
+import {
+  GOOGLE_CALENDAR_COPY,
+  shortenGoogleCalendarMessage,
+} from '@/utils/google-calendar/display-messages';
 import { saveGoogleCalendarOAuthReturnPath } from '@/utils/google-calendar/oauthReturnPath';
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname } from 'expo-router';
@@ -67,9 +71,7 @@ export default function GoogleCalendarConnectButton({
       await saveGoogleCalendarOAuthReturnPath(pathname);
       const url = await getGoogleCalendarAuthUrl();
       if (!url) {
-        setErrorHint(
-          'Calendar linking is not ready: the server did not return a Google sign-in URL.',
-        );
+        setErrorHint(GOOGLE_CALENDAR_COPY.signInUnavailable);
         return;
       }
 
@@ -83,7 +85,7 @@ export default function GoogleCalendarConnectButton({
       }
 
       if (result.type === 'cancel' || result.type === 'dismiss') {
-        setErrorHint('Google Calendar connection was cancelled.');
+        setErrorHint(GOOGLE_CALENDAR_COPY.connectionCancelled);
       }
     } catch (e: unknown) {
       const msg = extractApiErrorMessage(e);
@@ -92,11 +94,11 @@ export default function GoogleCalendarConnectButton({
           ? (e as { statusCode?: number }).statusCode
           : undefined;
       if (statusCode === 401) {
-        setErrorHint('You need to be logged in first. Sign in again, then retry.');
+        setErrorHint(GOOGLE_CALENDAR_COPY.signInRequiredButton);
       } else if (statusCode === 404) {
-        setErrorHint('GET /auth/google is not available on this API build (404).');
+        setErrorHint(GOOGLE_CALENDAR_COPY.linkingUnavailable);
       } else {
-        setErrorHint(msg);
+        setErrorHint(shortenGoogleCalendarMessage(msg));
       }
     } finally {
       setPending(false);
@@ -130,7 +132,7 @@ export default function GoogleCalendarConnectButton({
           <View style={styles.connectedHeader}>
             <Ionicons name="checkmark-circle" size={16} color={isDark ? '#86efac' : '#15803d'} />
             <Text style={[styles.connectedTitle, isDark && styles.textLight]}>
-              Google Calendar Connected
+              Google Calendar connected
             </Text>
           </View>
           {calendarConnectionStatus?.email ? (
@@ -138,7 +140,7 @@ export default function GoogleCalendarConnectButton({
               {calendarConnectionStatus.email} linked
             </Text>
           ) : (
-            <Text style={[styles.metaText, hintStyle]}>Busy time sync enabled</Text>
+            <Text style={[styles.metaText, hintStyle]}>Busy-time sync on</Text>
           )}
           {calendarConnectionStatus?.lastSyncAt ? (
             <Text style={[styles.metaText, hintStyle]}>
@@ -177,7 +179,7 @@ export default function GoogleCalendarConnectButton({
 
       {calendarStatus && calendarStatus !== 'connected' && calendarConnectionStatus?.lastError ? (
         <Text style={[styles.statusHint, styles.warnHint]}>
-          Last sync issue: {calendarConnectionStatus.lastError}
+          {shortenGoogleCalendarMessage(calendarConnectionStatus.lastError)}
         </Text>
       ) : null}
 

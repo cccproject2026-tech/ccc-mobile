@@ -3,6 +3,7 @@
  * Ported from ccc-web merged-availability.ts
  */
 import type { CalendarBusyPeriod } from '@/types/googleCalendar.types';
+import { GOOGLE_CALENDAR_COPY } from '@/utils/google-calendar/display-messages';
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   return x && typeof x === 'object' ? (x as Record<string, unknown>) : null;
@@ -118,17 +119,17 @@ export function buildGoogleConnectBanners(
 ): string[] {
   const banners: string[] = [];
   if (mentor.googleCalendarStatus === 'expired' || mentor.googleCalendarStatus === 'error') {
-    banners.push('Reconnect Google Calendar to avoid double-booking.');
+    banners.push(GOOGLE_CALENDAR_COPY.reconnectMentor);
   } else if (mentor.googleCalendarLinked === false) {
-    banners.push('Link Google Calendar to avoid double-booking.');
+    banners.push(GOOGLE_CALENDAR_COPY.linkMentor);
   }
   if (
     participantMergedInRequest &&
     (participant.googleCalendarStatus === 'expired' || participant.googleCalendarStatus === 'error')
   ) {
-    banners.push('Booking participant: reconnect Google Calendar to avoid double-booking.');
+    banners.push(GOOGLE_CALENDAR_COPY.reconnectParticipant);
   } else if (participantMergedInRequest && participant.googleCalendarLinked === false) {
-    banners.push('Booking participant: link Google Calendar to avoid double-booking.');
+    banners.push(GOOGLE_CALENDAR_COPY.linkParticipant);
   }
   return banners;
 }

@@ -380,7 +380,7 @@ export function MentorAvailabilityWorkspace({
             }}
           />
           <Text style={styles.googleCalendarHint}>
-            Link Google Calendar so external busy times block bookings and open slots sync to your calendar.
+            Link Google Calendar to sync busy times and bookings.
           </Text>
         </View>
 

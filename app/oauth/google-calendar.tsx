@@ -2,6 +2,10 @@ import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { invalidateAfterGoogleCalendarOAuth } from '@/hooks/googleCalendar/useGoogleCalendarStatus';
 import { parseGoogleCalendarOAuthReturnUrl } from '@/services/googleCalendar.service';
 import { useAuthStore } from '@/stores/auth.store';
+import {
+  GOOGLE_CALENDAR_COPY,
+  shortenGoogleCalendarMessage,
+} from '@/utils/google-calendar/display-messages';
 import { consumeGoogleCalendarOAuthReturnPath } from '@/utils/google-calendar/oauthReturnPath';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
@@ -18,7 +22,7 @@ export default function GoogleCalendarOAuthReturnScreen() {
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ googleCalendar?: string; reason?: string }>();
   const { user, isAuthenticated } = useAuthStore();
-  const [statusText, setStatusText] = useState('Finishing Google Calendar connection…');
+  const [statusText, setStatusText] = useState(GOOGLE_CALENDAR_COPY.connecting);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -33,7 +37,7 @@ export default function GoogleCalendarOAuthReturnScreen() {
         const authed = useAuthStore.getState().isAuthenticated;
 
         if (!authed || !authUser?.id) {
-          setStatusText('Sign in required. Returning…');
+          setStatusText(GOOGLE_CALENDAR_COPY.signInRequired);
           router.replace('/');
           return;
         }
@@ -57,7 +61,7 @@ export default function GoogleCalendarOAuthReturnScreen() {
         const returnPath = await consumeGoogleCalendarOAuthReturnPath(authUser.role);
 
         if (outcome.outcome === 'linked') {
-          setStatusText('Google Calendar connected. Opening schedule…');
+          setStatusText(GOOGLE_CALENDAR_COPY.connectedOpening);
           try {
             await invalidateAfterGoogleCalendarOAuth(queryClient, authUser.id);
           } catch {
@@ -65,20 +69,20 @@ export default function GoogleCalendarOAuthReturnScreen() {
           }
           Toast.show({
             type: 'floating',
-            text1: 'Google Calendar connected.',
+            text1: GOOGLE_CALENDAR_COPY.connected,
             visibilityTime: 4500,
           });
         } else if (outcome.outcome === 'error') {
-          setStatusText('Could not connect Google Calendar. Returning…');
+          setStatusText(GOOGLE_CALENDAR_COPY.connectFailedReturning);
           Toast.show({
             type: 'floating',
             text1: outcome.reason
-              ? `Google Calendar: ${outcome.reason}`
-              : 'Google Calendar linking failed.',
+              ? shortenGoogleCalendarMessage(outcome.reason)
+              : GOOGLE_CALENDAR_COPY.connectFailed,
             visibilityTime: 6000,
           });
         } else {
-          setStatusText('Returning to schedule…');
+          setStatusText(GOOGLE_CALENDAR_COPY.returning);
         }
 
         router.replace(returnPath as any);

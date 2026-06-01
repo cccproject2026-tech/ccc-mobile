@@ -13,6 +13,7 @@ import {
 import { saveAssessmentMeetingLink } from "@/lib/assessments/assessmentMeetings";
 import { appointmentService } from "@/services/appointments.service";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
+import { getScheduleMeetingCalendarNote } from "@/utils/google-calendar/display-messages";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -154,15 +155,18 @@ export default function ScheduleMeetingConfirmScreen() {
                 try {
                   const result = await submit();
                   setIsDone(true);
-                  const baseTitle =
+                  const text1 =
                     draft.mode === "reschedule" ? "Meeting rescheduled" : "Meeting scheduled";
-                  const warningSuffix =
-                    result.googleCalendarSyncWarnings.length > 0
-                      ? ` Note: ${result.googleCalendarSyncWarnings.join(" · ")}`
-                      : "";
-                  const text1 = result.googleCalendarSuccessHint
-                    ? `${baseTitle}. ${result.googleCalendarSuccessHint}${warningSuffix}`
-                    : `${baseTitle}${warningSuffix}`;
+                  const calendarNote = getScheduleMeetingCalendarNote({
+                    successHint: result.googleCalendarSuccessHint,
+                    warnings: result.googleCalendarSyncWarnings,
+                  });
+                  const returningText = isAssessmentFlow
+                    ? "Returning to assessment…"
+                    : "Returning to appointments…";
+                  const text2 = calendarNote
+                    ? `${calendarNote} · ${returningText}`
+                    : returningText;
                   const meetingTimeLabel = draft.selectedSlot
                     ? `${draft.selectedSlot.startTime} ${draft.selectedSlot.startPeriod}`
                     : "";
@@ -196,10 +200,8 @@ export default function ScheduleMeetingConfirmScreen() {
                   Toast.show({
                     type: "floating",
                     text1,
-                    text2: isAssessmentFlow
-                      ? "Returning to your assessment…"
-                      : "Returning to your appointments…",
-                    visibilityTime: result.googleCalendarSyncWarnings.length > 0 ? 9000 : 4500,
+                    text2,
+                    visibilityTime: result.googleCalendarSyncWarnings.length > 0 ? 7000 : 4500,
                   });
                   setTimeout(() => {
                     exitScheduleMeetingFlow(router, user?.role, {

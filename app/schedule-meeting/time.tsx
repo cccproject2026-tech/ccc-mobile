@@ -21,6 +21,10 @@ import { appointmentService } from "@/services/appointments.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import type { TimeSlot as APITimeSlot, WeeklyAvailability } from "@/types/appointment.types";
+import {
+  GOOGLE_CALENDAR_COPY,
+  shortenGoogleCalendarMessage,
+} from "@/utils/google-calendar/display-messages";
 import { filterTimeSlotsAgainstGoogleCalendar } from "@/utils/google-calendar/google-calendar-scheduling";
 import {
   filterSlotsByExistingBookings,
@@ -416,7 +420,7 @@ export default function ScheduleMeetingTimeScreen() {
       setCalendarConnectBanners(
         googleCalendarConnected
           ? result.connectGoogleBanners.filter(
-              (msg) => !/link google calendar|avoid double-booking/i.test(msg),
+              (msg) => !/link google calendar|reconnect google calendar/i.test(msg),
             )
           : result.connectGoogleBanners,
       );
@@ -632,18 +636,17 @@ export default function ScheduleMeetingTimeScreen() {
           {calendarSlotSyncLoading ? (
             <View style={styles.syncRow}>
               <ActivityIndicator color="#8ec5eb" size="small" />
-              <Text style={styles.syncText}>Syncing Google Calendar availability…</Text>
+              <Text style={styles.syncText}>{GOOGLE_CALENDAR_COPY.syncing}</Text>
             </View>
           ) : null}
           {calendarSlotSyncError ? (
             <Text style={styles.calendarError}>
-              {calendarSlotSyncError} Time slots cannot be validated until calendar access works.
+              {shortenGoogleCalendarMessage(calendarSlotSyncError) ||
+                GOOGLE_CALENDAR_COPY.slotValidationFailed}
             </Text>
           ) : null}
           {calendarBusyStripped > 0 ? (
-            <Text style={styles.calendarBanner}>
-              Some times are hidden due to conflicting Google Calendar events.
-            </Text>
+            <Text style={styles.calendarBanner}>{GOOGLE_CALENDAR_COPY.busyHidden}</Text>
           ) : null}
           {bookingConflictStrippedCount > 0 ? (
             <Text style={styles.calendarBanner}>
