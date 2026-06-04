@@ -92,7 +92,7 @@ const TopBar: React.FC<Props> = ({
     };
 
     return (
-        <View style={[styles.headerRow, { paddingTop: top + 10, minHeight: top + 54 }]}>
+        <View style={[styles.headerRow, { paddingTop: top + 14, paddingBottom: 8, minHeight: top + 58 }]}>
             {/* Left */}
             <View style={styles.leftIconBox}>
                 {showDrawer && (
@@ -116,7 +116,6 @@ const TopBar: React.FC<Props> = ({
                                 icon="chevron-back"
                                 onPress={handleBackPress}
                                 accessibilityLabel="Go back"
-                                prominent
                             />
                         )}
                     </>

@@ -177,7 +177,9 @@ export default function MicroGrantApplicationScreen() {
                                                     {applicationData.user?.email || 'Unknown User'}
                                                 </Text>
                                                 <Text style={styles.userRole}>
-                                                    {applicationData.application.formId.title || 'Applicant'}
+                                                    {typeof applicationData.application.formId === 'object' && applicationData.application.formId?.title
+                                                        ? applicationData.application.formId.title
+                                                        : 'Applicant'}
                                                 </Text>
                                             </View>
                                         </View>

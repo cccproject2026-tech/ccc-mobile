@@ -1,3 +1,5 @@
+export type MicrograntStatus = 'new' | 'pending' | 'accepted' | 'rejected';
+
 export interface GrantField {
     label: string;
     type: 'text' | 'textarea' | 'file' | 'checkbox' | 'select' | 'radio';
@@ -9,11 +11,16 @@ export interface GrantField {
 export interface GrantFormData {
     _id: string;
     title: string;
-    description: string;
-    fields: GrantField[];
-    createdAt: string;
-    updatedAt: string;
-    __v: number;
+    description?: string;
+    fields?: GrantField[];
+    sections?: Array<{
+        _id?: string;
+        title: string;
+        fields: GrantField[];
+    }>;
+    createdAt?: string;
+    updatedAt?: string;
+    __v?: number;
 }
 
 export interface GrantFormResponse {
@@ -26,10 +33,16 @@ export interface GrantApplicationData {
     [key: string]: string | string[] | null;
 }
 
+export interface MicrograntPickedFile {
+    uri: string;
+    name: string;
+    mimeType?: string;
+}
+
 export interface GrantSubmissionPayload {
     userId: string;
+    formId: string;
     answers: GrantApplicationData;
-    supportingDoc: string;
 }
 
 export interface GrantSubmissionResponse {
@@ -56,20 +69,25 @@ export interface UseGrantState {
 
 export interface MicrograntApplication {
     _id: string;
-    userId: {
+    userId?: {
         _id: string;
         email: string;
-    } | null;
-    formId: {
+        firstName?: string;
+        lastName?: string;
+        profilePicture?: string;
+    } | string | null;
+    formId?: {
         _id: string;
         title: string;
-    };
-    answers: GrantApplicationData;
-    supportingDoc: string;
-    status: 'new' | 'pending' | 'approved' | 'rejected' | 'under_review';
+        description?: string;
+    } | string | null;
+    answers?: GrantApplicationData;
+    supportingDocs?: unknown[];
+    supportingDoc?: string;
+    status: MicrograntStatus | 'approved' | 'under_review';
     createdAt: string;
     updatedAt: string;
-    __v: number;
+    __v?: number;
 }
 
 export interface MicrograntApplicationsApiResponse {
@@ -84,21 +102,7 @@ export interface MicrograntApplicationDetail {
         email: string;
         role: string;
     };
-    application: {
-        _id: string;
-        userId: string;
-        formId: {
-            _id: string;
-            title: string;
-            description: string;
-        };
-        answers: GrantApplicationData;
-        supportingDoc: string;
-        status: 'new' | 'pending' | 'approved' | 'rejected' | 'under_review';
-        createdAt: string;
-        updatedAt: string;
-        __v: number;
-    };
+    application: MicrograntApplication;
 }
 
 export interface MicrograntApplicationDetailApiResponse {

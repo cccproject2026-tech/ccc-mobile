@@ -279,14 +279,16 @@ export default function MicroGrant() {
                                         params: { applicationId: application.id }
                                     })}
                                     onCall={() => {
-                                        // Extract phone from application if available
                                         const applicationdata: MicrograntApplication | undefined = applicationsData?.find(app => app._id === application.id);
-                                        console.log('Call', applicationdata?.userId?.email || 'Unknown', applicationdata);
+                                        const uid = applicationdata?.userId;
+                                        const email = uid && typeof uid === 'object' ? uid.email : undefined;
+                                        console.log('Call', email || 'Unknown', applicationdata);
                                     }}
                                     onChat={() => console.log('Chat', application.name)}
                                     onMail={() => {
                                         const applicationData: MicrograntApplication | undefined = applicationsData?.find(app => app._id === application.id);
-                                        const email = applicationData?.userId?.email;
+                                        const uid = applicationData?.userId;
+                                        const email = uid && typeof uid === 'object' ? uid.email : undefined;
                                         if (email) {
                                             console.log('Mail', email);
                                         }

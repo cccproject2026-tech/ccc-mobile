@@ -1,5 +1,5 @@
 import { grantService } from '@/services/grant.service';
-import { GrantFormResponse, GrantSubmissionPayload, GrantSubmissionResponse } from '@/types/grant.type';
+import { GrantFormResponse, GrantSubmissionPayload, GrantSubmissionResponse, MicrograntApplicationDetail, MicrograntPickedFile } from '@/types/grant.type';
 import { useCallback, useState } from 'react';
 
 interface UseGrantState {
@@ -50,10 +50,13 @@ export const useGrant = () => {
      * Submit grant application
      */
     const submitApplication = useCallback(
-        async (payload: GrantSubmissionPayload): Promise<GrantSubmissionResponse> => {
+        async (
+            payload: GrantSubmissionPayload,
+            supportingDocs?: MicrograntPickedFile[]
+        ): Promise<GrantSubmissionResponse> => {
             setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
             try {
-                const response = await grantService.submitGrant(payload);
+                const response = await grantService.submitGrant(payload, supportingDocs);
                 setState((prev) => ({
                     ...prev,
                     isSubmitting: false,
@@ -75,45 +78,42 @@ export const useGrant = () => {
         []
     );
 
-    /**
-     * Check application status by ID
-     */
-    const checkApplicationStatus = useCallback(
-        async (userId: string) => {
-            setState((prev) => ({ ...prev, isLoading: true, error: null }));
-            try {
-                const statusData = await grantService.getGrantStatus(userId);
-                setState((prev) => ({
-                    ...prev,
-                    isLoading: false,
-                }));
-                return statusData;
-            } catch (error: any) {
-                const errorMessage =
-                    error?.response?.data?.message ||
-                    'Failed to fetch application status';
-                setState((prev) => ({
-                    ...prev,
-                    error: errorMessage,
-                    isLoading: false,
-                }));
-                throw error;
+    const fetchApplicationByUserId = useCallback(async (userId: string) => {
+        setState((prev) => ({ ...prev, isLoading: true, error: null }));
+        try {
+            const detail = await grantService.getApplicationByUserId(userId);
+            setState((prev) => ({ ...prev, isLoading: false }));
+            return detail;
+        } catch (error: any) {
+            const status = error?.statusCode ?? error?.response?.status;
+            if (status === 404) {
+                setState((prev) => ({ ...prev, isLoading: false }));
+                return null;
             }
-        },
-        []
-    );
+            const errorMessage =
+                error?.response?.data?.message ||
+                'Failed to fetch application';
+            setState((prev) => ({
+                ...prev,
+                error: errorMessage,
+                isLoading: false,
+            }));
+            throw error;
+        }
+    }, []);
 
     /**
      * Build and submit application in one call
      */
     const submitCompleteApplication = useCallback(
-        async (userId: string, formAnswers: Record<string, string>, supportingDoc?: string) => {
-            const payload = grantService.buildSubmissionPayload(
-                userId,
-                formAnswers,
-                supportingDoc
-            );
-            return submitApplication(payload);
+        async (
+            userId: string,
+            formId: string,
+            formAnswers: Record<string, string>,
+            supportingDocs?: MicrograntPickedFile[]
+        ) => {
+            const payload = grantService.buildSubmissionPayload(userId, formId, formAnswers);
+            return submitApplication(payload, supportingDocs);
         },
         [submitApplication]
     );
@@ -136,7 +136,7 @@ export const useGrant = () => {
         // Methods
         fetchGrantForm,
         submitApplication,
-        checkApplicationStatus,
+        fetchApplicationByUserId,
         submitCompleteApplication,
         resetState,
     };

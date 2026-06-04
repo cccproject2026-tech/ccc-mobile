@@ -1,28 +1,43 @@
-import { Button } from "@/components/atom/buttons";
-import { InputCard } from "@/components/atom/cards";
-import { HeaderTitle } from "@/components/atom/header";
-import { ResponseModal } from "@/components/atom/modals";
-import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
-import TopBar from "@/components/director/TopBar";
-import { Colors } from "@/constants/Colors";
-import { customColors } from "@/constants/config/customColors";
-import { useCheckApplication } from "@/hooks/grant/useCheckApplication";
-import { useGrant } from "@/hooks/grant/useGrant";
-import { useAuthStore } from "@/stores";
-import { getFontSize, getSpacing, isSmallDevice } from "@/utils/responsive";
-import AppGradientBackground from "@/components/layout/AppGradientBackground";
-import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
-import KeyboardSafeContainer from "@/components/layout/KeyboardSafeContainer";
+import { Button } from '@/components/atom/buttons';
+import { InputCard } from '@/components/atom/cards';
+import CheckBox from '@/components/atom/checkBox';
+import { HeaderTitle } from '@/components/atom/header';
+import { ResponseModal } from '@/components/atom/modals';
+import SimpleSuccessModal from '@/components/atom/SimpleSuccessModal';
+import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
+import AppGradientBackground from '@/components/layout/AppGradientBackground';
+import MicrograntStatusBadge from '@/components/microgrant/MicrograntStatusBadge';
+import TopBar from '@/components/director/TopBar';
+import { customColors } from '@/constants/config/customColors';
+import { useGrant } from '@/hooks/grant/useGrant';
+import { useAuthStore } from '@/stores';
+import { MicrograntApplicationDetail, MicrograntPickedFile } from '@/types/grant.type';
+import {
+  MICROGRANT_CONFIRMATION_LABELS,
+  MICROGRANT_PAGE_DESCRIPTION,
+  MICROGRANT_PAGE_TITLE,
+  MICROGRANT_QUESTION_LABELS,
+  MICROGRANT_REPORTING_TEXT,
+  MicrograntQuestionKey,
+  createEmptyMicrograntAnswers,
+  normalizeMicrograntSupportingDocs,
+} from '@/utils/microgrant';
+import { getFontSize, getSpacing, isSmallDevice } from '@/utils/responsive';
+import * as DocumentPicker from 'expo-document-picker';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Platform,
   Pressable,
   Text,
-  View
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const MAX_FILES = 5;
 
 export default function Grant() {
   const { bottom } = useSafeAreaInsets();
@@ -35,52 +50,75 @@ export default function Grant() {
     isSubmitting,
     error,
     fetchGrantForm,
+    fetchApplicationByUserId,
     submitCompleteApplication,
     resetState,
   } = useGrant();
 
-  const [step, setStep] = React.useState(1);
-  const [formAnswers, setFormAnswers] = React.useState<Record<string, string>>({});
-  const [selectedReportingOption, setSelectedReportingOption] = React.useState<string>("");
-  const [responseModal, setResponseModal] = React.useState({
-    visible: false,
-    message: "",
-    buttonText: "",
+  const [step, setStep] = useState<1 | 2>(1);
+  const [formAnswers, setFormAnswers] = useState(createEmptyMicrograntAnswers());
+  const [supportingDocs, setSupportingDocs] = useState<MicrograntPickedFile[]>([]);
+  const [confirmations, setConfirmations] = useState({
+    reviewed: false,
+    uploadsIncluded: false,
   });
-  const [isVisible, setIsVisible] = React.useState(false);
-  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
-  const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+  const [otherNote, setOtherNote] = useState('');
+  const [formId, setFormId] = useState('');
+  const [pageLoading, setPageLoading] = useState(true);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [applicationData, setApplicationData] = useState<MicrograntApplicationDetail | null>(null);
+  const [responseModal, setResponseModal] = useState({
+    visible: false,
+    message: '',
+    buttonText: 'OK',
+  });
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const { data: checkApplicationData, isLoading: isCheckingApplication } =
-    useCheckApplication(user?.id);
-
-  // Fetch form
-  useEffect(() => {
-    fetchGrantForm();
-  }, []);
-
-  // If already applied → LOCK to Step 3 forever
-  useEffect(() => {
-    if (checkApplicationData?.data?.applied) {
-      setStep(3);
+  const loadPage = useCallback(async () => {
+    if (!user?.id) {
+      setPageLoading(false);
+      return;
     }
-  }, [checkApplicationData]);
 
-  const reportingProcedureText = [
-    "If approved, you will sign a grant agreement based on the submitted Action Steps—the CCC may modify, suspend, or stop payment of grant funds if the terms of the agreement are changed or not followed",
-    "Upon completion of the project, the grantee must submit a grant report regarding the use of funds consisting of a narrative report and financial accounting—the report ought to include copies of relevant receipts and records of expenditures.",
-    "Any grant funds that have not been used for, or committed to, the project upon expiration or termination of the grant agreement must be returned to the CCC.",
-  ];
+    setPageLoading(true);
+    try {
+      const existing = await fetchApplicationByUserId(user.id);
+      if (existing?.application) {
+        setApplicationData(existing);
+        setHasApplied(true);
+        setPageLoading(false);
+        return;
+      }
 
-  const reportingOptions = [
-    "I have reviewed the application and filled out each the section to the best of my knowledge",
-    "I have filled out the application, and I would like to discuss it with a center's director",
-    "Other: __________________",
-  ];
+      const formRes = await fetchGrantForm();
+      const id = formRes?.data?._id;
+      if (id) {
+        setFormId(id);
+        setHasApplied(false);
+      }
+    } catch {
+      setResponseModal({
+        visible: true,
+        message: 'Could not load micro grant. Please try again.',
+        buttonText: 'OK',
+      });
+    } finally {
+      setPageLoading(false);
+    }
+  }, [fetchApplicationByUserId, fetchGrantForm, user?.id]);
 
-  const handleInputChange = (fieldLabel: string, value: string) => {
+  useEffect(() => {
+    loadPage();
+  }, [loadPage]);
+
+  const isCoverSheetValid = useMemo(
+    () => MICROGRANT_QUESTION_LABELS.every((label) => formAnswers[label].trim() !== ''),
+    [formAnswers]
+  );
+
+  const handleInputChange = (fieldLabel: MicrograntQuestionKey, value: string) => {
     setFormAnswers((prev) => ({ ...prev, [fieldLabel]: value }));
-
     if (validationErrors[fieldLabel]) {
       setValidationErrors((prev) => {
         const updated = { ...prev };
@@ -90,75 +128,34 @@ export default function Grant() {
     }
   };
 
-  const validateCurrentStep = () => {
-    if (step === 1) {
-      const errors: Record<string, string> = {};
+  const pickSupportingDocs = async () => {
+    const res = await DocumentPicker.getDocumentAsync({
+      type: '*/*',
+      multiple: true,
+      copyToCacheDirectory: true,
+    });
+    if (res.canceled || !res.assets?.length) return;
 
-      form?.data?.fields.forEach((field) => {
-        if (field.required) {
-          const value = formAnswers[field.label];
-          if (!value || value.trim() === "") {
-            errors[field.label] = `${field.label} is required`;
-          }
-        }
-      });
+    const picked = res.assets.slice(0, MAX_FILES).map((asset) => ({
+      uri: asset.uri,
+      name: asset.name,
+      mimeType: asset.mimeType || 'application/octet-stream',
+    }));
 
-      setValidationErrors(errors);
-
-      if (Object.keys(errors).length) {
-        Alert.alert("Validation Error", Object.values(errors)[0]);
-        return false;
-      }
-      return true;
-    }
-
-    if (step === 2 && !selectedReportingOption) {
-      Alert.alert("Validation Error", "Please select a reporting procedure option");
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleNext = () => {
-    if (validateCurrentStep()) setStep(step + 1);
-  };
-
-  const handleSubmit = async () => {
-    if (!validateCurrentStep()) return;
-
-    const finalAnswers = {
-      ...formAnswers,
-      reportingProcedure: selectedReportingOption,
-    };
-
-    try {
-      await submitCompleteApplication(user?.id as string, finalAnswers);
-
-      setShowSuccessModal(true);
-
-      setTimeout(() => {
-        setShowSuccessModal(false);
-        setStep(3);
-      }, 2000);
-    } catch (err: any) {
-      setResponseModal({
-        visible: true,
-        message: err.message || "Failed to submit application",
-        buttonText: "OK",
-      });
-    }
+    setSupportingDocs((prev) => [...prev, ...picked].slice(0, MAX_FILES));
   };
 
   const handleClearForm = () => {
-    Alert.alert("Clear Form", "Are you sure you want to clear all form data?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert('Clear Form', 'Are you sure you want to clear all form data?', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: "Clear",
-        style: "destructive",
+        text: 'Clear',
+        style: 'destructive',
         onPress: () => {
-          setFormAnswers({});
-          setSelectedReportingOption("");
+          setFormAnswers(createEmptyMicrograntAnswers());
+          setSupportingDocs([]);
+          setConfirmations({ reviewed: false, uploadsIncluded: false });
+          setOtherNote('');
           setValidationErrors({});
           setStep(1);
           resetState();
@@ -167,77 +164,98 @@ export default function Grant() {
     ]);
   };
 
-  const renderFormField = (field: any) => {
-    const value = formAnswers[field.label] || "";
-    const hasError = !!validationErrors[field.label];
-
-    return (
-      <View key={field._id}>
-        <InputCard
-          title={field.label + (field.required ? "" : "")}
-          value={value}
-          setValue={(v: string) => handleInputChange(field.label, v)}
-          description={field.type === "file" ? "[Upload up to 10 files. Max 100MB.]" : ""}
-          required={field.required}
-          multiline={field.type === "textarea"}
-          fileUpload={field.type === "file"}
-          answer={field.type !== "file"}
-        />
-        {hasError && (
-          <Text
-            style={{
-              color: "#FF6B6B",
-              fontSize: getFontSize(12),
-              marginTop: getSpacing(-12),
-              marginBottom: getSpacing(8),
-              marginLeft: getSpacing(4),
-            }}
-          >
-            {validationErrors[field.label]}
-          </Text>
-        )}
-      </View>
-    );
+  const handleNext = () => {
+    if (!isCoverSheetValid) {
+      Alert.alert('Validation Error', 'Please fill all required fields before continuing.');
+      return;
+    }
+    setStep(2);
   };
 
-  // Loading state
-  if (isLoading || isCheckingApplication) {
+  const handleSubmit = async () => {
+    if (!user?.id) {
+      Alert.alert('Error', 'User not authenticated. Please log in again.');
+      return;
+    }
+    if (!formId) {
+      Alert.alert('Error', 'Form id is missing. Please refresh and try again.');
+      return;
+    }
+    if (!isCoverSheetValid) {
+      Alert.alert('Validation Error', 'Please complete all required cover sheet fields.');
+      setStep(1);
+      return;
+    }
+    if (!confirmations.reviewed || !confirmations.uploadsIncluded) {
+      Alert.alert('Validation Error', 'Please complete the confirmations before submitting.');
+      return;
+    }
+
+    const payloadAnswers: Record<string, string> = { ...formAnswers };
+    if (otherNote.trim()) {
+      payloadAnswers.Other = otherNote.trim();
+    }
+
+    try {
+      await submitCompleteApplication(user.id, formId, payloadAnswers, supportingDocs);
+      setShowSuccessModal(true);
+
+      const appRes = await fetchApplicationByUserId(user.id);
+      if (appRes?.application) {
+        setApplicationData(appRes);
+        setHasApplied(true);
+      }
+
+      setFormAnswers(createEmptyMicrograntAnswers());
+      setSupportingDocs([]);
+      setConfirmations({ reviewed: false, uploadsIncluded: false });
+      setOtherNote('');
+      setStep(1);
+    } catch (err: any) {
+      setResponseModal({
+        visible: true,
+        message: err?.response?.data?.message || err.message || 'Failed to submit application',
+        buttonText: 'OK',
+      });
+    }
+  };
+
+  const onBackPress = () => {
+    if (hasApplied) {
+      router.back();
+      return;
+    }
+    if (step > 1) setStep(1);
+    else router.back();
+  };
+
+  const submittedAnswers = applicationData?.application?.answers ?? {};
+  const submittedDocs = normalizeMicrograntSupportingDocs(
+    applicationData?.application?.supportingDocs ??
+      applicationData?.application?.supportingDoc
+  );
+
+  if (pageLoading || isLoading) {
     return (
       <AppGradientBackground style={{ flex: 1 }}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#fff" />
-          <Text style={{ color: "#fff", marginTop: 16, fontSize: getFontSize(16) }}>
-            Loading form...
+          <Text style={{ color: '#fff', marginTop: 16, fontSize: getFontSize(16) }}>
+            Loading micro grant...
           </Text>
         </View>
       </AppGradientBackground>
     );
   }
 
-  // ❗ BACK BUTTON LOGIC FIXED
-  const onBackPress = () => {
-    if (checkApplicationData?.data?.applied) {
-      // Already applied → DO NOT GO TO FORM
-      router.back();
-      return;
-    }
-
-    if (step > 1) setStep(step - 1);
-    else router.back();
-  };
-
-  // Error state
-  if (error && !form) {
+  if (error && !form && !hasApplied) {
     return (
       <AppGradientBackground style={{ flex: 1 }}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
-          <Text style={{ color: "#fff", fontSize: getFontSize(18), textAlign: "center", marginBottom: 16 }}>
-            Failed to load form
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
+          <Text style={{ color: '#fff', fontSize: getFontSize(18), textAlign: 'center', marginBottom: 16 }}>
+            Failed to load micro grant
           </Text>
-          <Text style={{ color: "#fff", fontSize: getFontSize(14), textAlign: "center", marginBottom: 24 }}>
-            {error}
-          </Text>
-          <Button title="Retry" type="submit" onPress={fetchGrantForm} style={{ width: "50%" }} />
+          <Button title="Retry" type="submit" onPress={loadPage} style={{ width: '50%' }} />
         </View>
       </AppGradientBackground>
     );
@@ -248,1186 +266,483 @@ export default function Grant() {
       <AppGradientBackground style={{ flex: 1 }}>
         <TopBar
           showDrawer={false}
-          showBackButton={true}
-          showBackButtonText={true}
+          showBackButton
           onPressBack={onBackPress}
-          showNotifications={true}
-          onProfilePress={() => { }}
+          showNotifications
+          onProfilePress={() => {}}
           role="pastor"
         />
 
-        <View style={{ flex: 1 }}>
-            <View style={{ width: "100%", alignItems: "center", marginTop: 16, flex: 1 }}>
-              <KeyboardSafeContainer
-              contentContainerStyle={{
-                paddingBottom: Platform.OS === "android" ? bottom : bottom * 1.5,
-                paddingHorizontal: getSpacing(16),
-                flexGrow: 1,
-              }}
-              style={{ width: "100%", flex: 1 }}
-              useSafeAreaBottom
-              extraScrollHeight={24}
-            >
-              <View style={{ width: "100%", flexDirection: "column" }}>
-
-                {/* TITLE */}
-                <HeaderTitle
-                  title={form?.data?.title || "Micro-Grant Application"}
-                  textStyle={{
-                    fontWeight: "700",
-                    color: "#ffffff",
-                    fontFamily: "AlbertBold",
-                    fontSize: getFontSize(isSmallDevice ? 16 : 18),
-                    textAlign: "center",
-                  }}
-                />
-
-                <View style={{ width: "100%", paddingVertical: getSpacing(8) }}>
-                  <Text
-                    style={{
-                      color: "white",
-                      fontSize: getFontSize(14),
-                      lineHeight: getFontSize(20),
-                      fontWeight: "500",
-                      textAlign: "center",
-                    }}
-                  >
-                    {form?.data?.description ||
-                      "Please keep in mind that the church applying for a grant must become a partner with the CCC by signing a MOU."}
-                  </Text>
-                </View>
-
-                {/* === STEP 3: SHOW ONLY STATUS (if already applied) === */}
-                {STEP_3_VIEW()}
-
-                {/* === IF NOT APPLIED → SHOW FORM === */}
-                {!checkApplicationData?.data?.applied && (
-                  <>
-                    {step === 1 && (
-                      <>
-                        <View
-                          style={{
-                            borderWidth: 1,
-                            borderColor: "white",
-                            borderRadius: getSpacing(10),
-                            backgroundColor: "#14517d",
-                            marginVertical: getSpacing(16),
-                            paddingVertical: getSpacing(16),
-                            paddingHorizontal: getSpacing(16),
-                            width: "100%",
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: "white",
-                              fontSize: getFontSize(16),
-                              fontWeight: "600",
-                            }}
-                          >
-                            1. Cover Sheet
-                          </Text>
-                          <Text
-                            style={{
-                              color: "white",
-                              fontSize: getFontSize(14),
-                              marginTop: getSpacing(4),
-                            }}
-                          >
-                            Please answer the questions succinctly following prompts
-                          </Text>
-                        </View>
-
-                        <View style={{ width: "100%", alignItems: "flex-end", paddingVertical: getSpacing(8) }}>
-                          <Text
-                            style={{
-                              color: "yellow",
-                              fontSize: getFontSize(14),
-                              fontWeight: "500",
-                            }}
-                          >
-                            * Indicates required questions
-                          </Text>
-                        </View>
-
-                        {form?.data?.fields?.map((field) => renderFormField(field))}
-                      </>
-                    )}
-
-                    {step === 2 && (
-                      <View style={{ width: "100%", paddingVertical: 20, gap: 20 }}>
-                        <View
-                          style={{
-                            borderWidth: 1,
-                            borderColor: "white",
-                            borderRadius: 8,
-                            paddingVertical: 8,
-                          }}
-                        >
-                          {reportingProcedureText.map((text, i) => (
-                            <View
-                              key={i}
-                              style={{
-                                flexDirection: "row",
-                                paddingVertical: 8,
-                                paddingHorizontal: 20,
-                                gap: 20,
-                              }}
-                            >
-                              <Text
-                                style={{
-                                  fontSize: 15,
-                                  color: customColors.customWhiteEighty,
-                                }}
-                              >
-                                ⭐
-                              </Text>
-                              <Text
-                                style={{
-                                  fontSize: 16,
-                                  fontWeight: "500",
-                                  color: customColors.customWhite,
-                                  paddingRight: 30,
-                                }}
-                              >
-                                {text}
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
-
-                        <View
-                          style={{
-                            borderWidth: 1,
-                            borderColor: "white",
-                            borderRadius: 8,
-                            paddingVertical: 8,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              fontWeight: "500",
-                              color: customColors.customWhite,
-                              paddingLeft: 20,
-                            }}
-                          >
-                            Please review the grant application thoroughly before
-                            submission and ensure that all required sections are
-                            completed accurately
-                          </Text>
-
-                          {reportingOptions.map((option, i) => (
-                            <Pressable
-                              key={i}
-                              onPress={() => setSelectedReportingOption(option)}
-                              style={{
-                                flexDirection: "row",
-                                paddingHorizontal: 20,
-                                paddingVertical: 8,
-                                gap: 20,
-                                alignItems: "center",
-                              }}
-                            >
-                              <View
-                                style={{
-                                  width: 20,
-                                  height: 20,
-                                  borderRadius: 10,
-                                  borderWidth: 2,
-                                  borderColor: "white",
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                }}
-                              >
-                                {selectedReportingOption === option && (
-                                  <View
-                                    style={{
-                                      width: 12,
-                                      height: 12,
-                                      borderRadius: 6,
-                                      backgroundColor: "white",
-                                    }}
-                                  />
-                                )}
-                              </View>
-
-                              <Text
-                                style={{
-                                  fontSize: 16,
-                                  fontWeight: "500",
-                                  flex: 1,
-                                  color: customColors.customWhite,
-                                  paddingRight: 30,
-                                }}
-                              >
-                                {option}
-                              </Text>
-                            </Pressable>
-                          ))}
-                        </View>
-                      </View>
-                    )}
-
-                    {step <= 2 && (
-                      <View
-                        style={{
-                          flexDirection: isSmallDevice ? "column" : "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: getSpacing(16),
-                          marginTop: getSpacing(24),
-                          paddingHorizontal: getSpacing(16),
-                        }}
-                      >
-                        <Button
-                          title={"Clear Form"}
-                          type={"cancel"}
-                          onPress={handleClearForm}
-                          style={{
-                            flex: isSmallDevice ? undefined : 1,
-                            width: isSmallDevice ? "100%" : undefined,
-                            minHeight: getSpacing(44),
-                          }}
-                        />
-
-                        <Button
-                          onPress={() => (step == 2 ? handleSubmit() : handleNext())}
-                          title={step == 2 ? "Submit" : "Next"}
-                          type={"submit"}
-                          disabled={isSubmitting}
-                          style={{
-                            flex: isSmallDevice ? undefined : 1,
-                            width: isSmallDevice ? "100%" : undefined,
-                            minHeight: getSpacing(44),
-                          }}
-                        />
-                      </View>
-                    )}
-                  </>
-                )}
-              </View>
-              </KeyboardSafeContainer>
-
-              {/* Response modal */}
-              <ResponseModal
-                buttonText={responseModal.buttonText}
-                buttonPress={() => setResponseModal((prev) => ({ ...prev, visible: false }))}
-                isModalVisible={responseModal.visible}
-                responseText={responseModal.message}
-                closeMenu={() =>
-                  setResponseModal((prev) => ({ ...prev, visible: false, message: "" }))
-                }
-              />
-            </View>
-        </View>
-
-        <SimpleSuccessModal
-          visible={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          title="Application has been submitted successfully."
-        />
-
-        {/* Status Check Modal */}
-        <Pressable
-          style={{
-            display: isVisible ? "flex" : "none",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-            paddingHorizontal: 16,
+        <KeyboardSafeContainer
+          contentContainerStyle={{
+            paddingBottom: Platform.OS === 'android' ? bottom : bottom * 1.5,
+            paddingHorizontal: getSpacing(16),
+            flexGrow: 1,
           }}
-          onPress={() => setIsVisible(false)}
+          style={{ flex: 1, width: '100%' }}
+          useSafeAreaBottom
+          extraScrollHeight={24}
         >
-          <Pressable
-            style={{
-              width: "100%",
-              maxWidth: 400,
-              gap: 12,
-              padding: 24,
-              backgroundColor: "white",
-              borderRadius: 12,
+          <HeaderTitle
+            title={MICROGRANT_PAGE_TITLE}
+            textStyle={{
+              fontWeight: '700',
+              color: '#ffffff',
+              fontFamily: 'AlbertBold',
+              fontSize: getFontSize(isSmallDevice ? 16 : 18),
+              textAlign: 'center',
             }}
-            onPress={(e) => e.stopPropagation()}
+          />
+
+          <Text
+            style={{
+              color: 'white',
+              fontSize: getFontSize(14),
+              lineHeight: getFontSize(20),
+              fontWeight: '500',
+              textAlign: 'center',
+              marginVertical: getSpacing(8),
+            }}
           >
-            <Text
-              style={{
-                fontWeight: "600",
-                fontSize: 16,
-                lineHeight: 24,
-                color: "#176192",
-                textAlign: "center",
-              }}
-            >
-              Application Status
-            </Text>
+            {MICROGRANT_PAGE_DESCRIPTION}
+          </Text>
 
-            <Text
-              style={{
-                fontWeight: "500",
-                fontSize: 14,
-                lineHeight: 20,
-                color: "#1E366F",
-                textAlign: "center",
-              }}
-            >
-              Your application is currently under review. We will notify you once it has
-              been processed.
-            </Text>
-
-            <Button
-              title="Close"
-              type="submit"
-              onPress={() => setIsVisible(false)}
-              style={{ marginTop: 12 }}
+          {hasApplied && applicationData ? (
+            <SubmittedApplicationView
+              applicationData={applicationData}
+              submittedAnswers={submittedAnswers}
+              submittedDocs={submittedDocs}
+              onBackHome={() => router.back()}
             />
-          </Pressable>
-        </Pressable>
+          ) : (
+            <>
+              {step === 1 && (
+                <>
+                  <StepHeader
+                    step={1}
+                    title="Cover Sheet"
+                    subtitle="Please answer the questions succinctly following prompts"
+                  />
+                  <Text style={styles.requiredHint}>* Indicates required questions</Text>
+
+                  {MICROGRANT_QUESTION_LABELS.map((label) => (
+                    <View key={label}>
+                      <InputCard
+                        title={label}
+                        value={formAnswers[label]}
+                        setValue={(v: string) => handleInputChange(label, v)}
+                        description=""
+                        required
+                        answer
+                      />
+                      {validationErrors[label] ? (
+                        <Text style={styles.errorText}>{validationErrors[label]}</Text>
+                      ) : null}
+                    </View>
+                  ))}
+
+                  <View style={styles.uploadSection}>
+                    <Text style={styles.uploadLabel}>
+                      Please upload here any supporting documents or media (photos, videos, publications, etc.)
+                    </Text>
+                    <Pressable style={styles.uploadBox} onPress={pickSupportingDocs}>
+                      <Text style={styles.uploadHint}>
+                        Tap to choose files (up to {MAX_FILES}, max 10 MB each)
+                      </Text>
+                    </Pressable>
+                    {supportingDocs.map((file, index) => (
+                      <Text key={`${file.name}-${index}`} style={styles.fileName}>
+                        {file.name}
+                      </Text>
+                    ))}
+                  </View>
+                </>
+              )}
+
+              {step === 2 && (
+                <View style={{ gap: 20, paddingVertical: 12 }}>
+                  <View style={styles.panel}>
+                    {MICROGRANT_REPORTING_TEXT.map((text, i) => (
+                      <View key={i} style={styles.reportRow}>
+                        <Text style={styles.star}>*</Text>
+                        <Text style={styles.reportText}>{text}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.panel}>
+                    <Text style={styles.reviewIntro}>
+                      Please review the grant application thoroughly before submission to ensure that all sections have accurate information.
+                    </Text>
+
+                    <View style={styles.checkboxRow}>
+                      <CheckBox
+                        type="square"
+                        value={confirmations.reviewed}
+                        setValue={(val) =>
+                          setConfirmations((prev) => ({ ...prev, reviewed: val }))
+                        }
+                      />
+                      <Text style={styles.checkboxLabel}>
+                        {MICROGRANT_CONFIRMATION_LABELS.reviewed}
+                      </Text>
+                    </View>
+
+                    <View style={styles.checkboxRow}>
+                      <CheckBox
+                        type="square"
+                        value={confirmations.uploadsIncluded}
+                        setValue={(val) =>
+                          setConfirmations((prev) => ({
+                            ...prev,
+                            uploadsIncluded: val,
+                          }))
+                        }
+                      />
+                      <Text style={styles.checkboxLabel}>
+                        {MICROGRANT_CONFIRMATION_LABELS.uploadsIncluded}
+                      </Text>
+                    </View>
+
+                    <InputCard
+                      title="Other"
+                      value={otherNote}
+                      setValue={setOtherNote}
+                      description="Optional"
+                      required={false}
+                      answer
+                    />
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.actions}>
+                <Button title="Clear Form" type="cancel" onPress={handleClearForm} style={styles.actionBtn} />
+                <Button
+                  title={step === 2 ? (isSubmitting ? 'Submitting...' : 'Submit') : 'Next'}
+                  type="submit"
+                  disabled={isSubmitting || (step === 2 && (!confirmations.reviewed || !confirmations.uploadsIncluded))}
+                  onPress={() => (step === 2 ? handleSubmit() : handleNext())}
+                  style={styles.actionBtn}
+                />
+              </View>
+            </>
+          )}
+        </KeyboardSafeContainer>
       </AppGradientBackground>
+
+      <SimpleSuccessModal
+        visible={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Micro Grant application submitted successfully."
+      />
+
+      <ResponseModal
+        buttonText={responseModal.buttonText}
+        buttonPress={() => setResponseModal((prev) => ({ ...prev, visible: false }))}
+        isModalVisible={responseModal.visible}
+        responseText={responseModal.message}
+        closeMenu={() => setResponseModal((prev) => ({ ...prev, visible: false, message: '' }))}
+      />
     </>
   );
+}
 
-  // === Extracted Step 3 section for clean code ===
-  function STEP_3_VIEW() {
-    if (step !== 3) return null;
+function StepHeader({
+  step,
+  title,
+  subtitle,
+}: {
+  step: number;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <View style={styles.stepHeader}>
+      <Text style={styles.stepTitle}>
+        {step}. {title}
+      </Text>
+      {subtitle ? <Text style={styles.stepSubtitle}>{subtitle}</Text> : null}
+    </View>
+  );
+}
 
-    return (
-      <View
-        style={{
-          width: "100%",
-          flexDirection: "column",
-          gap: 20,
-          justifyContent: "center",
-          paddingVertical: 20,
-        }}
-      >
-        <View
-          style={{
-            width: "100%",
-            flexDirection: "column",
-            borderRadius: 8,
-            paddingVertical: 8,
-            borderWidth: 1,
-            borderColor: "white",
-          }}
-        >
-          <View
-            style={{
-              width: "100%",
-              flexDirection: "column",
-              borderRadius: 8,
-              justifyContent: "center",
-              paddingHorizontal: 20,
-              paddingVertical: 8,
-              gap: 20,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "500",
-                lineHeight: 22,
-                color: customColors.customWhiteEighty,
-                textAlign: "center",
-              }}
-            >
-              You have successfully submitted the application for the grant.
-              Please check the status of your application for updates.
+function SubmittedApplicationView({
+  applicationData,
+  submittedAnswers,
+  submittedDocs,
+  onBackHome,
+}: {
+  applicationData: MicrograntApplicationDetail;
+  submittedAnswers: Record<string, string | string[] | null>;
+  submittedDocs: { name: string; url: string }[];
+  onBackHome: () => void;
+}) {
+  const app = applicationData.application;
+
+  return (
+    <View style={{ gap: 16, paddingVertical: 12 }}>
+      <View style={styles.submittedPanel}>
+        <Text style={styles.submittedTitle}>My Micro Grant Application</Text>
+        <Text style={styles.submittedEmail}>{applicationData.user.email}</Text>
+        <MicrograntStatusBadge status={app.status} />
+
+        <View style={styles.metaRow}>
+          <View style={styles.metaBox}>
+            <Text style={styles.metaLabel}>Submitted on</Text>
+            <Text style={styles.metaValue}>
+              {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : '-'}
             </Text>
-
-            <View
-              style={{
-                width: "100%",
-                flexDirection: "row",
-                justifyContent: "center",
-                paddingHorizontal: 20,
-                paddingVertical: 8,
-              }}
-            >
-              <Button
-                title={"Check Status"}
-                type={"cancel"}
-                style={{ width: "40%" }}
-                onPress={() => setIsVisible(true)}
-              />
-            </View>
+          </View>
+          <View style={styles.metaBox}>
+            <Text style={styles.metaLabel}>Last updated</Text>
+            <Text style={styles.metaValue}>
+              {app.updatedAt ? new Date(app.updatedAt).toLocaleDateString() : '-'}
+            </Text>
           </View>
         </View>
       </View>
-    );
-  }
+
+      <View style={styles.submittedPanel}>
+        <Text style={styles.sectionTitle}>Submitted Answers</Text>
+        {Object.entries(submittedAnswers).map(([label, value]) => (
+          <View key={label} style={styles.answerBox}>
+            <Text style={styles.answerLabel}>{label}</Text>
+            <Text style={styles.answerValue}>{String(value || '-')}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.submittedPanel}>
+        <Text style={styles.sectionTitle}>Supporting Documents</Text>
+        {submittedDocs.length === 0 ? (
+          <Text style={styles.emptyDocs}>No supporting documents uploaded.</Text>
+        ) : (
+          submittedDocs.map((doc, index) => (
+            <View key={`${doc.name}-${index}`} style={styles.docRow}>
+              <Text style={styles.docName}>{doc.name}</Text>
+              {doc.url !== '#' ? (
+                <Pressable onPress={() => Linking.openURL(doc.url)}>
+                  <Text style={styles.openLink}>Open</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ))
+        )}
+      </View>
+
+      <View style={{ alignItems: 'flex-end' }}>
+        <Button title="Back" type="submit" onPress={onBackHome} style={{ width: 140 }} />
+      </View>
+    </View>
+  );
 }
 
-
-
-
-
-
-// import { Button } from "@/components/atom/buttons";
-// import { InputCard } from "@/components/atom/cards";
-// import { HeaderTitle } from "@/components/atom/header";
-// import { PastorNavigationHeader } from "@/components/pastor/Header";
-// import { Colors } from "@/constants/Colors";
-// import { useGrant } from "@/hooks/grant/useGrant";
-// import { useAuthStore } from "@/stores";
-// import { getFontSize, getSpacing, isSmallDevice } from "@/utils/responsive";
-// import { LinearGradient } from "expo-linear-gradient";
-// import React from "react";
-// import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-// import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// export default function Grant() {
-//   const { top, bottom } = useSafeAreaInsets();
-//   const { user } = useAuthStore(); // Get current user ID
-//   const {
-//     form,
-//     isLoading,
-//     isSubmitting,
-//     error,
-//     fetchGrantForm,
-//     submitCompleteApplication,
-//   } = useGrant();
-
-//   const [step, setStep] = React.useState(1);
-//   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
-//   const [formAnswers, setFormAnswers] = React.useState<Record<string, string>>({});
-//   const [errorModal, setErrorModal] = React.useState({
-//     visible: false,
-//     message: ''
-//   });
-
-//   // const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
-//   // Fetch form on mount
-//   React.useEffect(() => {
-//     fetchGrantForm().catch((err) => {
-//       console.error('Failed to load grant form:', err);
-//       setErrorModal({
-//         visible: true,
-//         message: 'Failed to load grant form. Please try again.',
-//       });
-//     });
-//   }, [fetchGrantForm]);
-
-//   const handleInputChange = (fieldLabel: string, value: string) => {
-//     setFormAnswers((prev) => ({
-//       ...prev,
-//       [fieldLabel]: value,
-//     }));
-//   };
-
-//   const handleSubmit = async () => {
-//     if (!user?.id) {
-//       setErrorModal({
-//         visible: true,
-//         message: 'User not authenticated. Please log in again.',
-//       });
-//       return;
-//     }
-
-//     try {
-//       await submitCompleteApplication(user.id, formAnswers);
-
-//       setShowSuccessModal(true);
-
-//       setTimeout(() => {
-//         setShowSuccessModal(false);
-//         setStep(3); // Move to success screen
-//         setFormAnswers({}); // Clear form
-//       }, 2000);
-//     } catch (err: any) {
-//       setErrorModal({
-//         visible: true,
-//         message: err?.response?.data?.message || 'Failed to submit application',
-//       });
-//     }
-//   };
-
-//   // Loading screen
-//   if (isLoading) {
-//     return (
-//       <LinearGradient
-//         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-//         style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
-//       >
-//         <ActivityIndicator size="large" color="white" />
-//         <Text style={{ color: 'white', marginTop: 16, fontSize: 16 }}>
-//           Loading grant form...
-//         </Text>
-//       </LinearGradient>
-//     );
-//   }
-
-//   // Error screen if form failed to load
-//   if (error && !form) {
-//     return (
-//       <LinearGradient
-//         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-//         style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}
-//       >
-//         <Text style={{ color: 'white', fontSize: 18, textAlign: 'center', marginBottom: 20 }}>
-//           Failed to load grant form
-//         </Text>
-//         <Button
-//           title="Retry"
-//           type="submit"
-//           onPress={() => fetchGrantForm()}
-//         />
-//       </LinearGradient>
-//     );
-//   }
-
-//   return (
-//     <>
-//       <LinearGradient
-//         colors={[Colors.lightBlueGradientOne, Colors.darkBlueGradientOne]}
-//         style={{ flex: 1 }}
-//       >
-//         <View style={{ flex: 1, paddingTop: top }}>
-//           <PastorNavigationHeader
-//             showDrawer={false}
-//             showBackButton={true}
-//             wrapperClass="mt-5"
-//           />
-
-//           <View
-//             style={{
-//               width: '100%',
-//               alignItems: 'center',
-//               marginTop: 16,
-//               flex: 1,
-//             }}
-//           >
-//             <ScrollView
-//               contentContainerStyle={{
-//                 paddingBottom: Platform.OS === 'android' ? bottom : bottom * 1.5,
-//                 paddingHorizontal: getSpacing(16),
-//                 flexGrow: 1,
-//               }}
-//               style={{ width: '100%' }}
-//             >
-//               <View
-//                 style={{
-//                   width: '100%',
-//                   flexDirection: 'column',
-//                   justifyContent: 'flex-start',
-//                   alignItems: 'stretch',
-//                 }}
-//               >
-//                 <HeaderTitle
-//                   title={form?.data.title || 'The Center for Community Change Micro-Grant Application'}
-//                   textStyle={{
-//                     fontWeight: '700',
-//                     color: '#ffffff',
-//                     fontFamily: 'AlbertBold',
-//                     fontSize: getFontSize(isSmallDevice ? 16 : 18),
-//                     textAlign: 'center',
-//                   }}
-//                 />
-
-//                 <View
-//                   style={{
-//                     width: '100%',
-//                     paddingVertical: getSpacing(8),
-//                   }}
-//                 >
-//                   <Text
-//                     style={{
-//                       color: 'white',
-//                       fontSize: getFontSize(14),
-//                       lineHeight: getFontSize(20),
-//                       fontWeight: '500',
-//                       textAlign: 'left',
-//                     }}
-//                   >
-//                     {form?.data.description || 'Form for pastors to apply for grants'}
-//                   </Text>
-//                 </View>
-
-//                 {/* Step Indicator */}
-//                 {step <= 2 && (
-//                   <View
-//                     style={{
-//                       borderWidth: 1,
-//                       borderColor: 'white',
-//                       borderRadius: getSpacing(10),
-//                       backgroundColor: '#14517d',
-//                       marginVertical: getSpacing(16),
-//                       paddingVertical: getSpacing(16),
-//                       paddingHorizontal: getSpacing(16),
-//                       width: '100%',
-//                     }}
-//                   >
-//                     <View
-//                       style={{
-//                         flexDirection: 'column',
-//                         gap: getSpacing(8),
-//                         justifyContent: 'flex-start',
-//                       }}
-//                     >
-//                       <Text
-//                         style={{
-//                           color: 'white',
-//                           fontSize: getFontSize(16),
-//                           lineHeight: getFontSize(20),
-//                           fontWeight: '600',
-//                         }}
-//                       >
-//                         {step}. {step == 1 ? 'Application Form' : 'Confirmation'}
-//                       </Text>
-//                       {step == 1 && (
-//                         <Text
-//                           style={{
-//                             color: 'white',
-//                             fontSize: getFontSize(14),
-//                             lineHeight: getFontSize(18),
-//                             fontWeight: '500',
-//                             marginTop: getSpacing(4),
-//                           }}
-//                         >
-//                           Please answer all required fields
-//                         </Text>
-//                       )}
-//                     </View>
-//                   </View>
-//                 )}
-
-//                 {step == 1 && (
-//                   <View
-//                     style={{
-//                       width: '100%',
-//                       alignItems: 'flex-end',
-//                       paddingVertical: getSpacing(8),
-//                     }}
-//                   >
-//                     <Text
-//                       style={{
-//                         color: 'yellow',
-//                         fontSize: getFontSize(14),
-//                         lineHeight: getFontSize(18),
-//                         fontWeight: '500',
-//                       }}
-//                     >
-//                       * Indicates required fields
-//                     </Text>
-//                   </View>
-//                 )}
-
-//                 {/* Render form fields - with null check */}
-//                 {step == 1 && form?.data.fields && form.data.fields.length > 0 ? (
-//                   <View>
-//                     {form.data.fields.map((field) => (
-//                       <InputCard
-//                         key={field._id}
-//                         title={`${field.label}${field.required ? ' *' : ''}`}
-//                         value={formAnswers[field.label] || ''}
-//                         setValue={(value) => handleInputChange(field.label, value)}
-//                         description={
-//                           field.type === 'text'
-//                             ? `[Enter ${field.label.toLowerCase()}]`
-//                             : field.type === 'textarea'
-//                               ? `[Describe ${field.label.toLowerCase()}]`
-//                               : '[Upload supporting documents]'
-//                         }
-//                         required={field.required}
-//                         fileUpload={field.type === 'file'}
-//                         answer={false}
-//                       />
-//                     ))}
-//                   </View>
-//                 ) : step == 1 ? (
-//                   <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-//                     <Text style={{ color: 'white', fontSize: 16 }}>
-//                       No form fields available
-//                     </Text>
-//                   </View>
-//                 ) : null}
-
-//                 {/* Step 2: Review/Confirmation */}
-//                 {step == 2 && (
-//                   <View
-//                     style={{
-//                       width: '100%',
-//                       flexDirection: 'column',
-//                       gap: 20,
-//                       justifyContent: 'center',
-//                       paddingVertical: 20,
-//                     }}
-//                   >
-//                     <View
-//                       style={{
-//                         width: '100%',
-//                         flexDirection: 'column',
-//                         borderRadius: 8,
-//                         paddingVertical: 8,
-//                         borderWidth: 1,
-//                         borderColor: 'white',
-//                       }}
-//                     >
-//                       <Text
-//                         style={{
-//                           fontSize: 16,
-//                           fontWeight: '500',
-//                           lineHeight: 28,
-//                           fontFamily: 'AlbertSans-Medium',
-//                           color: '#ffffff',
-//                           paddingLeft: 20,
-//                         }}
-//                       >
-//                         Please review your application carefully before submission.
-//                       </Text>
-
-//                       {/* Show submitted answers */}
-//                       <View style={{ paddingHorizontal: 20, paddingVertical: 12, gap: 12 }}>
-//                         {Object.entries(formAnswers).map(([key, value]) => (
-//                           <View key={key} style={{ gap: 4 }}>
-//                             <Text
-//                               style={{
-//                                 fontSize: 12,
-//                                 fontWeight: '600',
-//                                 color: '#ffeb3b',
-//                               }}
-//                             >
-//                               {key}
-//                             </Text>
-//                             <Text
-//                               style={{
-//                                 fontSize: 14,
-//                                 fontWeight: '400',
-//                                 color: '#ffffff',
-//                                 lineHeight: 20,
-//                               }}
-//                             >
-//                               {value}
-//                             </Text>
-//                           </View>
-//                         ))}
-//                       </View>
-//                     </View>
-//                   </View>
-//                 )}
-
-//                 {/* Step 3: Success */}
-//                 {step == 3 && (
-//                   <View
-//                     style={{
-//                       width: '100%',
-//                       flexDirection: 'column',
-//                       gap: 20,
-//                       justifyContent: 'center',
-//                       paddingVertical: 20,
-//                     }}
-//                   >
-//                     <View
-//                       style={{
-//                         width: '100%',
-//                         flexDirection: 'column',
-//                         borderRadius: 8,
-//                         paddingVertical: 8,
-//                         borderWidth: 1,
-//                         borderColor: 'white',
-//                       }}
-//                     >
-//                       <View
-//                         style={{
-//                           width: '100%',
-//                           flexDirection: 'column',
-//                           borderRadius: 8,
-//                           justifyContent: 'center',
-//                           paddingHorizontal: 20,
-//                           paddingVertical: 8,
-//                           gap: 20,
-//                         }}
-//                       >
-//                         <Text
-//                           style={{
-//                             fontSize: 16,
-//                             fontWeight: '500',
-//                             lineHeight: 22,
-//                             fontFamily: 'AlbertSans-Medium',
-//                             color: '#ffffff',
-//                             textAlign: 'center',
-//                           }}
-//                         >
-//                           You have successfully submitted the application for the grant.
-//                           Please check the status of your application for updates.
-//                         </Text>
-//                         <Button
-//                           title="Check Status"
-//                           type="cancel"
-//                           style={{ width: '100%' }}
-//                           onPress={() => {
-//                             // Add navigation to status page if available
-//                             setStep(1);
-//                             setFormAnswers({});
-//                           }}
-//                         />
-//                       </View>
-//                     </View>
-//                   </View>
-//                 )}
-
-//                 {/* Navigation Buttons */}
-//                 {step <= 2 && (
-//                   <View
-//                     style={{
-//                       flexDirection: isSmallDevice ? 'column' : 'row',
-//                       justifyContent: 'space-between',
-//                       alignItems: 'center',
-//                       gap: getSpacing(16),
-//                       marginTop: getSpacing(24),
-//                       paddingHorizontal: getSpacing(16),
-//                     }}
-//                   >
-//                     <Button
-//                       title="Clear Form"
-//                       type="cancel"
-//                       onPress={() => {
-//                         setStep(1);
-//                         setFormAnswers({});
-//                       }}
-//                       disabled={isSubmitting}
-//                       style={{
-//                         flex: isSmallDevice ? undefined : 1,
-//                         width: isSmallDevice ? '100%' : undefined,
-//                         minHeight: getSpacing(44),
-//                       }}
-//                     />
-//                     <Button
-//                       onPress={() =>
-//                         step == 2
-//                           ? handleSubmit()
-//                           : setStep(step + 1)
-//                       }
-//                       title={step == 2 ? 'Submit' : 'Next'}
-//                       type="submit"
-//                       disabled={isSubmitting}
-//                       loading={isSubmitting}
-//                       style={{
-//                         flex: isSmallDevice ? undefined : 1,
-//                         width: isSmallDevice ? '100%' : undefined,
-//                         minHeight: getSpacing(44),
-//                       }}
-//                     />
-//                   </View>
-//                 )}
-//               </View>
-//             </ScrollView>
-//           </View>
-//         </View>
-
-//         {/* Success Modal */}
-//         <Modal
-//           visible={showSuccessModal}
-//           transparent={true}
-//           animationType="fade"
-//           onRequestClose={() => setShowSuccessModal(false)}
-//         >
-//           <Pressable
-//             style={{
-//               flex: 1,
-//               alignItems: 'center',
-//               justifyContent: 'center',
-//               paddingHorizontal: getSpacing(16),
-//               backgroundColor: 'rgba(0, 0, 0, 0.5)',
-//             }}
-//             onPress={() => setShowSuccessModal(false)}
-//           >
-//             <Pressable
-//               style={{
-//                 width: '90%',
-//                 maxWidth: 400,
-//                 gap: getSpacing(12),
-//                 padding: getSpacing(24),
-//                 backgroundColor: 'white',
-//                 borderRadius: getSpacing(12),
-//                 alignItems: 'center',
-//               }}
-//               onPress={(e) => e.stopPropagation()}
-//             >
-//               <Text
-//                 style={{
-//                   fontWeight: '600',
-//                   fontSize: getFontSize(18),
-//                   lineHeight: getFontSize(24),
-//                   color: '#176192',
-//                   textAlign: 'center',
-//                   marginTop: getSpacing(20),
-//                 }}
-//               >
-//                 Application Submitted Successfully
-//               </Text>
-//               <Text
-//                 style={{
-//                   fontWeight: '500',
-//                   fontSize: getFontSize(14),
-//                   lineHeight: getFontSize(20),
-//                   color: '#1E366F',
-//                   textAlign: 'center',
-//                 }}
-//               >
-//                 Your grant application has been received and is under review.
-//               </Text>
-//             </Pressable>
-//           </Pressable>
-//         </Modal>
-
-//         {/* Error Modal */}
-//         <Modal
-//           visible={errorModal.visible}
-//           transparent
-//           animationType="fade"
-//           onRequestClose={() => setErrorModal({ visible: false, message: '' })}
-//         >
-//           <Pressable
-//             style={{
-//               flex: 1,
-//               justifyContent: 'center',
-//               alignItems: 'center',
-//               backgroundColor: 'rgba(0, 0, 0, 0.5)',
-//               paddingHorizontal: 20,
-//             }}
-//             onPress={() => setErrorModal({ visible: false, message: '' })}
-//           >
-//             <Pressable
-//               style={{
-//                 backgroundColor: 'white',
-//                 padding: 20,
-//                 borderRadius: 12,
-//                 maxWidth: '90%',
-//               }}
-//               onPress={(e) => e.stopPropagation()}
-//             >
-//               <Text
-//                 style={{
-//                   fontSize: 16,
-//                   fontWeight: '600',
-//                   color: '#d32f2f',
-//                   marginBottom: 10
-//                 }}
-//               >
-//                 Error
-//               </Text>
-//               <Text style={{ fontSize: 14, color: '#666', lineHeight: 20 }}>
-//                 {errorModal.message}
-//               </Text>
-//               <Button
-//                 title="Dismiss"
-//                 type="submit"
-//                 onPress={() => setErrorModal({ visible: false, message: '' })}
-//                 style={{ marginTop: 16 }}
-//               />
-//             </Pressable>
-//           </Pressable>
-//         </Modal>
-//       </LinearGradient>
-//     </>
-//   );
-// }
-// const styles = StyleSheet.create({
-//   stepContainer: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     flex: 1,
-//   },
-//   dot: {
-//     width: 12,
-//     height: 12,
-//     borderRadius: 6,
-//     backgroundColor: "#221c70", // Change color as needed
-//   },
-//   line: {
-//     flex: 1,
-//     height: 1,
-//     // Change color as needed
-//     //   marginHorizontal: 5,
-//   },
-//   scrollContainer: {
-//     flex: 1,
-//     justifyContent: "space-between",
-//     // alignItems: "center",
-//   },
-//   text: {
-//     fontSize: 20,
-
-//     fontWeight: "bold",
-//   },
-//   separator: {
-//     height: 2,
-//     backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
-//     // marginHorizontal: 16,
-//     marginVertical: 18,
-//   },
-//   container: {
-//     alignItems: "center",
-//     justifyContent: "center",
-//     marginHorizontal: 16, // Reduced from 72px to 16px
-//   },
-//   image: {
-//     borderRadius: 8,
-//     margin: 8,
-//   },
-//   greetingText: {
-//     fontFamily: "AlbertSans-SemiBold",
-//     fontSize: 14,
-//     color: "#FFFFFF",
-//     fontWeight: "300",
-//   },
-//   roleText: {
-//     fontFamily: "AlbertSans-Medium",
-//     fontSize: 14,
-//     color: "#FFFFFF",
-//     fontWeight: "300",
-//   },
-//   divider: {
-//     height: 0.5,
-//     backgroundColor: "rgba(255, 255, 255, 0.2)",
-//     marginHorizontal: 16, // Reduced from 72px
-//   },
-//   progressContainer: {
-//     flexDirection: "row",
-//     gap: 4,
-//     alignItems: "center",
-//     marginTop: 8,
-//     marginHorizontal: 16, // Reduced from 72px
-//   },
-//   progressText: {
-//     color: "#FFFFFF",
-//     fontSize: 14,
-//     fontFamily: "AlbertSans-Regular",
-//   },
-//   progressBarBackground: {
-//     flex: 1,
-//     backgroundColor: "#182c5b",
-//     height: 8,
-//     borderRadius: 4,
-//     marginTop: 4,
-//   },
-//   progressBarFill: {
-//     backgroundColor: "#FFFFFF",
-//     height: 8,
-//     borderRadius: 4,
-//     width: "70%",
-//   },
-//   progressPercent: {
-//     color: "#FFFFFF",
-//     fontSize: 14,
-//     textAlign: "right",
-//     fontFamily: "AlbertSans-Regular",
-//   },
-//   actionsContainer: {
-//     flexDirection: "row",
-//     justifyContent: "center",
-//     alignItems: "center",
-//     gap: 8,
-//     padding: 20,
-//     marginTop: 16,
-//     marginBottom: 16,
-//   },
-//   actionButton: {
-//     flex: 1,
-//     flexDirection: "row",
-//     justifyContent: "space-around",
-//     alignItems: "center",
-//     borderRadius: 12,
-//     padding: 6,
-//     paddingVertical: 10,
-//     backgroundColor: "#004B87",
-//     borderWidth: 1,
-//     borderColor: "rgba(255, 255, 255, 0.8)",
-//   },
-//   actionText: {
-//     fontFamily: "AlbertSans-Regular",
-//     color: "#FFFFFF",
-//   },
-//   icon: {
-//     width: 18,
-//     height: 18,
-//     marginHorizontal: 16,
-//   },
-//   sectionMargin: {
-//     marginVertical: 8,
-//   },
-//   whiteText: {
-//     fontFamily: "AlbertRegular",
-//     color: "white",
-//     fontSize: 14,
-//   },
-//   summaryContainer: {
-//     flexDirection: "row",
-//     borderRadius: 8,
-//     padding: 8,
-//     borderWidth: 1,
-//     borderColor: "rgba(255, 255, 255, 0.45)",
-//     marginTop: 8,
-//   },
-//   detailedContainer: {
-//     borderRadius: 8,
-//     padding: 8,
-//     borderWidth: 1,
-//     borderColor: "rgba(255, 255, 255, 0.45)",
-//     marginTop: 16,
-//   },
-//   rowContainer: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     gap: 12,
-//     marginVertical: 8,
-//   },
-//   infoBox: {
-//     flex: 1,
-//     flexDirection: "row",
-//     borderRadius: 8,
-//     padding: 8,
-//     borderWidth: 1,
-//     borderColor: "rgba(255, 255, 255, 0.8)",
-//   },
-//   interestsContainer: {
-//     borderRadius: 8,
-//     padding: 8,
-//     borderWidth: 1,
-//     borderColor: "rgba(255, 255, 255, 0.8)",
-//     marginVertical: 8,
-//   },
-//   commentsContainer: {
-//     borderRadius: 8,
-//     padding: 8,
-//     borderWidth: 1,
-//     borderColor: "rgba(255, 255, 255, 0.8)",
-//     marginVertical: 8,
-//   },
-//   appointmentsContainer: {
-//     marginHorizontal: 16,
-//     marginTop: 16,
-//     position: "relative",
-
-//     width: "100%",
-//     borderWidth: 1,
-//     borderColor: "white",
-//     paddingVertical: 20,
-//     paddingHorizontal: 10,
-//     borderRadius: 10,
-//   },
-//   rowBetween: {
-//     marginVertical: 10,
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//   },
-//   upcomingText: {
-//     color: "#FFFFFF", // customWhite
-//     fontSize: 14,
-//     fontFamily: "AlbertSans-Bold",
-//     textAlign: "center",
-//   },
-//   seeAllText: {
-//     color: "#FFFFFF", // customWhite
-//     fontSize: 14,
-//     fontFamily: "AlbertSans-Medium",
-//     textAlign: "center",
-//   },
-// });
+const styles = {
+  stepHeader: {
+    borderWidth: 1,
+    borderColor: 'white',
+    borderRadius: getSpacing(10),
+    backgroundColor: '#14517d',
+    marginVertical: getSpacing(16),
+    paddingVertical: getSpacing(16),
+    paddingHorizontal: getSpacing(16),
+    width: '100%' as const,
+  },
+  stepTitle: {
+    color: 'white',
+    fontSize: getFontSize(16),
+    fontWeight: '600' as const,
+  },
+  stepSubtitle: {
+    color: 'white',
+    fontSize: getFontSize(14),
+    marginTop: getSpacing(4),
+  },
+  requiredHint: {
+    color: 'yellow',
+    fontSize: getFontSize(14),
+    fontWeight: '500' as const,
+    textAlign: 'right' as const,
+    marginBottom: getSpacing(8),
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: getFontSize(12),
+    marginTop: getSpacing(-12),
+    marginBottom: getSpacing(8),
+    marginLeft: getSpacing(4),
+  },
+  uploadSection: {
+    marginTop: getSpacing(12),
+    gap: 8,
+  },
+  uploadLabel: {
+    color: 'white',
+    fontSize: getFontSize(14),
+    fontWeight: '500' as const,
+  },
+  uploadBox: {
+    borderWidth: 2,
+    borderStyle: 'dashed' as const,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center' as const,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  uploadHint: {
+    color: '#cde2f2',
+    fontSize: getFontSize(13),
+    textAlign: 'center' as const,
+  },
+  fileName: {
+    color: 'white',
+    fontSize: getFontSize(13),
+  },
+  panel: {
+    borderWidth: 1,
+    borderColor: 'white',
+    borderRadius: 8,
+    paddingVertical: 8,
+  },
+  reportRow: {
+    flexDirection: 'row' as const,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  star: {
+    fontSize: 15,
+    color: customColors.customWhiteEighty,
+  },
+  reportText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500' as const,
+    color: customColors.customWhite,
+    paddingRight: 20,
+  },
+  reviewIntro: {
+    fontSize: 16,
+    fontWeight: '500' as const,
+    color: customColors.customWhite,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  checkboxRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  checkboxLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500' as const,
+    color: customColors.customWhite,
+  },
+  actions: {
+    flexDirection: isSmallDevice ? ('column' as const) : ('row' as const),
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    gap: getSpacing(16),
+    marginTop: getSpacing(24),
+  },
+  actionBtn: {
+    flex: isSmallDevice ? undefined : 1,
+    width: isSmallDevice ? ('100%' as const) : undefined,
+    minHeight: getSpacing(44),
+  },
+  submittedPanel: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: 16,
+    gap: 12,
+  },
+  submittedTitle: {
+    color: '#fff',
+    fontSize: getFontSize(22),
+    fontWeight: '600' as const,
+  },
+  submittedEmail: {
+    color: '#d9ebf8',
+    fontSize: getFontSize(15),
+  },
+  metaRow: {
+    flexDirection: 'row' as const,
+    gap: 12,
+    marginTop: 8,
+  },
+  metaBox: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: 12,
+  },
+  metaLabel: {
+    color: '#cde2f2',
+    fontSize: getFontSize(13),
+  },
+  metaValue: {
+    color: '#fff',
+    fontSize: getFontSize(18),
+    fontWeight: '600' as const,
+    marginTop: 4,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: getFontSize(18),
+    fontWeight: '600' as const,
+    marginBottom: 4,
+  },
+  answerBox: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    backgroundColor: 'rgba(11, 53, 87, 0.4)',
+    padding: 12,
+    marginTop: 8,
+  },
+  answerLabel: {
+    color: '#fff',
+    fontSize: getFontSize(14),
+    fontWeight: '600' as const,
+  },
+  answerValue: {
+    color: '#d9ebf8',
+    fontSize: getFontSize(14),
+    marginTop: 6,
+  },
+  emptyDocs: {
+    color: '#cde2f2',
+    fontSize: getFontSize(14),
+  },
+  docRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    backgroundColor: 'rgba(11, 53, 87, 0.4)',
+    padding: 12,
+    marginTop: 8,
+  },
+  docName: {
+    color: '#fff',
+    fontSize: getFontSize(14),
+    flex: 1,
+    marginRight: 12,
+  },
+  openLink: {
+    color: '#8ec5eb',
+    fontSize: getFontSize(14),
+    fontWeight: '600' as const,
+  },
+};

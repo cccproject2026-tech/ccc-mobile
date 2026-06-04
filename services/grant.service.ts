@@ -1,4 +1,5 @@
-import { CheckApplicationResponse, GrantFormResponse, GrantSubmissionPayload, GrantSubmissionResponse, MicrograntApplication, MicrograntApplicationDetail, MicrograntApplicationDetailApiResponse, MicrograntApplicationsApiResponse } from '@/types/grant.type';
+import { CheckApplicationResponse, GrantFormResponse, GrantSubmissionPayload, GrantSubmissionResponse, MicrograntApplication, MicrograntApplicationDetail, MicrograntApplicationDetailApiResponse, MicrograntPickedFile } from '@/types/grant.type';
+import { unwrapMicrograntApplicationsList, unwrapMicrograntWithUser } from '@/utils/microgrant';
 import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
@@ -23,9 +24,30 @@ export const grantService = {
      * Submit grant application with form data
      */
     submitGrant: async (
-        payload: GrantSubmissionPayload
+        payload: GrantSubmissionPayload,
+        supportingDocs?: MicrograntPickedFile[]
     ): Promise<GrantSubmissionResponse> => {
         try {
+            if (supportingDocs && supportingDocs.length > 0) {
+                const formData = new FormData();
+                formData.append('userId', payload.userId);
+                formData.append('formId', payload.formId);
+                formData.append('answers', JSON.stringify(payload.answers));
+                supportingDocs.forEach((file) => {
+                    formData.append('files', {
+                        uri: file.uri,
+                        type: file.mimeType || 'application/octet-stream',
+                        name: file.name,
+                    } as any);
+                });
+                const response = await apiClient.post<GrantSubmissionResponse>(
+                    ENDPOINTS.GRANT.APPLY_GRANT,
+                    formData,
+                    { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }
+                );
+                return response.data;
+            }
+
             const response = await apiClient.post<GrantSubmissionResponse>(
                 ENDPOINTS.GRANT.APPLY_GRANT,
                 payload
@@ -33,6 +55,22 @@ export const grantService = {
             return response.data;
         } catch (error) {
             console.error('Error submitting grant application:', error);
+            throw error;
+        }
+    },
+
+    getApplicationByUserId: async (userId: string): Promise<MicrograntApplicationDetail | null> => {
+        try {
+            const response = await apiClient.get<MicrograntApplicationDetailApiResponse>(
+                ENDPOINTS.GRANT.GET_APPLICATION(userId)
+            );
+            return unwrapMicrograntWithUser(response);
+        } catch (error: any) {
+            const status = error?.statusCode ?? error?.response?.status;
+            if (status === 404) {
+                return null;
+            }
+            console.error('Error fetching microgrant application by user:', error);
             throw error;
         }
     },
@@ -72,10 +110,8 @@ export const grantService = {
      */
     getApplications: async (status?: string): Promise<MicrograntApplication[]> => {
         try {
-            const response = await apiClient.get<MicrograntApplicationsApiResponse>(
-                ENDPOINTS.GRANT.GET_APPLICATIONS(status)
-            );
-            return response.data.data;
+            const response = await apiClient.get(ENDPOINTS.GRANT.GET_APPLICATIONS(status));
+            return unwrapMicrograntApplicationsList(response);
         } catch (error) {
             console.error('Error fetching microgrant applications:', error);
             throw error;
@@ -90,25 +126,24 @@ export const grantService = {
             const response = await apiClient.get<MicrograntApplicationDetailApiResponse>(
                 ENDPOINTS.GRANT.GET_APPLICATION(applicationId)
             );
-            return response.data.data;
+            const detail = unwrapMicrograntWithUser(response);
+            if (!detail) {
+                throw new Error('Could not read application data from the server.');
+            }
+            return detail;
         } catch (error) {
             console.error('Error fetching microgrant application:', error);
             throw error;
         }
     },
 
-    /**
-     * Helper method to build submission payload
-     */
     buildSubmissionPayload: (
         userId: string,
-        formAnswers: Record<string, string>,
-        supportingDocUrl: string = 'https://example.com/uploads/proof.pdf'
-    ): GrantSubmissionPayload => {
-        return {
-            userId,
-            answers: formAnswers,
-            supportingDoc: supportingDocUrl,
-        };
-    },
+        formId: string,
+        formAnswers: Record<string, string>
+    ): GrantSubmissionPayload => ({
+        userId,
+        formId,
+        answers: formAnswers,
+    }),
 };

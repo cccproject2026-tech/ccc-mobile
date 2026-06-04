@@ -43,12 +43,26 @@ export const mapMicrograntApplicationToInterest = (
     application: MicrograntApplication
 ): Interest & { status: 'new' | 'pending' | 'approved' } => {
     // Extract name from answers or use email as fallback
-    const churchName = application.answers['Church Name'] as string || '';
-    const purpose = application.answers['Purpose of Grant'] as string || '';
-    const name = churchName || application.userId?.email || 'Unknown';
-    
-    // Use purpose as role, or form title
-    const role = purpose || application.formId.title || 'Micro Grant Application';
+    const answers = application.answers ?? {};
+    const churchName =
+        (answers['Church Name'] as string) ||
+        (answers['Name of the church'] as string) ||
+        '';
+    const purpose =
+        (answers['Purpose of Grant'] as string) ||
+        (answers['Name of the project/program'] as string) ||
+        '';
+    const userEmail =
+        application.userId && typeof application.userId === 'object'
+            ? application.userId.email
+            : undefined;
+    const name = churchName || userEmail || 'Unknown';
+
+    const formTitle =
+        application.formId && typeof application.formId === 'object'
+            ? application.formId.title
+            : 'Micro Grant Application';
+    const role = purpose || formTitle;
     
     // Format time from createdAt
     const createdAt = new Date(application.createdAt);
@@ -73,7 +87,7 @@ export const mapMicrograntApplicationToInterest = (
         status = 'new';
     } else if (application.status === 'pending' || application.status === 'under_review') {
         status = 'pending';
-    } else if (application.status === 'approved') {
+    } else if (application.status === 'approved' || application.status === 'accepted') {
         status = 'approved';
     }
 
