@@ -1,6 +1,14 @@
 import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import { icons } from '@/constants/images';
 import { useMicrograntApplication } from '@/hooks/grant/useMicrograntApplications';
+import { profileService } from '@/services/profile.service';
+import { profileKeys } from '@/hooks/profile/useProfile';
+import {
+    MICROGRANT_PAGE_TITLE,
+    churchLabelFromApplication,
+    displayNameFromMicrograntDetail,
+} from '@/utils/microgrant';
+import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -34,8 +42,14 @@ interface FormData {
  */
 const mapApplicationToFormData = (answers: Record<string, string | string[] | null>): FormData => {
     return {
-        churchName: (answers['Church Name'] as string) || '',
-        projectName: (answers['Purpose of Grant'] as string) || '',
+        churchName:
+            (answers['Name of the church'] as string) ||
+            (answers['Church Name'] as string) ||
+            '',
+        projectName:
+            (answers['Name of the project/program'] as string) ||
+            (answers['Purpose of Grant'] as string) ||
+            '',
         projectImportance: (answers['Who does the project/program serve and why is it important?'] as string) || '',
         amountRequested: (answers['Amount requested'] as string) || '',
         denominationalSupport: (answers['Project amount of denominational support'] as string) || '',
@@ -65,6 +79,26 @@ export default function MicroGrantApplicationScreen() {
 
     // Fetch application data from API
     const { data: applicationData, isLoading, error } = useMicrograntApplication(applicationId || '');
+
+    const applicantUserId =
+        applicationData?.user?._id ||
+        (typeof applicationData?.application?.userId === 'string'
+            ? applicationData.application.userId
+            : undefined);
+
+    const { data: applicantProfile } = useQuery({
+        queryKey: profileKeys.user(applicantUserId || ''),
+        queryFn: () => profileService.getUserById(applicantUserId!),
+        enabled: !!applicantUserId,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const applicantDisplayName = applicationData
+        ? displayNameFromMicrograntDetail(applicationData, applicantProfile)
+        : '';
+
+    const applicantRole =
+        applicantProfile?.role || applicationData?.user?.role || 'Pastor';
 
     // Map API data to form data
     const formData = useMemo(() => {
@@ -158,8 +192,7 @@ export default function MicroGrantApplicationScreen() {
                                 <View style={styles.headerContainer}>
                                     <View style={styles.headerCard}>
                                         <Text style={styles.headerText}>
-                                            The Center for Community Change{'\n'}
-                                            Micro-Grant Application
+                                            {MICROGRANT_PAGE_TITLE}
                                         </Text>
                                     </View>
                                 </View>
@@ -174,12 +207,10 @@ export default function MicroGrantApplicationScreen() {
                                             />
                                             <View>
                                                 <Text style={styles.userName}>
-                                                    {applicationData.user?.email || 'Unknown User'}
+                                                    {applicantDisplayName || churchLabelFromApplication(applicationData.application)}
                                                 </Text>
                                                 <Text style={styles.userRole}>
-                                                    {typeof applicationData.application.formId === 'object' && applicationData.application.formId?.title
-                                                        ? applicationData.application.formId.title
-                                                        : 'Applicant'}
+                                                    {applicantRole}
                                                 </Text>
                                             </View>
                                         </View>

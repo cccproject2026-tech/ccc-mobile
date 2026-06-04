@@ -151,3 +151,15 @@ export function micrograntStatusColor(status?: string): string {
   if (s === 'pending') return '#FFD84E';
   return '#8ec5eb';
 }
+export function displayNameFromMicrograntDetail(
+  detail: MicrograntApplicationDetail,
+  profile?: { firstName?: string; lastName?: string } | null,
+): string {
+  const fn = profile?.firstName?.trim();
+  const ln = profile?.lastName?.trim();
+  if (fn || ln) return [fn, ln].filter(Boolean).join(' ');
+  if (detail.user?.email) return detail.user.email;
+  const church = churchLabelFromApplication(detail.application);
+  if (church && church !== 'Not provided') return church;
+  return applicantDisplayName(detail.application);
+}
