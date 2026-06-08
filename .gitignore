@@ -44,3 +44,13 @@ app-example
 
 android
 ios
+
+
+
+.expo-export-*/
+.expo/
+node_modules/
+build/
+.env
+agent_tsc*.txt
+tmp-utf8-test.txt
