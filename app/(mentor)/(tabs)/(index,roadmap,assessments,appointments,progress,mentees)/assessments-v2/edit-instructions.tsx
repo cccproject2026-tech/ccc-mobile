@@ -35,11 +35,11 @@ export default function EditInstructionsPage() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Fetch assessment data
+  
   const { data: assessment, isLoading: loading, error: queryError } = useAssessment(assessmentId);
   const updateInstructionsMutation = useUpdateAssessmentInstructions();
 
-  // Initialize instructions from assessment data
+  
   useEffect(() => {
     if (assessment?.instructions) {
       setInstructions(
@@ -53,7 +53,7 @@ export default function EditInstructionsPage() {
 
   const error = queryError ? "Failed to load assessment. Please try again." : null;
 
-  // Infer type from name
+  
   const inferType = (name: string): string => {
     const nameLower = name.toLowerCase();
     if (nameLower.includes("cma") || nameLower.includes("church")) {
@@ -84,7 +84,7 @@ export default function EditInstructionsPage() {
   };
 
   const handleSaveChanges = () => {
-    // Filter out empty instructions
+    
     const validInstructions = instructions
       .map((inst) => inst.text.trim())
       .filter((text) => text.length > 0);
@@ -120,11 +120,11 @@ export default function EditInstructionsPage() {
   };
 
   const handleEditSections = () => {
-    // Navigate to edit sections page (to be implemented)
-    // router.push({
-    //   pathname: "/(mentor)/assessments-v2/edit-sections",
-    //   params: { assessmentId },
-    // });
+    
+    
+    
+    
+    
     console.log("Edit sections");
   };
 
@@ -192,7 +192,7 @@ export default function EditInstructionsPage() {
             }}
             extraScrollHeight={24}
           >
-            {/* Header Section */}
+            {}
             <View style={styles.header}>
               <Pressable onPress={() => router.back()} hitSlop={10}>
                 <Ionicons name="arrow-back" size={24} color="#E2E8F0" />
@@ -203,7 +203,7 @@ export default function EditInstructionsPage() {
               </View>
             </View>
 
-            {/* Assessment Card */}
+            {}
             <View style={styles.cardContainer}>
               <AssessmentMainCard
                 type={assessmentType}
@@ -222,7 +222,7 @@ export default function EditInstructionsPage() {
               </Pressable>
             </View>
 
-            {/* Description Box */}
+            {}
             <View style={styles.descriptionContainer}>
               <Text style={styles.descriptionText} numberOfLines={2}>
                 {assessment.description ||
@@ -230,7 +230,7 @@ export default function EditInstructionsPage() {
               </Text>
             </View>
 
-            {/* Assessment Instructions Section */}
+            {}
             <View style={styles.instructionsSection}>
               <View style={styles.instructionsHeader}>
                 <Text style={styles.instructionsTitle}>
@@ -291,7 +291,7 @@ export default function EditInstructionsPage() {
               )}
             </View>
 
-            {/* Action Buttons */}
+            {}
             <View style={styles.actionButtons}>
               <TouchableOpacity
                 style={styles.cancelButton}
@@ -323,7 +323,7 @@ export default function EditInstructionsPage() {
           </KeyboardSafeContainer>
         </SafeAreaView>
 
-        {/* Success Modal */}
+        {}
         <AssessmentEditedSuccessModal
           visible={showSuccessModal}
           onClose={handleSuccessModalClose}

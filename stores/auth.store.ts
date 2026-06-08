@@ -1,4 +1,4 @@
-// stores/auth.store.ts
+
 import { User } from '@/types/auth.types';
 import { storage } from '@/utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,13 +13,13 @@ interface AuthState {
 }
 
 interface AuthActions {
-    // Set user after login
+    
     setUser: (user: User) => void;
-    // Logout user
+    
     logout: () => Promise<void>;
-    // Initialize from storage on app startup
+    
     initialize: () => Promise<void>;
-    // Update user data
+    
     updateUser: (updates: Partial<User>) => void;
 }
 
@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthStore>()(
 
                     console.log('✅ Logout complete');
 
-                    // Then clear all storage (async)
+                    
                     await storage.clearAll();
 
                     try {
@@ -70,7 +70,7 @@ export const useAuthStore = create<AuthStore>()(
             initialize: async () => {
                 try {
                     console.log('🔄 Initializing auth...');
-                    // Check if tokens exist in secure storage
+                    
                     const tokens = await storage.getTokens();
                     if (tokens?.accessToken) {
                         set({ isInitialized: true, isAuthenticated: true });

@@ -41,7 +41,7 @@ export default function Submit() {
   const [isVisible, setIsVisible] = React.useState(false);
   const params = useLocalSearchParams();
 
-  // Parse the data safely
+  
   const dataItems: AssessmentData | undefined = params.data
     ? (JSON.parse(params.data as string) as AssessmentData)
     : undefined;

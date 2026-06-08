@@ -126,14 +126,14 @@ export const useGrant = () => {
     }, []);
 
     return {
-        // State
+        
         form: state.form,
         isLoading: state.isLoading,
         isSubmitting: state.isSubmitting,
         error: state.error,
         success: state.success,
 
-        // Methods
+        
         fetchGrantForm,
         submitApplication,
         fetchApplicationByUserId,

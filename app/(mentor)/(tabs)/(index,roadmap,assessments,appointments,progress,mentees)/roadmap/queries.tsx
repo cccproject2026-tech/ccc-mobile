@@ -61,7 +61,7 @@ export default function QueriesScreen() {
   const [expandedQueryId, setExpandedQueryId] = useState<string | null>(null);
   const [responses, setResponses] = useState<Record<string, string>>({});
 
-  // Filter queries by status
+  
   const filteredQueries = useMemo(() => {
     return allQueries.filter((query) => query.status === activeTab);
   }, [allQueries, activeTab]);
@@ -129,7 +129,7 @@ export default function QueriesScreen() {
 
     return (
       <View key={query._id} style={styles.queryCard}>
-        {/* Query Header */}
+        {}
         <View style={styles.queryHeader}>
           <View style={styles.queryHeaderLeft}>
             <Image 
@@ -154,10 +154,10 @@ export default function QueriesScreen() {
           </Pressable>
         </View>
 
-        {/* Query Message */}
+        {}
         <Text style={styles.queryMessage}>{query.actualQueryText}</Text>
 
-        {/* Expanded Section - Response Area or Existing Response */}
+        {}
         {isExpanded && (
           <View style={styles.expandedSection}>
             {query.status === "pending" ? (
@@ -224,7 +224,7 @@ export default function QueriesScreen() {
     );
   };
 
-  // const menteeName = data?.menteeName || "Mentee";
+  
 
   const menteeTitle =
     typeof menteeName === "string" && menteeName.length > 0 ? menteeName : "Mentee";

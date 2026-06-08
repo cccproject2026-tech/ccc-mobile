@@ -71,10 +71,10 @@ export default function DirectorDashboard() {
 
   const handleAssign = () => {
     setShowConfirmation(false);
-    // Navigate to assignment screen
+    
   };
 
-  // Handle greeting period change from HeaderHero
+  
   const handleGreetingPeriodChange = useCallback(
     (period: "morning" | "afternoon" | "evening") => {
       setGreetingPeriod(period);
@@ -306,7 +306,7 @@ export default function DirectorDashboard() {
                 Explore CCC
               </Text>
 
-              {/* Grid */}
+              {}
               <View
                 style={{
                   flexDirection: "row",
@@ -338,7 +338,7 @@ export default function DirectorDashboard() {
                 Overview
               </Text>
 
-              {/* Stats Row */}
+              {}
               <View
                 style={{
                   flexDirection: "row",
@@ -383,7 +383,7 @@ export default function DirectorDashboard() {
               <MonthlyTrendsChart />
             </View>
             <ActionCardList />
-            {/* Confirmation Modal */}
+            {}
             <UserAddedConfirmationModal
               visible={showConfirmation}
               userName={addedUser.name}

@@ -29,7 +29,7 @@ const AddUserCard: React.FC<Props> = ({ onUserAdded }) => {
     const handleAdd = () => {
         if (name && email && selectedTitle) {
             onUserAdded(name, selectedTitle);
-            // Reset form
+            
             setName('');
             setEmail('');
             setSelectedTitle('');
@@ -44,7 +44,7 @@ const AddUserCard: React.FC<Props> = ({ onUserAdded }) => {
             end={{ x: 0.5, y: 1 }}
             style={styles.card}
         >
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <View style={styles.iconCircle}>
                     <Ionicons
@@ -60,7 +60,7 @@ const AddUserCard: React.FC<Props> = ({ onUserAdded }) => {
                 Add new pastors and mentors to the platform
             </Text>
 
-            {/* Name Input */}
+            {}
             <TextInput
                 style={styles.input}
                 placeholder="Enter Name"
@@ -69,7 +69,7 @@ const AddUserCard: React.FC<Props> = ({ onUserAdded }) => {
                 onChangeText={setName}
             />
 
-            {/* Email Input */}
+            {}
             <TextInput
                 style={styles.input}
                 placeholder="Enter e-mail ID"
@@ -80,7 +80,7 @@ const AddUserCard: React.FC<Props> = ({ onUserAdded }) => {
                 onChangeText={setEmail}
             />
 
-            {/* Title Picker */}
+            {}
             <Pressable
                 style={styles.picker}
                 onPress={() => setShowTitlePicker(!showTitlePicker)}
@@ -100,7 +100,7 @@ const AddUserCard: React.FC<Props> = ({ onUserAdded }) => {
                 />
             </Pressable>
 
-            {/* Dropdown List */}
+            {}
             {showTitlePicker && (
                 <View style={styles.dropdown}>
                     {titles.map((title) => (
@@ -118,7 +118,7 @@ const AddUserCard: React.FC<Props> = ({ onUserAdded }) => {
                 </View>
             )}
 
-            {/* Add Button */}
+            {}
             <Pressable style={styles.addButton} onPress={handleAdd}>
                 <Text style={styles.addButtonText}>Add</Text>
             </Pressable>

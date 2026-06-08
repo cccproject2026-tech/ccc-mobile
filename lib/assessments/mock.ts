@@ -1287,7 +1287,7 @@ export const dummyRoadMaps: Assessment[] = [
         "title": "Pastoral Ministry Profile (PMP)",
         "description": "Take a deeper look into your ministry",
         "status": "Submitted",
-        // "dueDate": "2024-10-20",
+        
         "completionDate": "2024-09-20",
         "completedOn": "2024-09-18",
         "meetingDate": "2025-01-20",
@@ -2121,7 +2121,7 @@ export const dummyRoadMaps: Assessment[] = [
         "title": "Pastoral Ministry Profile (PMP)",
         "description": "Take a deeper look into your ministry",
         "status": "Completed",
-        // "dueDate": "2024-10-20",
+        
         "completionDate": "2024-09-20",
         "completedOn": "2024-09-18",
         "meetingDate": "2025-01-20",

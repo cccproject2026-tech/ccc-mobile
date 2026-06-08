@@ -1,4 +1,4 @@
-// app/(pastor)/profile-upload.tsx
+
 import TopBar from '@/components/director/TopBar';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
@@ -27,7 +27,7 @@ import {
 export default function ProfileUpload() {
     const router = useRouter();
 
-    // Store hooks
+    
     const { setCurrentStep, setHasProfilePicture } = useOnboardingStore();
     const { user } = useAuthStore();
 
@@ -35,12 +35,12 @@ export default function ProfileUpload() {
     const uploadProfilePicture = useUploadProfilePicture();
     const uploadDocument = useUploadDocument();
 
-    // Loading states
+    
     const [imageLoading, setImageLoading] = useState(false);
     const [documentLoading, setDocumentLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
 
-    // Upload states
+    
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const [documentName, setDocumentName] = useState<string | null>(null);
 
@@ -125,7 +125,7 @@ export default function ProfileUpload() {
         }
     }, [uploadDocument]);
 
-    // Handle continue
+    
     const handleContinue = useCallback(async () => {
         try {
             setActionLoading(true);
@@ -139,7 +139,7 @@ export default function ProfileUpload() {
                 try {
                     await markPastorMentorIntroStart(user.id);
                 } catch {
-                    /* non-blocking */
+                    
                 }
             }
 
@@ -161,7 +161,7 @@ export default function ProfileUpload() {
                 <TopBar role="pastor" showUserName />
                 <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
                     <View style={styles.content}>
-                        {/* Header */}
+                        {}
                         <View style={styles.headerRow}>
                             <Text style={styles.incompleteText}>Your profile is incomplete</Text>
 
@@ -188,7 +188,7 @@ export default function ProfileUpload() {
                             </TouchableOpacity>
                         </View>
 
-                        {/* Upload Card */}
+                        {}
                         <View style={styles.uploadCard}>
                             <View style={styles.avatarContainer}>
                                 {profileImage ? (
@@ -206,7 +206,7 @@ export default function ProfileUpload() {
                             <Text style={styles.sectionTitle}>Upload your profile photo</Text>
                            
 
-                            {/* Upload Image Button */}
+                            {}
                             <TouchableOpacity
                                 style={styles.uploadImageButton}
                                 onPress={handleImageUpload}
@@ -230,7 +230,7 @@ export default function ProfileUpload() {
                                 Examples: ID proof, church letter, certificates
                             </Text>
 
-                            {/* Upload Document Button */}
+                            {}
                             <TouchableOpacity
                                 style={styles.uploadDocButton}
                                 onPress={handleDocumentUpload}
@@ -254,7 +254,7 @@ export default function ProfileUpload() {
                             </TouchableOpacity>
                         </View>
 
-                        {/* Bottom Logo */}
+                        {}
                         <View style={styles.logoContainer}>
                             <Image
                                 source={icons.universityIcon}

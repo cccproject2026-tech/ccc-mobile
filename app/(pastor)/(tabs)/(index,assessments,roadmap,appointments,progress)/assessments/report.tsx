@@ -1,4 +1,4 @@
-// app/assessments/pmp-report.tsx
+
 import { getFontSize, getSpacing, isSmallDevice } from '@/utils/responsive';
 import { sharePdfFromHtml } from '@/utils/pdf';
 import { Ionicons } from '@expo/vector-icons';
@@ -264,8 +264,8 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         position: 'relative',
-        // top: getSpacing(20),
-        // right: getSpacing(20),
+        
+        
         alignSelf: 'flex-end',
         zIndex: 10,
         padding: getSpacing(8),
@@ -275,12 +275,12 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: getSpacing(isSmallDevice ? 20 : 24),
-        // paddingTop: getSpacing(12),
+        
     },
     header: {
         alignItems: 'center',
-        // marginBottom: getSpacing(24),
-        // paddingTop: getSpacing(24),
+        
+        
     },
     logo: {
         width: SCREEN_WIDTH * 1.5,

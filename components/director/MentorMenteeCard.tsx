@@ -11,8 +11,8 @@ const isLargeDevice = SCREEN_WIDTH >= 414;
 type Props = {
     name: string;
     role: string;
-    metricLabel?: string; // "5 Mentees" or "Last Contacted"
-    metricValue?: string; // "" or "5 Days Ago"
+    metricLabel?: string;
+    metricValue?: string;
     avatar?: any;
     onCall?: () => void;
     onChat?: () => void;
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: isSmallDevice ? 8 : 10,
         flex: 1,
-        minWidth: 0, // Prevent overflow
+        minWidth: 0,
     },
     avatar: {
         width: isSmallDevice ? 48 : isMediumDevice ? 52 : 56,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     },
     info: {
         flex: 1,
-        minWidth: 0, // Prevent overflow
+        minWidth: 0,
     },
     name: {
         color: '#EAF7FF',
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: isSmallDevice ? 4 : 6,
         flexShrink: 0,
-        maxWidth: SCREEN_WIDTH * 0.4, // Limit to 40% of screen width
+        maxWidth: SCREEN_WIDTH * 0.4,
     },
     metricContainer: {
         alignItems: 'flex-end',

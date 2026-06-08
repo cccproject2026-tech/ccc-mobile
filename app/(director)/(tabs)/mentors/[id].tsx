@@ -59,7 +59,7 @@ export default function MentorProfile() {
 
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
-    // Fetch mentor data by email
+    
     const { data: mentorData, isLoading, isError } = useMentorByEmail(email);
 
     const menuItems = [
@@ -122,7 +122,7 @@ export default function MentorProfile() {
         }
     }, [mentorData, initialProfileData]);
 
-    // Bottom Sheet Handlers
+    
     const handleOpenMenu = useCallback(() => {
         setTimeout(() => {
             bottomSheetModalRef.current?.present();
@@ -191,7 +191,7 @@ export default function MentorProfile() {
     };
 
 
-    // Loading state
+    
     if (isLoading) {
         return (
             <LinearGradient
@@ -214,7 +214,7 @@ export default function MentorProfile() {
         );
     }
 
-    // Error state
+    
     if (isError) {
         return (
             <LinearGradient
@@ -241,7 +241,7 @@ export default function MentorProfile() {
 
     const mentorName = mentorData ? `${mentorData.firstName} ${mentorData.lastName}`.trim() : 'Mentor';
 
-    // STATE 2: Filled Profile (View Mode)
+    
     if (!isEditing) {
         return (
             <LinearGradient
@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     profileInputContainer: {
-        // backgroundColor: 'rgba(0, 0, 0, 0.25)',
+        
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.6)',
         borderRadius: getSpacing(12),
@@ -858,21 +858,21 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',
     },
 
-    // editSection: {
-    //   marginBottom: 16,
-    // },
+    
+    
+    
     sectionTitle: {
         fontSize: getFontSize(14),
         fontWeight: '600',
         color: '#fff',
         marginBottom: getSpacing(12),
     },
-    // editSectionHeader: {
-    //   flexDirection: 'row',
-    //   justifyContent: 'space-between',
-    //   alignItems: 'center',
-    //   marginBottom: 12,
-    // },
+    
+    
+    
+    
+    
+    
     input: {
         backgroundColor: 'transparent',
         borderWidth: 1,
@@ -934,7 +934,7 @@ const styles = StyleSheet.create({
         lineHeight: getFontSize(20),
     },
     viewField: {
-        // backgroundColor: 'rgba(58, 124, 165, 0.4)',
+        
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.6)',
         borderRadius: getSpacing(8),
@@ -970,7 +970,7 @@ const styles = StyleSheet.create({
         marginBottom: getSpacing(12),
     },
     editInput: {
-        // backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.6)',
         borderRadius: getSpacing(8),

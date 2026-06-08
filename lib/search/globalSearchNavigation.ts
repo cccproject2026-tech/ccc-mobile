@@ -126,7 +126,6 @@ export function getRoadmapDisplaySubtitle(item: unknown): string {
   );
 }
 
-
 function toSearchFieldText(value: unknown): string {
   if (value == null || value === "") return "";
   if (typeof value === "string") return value.trim();

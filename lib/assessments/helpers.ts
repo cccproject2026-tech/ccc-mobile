@@ -32,7 +32,6 @@ export function mergeAssessmentWithResponse(
     };
 }
 
-
 export function transformAnswersToPayload(
     sectionAnswers: Record<number, Record<string, any>>,
     sections: Array<{ _id: string; layers: Array<{ _id: string }> }>
@@ -78,8 +77,6 @@ export function transformPreSurveyToPayload(
     }));
 }
 
-
-
 export function transformSubmittedAnswersToStore(
     submittedAnswers: SubmittedAnswersResponse | null | undefined,
     assessment: Assessment,
@@ -92,7 +89,7 @@ export function transformSubmittedAnswersToStore(
         return { preSurveyAnswers: {}, sectionAnswers: {} };
     }
 
-    // Transform pre-survey answers
+    
     const preSurveyAnswers: Record<string, string> = {};
     if (submittedAnswers.preSurveyAnswers && assessment.preSurvey) {
         submittedAnswers.preSurveyAnswers.forEach((answer) => {

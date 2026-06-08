@@ -64,7 +64,7 @@ export default function InterestFormScreen() {
     const { top, bottom } = useSafeAreaInsets();
     const { interestId } = useLocalSearchParams<{ interestId: string }>();
 
-    // Fetch all interests
+    
     const { data: interestsData, isLoading } = useInterests();
 
     // Find the specific interest by ID (using _id from backend)
@@ -73,10 +73,10 @@ export default function InterestFormScreen() {
         return interestsData.find((item) => item._id === interestId);
     }, [interestsData, interestId]);
 
-    // Map interest to form data
+    
     const formData = useMemo(() => {
         if (!interest) {
-            // Return empty defaults if no interest found
+            
             return {
                 firstName: '',
                 lastName: '',
@@ -109,7 +109,7 @@ export default function InterestFormScreen() {
         return mapInterestToFormData(interest);
     }, [interest]);
 
-    // Get user name and role for display
+    
     const userName = useMemo(() => {
         if (!interest) return 'Unknown';
         const name = [interest.firstName, interest.lastName].filter(Boolean).join(' ');
@@ -121,7 +121,7 @@ export default function InterestFormScreen() {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [showRejectedConfirmation, setShowRejectedConfirmation] = useState(false);
 
-    // Mutation for updating interest status
+    
     const { mutate: updateStatus, isPending: isUpdatingStatus } = useUpdateInterestStatus();
 
     const handleReject = () => setShowRejectModal(true);
@@ -149,7 +149,6 @@ export default function InterestFormScreen() {
             }
         );
     };
-
 
     const handleAddToPending = () => router.back();
 
@@ -202,7 +201,7 @@ export default function InterestFormScreen() {
                         </Pressable>
                     </View>
 
-                    {/* Loading State */}
+                    {}
                     {isLoading ? (
                         <View style={{ padding: 40, alignItems: 'center' }}>
                             <ActivityIndicator color="#fff" size="large" />
@@ -228,7 +227,7 @@ export default function InterestFormScreen() {
                         </View>
                     ) : (
                         <>
-                            {/* User Info Card */}
+                            {}
                             <View style={styles.userCard}>
                                 <View style={styles.userCardTop}>
                                     <View style={styles.avatarContainer}>
@@ -240,15 +239,15 @@ export default function InterestFormScreen() {
                                     </View>
                                 </View>
 
-                                {/* Contact Icons */}
+                                {}
                                 <View style={styles.contactIcons}>
                                     <TouchableOpacity
                                         style={styles.iconButton}
                                         onPress={() => {
                                             if (interest?.phoneNumber) {
-                                                // Open phone dialer
+                                                
                                                 const phoneUrl = `tel:${interest.phoneNumber.replace(/[^0-9+]/g, '')}`;
-                                                // Linking.openURL(phoneUrl); // Uncomment if Linking is imported
+                                                
                                                 console.log('Call:', interest.phoneNumber);
                                             }
                                         }}
@@ -265,9 +264,9 @@ export default function InterestFormScreen() {
                                         style={styles.iconButton}
                                         onPress={() => {
                                             if (interest?.email) {
-                                                // Open email client
+                                                
                                                 const emailUrl = `mailto:${interest.email}`;
-                                                // Linking.openURL(emailUrl); // Uncomment if Linking is imported
+                                                
                                                 console.log('Email:', interest.email);
                                             }
                                         }}
@@ -278,10 +277,10 @@ export default function InterestFormScreen() {
                                         style={styles.iconButton}
                                         onPress={() => {
                                             if (interest?.phoneNumber) {
-                                                // Open WhatsApp
+                                                
                                                 const phone = interest.phoneNumber.replace(/[^0-9+]/g, '');
                                                 const whatsappUrl = `https://wa.me/${phone}`;
-                                                // Linking.openURL(whatsappUrl); // Uncomment if Linking is imported
+                                                
                                                 console.log('WhatsApp:', interest.phoneNumber);
                                             }
                                         }}
@@ -291,7 +290,7 @@ export default function InterestFormScreen() {
                                 </View>
                             </View>
 
-                            {/* Personal Information */}
+                            {}
                             <View style={{
                                 borderWidth: 1,
                                 borderColor: 'rgba(255,255,255,0.3)',
@@ -328,7 +327,7 @@ export default function InterestFormScreen() {
                                     </View>
                                 </View>
 
-                                {/* Current Church -1 Information */}
+                                {}
                                 <View style={styles.sectionBorder}>
                                     <View style={styles.section}>
                                         <Text style={styles.sectionTitle}>Current Church -1 Information</Text>
@@ -378,7 +377,7 @@ export default function InterestFormScreen() {
                                     </View>
                                 </View>
 
-                                {/* Current Church -2 Information */}
+                                {}
                                 {formData.church2Name && (
                                     <View style={styles.sectionBorder}>
                                         <View style={styles.section}>
@@ -430,7 +429,7 @@ export default function InterestFormScreen() {
                                     </View>
                                 )}
 
-                                {/* Other Information */}
+                                {}
                                 <View>
                                     <View style={styles.section}>
                                         <Text style={styles.sectionTitle}>Other Information</Text>
@@ -469,7 +468,7 @@ export default function InterestFormScreen() {
                                 </View>
                             </View>
 
-                            {/* Action Buttons */}
+                            {}
                             <View style={styles.actionButtons}>
                                 <Pressable
                                     style={[styles.rejectButton, isUpdatingStatus && styles.buttonDisabled]}
@@ -501,12 +500,12 @@ export default function InterestFormScreen() {
                     )}
             </KeyboardSafeContainer>
 
-            {/* Modals */}
+            {}
             <RejectInterestModal
                 visible={showRejectModal}
                 onCancel={() => setShowRejectModal(false)}
                 onConfirmReject={handleConfirmReject}
-            // isLoading={isUpdatingStatus}
+            
             />
 
             <InterestRejectedModal
@@ -697,7 +696,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         marginLeft: Platform.OS === 'android' ? 8 : 12,
     },
-
 
     sectionBorder: {
         borderBottomColor: '#ccc',

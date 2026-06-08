@@ -766,4 +766,3 @@ export function sessionCardHighlightStyle(isCurrent: boolean): ViewStyle {
     : {};
 }
 
-

@@ -125,13 +125,13 @@ export default function EmpowermentCards() {
           >
             <PastorNavigationHeader showNameTag={true} wrapperClass="mt-5" />
 
-            {/* Header Section */}
+            {}
             <Header
               title="Church Empowerment Phase"
               subTitle="Revitalization Roadmap"
             />
 
-            {/* Tabs Section */}
+            {}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -156,7 +156,7 @@ export default function EmpowermentCards() {
               ))}
             </ScrollView>
 
-            {/* Content Section */}
+            {}
             <View
               style={{
                 marginVertical: 10,
@@ -176,7 +176,7 @@ export default function EmpowermentCards() {
           </ScrollView>
         </SafeAreaView>
 
-        {/* Modal */}
+        {}
         <RoadMapOutcomeModal
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}

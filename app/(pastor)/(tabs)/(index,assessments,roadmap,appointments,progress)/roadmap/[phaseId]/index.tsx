@@ -96,7 +96,6 @@ export default function PastorRoadmapDetail() {
       list = list.filter((t) => String(t.status || "").toLowerCase() === "not started");
     }
 
-
     const q = search.trim().toLowerCase();
     if (!q) return list;
     return list.filter((t) => {

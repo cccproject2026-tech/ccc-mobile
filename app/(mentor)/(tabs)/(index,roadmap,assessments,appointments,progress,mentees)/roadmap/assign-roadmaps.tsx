@@ -18,7 +18,7 @@ const AssignRoadmaps = () => {
     const params = useLocalSearchParams();
     const { user } = useAuthStore();
 
-    // Get selected roadmap IDs from params
+    
     const selectedRoadmapIds = useMemo(() => {
         console.log("params:----->>>>>>>>>>>>>>", params);
         const ids = params.roadmapIds;
@@ -36,7 +36,7 @@ const AssignRoadmaps = () => {
     const [search, setSearch] = useState('');
     const [selectedMentees, setSelectedMentees] = useState<Set<string>>(new Set());
 
-    // Fetch only mentees assigned to this mentor
+    
     const { 
         data, 
         isLoading, 
@@ -54,10 +54,10 @@ const AssignRoadmaps = () => {
         }
     };
 
-    // Assign mutation
+    
     const assignMutation = useAssignRoadmaps();
 
-    // Filter mentees based on search
+    
     const filteredMentees = useMemo(() => {
         if (!search.trim()) return mentees;
 
@@ -102,10 +102,10 @@ const AssignRoadmaps = () => {
         setSelectedMentees((prev) => {
             const newSet = new Set(prev);
             if (areAllSelectableSelected) {
-                // Deselect all visible selectable
+                
                 selectableMentees.forEach((m) => newSet.delete(m.id));
             } else {
-                // Select all visible selectable
+                
                 selectableMentees.forEach((m) => newSet.add(m.id));
             }
             return newSet;
@@ -146,7 +146,7 @@ const AssignRoadmaps = () => {
         }
     };
 
-    // Get selected mentee names for footer
+    
     const selectedMenteeNames = useMemo(() => {
         const names = Array.from(selectedMentees)
             .slice(0, 3)
@@ -200,7 +200,7 @@ const AssignRoadmaps = () => {
                 <TopBar role="mentor" showUserName={true} />
             </View>
 
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={28} color="#fff" />
@@ -208,12 +208,12 @@ const AssignRoadmaps = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
+            {}
             <View style={styles.searchContainer}>
                 <SearchBar value={search} onChangeValue={setSearch} placeholder="Search mentees" />
             </View>
 
-            {/* Select All */}
+            {}
             <View style={styles.selectAllContainer}>
                 <TouchableOpacity onPress={handleSelectAll}>
                     <Text style={styles.selectAllText}>
@@ -224,7 +224,7 @@ const AssignRoadmaps = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Mentees List */}
+            {}
             <View style={styles.content}>
                 {isLoading ? (
                     <View style={styles.loadingContainer}>
@@ -272,7 +272,7 @@ const AssignRoadmaps = () => {
                 )}
             </View>
 
-            {/* Footer with Assign Button */}
+            {}
             {selectedMentees.size > 0 && (
                 <View style={[styles.footer, { paddingBottom: bottom + 16 }]}>
                     <View style={styles.footerContent}>

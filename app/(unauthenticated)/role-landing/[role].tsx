@@ -81,11 +81,11 @@ export default function RoleLandingScreen() {
                 locations={[0, 0.5, 1]}
                 style={[styles.gradient, { paddingTop: top + 10, paddingBottom: bottom + 10 }]}
             >
-                {/* Decorative background circle */}
+                {}
                 <View style={styles.bgCircleTop} />
                 <View style={styles.bgCircleBottom} />
 
-                {/* Top bar: back + skip to login */}
+                {}
                 <Pressable
                     onPress={handleBackPress}
                     style={[styles.backButton, { top: top + 8 }]}
@@ -103,7 +103,7 @@ export default function RoleLandingScreen() {
                 </Pressable>
 
                 <View style={styles.center}>
-                    {/* Pill badge */}
+                    {}
                     <View style={styles.pill}>
                         <View style={styles.pillDots}>
                             <View style={styles.pillDot} />
@@ -114,7 +114,7 @@ export default function RoleLandingScreen() {
 
                     
 
-                    {/* Main headline */}
+                    {}
                     <View style={styles.titleWrap}>
                         <Text style={styles.titleTop}>Grow your</Text>
                         <Text style={styles.titleBottom}>
@@ -127,14 +127,14 @@ export default function RoleLandingScreen() {
                         </Text>
                     </View>
 
-                    {/* Divider */}
+                    
                     <View style={styles.dividerRow}>
                         <View style={styles.dividerLine} />
                         <Ionicons name="leaf-outline" size={14} color={accent.mint} />
                         <View style={styles.dividerLine} />
                     </View>
 
-                    {/* CTA Buttons */}
+                    
                     <Pressable
                         onPress={handleStartJourney}
                         style={styles.primaryButton}
@@ -155,7 +155,7 @@ export default function RoleLandingScreen() {
                         <Text style={styles.secondaryButtonText}>Watch Introduction</Text>
                     </Pressable>
 
-                    {/* Social proof */}
+                    
                     <View style={styles.socialCard}>
                         <View style={styles.avatars}>
                             {avatars.map((avatar, idx) => (
@@ -248,7 +248,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
 
-    // Pill
     pill: {
         flexDirection: "row",
         alignItems: "center",
@@ -285,7 +284,6 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
 
-    // Brand block
     brandBlock: {
         alignItems: "center",
         marginBottom: 28,
@@ -319,7 +317,6 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
 
-    // Title
     titleWrap: {
         alignItems: "center",
         marginBottom: 20,
@@ -353,7 +350,6 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 
-    // Divider
     dividerRow: {
         flexDirection: "row",
         alignItems: "center",
@@ -366,7 +362,6 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.12)",
     },
 
-    // Primary button
     primaryButton: {
         width: "100%",
         borderRadius: 999,
@@ -398,7 +393,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
 
-    // Secondary button
     secondaryButton: {
         width: "100%",
         borderRadius: 999,
@@ -427,7 +421,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
 
-    // Social proof card
     socialCard: {
         flexDirection: "row",
         alignItems: "center",

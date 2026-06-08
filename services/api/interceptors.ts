@@ -88,7 +88,7 @@ apiClient.interceptors.request.use(
           );
         }
       } else {
-        // Remove params entirely if empty
+        
         delete config.params;
         if (__DEV__) {
           console.log("✅ Removed empty params object");
@@ -100,7 +100,7 @@ apiClient.interceptors.request.use(
     if (config.url && config.url.includes("undefined")) {
       console.warn('⚠️ URL contains "undefined":', config.url);
       config.url = config.url.replace(/[?&][^=]*=undefined/g, "");
-      // Clean up any trailing ? or &
+      
       config.url = config.url.replace(/[?&]$/, "");
     }
 
@@ -174,25 +174,25 @@ apiClient.interceptors.response.use(
           throw new Error("Refresh response missing tokens");
         }
 
-        // Update stored tokens
+        
         await storage.setTokens(accessToken, newRefreshToken);
 
-        // Update Zustand store
-        // useAuthStore.getState().setTokens({
-        //     accessToken,
-        //     refreshToken: newRefreshToken
-        // });
+        
+        
+        
+        
+        
 
-        // Process queued requests
+        
         processQueue(null, accessToken);
 
-        // Retry original request
+        
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
 
-        // Logout user and return to welcome center
+        
         await useAuthStore.getState().logout();
         navigateToWelcomeCenter();
 
@@ -214,7 +214,7 @@ apiClient.interceptors.response.use(
       const attempt = Number(originalRequest.__transientRetryAttempt ?? 0);
       if (attempt < 2) {
         originalRequest.__transientRetryAttempt = attempt + 1;
-        // Backoff + jitter
+        
         await sleep(400 * (attempt + 1) + Math.floor(Math.random() * 250));
         return apiClient(originalRequest);
       }
@@ -290,7 +290,7 @@ apiClient.interceptors.response.use(
       });
     }
 
-    // Handle other errors
+    
     const status = error.response?.status || 500;
     const url = (error.config as { baseURL?: string; url?: string; method?: string })
       ? `${(error.config as any).baseURL ?? ""}${(error.config as any).url ?? ""}`

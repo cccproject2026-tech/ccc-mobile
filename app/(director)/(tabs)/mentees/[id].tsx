@@ -76,7 +76,7 @@ export default function MenteeProfile() {
 
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
-    // Fetch mentee data by email
+    
     const { data: menteeDataFromApi, isLoading, isError } = useMenteeByEmail(email);
 
     const menuItems = [
@@ -159,7 +159,7 @@ export default function MenteeProfile() {
         }
     }, [menteeDataFromApi, initialMenteeData]);
 
-    // Bottom Sheet Handlers
+    
     const handleOpenMenu = useCallback(() => {
         setTimeout(() => {
             bottomSheetModalRef.current?.present();
@@ -176,7 +176,6 @@ export default function MenteeProfile() {
             return { ...prev, churches };
         });
     };
-
 
     const pickImage = async () => {
         try {
@@ -207,14 +206,12 @@ export default function MenteeProfile() {
         }
     };
 
-
-
     const handleCloseModal = useCallback(() => {
         bottomSheetModalRef.current?.dismiss();
     }, []);
 
     const handleSave = () => {
-        // Merge edit form into mentee data
+        
         setMenteeData(prev => ({ ...prev, ...editForm } as MenteeData));
         setIsEditing(false);
     };
@@ -236,12 +233,12 @@ export default function MenteeProfile() {
     };
 
     const handleAcceptFieldMentor = () => {
-        // Mock accepting the invitation
+        
         setMenteeData(prev => ({ ...prev, isFieldMentor: true, fieldMentorStatus: 'accepted' }));
         Alert.alert('Accepted', 'Field Mentor role accepted (mock).');
     };
 
-    // Loading state
+    
     if (isLoading) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -261,7 +258,7 @@ export default function MenteeProfile() {
         );
     }
 
-    // Error state
+    
     if (isError) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -285,9 +282,9 @@ export default function MenteeProfile() {
 
     const menteeName = menteeDataFromApi ? `${menteeDataFromApi.firstName} ${menteeDataFromApi.lastName}`.trim() : 'Mentee';
 
-    // Determine which button to show
+    
     const getActionButton = () => {
-        // If not completed or progress < 100, show Edit Profile
+        
         if (!menteeData.isCompleted || (menteeData.progress && menteeData.progress < 100)) {
             return (
                 <TouchableOpacity
@@ -351,7 +348,7 @@ export default function MenteeProfile() {
             );
         }
 
-        // If is field mentor, show Edit Profile
+        
         return (
             <TouchableOpacity
                 style={styles.actionButton}
@@ -431,7 +428,7 @@ export default function MenteeProfile() {
 
                             <Text style={styles.menteesText}>Total Mentors: {menteeData.totalMentors}</Text>
 
-                            {/* Contact Icons */}
+                            {}
                             <View style={styles.contactIcons}>
                                 <TouchableOpacity style={styles.contactIcon}>
                                     <Ionicons name="call-outline" size={getIconSize(24)} color="#fff" />
@@ -625,7 +622,7 @@ export default function MenteeProfile() {
                     </View>
                 </ScrollView>
 
-                {/* Bottom Sheet Modal */}
+                {}
                 <ActionBottomSheet
                     ref={bottomSheetModalRef}
                     title={menteeName}
@@ -703,7 +700,7 @@ export default function MenteeProfile() {
                     borderRadius: 12,
                 }}>
 
-                    {/* Personal Information Section */}
+                    {}
                     <View style={styles.editSection}>
                         <Text style={styles.sectionTitle}>Personal Information</Text>
                         <View style={styles.row}>
@@ -882,7 +879,6 @@ export default function MenteeProfile() {
         </AppGradientBackground>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: {

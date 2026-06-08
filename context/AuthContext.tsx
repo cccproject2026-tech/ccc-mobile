@@ -13,7 +13,7 @@ export interface AuthState {
     interestStatus: InterestStatus;
     interestData: InterestFormData | null;
     passwordSet: boolean;
-    profileComplete: boolean; // NEW
+    profileComplete: boolean;
 }
 
 interface AuthContextType extends AuthState {
@@ -27,7 +27,7 @@ interface AuthContextType extends AuthState {
     setPassword: (email: string, password: string) => Promise<void>;
     verifyEmail: (email: string) => Promise<boolean>;
     resetPassword: (email: string, newPassword: string) => Promise<void>;
-    completeProfile: () => Promise<void>; // NEW
+    completeProfile: () => Promise<void>;
     clearError: () => void;
     resetAuth: () => void;
 }
@@ -55,7 +55,7 @@ function useProtectedRoute(user: User | null, isLoading: boolean, profileComplet
         console.log('Profile complete:', profileComplete);
         console.log('Pathname:', pathname);
 
-        // Allow root index page for role selection (public)
+        
         if (inRootIndex) {
             return;
         }
@@ -91,7 +91,7 @@ function useProtectedRoute(user: User | null, isLoading: boolean, profileComplet
 
         // If user is not signed in and trying to access login group
         if (!user && inAuthGroup) {
-            // Allow access to login group (public)
+            
             return;
         }
 
@@ -113,10 +113,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         interestStatus: 'none',
         interestData: null,
         passwordSet: false,
-        profileComplete: false, // NEW
+        profileComplete: false,
     });
 
-    // Use the protected route hook
+    
     useProtectedRoute(state.user, state.isLoading, state.profileComplete);
 
     // Initialize auth state from AsyncStorage
@@ -128,14 +128,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const storedInterestStatus = await AsyncStorage.getItem(STORAGE_KEYS.INTEREST_STATUS);
                 const storedInterestData = await AsyncStorage.getItem(STORAGE_KEYS.INTEREST_DATA);
                 const storedPasswordSet = await AsyncStorage.getItem(STORAGE_KEYS.PASSWORD_SET);
-                const storedProfileComplete = await AsyncStorage.getItem(STORAGE_KEYS.PROFILE_COMPLETE); // NEW
+                const storedProfileComplete = await AsyncStorage.getItem(STORAGE_KEYS.PROFILE_COMPLETE);
 
                 console.log('Initializing auth:', {
                     hasUser: !!storedUser,
                     hasToken: !!storedToken,
                     interestStatus: storedInterestStatus,
                     passwordSet: storedPasswordSet,
-                    profileComplete: storedProfileComplete, // NEW
+                    profileComplete: storedProfileComplete,
                 });
 
                 if (storedUser && storedToken) {
@@ -148,7 +148,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         interestStatus: (storedInterestStatus as InterestStatus) || 'none',
                         interestData: storedInterestData ? JSON.parse(storedInterestData) : null,
                         passwordSet: storedPasswordSet === 'true',
-                        profileComplete: storedProfileComplete === 'true', // NEW
+                        profileComplete: storedProfileComplete === 'true',
                     });
                 } else {
                     setState(prev => ({
@@ -159,7 +159,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         interestStatus: (storedInterestStatus as InterestStatus) || 'none',
                         interestData: storedInterestData ? JSON.parse(storedInterestData) : null,
                         passwordSet: storedPasswordSet === 'true',
-                        profileComplete: false, // NEW
+                        profileComplete: false,
                     }));
                 }
             } catch (error) {
@@ -172,7 +172,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     interestStatus: 'none',
                     interestData: null,
                     passwordSet: false,
-                    profileComplete: false, // NEW
+                    profileComplete: false,
                 });
             }
         };
@@ -218,7 +218,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await AsyncStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
             await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
 
-            // Check profile complete status
+            
             const profileComplete = await AsyncStorage.getItem(STORAGE_KEYS.PROFILE_COMPLETE);
 
             console.log('Login successful:', user);
@@ -229,7 +229,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 isAuthenticated: true,
                 isLoading: false,
                 error: null,
-                profileComplete: profileComplete === 'true', // NEW
+                profileComplete: profileComplete === 'true',
             }));
         } catch (error) {
             console.error('Login failed:', error);
@@ -261,7 +261,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 isAuthenticated: false,
                 isLoading: false,
                 error: null,
-                profileComplete: false, // Reset on logout
+                profileComplete: false,
             }));
         } catch (error) {
             console.error('Logout failed:', error);
@@ -528,7 +528,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    // NEW - Complete profile function
+    
     const completeProfile = async (): Promise<void> => {
         setState(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -573,7 +573,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             console.log('✅ AsyncStorage cleared successfully');
 
-            // Reset state to initial values
+            
             setState({
                 user: null,
                 isAuthenticated: false,
@@ -605,7 +605,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         clearError,
         resetAuth,
         resetPassword,
-        completeProfile, // NEW
+        completeProfile,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

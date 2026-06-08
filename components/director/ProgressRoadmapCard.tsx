@@ -1,4 +1,4 @@
-// components/director/ProgressRoadmapCard.tsx
+
 import { RoadmapCardData } from '@/lib/roadmap/types';
 import { icons } from '@/constants/images';
 import { roadmapTheme } from '@/components/ui/design-system/roadmapTheme';
@@ -57,7 +57,7 @@ export const RoadmapCard: React.FC<Props> = ({
     const hasProgress = data.taskProgress && !isCompleted;
     const showArrow = data.showArrow && !isCompleted && !selectionMode;
 
-    // ✅ Check if actions (menu or arrow) are present
+    
     const hasActions = (showMenu || showArrow || selectionMode);
 
     const progressPercentage = useMemo(() => {
@@ -71,7 +71,7 @@ export const RoadmapCard: React.FC<Props> = ({
         const configs = {
             'completed': {
                 text: 'Completed',
-                bg: 'rgba(34, 197, 94, 0.18)', // green
+                bg: 'rgba(34, 197, 94, 0.18)',
                 accent: 'rgba(34, 197, 94, 0.55)',
             },
             'due': {
@@ -81,17 +81,17 @@ export const RoadmapCard: React.FC<Props> = ({
             },
             'in-progress': {
                 text: 'In Progress',
-                bg: 'rgba(59, 130, 246, 0.18)', // blue
+                bg: 'rgba(59, 130, 246, 0.18)',
                 accent: 'rgba(59, 130, 246, 0.55)',
             },
             'initial': {
                 text: 'Not Started',
-                bg: 'rgba(56, 189, 248, 0.16)', // sky
+                bg: 'rgba(56, 189, 248, 0.16)',
                 accent: 'rgba(56, 189, 248, 0.45)',
             },
             'submitted': {
                 text: 'Submitted',
-                bg: 'rgba(251, 191, 36, 0.20)', // amber
+                bg: 'rgba(251, 191, 36, 0.20)',
                 accent: 'rgba(251, 191, 36, 0.55)',
             },
         } as const;
@@ -108,16 +108,16 @@ export const RoadmapCard: React.FC<Props> = ({
     }, []);
 
     const progressFillColor = useMemo(() => {
-        if (data.status === 'completed') return 'rgba(34, 197, 94, 0.85)'; // green
-        if (data.status === 'due') return 'rgba(59, 130, 246, 0.82)'; // blue (same as in-progress)
-        if (data.status === 'in-progress') return 'rgba(59, 130, 246, 0.82)'; // blue
-        if (data.status === 'initial') return 'rgba(56, 189, 248, 0.80)'; // sky
-        if (data.status === 'submitted') return 'rgba(251, 191, 36, 0.85)'; // amber
+        if (data.status === 'completed') return 'rgba(34, 197, 94, 0.85)';
+        if (data.status === 'due') return 'rgba(59, 130, 246, 0.82)';
+        if (data.status === 'in-progress') return 'rgba(59, 130, 246, 0.82)';
+        if (data.status === 'initial') return 'rgba(56, 189, 248, 0.80)';
+        if (data.status === 'submitted') return 'rgba(251, 191, 36, 0.85)';
         return 'rgba(255,255,255,0.55)';
     }, [data.status]);
 
     const secondaryTextColor = useMemo(() => {
-        // Keep secondary text readable and consistent
+        
         return 'rgba(255,255,255,0.70)';
     }, []);
 
@@ -174,7 +174,7 @@ export const RoadmapCard: React.FC<Props> = ({
                         onPress={(e) => {
                             // Prevent the card wrapper onPress from firing when tapping the menu button.
                             // This avoids accidental navigation instead of opening the action sheet.
-                            // (Same pattern used in other card components.)
+                            
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             (e as any)?.stopPropagation?.();
                             onMenuPress();
@@ -334,7 +334,7 @@ export const RoadmapCard: React.FC<Props> = ({
             activeOpacity={0.7}
         >
             <View style={styles.cardBody}>
-                {/* ✅ Use dynamic flex ratios based on hasActions */}
+                {}
                 <View style={[
                     styles.inner,
                     !hasActions && styles.innerNoActions
@@ -525,16 +525,16 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         minWidth: 0,
     },
-    // ✅ When no actions, use different layout
+    
     innerNoActions: {
-        // No changes needed, flexDirection remains 'row'
+        
     },
     left: {
         marginRight: 12,
         alignItems: 'flex-start',
         flexShrink: 0,
     },
-    // ✅ When no actions, left section matches assessment thumbnail column width
+    
     leftNoActions: {
         width: 128,
         maxWidth: 128,
@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
         flex: 1,
         minWidth: 0,
     },
-    // ✅ When no actions, right section takes remaining 70%
+    
     rightNoActions: {
         flex: 1,
         paddingRight: 22,
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
         paddingRight: getSpacing(40),
         minWidth: 0,
     },
-    // ✅ When no actions, no padding needed for actions space
+    
     titleNoActions: {
         paddingRight: 0,
     },
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
         paddingRight: getSpacing(40),
         minWidth: 0,
     },
-    // ✅ Remove padding when no actions
+    
     descriptionNoActions: {
         paddingRight: 0,
     },
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
         maxWidth: '100%',
     },
     phasePillNoActions: {
-        // keep same; placeholder for any no-actions tweaks
+        
     },
     phasePillText: {
         color: '#FFFFFF',

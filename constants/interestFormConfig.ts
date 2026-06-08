@@ -6,7 +6,7 @@ export interface FormField {
     defaultValue: string | boolean;
     keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'numeric';
     showClearButton?: boolean;
-    width?: 'full' | 'half'; // for layout
+    width?: 'full' | 'half';
 }
 
 export interface FormSection {
@@ -14,7 +14,7 @@ export interface FormSection {
     title: string;
     fields: FormField[];
     showAddMoreButton?: boolean;
-    checkboxesInContainer?: boolean; // wrap checkboxes in dark blue container
+    checkboxesInContainer?: boolean;
 }
 
 export const interestFormConfig: FormSection[] = [

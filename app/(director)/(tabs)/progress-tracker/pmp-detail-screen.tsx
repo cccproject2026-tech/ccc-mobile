@@ -94,7 +94,7 @@ export default function PMPDetailsScreen() {
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Header */}
+                    {}
                     <View style={styles.header}>
                         <Pressable onPress={() => router.back()} style={styles.closeButton}>
                             <Ionicons name="close" size={28} color="#1C4ED8" />
@@ -105,7 +105,7 @@ export default function PMPDetailsScreen() {
                         </Pressable>
                     </View>
 
-                    {/* Profile Section */}
+                    {}
                     <View style={styles.profileSection}>
                         <Image
                             source={icons.myProfile}
@@ -115,27 +115,27 @@ export default function PMPDetailsScreen() {
                         <Text style={styles.userName}>John Ross</Text>
                     </View>
 
-                    {/* Survey Name */}
+                    {}
                     <View style={styles.surveyNameSection}>
                         <Text style={styles.surveyLabel}>Survey Name :</Text>
                         <Text style={styles.surveyValue}>Self Assessment Survey</Text>
                     </View>
 
-                    {/* Sections */}
+                    {}
                     {sections.map((section) => (
                         <View key={section.id} style={styles.sectionCard}>
-                            {/* Section Title with Underline */}
+                            {}
                             <View style={styles.sectionTitleWrapper}>
                                 <Text style={styles.sectionTitle}>{section.title}</Text>
                                 <View style={styles.titleUnderline} />
                             </View>
 
-                            {/* Development Plans Label */}
+                            {}
                             <Text style={styles.plansLabel}>
                                 Customized Development Plans :
                             </Text>
 
-                            {/* Plans List */}
+                            {}
                             <View style={styles.plansList}>
                                 {section.plans.map((plan) => (
                                     <View key={plan.id} style={styles.planItem}>

@@ -14,7 +14,6 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import Toast from 'react-native-toast-message';
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -45,7 +44,7 @@ function GoogleCalendarOAuthListener() {
 function RootLayoutNav() {
   const { isAuthenticated, user } = useAuthStore();
 
-  // Guard conditions
+  
   const isPastor = isAuthenticated && (user?.role === 'pastor');
   const isMentor = isAuthenticated && user?.role === 'mentor';
   const isDirector = isAuthenticated && user?.role === 'director';
@@ -63,28 +62,28 @@ function RootLayoutNav() {
         contentStyle: { backgroundColor: "transparent" },
       }}
     >
-      {/* ✅ ADDED: Root index - Always accessible for role selection */}
+      {}
       <Stack.Protected guard={showIndex}>
         <Stack.Screen name="index" />
         <Stack.Screen name="get-started" />
       </Stack.Protected>
 
-      {/* Unauthenticated Routes */}
+      {}
       <Stack.Protected guard={isUnauthenticated}>
         <Stack.Screen name="(unauthenticated)" />
       </Stack.Protected>
 
-      {/* Pastor Routes */}
+      {}
       <Stack.Protected guard={isPastor}>
         <Stack.Screen name="(pastor)" />
       </Stack.Protected>
 
-      {/* Mentor Routes */}
+      {}
       <Stack.Protected guard={isMentor}>
         <Stack.Screen name="(mentor)" />
       </Stack.Protected>
 
-      {/* Director Routes - protected so logout from mentor doesn't land here as "Guest User" */}
+      {}
       <Stack.Protected guard={isDirector}>
         <Stack.Screen name="(director)" />
       </Stack.Protected>

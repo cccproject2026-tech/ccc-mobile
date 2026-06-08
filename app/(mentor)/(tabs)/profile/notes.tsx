@@ -132,7 +132,7 @@ export default function MentorNotes() {
           />
         </View>
 
-        {/* Notes List */}
+        {}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}

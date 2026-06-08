@@ -20,7 +20,7 @@ export function usePastorSessions(pastorId?: string) {
     staleTime: 60000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    // Avoid duplicate bursts on navigation + manual refresh
+    
     refetchOnMount: true,
     refetchOnReconnect: true,
     // Keep showing last good data if a refetch gets throttled (429)

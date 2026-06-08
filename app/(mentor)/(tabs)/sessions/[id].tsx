@@ -100,7 +100,6 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// ============= Utility Functions =============
 const normalizeMeetingUrl = (raw: string): string => {
   const trimmed = raw.trim();
   if (!trimmed) return trimmed;
@@ -173,7 +172,6 @@ const mapApiSummaryToUiSummary = (summary?: TranscriptSummary): MentorshipAiSumm
   };
 };
 
-// ============= Components =============
 const MeetingJoinDetails = ({ meetingLink, platform }: { meetingLink: string; platform: AppointmentPlatform }) => {
   const link = meetingLink.trim();
   const zoomId = platform === "zoom" ? parseZoomMeetingIdFromUrl(link) : undefined;
@@ -373,7 +371,6 @@ const InsightsCard = () => {
   );
 };
 
-// ============= Main Screen =============
 export default function SessionDetailsScreen() {
   const layout = usePastorMeetingLayout();
   const router = useRouter();
@@ -874,7 +871,7 @@ export default function SessionDetailsScreen() {
         }}
       />
       <LinearGradient colors={sessionGradientColors} style={styles.gradient}>
-        {/* Header */}
+        
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
@@ -892,12 +889,12 @@ export default function SessionDetailsScreen() {
           ]}
           nestedScrollEnabled
         >
-          {/* Progress */}
+          
           <View style={styles.progressSection}>
             <SessionProgressHeader sessions={sortedSessions} nextSessionId={nextSessionId} />
           </View>
 
-          {/* Hero Card */}
+          
           <View style={styles.heroCard}>
             <View style={styles.heroHeader}>
               <View style={styles.heroInfo}>
@@ -952,7 +949,7 @@ export default function SessionDetailsScreen() {
             </View>
           ) : null}
 
-          {/* Meeting Section (ONLINE) — hidden after session is completed */}
+          
           {!isInPerson && meetingLink && !isMeetingTypeLocked && (
             <View style={styles.meetingSection}>
               <View style={styles.sectionHeader}>
@@ -1046,7 +1043,7 @@ export default function SessionDetailsScreen() {
             </View>
           )}
 
-          {/* Notes & Transcript Section */}
+          
           <View style={styles.contentSection}>
             <View style={styles.sectionHeader}>
               <Ionicons name="document-text-outline" size={20} color="rgba(255,255,255,0.7)" />
@@ -1122,10 +1119,10 @@ export default function SessionDetailsScreen() {
             </View>
           </View>
 
-          {/* Insights Card */}
+          
           <InsightsCard />
 
-          {/* Actions */}
+          
           <View style={styles.actionsSection}>
             <Pressable
               style={[styles.primaryButton, (!canComplete || isMutating) && styles.buttonDisabled]}
@@ -1192,7 +1189,6 @@ export default function SessionDetailsScreen() {
   );
 }
 
-// ============= Styles =============
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   gradient: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },

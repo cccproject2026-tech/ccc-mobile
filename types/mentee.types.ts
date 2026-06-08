@@ -12,11 +12,11 @@ export interface Mentee extends User {
     phase?: string;
     phaseNumber?: number;
 
-    // UI state fields
+    
     description?: string;
     completedOn?: string;
 
-    // Optional UI features
+    
     isFieldMentor?: boolean;
     scholarshipAmount?: number | string;
     dateOfApproval?: string;
@@ -26,7 +26,6 @@ export interface Mentee extends User {
     assignedAssessmentIds?: string[];
     assignedId?: string[];
 }
-
 
 export interface GetMenteesApiResponse {
     success: boolean;

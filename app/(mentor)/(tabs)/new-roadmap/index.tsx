@@ -27,7 +27,7 @@ export default function PhaseList() {
         'ALL' | 'DUE' | 'COMPLETED' | 'NOT_STARTED' | 'IN_PROGRESS'
     >('ALL');
 
-    // Outcome menu items
+    
     const getOutcomeMenuItems = useCallback((): MenuItem[] => [
         {
             id: 'outcome-4-months',
@@ -108,7 +108,7 @@ export default function PhaseList() {
                 });
             }
 
-            // For DUE tab, check if any item is due
+            
             if (activeTab === 'DUE') {
                 const today = new Date().toISOString().slice(0, 10);
                 return items.some(item => {
@@ -135,7 +135,7 @@ export default function PhaseList() {
                 <TopBar role="pastor" showUserName />
             </View>
 
-            {/* Header */}
+            {}
             <View className="flex-row items-center justify-between px-1 py-4 mb-4 border-b border-white/20">
                 <View className="flex-row items-center flex-1">
                     <TouchableOpacity onPress={() => router.back()}>
@@ -155,7 +155,7 @@ export default function PhaseList() {
                 </TouchableOpacity>
             </View>
 
-            {/* Search & Tabs */}
+            {}
             <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
                 <SearchBar value={search} onChangeValue={setSearch} />
             </View>
@@ -165,9 +165,9 @@ export default function PhaseList() {
                 onChange={handleTabChange}
             />
 
-            {/* Scrollable Content */}
+            {}
             <ScrollView contentContainerStyle={{ padding: 16 }}>
-                {/* Only show reset button on "All" tab */}
+                {}
                 {activeTab === 'ALL' && (
                     <View style={{ marginBottom: 16 }}>
                         <Pressable
@@ -215,7 +215,7 @@ export default function PhaseList() {
                 )}
             </ScrollView>
 
-            {/* Context Menu (rendered on top) */}
+            {}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={getOutcomeMenuItems()}
@@ -230,7 +230,7 @@ export default function PhaseList() {
                 }}
             />
 
-            {/* Outcome Modal */}
+            {}
             <ExpectedOutcomeModal
                 visible={showOutcomeModal}
                 onClose={() => setShowOutcomeModal(false)}

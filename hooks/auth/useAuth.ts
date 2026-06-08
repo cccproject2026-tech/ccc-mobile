@@ -1,4 +1,4 @@
-// hooks/useAuth.ts
+
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
@@ -27,7 +27,6 @@ export const authKeys = {
   resetPassword: ["auth", "resetPassword"] as const,
 };
 
-// ============= LOGIN MUTATION =============
 export const useLogin = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -43,19 +42,19 @@ export const useLogin = () => {
       console.log("✅ Login successful");
 
       try {
-        // Extract user and tokens from response.data
+        
         const { user, accessToken, refreshToken } = response.data;
 
-        // Store tokens in secure storage
+        
         await storage.setTokens(accessToken, refreshToken);
 
-        // Store user data in secure storage
+        
         await storage.setUserData(user);
 
         // Update auth store
         setUser(user);
 
-        // ✅ NEW: Check if user has profile picture
+        
         if (user.profilePicture) {
           setHasProfilePicture(true);
           console.log("📷 User has profile picture");
@@ -64,7 +63,7 @@ export const useLogin = () => {
           console.log("❌ User missing profile picture");
         }
 
-        // Invalidate all queries
+        
         await queryClient.invalidateQueries({
           queryKey: authKeys.all,
         });
@@ -72,7 +71,7 @@ export const useLogin = () => {
         console.log("✅ Logged in as:", user.email);
         console.log("👤 User role:", user.role);
 
-        // Navigate based on user role
+        
         if (user.role === "pastor") {
           router.replace("/(pastor)/(tabs)");
         } else if (user.role === "mentor") {
@@ -90,7 +89,6 @@ export const useLogin = () => {
   });
 };
 
-// ============= SEND OTP MUTATION =============
 export const useSendOtp = () => {
   return useMutation({
     mutationFn: (data: SendOtpRequest) => authService.sendOtp(data),
@@ -103,7 +101,6 @@ export const useSendOtp = () => {
   });
 };
 
-// ============= VERIFY OTP MUTATION =============
 export const useVerifyOtp = () => {
   const { setEmailVerified } = useOnboardingStore();
 
@@ -126,7 +123,6 @@ export const useVerifyOtp = () => {
   });
 };
 
-// ============= SET PASSWORD MUTATION =============
 export const useSetPassword = () => {
   const { setPasswordSet, setCurrentStep } = useOnboardingStore();
 
@@ -138,7 +134,7 @@ export const useSetPassword = () => {
       try {
         const { data: userData, message } = response;
 
-        // If response contains user data, store it
+        
         if (userData) {
           await storage.setUserData(userData);
           if (userData.role === "pastor" && userData.id) {
@@ -146,7 +142,7 @@ export const useSetPassword = () => {
           }
         }
 
-        // Mark password as set in store
+        
         setPasswordSet(true);
         setCurrentStep("password");
 
@@ -166,7 +162,6 @@ export const useSetPassword = () => {
   });
 };
 
-// ============= FORGOT PASSWORD MUTATION =============
 export const useForgotPassword = () => {
   return useMutation({
     mutationFn: (email: string) => authService.forgotPassword(email),
@@ -181,12 +176,11 @@ export const useForgotPassword = () => {
   });
 };
 
-// ============= RESET PASSWORD MUTATION =============
 export const useResetPassword = () => {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: (data: ResetPasswordRequest) => authService.resetPassword(data), // send full object
+    mutationFn: (data: ResetPasswordRequest) => authService.resetPassword(data),
     onSuccess: (response) => {
       console.log("✅ Password reset successful");
       router.replace("/(unauthenticated)/login-form");
@@ -197,7 +191,6 @@ export const useResetPassword = () => {
   });
 };
 
-// ============= LOGOUT MUTATION =============
 export const useLogout = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -212,10 +205,10 @@ export const useLogout = () => {
         // Clear auth store
         await logout();
 
-        // Clear secure storage
+        
         await storage.clearAll();
 
-        // Clear all queries
+        
         await queryClient.clear();
 
         console.log("✅ Logout complete");
@@ -248,7 +241,7 @@ export const useRefreshToken = () => {
           throw new Error("Refresh response missing tokens");
         }
 
-        // Store new tokens in secure storage
+        
         await storage.setTokens(accessToken, refreshToken);
 
         // Invalidate queries to refetch with new token

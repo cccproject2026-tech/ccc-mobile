@@ -51,7 +51,7 @@ export default function RoadmapFormScreen() {
   const phaseLoopIndex = params.phaseLoopIndex ? parseInt(params.phaseLoopIndex as string, 10) : undefined;
   const phaseLoopTotal = params.phaseLoopTotal ? parseInt(params.phaseLoopTotal as string, 10) : undefined;
 
-  // Fetch roadmap data if in edit mode
+  
   const { data: editRoadmapData, isLoading: isLoadingEditRoadmap } = useRoadmap(
     (isEditMode && roadmapId) || (isNestedEdit && parentRoadmapId) ? (isNestedEdit ? parentRoadmapId : roadmapId) : undefined
   );
@@ -197,7 +197,7 @@ export default function RoadmapFormScreen() {
               }
             });
           }
-          // Add nested fields from sections
+          
           if (extra.sections) {
             extra.sections.forEach((sectionExtra) => {
               const nestedFieldId = `field_${Date.now()}_${fieldIndex++}`;
@@ -260,7 +260,7 @@ export default function RoadmapFormScreen() {
     return fields;
   };
 
-  // Pre-fill form data when in edit mode
+  
   React.useEffect(() => {
     if ((isEditMode || isNestedEdit) && editRoadmapData) {
       let roadmapToEdit = editRoadmapData;
@@ -290,7 +290,7 @@ export default function RoadmapFormScreen() {
   const handleDeleteField = (fieldId: string) => {
     const field = formData.customFields.find((f) => f.id === fieldId);
 
-    // Check if it's a section with nested fields
+    
     const hasNestedFields = formData.customFields.some(
       (f) => f.parentSectionId === fieldId
     );
@@ -338,7 +338,7 @@ export default function RoadmapFormScreen() {
     console.log("Field insert result:", result);
     const { type, data } = result;
 
-    // If editing, update existing field
+    
     if (editingFieldId) {
       setFormData((prev) => ({
         ...prev,
@@ -350,11 +350,11 @@ export default function RoadmapFormScreen() {
       return;
     }
 
-    // Create a new field based on type
+    
     let newField: any = {
       id: `field_${Date.now()}`,
       type: type,
-      parentSectionId: currentSectionId, // Track parent section
+      parentSectionId: currentSectionId,
     };
 
     if (type === "text" || type === "textarea") {
@@ -411,7 +411,7 @@ export default function RoadmapFormScreen() {
       customFields: [...prev.customFields, newField],
     }));
 
-    // Reset section context after adding field
+    
     setCurrentSectionId(null);
     console.log("Field added:", newField);
   };
@@ -533,7 +533,7 @@ export default function RoadmapFormScreen() {
   // Transform custom fields to API extras format
   const transformFieldsToExtras = (fields: any[]): RoadmapExtra[] => {
     return fields
-      .filter((field) => !field.parentSectionId) // Only top-level fields
+      .filter((field) => !field.parentSectionId)
       .map((field) => {
         const nestedFields = fields.filter((f) => f.parentSectionId === field.id);
 
@@ -666,7 +666,7 @@ export default function RoadmapFormScreen() {
   const transformToUpdateFormat = (): UpdateRoadmapRequest => {
     const extras = transformFieldsToExtras(formData.customFields);
     
-    // Get the roadmap to update
+    
     let roadmapToUpdate = editRoadmapData;
     if (isNestedEdit && nestedRoadmapId && editRoadmapData?.roadmaps) {
       roadmapToUpdate = editRoadmapData.roadmaps.find(r => r._id === nestedRoadmapId) as any;
@@ -676,7 +676,7 @@ export default function RoadmapFormScreen() {
       throw new Error('Roadmap data not found');
     }
 
-    // Build update request
+    
     const updateData: UpdateRoadmapRequest = {
       name: roadmapData.name,
       duration: roadmapData.completionTime,
@@ -698,7 +698,7 @@ export default function RoadmapFormScreen() {
         updateData.totalSteps = editRoadmapData.totalSteps;
       }
       
-      // Include existing nested roadmaps with their _id
+      
       if (editRoadmapData.roadmaps && editRoadmapData.roadmaps.length > 0) {
         updateData.roadmaps = editRoadmapData.roadmaps.map((nested: any) => ({
           _id: nested._id,
@@ -722,7 +722,7 @@ export default function RoadmapFormScreen() {
     const extras = transformFieldsToExtras(formData.customFields);
 
     if (isPhaseFlow) {
-      // Phase flow: create phase with multiple roadmaps
+      
       const roadmaps = state.roadmaps.map((roadmap) => {
         const roadmapExtras = roadmap.fields ? transformFieldsToExtras(roadmap.fields) : [];
         return {
@@ -754,7 +754,7 @@ export default function RoadmapFormScreen() {
         roadmaps,
       };
     } else {
-      // Single roadmap flow - create as a single type roadmap
+      
       return {
         type: "single",
         name: roadmapData.name,
@@ -782,7 +782,7 @@ export default function RoadmapFormScreen() {
   };
 
   const handleCreateRoadmap = () => {
-    // Enhanced validation
+    
     const errors: string[] = [];
     const hasNextPhaseLoop =
       phaseLoopActive &&
@@ -799,7 +799,7 @@ export default function RoadmapFormScreen() {
       errors.push("Description Verbiage is required");
     }
 
-    // Validate custom fields
+    
     formData.customFields.forEach((field, index) => {
       if (field.type === "assessment" && !field.selectedAssessment) {
         errors.push(
@@ -819,11 +819,11 @@ export default function RoadmapFormScreen() {
       return;
     }
 
-    // Handle nested roadmap editing
+    
     if (isNestedEdit && parentRoadmapId && nestedRoadmapId && editRoadmapData) {
       const extras = transformFieldsToExtras(formData.customFields);
       
-      // Update nested roadmap within parent's roadmaps array
+      
       const updatedRoadmaps = editRoadmapData.roadmaps?.map((nested: any) => {
         if (nested._id === nestedRoadmapId) {
           return {
@@ -891,7 +891,7 @@ console.log('-----------------------------------------------------------');
       return;
     }
 
-    // Handle main roadmap editing
+    
     if (isEditMode && roadmapId) {
       const updateData = transformToUpdateFormat();
       
@@ -918,7 +918,7 @@ console.log('-----------------------------------------------------------');
       return;
     }
 
-    // Handle nested roadmap creation
+    
     if (isNestedRoadmap && parentRoadmapId) {
       const extras = transformFieldsToExtras(formData.customFields);
       
@@ -980,7 +980,7 @@ console.log('-----------------------------------------------------------');
     });
   };
 
-  // Field Type Label Component
+  
   const FieldTypeLabel = ({ type }: { type: string }) => {
     const getTypeLabel = (type: string): string => {
       switch (type) {
@@ -1010,7 +1010,7 @@ console.log('-----------------------------------------------------------');
     );
   };
 
-  // Reusable action buttons component
+  
   const FieldActionButtons = ({ fieldId }: { fieldId: string }) => (
     <View style={styles.fieldActions}>
       <TouchableOpacity onPress={() => handleEditField(fieldId)} hitSlop={10}>
@@ -1167,7 +1167,7 @@ console.log('-----------------------------------------------------------');
               />
             )}
 
-            {/* Nested Fields Container */}
+            {}
             <View style={styles.nestedFieldsContainer}>
               {nestedFields.map((nestedField, idx) => (
                 <View key={nestedField.id} style={styles.nestedFieldWrapper}>
@@ -1175,7 +1175,7 @@ console.log('-----------------------------------------------------------');
                 </View>
               ))}
 
-              {/* Add Field Button Inside Section */}
+              {}
               <TouchableOpacity
                 style={styles.addNestedFieldButton}
                 onPress={() => {
@@ -1223,7 +1223,7 @@ console.log('-----------------------------------------------------------');
       style={[styles.container, { paddingBottom: bottom }]}
     >
       <View style={styles.content}>
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -1240,7 +1240,7 @@ console.log('-----------------------------------------------------------');
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
         >
-          {/* Banner Preview */}
+          {}
           <View style={styles.bannerSection}>
             {roadmapData.bannerImage ? (
               <View style={styles.bannerImageContainer}>
@@ -1268,9 +1268,9 @@ console.log('-----------------------------------------------------------');
             </Text>
           </View>
 
-          {/* Form Fields */}
+          {}
           <View style={styles.formContainer}>
-            {/* Church Roadmap Verbiage */}
+            {}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Church Roadmap Verbiage</Text>
               <TextInput
@@ -1284,7 +1284,7 @@ console.log('-----------------------------------------------------------');
               />
             </View>
 
-            {/* Description Verbiage */}
+            {}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Description Verbiage</Text>
               <TextInput
@@ -1304,10 +1304,10 @@ console.log('-----------------------------------------------------------');
               />
             </View>
 
-            {/* Divider */}
+            {}
             <View style={styles.divider} />
 
-            {/* Insert Field Section */}
+            {}
             <View style={styles.insertFieldSection}>
               <View style={styles.insertFieldHeader}>
                 <Text style={styles.insertFieldTitle}>Insert Field</Text>
@@ -1320,7 +1320,7 @@ console.log('-----------------------------------------------------------');
                 </TouchableOpacity>
               </View>
 
-              {/* Custom Fields List - Only top-level fields */}
+              {}
               {formData.customFields
                 .filter((field) => !field.parentSectionId)
                 .map((field, index) => renderCustomField(field, index))}
@@ -1328,7 +1328,7 @@ console.log('-----------------------------------------------------------');
           </View>
         </ScrollView>
 
-        {/* Action Buttons */}
+        {}
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
             <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -1357,14 +1357,14 @@ console.log('-----------------------------------------------------------');
         </View>
       </View>
 
-      {/* Field Type Selection Modal */}
+      {}
       <Modal
         visible={menuVisible}
         transparent
         animationType="fade"
         onRequestClose={() => {
           setMenuVisible(false);
-          setCurrentSectionId(null); // Reset section context
+          setCurrentSectionId(null);
         }}
       >
         <TouchableOpacity
@@ -1372,7 +1372,7 @@ console.log('-----------------------------------------------------------');
           activeOpacity={1}
           onPress={() => {
             setMenuVisible(false);
-            setCurrentSectionId(null); // Reset section context
+            setCurrentSectionId(null);
           }}
         >
           <View style={styles.modalContent}>
@@ -1399,7 +1399,7 @@ console.log('-----------------------------------------------------------');
         </TouchableOpacity>
       </Modal>
 
-      {/* Add Field Bottom Sheet */}
+      {}
       <AddFieldSheet
         ref={addFieldSheetRef}
         onInsert={handleFieldInsert}
@@ -1409,7 +1409,7 @@ console.log('-----------------------------------------------------------');
         }}
       />
 
-      {/* Success Modal */}
+      {}
       <SimpleSuccessModal
         visible={showSuccess}
         onClose={() => {
@@ -1598,7 +1598,7 @@ const styles = StyleSheet.create({
   createButtonTextDisabled: {
     color: "rgba(255, 255, 255, 0.5)",
   },
-  // Modal Styles
+  
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -1807,7 +1807,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.8)",
     fontWeight: "500",
   },
-  // New styles for nested fields and field type labels
+  
   nestedFieldsContainer: {
     marginTop: 16,
     paddingTop: 16,

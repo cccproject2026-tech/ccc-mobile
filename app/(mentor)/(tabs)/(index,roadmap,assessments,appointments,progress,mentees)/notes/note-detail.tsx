@@ -20,7 +20,7 @@ export default function NoteDetail() {
   const menteeId = (params.menteeId as string) || undefined
   const menteeName = (params.menteeName as string) || undefined
 
-  // Get the specific note
+  
   const [note, setNote] = React.useState<any>(null)
   const [loading, setLoading] = React.useState(true)
 
@@ -96,7 +96,7 @@ export default function NoteDetail() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <SquircleIconButton
@@ -132,7 +132,7 @@ export default function NoteDetail() {
           </View>
         </View>
 
-        {/* Date/Time Badge */}
+        {}
         <View style={styles.dateContainer}>
           <View style={styles.dateBadge}>
             <Text style={styles.dateText}>
@@ -157,7 +157,7 @@ export default function NoteDetail() {
           </View>
         </View>
 
-        {/* Note Content */}
+        {}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}

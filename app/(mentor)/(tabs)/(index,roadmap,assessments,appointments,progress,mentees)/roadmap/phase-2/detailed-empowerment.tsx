@@ -1,5 +1,5 @@
 import { Button, UploadPDFButton } from "@/components/atom/buttons";
-// import { CheckBox } from "@/components/atom/checkBox"
+
 import { OptionsModal } from "@/components/atom/modals";
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Tab } from "@/components/atom/tab";
@@ -67,14 +67,14 @@ export default function DetailedEmpowerment() {
           >
             <PastorNavigationHeader showNameTag={true} wrapperClass="mt-5" />
 
-            {/* Header Section */}
+            {}
             <Header
               title="Church Empowerment Phase"
               subTitle="Revitalization Roadmap"
               hideSearchBar={true}
             />
 
-            {/* Tabs Section */}
+            {}
             <View
               style={{
                 flexDirection: "row",
@@ -95,7 +95,7 @@ export default function DetailedEmpowerment() {
               ))}
             </View>
 
-            {/* Content Section */}
+            {}
             {formTab === 1 ? (
               <View
                 style={{
@@ -154,7 +154,7 @@ export default function DetailedEmpowerment() {
                           {data?.time}
                         </Text>
                       </View>
-                      {/* Separator */}
+                      {}
                       <View className="h-[0.5px] bg-white/30 mt-3" />
 
                       <View style={styles.sectionMargin}>
@@ -190,7 +190,7 @@ export default function DetailedEmpowerment() {
                           icon={icons.attachPin}
                           selectedFile={null}
                           setSelectedFile={(file: DocumentPickerResult) => {
-                            // TODO: Implement file handling
+                            
                             console.log("Selected file:", file);
                           }}
                         />
@@ -259,7 +259,7 @@ export default function DetailedEmpowerment() {
                           {data?.time}
                         </Text>
                       </View>
-                      {/* Separator */}
+                      {}
                       <View className="h-[0.5px] bg-white/30 mt-3" />
 
                       <View style={styles.sectionMargin}>
@@ -306,7 +306,7 @@ export default function DetailedEmpowerment() {
                           icon={icons.attachPin}
                           selectedFile={null}
                           setSelectedFile={(file: DocumentPickerResult) => {
-                            // TODO: Implement file handling
+                            
                             console.log("Selected file:", file);
                           }}
                         />
@@ -389,7 +389,7 @@ export default function DetailedEmpowerment() {
                           {data?.time}
                         </Text>
                       </View>
-                      {/* Separator */}
+                      {}
                       <View className="h-[0.5px] bg-white/30 mt-3" />
 
                       <View style={styles.sectionMargin}>
@@ -496,7 +496,7 @@ export default function DetailedEmpowerment() {
                           {data?.time}
                         </Text>
                       </View>
-                      {/* Separator */}
+                      {}
                       <View className="h-[0.5px] bg-white/30 mt-3" />
 
                       <View style={styles.sectionMargin}>
@@ -583,7 +583,7 @@ export default function DetailedEmpowerment() {
           </ScrollView>
         </SafeAreaView>
 
-        {/* Modals */}
+        {}
         <OptionsModal
           isMenuVisible={isModalVisible}
           closeMenu={() => setIsModalVisible(false)}

@@ -1,5 +1,5 @@
 import { Button } from "@/components/atom/buttons"
-// import { CheckBox } from "@/components/atom/checkBox"
+
 import { OptionsModal } from "@/components/atom/modals"
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal"
 import { Tab } from "@/components/atom/tab"
@@ -72,7 +72,7 @@ export default function DetailedRoadMap() {
           >
             <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
 
-            {/* Header Section */}
+            {}
             <View
               style={{
                 width: "100%",
@@ -137,10 +137,10 @@ export default function DetailedRoadMap() {
               </TouchableOpacity>
             </View>
 
-            {/* Separator */}
+            {}
             <View style={styles.separator} />
 
-            {/* Tabs Section */}
+            {}
             {!surveyGuideLines && (
               <View
                 style={{
@@ -163,7 +163,7 @@ export default function DetailedRoadMap() {
               </View>
             )}
 
-            {/* Content Section */}
+            {}
             <View
               style={{
                 marginVertical: 10,
@@ -183,8 +183,8 @@ export default function DetailedRoadMap() {
                       width: "100%",
                       paddingHorizontal: 10,
                       position: "relative",
-                      overflow: "hidden",  // Clip children to bounds
-                      borderRadius: 20      // Match the image's border radius
+                      overflow: "hidden",
+                      borderRadius: 20
                     }}>
                       <Image
                         source={icons.detailedRoadmapImage}
@@ -232,14 +232,14 @@ export default function DetailedRoadMap() {
                           {data?.time}
                         </Text>
                       </View>
-                      {/* Separator */}
+                      {}
                       <View className="h-[0.5px] bg-white/30 mt-3" />
 
                       <View style={styles.sectionMargin}>
                         <Text style={styles.whiteText}>Roadmap</Text>
                       </View>
 
-                      {/* Intro Summary */}
+                      {}
                       <View style={styles.summaryContainer}>
                         <Text style={styles.whiteText}>
                           {data?.title == "Jump-start"
@@ -251,7 +251,7 @@ export default function DetailedRoadMap() {
                         <Text style={styles.whiteText}>Description</Text>
                       </View>
 
-                      {/* Description List */}
+                      {}
                       <View
                         style={[
                           styles.summaryContainer,
@@ -307,9 +307,7 @@ export default function DetailedRoadMap() {
                               justifyContent: "space-between",
                             }}
                           >
-                            {/* <View>
-                              <CheckBox style={{ padding: 10 }} />
-                            </View> */}
+                            {}
                             <View style={{ width: "80%" }}>
                               <Text
                                 style={[
@@ -333,7 +331,7 @@ export default function DetailedRoadMap() {
                             <Text style={styles.whiteText}>View 12 MONTHS MENTORING TIMELINE MONTHS</Text>
                           </View>
 
-                          {/* Notes Input */}
+                          {}
                           <View className="h-32 p-2 bg-transparent border rounded-lg border-white/40">
                             <TextInput
                               placeholder="Write Your Notes here..."
@@ -482,7 +480,7 @@ export default function DetailedRoadMap() {
                   >
                     Assessments Guidelines
                   </Text>
-                  {/* <ListCard list={List} /> */}
+                  {}
                   <View
                     style={{
                       width: "100%",
@@ -494,10 +492,10 @@ export default function DetailedRoadMap() {
                       type="cancel"
                       title={"Start Now"}
                       onPress={() =>
-                        // router.push({
-                        //   pathname: "/(pastor-tabs)/roadmap/survey",
-                        //   params: { data: JSON.stringify(data) }
-                        // })
+                        
+                        
+                        
+                        
 
                         console.log("pressed")
                       }
@@ -510,7 +508,7 @@ export default function DetailedRoadMap() {
           </KeyboardSafeContainer>
         </SafeAreaView>
 
-        {/* Modals */}
+        {}
         <OptionsModal
           isMenuVisible={isModalVisible}
           closeMenu={() => setIsModalVisible(false)}

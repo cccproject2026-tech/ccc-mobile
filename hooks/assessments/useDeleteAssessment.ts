@@ -9,11 +9,11 @@ export const useDeleteAssessment = () => {
             assessmentService.deleteAssessment(assessmentId),
 
         onSuccess: (data, assessmentId) => {
-            // Remove the deleted assessment from cache
+            
             queryClient.removeQueries({
                 queryKey: ['assessment', assessmentId],
             });
-            // Invalidate assessments list to refetch
+            
             queryClient.invalidateQueries({ queryKey: ['assessments'] });
             console.log('✅ Assessment deleted successfully');
         },

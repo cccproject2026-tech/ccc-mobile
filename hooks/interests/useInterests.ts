@@ -21,8 +21,8 @@ export function useInterestMetadata() {
     return useQuery<InterestMetadata>({
         queryKey: interestsKeys.metadata,
         queryFn: () => interestsService.getMetadata(),
-        staleTime: 2000, // 2 seconds (was 1 hour)
-        gcTime: 1000 * 60 * 60 * 24, // 24 hours
+        staleTime: 2000,
+        gcTime: 1000 * 60 * 60 * 24,
         retry: 1,
     });
 }
@@ -34,7 +34,7 @@ export function useUpdateInterestStatus() {
         mutationFn: ({ interestId, status }) =>
             interestsService.updateStatus(interestId, status),
         onSuccess: () => {
-            // Invalidate interests list to refetch updated data
+            
             queryClient.invalidateQueries({ queryKey: interestsKeys.all });
         },
     });

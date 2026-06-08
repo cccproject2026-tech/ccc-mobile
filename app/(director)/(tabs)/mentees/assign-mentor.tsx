@@ -165,7 +165,7 @@ export default function AssignNewPastorsScreen() {
             colors={['#176192', '#1D548D', '#264387']}
             style={[styles.container, { paddingTop: Platform.OS === 'ios' ? top : top + 10 }]}
         >
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -181,12 +181,12 @@ export default function AssignNewPastorsScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
+            {}
             <View style={styles.searchContainer}>
                 <SearchBar value={search} onChangeValue={setSearch} />
             </View>
 
-            {/* Sort By */}
+            {}
             <View style={styles.sortContainer}>
                 <Text style={styles.sortLabel}>Sort by</Text>
                 <Pressable style={styles.sortButton} onPress={() => setFilterModalVisible(true)}>
@@ -195,7 +195,7 @@ export default function AssignNewPastorsScreen() {
                 </Pressable>
             </View>
 
-            {/* Pastors List */}
+            {}
             <FlatList
                 data={filteredPastors}
                 keyExtractor={(item) => item.id}
@@ -214,7 +214,7 @@ export default function AssignNewPastorsScreen() {
                 showsVerticalScrollIndicator={false}
             />
 
-            {/* Sticky Bottom Assign Container */}
+            {}
             <View style={[styles.bottomContainer, { paddingBottom: bottom + 16 }]}>
                 <View style={styles.selectedNamesContainer}>
                     <Text style={styles.selectedNamesText} numberOfLines={1}>

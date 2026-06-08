@@ -29,7 +29,7 @@ export default function ScholarshipCard({
                 overflow: 'hidden',
             }}
         >
-            {/* Header */}
+            {}
             <Pressable
                 onPress={onToggleExpand}
                 style={{
@@ -55,10 +55,10 @@ export default function ScholarshipCard({
                 />
             </Pressable>
 
-            {/* Expanded Content */}
+            {}
             {isExpanded && (
                 <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                    {/* Amount */}
+                    {}
                     <Text
                         style={{
                             fontSize: 15,
@@ -72,7 +72,7 @@ export default function ScholarshipCard({
                         </Text>
                     </Text>
 
-                    {/* Total Money Awarded */}
+                    {}
                     <Text
                         style={{
                             fontSize: 15,
@@ -88,7 +88,7 @@ export default function ScholarshipCard({
                         </Text>
                     </Text>
 
-                    {/* Total Mentees */}
+                    {}
                     <Text
                         style={{
                             fontSize: 15,
@@ -104,7 +104,7 @@ export default function ScholarshipCard({
                         </Text>
                     </Text>
 
-                    {/* Edit Button */}
+                    {}
                     <TouchableOpacity
                         onPress={onEditPress}
                         style={{

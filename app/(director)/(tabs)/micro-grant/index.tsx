@@ -135,7 +135,7 @@ export default function MicroGrant() {
         setActiveTab(tab);
     };
 
-    // Fetch all applications to get counts for all tabs
+    
     const { data: allApplicationsData } = useMicrograntApplications();
     
     const allApplications = useMemo(() => {
@@ -172,7 +172,7 @@ export default function MicroGrant() {
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View className="flex-1 pt-6">
-                    {/* Header */}
+                    {}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.3)' }}>
                         <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -182,12 +182,12 @@ export default function MicroGrant() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Search Bar */}
+                    {}
                     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
                         <SearchBar value={search} onChangeValue={setSearch} />
                     </View>
 
-                    {/* Tabs */}
+                    {}
                     <View style={styles.tabsContainer}>
                         <Pressable
                             onPress={() => handleTabChange('new')}
@@ -262,7 +262,7 @@ export default function MicroGrant() {
                         </Pressable>
                     </View>
 
-                    {/* Applications List */}
+                    {}
                     <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
                         {isLoadingApplications ? (
                             <View style={{ padding: 40, alignItems: 'center' }}>

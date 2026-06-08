@@ -26,7 +26,7 @@ export default function PastorDocumentsScreen() {
     const { bottom } = useSafeAreaInsets();
     const { user } = useAuthStore();
 
-    // React Query hooks
+    
     const { data: documents = [], isLoading, refetch } = useDocuments();
     const uploadDocument = useUploadDocument();
     const deleteDocument = useDeleteDocument();
@@ -49,7 +49,7 @@ export default function PastorDocumentsScreen() {
 
                 console.log('📤 Uploading document:', file.name);
 
-                // Upload using mutation
+                
                 await uploadDocument.mutateAsync({
                     uri: file.uri,
                     name: file.name,
@@ -143,7 +143,7 @@ export default function PastorDocumentsScreen() {
         >
             <TopBar role="pastor" />
 
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -171,7 +171,7 @@ export default function PastorDocumentsScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Tabs */}
+            {}
             <View style={styles.tabContainer}>
                 <Pressable
                     style={[
@@ -207,7 +207,7 @@ export default function PastorDocumentsScreen() {
                 </Pressable>
             </View>
 
-            {/* Documents List */}
+            {}
             {activeTab === 'myDocuments' ? (
                 isLoading ? (
                     <View style={styles.emptyContainer}>

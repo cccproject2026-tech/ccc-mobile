@@ -233,7 +233,6 @@ export default function MenteeProgressScreen() {
     isRoadmapsRefetching ||
     isAssessmentsRefetching;
 
-
   if (isLoading) {
     return (
       <AppGradientBackground style={{ flex: 1 }}>

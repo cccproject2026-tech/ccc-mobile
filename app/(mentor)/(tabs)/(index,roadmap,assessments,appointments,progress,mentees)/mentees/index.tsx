@@ -62,7 +62,7 @@ export default function MyMentees() {
     return data?.pages.flatMap(page => page.mentees) ?? []
   }, [data])
 
-  // Filter mentees based on search text and active tab
+  
   const filteredMentees = useMemo(() => {
     let filtered = allMentees
 
@@ -89,7 +89,6 @@ export default function MyMentees() {
   }, [allMentees, searchText, activeTab])
 
   const menteeMenuRef = useRef<MenteeMenuBottomSheetRef>(null)
-
 
   const tabData = [
     { key: "all", label: "All" },
@@ -165,7 +164,7 @@ export default function MyMentees() {
 
   const renderHeader = () => (
     <View>
-      {/* Header Section */}
+      {}
       <PastorNavigationHeader showNameTag tagName={user?.firstName + " " + user?.lastName || ""} />
       <View style={styles.headerContainer}>
         <View style={styles.headerContent}>
@@ -200,10 +199,10 @@ export default function MyMentees() {
         </View>
       </View>
 
-      {/* Separator */}
+      {}
       <View className="h-[0.5px] bg-white/30 mt-1" />
 
-      {/* Search + tabs */}
+      {}
       <View style={styles.controlsWrap}>
         <RoadmapSearchField
           value={searchText}
@@ -219,7 +218,7 @@ export default function MyMentees() {
         />
       </View>
 
-      {/* Quick Access Mentors (hidden when map is visible) */}
+      {}
       {!showMap && (
         <View style={styles.quickAccessContainer}>
           <FlatList
@@ -291,7 +290,7 @@ export default function MyMentees() {
         </View>
       )}
 
-      {/* Separator */}
+      {}
       <View className="h-[0.5px] bg-white/20 mx-14 mb-4" />
 
       {showMap && (
@@ -428,7 +427,7 @@ export default function MyMentees() {
           </SafeAreaView>
         </AppGradientBackground>
 
-        {/* Mentee Menu Bottom Sheet */}
+        {}
         <MenteeMenuBottomSheet
           ref={menteeMenuRef}
           mentee={selectedMentee}

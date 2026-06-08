@@ -10,7 +10,7 @@ export default function VideoCard({
   return (
     <TouchableOpacity className="w-full bg-transparent rounded-[10px] py-2 px-2 my-2.5 border border-white/80 max-w-[95%] mx-auto">
       <View className="w-full flex-row items-start gap-2">
-        {/* Thumbnail */}
+        {}
         <View className="w-[130px] my-auto">
           <Image
             source={data?.image}
@@ -19,7 +19,7 @@ export default function VideoCard({
           />
         </View>
 
-        {/* Text Content */}
+        {}
         <View className="flex-1">
           <View className="w-full flex-row items-center">
             <Text

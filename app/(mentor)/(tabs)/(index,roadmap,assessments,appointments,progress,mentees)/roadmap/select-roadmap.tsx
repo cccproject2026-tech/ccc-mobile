@@ -19,14 +19,14 @@ const SelectRoadmaps = () => {
     const [search, setSearch] = useState('');
     const [selectedRoadmaps, setSelectedRoadmaps] = useState<Set<string>>(new Set());
 
-    // ✅ Fetch roadmaps
+    
     const {
         data: roadmaps = [],
         isLoading,
         isError,
     } = useAllRoadmaps();
 
-    // ✅ Transform roadmaps to RoadmapCardData
+    
     const roadmapCardsData = useMemo(() => {
         return (roadmaps || [])
             .filter(roadmap => roadmap != null)
@@ -34,7 +34,7 @@ const SelectRoadmaps = () => {
                 try {
                     return {
                         ...getRoadmapCard(roadmap),
-                        _id: roadmap._id // Ensure we have the ID for selection
+                        _id: roadmap._id
                     };
                 } catch (error) {
                     console.error('❌ Error transforming roadmap:', roadmap?._id, error);
@@ -44,7 +44,7 @@ const SelectRoadmaps = () => {
             .filter(card => card != null) as (RoadmapCardData & { _id: string })[];
     }, [roadmaps]);
 
-    // Filter roadmaps based on search
+    
     const filteredRoadmaps = useMemo(() => {
         if (!search.trim()) return roadmapCardsData;
 
@@ -102,7 +102,7 @@ const SelectRoadmaps = () => {
                 <TopBar role="mentor" showUserName={true} />
             </View>
 
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="close" size={28} color="#fff" />
@@ -128,12 +128,12 @@ const SelectRoadmaps = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
+            {}
             <View style={styles.searchContainer}>
                 <SearchBar value={search} onChangeValue={setSearch} placeholder="Search roadmaps" />
             </View>
 
-            {/* Select All */}
+            {}
             <View style={styles.selectAllContainer}>
                 <TouchableOpacity onPress={handleSelectAll}>
                     <Text style={styles.selectAllText}>
@@ -144,7 +144,7 @@ const SelectRoadmaps = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Roadmaps List */}
+            {}
             <View style={styles.content}>
                 {isLoading ? (
                     <View style={styles.centerContainer}>

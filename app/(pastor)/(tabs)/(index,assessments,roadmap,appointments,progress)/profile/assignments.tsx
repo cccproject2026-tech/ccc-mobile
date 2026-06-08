@@ -64,7 +64,6 @@ export default function Assignment() {
     };
   };
 
-
   const convertToRoadmapCardData = (oldData: any): RoadmapCardData => {
     let status: RoadmapCardStatus = 'initial';
 
@@ -80,7 +79,7 @@ export default function Assignment() {
 
     const taskProgress = oldData.taskStatus?.inProgress ? {
       completed: oldData.taskStatus.inProgress,
-      total: 8 // Assuming total of 8 tasks based on original logic
+      total: 8
     } : undefined;
 
     return {
@@ -94,83 +93,83 @@ export default function Assignment() {
     };
   };
 
-  // const dummyRoadMaps = [
-  //   {
-  //     title: "Prayer and Visitation Strategy",
-  //     assignment: true,
-  //     description: "Finalize the teams vision for the church",
-  //     time: "Completion Time Months 1 - 2",
-  //     type: "course",
-  //     read: false,
-  //     sessionDate: "10 / 11 / 24",
-  //     status: "Not Started Yet",
-  //     completionDate: "20 Oct 2024",
-  //     taskStatus: {
-  //       notStarted: true,
-  //       started: false,
-  //       inProgress: 0,
-  //       toComplete: 0,
-  //       completed: false,
-  //     },
-  //     image: require("@/assets/images/roadmap.jpg"),
-  //   },
-  //   {
-  //     assignment: true,
-  //     title: "Calendar",
-  //     description:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   //       "Finalize a vision team meeting schedule through the end of the year ",
-  //     type: "note",
-  //     time: "Completion Time Months 1 - 2",
-  //     read: false,
-  //     subPhase: true,
-  //     status: "Not Started Yet",
-  //     taskStatus: {
-  //       notStarted: true,
-  //       started: false,
-  //       inProgress: 0,
-  //       toComplete: 8,
-  //       completed: false,
-  //     },
-  //     image: require("@/assets/images/roadmap.jpg"),
-  //   },
-  //   {
-  //     assignment: true,
-  //     title: "Prayer",
-  //     description:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   //       " Prioritize church prayer times and meet consistently for prayer with your congregation",
-  //     time: "Completion Time Months 10 - 12",
-  //     type: "profile",
-  //     read: true,
-  //     status: "Not Started Yet",
-  //     taskStatus: {
-  //       notStarted: true,
-  //       started: false,
-  //       inProgress: 0,
-  //       toComplete: 0,
-  //       completed: false,
-  //     },
-  //     image: require("@/assets/images/roadmap.jpg"),
-  //   },
-  //   {
-  //     assignment: true,
-  //     title: "Mentoring Conversations",
-  //     description: "Schedule two mentoring conversations with your mentor",
-  //     time: "Completion Time Months 3 - 9",
-  //     showBothDate: true,
-  //     sessionDate: "10 / 11 / 24",
-  //     type: "assignment",
-  //     read: true,
-  //     status: "Not Started Yet",
-  //     taskStatus: {
-  //       notStarted: true,
-  //       started: false,
-  //       inProgress: 0,
-  //       toComplete: 18,
-  //       completed: false,
-  //     },
-  //     image: require("@/assets/images/roadmap.jpg"),
-  //   },
-  // ];
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   const availableTabs = [
     { tab: "All" },
@@ -183,7 +182,7 @@ export default function Assignment() {
     { tab: "On Hold" },
   ];
 
-  // Convert selected tasks to card data and filter by tab
+  
   const assignments = React.useMemo(() => selectedTasks.map(t => ({
     cardData: convertTaskToCard(t),
     statusLabel: statusLabel(t.status),
@@ -205,7 +204,7 @@ export default function Assignment() {
         }}>
           <TopBar role="Pastor" />
 
-          {/* Header Section */}
+          {}
           <View style={{ paddingBottom: 10 }}>
             <Header title="Assignments" showSettings={false} />
           </View>
@@ -220,7 +219,7 @@ export default function Assignment() {
               paddingBottom: bottom * 1.3,
             }}
           >
-            {/* Content Section */}
+            {}
             <View
               style={{
                 marginVertical: 10,
@@ -249,7 +248,7 @@ export default function Assignment() {
           </ScrollView>
         </View>
 
-        {/* Modal */}
+        {}
         <RoadMapOutcomeModal
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}

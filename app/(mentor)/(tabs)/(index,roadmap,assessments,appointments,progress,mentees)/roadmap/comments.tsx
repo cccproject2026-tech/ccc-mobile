@@ -211,7 +211,7 @@ export default function CommentsScreen() {
                 keyboardVerticalOffset={100}
             >
                 <View style={{ flex: 1 }}>
-                    {/* Comment Input Section */}
+                    {}
                     <View style={styles.inputSection}>
                         <TextAreaField
                             ref={commentInputRef}
@@ -244,7 +244,7 @@ export default function CommentsScreen() {
                         </View>
                     </View>
 
-                    {/* Comments List */}
+                    {}
                     <View style={styles.commentsHeader}>
                         <Text style={styles.commentsHeaderText}>All Comments</Text>
                     </View>

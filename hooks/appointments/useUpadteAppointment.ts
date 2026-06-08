@@ -15,7 +15,7 @@ export const useUpdateAppointment = (options?: UseUpdateAppointmentOptions) => {
         mutationFn: ({ id, payload }: { id: string; payload: UpdateAppointmentPayload }) =>
             appointmentService.updateAppointment(id, payload),
         onSuccess: (updatedAppointment) => {
-            // Invalidate all appointment queries to refresh the data
+            
             queryClient.invalidateQueries({ queryKey: ['appointments'] });
 
             onSuccess?.(updatedAppointment);

@@ -1,4 +1,4 @@
-// types/profile.types.ts
+
 import { User } from './auth.types';
 import { InterestFormData } from './onboarding.types';
 import { ProgressData } from './progress.types';

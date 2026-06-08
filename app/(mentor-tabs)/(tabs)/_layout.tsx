@@ -89,7 +89,7 @@ export default function MentorTabLayout() {
                         },
                     }}
                 >
-                    {/* VISIBLE TABS */}
+                    {}
                     <Tabs.Screen
                         name="index"
                         options={{
@@ -112,7 +112,7 @@ export default function MentorTabLayout() {
                         }}
                     />
 
-                    {/* HIDDEN ROUTES - only routes that actually exist in (tabs) directory */}
+                    {}
                     <Tabs.Screen name="notifications" options={{ href: null }} />
                     <Tabs.Screen name="new-roadmap" options={{ href: null }} />
                 </Tabs>
@@ -120,5 +120,4 @@ export default function MentorTabLayout() {
         </RoadmapProgressProvider>
     );
 }
-
 

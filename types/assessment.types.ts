@@ -35,7 +35,7 @@ export interface AssessmentSection {
     title: string;
     subtitle?: string;
     questionGroups: QuestionGroup[];
-    // Optional per-section CDP recommendations (levels 1–4)
+    
     recommendations?: CreateAssessmentSectionRecommendation[];
 }
 
@@ -158,11 +158,10 @@ export interface SubmitAnswersPayload {
         sectionId: string;
         layers: Array<{
             layerId: string;
-            selectedChoice: string; // Numeric level "1"|"2"|"3"|"4"
+            selectedChoice: string;
         }>;
     }>;
 }
-
 
 // ==================== Assessment Response ====================
 export interface AssessmentResponse {

@@ -83,7 +83,7 @@ export default function Header({
 
         {showNewMeeting && (
           <TouchableOpacity onPress={onNewMeetingPress}>
-            {/* <Ionicons name="add" size={20} color="white" /> */}
+            {}
             <Button
               type="custom"
               title="New Meetings"
@@ -106,7 +106,7 @@ export default function Header({
         )}
       </View>
 
-      {/* Separator */}
+      {}
       <View className="h-[0.5px] bg-white/30 mt-3" />
 
       {!hideSearchBar && (

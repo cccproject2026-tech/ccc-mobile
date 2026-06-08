@@ -337,7 +337,7 @@ export const menteeList = Object.values(menteeProfiles).map(
   ({ id, name, role }) => ({ id, name, role })
 )
 
-// Mock notes data for mentees
+
 export interface MentorNote {
   id: string
   menteeId: string

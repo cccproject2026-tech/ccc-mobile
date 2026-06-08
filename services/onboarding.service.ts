@@ -1,4 +1,4 @@
-// services/onboarding.service.ts
+
 import {
     ApprovalStatusResponse,
     InterestFormData,
@@ -8,7 +8,7 @@ import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
 export const onboardingService = {
-    // Submit interest form
+    
     submitInterest: async (
         data: InterestFormData
     ): Promise<SubmitInterestResponse> => {
@@ -21,7 +21,7 @@ export const onboardingService = {
         return response.data;
     },
 
-    // Check approval status
+    
     checkApprovalStatus: async (
         applicationId: string
     ): Promise<ApprovalStatusResponse> => {
@@ -30,7 +30,7 @@ export const onboardingService = {
             ENDPOINTS.USERS.CHECK_STATUS(applicationId),
             {
                 params: {
-                    t: Date.now(), // 🔹 Cache-buster to ensure we get the latest status
+                    t: Date.now(),
                 },
             }
         );

@@ -77,7 +77,7 @@ const Button = ({
                     className={`${labelClass}`}
                     style={[{
                         color: variantStyles.textColor,
-                        // fontFamily: "AlbertBold",
+                        
                         fontWeight: 500,
                         fontSize: 15,
                         lineHeight: 22,

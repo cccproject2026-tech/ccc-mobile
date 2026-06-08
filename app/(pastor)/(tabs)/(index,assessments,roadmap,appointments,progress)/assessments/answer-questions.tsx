@@ -42,9 +42,9 @@ export default function AnswerQuestionPage() {
     scheduleMeeting,
   );
   const router = useRouter();
-  // hasPreSurvey = false;
+  
   const { user } = useAuthStore();
-  // console.log('assessmentId',typeof hasPreSurvey, hasPreSurvey);
+  
   // Fetch assessment data from API
   const { data, isLoading, error } = useAssessment(assessmentId as string);
   const assessment = useMemo(() => {
@@ -63,13 +63,13 @@ export default function AnswerQuestionPage() {
     isError: isSubmittedAnswersError,
     error: submittedAnswersError,
   } = useFetchAnswers(assessmentId as string, user?.id, isViewMode);
-  // console.log('submittedAnswers', data);
-  // Get draft from store
+  
+  
   const getDraft = useAssessmentStore((state) => state.getDraft);
   const setDraft = useAssessmentStore((state) => state.saveDraft);
   const previousResponse = getDraft(assessmentId as string);
 
-  // Submission hooks
+  
   const submitPreSurvey = useSubmitPreSurvey();
   const submitAssessmentAnswers = useSubmitAssessmentAnswers();
   const {
@@ -98,7 +98,7 @@ export default function AnswerQuestionPage() {
     }
   }, [jumpstartRoadmapId, assignedRoadmaps]);
 
-  // DEBUG helper: always called from final submit before saving extras.
+  
   const ensureJumpstartTriggered = async () => {
     console.log("ensureJumpstartTriggered CALLED");
     console.log("Check conditions", {
@@ -107,8 +107,8 @@ export default function AnswerQuestionPage() {
       jumpstartRoadmapId,
     });
 
-    // Temporary force path for debugging:
-    // if jumpstart roadmap is not detected, use first assigned roadmap id.
+    
+    
     const debugRoadmapId = jumpstartRoadmapId || assignedRoadmaps[0]?._id;
     const debugUserId = user?.id;
 
@@ -156,7 +156,7 @@ export default function AnswerQuestionPage() {
   const [viewSectionAnswers, setViewSectionAnswers] = useState<
     Record<number, Record<string, any>> | undefined
   >(undefined);
-  // Load submitted answers into store (ONLY for view mode)
+  
   useEffect(() => {
     const answerDoc = submittedAnswers?.data;
     if (
@@ -194,27 +194,26 @@ export default function AnswerQuestionPage() {
     hasPreSurvey !== "true" || !!previousResponse?.preSurveyAnswers,
   );
 
-
   const showPreSurvey =
     hasPreSurvey === "true" &&
     !preSurveyCompleted &&
     !isViewMode &&
     (assessment?.preSurvey?.length ?? 0) > 0;
 
-  // Check if pre-survey has been submitted
+  
   const hasPreSurveyAnswers = isViewMode
     ? !!submittedAnswers?.data?.preSurveyAnswers
     : !!previousResponse?.preSurveyAnswers &&
       Object.keys(previousResponse.preSurveyAnswers).length > 0;
 
-  // const mockMentors: Mentor[] = [
-  //     { id: '1', name: 'John Ross', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/1.jpg' },
-  //     { id: '2', name: 'Sarah Johnson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/women/2.jpg' },
-  //     { id: '3', name: 'Michael Chen', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/men/3.jpg' },
-  //     { id: '4', name: 'Emily Davis', role: 'Mentor', profileImage: 'https://randomuser.me/api/portraits/women/4.jpg' },
-  //     { id: '5', name: 'Robert Wilson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/men/5.jpg' },
-  //     { id: '6', name: 'Lisa Anderson', role: 'Field Mentor', profileImage: 'https://randomuser.me/api/portraits/women/6.jpg' },
-  // ];
+  
+  
+  
+  
+  
+  
+  
+  
 
   const handlePreSurveyComplete = async (
     preSurveyAnswers: Record<string, string>,
@@ -282,7 +281,7 @@ export default function AnswerQuestionPage() {
         answers,
       };
 
-      // Trigger jumpstart BEFORE any extras/answers save.
+      
       await ensureJumpstartTriggered();
 
       console.log("STEP 2: Saving extras");
@@ -351,7 +350,7 @@ export default function AnswerQuestionPage() {
 
   const submittedSections = submittedAnswers?.data?.sections || [];
 
-  // Loading state
+  
   if (
     isLoading ||
     (isViewMode && isLoadingSubmitted) ||
@@ -380,7 +379,7 @@ export default function AnswerQuestionPage() {
     );
   }
 
-  // Error state
+  
   if (error || !assessment || (isViewMode && isSubmittedAnswersError)) {
     const errorMessage =
       isViewMode && isSubmittedAnswersError

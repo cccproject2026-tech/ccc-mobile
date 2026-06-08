@@ -1,4 +1,4 @@
-// services/roadmap.service.ts
+
 import {
     AddCommentRequest,
     AddCommentResponse,
@@ -89,7 +89,7 @@ const buildFormData = (formData: FormData, data: any, parentKey?: string) => {
     if (data && typeof data === 'object' && !(data instanceof Date) && !(data instanceof File) && !(data instanceof Blob)) {
         Object.keys(data).forEach(key => {
             const value = data[key];
-            if (value === undefined || value === null) return; // Skip undefined/null
+            if (value === undefined || value === null) return;
 
             const formKey = parentKey ? `${parentKey}[${key}]` : key;
 
@@ -440,7 +440,7 @@ export const roadmapService = {
                 );
             }
 
-            // Small spacing between pastors to avoid bursts.
+            
             await sleep(150);
         }
 
@@ -461,7 +461,7 @@ export const roadmapService = {
     async getRoadmaps() {
         const response = await apiClient.get<RoadmapResponse>('/roadmaps');
         if (!response.data.success) {
-            // console.log('Failed to fetch roadmaps:', response.data);
+            
             throw new Error(response.data.message || 'Failed to fetch roadmaps');
         }
         console.log('Fetched roadmaps:----->>>>>>>>>>>>>>', response.data.data);
@@ -471,7 +471,7 @@ export const roadmapService = {
     async createRoadmap(payload: CreateRoadmapRequest) {
         const formData = new FormData();
 
-        // Handle Banner Image
+        
         if (payload.imageUrl && !payload.imageUrl.startsWith('http')) {
             const uri = payload.imageUrl;
             const filename = uri.split('/').pop() || 'banner.jpg';
@@ -488,10 +488,10 @@ export const roadmapService = {
         // Clone payload and remove imageUrl to avoid duplication or sending it as text if it was a local URI
         // If it was a http URL, we might want to keep it? The requirement says "field named image will be included for the banner image".
         // Usually, if we upload a file, we don't send the URL field. 
-        // We'll append the rest of the payload.
+        
         const { imageUrl, ...restPayload } = payload;
 
-        // Append all other fields
+        
         buildFormData(formData, restPayload);
 
         // If there was an existing http imageUrl (not a file upload), we might want to include it?
@@ -512,7 +512,6 @@ export const roadmapService = {
         }
         return response.data;
     },
-
 
     async updateRoadmap(roadmapId: string, payload: UpdateRoadmapRequest) {
         console.log('-----------------------------------------------------------');
@@ -606,7 +605,7 @@ export const roadmapService = {
         roadMapId: string,
         userId: string,
         nestedRoadMapItemId: string,
-        extraName: string, // this becomes ?name=<fieldName>
+        extraName: string,
         file: any
     ) {
         const formData = new FormData();
@@ -635,15 +634,13 @@ export const roadmapService = {
         return response.data;
     },
 
-
     async getRoadmapDocuments(roadMapId: string, userId: string, nestedId: string) {
         const url =
             `/roadmaps/${roadMapId}/extras/documents?userId=${userId}&nestedRoadMapItemId=${nestedId}`;
 
-
         const response = await apiClient.get(url);
         console.log("Fetched roadmap documents:----->>>>>>>>>>>>>>", response.data);
-        return response.data; // { success: true, documents: [...] }
+        return response.data;
     },
 
     async deleteRoadmapDocument(
@@ -665,7 +662,6 @@ export const roadmapService = {
         const response = await apiClient.delete(url);
         return response.data;
     },
-
 
     async createRoadmapExtras(payload: CreateExtrasDto) {
         console.log('Creating roadmap extras with payload:', payload);
@@ -699,7 +695,7 @@ export const roadmapService = {
             ? userId
             : null;
 
-        // Build URL with query string manually if we have params
+        
         let url = `/roadmaps/${roadMapId}/extras`;
         const queryParams: string[] = [];
 
@@ -852,9 +848,9 @@ export const roadmapService = {
         }
     },
 
-    // ============================================
+    
     // SUBMISSION HISTORY API
-    // ============================================
+    
 
     async getTaskSubmissions(
         roadMapId: string,

@@ -15,9 +15,9 @@ export const useUpdateAssessmentInstructions = () => {
         }) => assessmentService.updateInstructions(assessmentId, instructions),
 
         onSuccess: (data, variables) => {
-            // Update the specific assessment in cache
+            
             queryClient.setQueryData(['assessment', variables.assessmentId], data);
-            // Invalidate assessments list to refetch
+            
             queryClient.invalidateQueries({ queryKey: ['assessments'] });
             console.log('✅ Assessment instructions updated successfully');
         },

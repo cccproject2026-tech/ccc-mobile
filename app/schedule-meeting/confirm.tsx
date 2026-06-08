@@ -86,7 +86,7 @@ export default function ScheduleMeetingConfirmScreen() {
 
   const existingAppointment = useMemo(() => {
     if (!draft.appointmentId) return null;
-    // Find from either list (best-effort)
+    
     const all = [...mentorAppointments, ...userAppointments];
     return all.find((a) => String(a.id) === String(draft.appointmentId)) ?? null;
   }, [draft.appointmentId, mentorAppointments, userAppointments]);

@@ -54,7 +54,7 @@ export default function AssignScholarshipScreen() {
                 contentContainerStyle={{ paddingBottom: bottom + 20 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header */}
+                {}
                 <TouchableOpacity
                     onPress={() => router.back()}
                     style={styles.header}
@@ -64,7 +64,7 @@ export default function AssignScholarshipScreen() {
                     <Text style={styles.headerTitle}>Interest Received</Text>
                 </TouchableOpacity>
 
-                {/* User Card */}
+                {}
                 <View style={styles.userCard}>
                     <View style={styles.userInfo}>
                         <View style={styles.avatar}>
@@ -76,7 +76,7 @@ export default function AssignScholarshipScreen() {
                         </View>
                     </View>
 
-                    {/* Contact Icons */}
+                    {}
                     <View style={styles.contactIcons}>
                         <TouchableOpacity style={styles.iconButton}>
                             <Ionicons name="call-outline" size={Platform.OS === 'android' ? 18 : 20} color="#fff" />
@@ -93,7 +93,7 @@ export default function AssignScholarshipScreen() {
                     </View>
                 </View>
 
-                {/* Rural/Urban Toggle */}
+                {}
                 <View style={styles.toggleCard}>
                     <Text style={styles.toggleLabel}>Choose Rural or Urban :</Text>
                     <View style={styles.toggleOptions}>
@@ -109,7 +109,7 @@ export default function AssignScholarshipScreen() {
                     </View>
                 </View>
 
-                {/* Product and Services */}
+                {}
                 <View style={styles.productCard}>
                     <Pressable
                         style={styles.productHeader}
@@ -143,7 +143,7 @@ export default function AssignScholarshipScreen() {
                     )}
                 </View>
 
-                {/* Amount Section */}
+                {}
                 <View style={styles.amountSection}>
                     <View style={styles.amountCard}>
                         <View style={styles.amountTextContainer}>
@@ -157,7 +157,7 @@ export default function AssignScholarshipScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Action Buttons */}
+                {}
                 <View style={styles.actionButtons}>
                     <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                         <Text style={styles.backButtonText}>BACK</Text>

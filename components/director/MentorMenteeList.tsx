@@ -16,7 +16,7 @@ const MentorMenteeList: React.FC = () => {
     const { mentors: allMentors, isLoading: isLoadingMentors, isError: isErrorMentors } = useMentors();
     const { data: menteesData, isLoading: isLoadingMentees, isError: isErrorMentees } = useMentees();
 
-    // Limit to first 3 items
+    
     const mentors = useMemo(() => {
         return allMentors && Array.isArray(allMentors) ? allMentors.slice(0, 3) : [];
     }, [allMentors]);
@@ -52,7 +52,7 @@ const MentorMenteeList: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            {/* Tab Header */}
+            {}
             <View style={styles.header}>
                 <View style={styles.tabs}>
                     <Pressable
@@ -89,7 +89,7 @@ const MentorMenteeList: React.FC = () => {
                 </Pressable>
             </View>
 
-            {/* List */}
+            {}
             <View style={styles.listContainer}>
                 {isLoading ? (
                     <View style={styles.loadingContainer}>

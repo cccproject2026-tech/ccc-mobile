@@ -99,7 +99,7 @@ export default function MentorStartJourneyScreen() {
                 </View>
 
                 <View style={styles.content}>
-                    {/* Illustration area */}
+                    {}
                     <View style={styles.illustrationArea}>
                         <View style={styles.outerRing}>
                             <View style={styles.innerRing}>
@@ -130,7 +130,7 @@ export default function MentorStartJourneyScreen() {
                         <View style={styles.dividerLine} />
                     </View>
 
-                    {/* Step cards */}
+                    {}
                     <View style={styles.cardList}>
                         {STEPS.map((step, i) => {
                             const isActive = i === activeStep;

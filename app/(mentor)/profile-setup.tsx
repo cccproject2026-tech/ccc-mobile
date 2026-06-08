@@ -1,4 +1,4 @@
-// app/(mentor)/profile-setup.tsx
+
 import TopBar from "@/components/director/TopBar";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
@@ -25,7 +25,7 @@ import AppGradientBackground from "@/components/layout/AppGradientBackground";
 export default function MentorProfileSetup() {
     const router = useRouter();
 
-    // Store hooks
+    
     const { setCurrentStep, setHasProfilePicture } = useOnboardingStore();
     const { user } = useAuthStore();
 
@@ -33,12 +33,12 @@ export default function MentorProfileSetup() {
     const uploadProfilePicture = useUploadProfilePicture();
     const uploadDocument = useUploadDocument();
 
-    // Loading states
+    
     const [imageLoading, setImageLoading] = useState(false);
     const [documentLoading, setDocumentLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
 
-    // Upload states
+    
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const [documentName, setDocumentName] = useState<string | null>(null);
 

@@ -62,7 +62,7 @@ interface Props {
     parentRoadmap?: Roadmap | null;
     phaseId?: string;
     itemId?: string;
-    userId?: string; // Target user (mentee)
+    userId?: string;
     /** When provided, called after a successful save instead of showing the default modal + router.back(). */
     onSaveSuccess?: () => void;
     /** Mentor browsing Roadmap Library templates — view-only, no save/submit. */
@@ -109,11 +109,11 @@ export function MentorTaskView({
         const v = String(raw ?? "").trim();
         if (!v) return null;
 
-        // 1) ISO-like: 2026-05-08
+        
         const iso = parse(v, "yyyy-MM-dd", new Date());
         if (isValid(iso) && v.length >= 10 && v[4] === "-" && v[7] === "-") return iso;
 
-        // 2) Legacy: DD / MM / YY
+        
         const legacy = parse(v, "dd / MM / yy", new Date());
         if (isValid(legacy)) return legacy;
 
@@ -199,7 +199,7 @@ export function MentorTaskView({
         isLibraryPreview ? undefined : targetUserId,
     );
 
-    // ── New submission-based state ──
+    
     const { data: latestSubmission, error: submissionError } = useLatestSubmission(
         roadmapId,
         itemId,
@@ -255,7 +255,7 @@ export function MentorTaskView({
                     style: "destructive",
                     onPress: () => {
                         setIsResubmitting(false);
-                        // Restore form data to latest submission values
+                        
                         if (latestSubmission?.responses) {
                             const restored: Record<string, any> = {};
                             for (const r of latestSubmission.responses) {
@@ -328,7 +328,7 @@ export function MentorTaskView({
     useEffect(() => {
         const init: Record<string, any> = {};
         
-        // 1. Load defaults from task definition
+        
         effectiveExtras.forEach((extra) => {
             if (extra.date) init[extra.name] = extra.date;
         });
@@ -545,7 +545,7 @@ export function MentorTaskView({
                 };
             });
 
-            // Try to create a new submission record (immutable)
+            
             let newSubmissionId: string | undefined;
             try {
                 const newSubmission = await createSubmission.mutateAsync({
@@ -557,7 +557,7 @@ export function MentorTaskView({
                 });
                 newSubmissionId = newSubmission._id;
 
-                // Upload pending files to the new submission
+                
                 for (const [extraName, files] of Object.entries(pendingFiles)) {
                     for (const file of files) {
                         await uploadSubmissionDoc.mutateAsync({
@@ -1320,7 +1320,7 @@ export function MentorTaskView({
                     </View>
                 )}
 
-                {/* Previously submitted — show action buttons (not edit) */}
+                {}
                 {hasSubmission && !isResubmitting && !isPreviewMode && (
                     <View style={styles.submissionActionsBanner}>
                         <View style={styles.submissionBannerHeader}>
@@ -1351,7 +1351,7 @@ export function MentorTaskView({
                     </View>
                 )}
 
-                {/* Mentor viewing pastor's work — show history access */}
+                {}
                 {hasSubmission && isViewingPastor && (
                     <View style={styles.submissionActionsBanner}>
                         <View style={styles.submissionBannerHeader}>
@@ -1370,7 +1370,7 @@ export function MentorTaskView({
                     </View>
                 )}
 
-                {/* Resubmitting — show new submission banner */}
+                {}
                 {isResubmitting && (
                     <View style={styles.resubmitBanner}>
                         <View style={styles.resubmitBadge}>
@@ -1397,7 +1397,7 @@ export function MentorTaskView({
                     effectiveExtras.map((extra, index) => renderExtra(extra, index))
                 }
 
-                {/* Submit / Resubmit button */}
+                {}
                 {showSaveProgress ? (
                     <Pressable
                         style={[

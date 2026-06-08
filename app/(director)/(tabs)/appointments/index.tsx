@@ -54,14 +54,14 @@ const Appointments: React.FC = () => {
   });
   const { bottom } = useSafeAreaInsets();
 
-  // Reset active tab when screen comes into focus
+  
   useFocusEffect(
     useCallback(() => {
       setActiveTab("appointments");
     }, []),
   );
 
-  // Bottom sheet ref
+  
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
   const { openSheet, assessmentId } = useLocalSearchParams();
 
@@ -69,11 +69,11 @@ const Appointments: React.FC = () => {
     if (openSheet === "true" && scheduleMeetingBottomSheetRef.current) {
       setTimeout(() => {
         scheduleMeetingBottomSheetRef.current?.present();
-      }, 200); // Ensure sheet presents after mount
+      }, 200);
     }
   }, [openSheet]);
 
-  // Mock mentors data
+  
   const mockMentors: Mentor[] = [
     {
       id: "1",
@@ -113,7 +113,7 @@ const Appointments: React.FC = () => {
     },
   ];
 
-  // Helper function to format date for display
+  
   const formatDisplayDate = (dateString: string) => {
     const date = new Date(dateString);
     const day = date.getDate();
@@ -137,38 +137,38 @@ const Appointments: React.FC = () => {
     return `${day} ${month} ${year}`;
   };
 
-  // Helper function to check if date is today
+  
   const isToday = (dateString: string) => {
     return dateString === today;
   };
 
-  // Filter appointments based on selected date
+  
   const getAppointmentsForDate = (dateString: string) => {
     // For demo purposes, we'll show appointments on specific dates
     // In real app, you'd filter based on actual appointment dates
     if (dateString === today) {
-      return appointments; // Show real appointments for today
+      return appointments;
     } else if (
       dateString === "2025-10-20" ||
       dateString === "2025-10-23" ||
       dateString === "2025-10-21"
     ) {
-      // Show some appointments for these demo dates
+      
       return appointments.slice(0, 2);
     }
-    return []; // No appointments for other dates
+    return [];
   };
 
   const selectedDateAppointments = getAppointmentsForDate(selectedDate);
 
   const handleViewDetails = (appointment: any) => {
     console.log("View details", appointment);
-    // Navigate to appointment details
+    
   };
 
   const handleReschedule = (appointment: any) => {
     console.log("Reschedule appointment", appointment);
-    // Navigate to reschedule screen
+    
   };
 
   const handleCancel = (appointment: any) => {
@@ -181,9 +181,9 @@ const Appointments: React.FC = () => {
           text: "Yes",
           style: "destructive",
           onPress: () => {
-            // Place your cancel logic here
+            
             console.log("Meeting cancelled:", appointment);
-            // Optionally show a success message or update state
+            
             setResponseModal({
               visible: true,
               message: "Meeting has been Canceled",
@@ -195,12 +195,12 @@ const Appointments: React.FC = () => {
     );
   };
 
-  // Handle new meeting button press
+  
   const handleNewMeeting = () => {
     scheduleMeetingBottomSheetRef.current?.present();
   };
 
-  // Handle schedule meeting
+  
   const handleScheduleMeeting = (data: any) => {
     console.log("Scheduling meeting:", data);
     setResponseModal({
@@ -222,7 +222,7 @@ const Appointments: React.FC = () => {
     }
   };
 
-  // Handle close bottom sheet
+  
   const handleCloseScheduleBottomSheet = () => {
     scheduleMeetingBottomSheetRef.current?.dismiss();
   };
@@ -269,7 +269,7 @@ const Appointments: React.FC = () => {
             <TopBar role="director" />
           </View>
           <View style={{ flex: 1 }}>
-            {/* Header */}
+            {}
             <Header
               title="Schedule"
               hideSearchBar={true}
@@ -282,7 +282,7 @@ const Appointments: React.FC = () => {
               <GoogleCalendarScheduleBanner />
             </View>
 
-            {/* Tab Switcher */}
+            {}
             <View style={styles.tabContainer}>
               <Pressable
                 style={[
@@ -327,7 +327,7 @@ const Appointments: React.FC = () => {
               />
             </View>
 
-            {/* Main content */}
+            {}
             <ScrollView
               style={{ flex: 1 }}
               contentContainerStyle={{ paddingBottom: bottom }}
@@ -343,9 +343,9 @@ const Appointments: React.FC = () => {
                   paddingTop: 20,
                 }}
               >
-                {/* Calendar */}
+                {}
                 <View style={styles.calendarContainer}>
-                  {/* Heading with Icon */}
+                  {}
                   <View style={styles.calendarHeader}>
                     <Image
                       source={icons.calendarIcon}
@@ -356,7 +356,7 @@ const Appointments: React.FC = () => {
                     </Text>
                   </View>
 
-                  {/* Calendar Component */}
+                  {}
                   <View
                     style={{
                       minHeight: 400,
@@ -391,7 +391,7 @@ const Appointments: React.FC = () => {
                   </View>
                 </View>
 
-                {/* Selected Date Appointments */}
+                {}
                 {selectedDateAppointments.length > 0 && (
                   <View style={styles.appointmentsContainer}>
                     <View style={styles.rowBetween}>
@@ -452,7 +452,7 @@ const Appointments: React.FC = () => {
                   </View>
                 )}
 
-                {/* No appointments message */}
+                {}
                 {selectedDateAppointments.length === 0 && (
                   <View style={styles.appointmentsContainer}>
                     <View style={styles.rowBetween}>
@@ -478,7 +478,7 @@ const Appointments: React.FC = () => {
         </>
       </LinearGradient>
 
-      {/* Schedule Meeting Bottom Sheet */}
+      {}
       <ScheduleMeetingBottomSheet
         ref={scheduleMeetingBottomSheetRef}
         onClose={handleCloseScheduleBottomSheet}
@@ -491,7 +491,7 @@ const Appointments: React.FC = () => {
         }}
       />
 
-      {/* Change Meeting Mode Modal */}
+      {}
       <Modal
         visible={changeModeModalVisible}
         transparent
@@ -617,13 +617,13 @@ const Appointments: React.FC = () => {
           </LinearGradient>
         </View>
       </Modal>
-      {/* Success Modal for Meeting Mode Change */}
+      {}
       <SimpleSuccessModal
         visible={showModeSuccess}
         onClose={() => setShowModeSuccess(false)}
         title={modeSuccessText}
       />
-      {/* General Success Modal */}
+      {}
       <SimpleSuccessModal
         visible={responseModal.visible}
         onClose={() => setResponseModal({ ...responseModal, visible: false })}
@@ -635,7 +635,7 @@ const Appointments: React.FC = () => {
 
 export default Appointments;
 const styles = StyleSheet.create({
-  // Tab Container
+  
   tabContainer: {
     flexDirection: "row",
     marginHorizontal: 16,
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: "#1E3A6F",
   },
-  // Calendar Container
+  
   calendarContainer: {
     width: "100%",
     borderWidth: StyleSheet.hairlineWidth,
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
 
-  // Calendar Header with Icon
+  
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -686,13 +686,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // Wrapper to control calendar height
+  
   calendarWrapper: {
-    maxHeight: 340, // Reduced from default height
+    maxHeight: 340,
     overflow: "hidden",
   },
 
-  // Appointments Container
+  
   appointmentsContainer: {
     marginTop: 16,
     position: "relative",

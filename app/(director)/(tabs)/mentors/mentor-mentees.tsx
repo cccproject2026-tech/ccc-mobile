@@ -17,7 +17,7 @@ const PHASES = ['All Phases', 'Phase 1', 'Phase 2', 'Phase 3'];
 
 export default function MentorMentees() {
     const router = useRouter();
-    const { id } = useLocalSearchParams(); // Mentor ID from route
+    const { id } = useLocalSearchParams();
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<'all' | 'in-progress' | 'completed'>('in-progress');
     const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -111,7 +111,7 @@ export default function MentorMentees() {
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View className="flex-1 pt-6">
-                    {/* Header */}
+                    {}
                     <View className="flex-row items-center justify-between px-4 pb-3 mb-4 border-b border-white/30">
                         <TouchableOpacity onPress={() => router.back()}>
                             <View className="flex-row items-center">
@@ -155,12 +155,12 @@ export default function MentorMentees() {
                         </View>
                     </View>
 
-                    {/* Search Bar */}
+                    {}
                     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
                         <SearchBar value={search} onChangeValue={setSearch} />
                     </View>
 
-                    {/* Tabs */}
+                    {}
                     <View className="flex-row gap-3 px-4 mb-4">
                         <Pressable
                             onPress={() => handleTabChange('all')}
@@ -210,7 +210,7 @@ export default function MentorMentees() {
                         <MentorProfileSwiper />
                     </View>
 
-                    {/* Sort By */}
+                    {}
                     <View className="flex-row items-center justify-end gap-2 px-4 mb-4">
                         <Text className="text-base text-white">Sort by</Text>
                         <Pressable
@@ -224,7 +224,7 @@ export default function MentorMentees() {
                         </Pressable>
                     </View>
 
-                    {/* Mentees List */}
+                    {}
                     <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
                         {filteredMentees.map((mentee) => (
                             <MenteeCard

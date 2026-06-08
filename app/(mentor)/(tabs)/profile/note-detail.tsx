@@ -92,7 +92,7 @@ export default function NoteDetail() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <SquircleIconButton
@@ -128,7 +128,7 @@ export default function NoteDetail() {
           </View>
         </View>
 
-        {/* Date/Time Badge */}
+        {}
         <View style={styles.dateContainer}>
           <View style={styles.dateBadge}>
             <Text style={styles.dateText}>
@@ -153,7 +153,7 @@ export default function NoteDetail() {
           </View>
         </View>
 
-        {/* Note Content */}
+        {}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}

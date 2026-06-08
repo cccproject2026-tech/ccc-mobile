@@ -11,23 +11,23 @@ export type ChurchDetails = {
 
 export type InterestStatus = 'new' | 'pending' | 'accepted' | 'rejected';
 
-// ============================================
+
 // API RESPONSE TYPES (Backend contract)
-// ============================================
+
 
 export type InterestCardViewModel = {
 	id: string;
 	name: string;
 	role: string;
 	time: string;
-	date: string; // Full date for sorting
+	date: string;
 	state: string;
 	country: string;
 	email?: string;
 	phoneNumber?: string;
 	conference?: string;
 	status?: InterestStatus;
-	// For accepted users
+	
 	mentors?: number;
 	mentorsAssigned?: boolean;
 	hasLoggedIn?: boolean;

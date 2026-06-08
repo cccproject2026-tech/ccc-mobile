@@ -19,7 +19,7 @@ export const useSubmitPreSurvey = () => {
         onSuccess: (data, variables) => {
             console.log('✅ Pre-survey submitted successfully');
 
-            // Update draft with submitted pre-survey data
+            
             updatePreSurveyAnswers(
                 variables.assessmentId,
                 variables.payload.preSurveyAnswers.reduce((acc, item) => ({
@@ -28,7 +28,7 @@ export const useSubmitPreSurvey = () => {
                 }), {})
             );
 
-            // Invalidate queries to refresh data
+            
             queryClient.invalidateQueries({
                 queryKey: ['assessment', variables.assessmentId]
             });
@@ -62,7 +62,7 @@ export const useSubmitAssessmentAnswers = () => {
             // Clear draft from local storage after successful submission
             clearDraft(variables.assessmentId);
 
-            // Invalidate queries to refresh data
+            
             queryClient.invalidateQueries({
                 queryKey: ['assessment', variables.assessmentId]
             });

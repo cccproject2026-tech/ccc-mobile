@@ -148,7 +148,7 @@ export default function NewNote() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
+        {}
           <View style={styles.header}>
           <View style={styles.headerTop}>
             <SquircleIconButton
@@ -184,7 +184,7 @@ export default function NewNote() {
           </View>
         </View>
 
-        {/* Tab Buttons */}
+        {}
         <View style={styles.tabContainer}>
           <TouchableOpacity
             activeOpacity={0.8}
@@ -203,7 +203,7 @@ export default function NewNote() {
           </TouchableOpacity>
         </View>
 
-          {/* Formatting Toolbar */}
+          {}
           <View style={styles.toolbarContainer}>
             <ScrollView
               horizontal

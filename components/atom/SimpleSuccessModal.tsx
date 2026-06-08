@@ -24,7 +24,7 @@ const SimpleSuccessModal: React.FC<SimpleSuccessModalProps> = ({
     visible,
     onClose,
     title,
-    // actionType = 'scheduled',
+    
 }) => {
     React.useEffect(() => {
         if (visible) {

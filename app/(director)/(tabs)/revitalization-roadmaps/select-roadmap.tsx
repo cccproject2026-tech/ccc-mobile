@@ -71,10 +71,10 @@ export default function SelectRoadmapScreen() {
 
     const handleSelectAll = () => {
         if (selectedItems.size === filteredRoadmaps.length) {
-            // Deselect all
+            
             setSelectedItems(new Set());
         } else {
-            // Select all visible items
+            
             const allIds = new Set(filteredRoadmaps.map(item => item.id));
             setSelectedItems(allIds);
         }
@@ -90,7 +90,7 @@ export default function SelectRoadmapScreen() {
             <View style={styles.content}>
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
-                {/* Header */}
+                {}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
                         <Ionicons name="close" size={28} color="#fff" />
@@ -109,12 +109,12 @@ export default function SelectRoadmapScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Search Bar */}
+                {}
                 <View style={styles.searchContainer}>
                     <SearchBar value={search} onChangeValue={setSearch} />
                 </View>
 
-                {/* Select All Button */}
+                {}
                 <View style={styles.selectAllContainer}>
                     <TouchableOpacity onPress={handleSelectAll} style={styles.selectAllButton}>
                         <Text style={styles.selectAllText}>
@@ -131,7 +131,7 @@ export default function SelectRoadmapScreen() {
                             onPress={() => handleItemSelect(item.id)}
                             activeOpacity={0.8}
                         >
-                            {/* Checkbox */}
+                            {}
                             <View style={styles.checkboxContainer}>
                                 <View style={[
                                     styles.checkbox,
@@ -143,14 +143,14 @@ export default function SelectRoadmapScreen() {
                                 </View>
                             </View>
 
-                            {/* Content */}
+                            {}
                             <View style={styles.itemContent}>
-                                {/* Image */}
+                                {}
                                 <View style={styles.imageContainer}>
                                     <Image source={item.image} style={styles.roadmapImage} />
                                 </View>
 
-                                {/* Text Content */}
+                                {}
                                 <View style={styles.textContent}>
                                     <Text style={styles.roadmapTitle} numberOfLines={2}>
                                         {item.title}
@@ -167,7 +167,7 @@ export default function SelectRoadmapScreen() {
                     ))}
                 </ScrollView>
 
-                {/* Selected Count */}
+                {}
                 {selectedItems.size > 0 && (
                     <View style={styles.selectedCountContainer}>
                         <Text style={styles.selectedCountText}>

@@ -170,7 +170,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
 
     useImperativeHandle(ref, () => ({
       present: () => {
-        // Reset any stale selections before showing
+        
         setSelectedDate("")
         setSelectedTime(null)
         setSelectedSlot(null)
@@ -282,7 +282,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
           >
-            {/* Header */}
+            {}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
                 <Ionicons name="calendar" size={28} color="#FFFFFF" />
@@ -297,7 +297,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
               </TouchableOpacity>
             </View>
 
-            {/* Date Picker using GradientCalendar */}
+            {}
             <View style={styles.section}>
               {isLoadingAvailability ? (
                 <View style={styles.loadingRow}>
@@ -335,7 +335,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
                 disablePastDates={true}
                 markToday={true}
                 // While loading, pass [] so users can't select random dates.
-                // Once loaded, enable ONLY the available dates.
+                
                 availableDates={
                   isLoadingAvailability || isLoadingWeekly ? [] : availableDates
                 }
@@ -347,7 +347,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
               />
             </View>
 
-            {/* Time Picker - only valid slots from mentor availability */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Choose a Time</Text>
               {selectedDate ? (
@@ -394,7 +394,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
               )}
             </View>
 
-            {/* Meeting Option Dropdown */}
+            {}
             <View style={styles.section}>
               <TouchableOpacity
                 style={styles.dropdownTrigger}
@@ -448,9 +448,9 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
                 </View>
               )}
             </View>
-              {/* <View style={{ height: 100 ,width:"100%",backgroundColor:"red"}}></View> */}
+              {}
 
-            {/* Action Buttons */}
+            {}
             <View style={styles.actionButtons}>
               <TouchableOpacity
                 style={styles.cancelButton}
@@ -473,10 +473,10 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
                 <Text style={styles.scheduleButtonText}>Schedule</Text>
               </TouchableOpacity>
             </View>
-            {/* <View style={{ height: 20 ,width:"100%"}}></View> */}
-            {/* <View style={{ height: 50 ,width:"100%",backgroundColor:"blue"}}></View> */}
+            {}
+            {}
           </BottomSheetScrollView>
-            {/* <View style={{ height: 250 ,width:"100%",backgroundColor:"blue"}}></View> */}
+            {}
         </LinearGradient>
       </BottomSheetModal>
     )

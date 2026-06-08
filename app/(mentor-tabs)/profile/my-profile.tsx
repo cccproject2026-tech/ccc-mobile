@@ -45,7 +45,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
 
-  // Fetch profile data from React Query
+  
   const { data: apiProfileData, isLoading, isError } = useProfile();
   const updateProfile = useUpdateProfile();
   const uploadProfilePicture = useUploadProfilePicture();
@@ -97,7 +97,7 @@ export default function ProfileScreen() {
     }
   }, [apiProfileData, isFormInitialized]);
 
-  // Handle image selection
+  
   const pickImage = useCallback(async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -188,7 +188,7 @@ export default function ProfileScreen() {
 
   const handleCancel = () => {
     setIsEditMode(false);
-    setIsFormInitialized(false); // Trigger re-init from api data
+    setIsFormInitialized(false);
     setSelectedImageFile(null);
   };
 
@@ -359,7 +359,7 @@ export default function ProfileScreen() {
               />
             </View>
 
-            {/* Detailed Personal Info */}
+            {}
             <View className="gap-4 p-2 pb-10 mt-4 border rounded-md border-white/45">
               <View className="gap-6 mt-2">
                 <Text className="font-[AlbertRegular] text-white text-[14px]">
@@ -391,7 +391,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.divider} />
 
-              {/* Church Information */}
+              {}
               {(isEditMode ? formData.churches : interest?.churchDetails)?.map((church, idx) => (
                 <View key={church.id || idx} className="flex-1 gap-3">
                   <View className="flex-row items-center justify-between gap-12">
@@ -474,7 +474,7 @@ export default function ProfileScreen() {
               )}
 
               <View style={styles.divider} />
-              {/* Other Information */}
+              {}
               <View className="my-2">
                 <Text className="font-[AlbertRegular] text-white text-[14px]">
                   Other Information

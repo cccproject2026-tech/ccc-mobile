@@ -261,7 +261,7 @@ export const SubmissionDetailView = memo(function SubmissionDetailView({
         <View style={styles.container}>
             {!hideHeader && (
                 <>
-                    {/* Header */}
+                    {}
                     <View style={styles.header}>
                         <View style={styles.headerLeft}>
                             {onClose && (
@@ -281,7 +281,7 @@ export const SubmissionDetailView = memo(function SubmissionDetailView({
                         </View>
                     </View>
 
-                    {/* Metadata */}
+                    {}
                     <View style={styles.metaRow}>
                         <Ionicons name="calendar-outline" size={13} color="rgba(255,255,255,0.5)" />
                         <Text style={styles.metaText}>
@@ -301,7 +301,7 @@ export const SubmissionDetailView = memo(function SubmissionDetailView({
                 </View>
             ) : null}
 
-            {/* Read-only lock banner */}
+            {}
             <View style={styles.readOnlyBanner}>
                 <Ionicons name="lock-closed-outline" size={14} color="rgba(255,255,255,0.5)" />
                 <Text style={styles.readOnlyBannerText}>
@@ -309,7 +309,7 @@ export const SubmissionDetailView = memo(function SubmissionDetailView({
                 </Text>
             </View>
 
-            {/* Responses */}
+            {}
             {(submission.responses ?? []).map((response: any, index: number) => (
                 <ResponseField
                     key={`${response.name}-${index}`}

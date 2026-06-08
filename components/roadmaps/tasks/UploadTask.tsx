@@ -1,4 +1,4 @@
-// components/roadmap/tasks/UploadTask.tsx
+
 import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
 import { Task, UploadSchema } from '@/lib/roadmap/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,7 +48,7 @@ export function UploadTask({ item }: Props) {
 
     return (
         <>
-            {/* Upload button */}
+            {}
             <Pressable style={styles.uploadButton} onPress={handleUpload}>
                 <Ionicons name="cloud-upload-outline" size={20} color="#0b2447" style={{ marginRight: 8 }} />
                 <Text style={styles.uploadButtonText}>
@@ -56,7 +56,7 @@ export function UploadTask({ item }: Props) {
                 </Text>
             </Pressable>
 
-            {/* Uploaded files */}
+            {}
             {attachments.map(file => (
                 <View key={file.id} style={styles.fileRow}>
                     <Ionicons name="document-outline" size={20} color="white" />
@@ -67,7 +67,7 @@ export function UploadTask({ item }: Props) {
                 </View>
             ))}
 
-            {/* Submit */}
+            {}
             {attachments.length > 0 && (
                 <Pressable style={styles.submitButton} onPress={handleSubmit}>
                     <Text style={styles.submitText}>Submit</Text>

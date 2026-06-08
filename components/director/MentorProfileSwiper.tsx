@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-// Mock data as fallback
 const mockProfiles = [
   {
     id: "mock-1",
@@ -54,7 +53,7 @@ export default function MentorProfileSwiper({
 }: MentorProfileSwiperProps) {
   const [imageErrors, setImageErrors] = React.useState<Record<string, boolean>>({});
 
-  // Use provided mentors or fall back to mock data
+  
   const displayProfiles = React.useMemo(() => {
     if (mentors && mentors.length > 0) {
       return mentors.map(mentor => ({
@@ -122,7 +121,7 @@ export default function MentorProfileSwiper({
           <Text style={styles.emptyText}>No mentors to preview yet.</Text>
         </View>
       )}
-      {/* thin divider */}
+      {}
       <View style={styles.divider} />
     </View>
   );

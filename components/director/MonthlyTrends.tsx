@@ -152,7 +152,7 @@ const MonthlyTrendsChart: React.FC = () => {
             onPress={handleOutsidePress}
             style={styles.container}
         >
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <View style={styles.headerRight}>
                     <View style={styles.legendContainer}>
@@ -173,7 +173,7 @@ const MonthlyTrendsChart: React.FC = () => {
                 </View>
             </View>
 
-            {/* Chart */}
+            {}
             <View style={styles.chartWrapper}>
                 <BarChart
                     data={chartData}
@@ -220,7 +220,7 @@ const MonthlyTrendsChart: React.FC = () => {
                     endSpacing={8}
                 />
 
-                {/* Custom Tooltip */}
+                {}
                 {selectedBar && (
                     <TouchableOpacity
                         activeOpacity={1}
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
         padding: 12,
         paddingTop: 16,
         marginVertical: 8,
-        // marginHorizontal: 16,
+        
     },
     header: {
         marginBottom: 16,

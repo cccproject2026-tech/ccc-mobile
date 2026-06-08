@@ -7,7 +7,7 @@ import {
 import { create } from 'zustand';
 
 interface GrantStore {
-    // State
+    
     form: GrantFormResponse | null;
     applications: MicrograntApplication[];
     currentApplication: MicrograntApplicationDetail | null;
@@ -15,7 +15,7 @@ interface GrantStore {
     isSubmitting: boolean;
     error: string | null;
 
-    // Actions
+    
     fetchGrantForm: () => Promise<void>;
     fetchApplications: (status?: string) => Promise<void>;
     fetchApplicationById: (applicationId: string) => Promise<void>;

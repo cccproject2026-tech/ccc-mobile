@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 const mockMentees: Mentee[] = [
-    // Full Scholarship
+    
     {
         id: '1',
         name: 'John Doe',
@@ -46,7 +46,7 @@ const mockMentees: Mentee[] = [
         profileImage: 'https://randomuser.me/api/portraits/men/33.jpg',
     },
 
-    // Partial Scholarship
+    
     {
         id: '4',
         name: 'Sarah Johnson',
@@ -68,7 +68,7 @@ const mockMentees: Mentee[] = [
         profileImage: 'https://randomuser.me/api/portraits/men/34.jpg',
     },
 
-    // Half Scholarship
+    
     {
         id: '6',
         name: 'David Wilson',
@@ -90,7 +90,7 @@ const mockMentees: Mentee[] = [
         profileImage: 'https://randomuser.me/api/portraits/women/46.jpg',
     },
 
-    // ADRA Discount
+    
     {
         id: '8',
         name: 'Robert Taylor',
@@ -194,7 +194,7 @@ export default function ProductAndServices() {
                 handleCloseModal();
                 setTimeout(() => {
                     router.push(`/(director)/(tabs)/mentees/notes`);
-                    // router.push(`/(director)/(tabs)/mentees/${selectedMentee?.id}/mentor-notes`);
+                    
                 }, 300);
             }
         },
@@ -219,7 +219,7 @@ export default function ProductAndServices() {
 
     const handleCloseModal = useCallback(() => {
         bottomSheetModalRef.current?.dismiss();
-        // Clear selected mentee after modal closes
+        
         setTimeout(() => {
             setSelectedMentee(null);
         }, 300);
@@ -248,7 +248,7 @@ export default function ProductAndServices() {
             );
         }
 
-        // Filter based on scholarship type based on amount
+        
         if (activeTab === 'full-scholarship') {
             filtered = filtered.filter((mentee) => mentee.scholarshipAmount === 500);
         } else if (activeTab === 'partial-scholarship') {
@@ -271,7 +271,7 @@ export default function ProductAndServices() {
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View className="flex-1 pt-6">
-                    {/* Header */}
+                    {}
                     <View className="flex-row items-center justify-between px-4 pb-3 mb-4 border-b border-white/30">
                         <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
                             <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -291,12 +291,12 @@ export default function ProductAndServices() {
                         </View>
                     </View>
 
-                    {/* Search Bar */}
+                    {}
                     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
                         <SearchBar value={search} onChangeValue={setSearch} />
                     </View>
 
-                    {/* Tabs */}
+                    {}
                     <TabSwitcher
                         tabs={tabs}
                         activeTab={activeTab}
@@ -304,7 +304,7 @@ export default function ProductAndServices() {
                     />
 
 
-                    {/* Sort By */}
+                    {}
                     <View className="flex-row items-center justify-end gap-2 px-4 mb-4">
                         <Text className="text-base text-white">Sort by</Text>
                         <Pressable
@@ -318,7 +318,7 @@ export default function ProductAndServices() {
                         </Pressable>
                     </View>
 
-                    {/* Mentees List */}
+                    {}
                     <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
                         {filteredMentees.map((mentee) => (
                             <MenteeCard

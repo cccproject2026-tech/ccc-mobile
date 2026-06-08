@@ -204,7 +204,7 @@ export const generateDefaultMonthlyAvailability = (
     const date = new Date(year, month - 1, day);
     const dayOfWeek = date.getDay();
 
-    // Monday to Friday (1-5)
+    
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
       const dateString = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       availability.push({
@@ -242,7 +242,6 @@ interface UseWeeklyAvailabilityOptions {
   role?: string;
 }
 
-// Helper function to format time slot
 export const formatTimeSlot = (slot: TimeSlot): string => {
   return `${slot.startTime} ${slot.startPeriod} - ${slot.endTime} ${slot.endPeriod}`;
 };
@@ -258,7 +257,6 @@ export const convertTo24Hour = (time: string, period: "AM" | "PM"): number => {
   return hour;
 };
 
-// Helper to get day name
 export const getDayName = (dayNumber: number): string => {
   const days = [
     "Sunday",
@@ -301,7 +299,7 @@ export const useWeeklyAvailability = (
       }
       return data;
     },
-    staleTime: 2000, // 2 seconds
+    staleTime: 2000,
     retry: 2,
     enabled: Boolean(mentorId) && options?.enabled !== false,
   });
@@ -384,19 +382,17 @@ export const useMonthlyAvailability = (
   };
 };
 
-// Helper hook to get current month availability
 export const useCurrentMonthAvailability = (
   mentorId: string | null,
   options?: UseMonthlyAvailabilityOptions,
 ) => {
   const currentDate = new Date();
-  const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+  const month = currentDate.getMonth() + 1;
   const year = currentDate.getFullYear();
 
   return useMonthlyAvailability({ mentorId, month, year }, options);
 };
 
-// Helper hook to navigate between months
 export const useAvailabilityNavigator = (
   mentorId: string | null,
   role?: string,
@@ -436,7 +432,7 @@ export const useAvailabilityNavigator = (
   const canGoToNextMonth = () => {
     const nextMonth = new Date(selectedDate);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
-    // Optional: Add logic to limit how far in the future users can go
+    
     return true;
   };
 
@@ -482,7 +478,7 @@ export const useSetAvailability = (options?: UseSetAvailabilityOptions) => {
     mutationFn: (payload: SetAvailabilityPayload) =>
       appointmentService.setAvailability(payload),
     onSuccess: (data) => {
-      // Invalidate related queries to refetch updated data
+      
       queryClient.invalidateQueries({ queryKey: ["weekly-availability"] });
       queryClient.invalidateQueries({ queryKey: ["monthly-availability"] });
       queryClient.invalidateQueries({ queryKey: ["appointments"] });

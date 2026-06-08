@@ -83,7 +83,6 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// ============= Utility Functions =============
 const normalizeMeetingUrl = (raw: string): string => {
   const trimmed = raw.trim();
   if (!trimmed) return trimmed;
@@ -198,7 +197,6 @@ const mapApiSummaryToMeetingSummary = (summary?: TranscriptSummary): PastorMeeti
   };
 };
 
-// ============= Components =============
 const MeetingJoinDetails = ({ meetingLink, platform }: { meetingLink: string; platform: AppointmentPlatform }) => {
   const link = meetingLink.trim();
   const zoomId = platform === "zoom" ? parseZoomMeetingIdFromUrl(link) : undefined;
@@ -366,7 +364,7 @@ const SessionAccordion = ({
   const { horizontalPad: padH, cardRadius } = usePastorMeetingLayout();
 
   const toggle = () => {
-    // Keep expanded (no accordion collapse)
+    
   };
 
   return (
@@ -424,7 +422,6 @@ const SessionAccordion = ({
   );
 };
 
-// ============= Main Screen =============
 export default function PastorSessionDetailScreen() {
   const layout = usePastorMeetingLayout();
   const router = useRouter();
@@ -715,7 +712,7 @@ export default function PastorSessionDetailScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={sessionGradientColors} style={styles.gradient}>
-        {/* Header */}
+        
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
@@ -733,12 +730,12 @@ export default function PastorSessionDetailScreen() {
           ]}
           nestedScrollEnabled
         >
-          {/* Progress Indicator */}
+          
           <View style={styles.progressSection}>
             <SessionProgressHeader sessions={sortedSessions} nextSessionId={nextSessionId} />
           </View>
 
-          {/* Hero Card */}
+          
           <View style={styles.heroCard}>
             <View style={styles.heroHeader}>
               <View style={styles.heroInfo}>
@@ -781,7 +778,7 @@ export default function PastorSessionDetailScreen() {
             )}
           </View>
 
-          {/* Sessions List */}
+          
           <View style={styles.sessionsSection}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Meeting History</Text>
@@ -861,7 +858,6 @@ export default function PastorSessionDetailScreen() {
   );
 }
 
-// ============= Styles =============
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   gradient: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },

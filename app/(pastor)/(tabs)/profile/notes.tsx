@@ -137,7 +137,7 @@ export default function PastorNotes() {
           />
         </View>
 
-        {/* Notes List */}
+        {}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}

@@ -52,7 +52,7 @@ export default function AssignToPage() {
   // Fetch assessment to get existing assignments (optional, now we rely on mentee progress)
   const { isLoading: assessmentLoading } = useAssessment(assessmentId);
 
-  // Only mentees assigned to this mentor
+  
   const {
     data: menteesResponse,
     isLoading: loading,
@@ -65,7 +65,7 @@ export default function AssignToPage() {
 
   const assignAssessmentMutation = useAssignAssessment();
 
-  // Map mentees to display format
+  
   const mentees: MenteeDisplay[] = useMemo(() => {
     if (!menteesResponse?.pages.flatMap((page: any) => page.mentees)) return [];
     return menteesResponse.pages.flatMap((page: any) => page.mentees).map((mentee: any) => ({
@@ -106,7 +106,6 @@ export default function AssignToPage() {
       return selectableMentees.length > 0 && selectableMentees.every(m => selectedMentees.has(m.id));
   }, [selectableMentees, selectedMentees]);
 
-
   const toggleSelection = (menteeId: string) => {
     setSelectedMentees((prev) => {
       const next = new Set(prev);
@@ -123,10 +122,10 @@ export default function AssignToPage() {
     setSelectedMentees((prev) => {
         const newSet = new Set(prev);
         if (areAllSelectableSelected) {
-            // Deselect all visible selectable
+            
             selectableMentees.forEach((m) => newSet.delete(m.id));
         } else {
-            // Select all visible selectable
+            
             selectableMentees.forEach((m) => newSet.add(m.id));
         }
         return newSet;
@@ -137,7 +136,7 @@ export default function AssignToPage() {
     return Array.from(selectedMentees)
       .map((id) => mentees.find((m) => m.id === id)?.name)
       .filter(Boolean)
-      .slice(0, 3); // Show max 3 names
+      .slice(0, 3);
   }, [selectedMentees, mentees]);
 
   const handleAssign = async () => {
@@ -174,7 +173,7 @@ export default function AssignToPage() {
     console.log('mentee', JSON.stringify(mentee, null, 2));
     return (
       <View style={styles.menteeCard}>
-        {/* Avatar */}
+        {}
         <View style={styles.avatarContainer}>
           <Image
             source={mentee.avatar}
@@ -183,12 +182,12 @@ export default function AssignToPage() {
           />
         </View>
 
-        {/* Name */}
+        {}
         <Text style={styles.menteeName} numberOfLines={1}>
           {mentee.name}
         </Text>
 
-        {/* Checkbox */}
+        {}
         <Pressable
           onPress={() => toggleSelection(mentee.id)}
           hitSlop={8}
@@ -197,7 +196,7 @@ export default function AssignToPage() {
             style={[
               styles.checkbox,
               isSelected && {
-                // borderColor: "#5EB3D1",
+                
                 backgroundColor: "#fff",
               },
             ]}
@@ -252,7 +251,7 @@ export default function AssignToPage() {
         role="mentor"
       />
 
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="arrow-back" size={24} color="#E2E8F0" />
@@ -261,7 +260,7 @@ export default function AssignToPage() {
       </View>
 
       <View style={{ paddingHorizontal: 16 }}>
-        {/* Search Bar */}
+        {}
         <View style={{ marginTop: 14 }}>
           <SearchBar
             value={search}
@@ -270,7 +269,7 @@ export default function AssignToPage() {
                  />
         </View>
 
-        {/* Select All */}
+        {}
         <Pressable
           onPress={handleSelectAll}
           hitSlop={8}
@@ -282,7 +281,7 @@ export default function AssignToPage() {
         </Pressable>
       </View>
 
-      {/* Mentees List */}
+      {}
       <View style={{ flex: 1, marginTop: 16 }}>
         {loading || assessmentLoading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -339,7 +338,7 @@ export default function AssignToPage() {
         )}
       </View>
 
-      {/* Bottom Action Bar */}
+      {}
       {selectedMentees.size > 0 && (
         <View
             style={[
@@ -379,7 +378,7 @@ export default function AssignToPage() {
         </View>
       )}
 
-      {/* Success Modal */}
+      {}
       <AssessmentAssignedSuccessModal
         visible={showSuccessModal}
         onClose={handleSuccessModalClose}

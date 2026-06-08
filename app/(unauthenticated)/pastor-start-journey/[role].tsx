@@ -77,7 +77,7 @@ export default function PastorStartJourneyScreen() {
                 <View style={styles.bgCircleTop} />
                 <View style={styles.bgCircleBottom} />
 
-                {/* Top bar */}
+                {}
                 <View style={styles.topBar}>
                     <Pressable onPress={handleBack} hitSlop={12} style={styles.backBtn}>
                         <Ionicons name="chevron-back" size={20} color="rgba(255,255,255,0.9)" />
@@ -88,10 +88,10 @@ export default function PastorStartJourneyScreen() {
                     </Pressable>
                 </View>
 
-                {/* Content */}
+                {}
                 <View style={styles.content}>
 
-                    {/* Illustration area */}
+                    {}
                     <View style={styles.illustrationArea}>
                         <View style={styles.outerRing}>
                             <View style={styles.innerRing}>
@@ -106,7 +106,7 @@ export default function PastorStartJourneyScreen() {
                         </View>
                     </View>
 
-                    {/* Heading */}
+                    {}
                     <View style={styles.headingBlock}>
                         <Text style={styles.headingLight}>We will guide you</Text>
                         <Text style={styles.headingStrong}>
@@ -124,7 +124,7 @@ export default function PastorStartJourneyScreen() {
                         <View style={styles.dividerLine} />
                     </View>
 
-                    {/* Step cards */}
+                    {}
                     <View style={styles.cardList}>
                         {STEPS.map((step, i) => {
                             const isActive = i === activeStep;
@@ -165,7 +165,7 @@ export default function PastorStartJourneyScreen() {
                     {!!roleLabel && <Text style={styles.hiddenRoleText}>{roleLabel}</Text>}
                 </View>
 
-                {/* Bottom */}
+                {}
                 <View style={styles.bottomArea}>
                     <Pressable onPress={handleContinue} style={styles.continueBtn}>
                         <Text style={styles.continueText}>Continue</Text>
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.04)",
     },
 
-    // Top bar
+    
     topBar: {
         flexDirection: "row",
         alignItems: "center",
@@ -261,12 +261,12 @@ const styles = StyleSheet.create({
         fontWeight: "500",
     },
 
-    // Content
+    
     content: {
         flex: 1,
     },
 
-    // Illustration
+    
     illustrationArea: {
         alignItems: "center",
         marginBottom: 16,
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 
-    // Heading
+    
     headingBlock: {
         marginBottom: 12,
     },
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.12)",
     },
 
-    // Cards
+    
     cardList: {
         gap: 16,
         marginBottom: 8,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
 
-    // Bottom
+    
     bottomArea: {
         gap: 8,
         paddingTop: 6,

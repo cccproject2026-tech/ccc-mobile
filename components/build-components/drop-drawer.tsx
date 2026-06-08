@@ -11,7 +11,7 @@ import {
   ViewStyle,
 } from "react-native";
 
-// Enable layout animation for Android
+
 if (Platform.OS === "android") {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -71,7 +71,7 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
     } else {
       setSelectedValues([...selectedValues, value]);
     }
-    // Close dropdown after selection
+    
     Animated.timing(animation, {
       toValue: 0,
       duration: 300,
@@ -100,7 +100,7 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
 
   return (
     <View style={[styles.container, containerStyle]}>
-      {/* Header */}
+      {}
       <TouchableOpacity
         style={styles.header}
         onPress={toggleExpanded}
@@ -116,7 +116,7 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
         />
       </TouchableOpacity>
 
-      {/* Animated Dropdown Content */}
+      {}
       <Animated.View
         style={[styles.contentContainer, { height: animatedHeight }]}
       >
@@ -134,7 +134,7 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
               onPress={() => toggleItem(item.value)}
               activeOpacity={0.7}
             >
-              {/* Indicator circle or checkbox in hidden measure container */}
+              {}
               <View
                 style={[
                   useCircleIndicator ? styles.circleIndicator : styles.checkbox,
@@ -157,7 +157,7 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
           ))}
         </View>
 
-        {/* Visible content */}
+        {}
         <View style={styles.visibleContent}>
           {items.map((item, index) => (
             <TouchableOpacity
@@ -169,7 +169,7 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
               onPress={() => toggleItem(item.value)}
               activeOpacity={0.7}
             >
-              {/* Indicator circle or checkbox */}
+              {}
               <View
                 style={[
                   useCircleIndicator ? styles.circleIndicator : styles.checkbox,
@@ -181,7 +181,7 @@ const CustomDrawerDropdown: React.FC<CustomDrawerDropdownProps> = ({
               >
                 {isSelected(item.value) &&
                   (useCircleIndicator ? (
-                    // <Ionicons name="radio-button-on" size={14} color="white" />
+                    
                     <></>
                   ) : (
                     <Ionicons name="checkmark" size={14} color="white" />

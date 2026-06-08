@@ -1,13 +1,13 @@
 import { Comment, Division, Phase, Query, QueryResponse, RevitalizationData, Task } from './types';
 
-// Existing helpers
+
 export const getTask = (data: RevitalizationData, id: string): Task => data.tasks[id];
 export function getPhase(data: RevitalizationData, phaseId: string): Phase {
     return data.phases[phaseId];
 }
 
 export function getPhaseTasks(data: RevitalizationData, phase: Phase): Task[] {
-    // If phase has divisions, get tasks from all divisions
+    
     if (phase.divisions && data.divisions) {
         const allTasks: Task[] = [];
         phase.divisions.forEach(divId => {
@@ -22,7 +22,7 @@ export function getPhaseTasks(data: RevitalizationData, phase: Phase): Task[] {
         return allTasks;
     }
 
-    // Otherwise get direct tasks
+    
     if (phase.tasks) {
         return phase.tasks
             .map(taskId => data.tasks[taskId])
@@ -32,7 +32,7 @@ export function getPhaseTasks(data: RevitalizationData, phase: Phase): Task[] {
     return [];
 }
 
-// Comment helpers
+
 export const getComment = (data: RevitalizationData, id: string): Comment | undefined =>
     data.comments?.[id];
 
@@ -50,8 +50,7 @@ export const getUnreadCommentCount = (data: RevitalizationData, taskId: string):
     return getTaskComments(data, taskId).filter(c => c.status === 'UNREAD').length;
 };
 
-// Query helpers
-// Query helpers - simplified, no filtering by phase/task
+
 export const getQuery = (data: RevitalizationData, id: string): Query | undefined =>
     data.queries?.[id];
 

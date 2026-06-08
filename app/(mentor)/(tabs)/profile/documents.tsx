@@ -18,15 +18,15 @@ import { CommonCard, GradientBackground, SectionHeader } from "@/components/ui/d
 import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme"
 
 export default function MentorDocumentsScreen() {
-  // Fetch profile to get user name
+  
   const { data: profileData } = useProfile()
   const user = profileData?.user
   const userName = user ? `${user.firstName} ${user.lastName}`.trim() : "Me"
 
-  // Fetch documents for the current mentor
+  
   const { data: documents, isLoading, refetch } = useDocuments()
 
-  // Format date for display (US format)
+  
   const formatDocumentDate = React.useCallback((dateString?: string): string => {
     if (!dateString) return "Unknown date"
     const date = new Date(dateString)
@@ -39,20 +39,20 @@ export default function MentorDocumentsScreen() {
     })
   }, [])
 
-  // Format documents for display
+  
   const formattedDocuments = useMemo(() => {
     if (!documents || documents.length === 0) return { recentUploads: [], library: [] }
 
-    // Sort by upload date (most recent first)
+    
     const sorted = [...documents].sort((a, b) => {
       const dateA = new Date(a.uploadedAt || 0).getTime()
       const dateB = new Date(b.uploadedAt || 0).getTime()
       return dateB - dateA
     })
 
-    // Recent uploads (last 5)
+    
     // defined as uploaded in the last 7 days for example? Or just top 5?
-    // The original code took top 5.
+    
     const recentUploads = sorted.slice(0, 5).map((doc, index) => ({
       id: doc.id || index.toString(),
       title: doc.fileName || "Document",
@@ -60,7 +60,7 @@ export default function MentorDocumentsScreen() {
       original: doc
     }))
 
-    // Library (all documents)
+    
     const library = sorted.map((doc, index) => ({
       id: doc.id || index.toString(),
       title: doc.fileName || "Document",
@@ -70,7 +70,6 @@ export default function MentorDocumentsScreen() {
 
     return { recentUploads, library }
   }, [documents, formatDocumentDate])
-
 
   if (isLoading) {
     return (
@@ -123,7 +122,7 @@ export default function MentorDocumentsScreen() {
   }
     
   // Using FlatList for the main library list to be "pagination ready"
-  // Header component for FlatList includes top nav, breadcrumbs, recent uploads
+  
   const ListHeader = () => (
     <View>
       <SectionHeader
@@ -133,7 +132,7 @@ export default function MentorDocumentsScreen() {
         showBackButton
       />
 
-      {/* Recent Uploads */}
+      {}
       {renderRecentUploads()}
 
       <View style={styles.sectionBlock}>
@@ -142,7 +141,7 @@ export default function MentorDocumentsScreen() {
     </View>
   )
     
-  // Using FlatList for performance and future pagination
+  
   return (
     <GradientBackground>
       <Stack.Screen options={{ headerShown: false }} />

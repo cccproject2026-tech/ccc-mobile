@@ -85,14 +85,14 @@ export default function CreateAssessmentPage() {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
 
-  // Pre-Survey Toggle (determines PMP vs CMA)
+  
   const [hasPreSurvey, setHasPreSurvey] = useState(false);
 
-  // Assessment Details
+  
   const [assessmentName, setAssessmentName] = useState("");
   const [briefDescription, setBriefDescription] = useState("");
 
-  // General Instructions
+  
   const [instructions, setInstructions] = useState<Instruction[]>([
     { id: "1", text: "" },
   ]);
@@ -102,7 +102,7 @@ export default function CreateAssessmentPage() {
     { id: '1', text: '', type: 'number', placeholder: 'Enter number' },
   ]);
 
-  // Sections (each section has its own recommendations for Level 1–4 CDP)
+  
   const [sections, setSections] = useState<Section[]>([
     {
       id: "1",
@@ -116,14 +116,14 @@ export default function CreateAssessmentPage() {
     },
   ]);
 
-  // Dropdown states for each section
+  
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
-  // Loading and success states
+  
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const createAssessmentMutation = useCreateAssessment();
 
-  // Image Upload
+  
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   const handleImagePicker = async () => {
@@ -372,7 +372,7 @@ export default function CreateAssessmentPage() {
   };
 
   const handleCreate = async () => {
-    // Validation
+    
     if (!assessmentName.trim()) {
       Alert.alert("Error", "Please enter an assessment name.");
       return;
@@ -383,7 +383,7 @@ export default function CreateAssessmentPage() {
       return;
     }
 
-    // Filter out empty instructions
+    
     const validInstructions = instructions
       .map((inst) => inst.text.trim())
       .filter((text) => text.length > 0);
@@ -393,7 +393,7 @@ export default function CreateAssessmentPage() {
       return;
     }
 
-    // Validate pre-survey questions if hasPreSurvey is true
+    
     let validPreSurvey: { text: string; type: string; placeholder: string; required: boolean }[] = [];
     if (hasPreSurvey) {
       validPreSurvey = preSurveyQuestions
@@ -414,7 +414,7 @@ export default function CreateAssessmentPage() {
     // Validate sections (each section includes its own recommendations for Level 1–4 CDP)
     const validSections = sections
       .map((section) => {
-        // Filter out empty layers and choices
+        
         const validLayers = section.layers
           .map((layer, layerIndex) => {
             const validChoices = layer.choices
@@ -468,7 +468,7 @@ export default function CreateAssessmentPage() {
       return;
     }
 
-    // Determine assessment type based on hasPreSurvey
+    
     const assessmentType: AssessmentType = hasPreSurvey ? 'CMA' : 'PMP';
 
     const requestData: any = {
@@ -479,7 +479,7 @@ export default function CreateAssessmentPage() {
       sections: validSections,
     };
 
-    // Add preSurvey only if hasPreSurvey is true
+    
     if (hasPreSurvey) {
       requestData.preSurvey = validPreSurvey;
     }
@@ -513,7 +513,7 @@ export default function CreateAssessmentPage() {
       />
 
       <KeyboardSafeContainer mode="avoid" style={{ flex: 1 }}>
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={10}>
             <Ionicons name="arrow-back" size={24} color="#E2E8F0" />
@@ -521,7 +521,7 @@ export default function CreateAssessmentPage() {
           <Text style={styles.headerTitle}>Create - Assessment</Text>
         </View>
 
-        {/* Form Content */}
+        {}
         <KeyboardSafeContainer
           style={styles.scrollView}
           contentContainerStyle={{
@@ -530,7 +530,7 @@ export default function CreateAssessmentPage() {
           }}
           extraScrollHeight={24}
         >
-        {/* Assessment Details */}
+        {}
         <View style={styles.section}>
           <TextInput
             style={styles.input}
@@ -550,7 +550,7 @@ export default function CreateAssessmentPage() {
           />
         </View>
 
-        {/* Pre-Survey Toggle */}
+        {}
         <View style={styles.typeSelectionContainer}>
           <Text style={styles.typeLabel}>Include Pre-Survey Questions?</Text>
           <View style={styles.radioGroup}>
@@ -580,7 +580,7 @@ export default function CreateAssessmentPage() {
           </View>
         </View>
 
-        {/* General Instructions */}
+        {}
         <View style={styles.section}>
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>
@@ -614,7 +614,7 @@ export default function CreateAssessmentPage() {
           </View>
         </View>
 
-        {/* Pre-Survey Questions (shown only if hasPreSurvey is true) */}
+        {}
         {hasPreSurvey && (
           <View style={styles.boxContainer}>
             <Text style={styles.boxTitle}>Pre-Survey Questions</Text>
@@ -652,7 +652,7 @@ export default function CreateAssessmentPage() {
           </View>
         )}
 
-        {/* Sections */}
+        {}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Sections</Text>
@@ -695,7 +695,7 @@ export default function CreateAssessmentPage() {
                 numberOfLines={3}
               />
 
-              {/* Number of Layers */}
+              {}
               <View style={styles.layerCountContainer}>
                 <Text style={styles.layerCountLabel}>Number of Layers:</Text>
                 <View style={styles.layerCountControls}>
@@ -731,12 +731,12 @@ export default function CreateAssessmentPage() {
                 </View>
               </View>
 
-              {/* Layers */}
+              {}
               {section.layers.map((layer, layerIndex) => (
                 <View key={layer.id} style={styles.layerSection}>
                   <Text style={styles.layerTitle}>Layer {layerIndex + 1}</Text>
 
-                  {/* Choices */}
+                  {}
                   <Text style={styles.layerFieldLabel}>Choices</Text>
                   {layer.choices.map((choice, choiceIndex) => (
                     <View key={choice.id} style={styles.choiceRow}>
@@ -768,7 +768,7 @@ export default function CreateAssessmentPage() {
                 </View>
               ))}
 
-              {/* Per-section CDP: Level 1–4 Customized Development Plans */}
+              {}
               <View style={styles.cdpSection}>
                 <Text style={styles.cdpSectionTitle}>
                   Customized Development Plans (this section)
@@ -819,7 +819,7 @@ export default function CreateAssessmentPage() {
           ))}
         </View>
 
-        {/* Image Upload */}
+        {}
         <View style={styles.uploadContainer}>
           <TouchableOpacity
             style={styles.uploadButton}
@@ -836,7 +836,7 @@ export default function CreateAssessmentPage() {
           )}
         </View>
 
-        {/* Action Buttons */}
+        {}
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.cancelButton}
@@ -859,7 +859,7 @@ export default function CreateAssessmentPage() {
       </KeyboardSafeContainer>
       </KeyboardSafeContainer>
 
-      {/* Success Modal */}
+      {}
       <AssessmentCreatedSuccessModal
         visible={showSuccessModal}
         onClose={handleSuccessModalClose}
@@ -1127,7 +1127,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  // New styles for Pre-Survey
+  
   typeSelectionContainer: {
     marginBottom: 24,
   },

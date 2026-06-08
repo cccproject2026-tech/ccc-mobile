@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-// ==================== Store State ====================
+
 interface AssessmentStoreState {
     draftResponses: Record<string, AssessmentResponse>;
 }
@@ -17,20 +17,20 @@ interface AssessmentStoreActions {
     updatePreSurveyAnswers: (assessmentId: string, answers: Record<string, string>) => void;
 }
 
-// ==================== Store Type ====================
+
 type AssessmentStore = AssessmentStoreState & AssessmentStoreActions;
 
-// ==================== Storage Key ====================
+
 const STORAGE_KEY = 'assessment-drafts';
 
 // ==================== Zustand Store ====================
 export const useAssessmentStore = create<AssessmentStore>()(
     persist(
         (set, get) => ({
-            // ==================== State ====================
+            
             draftResponses: {},
 
-            // ==================== Actions ====================
+            
             saveDraft: (assessmentId: string, response: AssessmentResponse) => {
                 set((state) => ({
                     draftResponses: {

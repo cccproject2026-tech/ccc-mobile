@@ -91,7 +91,7 @@ export default function MenteeRoadmapDetailScreen() {
     const filteredRoadmaps = useMemo(() => {
         let filtered = mockRoadmapData;
 
-        // Filter by search
+        
         if (search) {
             filtered = filtered.filter((item) =>
                 item.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -99,7 +99,7 @@ export default function MenteeRoadmapDetailScreen() {
             );
         }
 
-        // Filter by tab
+        
         if (activeTab !== 'All') {
             filtered = filtered.filter((item) => item.filterStatus === activeTab);
         }
@@ -185,7 +185,7 @@ export default function MenteeRoadmapDetailScreen() {
             <View style={styles.content}>
                 <TopBar notifications={4} showUserName={true} showNotifications={true} />
 
-                {/* Header */}
+                {}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -201,19 +201,19 @@ export default function MenteeRoadmapDetailScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Search Bar */}
+                {}
                 <View style={styles.searchContainer}>
                     <SearchBar value={search} onChangeValue={setSearch} />
                 </View>
 
-                {/* Tab Buttons */}
+                {}
                 <TabSwitcher
                     tabs={tabs}
                     activeTab={activeTab}
                     onChange={(key) => setActiveTab(key as TabType)}
                 />
 
-                {/* Roadmap List */}
+                {}
                 <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                     {filteredRoadmaps.map((item) => (
                         <RoadmapCard

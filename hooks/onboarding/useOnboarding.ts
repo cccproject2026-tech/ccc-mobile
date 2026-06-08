@@ -1,4 +1,4 @@
-// hooks/useOnboarding.ts
+
 import { authService } from "@/services/auth.service";
 import { onboardingService } from "@/services/onboarding.service";
 import { profileService } from "@/services/profile.service";
@@ -117,8 +117,6 @@ export const useCheckOnboardingStatus = () => {
   });
 };
 
-// Submit interest mutation
-// Submit interest mutation
 export const useSubmitInterest = () => {
   const router = useRouter();
   const { setUserId, setApplicationId, setInterestStatus, setInterestData } =
@@ -134,7 +132,7 @@ export const useSubmitInterest = () => {
       const userId = response.data?.userId;
       const applicationId = response.data?.id;
 
-      // Save to store
+      
       if (userId) setUserId(userId);
       if (applicationId) setApplicationId(applicationId);
       setInterestStatus("pending");
@@ -149,7 +147,6 @@ export const useSubmitInterest = () => {
   });
 };
 
-// Check approval status query
 export const useCheckApprovalStatus = (enabled: boolean = false) => {
   const { userId, email, interestData, interestStatus, applicationId } =
     useOnboardingStore();

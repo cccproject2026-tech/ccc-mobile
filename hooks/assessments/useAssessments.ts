@@ -6,7 +6,7 @@ export const useAssessments = () => {
     return useQuery<ApiAssessment[]>({
         queryKey: ['assessments'],
         queryFn: () => assessmentService.getAssessments(),
-        staleTime: 2000, // 2 seconds
+        staleTime: 2000,
         retry: 2,
     });
 };

@@ -40,10 +40,6 @@ interface GradientCalendarProps {
   headerText?: string;
 }
 
-/* ============================= */
-/* ✅ SAFE DATE HELPERS (ADDED)  */
-/* ============================= */
-
 const isValidDate = (date: Date) =>
   date instanceof Date && !isNaN(date.getTime());
 
@@ -74,8 +70,6 @@ const parseLocalYmdToDate = (ymd: string): Date => {
 
 const YMD_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-/* ============================= */
-
 const GradientCalendar: React.FC<GradientCalendarProps> = ({
   selected,
   setSelected,
@@ -93,21 +87,21 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
   headerText = "Select Available Date",
   headerTextStyle,
 }) => {
-  /* ✅ FIXED INITIAL STATE */
+  
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
     selected && YMD_PATTERN.test(selected.trim())
       ? parseLocalYmdToDate(selected.trim())
       : new Date(),
   );
 
-  /* ✅ FIXED TODAY (no timezone bug) */
+  
   const today = formatDate(new Date());
 
-  /* ============================= */
-  /* Sync visible month when user selects a day — NOT when selection is cleared */
-  /* ============================= */
+  
+  
+  
   /* Clearing selected (e.g. "") used safeParseDate → today and jumped the grid back */
-  /* to the current month while the user had already navigated forward — looked like */
+  
   /* “next goes to May” and every day disabled. Only react to real YYYY-MM-DD picks. */
 
   useEffect(() => {
@@ -116,10 +110,10 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     setCurrentMonth(parseLocalYmdToDate(ymd));
   }, [selected]);
 
-  /* ============================= */
+  
   /* Date enabling: when availableDates is provided, use ONLY availableDates.includes(dateStr).
    * No filtering by current month/year — any date in availableDates is enabled. */
-  /* ============================= */
+  
 
   const isDateAvailable = (dateStr: string): boolean => {
     if (unavailableDates.includes(dateStr)) return false;
@@ -127,7 +121,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     if (disablePastDates && dateStr < today) return false;
 
     // When availableDates is provided, ONLY those dates are enabled.
-    // (If it's an empty array, that means no availability → disable all.)
+    
     if (availableDates) {
       return availableDates.includes(dateStr);
     }
@@ -166,9 +160,9 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     }
   };
 
-  /* ============================= */
-  /* ✅ SAFE MONTH NAVIGATION */
-  /* ============================= */
+  
+  
+  
 
   const handlePrevMonth = () => {
     const safePrev = safeParseDate(currentMonth);
@@ -191,9 +185,9 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     year: "numeric",
   });
 
-  /* ============================= */
-  /* ✅ FIXED MARKED DATES */
-  /* ============================= */
+  
+  
+  
 
   const markedDates = useMemo(() => {
     const marked: any = {};
@@ -204,7 +198,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     const month = safeMonth.getMonth();
 
     // Full visible grid for this month: Sunday before/on the 1st → Saturday after last day.
-    // (Previous code used `month - 1` for the start day, which shifted marking one month early
+    
     // and broke January / month boundaries — availability dots looked wrong after changing month.)
     const firstOfMonth = new Date(year, month, 1);
     const lastOfMonth = new Date(year, month + 1, 0);
@@ -216,7 +210,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
     const currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
-      /* ✅ REPLACED toISOString() */
+      
       const dateStr = formatDate(currentDate);
       const isAvailable = isDateAvailable(dateStr);
 
@@ -341,7 +335,7 @@ const GradientCalendar: React.FC<GradientCalendarProps> = ({
               textDayFontWeight: "500",
               arrowColor: "transparent",
               monthTextColor: "transparent",
-              // textMonthFontSize: 0,
+              
             }}
             style={{ backgroundColor: "transparent" }}
             hideArrows={true}

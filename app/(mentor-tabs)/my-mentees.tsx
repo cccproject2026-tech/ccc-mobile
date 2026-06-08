@@ -53,7 +53,7 @@ export default function MyMentees() {
 
   const { data: mentees, isLoading, isError } = useMentees()
 
-  // Filter mentees based on search text and active tab
+  
   const filteredMentees = useMemo(() => {
     let filtered = mentees?.mentees ?? []
 
@@ -82,7 +82,6 @@ export default function MyMentees() {
   const menteeMenuRef = useRef<MenteeMenuBottomSheetRef>(null)
   const scheduleMeetingRef = useRef<ScheduleMeetingBottomSheetRef>(null)
 
-
   const tabData = [
     { key: "ALL", label: "All" },
     { key: "IN_PROGRESS", label: "In Progress" },
@@ -100,13 +99,13 @@ export default function MyMentees() {
 
   const handleMenuAction = (action: string, mentee: any) => {
     console.log(`Action: ${action} for mentee: ${mentee?.name}`)
-    // Handle different actions here
+    
     switch (action) {
       case "revitalization-roadmap":
-        // Navigate to roadmap
+        
         break
       case "mentor-notes":
-        // Navigate to notes
+        
         router.push({
           pathname: "/(mentor-tabs)/mentor-notes",
           params: {
@@ -116,20 +115,20 @@ export default function MyMentees() {
         })
         break
       case "assessments":
-        // Navigate to assessments
+        
         break
       case "assignments":
-        // Navigate to assignments
+        
         break
       case "track-progress":
-        // Navigate to progress tracking
+        
         break
       case "schedule-meeting":
-        // Open schedule meeting bottom sheet
+        
         scheduleMeetingRef.current?.present()
         break
       case "mark-complete":
-        // Mark mentee program as complete
+        
         break
       default:
         break
@@ -201,7 +200,7 @@ export default function MyMentees() {
               }}
             >
               <View>
-                {/* Header Section */}
+                {}
                 <PastorNavigationHeader showNameTag />
                 <View style={styles.headerContainer}>
                   <View style={styles.headerContent}>
@@ -236,10 +235,10 @@ export default function MyMentees() {
                   </View>
                 </View>
 
-                {/* Separator */}
+                {}
                 <View className="h-[0.5px] bg-white/30 mt-1" />
 
-                {/* Search Section */}
+                {}
                 <View style={styles.searchContainer} className="mt-4">
                   <View style={styles.searchBox}>
                     <TextInput
@@ -258,7 +257,7 @@ export default function MyMentees() {
                   </View>
                 </View>
 
-                {/* Tabs */}
+                {}
                 <View style={{ paddingHorizontal: 6, marginBottom: 12 }}>
                   <TabSwitcher
                     tabs={tabData}
@@ -267,7 +266,7 @@ export default function MyMentees() {
                   />
                 </View>
 
-                {/* Quick Access Mentors (hidden when map is visible) */}
+                {}
                 {!showMap && (
                   <View style={styles.quickAccessContainer}>
                     <ScrollView
@@ -339,10 +338,10 @@ export default function MyMentees() {
                     </ScrollView>
                   </View>
                 )}
-                {/* Separator */}
+                {}
                 <View className="h-[0.5px] bg-white/20 mx-14" />
 
-                {/* phase select dropdown */}
+                {}
                 <View style={styles.filtersRow}>
                   <Text style={styles.filtersLabel}>Filters</Text>
                   <View style={{ position: "relative" }}>
@@ -367,7 +366,7 @@ export default function MyMentees() {
                     {showPhaseDropdown && (
                       <View style={styles.dropdownMenu}
                       >
-                        {/* Phase Section */}
+                        {}
                         <TouchableOpacity
                           activeOpacity={0.8}
                           style={styles.sectionHeader}
@@ -403,7 +402,7 @@ export default function MyMentees() {
 
                         <View style={styles.sectionDivider} />
 
-                        {/* State Section */}
+                        {}
                         <TouchableOpacity
                           activeOpacity={0.8}
                           style={styles.sectionHeader}
@@ -439,7 +438,7 @@ export default function MyMentees() {
 
                         <View style={styles.sectionDivider} />
 
-                        {/* Conference Section */}
+                        {}
                         <TouchableOpacity
                           activeOpacity={0.8}
                           style={styles.sectionHeader}
@@ -474,7 +473,7 @@ export default function MyMentees() {
 
                         <View style={styles.sectionDivider} />
 
-                        {/* Clear Sort */}
+                        {}
                         <TouchableOpacity
                           style={[styles.optionRow, { paddingVertical: 12 }]}
                           onPress={() => {
@@ -491,7 +490,7 @@ export default function MyMentees() {
                   </View>
                 </View>
 
-                {/* Map or Mentors List */}
+                {}
                 {showMap ? (
                   <View style={{ marginHorizontal: 16, marginTop: 12, marginBottom: 24, borderRadius: 10, overflow: "hidden", height: 410 }}>
                     <MapView
@@ -567,7 +566,7 @@ export default function MyMentees() {
         </SafeAreaView>
       </LinearGradient>
 
-        {/* Mentee Menu Bottom Sheet */}
+        {}
         <MenteeMenuBottomSheet
           ref={menteeMenuRef}
           mentee={selectedMentee}
@@ -575,7 +574,7 @@ export default function MyMentees() {
           onAction={handleMenuAction}
         />
 
-        {/* Schedule Meeting Bottom Sheet */}
+        {}
         <ScheduleMeetingBottomSheet
           ref={scheduleMeetingRef}
           mentee={selectedMentee}

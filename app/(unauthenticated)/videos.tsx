@@ -1,4 +1,4 @@
-// app/(login)/video-player.tsx
+
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { getFontSize, getSpacing } from "@/utils/responsive";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
@@ -51,7 +51,7 @@ export default function VideoPlayerScreen() {
         `;
     }, [currentVideoUrl]);
 
-    // Related/More videos
+    
     const relatedVideos = [
         {
             id: "related-1",
@@ -70,16 +70,16 @@ export default function VideoPlayerScreen() {
     ];
 
     const handleVideoPress = (video: any) => {
-        // router.replace({
-        //     pathname: "/(login)/video-player",
-        //     params: {
-        //         videoId: video.id,
-        //         title: video.title,
-        //         description: video.description,
-        //         videoUrl: video.videoUrl,
-        //         duration: video.duration,
-        //     },
-        // });
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     };
 
     return (
@@ -96,10 +96,10 @@ export default function VideoPlayerScreen() {
                         ]}
                         showsVerticalScrollIndicator={false}
                     >
-                        {/* Video Player Section */}
+                        {}
                         <View style={styles.videoSection}>
                             <View style={styles.videoContainer}>
-                                {/* Video Player */}
+                                {}
                                 <WebView
                                     key={currentVideoUrl}
                                     source={{ html }}
@@ -111,9 +111,9 @@ export default function VideoPlayerScreen() {
                                     scrollEnabled={false}
                                 />
 
-                                {/* Overlay Controls Container - Absolute */}
+                                {}
                                 <View style={styles.overlayContainer}>
-                                    {/* Back Button - Top Left */}
+                                    {}
                                     <TouchableOpacity
                                         onPress={() => router.back()}
                                         style={styles.backButton}
@@ -127,7 +127,7 @@ export default function VideoPlayerScreen() {
                                         <Text style={styles.backButtonText}>Back</Text>
                                     </TouchableOpacity>
 
-                                    {/* Logo - Top Right */}
+                                    {}
                                     <View style={styles.logoContainer}>
                                         <View style={styles.logoCircle}>
                                             <Image
@@ -141,7 +141,7 @@ export default function VideoPlayerScreen() {
 
                             </View>
 
-                            {/* Video Info - Blue Background */}
+                            {}
                             <View style={styles.videoInfoContainer}>
                                 <Text style={styles.videoTitle}>
                                     {title || "Center for Community Change"}
@@ -152,7 +152,7 @@ export default function VideoPlayerScreen() {
                             </View>
                         </View>
 
-                        {/* Related Videos Section */}
+                        {}
                         {relatedVideos.map((video, index) => (
                             <View key={index} style={styles.relatedVideoSection}>
                                 <TouchableOpacity
@@ -167,13 +167,13 @@ export default function VideoPlayerScreen() {
                                         />
 
                  
-                                        {/* Duration Badge */}
+                                        {}
                                         <View style={styles.durationBadge}>
                                             <Text style={styles.durationText}>{video.duration}</Text>
                                         </View>
                                     </View>
 
-                                    {/* Video Info - Blue Background */}
+                                    {}
                                     <View style={styles.videoInfoContainer}>
                                         <Text style={styles.videoTitle}>
                                             {video.title}
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
 
-    // Video Section
+    
     videoSection: {
         marginBottom: 0,
     },
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
         height: "100%",
     },
 
-    // Overlay Container - Contains back button and logo
+    
     overlayContainer: {
         position: "absolute",
         top: 0,
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
 
-    // Back Button
+    
     backButton: {
         flexDirection: "row",
         alignItems: "center",
@@ -252,9 +252,9 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
     },
 
-    // Logo Container
+    
     logoContainer: {
-        // No absolute positioning needed, it's in the flex row
+        
     },
     logoCircle: {
         width: getSpacing(44),
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
         height: "70%",
     },
 
-    // Video Controls (Center)
+    
     videoControlsCenter: {
         position: "absolute",
         top: 0,
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
         height: getSpacing(40),
     },
 
-    // Progress Bar (Bottom)
+    
     progressBarWrap: {
         position: "absolute",
         bottom: getSpacing(16),
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 
-    // Video Info Container (Blue Background)
+    
     videoInfoContainer: {
         backgroundColor: "#1e5a8e",
         paddingVertical: getSpacing(16),
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
         lineHeight: getFontSize(20),
     },
 
-    // Related Videos Section
+    
     relatedVideoSection: {
         marginTop: 0,
     },
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
         height: "100%",
     },
 
-    // Play Icon Overlay (for related videos)
+    
     playIconOverlay: {
         position: "absolute",
         top: 0,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
         borderColor: "rgba(255, 255, 255, 0.8)",
     },
 
-    // Duration Badge
+    
     durationBadge: {
         position: "absolute",
         bottom: getSpacing(12),

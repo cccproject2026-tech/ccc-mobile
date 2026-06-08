@@ -157,7 +157,7 @@ function FocusItemCard({
 
   return (
     <View style={styles.itemRow}>
-      {/* Timeline column */}
+      {}
       <View style={styles.timelineColumn}>
         <View style={[styles.timelineDot, isPrimary && styles.timelineDotPrimary]}>
           {isPrimary && (
@@ -167,7 +167,7 @@ function FocusItemCard({
         {!isLast && <View style={styles.timelineLine} />}
       </View>
 
-      {/* Card */}
+      {}
       <Animated.View style={{ flex: 1, transform: [{ scale }] }}>
         <TouchableOpacity
           activeOpacity={1}
@@ -176,7 +176,7 @@ function FocusItemCard({
           onPressOut={handlePressOut}
           style={[styles.itemCard, isPrimary && styles.itemCardPrimary]}
         >
-          {/* Header row */}
+          {}
           <View style={styles.itemHeader}>
             <Text
               style={[styles.itemTitle, isPrimary && styles.itemTitlePrimary]}
@@ -190,7 +190,7 @@ function FocusItemCard({
             </View>
           </View>
 
-          {/* Description */}
+          {}
           <Text
             style={[
               styles.itemDescription,
@@ -201,7 +201,7 @@ function FocusItemCard({
             {item.description}
           </Text>
 
-          {/* Meta pill */}
+          {}
           {!!item.meta && (
             <View style={styles.metaPill}>
               <Ionicons name="time-outline" size={11} color="#A8CFFF" />
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 4,
   },
-  // ── Header block ──
+  
   headerBlock: {
     gap: 8,
     paddingTop: 4,
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
-  // ── Timeline ──
+  
   itemRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
 
-  // ── Item card ──
+  
   itemCard: {
     flex: 1,
     backgroundColor: "rgba(255,255,255,0.055)",
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // ── Meta pill ──
+  
   metaPill: {
     alignSelf: "flex-start",
     flexDirection: "row",
@@ -710,8 +710,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-
-  // ── Empty state ──
+  
   emptyCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -730,7 +729,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
 
-  // ── Skeleton ──
+  
   skeletonDot: {
     backgroundColor: "rgba(255,255,255,0.1)",
     borderColor: "transparent",

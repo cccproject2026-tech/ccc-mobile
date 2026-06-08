@@ -51,14 +51,14 @@ const AvailabilityScreen = () => {
     "appointments" | "availability"
   >("availability");
   
-  // Reset active tab when screen comes into focus
+  
   useFocusEffect(
     useCallback(() => {
       setActiveTab("availability");
     }, [])
   );
 
-  // Weekly availability state
+  
   const [weeklyAvailability, setWeeklyAvailability] =
     React.useState<WeeklyAvailability>({
       monday: {
@@ -88,7 +88,7 @@ const AvailabilityScreen = () => {
       sunday: { enabled: false, slots: [] },
     });
 
-  // Meeting preferences state
+  
   const [meetingDuration, setMeetingDuration] = React.useState("60 Minutes");
   const [maxBookingPerDay, setMaxBookingPerDay] = React.useState("5");
   const [minSchedulingNotice, setMinSchedulingNotice] =
@@ -96,7 +96,7 @@ const AvailabilityScreen = () => {
   const [preferredMeetingOption, setPreferredMeetingOption] =
     React.useState("Zoom");
 
-  // Dropdown states
+  
   const [showDurationDropdown, setShowDurationDropdown] = React.useState(false);
   const [showMaxBookingDropdown, setShowMaxBookingDropdown] =
     React.useState(false);
@@ -271,7 +271,7 @@ const AvailabilityScreen = () => {
             <TopBar role="director" />
           </View>
           <View style={{ flex: 1 }}>
-            {/* Header */}
+            {}
             <Header
               title="Schedule"
               hideSearchBar={true}
@@ -279,7 +279,7 @@ const AvailabilityScreen = () => {
               showNewMeeting={false}
             />
 
-            {/* Tab Switcher */}
+            {}
             <View style={styles.tabContainer}>
               <Pressable
                 style={[
@@ -321,7 +321,7 @@ const AvailabilityScreen = () => {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.contentContainer}>
-                {/* Date Input */}
+                {}
                 <View style={styles.sectionContainer}>
                   <Text style={styles.sectionTitle}>
                     Enter a date (dd-mm-yyyy)
@@ -336,7 +336,7 @@ const AvailabilityScreen = () => {
                   </View>
                 </View>
 
-                {/* My Weekly Availability */}
+                {}
                 <View style={styles.sectionContainer}>
                   <View style={styles.sectionHeader}>
                     <Image
@@ -359,7 +359,7 @@ const AvailabilityScreen = () => {
                   </View>
                 </View>
 
-                {/* Available Hours */}
+                {}
                 <View style={styles.sectionContainer}>
                   <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Available Hours</Text>
@@ -439,7 +439,7 @@ const AvailabilityScreen = () => {
                   </View>
                 </View>
 
-                {/* Meeting Settings */}
+                {}
                 <View style={styles.sectionContainer}>
                   <Text style={styles.sectionTitle}>Meeting Duration</Text>
                   <Pressable
@@ -528,7 +528,7 @@ const AvailabilityScreen = () => {
                   )}
                 </View>
 
-                {/* Submit Button */}
+                {}
                 <Pressable style={styles.submitButton} onPress={handleSubmit}>
                   <Text style={styles.submitButtonText}>Submit</Text>
                 </Pressable>
@@ -538,7 +538,7 @@ const AvailabilityScreen = () => {
         </>
       </LinearGradient>
 
-      {/* Success Modal */}
+      {}
       <SimpleSuccessModal
         visible={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
@@ -549,7 +549,7 @@ const AvailabilityScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  // Tab Container
+  
   tabContainer: {
     flexDirection: "row",
     marginHorizontal: 16,

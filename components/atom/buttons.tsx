@@ -16,7 +16,7 @@ import {
 // Define button types as a union type for better type safety
 type ButtonType = "cancel" | "submit" | "schedule" | "custom" | "start";
 
-// Interface for Button component props
+
 interface ButtonProps {
   title: string;
   onPress: () => void;
@@ -29,7 +29,7 @@ interface ButtonProps {
   disabled?: boolean;
 }
 
-// Interface for UploadPDFButton component props
+
 interface UploadPDFButtonProps {
   title: string;
   onPress?: () => void;
@@ -51,7 +51,7 @@ export const Button: React.FC<ButtonProps> = ({
   textColor = "",
   disabled = false
 }) => {
-  // Base styles for better maintainability
+  
   const baseButtonStyle: ViewStyle = {
     padding: 8,
     borderRadius: 8,
@@ -217,7 +217,7 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
         setSelectedFile(result);
         console.log("Selected PDF:", result);
 
-        // Call onPress callback if provided
+        
         if (onPress) {
           onPress();
         }
@@ -243,7 +243,7 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
         textStyle={textStyle}
       />
 
-      {/* Optional: Display selected file name */}
+      {}
       {selectedFile && !selectedFile.canceled && (
         <Text style={styles.selectedFileText}>
           Selected: {selectedFile.assets?.[0]?.name || "Unknown file"}
@@ -310,7 +310,7 @@ export const SurveyButton = ({
 
 const styles = StyleSheet.create({
   uploadContainer: {
-    // Add any specific styles for the upload container
+    
   },
   selectedFileText: {
     marginTop: 8,

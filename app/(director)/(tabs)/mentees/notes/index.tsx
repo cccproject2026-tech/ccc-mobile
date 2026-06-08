@@ -21,7 +21,6 @@ import {
 } from 'react-native-pell-rich-editor';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-
 interface Note {
     id: string;
     content: string;
@@ -154,7 +153,7 @@ export default function MenteeNotes(): JSX.Element {
                     <Text className="ml-10 text-sm text-white/70">Mentee › John Doe</Text>
                 </View>
 
-                {/* Tab Buttons */}
+                {}
                 <View className="flex-row gap-3 px-4 mt-6 mb-4">
                     <TouchableOpacity
                         onPress={() => setActiveTab('new')}
@@ -184,7 +183,7 @@ export default function MenteeNotes(): JSX.Element {
                 </View>
 
                 {activeTab === 'new' ? (
-                    // New Note Editor
+                    
                     <KeyboardSafeContainer
                         mode="avoid"
                         style={{ flex: 1 }}

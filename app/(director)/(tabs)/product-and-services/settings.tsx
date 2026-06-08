@@ -26,7 +26,7 @@ interface ScholarshipType {
     amount: number;
     totalAwarded: number;
     totalMentees: number;
-    color: string; // Added for pie chart
+    color: string;
 }
 
 const scholarshipData: ScholarshipType[] = [
@@ -121,7 +121,7 @@ export default function ProductAndServices() {
         item.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    // Calculate totals
+    
     const totalMoneyAwarded = useMemo(() => {
         return scholarships.reduce((sum, s) => sum + s.totalAwarded, 0);
     }, [scholarships]);
@@ -130,7 +130,7 @@ export default function ProductAndServices() {
         return scholarships.reduce((sum, s) => sum + s.totalMentees, 0);
     }, [scholarships]);
 
-    // Prepare pie chart data
+    
     const pieData = useMemo(() => {
         return scholarships.map(scholarship => ({
             value: scholarship.totalAwarded,
@@ -146,7 +146,7 @@ export default function ProductAndServices() {
                 style={{ flex: 1, paddingBottom: bottom, paddingTop: top }}
             >
                 <View style={{ flex: 1 }}>
-                    {/* Header */}
+                    {}
                     <View
                         style={{
                             flexDirection: 'row',
@@ -172,12 +172,12 @@ export default function ProductAndServices() {
                         </Text>
                     </View>
 
-                    {/* Search Bar */}
+                    {}
                     <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
                         <SearchBar value={search} onChangeValue={setSearch} />
                     </View>
 
-                    {/* Tabs */}
+                    {}
                     <View
                         style={{
                             flexDirection: 'row',
@@ -241,7 +241,7 @@ export default function ProductAndServices() {
                         </Pressable>
                     </View>
 
-                    {/* Content - Toggle between All Scholarships and Info */}
+                    {}
                     <ScrollView
                         style={{ flex: 1, paddingHorizontal: 16 }}
                         showsVerticalScrollIndicator={false}
@@ -273,7 +273,7 @@ export default function ProductAndServices() {
                     </ScrollView>
                 </View>
 
-                {/* Bottom Sheet Modal */}
+                {}
                 <BottomSheetModal
                     ref={bottomSheetModalRef}
                     snapPoints={['45%']}
@@ -289,7 +289,7 @@ export default function ProductAndServices() {
                         style={{ flex: 1, borderRadius: 16, padding: 20 }}
                     >
                         <BottomSheetView style={{ flex: 1, padding: 20 }}>
-                            {/* Header */}
+                            {}
                             <View style={{
                                 backgroundColor: 'rgba(255, 255, 255, 0.1)',
                                 borderRadius: 12,
@@ -308,7 +308,7 @@ export default function ProductAndServices() {
                                 </Text>
                             </View>
 
-                            {/* Input Section */}
+                            {}
                             <Text style={{
                                 fontSize: 18,
                                 fontWeight: '600',
@@ -343,7 +343,7 @@ export default function ProductAndServices() {
                                 />
                             </View>
 
-                            {/* Buttons */}
+                            {}
                             <View style={{
                                 flexDirection: 'row',
                                 gap: 16,
@@ -397,7 +397,7 @@ export default function ProductAndServices() {
     );
 }
 
-// Info Section Component
+
 interface InfoSectionProps {
     totalMoneyAwarded: number;
     totalMenteesAwarded: number;
@@ -417,7 +417,7 @@ function InfoSection({
 }: InfoSectionProps) {
     return (
         <View>
-            {/* Summary Card */}
+            {}
             <View
                 style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -454,7 +454,7 @@ function InfoSection({
                 </Text>
             </View>
 
-            {/* Divider */}
+            {}
             <View
                 style={{
                     height: 1,
@@ -463,7 +463,7 @@ function InfoSection({
                 }}
             />
 
-            {/* Chart Section */}
+            {}
             <View>
                 <View
                     style={{
@@ -484,7 +484,7 @@ function InfoSection({
                     </Text>
                 </View>
 
-                {/* Chart Card */}
+                {}
                 <View
                     style={{
                         backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -494,7 +494,7 @@ function InfoSection({
                         borderColor: 'rgba(255, 255, 255, 0.3)',
                     }}
                 >
-                    {/* Year Selector */}
+                    {}
                     <View
                         style={{
                             alignSelf: 'flex-end',
@@ -527,7 +527,7 @@ function InfoSection({
                         </Pressable>
                     </View>
 
-                    {/* Pie Chart with Legend */}
+                    {}
                     <View
                         style={{
                             flexDirection: 'row',
@@ -535,7 +535,7 @@ function InfoSection({
                             justifyContent: 'space-between',
                         }}
                     >
-                        {/* Pie Chart */}
+                        {}
                         <View style={{ alignItems: 'center' }}>
                             <PieChart
                                 data={pieData}
@@ -551,7 +551,7 @@ function InfoSection({
                             />
                         </View>
 
-                        {/* Legend */}
+                        {}
                         <View style={{ flex: 1, paddingLeft: 20 }}>
                             {scholarships.map((scholarship) => (
                                 <View

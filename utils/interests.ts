@@ -42,7 +42,7 @@ export const mapInterestItemToInterestWithStatus = (
 export const mapMicrograntApplicationToInterest = (
     application: MicrograntApplication
 ): Interest & { status: 'new' | 'pending' | 'approved' } => {
-    // Extract name from answers or use email as fallback
+    
     const answers = application.answers ?? {};
     const churchName =
         (answers['Church Name'] as string) ||
@@ -64,7 +64,7 @@ export const mapMicrograntApplicationToInterest = (
             : 'Micro Grant Application';
     const role = purpose || formTitle;
     
-    // Format time from createdAt
+    
     const createdAt = new Date(application.createdAt);
     const now = new Date();
     const diffMs = now.getTime() - createdAt.getTime();

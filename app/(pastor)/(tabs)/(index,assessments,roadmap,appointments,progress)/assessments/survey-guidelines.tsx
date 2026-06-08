@@ -122,7 +122,7 @@ export default function SurveyGuidelinesPage() {
     }, [refetch, refetchAnswers]),
   );
 
-  // NEW: Separate handler for fresh start (Start Now / Repeat)
+  
   const handleFreshStart = () => {
     if (!assessment) return;
 
@@ -143,11 +143,11 @@ export default function SurveyGuidelinesPage() {
     });
   };
 
-  // NEW: Handler for continuing (Continue Assessment)
+  
   const handleContinue = () => {
     if (!assessment) return;
 
-    // Check if assessment has pre-survey
+    
     const hasPreSurvey = !!(
       assessment.preSurvey && assessment.preSurvey.length > 0
     );
@@ -163,10 +163,10 @@ export default function SurveyGuidelinesPage() {
   };
 
   const handleRepeatSurvey = async () => {
-    // Clear draft from store
+    
     clearDraft(assessmentId as string);
 
-    // Start fresh (will show pre-survey if available)
+    
     handleFreshStart();
   };
 
@@ -201,7 +201,7 @@ export default function SurveyGuidelinesPage() {
 
   const cardContent = getCardContent();
 
-  // Button text logic
+  
   const getButtonText = () => {
     if (submissionState.isFullyCompleted || submissionState.awaitingCdp) {
       return null;
@@ -216,14 +216,14 @@ export default function SurveyGuidelinesPage() {
 
   const buttonText = getButtonText();
 
-  // Determine which handler to use
+  
   const isFirstTime =
     !submissionState.preSurveySubmitted &&
     !submissionState.answersSubmitted &&
     !submissionState.hasLocalDraft;
   const handleButtonClick = isFirstTime ? handleFreshStart : handleContinue;
 
-  // Loading state
+  
   if (isLoading || isLoadingAnswers) {
     return (
       <AppGradientBackground
@@ -240,7 +240,7 @@ export default function SurveyGuidelinesPage() {
     );
   }
 
-  // Error state
+  
   if (error || !assessment) {
     return (
       <AppGradientBackground
@@ -298,7 +298,7 @@ export default function SurveyGuidelinesPage() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Assessment Card */}
+        {}
         <View style={styles.cardContainer}>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{cardContent?.acronym}</Text>
@@ -336,7 +336,7 @@ export default function SurveyGuidelinesPage() {
           </View>
         </View>
 
-        {/* Meeting info */}
+        {}
         {assessment.completedOn && assessment.meetingDate && (
           <LinearGradient
             colors={["#B83AF3", "#21B6E9"]}
@@ -358,7 +358,7 @@ export default function SurveyGuidelinesPage() {
           </LinearGradient>
         )}
 
-        {/* Show guidelines only if not completed */}
+        {}
         {!submissionState.isFullyCompleted && (
           <View style={styles.guidelinesSection}>
             <Text style={styles.guidelinesTitle}>Assessment Guidelines</Text>
@@ -375,7 +375,7 @@ export default function SurveyGuidelinesPage() {
           </View>
         )}
 
-        {/* Action Buttons */}
+        {}
         {submissionState.isFullyCompleted || submissionState.awaitingCdp || message ? (
           <View style={styles.completedButtonContainer}>
             {submissionState.isFullyCompleted && (

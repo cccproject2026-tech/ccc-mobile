@@ -82,12 +82,12 @@ const AssessmentMenuBottomSheet = forwardRef<BottomSheetModal, AssessmentMenuBot
                         end={{ x: 0, y: 1 }}
                         style={[styles.contentContainer, { paddingBottom: bottom + 20 }]}
                     >
-                        {/* Close Button */}
+                        {}
                         <Pressable style={styles.closeButton} onPress={handleClose}>
                             <Ionicons name="close" size={getIconSize(28)} color="#FFFFFF" />
                         </Pressable>
 
-                        {/* Assessment Header */}
+                        {}
                         {assessment && (
                             <>
                                 <View style={styles.header}>
@@ -121,7 +121,7 @@ const AssessmentMenuBottomSheet = forwardRef<BottomSheetModal, AssessmentMenuBot
                                     </View>
                                 </View>
 
-                                {/* Menu Items */}
+                                {}
                                 <View style={styles.menuContainer}>
                                     <Pressable style={styles.menuItem} onPress={handleAssignTo}>
                                         <Ionicons name="share-outline" size={getIconSize(24)} color="#FFFFFF" />
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "rgba(255, 255, 255, 0.3)",
         borderRadius: getSpacing(16),
-        // backgroundColor: "rgba(255, 255, 255, 0.05)",
+        
     },
     headerInfo: {
         flex: 1,

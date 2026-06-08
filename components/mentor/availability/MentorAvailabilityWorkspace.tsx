@@ -391,7 +391,7 @@ export function MentorAvailabilityWorkspace({
           </View>
         ) : null}
 
-        {/* Step 1 — Weekly pattern */}
+        {}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Step 1 — Weekly pattern</Text>
           <Text style={styles.sectionSub}>
@@ -530,7 +530,7 @@ export function MentorAvailabilityWorkspace({
           })}
         </View>
 
-        {/* Step 2 — Booking rules (read-only) */}
+        {}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Step 2 — Booking rules</Text>
           <Text style={styles.sectionSub}>
@@ -593,7 +593,7 @@ export function MentorAvailabilityWorkspace({
           </Pressable>
         </View>
 
-        {/* Step 3 — Calendar */}
+        {}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Step 3 — Calendar</Text>
           <Text style={styles.sectionSub}>
@@ -651,7 +651,7 @@ export function MentorAvailabilityWorkspace({
         </View>
       </ScrollView>
 
-      {/* Block day confirm */}
+      {}
       <Modal visible={Boolean(pendingBlockYmd)} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.confirmCard}>
@@ -686,7 +686,7 @@ export function MentorAvailabilityWorkspace({
         </View>
       </Modal>
 
-      {/* Day modal — bottom sheet with safe-area footer */}
+      {}
       <Modal
         visible={Boolean(dayModalYmd)}
         animationType="slide"

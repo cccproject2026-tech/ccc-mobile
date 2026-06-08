@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 
-// components/roadmap/ItemCard.tsx
+
 import { BaseItem } from '@/lib/roadmap/types';
 import { Image, StyleSheet } from 'react-native';
 
@@ -30,7 +30,7 @@ export const ItemCard = ({ item }: Props) => {
 
     return (
         <View style={styles.card}>
-            {/* Left - Image */}
+            {}
             <View style={styles.imageContainer}>
                 <Image
                     source={{ uri: 'https://via.placeholder.com/80' }}
@@ -38,7 +38,7 @@ export const ItemCard = ({ item }: Props) => {
                 />
             </View>
 
-            {/* Right - Content */}
+            {}
             <View style={styles.content}>
                 <Text style={styles.title} numberOfLines={2}>
                     {item.title}
@@ -49,12 +49,12 @@ export const ItemCard = ({ item }: Props) => {
                     </Text>
                 )}
 
-                {/* Completion time */}
+                {}
                 <Text style={styles.completionTime}>
                     Completion Time{'\n'}Months {item}
                 </Text>
 
-                {/* Status badge */}
+                {}
                 <View style={styles.statusRow}>
                     <View style={[styles.statusPill, { borderColor: getStatusColor() }]}>
                         <Text style={[styles.statusText, { color: getStatusColor() }]}>
@@ -128,7 +128,7 @@ export default function PhaseDetail() {
     const items = selectItems(mockRevitalization, phase.items);
     const [activeTab, setActiveTab] = useState<'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED'>('ALL');
 
-    // Filter items based on tab
+    
     const filteredItems = items.filter(item => {
         if (activeTab === 'ALL') return true;
         if (activeTab === 'DUE') {
@@ -150,7 +150,7 @@ export default function PhaseDetail() {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#0b1e33' }}>
-            {/* Header */}
+            {}
             <View style={{ padding: 16 }}>
                 <Text style={{ color: 'white', fontSize: 22, fontWeight: 'bold' }}>
                     {phase.title}
@@ -160,7 +160,7 @@ export default function PhaseDetail() {
                 </Text>
             </View>
 
-            {/* Search bar - optional for now */}
+            {}
             <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
                 <View style={{
                     backgroundColor: '#153f6d',
@@ -173,7 +173,7 @@ export default function PhaseDetail() {
                 </View>
             </View>
 
-            {/* Tabs */}
+            {}
             <View style={{ flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 16 }}>
                 {['ALL', 'DUE', 'NOT_STARTED', 'COMPLETED'].map(tab => (
                     <Pressable
@@ -196,7 +196,7 @@ export default function PhaseDetail() {
                 ))}
             </View>
 
-            {/* Task list */}
+            {}
             <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0 }}>
                 {filteredItems.map(item => (
                     <Pressable

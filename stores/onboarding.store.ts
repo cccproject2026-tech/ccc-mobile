@@ -1,25 +1,25 @@
-// stores/onboarding.store.ts
+
 import { InterestFormData, InterestStatus } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface OnboardingState {
-    // Form data
+    
     interestData: InterestFormData | null;
     interestStatus: InterestStatus | null;
     userId: string | null;
     applicationId: string | null;
     email: string | null;
 
-    // Email verification flow
+    
     isEmailVerified: boolean;
     isPasswordSet: boolean;
 
-    // Profile completion
+    
     hasProfilePicture: boolean;
 
-    // UI flow state (temporary, not persisted)
+    
     currentStep:
     | 'form'
     | 'submitted'
@@ -110,7 +110,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 console.log('🔐 Password set:', passwordSet);
             },
 
-            // ✅ NEW: Set profile picture status
+            
             setHasProfilePicture: (has) => {
                 set({ hasProfilePicture: has });
                 console.log('📷 Has profile picture:', has);
@@ -163,8 +163,8 @@ export const useOnboardingStore = create<OnboardingStore>()(
                 isEmailVerified: state.isEmailVerified,
                 isPasswordSet: state.isPasswordSet,
                 hasProfilePicture: state.hasProfilePicture,
-                // Don't persist currentStep (UI state only)
-                // Don't persist hasHydrated (runtime only)
+                
+                
             }),
             onRehydrateStorage: () => (state) => {
                 state?.setHasHydrated(true);

@@ -71,7 +71,7 @@ export default function MenteeNoteDetail(): JSX.Element {
             setIsEditMode(false);
             Alert.alert('Success', 'Note updated successfully!');
 
-            // Update view mode content
+            
             setTimeout(() => {
                 viewRichText.current?.setContentHTML(noteContent);
             }, 300);
@@ -140,7 +140,7 @@ export default function MenteeNoteDetail(): JSX.Element {
                         </View>
 
                         <View className="flex-row gap-3">
-                            {/* Edit Button */}
+                            {}
                             <TouchableOpacity
                                 onPress={handleEdit}
                                 className="p-3"
@@ -149,7 +149,7 @@ export default function MenteeNoteDetail(): JSX.Element {
                                 <Ionicons name="pencil" size={24} color="white" />
                             </TouchableOpacity>
 
-                            {/* Delete Button */}
+                            {}
                             <TouchableOpacity
                                 onPress={handleDelete}
                                 className="p-3"

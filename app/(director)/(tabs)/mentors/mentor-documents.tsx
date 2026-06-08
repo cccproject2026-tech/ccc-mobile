@@ -70,7 +70,7 @@ export default function MentorDocumentsScreen() {
                 showBackButton={false}
             />
 
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="chevron-back" size={getIconSize(28)} color="#fff" />
@@ -86,13 +86,13 @@ export default function MentorDocumentsScreen() {
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom + 20 }]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* New Documents Section */}
+                {}
                 <Pressable style={styles.sectionHeader} onPress={handleDownloadAll}>
                     <Text style={styles.sectionHeaderText}>3 New Documents Uploaded</Text>
                     <Ionicons name="download-outline" size={getIconSize(24)} color="#fff" />
                 </Pressable>
 
-                {/* Uploaded Documents List */}
+                {}
                 <View style={styles.section}>
                     {uploadedDocuments.map((doc, index) => (
                         <View key={doc.id}>
@@ -113,12 +113,12 @@ export default function MentorDocumentsScreen() {
                     ))}
                 </View>
 
-                {/* Document Library Section */}
+                {}
                 <View style={styles.libraryHeader}>
                     <Text style={styles.libraryHeaderText}>Document Library • John Doe</Text>
                 </View>
 
-                {/* Library Documents List */}
+                {}
                 <View style={styles.section}>
                     {libraryDocuments.map((doc, index) => (
                         <View key={doc.id}>

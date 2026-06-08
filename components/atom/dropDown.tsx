@@ -44,12 +44,12 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 };
 
 const styles = StyleSheet.create({
-  // container: {
-  //   padding: 0,
-  //   borderWidth: 1,
-  //   borderColor: "white",
-  //   borderRadius: 10,
-  // },
+  
+  
+  
+  
+  
+  
 });
 
 interface PickerSelectStyles {

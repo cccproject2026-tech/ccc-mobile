@@ -25,21 +25,21 @@ export const useAssignAssessment = () => {
         },
 
         onSuccess: (data, variables) => {
-            // Invalidate progress queries for all affected users
+            
             variables.userIds.forEach((userId) => {
                 queryClient.invalidateQueries({
                     queryKey: progressKeys.user(userId),
                 });
             });
 
-            // Invalidate base progress key
+            
             queryClient.invalidateQueries({ queryKey: ['progress'] });
 
-            // Invalidate assessments list to refetch
+            
             queryClient.invalidateQueries({ queryKey: ['assessments'] });
-            // Invalidate mentees list to update assignment status
+            
             queryClient.invalidateQueries({ queryKey: ['mentees'] });
-            // Invalidate the specific assessment
+            
             queryClient.invalidateQueries({
                 queryKey: ['assessment', variables.assessmentId],
             });

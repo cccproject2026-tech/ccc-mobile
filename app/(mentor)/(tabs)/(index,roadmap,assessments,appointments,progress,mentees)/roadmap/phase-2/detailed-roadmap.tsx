@@ -1,5 +1,5 @@
 import { Button } from "@/components/atom/buttons"
-// import { CheckBox } from "@/components/atom/checkBox"
+
 import { OptionsModal } from "@/components/atom/modals"
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal"
 import { Tab } from "@/components/atom/tab"
@@ -75,7 +75,7 @@ export default function DetailedRoadMap() {
           >
             <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
 
-            {/* Header Section */}
+            {}
             <View
               style={{
                 width: "100%",
@@ -140,10 +140,10 @@ export default function DetailedRoadMap() {
               </TouchableOpacity>
             </View>
 
-            {/* Separator */}
+            {}
             <View style={styles.separator} />
 
-            {/* Tabs Section */}
+            {}
             {!surveyGuideLines && (
               <View
                 style={{
@@ -166,7 +166,7 @@ export default function DetailedRoadMap() {
               </View>
             )}
 
-            {/* Content Section */}
+            {}
             <View
               style={{
                 marginVertical: 10,
@@ -225,23 +225,20 @@ export default function DetailedRoadMap() {
                           {data?.time}
                         </Text>
                       </View>
-                      {/* Separator */}
+                      {}
                       <View className="h-[0.5px] bg-white/30 mt-3" />
 
-
-                      {/* Intro Summary */}
+                      {}
                       <View style={styles.sectionMargin}>
                         <Text style={styles.whiteText}>Roadmap</Text>
                       </View>
                       <TextAreaField />
 
-
-                      {/* Description List */}
+                      {}
                       <View style={styles.sectionMargin}>
                         <Text style={styles.whiteText}>Description</Text>
                       </View>
                       <TextAreaField />
-
 
                       <View className="h-[0.5px] bg-white/30 my-6" />
 
@@ -250,9 +247,8 @@ export default function DetailedRoadMap() {
                       </View>
                       <TextAreaField />
 
-
                       {flag === "submit-media" ? (
-                        // showCommunity ? (
+                        
                         <View className="p-3 flex gap-8 border border-solid border-white/20 rounded-[10px]">
                           <View>
                             <View style={styles.sectionMargin}>
@@ -326,27 +322,27 @@ export default function DetailedRoadMap() {
                             style={{ width: 162, margin: "auto", marginBottom: 45 }}
                           />
                         </View>
-                        // ) : (
-                        //   <View className="flex gap-9">
-                        //     <View>
-                        //       <View style={styles.sectionMargin}>
-                        //         <Text style={styles.whiteText}>Adjustments you have made</Text>
-                        //       </View>
-                        //       <TextAreaField />
-                        //     </View>
-                        //     <View className="flex flex-row items-center justify-center w-full gap-3">
-                        //       <Text className="text-sm leading-[22px] text-white">
-                        //         Facility Review Date :
-                        //       </Text>
-                        //       <View className="border border-solid border-[#FFFFFF73] rounded-[10px] h-[33px] max-w-[194px] w-full justify-center items-center">
-                        //         <Text className="text-sm leading-[22px] text-white">
-                        //           20 / 11 / 24
-                        //         </Text>
-                        //       </View>
-                        //     </View>
-                        //     <View className="h-[0.5px] bg-white/30 my-6" />
-                        //   </View>
-                        // )
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                       ) : (
                         <View className="flex gap-[54px] mt-12">
                           <View className="flex flex-row items-center justify-center w-full gap-3">
@@ -453,7 +449,7 @@ export default function DetailedRoadMap() {
                   >
                     Assessments Guidelines
                   </Text>
-                  {/* <ListCard list={List} /> */}
+                  {}
                   <View
                     style={{
                       width: "100%",
@@ -465,10 +461,10 @@ export default function DetailedRoadMap() {
                       type="cancel"
                       title={"Start Now"}
                       onPress={() =>
-                        // router.push({
-                        //   pathname: "/(pastor-tabs)/roadmap/survey",
-                        //   params: { data: JSON.stringify(data) }
-                        // })
+                        
+                        
+                        
+                        
 
                         console.log("pressed")
                       }
@@ -481,7 +477,7 @@ export default function DetailedRoadMap() {
           </KeyboardSafeContainer>
         </SafeAreaView>
 
-        {/* Modals */}
+        {}
         <OptionsModal
           isMenuVisible={isModalVisible}
           closeMenu={() => setIsModalVisible(false)}

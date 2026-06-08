@@ -23,11 +23,11 @@ export interface RoadmapCardData {
     image: ImageSourcePropType;
     title: string;
     description?: string;
-    time?: string; // "Months 1-2" / completion time
+    time?: string;
     status?: RoadmapCardStatus;
     completionDate?: string;
     sessionDate?: string;
-    phase?: string; // "Phase 1", "Phase 2"
+    phase?: string;
     taskStatus?: TaskStatus;
     taskProgress?: {
         completed: number;
@@ -36,7 +36,7 @@ export interface RoadmapCardData {
     meeting?: MeetingData;
     showArrow?: boolean;
     showBothDate?: boolean;
-    // Navigation flags
+    
     assignment?: boolean;
     subPhase?: boolean;
     empowerment?: boolean;
@@ -48,7 +48,7 @@ interface Props {
     onPress?: () => void;
     showMenu?: boolean;
     onMenuPress?: () => void;
-    // For complex navigation (RevitalizationCard)
+    
     navigation?: any;
     pathname?: string;
 }
@@ -77,7 +77,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
     const isDue = normalizedStatus === 'due';
     const isNotStarted = normalizedStatus === 'initial';
 
-    // Progress calculation
+    
     const hasProgress = data.taskStatus?.started || (data.taskProgress && !isCompleted);
     const progressPercentage = data.taskStatus
         ? (data.taskStatus.inProgress / data.taskStatus.toComplete) * 100
@@ -85,7 +85,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
             ? (data.taskProgress.completed / data.taskProgress.total) * 100
             : 0;
 
-    // Status text
+    
     const getStatusText = () => {
         if (normalizedStatus === 'completed') return 'Completed';
         if (normalizedStatus === 'due') return 'Due';
@@ -103,7 +103,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
 
     const statusText = getStatusText();
 
-    // Complex navigation handler (for full variant)
+    
     const handleNavigation = () => {
         if (isFull && navigation && pathname) {
             if (pathname === "/roadmap/phase-1/revitalization-roadmap") {
@@ -169,7 +169,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
 
     const CardWrapper = TouchableOpacity;
 
-    // FULL VARIANT (RevitalizationCard style)
+    
     if (isFull) {
         return (
             <CardWrapper
@@ -178,7 +178,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                 activeOpacity={0.7}
             >
                 <View style={styles.fullInner}>
-                    {/* Left Section */}
+                    {}
                     <View style={styles.fullLeft}>
                         <View style={styles.fullImageContainer}>
                             <Image source={data.image} style={styles.fullImage} />
@@ -193,7 +193,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                         )}
                     </View>
 
-                    {/* Right Section */}
+                    {}
                     <View style={styles.fullRight}>
                         <Text style={styles.fullTitle} ellipsizeMode="tail">
                             {data.title}
@@ -203,7 +203,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                             <Text style={styles.fullDescription}>{data.description}</Text>
                         )}
 
-                        {/* Status Badge */}
+                        {}
                         {statusText && (
                             <View style={styles.fullStatusContainer}>
                                 <Text style={styles.fullStatusText}>
@@ -219,7 +219,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                             </View>
                         )}
 
-                        {/* Session Date Box (single) */}
+                        {}
                         {data.sessionDate && isNotStarted && !data.showBothDate && (
                             <View style={styles.sessionDateBox}>
                                 <Text style={styles.sessionDateLabel}>Session Date :</Text>
@@ -229,7 +229,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                             </View>
                         )}
 
-                        {/* Progress Bar */}
+                        {}
                         {hasProgress && (
                             <View style={styles.progressContainer}>
                                 <View style={styles.progressWrapper}>
@@ -250,7 +250,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                             </View>
                         )}
 
-                        {/* Completion Date */}
+                        {}
                         {isCompleted && data.completionDate && (
                             <Text style={styles.fullCompletionDate}>
                                 Completed on : {data.completionDate}
@@ -259,7 +259,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                     </View>
                 </View>
 
-                {/* Two Session Dates (showBothDate) */}
+                {}
                 {data.showBothDate && data.sessionDate && isNotStarted && (
                     <View style={styles.doubleDateContainer}>
                         <View style={styles.dateColumn}>
@@ -277,7 +277,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                     </View>
                 )}
 
-                {/* Meeting Banner */}
+                {}
                 {data.showBothDate && data.meeting && (
                     <LinearGradient
                         colors={['#B83AF3', '#21B6E9']}
@@ -303,7 +303,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
         );
     }
 
-    // SIMPLE VARIANT (RoadmapCard style)
+    
     return (
         <CardWrapper
             style={styles.card}
@@ -311,7 +311,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
             activeOpacity={0.7}
         >
             <View style={styles.inner}>
-                {/* Left Section */}
+                {}
                 <View style={styles.left}>
                     <View style={styles.imageContainer}>
                         <Image source={data.image} style={styles.image} />
@@ -331,7 +331,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                     )}
                 </View>
 
-                {/* Right Section */}
+                {}
                 <View style={styles.right}>
                     <View style={styles.titleRow}>
                         <Text style={styles.title} numberOfLines={2}>
@@ -366,7 +366,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                         </Text>
                     )}
 
-                    {/* Status Badge */}
+                    {}
                     {statusText && (
                         <View style={styles.statusRow}>
                             <View style={styles.statusPill}>
@@ -377,7 +377,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                         </View>
                     )}
 
-                    {/* Progress Bar */}
+                    {}
                     {hasProgress && (
                         <View style={styles.progressSection}>
                             <View style={styles.progressRow}>
@@ -397,7 +397,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
                         </View>
                     )}
 
-                    {/* Completion Date */}
+                    {}
                     {isCompleted && data.completionDate && (
                         <Text style={styles.completedDate}>
                             Completed on : {data.completionDate}
@@ -410,7 +410,7 @@ export const UnifiedRoadmapCard: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-    // SIMPLE VARIANT STYLES
+    
     card: {
         backgroundColor: 'rgba(255, 255, 255, 0.06)',
         borderRadius: 16,
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
         paddingRight: getSpacing(40),
     },
 
-    // FULL VARIANT STYLES
+    
     fullCard: {
         backgroundColor: '#194F82',
         borderRadius: 10,

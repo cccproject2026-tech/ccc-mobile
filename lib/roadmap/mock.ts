@@ -49,15 +49,15 @@ export const mockRevitalization: RevitalizationData = {
       estMonthsMin: 3,
       estMonthsMax: 9,
       coverImage: require("@/assets/images/roadmap.jpg"),
-      // tasks: [
-      //     'p2-mou-with-ngos',
-      //     'p2-facility-review',
-      //     'p2-community-survey',
-      //     'p2-run-pilot-program',
-      //     'p2-upload-report',
-      //     'p2-community-engagement',
-      //     'p2-empower-leader'
-      // ],
+      
+      
+      
+      
+      
+      
+      
+      
+      
       divisions: ["p2-division-church", "p2-division-pastor"],
     },
 
@@ -69,19 +69,19 @@ export const mockRevitalization: RevitalizationData = {
       estMonthsMin: 10,
       estMonthsMax: 12,
       coverImage: require("@/assets/images/roadmap.jpg"),
-      // tasks: [
-      //     'p3-train-new-coaches',
-      //     'p3-plant-microgroups',
-      //     'p3-measure-kpis',
-      //     'p3-graduation',
-      //     "p3-review"
-      // ],
+      
+      
+      
+      
+      
+      
+      
       divisions: ["p3-division-church", "p3-division-pastor"],
     },
   },
 
   divisions: {
-    // ========== PHASE 2 DIVISIONS ==========
+    
     "p2-division-church": {
       id: "p2-division-church",
       phaseId: "phase-2",
@@ -119,7 +119,7 @@ export const mockRevitalization: RevitalizationData = {
       ],
     },
 
-    // ========== PHASE 3 DIVISIONS ==========
+    
     "p3-division-church": {
       id: "p3-division-church",
       phaseId: "phase-3",
@@ -151,7 +151,7 @@ export const mockRevitalization: RevitalizationData = {
     },
   },
   tasks: {
-    // ========== JUMP-START ==========
+    
     "jump-start-session": {
       id: "jump-start-session",
       phaseId: "jump-start",
@@ -231,7 +231,7 @@ export const mockRevitalization: RevitalizationData = {
       },
     },
 
-    // ========== PHASE 1 ==========
+    
     "p1-sign-roadmap": {
       id: "p1-sign-roadmap",
       phaseId: "phase-1",
@@ -256,13 +256,13 @@ export const mockRevitalization: RevitalizationData = {
               "I agree to participate in the 12-month revitalization mentoring and church growth roadmap provided by The Center for Community Change",
             required: true,
           },
-          // {
-          //     id: 'signature',
-          //     type: 'SIGNATURE',
-          //     label: 'Signature Required here',
-          //     required: true,
-          //     dependsOn: ['agreement-checkbox'],
-          // },
+          
+          
+          
+          
+          
+          
+          
         ],
         submitLabel: "Signature Required here",
       },
@@ -299,7 +299,7 @@ export const mockRevitalization: RevitalizationData = {
             required: true,
           },
         ],
-        // submitLabel: 'Submit',
+        
       },
       meta: {
         coverImage: require("@/assets/images/roadmap.jpg"),
@@ -525,7 +525,7 @@ export const mockRevitalization: RevitalizationData = {
       },
     },
 
-    // ========== PHASE 2 ==========
+    
     "p2-mou-with-ngos": {
       id: "p2-mou-with-ngos",
       phaseId: "phase-2",
@@ -579,7 +579,7 @@ export const mockRevitalization: RevitalizationData = {
           {
             id: "section",
             type: "SECTION_BOX",
-            // label: 'Facility Review Areas',
+            
             fields: [
               {
                 id: "adjustments-made",
@@ -621,7 +621,7 @@ export const mockRevitalization: RevitalizationData = {
           {
             id: "section",
             type: "SECTION_BOX",
-            // label: 'Facility Review Areas',
+            
             fields: [
               {
                 id: "secret-guest-info",
@@ -885,7 +885,7 @@ export const mockRevitalization: RevitalizationData = {
       },
     },
 
-    // pastor
+    
     "p2-gods-vision": {
       id: "p2-gods-vision",
       phaseId: "phase-2",
@@ -1292,7 +1292,7 @@ export const mockRevitalization: RevitalizationData = {
       },
     },
 
-    // ========== PHASE 3 ==========
+    
     "p3-train-new-coaches": {
       id: "p3-train-new-coaches",
       phaseId: "phase-3",
@@ -1434,7 +1434,7 @@ export const mockRevitalization: RevitalizationData = {
               "/(pastor-tabs)/(tabs)/assessments/survey-guidelines?assessmentId=assessment_001" as RelativePathString,
           },
         ],
-        // submitLabel: 'Submit',
+        
       },
       meta: {
         coverImage: require("@/assets/images/roadmap.jpg"),
@@ -1507,7 +1507,7 @@ export const mockRevitalization: RevitalizationData = {
       },
     },
 
-    // pastors
+    
 
     "p3-inactive-member-visitation": {
       id: "p3-inactive-member-visitation",

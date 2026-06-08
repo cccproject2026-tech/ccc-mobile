@@ -425,10 +425,10 @@ export const appointmentService = {
     dateString: string,
     timeSlot: { startTime: string; startPeriod: "AM" | "PM" },
   ): string => {
-    // Parse date string (format: "2025-11-22")
+    
     const [year, month, day] = dateString.split("-").map(Number);
 
-    // Convert to 24-hour format
+    
     let hour = parseInt(timeSlot.startTime, 10);
     if (timeSlot.startPeriod === "PM" && hour !== 12) {
       hour += 12;

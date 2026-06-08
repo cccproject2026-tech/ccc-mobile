@@ -29,7 +29,7 @@ export const DrawerOverlay: React.FC = () => {
   const mockNavigation = {
     navigate: (routeName: string) => {
       console.log('Navigate to:', routeName);
-      // Navigation logic moved to CustomDrawer.tsx
+      
     },
     closeDrawer,
   };

@@ -14,7 +14,6 @@ import React from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as DropdownMenu from 'zeego/dropdown-menu';
 
-
 export interface MenuItem {
     key: string;
     title: string;
@@ -40,7 +39,6 @@ interface MentorCardProps {
     onNamePress?: () => void;
 }
 
-// Reusable ContactIcons component
 interface ContactIconsProps {
     layout: 'card' | 'list';
     onCall?: () => void;
@@ -115,7 +113,6 @@ const ContactIcons: React.FC<ContactIconsProps> = ({ layout, onCall, onChat, onM
     );
 };
 
-// Zeego Dropdown Menu Component
 const ZeegoDropdownMenu: React.FC<{
     menuItems?: MenuItem[];
     onPressMenu?: () => void;
@@ -161,7 +158,7 @@ const ZeegoDropdownMenu: React.FC<{
         );
     }
 
-    // Fallback to regular TouchableOpacity for onPressMenu
+    
     return (
         <TouchableOpacity style={styles.menuButton} onPress={(e) => { e.stopPropagation(); handleMenuPress(); }}>
             <Ionicons name="ellipsis-vertical" size={getIconSize(20)} color="#fff" />
@@ -185,7 +182,7 @@ export default function MentorCard({
     onNamePress,
 }: MentorCardProps) {
     const isSelectionMode = onToggleSelect !== undefined;
-    const imageSize = getCardImageSize() * 0.8; // Make image 20% smaller
+    const imageSize = getCardImageSize() * 0.8;
     const listHeight = getListItemHeight();
 
     if (layout === 'list') {
@@ -210,7 +207,6 @@ export default function MentorCard({
                         )}
                     </View>
 
-
                     <View style={styles.listInfoSection}>
                         <MentorNameText
                             name={mentor.name}
@@ -224,7 +220,6 @@ export default function MentorCard({
                             </View>
                         )}
                     </View>
-
 
                     <ContactIcons
                         layout="list"
@@ -272,7 +267,6 @@ export default function MentorCard({
                     )}
                 </View>
 
-
                 <View style={styles.listInfoSection}>
                     <MentorNameText
                         name={mentor.name}
@@ -286,7 +280,6 @@ export default function MentorCard({
                         </View>
                     )}
                 </View>
-
 
                 <ContactIcons
                     layout="list"
@@ -321,7 +314,7 @@ export default function MentorCard({
         );
     }
 
-    // Card Layout (Default)
+    
     // If card should handle presses itself (selection mode or provided onPress), render a TouchableOpacity.
     // Otherwise render a plain View so parent wrappers can handle taps.
     if (isSelectionMode || onPress) {
@@ -422,7 +415,6 @@ export default function MentorCard({
                     )}
                 </View>
 
-
                 <View style={styles.infoSection}>
                     <View style={styles.headerRow}>
                         <MentorNameText
@@ -449,7 +441,6 @@ export default function MentorCard({
                     </Text>
                 </View>
 
-
                 {isSelectionMode && !onMenuPress && !menuItems ? (
                     <View style={styles.checkboxContainer}>
                         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -464,7 +455,6 @@ export default function MentorCard({
                 )}
             </View>
 
-
             <ContactIcons
                 layout="card"
                 onCall={onCall}
@@ -477,7 +467,7 @@ export default function MentorCard({
 }
 
 const styles = StyleSheet.create({
-    // Card Layout Styles
+    
     card: {
         backgroundColor: roadmapTheme.frostedSurfaceStrong,
         borderRadius: 14,
@@ -574,7 +564,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    // List Layout Styles
+    
     listContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -582,13 +572,13 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         borderWidth: 1,
         borderColor: roadmapTheme.frostedBorder,
-        padding: isAndroid ? getSpacing(12) : getSpacing(8), // More padding on Android
+        padding: isAndroid ? getSpacing(12) : getSpacing(8),
         marginBottom: getSpacing(8),
-        minHeight: isAndroid ? getSpacing(68) : getSpacing(56), // Taller on Android
-        // gap: isAndroid ? getSpacing(10) : getSpacing(8), // Add gap between items
+        minHeight: isAndroid ? getSpacing(68) : getSpacing(56),
+        
     },
     listImageContainer: {
-        width: isAndroid ? getSpacing(48) : getSpacing(40), // Larger on Android
+        width: isAndroid ? getSpacing(48) : getSpacing(40),
         height: isAndroid ? getSpacing(48) : getSpacing(40),
         borderRadius: getSpacing(10),
         overflow: 'hidden',
@@ -599,10 +589,10 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         minWidth: 0,
-        marginRight: getSpacing(8), // Add margin for breathing room
+        marginRight: getSpacing(8),
     },
     listName: {
-        fontSize: getFontSize(isSmallDevice ? 15 : 16), // Slightly larger
+        fontSize: getFontSize(isSmallDevice ? 15 : 16),
         fontWeight: '600',
         color: '#fff',
         marginBottom: getSpacing(4),
@@ -615,27 +605,27 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     listMenteesText: {
-        fontSize: getFontSize(isSmallDevice ? 12 : 13), // Slightly larger
+        fontSize: getFontSize(isSmallDevice ? 12 : 13),
         fontWeight: '500',
         color: '#FFC107',
     },
     listIconButton: {
-        width: isAndroid ? getSpacing(36) : getSpacing(24), // Much larger on Android
+        width: isAndroid ? getSpacing(36) : getSpacing(24),
         height: isAndroid ? getSpacing(36) : getSpacing(24),
         alignItems: 'center',
         justifyContent: 'center',
-        // marginLeft: isAndroid ? getSpacing(2) : 0, // Small margin between icons
+        
     },
     listMenuButton: {
-        width: isAndroid ? getSpacing(36) : getSpacing(28), // Larger on Android
+        width: isAndroid ? getSpacing(36) : getSpacing(28),
         height: isAndroid ? getSpacing(36) : getSpacing(28),
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        // marginLeft: isAndroid ? getSpacing(4) : 0,
+        
     },
     checkbox: {
-        width: getSpacing(26), // Slightly larger
+        width: getSpacing(26),
         height: getSpacing(26),
         borderRadius: getSpacing(6),
         borderWidth: 2,

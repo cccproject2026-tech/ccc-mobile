@@ -110,7 +110,7 @@ export default function RevitalizationScreen() {
           >
             <PastorNavigationHeader wrapperClass="mt-5" showNameTag={true} />
 
-            {/* Header Section */}
+            {}
             <View
               style={{
                 width: "100%",
@@ -148,10 +148,10 @@ export default function RevitalizationScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Separator */}
+            {}
             <View className="h-[0.5px] bg-white/30 mt-3" />
 
-            {/* Search Section */}
+            {}
             <View style={styles.searchContainer}>
               <Search
                 searchText={searchText}
@@ -159,7 +159,7 @@ export default function RevitalizationScreen() {
               />
             </View>
 
-            {/* Tabs Section */}
+            {}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -184,7 +184,7 @@ export default function RevitalizationScreen() {
               ))}
             </ScrollView>
 
-            {/* Content Section */}
+            {}
             <View
               style={{
                 marginVertical: 10,
@@ -204,7 +204,7 @@ export default function RevitalizationScreen() {
           </ScrollView>
         </SafeAreaView>
 
-        {/* Modal */}
+        {}
         <RoadMapOutcomeModal
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}

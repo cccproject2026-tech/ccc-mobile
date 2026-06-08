@@ -53,7 +53,7 @@ export default function AnswerQuestionPage() {
   const { user } = useAuthStore();
 
   // Determine the user ID to fetch answers for: passed targetUserId (mentee) or current user (if fallback)
-  // For mentor view, targetUserId should be provided.
+  
   const userIdToFetch = (targetUserId as string) || user?.id;
 
   // Fetch assessment data from API
@@ -72,12 +72,12 @@ export default function AnswerQuestionPage() {
   const { data: submittedAnswers, isLoading: isLoadingSubmitted } =
     useFetchAnswers(assessmentId as string, userIdToFetch, isViewMode);
 
-  // Get draft from store
+  
   const getDraft = useAssessmentStore((state) => state.getDraft);
   const setDraft = useAssessmentStore((state) => state.saveDraft);
   const previousResponse = getDraft(assessmentId as string);
 
-  // Submission hooks - not used in view mode mostly
+  
   const submitPreSurvey = useSubmitPreSurvey();
   const submitAssessmentAnswers = useSubmitAssessmentAnswers();
   const { mutateAsync: sendRecommendation } = useSendRecommendation();
@@ -89,7 +89,7 @@ export default function AnswerQuestionPage() {
     Record<number, Record<string, any>> | undefined
   >(undefined);
 
-  // Load submitted answers (ONLY for view mode)
+  
   useEffect(() => {
     const answerDoc = submittedAnswers?.data;
     if (
@@ -133,7 +133,7 @@ export default function AnswerQuestionPage() {
     isLoadingSubmitted,
   ]);
 
-  // Track if pre-survey is completed
+  
   const [preSurveyCompleted, setPreSurveyCompleted] = useState(
     hasPreSurvey !== "true" || !!previousResponse?.preSurveyAnswers,
   );
@@ -146,7 +146,7 @@ export default function AnswerQuestionPage() {
     !isViewMode &&
     (assessment?.preSurvey?.length ?? 0) > 0;
 
-  // Check if pre-survey has been submitted
+  
   const hasPreSurveyAnswers = isViewMode
     ? !!submittedAnswers?.data?.preSurveyAnswers
     : !!previousResponse?.preSurveyAnswers &&
@@ -391,7 +391,7 @@ export default function AnswerQuestionPage() {
     });
   }, [assessment, data?.sections, submittedAnswers?.data?.sections]);
 
-  // Loading state
+  
   if (isLoading || (isViewMode && isLoadingSubmitted)) {
     return (
       <AppGradientBackground
@@ -410,7 +410,7 @@ export default function AnswerQuestionPage() {
     );
   }
 
-  // Error state
+  
   if (error || !assessment) {
     return (
       <AppGradientBackground

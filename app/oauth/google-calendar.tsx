@@ -65,7 +65,7 @@ export default function GoogleCalendarOAuthReturnScreen() {
           try {
             await invalidateAfterGoogleCalendarOAuth(queryClient, authUser.id);
           } catch {
-            // Non-blocking.
+            
           }
           Toast.show({
             type: 'floating',

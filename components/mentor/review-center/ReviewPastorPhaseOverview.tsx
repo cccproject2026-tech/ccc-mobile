@@ -189,7 +189,7 @@ export function ReviewPastorPhaseOverview({
           />
         </Pressable>
         <Pressable onPress={openFullRoadmap} hitSlop={8}>
-          {/* <Text style={styles.link}>Full roadmap</Text> */}
+          {}
         </Pressable>
       </View>
 

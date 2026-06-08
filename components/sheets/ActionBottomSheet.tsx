@@ -70,14 +70,14 @@ const ActionBottomSheet = forwardRef<BottomSheetModal, ActionBottomSheetProps>(
                 ]}
             >
                 <BottomSheetView style={[styles.container, { paddingBottom: bottom + 20 }]}>
-                    {/* Header with Close Icon */}
+                    {}
                     <View style={[styles.header, { borderColor: colorScheme.text + "20" }]}>
-                        {/* Close Button - Top Right Corner */}
+                        {}
                         <Pressable onPress={onClose} style={styles.closeBtn}>
                             <Ionicons name="close" size={24} color={colorScheme.text} />
                         </Pressable>
 
-                        {/* Avatar */}
+                        {}
                         {image ? (
                             <Image source={{ uri: image }} style={styles.avatar} />
                         ) : (
@@ -86,7 +86,7 @@ const ActionBottomSheet = forwardRef<BottomSheetModal, ActionBottomSheetProps>(
                             </View>
                         )}
 
-                        {/* Text Content */}
+                        {}
                         <View style={styles.textContainer}>
                             <Text
                                 style={[styles.title, { color: colorScheme.text }]}
@@ -109,7 +109,7 @@ const ActionBottomSheet = forwardRef<BottomSheetModal, ActionBottomSheetProps>(
                         </View>
                     </View>
 
-                    {/* Menu Actions */}
+                    {}
                     <View style={styles.menuContainer}>
                         {actions.map((item, i) => (
                             <Pressable
@@ -149,10 +149,10 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingVertical: 16,
         paddingHorizontal: 16,
-        paddingRight: 48, // Extra padding on right for close button
+        paddingRight: 48,
         marginTop: 16,
         marginBottom: 20,
-        position: 'relative', // For absolute positioning of close button
+        position: 'relative',
     },
 
     closeBtn: {

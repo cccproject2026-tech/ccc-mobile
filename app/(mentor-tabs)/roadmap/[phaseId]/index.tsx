@@ -20,7 +20,7 @@ type TabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
 export default function RoadmapDetail() {
     const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
 
-    // Fetch single roadmap
+    
     const { data: roadmap, isLoading, error, refetch } = useRoadmap(phaseId);
 
     const [showOutcomeMenu, setShowOutcomeMenu] = useState(false);
@@ -28,7 +28,7 @@ export default function RoadmapDetail() {
     const [selectedOutcome, setSelectedOutcome] = useState('');
     const [search, setSearch] = useState('');
 
-    // Get phase number from phase string
+    
     const phaseNumber = useMemo(() => {
         if (!roadmap?.phase) return null;
         const match = roadmap.phase.match(/\d+/);
@@ -95,7 +95,7 @@ export default function RoadmapDetail() {
         [],
     );
 
-    // Get all tasks
+    
     const allTasks = useMemo(() => {
         return roadmap ? getTasks(roadmap) : [];
     }, [roadmap]);
@@ -132,7 +132,7 @@ export default function RoadmapDetail() {
         });
     }, [roadmap, activeTab, allTasks, search]);
 
-    // Loading state
+    
     if (isLoading) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -147,7 +147,7 @@ export default function RoadmapDetail() {
         );
     }
 
-    // Error or not found state
+    
     if (error || !roadmap) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -176,7 +176,7 @@ export default function RoadmapDetail() {
                 <TopBar role="mentor" showUserName />
             </View>
 
-            {/* Header */}
+            {}
             <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -259,19 +259,19 @@ export default function RoadmapDetail() {
                 </View>
             </View>
 
-            {/* Search */}
+            {}
             <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
                 <SearchBar value={search} onChangeValue={setSearch} />
             </View>
 
-            {/* Tabs */}
+            {}
             <TabSwitcher
                 tabs={tabs}
                 activeTab={activeTab}
                 onChange={(key) => setActiveTab(key as TabKey)}
             />
 
-            {/* Content */}
+            {}
             <ScrollView contentContainerStyle={{ padding: 16 }}>
                 {filteredTasks.length > 0 ? (
                     filteredTasks.map(task => {
@@ -296,7 +296,7 @@ export default function RoadmapDetail() {
                 )}
             </ScrollView>
 
-            {/* Modals */}
+            {}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={outcomeMenuItems()}

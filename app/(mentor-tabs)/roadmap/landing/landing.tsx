@@ -23,28 +23,28 @@ export default function Landing() {
     const [statusTab, setStatusTab] = useState<StatusTabKey>('ALL');
     const [search, setSearch] = useState('');
 
-    // Fetch roadmaps
+    
     const { data: roadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
 
-    // Handle roadmap press navigation
+    
     const handleRoadmapPress = useCallback((roadmap: Roadmap) => {
         if (!roadmap.haveNextedRoadMaps || roadmap.roadmaps.length === 0) {
             console.warn('Roadmap has no tasks');
             return;
         }
 
-        // Navigate to roadmap detail - using dynamic routes
+        
         const singleTaskId = getSingleNestedTaskId(roadmap);
         if (singleTaskId) {
             router.push(`/(mentor-tabs)/roadmap/${roadmap._id}/${singleTaskId}` as any);
         } else {
-            // Multiple tasks - show task list
+            
             router.push(`/(mentor-tabs)/roadmap/${roadmap._id}` as any);
         }
     }, []);
 
-    // Filter roadmaps by pastor division
-    //todo: this logic is wrong we need to fix this
+    
+    
     const filterPastorRoadmaps = useCallback((roadmapList: Roadmap[]): Roadmap[] => {
         return roadmapList.filter(roadmap =>
             roadmap.roadmaps?.some(nested =>
@@ -53,7 +53,7 @@ export default function Landing() {
         );
     }, []);
 
-    // Calculate roadmaps with status
+    
     const roadmapsWithStatus = useMemo(() => {
         if (!roadmaps) return [];
 
@@ -63,21 +63,21 @@ export default function Landing() {
         });
     }, [roadmaps]);
 
-    // Apply all filters
+    
     const filteredRoadmaps = useMemo(() => {
         let filtered = roadmapsWithStatus;
 
-        // Step 1: Apply main tab filter (Pastor's Roadmaps vs Roadmap Library)
+        
         if (mainTab === 'PASTOR_ROADMAPS') {
             const pastorRoadmaps = filterPastorRoadmaps(filtered.map(r => r.roadmap));
             filtered = filtered.filter(({ roadmap }) =>
                 pastorRoadmaps.some(pr => pr._id === roadmap._id)
             );
 
-            // Step 2: Apply status filter (only for Pastor's Roadmaps)
+            
             if (statusTab !== 'ALL') {
                 const statusMap: Record<StatusTabKey, RoadmapCardStatus> = {
-                    ALL: 'initial', // Not used
+                    ALL: 'initial',
                     COMPLETED: 'completed',
                     IN_PROGRESS: 'in-progress',
                     NOT_STARTED: 'initial',
@@ -90,7 +90,7 @@ export default function Landing() {
             }
         }
 
-        // Step 3: Apply search filter
+        
         if (search.trim()) {
             const searchLower = search.toLowerCase();
             filtered = filtered.filter(({ roadmap }) =>
@@ -123,7 +123,7 @@ export default function Landing() {
                 </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
+            {}
             <View style={styles.searchWrapper}>
                 <SearchBar
                     value={search}
@@ -132,7 +132,7 @@ export default function Landing() {
                 />
             </View>
 
-            {/* Main Tabs: Pastor's Roadmaps / Roadmap Library */}
+            {}
             <View style={styles.mainTabsContainer}>
                 <Pressable
                     style={[
@@ -168,7 +168,7 @@ export default function Landing() {
                 </Pressable>
             </View>
 
-            {/* Status Tabs (only show in Pastor's Roadmaps) */}
+            
             {mainTab === 'PASTOR_ROADMAPS' && (
                 <TabSwitcher
                     tabs={[

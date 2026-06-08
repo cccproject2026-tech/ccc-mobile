@@ -23,7 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 
-// Mock data for Mentors
+
 const mockMentors: MentorData[] = [
   {
     id: '1',
@@ -77,11 +77,11 @@ export default function RevitalizationRoadmap() {
     bannerImage: roadmap.imageUrl || undefined,
   }), []);
 
-  // Transform roadmaps to RoadmapCardData
+  
   const roadmapLibrary: RoadmapCardData[] = useMemo(() => {
     console.log("🔄 Transforming roadmaps to cards. Total roadmaps:", roadmaps.length);
     const transformed = roadmaps
-      .filter(roadmap => roadmap != null) // Filter out null/undefined roadmaps
+      .filter(roadmap => roadmap != null)
       .map(roadmap => {
         try {
           return getRoadmapCard(roadmap);
@@ -116,7 +116,7 @@ export default function RevitalizationRoadmap() {
 
 
 
-  // Menu items for mentees
+  
   const menteeMenuItems = [
     {
       icon: 'people-outline',
@@ -170,7 +170,7 @@ export default function RevitalizationRoadmap() {
     { icon: 'calendar-outline', label: 'Product and Services', onPress: () => console.log('Schedule a Meeting') },
   ];
 
-  // Menu items for mentors
+  
   const mentorMenuItems = [
     { icon: 'people-outline', label: 'List of Mentees', onPress: () => router.push('/(director)/(tabs)/mentors/mentor-mentees') },
     { icon: 'person-add-outline', label: 'Assign New Mentee', onPress: () => router.push('/(director)/(tabs)/mentors/assign-mentee') },
@@ -198,14 +198,14 @@ export default function RevitalizationRoadmap() {
     { icon: 'person-remove-outline', label: 'Remove as Field Mentor', onPress: () => console.log('Remove as Field Mentor') },
   ];
 
-  // Menu items for roadmaps
+  
   const roadmapMenuItems = [
     {
       icon: 'person-add-outline',
       label: 'Assign to',
       onPress: () => {
         if (!selectedRoadmap) return;
-        // Find the roadmap ID from the roadmap data
+        
         const roadmap = roadmaps.find(r => r.name === selectedRoadmap.title);
         if (!roadmap) return;
         
@@ -228,14 +228,14 @@ export default function RevitalizationRoadmap() {
         
         handleCloseModal();
         
-        // For phase type, open modal to edit phase details first
+        
         if (roadmap.type === 'phase') {
           setEditingPhaseData(roadmap);
           setTimeout(() => {
             createRoadmapModalRef.current?.present();
           }, 350);
         } else {
-          // For single roadmap, go directly to edit
+          
           setTimeout(() => {
             router.push({
               pathname: '/(director)/(tabs)/revitalization-roadmaps/(creation)/create-roadmap',
@@ -301,7 +301,7 @@ export default function RevitalizationRoadmap() {
     }, 300);
   }, []);
 
-  // Create Roadmap Modal Handlers
+  
   const handleOpenCreateRoadmapModal = useCallback(() => {
     setEditingPhaseData(null);
     createRoadmapModalRef.current?.present();
@@ -349,7 +349,7 @@ export default function RevitalizationRoadmap() {
   };
 
   const handlePhasePress = useCallback((roadmapData: RoadmapCardData) => {
-    // Find the corresponding roadmap by title
+    
     const roadmap = roadmaps.find(r => r.name === roadmapData.title);
     console.log('roadmap', roadmap);
     
@@ -364,11 +364,11 @@ export default function RevitalizationRoadmap() {
     }
 
     // Single type roadmaps always navigate directly to task detail page
-    // If it has nested roadmaps, navigate to the first one
+    
     if (roadmap.haveNextedRoadMaps && roadmap.roadmaps && roadmap.roadmaps.length > 0) {
       router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}/${roadmap.roadmaps[0]._id}`);
     } else {
-      // Fallback: if no nested roadmaps, still navigate to phase detail page
+      
       router.push(`/(director)/(tabs)/revitalization-roadmaps/${roadmapId}`);
     }
   }, [roadmaps, router]);
@@ -443,12 +443,12 @@ export default function RevitalizationRoadmap() {
           showUserName={true}
           showNotifications={true}
         />
-        {/* Header */}
+        {}
         <RoadmapHeader
           handleOpenCreateRoadmapModal={handleOpenCreateRoadmapModal}
           activeTab={activeTab}
         />
-        {/* Search Bar - Fixed */}
+        {}
         <View
           style={{ paddingHorizontal: 16 }}
         >
@@ -472,7 +472,7 @@ export default function RevitalizationRoadmap() {
           >
             <MentorProfileSwiper />
           </View>
-          {/* Tabs */}
+          {}
           <TabSwitcher
             tabs={tabData}
             activeTab={activeTab}
@@ -483,9 +483,9 @@ export default function RevitalizationRoadmap() {
             }
           />
 
-          {/* Profile Swiper */}
+          {}
 
-          {/* Sort By */}
+          {}
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, paddingHorizontal: 16, marginBottom: 16, alignItems: 'center' }} className="flex-row items-center justify-end gap-2 px-4 mb-4">
             <Text style={{ fontSize: 16, color: 'white' }} className="text-base text-white">Sort by</Text>
             <Pressable
@@ -502,7 +502,7 @@ export default function RevitalizationRoadmap() {
             </Pressable>
           </View>
 
-          {/* Content List */}
+          {}
           <View className="px-4">
             {activeTab === "roadmap-library" && (
               <>
@@ -545,7 +545,7 @@ export default function RevitalizationRoadmap() {
             )}
 
             {activeTab === "mentors" &&
-              /* Mentors List */
+              
               filteredMentors.map((mentor) => (
                 <TouchableOpacity
                   key={mentor.id}
@@ -569,7 +569,7 @@ export default function RevitalizationRoadmap() {
               ))}
 
             {activeTab === "mentees" &&
-              /* Mentees List */
+              
               filteredMentees.map((mentee) => (
                 <MenteeCard
                   key={mentee.id}

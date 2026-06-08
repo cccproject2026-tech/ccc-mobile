@@ -51,10 +51,10 @@ function TabIcon({
 
     return (
         <View style={tabIconStyles.wrapper}>
-            {/* Active pill indicator */}
+            {}
             <Animated.View style={[tabIconStyles.pill, { opacity }]} />
 
-            {/* Icon */}
+            {}
             <Animated.View style={{ transform: [{ scale }] }}>
                 <Image
                     source={source}
@@ -136,7 +136,7 @@ export default function PastorTabLayout() {
                         tabBarInactiveTintColor: 'rgba(255,255,255,0.38)',
                         sceneStyle: { backgroundColor: "transparent" },
                         tabBarStyle: {
-                            // Solid deep navy — clean & premium
+                            
                             backgroundColor: '#0D3351',
                             borderTopWidth: 1,
                             borderTopColor: 'rgba(255,255,255,0.07)',
@@ -162,7 +162,7 @@ export default function PastorTabLayout() {
                         },
                     }}
                 >
-                    {/* ── Notifications ── */}
+                    {}
                     <Tabs.Screen
                         name="notifications"
                         options={{
@@ -173,7 +173,7 @@ export default function PastorTabLayout() {
                         }}
                     />
 
-                    {/* ── Dashboard ── */}
+                    {}
                     <Tabs.Screen
                         name="index"
                         options={{
@@ -184,7 +184,7 @@ export default function PastorTabLayout() {
                         }}
                     />
 
-                    {/* ── Profile ── */}
+                    {}
                     <Tabs.Screen
                         name="profile/index"
                         options={{
@@ -195,7 +195,7 @@ export default function PastorTabLayout() {
                         }}
                     />
 
-                    {/* ── Hidden routes ── */}
+                    {}
                     {HIDDEN_ROUTES.map((name) => (
                         <Tabs.Screen key={name} name={name} options={{ href: null }} />
                     ))}

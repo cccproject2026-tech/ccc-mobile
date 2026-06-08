@@ -3,11 +3,11 @@ import { Status } from '@/lib/roadmap/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-// Progress data structure for each task
+
 interface TaskProgress {
     status?: Status;
-    formValues?: Record<string, any>; // All field values (text, checkbox, dropdown, etc.)
-    attachments?: Record<string, FileAttachment[]>; // Files per field
+    formValues?: Record<string, any>;
+    attachments?: Record<string, FileAttachment[]>;
     updatedAt: number;
 }
 
@@ -19,10 +19,10 @@ interface FileAttachment {
     mimeType?: string;
 }
 
-// Overall progress state
-type Progress = Record<string, TaskProgress>; // taskId -> progress
 
-// Context interface
+type Progress = Record<string, TaskProgress>;
+
+
 interface RoadmapProgressContextValue {
     progress: Progress;
     updateItem: (taskId: string, patch: Partial<TaskProgress>) => void;
@@ -32,13 +32,13 @@ interface RoadmapProgressContextValue {
 
 const RoadmapProgressContext = createContext<RoadmapProgressContextValue | null>(null);
 
-const STORAGE_KEY = 'roadmap-progress-v2'; // v2 for new schema
+const STORAGE_KEY = 'roadmap-progress-v2';
 
 export function RoadmapProgressProvider({ children }: { children: React.ReactNode }) {
     const [progress, setProgress] = useState<Progress>({});
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Load from AsyncStorage on mount
+    
     useEffect(() => {
         (async () => {
             try {
@@ -55,32 +55,32 @@ export function RoadmapProgressProvider({ children }: { children: React.ReactNod
         })();
     }, []);
 
-    // Save to AsyncStorage with debounce
+    
     useEffect(() => {
-        if (!isLoaded) return; // Don't save until initial load is complete
+        if (!isLoaded) return;
 
         const timer = setTimeout(() => {
             AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(progress)).catch(error => {
                 console.error('Failed to save progress:', error);
             });
-        }, 500); // 500ms debounce
+        }, 500);
 
         return () => clearTimeout(timer);
     }, [progress, isLoaded]);
 
-    // Update task progress
+    
     const updateItem = useCallback((taskId: string, patch: Partial<TaskProgress>) => {
         setProgress(prev => {
             const current = prev[taskId] || { updatedAt: 0 };
 
-            // Merge updates
+            
             const updated: TaskProgress = {
                 ...current,
                 ...patch,
                 updatedAt: Date.now(),
             };
 
-            // Merge formValues if provided
+            
             if (patch.formValues) {
                 updated.formValues = {
                     ...(current.formValues || {}),
@@ -88,7 +88,7 @@ export function RoadmapProgressProvider({ children }: { children: React.ReactNod
                 };
             }
 
-            // Merge attachments if provided
+            
             if (patch.attachments) {
                 updated.attachments = {
                     ...(current.attachments || {}),
@@ -103,7 +103,7 @@ export function RoadmapProgressProvider({ children }: { children: React.ReactNod
         });
     }, []);
 
-    // Reset all progress
+    
     const resetAll = useCallback(() => {
         setProgress({});
         AsyncStorage.removeItem(STORAGE_KEY).catch(error => {
@@ -111,7 +111,7 @@ export function RoadmapProgressProvider({ children }: { children: React.ReactNod
         });
     }, []);
 
-    // Reset single task
+    
     const resetTask = useCallback((taskId: string) => {
         setProgress(prev => {
             const { [taskId]: _, ...rest } = prev;
@@ -136,7 +136,7 @@ export function RoadmapProgressProvider({ children }: { children: React.ReactNod
     );
 }
 
-// Hook to use context
+
 export function useRoadmapProgress() {
     const ctx = useContext(RoadmapProgressContext);
     if (!ctx) {
@@ -145,7 +145,7 @@ export function useRoadmapProgress() {
     return ctx;
 }
 
-// Helper hooks for common operations
+
 export function useTaskProgress(taskId: string) {
     const { progress, updateItem } = useRoadmapProgress();
 

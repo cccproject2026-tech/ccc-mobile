@@ -45,7 +45,7 @@ export const HeaderRight: React.FC<HeaderRightProps> = ({
         onPress={() => navigation.navigate("Notification")}
       >
         <Image
-          source={icons.notification} // Replace with actual user profile image URL
+          source={icons.notification}
           style={{ width: 30, height: "100%" }}
           resizeMode="contain"
         />
@@ -53,7 +53,7 @@ export const HeaderRight: React.FC<HeaderRightProps> = ({
     )}
     <TouchableOpacity onPress={() => navigation.openDrawer()}>
       <Image
-        source={icons.logo} // Replace with actual user profile image URL
+        source={icons.logo}
         style={{ width: 30, height: "100%" }}
         resizeMode="contain"
       />
@@ -72,14 +72,14 @@ export const HeaderTitle: React.FC<HeaderTitleProps> = ({
     start={{ x: 0, y: 0 }}
     end={{ x: 1, y: 1 }}
     style={{
-      padding: 2, // Border thickness
+      padding: 2,
       borderRadius: 10,
     }}
   >
     <View
       style={[
         {
-          backgroundColor: Colors.lightBlueGradientOne, // Same as parent's background
+          backgroundColor: Colors.lightBlueGradientOne,
           borderRadius: 8,
           paddingHorizontal: 30,
           paddingVertical: 8,

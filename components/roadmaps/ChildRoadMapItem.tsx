@@ -1,4 +1,4 @@
-// components/roadmap/items/ChildRoadmapItem.tsx
+
 import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
 import { ChildRoadmap } from '@/lib/roadmap/types';
 import { Button, Pressable, ScrollView, Text, TextInput } from 'react-native';

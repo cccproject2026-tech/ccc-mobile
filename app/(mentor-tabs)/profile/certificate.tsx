@@ -105,14 +105,14 @@ export default function Certificate() {
       {
         text: "Camera",
         onPress: () => {
-          // Mock camera functionality
+          
           Alert.alert("Camera", "Camera functionality would open here");
         },
       },
       {
         text: "Photo Library",
         onPress: () => {
-          // Mock photo library functionality
+          
           Alert.alert("Photo Library", "Photo library would open here");
         },
       },
@@ -144,7 +144,7 @@ export default function Certificate() {
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
-    // Reset to original data if needed
+    
   };
 
   const handleSavePress = () => {
@@ -300,7 +300,7 @@ export default function Certificate() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{
-                    padding: 2, // Border thickness
+                    padding: 2,
                     borderRadius: 999999,
                   }}
                 >
@@ -355,7 +355,7 @@ export default function Certificate() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{
-                  padding: 2, // Border thickness
+                  padding: 2,
                   borderRadius: 10,
                   marginBottom: 16,
                   marginHorizontal: 22,
@@ -368,7 +368,7 @@ export default function Certificate() {
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 10,
-                      backgroundColor: customColors.lightBlueGradientOne, // Same as parent's background
+                      backgroundColor: customColors.lightBlueGradientOne,
                       borderRadius: 8,
                       paddingHorizontal: 30,
                       paddingVertical: 8,
@@ -416,7 +416,7 @@ export default function Certificate() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{
-                  padding: 2, // Border thickness
+                  padding: 2,
                   borderRadius: 10,
                   marginHorizontal: 22,
                 }}
@@ -427,7 +427,7 @@ export default function Certificate() {
                       flexDirection: "column",
                       justifyContent: "center",
                       gap: 10,
-                      backgroundColor: customColors.lightBlueGradientOne, // Same as parent's background
+                      backgroundColor: customColors.lightBlueGradientOne,
                       borderRadius: 8,
                       paddingHorizontal: 30,
                       paddingVertical: 8,
@@ -487,7 +487,7 @@ export default function Certificate() {
                   <Text style={styles.whiteText}>Profile Information</Text>
                 </View>
 
-                {/* Intro Summary */}
+                {}
                 <View style={styles.summaryContainer}>
                   {renderEditableText(
                     profileData.profileSummary,
@@ -498,7 +498,7 @@ export default function Certificate() {
                   )}
                 </View>
 
-                {/* Detailed Personal Info */}
+                {}
                 <View style={styles.detailedContainer}>
                   <View className="gap-3 mt-2">
                     <Text style={styles.whiteText}>Personal Information</Text>
@@ -548,7 +548,7 @@ export default function Certificate() {
                   </View>
                   <View style={styles.divider} />
 
-                  {/* Church-1 Personal Info */}
+                  {}
                   <View className="gap-3">
                     <View
                       style={[
@@ -693,7 +693,7 @@ export default function Certificate() {
                   </View>
                   <View style={styles.divider} />
 
-                  {/* church 2 Information */}
+                  {}
                   {profileData.church2 && (
                     <View className="gap-3">
                       <View
@@ -842,12 +842,12 @@ export default function Certificate() {
                   )}
 
                   <View style={styles.divider} />
-                  {/* Other Information */}
+                  {}
                   <View style={styles.sectionMargin}>
                     <Text style={styles.whiteText}>Other Information</Text>
                   </View>
 
-                  {/* Title */}
+                  {}
                   <View style={styles.infoBox}>
                     {isEditMode ? (
                       <CustomDropdown
@@ -866,7 +866,7 @@ export default function Certificate() {
                     )}
                   </View>
 
-                  {/* Years in Ministry and Conference */}
+                  {}
                   <View style={styles.rowContainer}>
                     <View style={styles.infoBox}>
                       {isEditMode ? (
@@ -899,7 +899,7 @@ export default function Certificate() {
                     </View>
                   </View>
 
-                  {/* Current Community Service Projects */}
+                  {}
                   <View style={styles.infoBox}>
                     {isEditMode ? (
                       renderEditableText(
@@ -914,7 +914,7 @@ export default function Certificate() {
                     )}
                   </View>
 
-                  {/* Interests */}
+                  {}
                   <View style={styles.interestsContainer}>
                     <Text style={styles.whiteText}>Interests :</Text>
                     {renderEditableText(
@@ -926,7 +926,7 @@ export default function Certificate() {
                     )}
                   </View>
 
-                  {/* Comments */}
+                  {}
                   <View style={styles.commentsContainer}>
                     <Text style={styles.whiteText}>Comments :</Text>
                     {renderEditableText(
@@ -941,7 +941,7 @@ export default function Certificate() {
               </View>
             </ScrollView>
 
-            {/* Save/Cancel Buttons */}
+            {}
             {isEditMode && (
               <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity
@@ -961,17 +961,8 @@ export default function Certificate() {
           </View>
         </SafeAreaView>
 
-        {/* Modals */}
-        {/* <ConfirmationModal
-          isVisible={showConfirmation}
-          onClose={() => setShowConfirmation(false)}
-          onConfirm={handleConfirmSave}
-        />
-
-        <SuccessToast
-          isVisible={showSuccessToast}
-          onClose={() => setShowSuccessToast(false)}
-        /> */}
+        {}
+        {}
       </LinearGradient>
     </>
   );
@@ -1029,7 +1020,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     justifyContent: "space-between",
-    // alignItems: "center",
+    
   },
   text: {
     fontSize: 20,
@@ -1037,14 +1028,14 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
-    // marginHorizontal: 16,
-    // marginVertical: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    
+    
   },
   container: {
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 72, // 4.5rem = 72px
+    marginHorizontal: 72,
   },
   greetingText: {
     fontFamily: "AlbertSans-SemiBold",
@@ -1307,8 +1298,8 @@ const styles = StyleSheet.create({
   },
   mentorIconContainer: {
     flexDirection: "row",
-    gap: 14, // gap-1
-    // paddingHorizontal: 8, // px-2
+    gap: 14,
+    
   },
   MentorIcon: {
     width: 18,

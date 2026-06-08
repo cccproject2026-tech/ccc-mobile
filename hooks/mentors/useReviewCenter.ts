@@ -40,7 +40,7 @@ async function persistSeenIds(ids: Set<string>): Promise<void> {
   try {
     await AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify([...ids]));
   } catch {
-    // silent
+    
   }
 }
 
@@ -126,7 +126,7 @@ export function useReviewCenter() {
         if (!pastorId) return;
         const pastorName = menteeNameById.get(pastorId) ?? "Pastor";
 
-        // --- Roadmap submissions ---
+        
         const roadmapIds: string[] = (mentee.assignedRoadmapIds ?? [])
           .map((x: any) => String(x))
           .filter(Boolean)
@@ -146,7 +146,7 @@ export function useReviewCenter() {
                 );
                 submissions.push(...subs);
               } catch {
-                // skip task
+                
               }
             });
 
@@ -208,7 +208,7 @@ export function useReviewCenter() {
           }
         }
 
-        // --- Assessment submissions ---
+        
         const assessmentIds: string[] = (mentee.assignedAssessmentIds ?? [])
           .map((x: any) => String(x))
           .filter(Boolean)

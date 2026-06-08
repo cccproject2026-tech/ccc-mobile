@@ -14,7 +14,7 @@ export const useCreateAssessment = () => {
             queryClient.invalidateQueries({ queryKey: ['assessments'] });
             // Invalidate progress to ensure new assessment shows up if relevant
             queryClient.invalidateQueries({ queryKey: ['progress'] });
-            // Optionally add the new assessment to the cache
+            
             queryClient.setQueryData(['assessment', data._id], data);
             console.log('✅ Assessment created successfully');
         },

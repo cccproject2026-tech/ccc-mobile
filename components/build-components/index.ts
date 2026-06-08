@@ -10,7 +10,7 @@ export { default as ScreenLayout } from "./screen-layout";
 export { default as Separator } from "./separator";
 export { default as TextArea } from "./text-area";
 
-// Cards
+
 export { default as AssessmentCard } from "./cards/assessment-card";
 export { default as AssessmentMainCard } from "./cards/assessment-main-card";
 export { default as CommentCard } from "./cards/comment-card";

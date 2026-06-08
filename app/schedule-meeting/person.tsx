@@ -77,7 +77,7 @@ export default function ScheduleMeetingPersonScreen() {
             });
           }
         } catch {
-          // ignore
+          
         }
       }
     }, [

@@ -22,7 +22,7 @@ const RejectInterestModal: React.FC<RejectInterestModalProps> = ({
         >
             <View className="items-center justify-center flex-1 bg-black/50">
                 <View className="w-[85%] max-w-md bg-gray-200 rounded-3xl p-6 relative">
-                    {/* Close Button */}
+                    {}
                     <Pressable
                         onPress={onCancel}
                         className="absolute items-center justify-center w-8 h-8 top-4 right-4"
@@ -30,12 +30,12 @@ const RejectInterestModal: React.FC<RejectInterestModalProps> = ({
                         <Ionicons name="close" size={24} color="#666" />
                     </Pressable>
 
-                    {/* Title */}
+                    {}
                     <Text className="text-[#1a5b77] text-center text-xl font-semibold mb-8 mt-4">
                         Are you sure want to{'\n'}Reject Interest ?
                     </Text>
 
-                    {/* Buttons */}
+                    {}
                     <View className="flex-row gap-4">
                         <Pressable
                             onPress={onCancel}

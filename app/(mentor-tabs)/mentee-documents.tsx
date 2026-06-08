@@ -30,10 +30,10 @@ export default function MenteeDocumentsScreen() {
     return menteesData?.mentees?.find((m) => m.id === id)
   }, [menteesData, id])
 
-  // Fetch documents for the mentee
+  
   const { data: documents, isLoading: isLoadingDocuments } = useDocumentsByUserId(id)
 
-  // Format date for display (US format)
+  
   const formatDocumentDate = React.useCallback((dateString?: string): string => {
     if (!dateString) return "Unknown date"
     const date = new Date(dateString)
@@ -46,25 +46,25 @@ export default function MenteeDocumentsScreen() {
     })
   }, [])
 
-  // Format documents for display
+  
   const formattedDocuments = useMemo(() => {
     if (!documents || documents.length === 0) return { recentUploads: [], library: [] }
 
-    // Sort by upload date (most recent first)
+    
     const sorted = [...documents].sort((a, b) => {
       const dateA = new Date(a.uploadedAt || 0).getTime()
       const dateB = new Date(b.uploadedAt || 0).getTime()
       return dateB - dateA
     })
 
-    // Recent uploads (last 5)
+    
     const recentUploads = sorted.slice(0, 5).map((doc, index) => ({
       id: doc.id || index.toString(),
       title: doc.fileName || "Document",
       time: formatDocumentDate(doc.uploadedAt),
     }))
 
-    // Library (all documents)
+    
     const library = sorted.map((doc, index) => ({
       id: doc.id || index.toString(),
       title: doc.fileName || "Document",
@@ -123,7 +123,7 @@ export default function MenteeDocumentsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.contentContainer}>
-          {/* Top Navigation Bar */}
+          {}
           <View style={styles.topNav}>
             <TouchableOpacity activeOpacity={0.8}>
               <Ionicons name="menu" size={26} color="#FFFFFF" />
@@ -146,7 +146,7 @@ export default function MenteeDocumentsScreen() {
             </View>
           </View>
 
-          {/* Header with Back Button */}
+          {}
           <View style={styles.headerRow}>
             <SquircleIconButton
               icon="chevron-back"
@@ -170,7 +170,7 @@ export default function MenteeDocumentsScreen() {
             <View style={{ width: 24 }} />
           </View>
 
-          {/* New Documents Banner */}
+          {}
           {formattedDocuments.recentUploads.length > 0 && (
             <TouchableOpacity activeOpacity={0.9} style={styles.uploadBanner}>
               <Text style={styles.uploadBannerText}>
@@ -180,7 +180,7 @@ export default function MenteeDocumentsScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Recent Uploads List */}
+          {}
           {formattedDocuments.recentUploads.length > 0 && (
             <View style={styles.recentUploadsSection}>
               {formattedDocuments.recentUploads.map((doc) => (
@@ -204,14 +204,14 @@ export default function MenteeDocumentsScreen() {
             </View>
           )}
 
-          {/* Document Library Banner */}
+          {}
           <View style={styles.libraryBanner}>
             <Text style={styles.libraryBannerText}>
               Document Library • {resolvedMenteeName}
             </Text>
           </View>
 
-          {/* Document Library List */}
+          {}
           <View style={styles.librarySection}>
             {formattedDocuments.library.length > 0 ? (
               formattedDocuments.library.map((doc) => (

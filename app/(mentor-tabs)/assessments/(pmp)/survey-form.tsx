@@ -22,7 +22,7 @@ export default function SurveyForm() {
   const [isVisible, setIsVisible] = React.useState(false);
   const scrollViewRef = React.useRef<ScrollView>(null);
 
-  // Use TanStack Query hooks
+  
   const { data: assessment, isLoading: loading, error: queryError } = useAssessment(assessmentId);
   const submitAssessmentMutation = useSubmitAssessmentAnswers();
   const error = queryError ? "Failed to load assessment. Please try again." : null;
@@ -43,7 +43,7 @@ export default function SurveyForm() {
     const currentSection = assessment.sections[formTab];
     if (!currentSection) return;
 
-    // Get all layer keys for the current section
+    
     const tabKeys = currentSection.layers.map(
       (layer) => `section_${currentSection._id}_layer_${layer._id}`
     );
@@ -64,7 +64,7 @@ export default function SurveyForm() {
 
     Object.entries(selections).forEach(([key, selectedIndices]) => {
       const parts = key.split('_');
-      // Format: section_${sectionId}_layer_${layerId}
+      
       if (parts.length >= 4 && parts[0] === 'section' && parts[2] === 'layer') {
         const sectionId = parts[1];
         const layerId = parts.slice(3).join('_');
@@ -117,7 +117,7 @@ export default function SurveyForm() {
       return;
     }
 
-    // Submit the assessment
+    
     submitAssessmentMutation.mutate(
       {
         assessmentId,
@@ -163,7 +163,7 @@ export default function SurveyForm() {
           </Text>
         </View>
 
-        {/* Render ChecklistCard for each layer */}
+        {}
         {section.layers.map((layer) => {
           const selectionKey = `section_${section._id}_layer_${layer._id}`;
           const choiceTexts = layer.choices.map((choice) => choice.text);

@@ -133,7 +133,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           name: "Change Mentor",
           iconKey: "changeMentor",
           navigateLocation: "/(pastor-tabs)/roadmap/phase-2/empowerment-cards",
-          // navigateLocation: "/(pastor-tabs)/profile/my-profile",
+          
         },
       ],
     },
@@ -306,7 +306,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.drawerHeader}>
-        {/* Profile and App Logo */}
+        {}
         <View
           style={{
             width: 100,
@@ -344,12 +344,12 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           }}
         >
           {/* <Image
-            source={require("../../assets/logos/CCClogo.png")} // Replace with your app logo
+            source={require("../../assets/logos/CCClogo.png")}
             style={{ width: "100%", height: "100%" }}
             resizeMode="contain"
           /> */}
           <TouchableOpacity onPress={closeDrawer}>
-            {/* <Text>X</Text> */}
+            {}
             <Image
               source={image}
               style={{ width: 25, height: 25 }}
@@ -359,7 +359,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
         </View>
       </View>
 
-      {/* Drawer Options */}
+      {}
       <View style={{ padding: 10 }}>
         {(currentScreen == "Pastor"
           ? PastorScreenDrawerContent
@@ -383,7 +383,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
               <Text style={styles.drawerText}>{e.name}</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
-            {/* <View style={styles.separator} /> */}
+            {}
             {(e.name == "Profile" || e.name == "Settings") &&
               e.subTabs?.map((ee: SubTabItem, index) => (
                 <View style={{ width: "70%", marginLeft: 90 }} key={index}>
@@ -403,8 +403,8 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
                     <Text style={styles.drawerText}>{ee.name}</Text>
                   </TouchableOpacity>
                   <View style={styles.separator} />
-                  {/* <View style={styles.separator} /> */}
-                  {/* <View style={{width:"50%"}}></View> */}
+                  {}
+                  {}
                 </View>
               ))}
           </React.Fragment>
@@ -413,7 +413,7 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
       <View style={{ marginVertical: 10, padding: 10 }}>
         <TouchableOpacity
           style={styles.drawerItem}
-          // onPress={() => props.navigation.navigate("")}
+          
           onPress={() => alert("Logged out!")}
         >
           <Image
@@ -423,19 +423,19 @@ export const CustomDrawerContent = (props: CustomDrawerContentProps) => {
           <Text style={styles.drawerText}>Log out</Text>
         </TouchableOpacity>
       </View>
-      {/* You can add more items here */}
+      {}
 
-      {/* Footer Section */}
+      {}
       <View style={styles.drawerFooter}>
         <View
           style={{ backgroundColor: "#33688e", borderRadius: 10, padding: 4 }}
         >
-          {/* Logout Button */}
+          {}
           <TouchableOpacity
-            // style={styles.footerItem}
+            
             onPress={() => {
-              // Implement logout functionality here
-              // console.log("Logging out...");
+              
+              
             }}
           >
             <Text style={{ color: "white" }}>Contact Information</Text>
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 110,
     paddingTop: 50,
-    // paddingBottom: 20,
+    
     backgroundColor: "#14517d",
   },
   profilePic: {
@@ -505,9 +505,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   drawerFooter: {
-    marginTop: "auto", // Push the footer to the bottom
+    marginTop: "auto",
     padding: 10,
-    backgroundColor: "#14517d", // Set a background color for the footer
+    backgroundColor: "#14517d",
   },
   footerItem: {
     flexDirection: "row",
@@ -517,6 +517,6 @@ const styles = StyleSheet.create({
   footerText: {
     marginLeft: 10,
     fontSize: 18,
-    color: "#ff6347", // Red color for the footer text
+    color: "#ff6347",
   },
 });

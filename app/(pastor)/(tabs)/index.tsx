@@ -391,7 +391,7 @@ export default function PastorDashboard() {
         icon: "people-outline" as const,
         line1: "Mentorship",
         line2: "Sessions",
-        // line3: nextMentorshipWhenLabel,
+        
         sheetTitle: "Attend Mentorship Session",
         sectionId: "mentorship-sessions",
       },

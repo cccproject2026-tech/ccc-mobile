@@ -1,36 +1,13 @@
-// // app/(pastor-tabs)/(tabs)/new-roadmap/[phaseId]/[itemId].tsx
-// import { ChildRoadmapItem } from '@/components/roadmaps/ChildRoadMapItem';
-// import { FormTask } from '@/components/roadmaps/tasks/FormTask';
-// import { SignatureTask } from '@/components/roadmaps/tasks/SignatureTask';
-// import { UploadTask } from '@/components/roadmaps/tasks/UploadTask';
-// import { mockRevitalization } from '@/lib/roadmap/mock';
-// import { Task } from '@/lib/roadmap/types';
-// import { useLocalSearchParams } from 'expo-router';
-// import { Text } from 'react-native';
 
-// export default function ItemDetail() {
-//     const { itemId } = useLocalSearchParams<{ itemId: string }>();
-//     const item = mockRevitalization.items[itemId!];
 
-//     if (!item) return <Text>Not found</Text>;
 
-//     // Route to correct component based on taskType
-//     if (item.kind === 'TASK') {
-//         const task = item as Task;
-//         switch (task.taskType) {
-//             case 'UPLOAD': return <UploadTask item={task} />;
-//             case 'FORM': return <FormTask item={task} />;
-//             case 'SIGN': return <SignatureTask item={task} />;
-//             // case 'CHECKLIST': return <ChecklistTask item={task} />;
-//             // case 'LINK': return <LinkTask item={task} />;
-//             // case 'MEETING': return <MeetingTask item={task} />;
-//             default: return <Text>Unsupported task</Text>;
-//         }
-//     }
 
-//     // Handle child roadmaps (Jump-start)
-//     return <ChildRoadmapItem item={item} />;
-// }
+
+
+
+
+
+
 
 
 // app/(pastor-tabs)/(tabs)/new-roadmap/[phaseId]/[itemId].tsx
@@ -61,7 +38,7 @@ export default function ItemDetail() {
     const [activeTab, setActiveTab] = useState<'overview' | 'comments' | 'queries'>('overview');
     const { progress, toggleChecklist, updateItem } = useRoadmapProgress();
 
-    // Outcome menu items
+    
     const getOutcomeMenuItems = useCallback((): MenuItem[] => [
         {
             id: 'outcome-4-months',
@@ -116,13 +93,13 @@ export default function ItemDetail() {
 
     const p = progress[item.id];
 
-    // Render bottom interactive section based on task type
+    
     const renderInteractiveContent = () => {
-        // Jump-start child roadmap
+        
         if (item.kind === 'CHILD_ROADMAP') {
             const childItem = item as ChildRoadmap;
 
-            // Overview - show steps as checklist
+            
             return (
                 <View>
                     {childItem.steps.map(step => (
@@ -149,7 +126,7 @@ export default function ItemDetail() {
             );
         }
 
-        // Task types - use reusable components
+        
         const task = item as Task;
         if (task.taskType === 'SIGN') return <SignatureTask item={task} />;
         if (task.taskType === 'UPLOAD') return <UploadTask item={task} />;
@@ -173,7 +150,7 @@ export default function ItemDetail() {
                 <TopBar role="pastor" showUserName />
             </View>
 
-            {/* Header */}
+            {}
             <View className="flex-row items-center justify-between px-4 py-4 mb-5 border-b border-white/20">
                 <View className="flex-row items-center flex-1">
                     <TouchableOpacity onPress={() => router.back()}>
@@ -198,7 +175,7 @@ export default function ItemDetail() {
 
 
             <View className="flex-row items-center justify-center px-4 mb-4">
-                {/* Over View Tab */}
+                {}
                 <TouchableOpacity
                     onPress={() => setActiveTab('overview')}
                     className={`px-6 py-2.5 rounded-full mr-2 ${activeTab === 'overview' ? 'bg-white' : 'bg-transparent border border-white/40'
@@ -212,7 +189,7 @@ export default function ItemDetail() {
                     </Text>
                 </TouchableOpacity>
 
-                {/* Comments Tab */}
+                {}
                 <TouchableOpacity
                     onPress={() => setActiveTab('comments')}
                     className={`px-5 py-2.5 rounded-full mr-2 flex-row items-center ${activeTab === 'comments' ? 'bg-white' : 'bg-transparent border border-white/40'
@@ -237,7 +214,7 @@ export default function ItemDetail() {
                     </View>
                 </TouchableOpacity>
 
-                {/* Queries Tab */}
+                {}
                 <TouchableOpacity
                     onPress={() => setActiveTab('queries')}
                     className={`px-5 py-2.5 rounded-full flex-row items-center ${activeTab === 'queries' ? 'bg-white' : 'bg-transparent border border-white/40'
@@ -263,9 +240,9 @@ export default function ItemDetail() {
                 </TouchableOpacity>
             </View>
 
-            {/* Scrollable Content */}
+            {}
             <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
-                {/* Hero Card with Cover Image */}
+                {}
                 <View
                     className="relative mb-0 overflow-hidden rounded-3xl"
                     style={{
@@ -273,7 +250,7 @@ export default function ItemDetail() {
                         height: 220,
                     }}
                 >
-                    {/* Image - Replace with your actual image */}
+                    {}
                     {item?.meta?.coverImage ? (
                         <Image
                             source={typeof item.meta.coverImage === 'string'
@@ -298,22 +275,22 @@ export default function ItemDetail() {
                         />
                     )}
 
-                    {/* Text overlay with background */}
+                    {}
                     <View
                         style={{
                             position: 'absolute',
-                            bottom: 24, // Adjust this value to control vertical positioning
+                            bottom: 24,
                             left: 0,
-                            paddingLeft: 24, // Matches the padding for the text
-                            paddingRight: 24, // You might want to adjust this based on desired width
+                            paddingLeft: 24,
+                            paddingRight: 24,
                         }}
                     >
                         <View
                             style={{
-                                backgroundColor: 'rgba(50, 50, 80, 0.7)', // Semi-transparent dark background
-                                paddingVertical: 8, // Vertical padding inside the background
-                                paddingHorizontal: 12, // Horizontal padding inside the background
-                                borderRadius: 8, // Rounded corners for the background
+                                backgroundColor: 'rgba(50, 50, 80, 0.7)',
+                                paddingVertical: 8,
+                                paddingHorizontal: 12,
+                                borderRadius: 8,
                                 alignSelf: 'flex-start', // Ensures the background only takes up space needed for text
                             }}
                         >
@@ -324,7 +301,7 @@ export default function ItemDetail() {
                     </View>
                 </View>
 
-                {/* Completion Time Section with Border */}
+                {}
                 <View
                     className="px-6 py-4 border-b border-white/20"
                     style={{
@@ -337,7 +314,7 @@ export default function ItemDetail() {
                     </Text>
                 </View>
 
-                {/* Roadmap Section */}
+                {}
                 <Text className="px-1 mt-6 mb-3 text-xl font-semibold text-white">
                     Roadmap
                 </Text>
@@ -353,7 +330,7 @@ export default function ItemDetail() {
                     </Text>
                 </View>
 
-                {/* Description Section */}
+                {}
                 <Text className="px-1 mb-3 text-xl font-semibold text-white">
                     Description
                 </Text>
@@ -396,11 +373,11 @@ export default function ItemDetail() {
                     )}
                 </View>
 
-                {/* Interactive Task Content */}
+                {}
                 {renderInteractiveContent()}
             </ScrollView>
 
-            {/* Context Menu (rendered on top) */}
+            {}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={getOutcomeMenuItems()}
@@ -415,7 +392,7 @@ export default function ItemDetail() {
                 }}
             />
 
-            {/* Outcome Modal */}
+            {}
             <ExpectedOutcomeModal
                 visible={showOutcomeModal}
                 onClose={() => setShowOutcomeModal(false)}

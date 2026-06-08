@@ -32,7 +32,7 @@ const transformMentor = (mentor: MentorListItem): Mentor => {
         email: mentor.email,
         username: mentor.username,
         // Keep both keys in sync: UI components historically used `profilePicture`,
-        // while this hook previously exposed only `profileImage`.
+        
         profilePicture: mentor.profilePicture,
         profileImage: mentor.profilePicture,
         phoneNumber: mentor.phoneNumber,
@@ -51,11 +51,11 @@ export const useMentors = () => {
     const query = useQuery({
         queryKey: ['mentors'],
         queryFn: () => mentorsService.getMentors(),
-        staleTime: 2000, // 2 seconds (was 5 minutes)
+        staleTime: 2000,
         retry: 2,
     });
 
-    // Transform the data
+    
     const transformedData = query.data && query.data.mentors && Array.isArray(query.data.mentors)
         ? {
             mentors: query.data.mentors.map(transformMentor),

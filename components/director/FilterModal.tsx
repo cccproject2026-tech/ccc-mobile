@@ -62,7 +62,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                     }}
                     onPress={(e) => e.stopPropagation()}
                 >
-                    {/* Filter Options */}
+                    {}
                     {filterOptions.map((filterOption, index) => (
                         <View
                             key={index}
@@ -139,7 +139,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                                 )}
                             </View>
 
-                            {/* Expandable options */}
+                            {}
                             {(filterOption.isExpandable || filterOption.options) &&
                                 expandedSection === filterOption.label && (
                                     <View>
@@ -193,7 +193,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                         </View>
                     ))}
 
-                    {/* Clear Sort Section */}
+                    {}
                     <View
                         style={{
                             padding: Platform.OS === 'android' ? 16 : 24,

@@ -98,7 +98,7 @@ export default function AssessmentQuestionsSection({
     const currentSection = assessment.sections[currentSectionIndex];
 
     // CDP is ready only when the ANSWERS API contains at least one recommendation.
-    // Missing/invalid recommendations are treated as empty.
+    
     const sections = submittedSections || [];
     const hasCdpRecommendations = sections.some(
         (section) =>
@@ -179,7 +179,7 @@ export default function AssessmentQuestionsSection({
         }
     }, [isViewMode, initialSectionAnswers]);
 
-    // Auto-save progress
+    
     useEffect(() => {
         if (!isViewMode) {
             saveProgress();
@@ -461,7 +461,7 @@ export default function AssessmentQuestionsSection({
 
     const renderQuestionGroup = (group: QuestionGroup) => (
         <View key={group.id} style={styles.questionGroupCard}>
-            {/* Show group title if exists */}
+            
             {group.questions.map(renderQuestion)}
         </View>
     );
@@ -514,7 +514,7 @@ export default function AssessmentQuestionsSection({
                 contentContainerStyle={styles.scrollContent}
                 extraScrollHeight={20}
             >
-                {/* View mode: Responses | Customized Development Plans at top of section */}
+                
                 {isViewMode && (
                     <View style={styles.tabBarContainer}>
                         <View style={[styles.tabSegment, styles.tabSegmentActive]}>
@@ -546,7 +546,7 @@ export default function AssessmentQuestionsSection({
                     </View>
                 )}
 
-                {/* Progress Indicator */}
+                
                 <View style={styles.progressContainer}>
                     {assessment.sections.map((_, index) => (
                         <React.Fragment key={index}>
@@ -564,7 +564,7 @@ export default function AssessmentQuestionsSection({
                     ))}
                 </View>
 
-                {/* Section Header Card */}
+                
                 <View style={styles.sectionHeaderCard}>
                     <View style={styles.sectionBadge}>
                         <Text style={styles.sectionBadgeText}>Section {currentSectionIndex + 1}</Text>
@@ -572,17 +572,17 @@ export default function AssessmentQuestionsSection({
                     <Text style={styles.sectionTitle}>{currentSection.title}</Text>
                 </View>
 
-                {/* Instructions (skip in view mode; subtitle is shown in section card) */}
+                
                 {!isViewMode && currentSection.subtitle && (
                     <Text style={styles.instructionText}>
                         {currentSection.subtitle}
                     </Text>
                 )}
 
-                {/* Render all question groups */}
+                
                 {currentSection.questionGroups.map(renderQuestionGroup)}
 
-                {/* Action Buttons */}
+                
                 <View style={styles.buttonContainer}>
                     {isViewMode ? (
                         <>

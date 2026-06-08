@@ -355,7 +355,6 @@ export default function MentorDashboardHome() {
               </View>
             </Animated.View>
 
-
             <Animated.View entering={FadeInUp.delay(140).springify()} style={styles.mapCard}>
               {canMountGoogleMapOnThisPlatform() ? (
                 <MapView
@@ -438,7 +437,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
 
-  // Focus Card
+  
   focusCard: {
     borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -505,7 +504,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
 
-  // Help Card
+  
   howToCard: {
     borderRadius: 12,
     backgroundColor: "rgba(255,255,255,0.07)",
@@ -565,7 +564,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  // Map Card
+  
   mapCard: {
     borderRadius: 16,
     overflow: "hidden",

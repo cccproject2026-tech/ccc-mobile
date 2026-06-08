@@ -46,21 +46,21 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
 
-  // Fetch profile data from React Query
+  
   const { data: profileData, isLoading, isError } = useProfile();
   const updateProfile = useUpdateProfile();
   const uploadProfilePicture = useUploadProfilePicture();
 
-  // Local UI state
+  
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<any>(null);
   const [showTitleDropdown, setShowTitleDropdown] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isFormInitialized, setIsFormInitialized] = useState(false); // NEW: Track initialization
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
 
-  // Form state (only when editing)
+  
   const [formData, setFormData] = useState<UpdateProfileData>({
     firstName: '',
     lastName: '',
@@ -75,7 +75,7 @@ export default function ProfileScreen() {
     bio: '',
   });
 
-  // FIXED: Only initialize form data ONCE when entering edit mode
+  
   useEffect(() => {
     if (isEditing && !isFormInitialized && profileData?.user) {
       console.log('📝 Initializing form data...');
@@ -95,22 +95,22 @@ export default function ProfileScreen() {
       });
       setProfileImage(profileData.user.profilePicture || null);
       setSelectedImageFile(null);
-      setIsFormInitialized(true); // Mark as initialized
+      setIsFormInitialized(true);
       console.log('✅ Form initialized');
     }
 
-    // Reset initialization flag when exiting edit mode
+    
     if (!isEditing && isFormInitialized) {
       setIsFormInitialized(false);
     }
-  }, [isEditing, isFormInitialized, profileData?.user?.id]); // Only depend on isEditing and user ID
+  }, [isEditing, isFormInitialized, profileData?.user?.id]);
 
-  // Calculate progress percentage
+  
   const progressPercentage = useMemo(() => {
     return profileData?.progress?.overallProgress || 0;
-  }, [profileData?.progress?.overallProgress]); // FIXED: Use specific property
+  }, [profileData?.progress?.overallProgress]);
 
-  // Get greeting based on time
+  
   const greeting = useMemo(() => {
     const h = new Date().getHours();
     if (h < 12) return 'Good Morning';
@@ -118,7 +118,7 @@ export default function ProfileScreen() {
     return 'Good Evening';
   }, []);
 
-  // ============= HANDLERS =============
+  
   const updateField = useCallback(
     (field: keyof UpdateProfileData, value: any) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
@@ -182,7 +182,7 @@ export default function ProfileScreen() {
 
         const fileObj = {
           uri: asset.uri,
-          type: asset.mimeType || 'image/jpeg', // FIXED: Use mimeType from asset
+          type: asset.mimeType || 'image/jpeg',
           fileName: asset.fileName || `profile-${Date.now()}.jpg`,
         };
 
@@ -257,7 +257,7 @@ export default function ProfileScreen() {
     setShowConfirmModal(false);
 
     try {
-      // Step 1: Upload profile picture first if a new one was selected
+      
       if (selectedImageFile) {
         console.log('📤 Uploading profile picture...');
         await uploadProfilePicture.mutateAsync(selectedImageFile);
@@ -266,7 +266,7 @@ export default function ProfileScreen() {
         console.log('ℹ️ No new profile picture to upload');
       }
 
-      // Step 2: Update other profile fields
+      
       const cleanedChurches = sanitizeChurches(formData.churches);
 
       const updateData: UpdateProfileData = {
@@ -317,7 +317,7 @@ export default function ProfileScreen() {
     setShowSuccessModal(false);
     setIsEditing(false);
     setSelectedImageFile(null);
-    setIsFormInitialized(false); // Reset initialization flag
+    setIsFormInitialized(false);
     if (profileData?.user) {
       setFormData({
         firstName: profileData.user.firstName || '',
@@ -349,7 +349,7 @@ export default function ProfileScreen() {
     [updateField]
   );
 
-  // ============= RENDER FUNCTIONS =============
+  
   const renderAvatar = () => (
     <View style={styles.avatarContainer}>
       <Image
@@ -456,7 +456,7 @@ export default function ProfileScreen() {
     </View>
   );
 
-  // ============= LOADING & ERROR STATES =============
+  
   if (isLoading) {
     return (
       <GradientBackground decorativeOrbs style={styles.container}>
@@ -486,10 +486,9 @@ export default function ProfileScreen() {
     );
   }
 
-
   console.log('👤 Rendering profile for:', profileData.user);
   console.log('📝 Profile Image:', profileImage);
-  // ============= MAIN RENDER =============
+  
   return (
     <GradientBackground decorativeOrbs style={styles.container}>
       <TopBar role="pastor" />
@@ -501,7 +500,7 @@ export default function ProfileScreen() {
         useSafeAreaBottom
         extraScrollHeight={24}
       >
-        {/* VIEW MODE */}
+        {}
         {!isEditing && (
           <>
             <CommonCard style={styles.profileHeader}>
@@ -584,7 +583,7 @@ export default function ProfileScreen() {
           </>
         )}
 
-        {/* EDIT MODE */}
+        {}
         {isEditing && (
           <>
             <CommonCard style={styles.editProfileHeader}>{renderAvatar()}</CommonCard>
@@ -656,7 +655,7 @@ export default function ProfileScreen() {
         )}
       </KeyboardSafeContainer>
 
-      {/* MODALS */}
+      {}
       <ConfirmModal
         visible={showConfirmModal}
         title="Are you sure you want to save changes?"
@@ -672,7 +671,6 @@ export default function ProfileScreen() {
     </GradientBackground>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -705,12 +703,12 @@ const styles = StyleSheet.create({
     gap: 14,
   },
 
-  // Header
+  
   headerContainer: {
     marginBottom: 2,
   },
 
-  // Profile Header
+  
   profileHeader: {
     alignItems: 'center',
     paddingVertical: 20,
@@ -760,7 +758,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Progress Bar
+  
   progressContainer: {
     flexDirection: 'row',
     gap: 8,
@@ -791,7 +789,7 @@ const styles = StyleSheet.create({
     color: roadmapTheme.textPrimary,
   },
 
-  // Action Buttons
+  
   actionButtons: {
     flexDirection: 'row',
     gap: 10,
@@ -814,13 +812,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
   },
 
-  // Sections
+  
 
   mainContentBox: {
     padding: 16,
   },
 
-  // Edit Actions
+  
   editActions: {
     flexDirection: 'row',
     gap: 12,
@@ -852,7 +850,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
   },
 
-  // Icons
+  
   editIcon: {
     width: 18,
     height: 18,

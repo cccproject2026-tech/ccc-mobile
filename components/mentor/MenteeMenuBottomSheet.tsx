@@ -19,8 +19,6 @@ import {
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-
-
 interface MenuAction {
   id: string
   label: string
@@ -119,7 +117,7 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
           style={[styles.menuGradient, { paddingBottom: bottom }]}
         >
           <BottomSheetScrollView contentContainerStyle={styles.scrollContent}>
-            {/* Menu Header */}
+            {}
             <View style={styles.menuHeader}>
               <View style={styles.menuHeaderContent}>
                 <Image
@@ -140,7 +138,7 @@ const MenteeMenuBottomSheet = forwardRef<MenteeMenuBottomSheetRef, MenteeMenuBot
               </TouchableOpacity>
             </View>
 
-            {/* Menu Items */}
+            {}
             <View style={styles.menuItems}>
               {menuActions.map((action) => (
                 <TouchableOpacity

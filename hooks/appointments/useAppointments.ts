@@ -19,29 +19,29 @@ export const appointmentKeys = {
 export const useAppointments = (options?: UseAppointmentsOptions) => {
   const { userId, mentorId, futureOnly } = options || {};
 
-  // Fetch user appointments
+  
   const userQuery = useQuery({
     queryKey: [...appointmentKeys.user(userId || ""), { futureOnly }] as const,
     queryFn: () => appointmentService.getUserAppointments(userId!, { futureOnly }),
     enabled: !!userId,
-    staleTime: 20000, // 2 seconds (was 5 minutes)
+    staleTime: 20000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     refetchOnReconnect: true,
   });
 
-  // Fetch mentor appointments
+  
   const mentorQuery = useQuery({
     queryKey: [...appointmentKeys.mentor(mentorId || ""), { futureOnly }] as const,
     queryFn: () => appointmentService.getMentorAppointments(mentorId!, { futureOnly }),
     enabled: !!mentorId,
-    staleTime: 20000, // 2 seconds (was 5 minutes)
+    staleTime: 20000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     refetchOnReconnect: true,
   });
 
-  // Get the right data
+  
   const appointments = userId ? userQuery.data || [] : mentorQuery.data || [];
   const isLoading = userId ? userQuery.isLoading : mentorQuery.isLoading;
   const isError = userId ? userQuery.isError : mentorQuery.isError;
@@ -55,7 +55,7 @@ export const useAppointments = (options?: UseAppointmentsOptions) => {
     return normalized === "cancelled" || normalized === "canceled" || normalized.startsWith("cancel");
   };
 
-  // Filter helpers
+  
   const getAppointmentsByStatus = (status: AppointmentStatus) => {
     return appointments.filter((apt) => apt.status === status);
   };
@@ -88,19 +88,19 @@ export const useAppointments = (options?: UseAppointmentsOptions) => {
   };
 
   return {
-    // Data
+    
     appointments,
     isLoading,
     isError,
     error,
 
-    // Filters
+    
     getAppointmentsByStatus,
     getAppointmentsByDate,
     getUpcomingAppointments,
     getPastAppointments,
 
-    // Refetch
+    
     refetch: userId ? userQuery.refetch : mentorQuery.refetch,
   };
 };
@@ -123,7 +123,7 @@ export const useCancelAppointment = () => {
         },
       );
 
-      // Then refetch to stay consistent with server data
+      
       queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
     },
   });

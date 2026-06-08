@@ -17,7 +17,7 @@ export default function ItemDetail() {
     const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string }>();
     const router = useRouter();
     
-    // Fetch parent roadmap
+    
     const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
     const { user } = useAuthStore();
 
@@ -31,7 +31,7 @@ export default function ItemDetail() {
     const [selectedOutcome, setSelectedOutcome] = useState('');
     const [activeTab, setActiveTab] = useState<'overview' | 'comments' | 'queries'>('overview');
 
-    // Find the specific nested roadmap (task)
+    
     const task = useMemo<NestedRoadmap | undefined>(() => {
         if (!roadmap) return undefined;
         const allTasks = getTasks(roadmap);
@@ -43,7 +43,7 @@ export default function ItemDetail() {
         [task, roadmap],
     );
 
-    // Get phase number
+    
     const phaseNumber = useMemo(() => {
         if (!roadmap?.phase) return null;
         const match = roadmap.phase.match(/\d+/);
@@ -108,7 +108,7 @@ export default function ItemDetail() {
         return `${day} ${month} ${year}`;
     };
 
-    // Loading state
+    
     if (isLoading) {
         return (
             <AppGradientBackground style={styles.container}>
@@ -123,7 +123,7 @@ export default function ItemDetail() {
         );
     }
 
-    // Error or not found state
+    
     if (error || !roadmap || !task) {
         return (
             <AppGradientBackground style={styles.container}>
@@ -152,7 +152,7 @@ export default function ItemDetail() {
                 <TopBar role="mentor" showUserName />
             </View>
 
-            {/* Header */}
+            {}
             <View style={styles.headerContainer}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity
@@ -218,7 +218,7 @@ export default function ItemDetail() {
                 </View>
             </View>
 
-            {/* Tabs */}
+            {}
             <View style={styles.tabRow}>
                 <TouchableOpacity
                     onPress={() => setActiveTab('overview')}
@@ -319,9 +319,9 @@ export default function ItemDetail() {
                 </TouchableOpacity>
             </View>
 
-            {/* Content */}
+            {}
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {/* Cover Image */}
+                {}
                 <View style={styles.coverImageContainer}>
                     {task.imageUrl ? (
                         <Image
@@ -342,7 +342,7 @@ export default function ItemDetail() {
                     </View>
                 </View>
 
-                {/* Completion Time / Status */}
+                {}
                 <View style={styles.completionBox}>
                     {task.status === 'completed' ? (
                         <View style={styles.completionContainer}>
@@ -363,7 +363,7 @@ export default function ItemDetail() {
                     )}
                 </View>
 
-                {/* Roadmap Section */}
+                {}
                 <Text style={styles.sectionTitle}>Roadmap</Text>
                 <View style={styles.sectionBox}>
                     <Text style={styles.sectionText}>
@@ -371,7 +371,7 @@ export default function ItemDetail() {
                     </Text>
                 </View>
 
-                {/* Description Section */}
+                {}
                 <Text style={styles.sectionTitle}>Description</Text>
                 <View style={styles.sectionBox}>
                     <Text style={styles.sectionText}>
@@ -379,7 +379,7 @@ export default function ItemDetail() {
                     </Text>
                 </View>
 
-                {/* Dynamic Form - Render extras */}
+                {}
                 {taskFormExtras.length > 0 && (
                     <DynamicFormTask
                         task={task}
@@ -390,7 +390,7 @@ export default function ItemDetail() {
                 )}
             </ScrollView>
 
-            {/* Modals */}
+            {}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={outcomeMenuItems()}

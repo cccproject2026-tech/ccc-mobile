@@ -93,7 +93,7 @@ const TopBar: React.FC<Props> = ({
 
     return (
         <View style={[styles.headerRow, { paddingTop: top + 14, paddingBottom: 8, minHeight: top + 58 }]}>
-            {/* Left */}
+            {}
             <View style={styles.leftIconBox}>
                 {showDrawer && (
                     <Pressable hitSlop={10} onPress={onMenuPress}>
@@ -121,7 +121,7 @@ const TopBar: React.FC<Props> = ({
                     </>
                 )}
             </View>
-            {/* Center */}
+            {}
             <View style={styles.centerArea}>
                 {showUserName && (
                     <LinearGradient
@@ -144,7 +144,7 @@ const TopBar: React.FC<Props> = ({
                     </LinearGradient>
                 )}
             </View>
-            {/* Right */}
+            {}
             <View style={styles.rightIconBox}>
                 {showSearchIcon && (
                     <Pressable
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(139, 168, 189, 0.8)", // More opaque blue-gray
+        backgroundColor: "rgba(139, 168, 189, 0.8)",
         paddingVertical: 10,
         paddingHorizontal: 14,
         paddingLeft: 10,

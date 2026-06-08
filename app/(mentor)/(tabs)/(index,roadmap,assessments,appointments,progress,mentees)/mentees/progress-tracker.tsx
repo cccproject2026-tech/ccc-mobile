@@ -87,13 +87,11 @@ export default function ProgressTracker() {
   const getFilterOptions = (): FilterOption[] => {
     return [
       { label: "Course Completion", options: ["Latest", "Oldest"], isExpandable: true },
-      // TODO: Replace with dynamic state list from backend metadata if available
+      
       { label: "State", options: [], isExpandable: true },
       { label: "Conference", isExpandable: true },
     ];
   };
-
-
 
   const filterOptions = useMemo(() => getFilterOptions(), []);
 

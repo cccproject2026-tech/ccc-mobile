@@ -27,7 +27,6 @@ import { useAuthStore } from "@/stores";
 import { resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
 import { paramToString } from "@/utils/routerParams";
 
-
 export default function CommentsScreen() {
     const router = useRouter();
     const { user } = useAuthStore();

@@ -188,7 +188,7 @@ export default function MicroGrantApplicationScreen() {
                             </View>
                         ) : (
                             <>
-                                {/* Header */}
+                                {}
                                 <View style={styles.headerContainer}>
                                     <View style={styles.headerCard}>
                                         <Text style={styles.headerText}>

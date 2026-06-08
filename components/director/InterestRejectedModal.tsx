@@ -14,7 +14,7 @@ const InterestRejectedModal: React.FC<InterestRejectedModalProps> = ({
         if (visible) {
             const timer = setTimeout(() => {
                 onClose();
-            }, 2000); // Auto close after 2 seconds
+            }, 2000);
 
             return () => clearTimeout(timer);
         }

@@ -1,8 +1,7 @@
-// types/auth.types.ts
+
 export type UserRole = 'pastor' | 'mentor' | 'director' | 'pending';
 export type UserStatus = 'new' | 'pending' | 'accepted' | 'rejected';
 
-// Single, unified User type
 export interface User {
     id: string;
     email: string;
@@ -43,7 +42,6 @@ export interface LoginResponse {
     };
 }
 
-// OTP flow
 export interface SendOtpRequest {
     email: string;
     purpose?: string;
@@ -71,7 +69,6 @@ export interface VerifyOtpResponse {
     };
 }
 
-// Password
 export interface SetPasswordRequest {
     email: string;
     password: string;
@@ -99,7 +96,6 @@ export interface RefreshTokenResponse {
     };
 }
 
-// Forgot password
 export interface ForgotPasswordRequest {
     email: string;
 }
@@ -109,8 +105,6 @@ export interface ForgotPasswordResponse {
     message: string;
 }
 
-
-// Reset password
 export interface ResetPasswordRequest {
     email: string;
     otp: string;

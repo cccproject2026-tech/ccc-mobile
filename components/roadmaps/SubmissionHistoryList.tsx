@@ -65,7 +65,7 @@ function buildLegacySubmissions(extras: ExtrasResponseDto): TaskSubmission[] {
 
     if (allExtras.length === 0) return [];
 
-    // Group entries by field name, preserving order
+    
     const byName = new Map<string, any[]>();
     for (const e of allExtras) {
         const key = e.name;
@@ -194,7 +194,7 @@ export const SubmissionHistoryList = memo(function SubmissionHistoryList({
                 (a, b) => b.submissionNumber - a.submissionNumber,
             );
         }
-        // Fallback: split legacy extras into synthetic submission entries
+        
         if (legacyExtras) {
             const legacy = buildLegacySubmissions(legacyExtras);
             return legacy.sort((a, b) => b.submissionNumber - a.submissionNumber);

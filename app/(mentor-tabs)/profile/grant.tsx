@@ -52,7 +52,7 @@ interface RootStackParamList {
     data: ProfileData;
     navigatedFrom: string;
   };
-  // add other screens here if needed
+  
 }
 
 export default function Grant() {
@@ -209,7 +209,7 @@ export default function Grant() {
               width: "100%",
               alignItems: "center",
               marginTop: 24,
-              // padding: 10,
+              
               flex: 1,
             }}
           >
@@ -265,7 +265,7 @@ export default function Grant() {
                       borderRadius: 10,
                       backgroundColor: "#14517d",
                       marginHorizontal: 16,
-                      // marginTop: 16,
+                      
                       paddingVertical: 10,
                       width: "100%",
                     }}
@@ -429,13 +429,13 @@ export default function Grant() {
                     <View
                       style={{
                         width: "100%",
-                        // paddingHorizontal:10,
+                        
                         flexDirection: "column",
-                        // backgroundColor: "#161b5f", // Same as parent's background
+                        
                         borderRadius: 8,
-                        // paddingHorizontal: 20,
+                        
                         paddingVertical: 8,
-                        // gap: 20,
+                        
                         borderWidth: 1,
                         borderColor: "white",
                       }}
@@ -471,7 +471,7 @@ export default function Grant() {
                               fontFamily: "AlbertSans-Medium",
                               color: customColors.customWhite,
                               paddingRight: 30,
-                              // textAlign: "center",
+                              
                             }}
                           >
                             {e.outcome}
@@ -482,13 +482,13 @@ export default function Grant() {
                     <View
                       style={{
                         width: "100%",
-                        // paddingHorizontal:10,
+                        
                         flexDirection: "column",
-                        // backgroundColor: "#161b5f", // Same as parent's background
+                        
                         borderRadius: 8,
-                        // paddingHorizontal: 20,
+                        
                         paddingVertical: 8,
-                        // gap: 20,
+                        
                         borderWidth: 1,
                         borderColor: "white",
                       }}
@@ -501,7 +501,7 @@ export default function Grant() {
                           fontFamily: "AlbertSans-Medium",
                           color: customColors.customWhite,
                           paddingLeft: 20,
-                          // textAlign: "center",
+                          
                         }}
                       >
                         Please review the grant application thoroughly before
@@ -534,7 +534,7 @@ export default function Grant() {
                               fontFamily: "AlbertSans-Medium",
                               color: customColors.customWhite,
                               paddingRight: 30,
-                              // textAlign: "center",
+                              
                             }}
                           >
                             {e.outcome}
@@ -556,13 +556,13 @@ export default function Grant() {
                     <View
                       style={{
                         width: "100%",
-                        // paddingHorizontal:10,
+                        
                         flexDirection: "column",
-                        // backgroundColor: "#161b5f", // Same as parent's background
+                        
                         borderRadius: 8,
-                        // paddingHorizontal: 20,
+                        
                         paddingVertical: 8,
-                        // gap: 20,
+                        
                         borderWidth: 1,
                         borderColor: "white",
                       }}
@@ -585,7 +585,7 @@ export default function Grant() {
                             lineHeight: 22,
                             fontFamily: "AlbertSans-Medium",
                             color: customColors.customWhiteEighty,
-                            // paddingRight: 30,
+                            
                             textAlign: "center",
                           }}
                         >
@@ -687,18 +687,18 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: "#221c70", // Change color as needed
+    backgroundColor: "#221c70",
   },
   line: {
     flex: 1,
     height: 1,
-    // Change color as needed
-    //   marginHorizontal: 5,
+    
+    
   },
   scrollContainer: {
     flex: 1,
     justifyContent: "space-between",
-    // alignItems: "center",
+    
   },
   text: {
     fontSize: 20,
@@ -707,14 +707,14 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
-    // marginHorizontal: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    
     marginVertical: 18,
   },
   container: {
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 72, // 4.5rem = 72px
+    marginHorizontal: 72,
   },
   image: {
     borderRadius: 8,
@@ -868,13 +868,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   upcomingText: {
-    color: "#FFFFFF", // customWhite
+    color: "#FFFFFF",
     fontSize: 14,
     fontFamily: "AlbertSans-Bold",
     textAlign: "center",
   },
   seeAllText: {
-    color: "#FFFFFF", // customWhite
+    color: "#FFFFFF",
     fontSize: 14,
     fontFamily: "AlbertSans-Medium",
     textAlign: "center",

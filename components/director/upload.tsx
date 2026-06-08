@@ -28,7 +28,7 @@ export default function UploadSection() {
         });
 
         if (!result.canceled) {
-            //   setUploadedDocs([...uploadedDocs, result.assets[0]]);
+            
         }
     };
 
@@ -50,7 +50,7 @@ export default function UploadSection() {
     return (
         <View className='flex justify-center' style={{ width: "100%", margin: "auto", borderRadius: 10 }}>
             <View className='border border-solid w-full rounded-[10px] flex justify-center items-center' style={{ paddingVertical: 52, gap: 38, borderColor: "#FFFFFF26" }}>
-                {/* Profile Avatar */}
+                {}
                 <View>
                     {profileImage ? (
                         <Image className="w-[100px] h-[100px] mt-auto rounded-full" source={{ uri: profileImage }} />

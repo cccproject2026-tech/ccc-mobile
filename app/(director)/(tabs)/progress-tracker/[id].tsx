@@ -61,14 +61,14 @@ export default function ProgressDetails() {
 
         const taskProgress = oldData.taskStatus?.inProgress ? {
             completed: oldData.taskStatus.inProgress,
-            total: 8 // Assuming total of 8 tasks based on original logic
+            total: 8
         } : undefined;
 
         return {
             image: oldData.image,
             title: oldData.title,
             description: oldData.description,
-            completionTime: progress.completedPercentage === 100 ? undefined : oldData.time, // Hide if overall progress is 100%
+            completionTime: progress.completedPercentage === 100 ? undefined : oldData.time,
             status: status,
             completedDate: oldData.completedTime,
             taskProgress: status !== 'completed' && status !== 'initial' ? taskProgress : undefined,
@@ -97,7 +97,7 @@ export default function ProgressDetails() {
 
     const handleDownload = () => {
         console.log('Download pressed');
-        // Download PDF logic
+        
     };
 
     const openCommentSheet = useCallback((commentId?: string) => {
@@ -116,20 +116,20 @@ export default function ProgressDetails() {
 
     const handleSubmitComment = useCallback((text: string) => {
         if (editingCommentId) {
-            // Edit existing comment
+            
             setComments(prev => prev.map(comment =>
                 comment.id === editingCommentId
                     ? { ...comment, text, timestamp: new Date() }
                     : comment
             ));
         } else {
-            // Add new comment (max 2)
+            
             if (comments.length < 2) {
                 const newComment = {
                     id: Date.now().toString(),
                     text,
-                    author: 'John Doe', // Replace with actual user
-                    role: 'Mentor', // Replace with actual role
+                    author: 'John Doe',
+                    role: 'Mentor',
                     timestamp: new Date(),
                 };
                 setComments(prev => [...prev, newComment]);
@@ -148,13 +148,12 @@ export default function ProgressDetails() {
         setComments(prev => prev.filter(c => c.id !== commentId));
     }, []);
 
-
-    // Determine button text based on state
+    
     const getCommentTriggerText = () => {
         return comments.length === 0 ? 'Add Final Comments' : 'View Final Comments';
     };
 
-    // Completed progress data
+    
     const completedData: ChartData = {
         roadmapsTotal: 5,
         roadmapsCompleted: 5,
@@ -162,7 +161,7 @@ export default function ProgressDetails() {
         assessmentsCompleted: 3,
     };
 
-    // In-progress data
+    
     const inProgressData: ChartData = {
         roadmapsTotal: 5,
         roadmapsCompleted: 3,
@@ -203,12 +202,11 @@ export default function ProgressDetails() {
         return 'Submit';
     };
 
-
     const handleSwitchProgress = (progress: 'completed' | 'inprogress') => {
         if (progress === 'completed') {
             setProgress({ completedPercentage: 100, remainingPercentage: 0 });
             setShowCompleted(true);
-            // setIsMarkedCompleted(true);
+            
         } else {
             setProgress({ completedPercentage: 62.5, remainingPercentage: 37.5 });
             setShowCompleted(false);
@@ -282,13 +280,13 @@ export default function ProgressDetails() {
                         contentContainerStyle={{ paddingBottom: bottom }}
                         showsVerticalScrollIndicator={false}
                     >
-                        {/* Pie Chart Section */}
+                        {}
                         <ProgressPieChart
                             data={progress}
                             title="Overall Progress - Roadmaps & Assessments"
                         />
 
-                        {/* Bar Chart Section */}
+                        {}
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>{currentTitle}</Text>
 
@@ -300,7 +298,7 @@ export default function ProgressDetails() {
                             </View>
                         </View>
 
-                        {/* Revitalization Roadmap Progress Section */}
+                        {}
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>Revitalization Roadmap Progress</Text>
                             {!showCompleted && (
@@ -338,7 +336,7 @@ export default function ProgressDetails() {
                             </View>
                         </View>
 
-                        {/* Assessments Progress Section */}
+                        {}
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>Assessments Progress</Text>
                             {!showCompleted && (
@@ -381,7 +379,7 @@ export default function ProgressDetails() {
                 </View>
             </View>
 
-            {/* Comment Bottom Sheet instance */}
+            {}
             <CommentBottomSheet
                 ref={commentSheetRef}
                 onClose={closeCommentSheet}
@@ -402,7 +400,6 @@ export default function ProgressDetails() {
         </LinearGradient>
     );
 }
-
 
 const styles = StyleSheet.create({
     backButton: {

@@ -46,7 +46,7 @@ const InterestCard: React.FC<Props> = ({
 
     return (
         <Pressable onPress={handleCardPress} style={styles.card}>
-            {/* Avatar Icon or Image */}
+            {}
             <View style={styles.avatarCircle}>
                 {data.profileImage ? (
                     <Image
@@ -63,7 +63,7 @@ const InterestCard: React.FC<Props> = ({
                 )}
             </View>
 
-            {/* Name and Role */}
+            {}
             <View style={styles.infoBlock}>
                 <Text style={styles.name} numberOfLines={1}>
                     {data.name}
@@ -73,7 +73,7 @@ const InterestCard: React.FC<Props> = ({
                 </Text>
             </View>
 
-            {/* Action Icons */}
+            {}
             <View style={styles.actions}>
                 <Pressable hitSlop={12} onPress={onCall}>
                     <Ionicons
@@ -105,10 +105,10 @@ const InterestCard: React.FC<Props> = ({
                 </Pressable>
             </View>
 
-            {/* Time */}
+            {}
             <Text style={styles.time}>{data.time}</Text>
 
-            {/* Chevron */}
+            {}
             <Pressable hitSlop={12} onPress={onPress}>
                 <Ionicons
                     name="chevron-forward"

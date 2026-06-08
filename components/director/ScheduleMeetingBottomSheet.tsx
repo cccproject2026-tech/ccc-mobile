@@ -144,11 +144,11 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const { bottom } = useSafeAreaInsets();
     const snapPoints = useMemo(() => ["95%"], []);
 
-    // Get current user and their role
+    
     const { user: currentUser } = useAuthStore();
     const currentUserRole = currentUser?.role || "pastor";
 
-    // Initialize state
+    
     const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(
       mode === "reschedule" ? 2 : initialPerson?.id ? 2 : 1,
     );
@@ -166,7 +166,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const submitGuardRef = useRef(false);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-    // Determine initial role tab based on currentUserRole
+    
     const initialSelectedRole = useMemo(() => {
       if (currentUserRole === "mentor") return "pastor" as UserRole;
       return "mentor" as UserRole;
@@ -190,7 +190,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       return usersData.users ?? [];
     }, [usersData]);
 
-    // Format users for the list
+    
     const formattedUsers: Mentor[] = useMemo(() => {
       if (shouldUseOverride) return peopleOverride || [];
       return allUsers.map((user) => ({
@@ -201,7 +201,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       }));
     }, [allUsers, peopleOverride, shouldUseOverride]);
 
-    // Filter users based on search query
+    
     const filteredMentors = useMemo(() => {
       if (!searchQuery) return formattedUsers;
       const query = searchQuery.toLowerCase();
@@ -233,7 +233,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       return [{ label: "Mentors", value: "mentor" as UserRole }];
     }, [currentUserRole]);
 
-    // ✅ Initialize mentor if rescheduling
+    
     useEffect(() => {
       if (
         mode === "reschedule" &&
@@ -247,7 +247,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       }
     }, [mode, existingAppointment, formattedUsers]);
 
-    // Prefill (schedule mode) - allows redirecting into this flow with a selected person.
+    
     useEffect(() => {
       if (mode !== "schedule") return;
       if (!initialPerson?.id) return;
@@ -255,7 +255,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       setCurrentStep(2);
     }, [initialPerson, mode]);
 
-    // Get current month and year for availability
+    
     const currentDate = new Date();
     const [currentMonth, setCurrentMonth] = useState(
       currentDate.getMonth() + 1,
@@ -352,7 +352,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       assessmentId,
     });
 
-    // Debug log only after mentorId is available
+    
     useEffect(() => {
       if (!mentorIdForAvailability) return;
       console.log("🔍 Reschedule Debug:", {
@@ -418,7 +418,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       return best || null;
     }, [availableDates, ymdToday]);
 
-    // Get days of week that have availability
+    
     const availableDaysOfWeek = useMemo(() => {
       if (!shouldFetchAvailability || !monthlyAvailability) return [];
       const daysSet = new Set(
@@ -499,7 +499,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
     const handleBack = () => {
       if (mode === "reschedule") {
         // Reschedule is typically invoked from an existing meeting context.
-        // Closing is the simplest mental model.
+        
         handleClose();
         return;
       }
@@ -523,7 +523,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
       try {
         const result = await submit();
 
-        // Legacy callback (side-effects only)
+        
         if (onSchedule && selectedMentor && selectedDate && selectedTime) {
           onSchedule({
             mentorId: selectedMentor.id,
@@ -652,10 +652,10 @@ const ScheduleMeetingBottomSheet = forwardRef<
                 ))}
               </View>
             {showMentorSelection ? (
-              // Step 1: Select Mentor
+              
               <View style={{ flex: 1 }}>
                 <View style={styles.stepContentNoScroll}>
-                  {/* <View */}
+                  {}
                   {/* <View
                     style={[
                       styles.titleContainer,
@@ -726,14 +726,14 @@ const ScheduleMeetingBottomSheet = forwardRef<
                     <BottomSheetFlatList
                       data={filteredMentors}
                       keyExtractor={(item: any) => item.id}
-                      // contentContainerStyle={{ backgroundColor: 'red',maxHeight: Dimensions.get('window').height * 0.5}}
+                      
                       renderItem={({ item: mentor }: { item: Mentor }) => (
                         <Pressable
                           key={mentor.id}
                           style={styles.mentorItemStep1}
                           onPress={() => {
                             setSelectedMentor(mentor);
-                            // Auto-advance to time selection (no extra Next step).
+                            
                             setCurrentStep(2);
                           }}
                         >
@@ -1480,7 +1480,7 @@ const styles = StyleSheet.create({
     marginBottom: getSpacing(isSmallDevice ? 16 : 18),
     textAlign: "center",
   },
-  // Step 1 specific styles
+  
   titleContainer: {
     borderWidth: 1.5,
     borderRadius: getSpacing(12),
@@ -1526,7 +1526,7 @@ const styles = StyleSheet.create({
     width: getSpacing(isSmallDevice ? 7 : 8),
     height: getSpacing(isSmallDevice ? 7 : 8),
     borderRadius: getSpacing(isSmallDevice ? 3.5 : 4),
-    backgroundColor: "#4A5BCC", // Dark blue inner circle
+    backgroundColor: "#4A5BCC",
   },
   mentorImageStep1: {
     width: getSpacing(isSmallDevice ? 28 : 32),

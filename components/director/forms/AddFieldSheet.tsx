@@ -61,7 +61,7 @@ const AddFieldSheet = forwardRef<AddFieldSheetRef, AddFieldSheetProps>(
         case "textarea":
           const fields: any[] = [];
 
-          // Add heading field if enabled
+          
           if (showHeading) {
             fields.push({
               key: "heading",
@@ -71,7 +71,7 @@ const AddFieldSheet = forwardRef<AddFieldSheetRef, AddFieldSheetProps>(
             });
           }
 
-          // Add placeholder field
+          
           fields.push({
             key: "placeholder",
             label: "Place Holder",
@@ -79,7 +79,7 @@ const AddFieldSheet = forwardRef<AddFieldSheetRef, AddFieldSheetProps>(
             type: "input",
           });
 
-          // Add button field if enabled
+          
           if (showButton) {
             fields.push({
               key: "button",
@@ -333,7 +333,7 @@ const AddFieldSheet = forwardRef<AddFieldSheetRef, AddFieldSheetProps>(
       );
       setFieldType(type);
       if (existingData) {
-        // Pre-fill form data for editing
+        
         setFormData(existingData);
       }
       setTimeout(() => {
@@ -382,12 +382,12 @@ const AddFieldSheet = forwardRef<AddFieldSheetRef, AddFieldSheetProps>(
               { paddingBottom: Math.max(bottom, 20) + 16 },
             ]}
           >
-            {/* Header */}
+            {}
             <View style={styles.headerSection}>
               <Text style={styles.headerTitle}>{config.title}</Text>
             </View>
 
-            {/* Content Area */}
+            {}
             <View style={styles.contentArea}>
               {config.fields.map((field: any) => {
                 if (field.conditional && !formData[field.conditional]) {
@@ -534,7 +534,7 @@ const AddFieldSheet = forwardRef<AddFieldSheetRef, AddFieldSheetProps>(
               })}
             </View>
 
-            {/* Action Buttons */}
+            {}
             <View style={styles.actionButtonsContainer}>
               <TouchableOpacity
                 style={styles.clearButton}

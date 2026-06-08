@@ -39,7 +39,7 @@ export default function GraduateStatusPieChart({ year = '2023' }: { year?: strin
 
     return (
         <View style={styles.container}>
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <LinearGradient
                     colors={['#21B6E9', '#136683']}
@@ -52,9 +52,9 @@ export default function GraduateStatusPieChart({ year = '2023' }: { year?: strin
                 </LinearGradient>
             </View>
 
-            {/* Chart Area */}
+            {}
             <View style={styles.chartArea}>
-                {/* Pie Chart Container */}
+                {}
                 <View style={styles.pieWrapper}>
                     <View style={styles.pieContainer}>
                         <PieChart
@@ -73,7 +73,7 @@ export default function GraduateStatusPieChart({ year = '2023' }: { year?: strin
                             }}
                         />
 
-                        {/* Custom Labels */}
+                        {}
                         <View style={[styles.customLabel, styles.inProgressPosition]}>
                             <LinearGradient
                                 colors={['#2D2C5B', '#3D3C6B']}
@@ -100,7 +100,7 @@ export default function GraduateStatusPieChart({ year = '2023' }: { year?: strin
                     </View>
                 </View>
 
-                {/* Legend */}
+                {}
                 <View style={styles.legend}>
                     {STATUS_DATA.map((item, index) => (
                         <View key={item.label} style={styles.legendItem}>
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         flex: 1,
     },
-    // Unused styles for compatibility
+    
     labelContainer: {},
     inProgressLabel: {},
     readyToGraduateLabel: {},

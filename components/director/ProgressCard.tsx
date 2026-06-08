@@ -47,13 +47,13 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ data }) => {
     return (
         <View style={styles.card}>
             <View style={styles.content}>
-                {/* Image */}
+                {}
                 <View style={styles.imageContainer}>
                     <Image source={data.image} style={styles.image} />
                     <Text>test</Text>
                 </View>
 
-                {/* Text Section */}
+                {}
                 <View style={styles.textContent}>
                     <Text style={styles.title} numberOfLines={2}>
                         {data.title}
@@ -65,10 +65,10 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ data }) => {
                         </Text>
                     )}
 
-                    {/* Customized Badge for completed assessments only */}
+                    {}
                     {isAssessment && isCompleted && renderCustomizedBadge()}
 
-                    {/* Date Info */}
+                    {}
                     {renderDateInfo()}
                 </View>
             </View>

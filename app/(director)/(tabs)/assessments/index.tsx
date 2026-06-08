@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Helper function to map API assessment to component Assessment type
 const mapApiAssessmentToAssessment = (apiAssessment: ApiAssessment): Assessment => {
-    // Infer type from name or default to 'PMP'
+    
     const inferType = (name: string): 'CMA' | 'PMP' => {
         const nameLower = name.toLowerCase();
         if (nameLower.includes('cma') || nameLower.includes('church')) {
@@ -65,7 +65,7 @@ export default function AssessmentsScreen() {
     // Fetch assessments from API
     const { data: apiAssessments, isLoading, error, refetch } = useAssessments();
 
-    // Refetch when screen comes into focus
+    
     useFocusEffect(
         useCallback(() => {
             refetch();
@@ -99,7 +99,7 @@ export default function AssessmentsScreen() {
         <AppGradientBackground style={styles.container}>
             <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -113,12 +113,12 @@ export default function AssessmentsScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
+            {}
             <View style={styles.searchContainer}>
                 <SearchBar value={search} onChangeValue={setSearch} placeholder="Search assessments..." />
             </View>
 
-            {/* Assessments List */}
+            {}
             <View style={styles.content}>
                 {isLoading ? (
                     <View style={styles.loadingContainer}>
@@ -260,5 +260,4 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
 });
-
 

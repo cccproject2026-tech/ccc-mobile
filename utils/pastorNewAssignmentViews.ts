@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
 const STORAGE_PREFIX = "pastor_new_assignment_viewed_";
 
 const storageKey = (

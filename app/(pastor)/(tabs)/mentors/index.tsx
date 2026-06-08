@@ -28,13 +28,13 @@ export default function MyMentorsScreen() {
     const [listToggle, setListToggle] = useState(false);
     const [searchText, setSearchText] = useState("");
 
-    // Get the current user's ID
+    
     const { user } = useAuthStore();
     if (!user) return null;
 
     const { mentors, isLoading, isError, isEmpty } = useAssignedMentors(user.id);
 
-    // Filter mentors based on search text
+    
     const filteredMentors = useMemo(() => {
         if (!mentors || mentors.length === 0) return [];
         if (!searchText.trim()) return mentors;
@@ -47,7 +47,7 @@ export default function MyMentorsScreen() {
         );
     }, [mentors, searchText]);
 
-    // Separate current and prior mentors based on status
+    
     const currentMentors = useMemo(() => {
         return filteredMentors.filter(mentor =>
             mentor.status === 'new' || mentor.status === 'pending' || mentor.status === 'accepted'
@@ -98,7 +98,7 @@ export default function MyMentorsScreen() {
         const gmailWeb = `https://mail.google.com/mail/?view=cm&fs=1&to=${mentor.email}`;
 
         try {
-            // Try Gmail app first
+            
             const canOpenGmail = await Linking.canOpenURL(gmailApp);
             if (canOpenGmail) {
                 console.log("Opening Gmail app");
@@ -106,18 +106,15 @@ export default function MyMentorsScreen() {
                 return;
             }
 
-            // Always open Gmail Web as fallback (100% works)
+            
             console.log("Opening Gmail web");
             await Linking.openURL(gmailWeb);
         } catch (error) {
             console.log("Mail open error:", error);
-            // Final fallback: Gmail web again (just in case)
+            
             await Linking.openURL(gmailWeb);
         }
     };
-
-
-
 
     const handleWhatsApp = async (mentor: MentorData) => {
         if (!mentor.phoneNumber) {
@@ -128,7 +125,7 @@ export default function MyMentorsScreen() {
 
         const canOpen = await Linking.canOpenURL(url);
         if (!canOpen) {
-            // Fallback to WhatsApp web
+            
             return Linking.openURL(`https://wa.me/${mentor.phoneNumber}`);
         }
 
@@ -169,7 +166,7 @@ export default function MyMentorsScreen() {
         );
     }
 
-    // Empty state when no mentors are assigned
+    
     const EmptyMentorsState = () => (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 40 }}>
             <Ionicons name="people-outline" size={80} color="rgba(255, 255, 255, 0.3)" style={{ marginBottom: 20 }} />
@@ -198,7 +195,7 @@ export default function MyMentorsScreen() {
                         <EmptyMentorsState />
                     ) : (
                         <View style={{ flex: 1 }}>
-                            {/* Header Section */}
+                            
                             <View style={styles.headerContainer}>
                                 <View style={styles.headerContent}>
                                     <TouchableOpacity
@@ -223,10 +220,10 @@ export default function MyMentorsScreen() {
                                 </View>
                             </View>
 
-                            {/* Separator */}
+                            
                             <View style={styles.dividerLine} />
 
-                            {/* Search Section */}
+                            
                             <View style={[styles.searchContainer, styles.searchContainerMargin]}>
                                 <View style={styles.searchBox}>
                                     <TextInput
@@ -245,7 +242,7 @@ export default function MyMentorsScreen() {
                                 </View>
                             </View>
 
-                            {/* Quick Access Mentors - Pass actual mentor data */}
+                            
                             <View style={styles.quickAccessContainer}>
                                 <MentorProfileSwiper
                                     mentors={mentors}
@@ -255,13 +252,13 @@ export default function MyMentorsScreen() {
                                 />
                             </View>
 
-                            {/* Mentors List */}
+                            
                             <ScrollView
                                 style={{ flex: 1 }}
                                 contentContainerStyle={{ paddingBottom: 20 }}
                                 showsVerticalScrollIndicator={false}
                             >
-                                {/* Current Mentors */}
+                                
                                 {currentMentors.length > 0 && (
                                     <View style={[styles.mentorsListContainer, styles.mentorsListContainerMargin]}>
                                         <View style={styles.mentorsHeader}>
@@ -302,7 +299,7 @@ export default function MyMentorsScreen() {
                                     </View>
                                 )}
 
-                                {/* Prior Mentors */}
+                                
                                 {priorMentors.length > 0 && (
                                     <View style={[styles.mentorsListContainer, styles.mentorsListContainerMargin]}>
                                         <View style={styles.mentorsHeader}>
@@ -343,7 +340,7 @@ export default function MyMentorsScreen() {
                                     </View>
                                 )}
 
-                                {/* Empty search results */}
+                                
                                 {filteredMentors.length === 0 && searchText.trim() !== "" && (
                                     <View style={{ paddingVertical: 40, paddingHorizontal: 20, alignItems: "center" }}>
                                         <Ionicons name="search-outline" size={60} color="rgba(255, 255, 255, 0.3)" style={{ marginBottom: 16 }} />
@@ -363,7 +360,6 @@ export default function MyMentorsScreen() {
         </>
     );
 }
-
 
 const styles = StyleSheet.create({
     headerContainer: {
@@ -467,7 +463,6 @@ const styles = StyleSheet.create({
         gap: 0,
     },
 
-    // Converted Styles
     myMentorsText: {
         color: '#fff',
         fontWeight: '600',

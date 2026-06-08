@@ -103,7 +103,7 @@ export default function NewNote() {
           ]);
         } else {
           await NotesService.createNote(menteeId, noteContent);
-          // Clear editor for a fresh new note next time
+          
           setNoteContent("");
           setInitializedFromParams(false);
           Alert.alert("Success", "Note saved successfully!", [
@@ -149,7 +149,7 @@ export default function NewNote() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
+        {}
           <View style={styles.header}>
           <View style={styles.headerTop}>
             <SquircleIconButton
@@ -185,7 +185,7 @@ export default function NewNote() {
           </View>
         </View>
 
-        {/* Tab Buttons */}
+        {}
         <View style={styles.tabContainer}>
           <TouchableOpacity
             activeOpacity={0.8}
@@ -204,7 +204,7 @@ export default function NewNote() {
           </TouchableOpacity>
         </View>
 
-        {/* Formatting Toolbar */}
+        {}
         <View style={styles.toolbarContainer}>
           <ScrollView
             horizontal

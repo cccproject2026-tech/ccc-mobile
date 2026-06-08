@@ -1,4 +1,4 @@
-// types/progress.types.ts
+
 
 export interface NestedRoadmapProgress {
     nestedRoadmapId: string;

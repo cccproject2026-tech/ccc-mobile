@@ -5,7 +5,7 @@ export default function CreationStackLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animation: 'none', // Prevent animation artifacts
+        animation: 'none',
       }}
     />
   );

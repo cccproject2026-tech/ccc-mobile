@@ -71,17 +71,17 @@ export default function PastorJourneyStep2Screen() {
                 <View style={styles.bgCircleTop} />
                 <View style={styles.bgCircleBottom} />
 
-                {/* Top bar */}
+                {}
                 <View style={styles.topBar}>
                     <Pressable onPress={handleBack} hitSlop={12} style={styles.backBtn}>
                         <Ionicons name="chevron-back" size={20} color="rgba(255,255,255,0.9)" />
                     </Pressable>
                 </View>
 
-                {/* Content */}
+                {}
                 <View style={styles.content}>
 
-                    {/* Page title block */}
+                    {}
                     <View style={styles.titleBlock}>
                         <Text style={styles.eyebrow}>How it works</Text>
                         <Text style={styles.titleLight}>Your journey is</Text>
@@ -102,7 +102,7 @@ export default function PastorJourneyStep2Screen() {
                         <View style={styles.dividerLine} />
                     </View>
 
-                    {/* Journey cards */}
+                    {}
                     <View style={styles.cardList}>
                         {JOURNEY_STEPS.map((step, i) => (
                             <View
@@ -112,7 +112,7 @@ export default function PastorJourneyStep2Screen() {
                                     i % 2 === 0 ? styles.cardStripeGold : styles.cardStripeMint,
                                 ]}
                             >
-                                {/* Left: number */}
+                                {}
                                 <Text
                                     style={[
                                         styles.cardNumber,
@@ -122,13 +122,13 @@ export default function PastorJourneyStep2Screen() {
                                     {step.number}
                                 </Text>
 
-                                {/* Center: text */}
+                                {}
                                 <View style={styles.cardBody}>
                                     <Text style={styles.cardTitle}>{step.title}</Text>
                                     <Text style={styles.cardDesc}>{step.desc}</Text>
                                 </View>
 
-                                {/* Right: icon */}
+                                {}
                                 <View style={styles.cardIcon}>
                                     <Ionicons name={step.icon} size={20} color="#fff" />
                                 </View>
@@ -139,7 +139,7 @@ export default function PastorJourneyStep2Screen() {
                     {!!roleLabel && <Text style={styles.hiddenRoleText}>{roleLabel}</Text>}
                 </View>
 
-                {/* Bottom */}
+                {}
                 <View style={styles.bottomArea}>
                     <Pressable onPress={handleNext} style={styles.nextBtn}>
                         <Text style={styles.nextText}>Next</Text>
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.04)",
     },
 
-    // Top bar
+    
     topBar: {
         flexDirection: "row",
         alignItems: "center",
@@ -195,12 +195,12 @@ const styles = StyleSheet.create({
         borderColor: "rgba(255,255,255,0.22)",
     },
 
-    // Content
+    
     content: {
         flex: 1,
     },
 
-    // Title block
+    
     titleBlock: {
         marginBottom: 20,
     },
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.12)",
     },
 
-    // Cards
+    
     cardList: {
         gap: 12,
     },
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
 
-    // Bottom
+    
     bottomArea: {
         paddingTop: 8,
         paddingBottom: 18,

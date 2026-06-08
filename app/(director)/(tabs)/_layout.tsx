@@ -46,7 +46,7 @@ export default function DirectorTabLayout() {
         paddingBottom: bottom,
       };
     } else {
-      // Button navigation
+      
       return {
         height: 75,
         paddingBottom: 15,
@@ -56,32 +56,32 @@ export default function DirectorTabLayout() {
 
   const tabBarConfig = getTabBarConfig();
 
-  // Hide tab bar for specific routes
+  
   useEffect(() => {
-    // Define patterns that should hide the tab bar
+    
     const hideTabBarPatterns = [
-      // Specific route patterns
+      
       /\/assign-mentor$/,
       /\/assign-mentee$/,
       /\/remove-mentor$/,
       /\/remove-mentee$/,
       /\/select-roadmap$/,
 
-      // Detail pages with dynamic IDs
+      
       /\/revitalization-roadmaps\/[^\/]+$/,
       /\/search$/,
 
-      // Sub-routes of new-interests (but not the main page)
+      
       /^\/new-interests\/.+/,
 
-      // Any modal or overlay routes
+      
       /\/modal\//,
       /\/overlay\//,
       
-      // Creation flow routes
+      
       /\/revitalization-roadmaps\/\(creation\)/,
 
-      // Assessment assignment routes
+      
       /\/assessments\/assign-mentee$/,
       /\/assessments\/create-assessment$/,
     ];

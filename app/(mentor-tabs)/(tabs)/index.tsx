@@ -46,10 +46,10 @@ export default function MentorDashboard() {
   const scrollOffset = useScrollViewOffset(scrollRef);
 
   const users = [
-    // India
+    
     {
       name: "Aarav",
-      profilePic: "https://example.com/profiles/aarav.jpg", // Replace with actual image URL
+      profilePic: "https://example.com/profiles/aarav.jpg",
       lat: 28.6139,
       lng: 77.209,
       color: "#FF5733",
@@ -63,7 +63,7 @@ export default function MentorDashboard() {
       color: "#33FF57",
       location: "Mumbai, India",
     },
-    // Pakistan
+    
     {
       name: "Ali",
       profilePic: "https://example.com/profiles/ali.jpg",
@@ -72,7 +72,7 @@ export default function MentorDashboard() {
       color: "#F39C12",
       location: "Karachi, Pakistan",
     },
-    // China
+    
     {
       name: "Wei",
       profilePic: "https://example.com/profiles/wei.jpg",
@@ -81,10 +81,10 @@ export default function MentorDashboard() {
       color: "#E74C3C",
       location: "Beijing, China",
     },
-    // Add more users as needed
+    
   ];
 
-  // Handle greeting period change from HeaderHero
+  
   const handleGreetingPeriodChange = useCallback(
     (period: "morning" | "afternoon" | "evening") => {
       setGreetingPeriod(period);
@@ -98,11 +98,11 @@ export default function MentorDashboard() {
     return "Good Evening";
   }, [greetingPeriod]);
 
-  // Get current user
+  
   const { user } = useAuthStore();
   const userAvatar = useCurrentUserAvatar();
 
-  // Fetch appointments for mentor
+  
   const {
     appointments,
     isLoading: isLoadingAppointments,
@@ -111,10 +111,10 @@ export default function MentorDashboard() {
     mentorId: user?.id,
   });
 
-  // Fetch roadmaps
+  
   const { data: roadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
 
-  // Format date for display (US format: "DD MMM YY")
+  
   const formatDate = useCallback((dateString: string): string => {
     const date = new Date(dateString);
     const day = date.getDate();
@@ -137,7 +137,7 @@ export default function MentorDashboard() {
     return `${day.toString().padStart(2, "0")} ${month} ${year}`;
   }, []);
 
-  // Format time for display (US format: "HH:MM hrs EST")
+  
   const formatTime = useCallback((dateString: string): string => {
     const date = new Date(dateString);
     return (
@@ -150,36 +150,36 @@ export default function MentorDashboard() {
     );
   }, []);
 
-  // Get today's date in YYYY-MM-DD format
+  
   const today = useMemo(() => {
     return new Date().toISOString().split("T")[0];
   }, []);
 
-  // Get today's appointments and format them
+  
   const todayAppointments = useMemo(() => {
     if (!appointments || !getAppointmentsByDate) return [];
 
     const todayApts = getAppointmentsByDate(today);
     return todayApts.map((apt: Appointment) => {
-      // Map platform to mode for AppointmentCard
+      
       const mode = apt.platform === "zoom" ? "duo" : "meet";
 
       return {
         date: formatDate(apt.meetingDate),
         time: formatTime(apt.meetingDate),
-        name: "Mentee", // TODO: Get actual mentee name from userId
+        name: "Mentee",
         role: "Mentee",
         mode: mode,
       };
     });
   }, [appointments, getAppointmentsByDate, today, formatDate, formatTime]);
 
-  // Format roadmaps for RoadMapCard
+  
   const formattedRoadmaps = useMemo(() => {
     if (!roadmaps || roadmaps.length === 0) return [];
 
     return roadmaps.slice(0, 3).map((roadmap) => {
-      // Map status to display format
+      
       let status = "Remaining";
       if (roadmap.status === "in-progress") {
         status = "In progress";
@@ -191,7 +191,7 @@ export default function MentorDashboard() {
         status = "Remaining";
       }
 
-      // Extract phase from roadmap name or use default
+      
       const phase = roadmap.phase || "Phase 1";
 
       return {
@@ -203,7 +203,7 @@ export default function MentorDashboard() {
   }, [roadmaps]);
 
   const { mentors } = useMentors();
-  const displayMentors = mentors.slice(0, 2); // Show only first 2 for reminders
+  const displayMentors = mentors.slice(0, 2);
 
   return (
     <>
@@ -279,7 +279,7 @@ export default function MentorDashboard() {
               </ScrollView>
             </View>
             <View style={styles.separator} />
-            {/* Appointments Section */}
+            {}
             <View
               style={{ paddingHorizontal: 16, marginTop: 14, marginBottom: 20 }}
             >
@@ -413,7 +413,7 @@ export default function MentorDashboard() {
                 Explore CCC
               </Text>
 
-              {/* Grid */}
+              
               <View
                 style={{
                   flexDirection: "row",
@@ -511,17 +511,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   backgroundImage: {
-    // ...StyleSheet.absoluteFillObject,
     width: "100%",
     height: 350,
-    zIndex: -1, // To ensure it goes behind other components
+    zIndex: -1,
   },
   contentContainer: {
     height: 200,
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
-    paddingTop: 20, // Adjust for header height
+    paddingTop: 20,
     gap: 3,
   },
   container: {
@@ -543,27 +542,27 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   upcomingText: {
-    color: "#FFFFFF", // customWhite
+    color: "#FFFFFF",
     fontSize: 18,
     fontFamily: "AlbertSans-Bold",
     textAlign: "center",
   },
   seeAllText: {
-    color: "#FFFFFF", // customWhite
+    color: "#FFFFFF",
     fontSize: 14,
     fontFamily: "AlbertSans-Medium",
     textAlign: "center",
   },
   appointmentBox: {
     width: "100%",
-    backgroundColor: "#14517d", // customBlueOne
+    backgroundColor: "#14517d",
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
+    borderColor: "rgba(255, 255, 255, 0.8)",
     marginBottom: 16,
   },
   appointmentImage: {
@@ -583,7 +582,7 @@ const styles = StyleSheet.create({
     fontFamily: "AlbertSans-Medium",
   },
   timeText: {
-    color: "#FFC107", // customYellow
+    color: "#FFC107",
     fontFamily: "AlbertSans-Medium",
     marginHorizontal: 4,
   },
@@ -622,7 +621,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     marginHorizontal: 16,
     marginVertical: 18,
   },
@@ -638,41 +637,40 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   RoadMapTitleText: {
-    color: "#FFFFFF", // customWhite
+    color: "#FFFFFF",
     fontSize: 18,
     fontFamily: "AlbertBold",
     textAlign: "center",
   },
   RoadMapSeeAllText: {
-    color: "#FFFFFF", // customWhite
+    color: "#FFFFFF",
     fontSize: 14,
     fontFamily: "AlbertMedium",
     textAlign: "center",
   },
 
   ExploreContainer: {
-    marginHorizontal: 16, // mx-4
-    marginTop: 0, // mt-0
+    marginHorizontal: 16,
+    marginTop: 0,
   },
   headerExploreContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
   headerExploreText: {
-    color: "#FFFFFF", // text-customWhite
-    fontSize: 18, // text-lg
-    fontFamily: "AlbertBold", // font-albertBold
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontFamily: "AlbertBold",
     textAlign: "center",
   },
   ExploreBoxContainer: {
-    // flex: 1,
-    padding: 20, // p-5
-    paddingHorizontal: 16, // px-4
+    padding: 20,
+    paddingHorizontal: 16,
   },
   ExploreBoxRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12, // mb-3
+    marginBottom: 12,
   },
   ExploreBoxRowTwo: {
     flexDirection: "row",
@@ -680,8 +678,8 @@ const styles = StyleSheet.create({
   },
 
   mentorContainer: {
-    marginHorizontal: 16, // mx-4
-    gap: 8, // gap-2
+    marginHorizontal: 16,
+    gap: 8,
     position: "relative",
   },
   mentorHeaderContainer: {
@@ -689,9 +687,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   mentorHeaderText: {
-    color: "#FFFFFF", // text-customWhite
-    fontSize: 18, // text-lg
-    fontFamily: "AlbertBold", // font-albertBold
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontFamily: "AlbertBold",
     textAlign: "center",
   },
 });

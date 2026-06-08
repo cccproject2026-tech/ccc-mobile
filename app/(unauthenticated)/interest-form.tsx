@@ -186,7 +186,7 @@ export default function InterestFormScreen() {
         }
     }, [role]);
 
-    // Form state
+    
     const [formData, setFormData] = useState<Partial<InterestFormData>>(() => ({
         ...INITIAL_FORM_DATA,
         title: prefillTitle || "",
@@ -274,7 +274,7 @@ export default function InterestFormScreen() {
         [scrollToField]
     );
 
-    // Show server-side submit errors in UI.
+    
     useEffect(() => {
         if (!isSubmitError) return;
 
@@ -290,14 +290,14 @@ export default function InterestFormScreen() {
         if (lower.includes("email") && (lower.includes("already") || lower.includes("exists"))) {
             setEmailError(true);
             setEmailErrorText(message);
-            // Ensure user can see it immediately.
+            
             if (emailRef.current) {
                 scrollToAndFocus("email", () => emailRef.current?.focus());
             }
         }
     }, [isSubmitError, submitError, scrollToAndFocus]);
 
-    // Transform metadata to form options
+    
     const TITLE_OPTIONS = useMemo(() => metadata?.titles || [], [metadata]);
     const INTEREST_OPTIONS = useMemo(() => metadata?.interests || [], [metadata]);
     // Full country/state lists from country-state-city (matches CCC-Web interest form).
@@ -374,7 +374,7 @@ export default function InterestFormScreen() {
             });
 
             // Prefill church country from selected phone country code.
-            // User can still change country manually afterward.
+            
             setFormData((prev) => {
                 const churches = [...(prev.churchDetails || [])];
                 const current = churches[index] || INITIAL_CHURCH;
@@ -412,11 +412,10 @@ export default function InterestFormScreen() {
             ? formData.churchDetails?.[locationPicker.churchIndex]
             : undefined;
 
+    
+    
 
-    // Auto-fill function for testing
-    // Removed - no longer needed
-
-    // Input handlers
+    
     const handleInputChange = useCallback((field: string, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     }, []);
@@ -480,7 +479,7 @@ export default function InterestFormScreen() {
         });
     }, []);
 
-    // Form validation
+    
     const validateForm = useCallback((): boolean => {
         setFirstNameError(false);
         setLastNameError(false);
@@ -546,7 +545,7 @@ export default function InterestFormScreen() {
 
         const churches = formData.churchDetails || [];
 
-        // Mandatory: at least one church entry.
+        
         if (!churches || churches.length === 0) {
             setChurchEntriesError(true);
             scrollToField("churchList");
@@ -554,7 +553,7 @@ export default function InterestFormScreen() {
         }
 
         // All church fields are mandatory except `churchWebsite` and `comments`.
-        // (These keys exist in `churchDetails`; `churchWebsite` is intentionally not validated.)
+        
         const nextChurchNameErrors = churches.map((church) => !church.churchName?.trim());
         const nextChurchPhoneErrors = churches.map((church, index) => {
             const rawChurchPhone = (church.churchPhone || "").replace(/[^\d]/g, "");
@@ -563,7 +562,7 @@ export default function InterestFormScreen() {
                 churchPhoneCountries[index] ||
                 DEFAULT_PHONE_COUNTRY;
 
-            // Phone is mandatory for each church entry.
+            
             if (!rawChurchPhone) return true;
             return rawChurchPhone.length < country.minLength;
         });
@@ -592,7 +591,7 @@ export default function InterestFormScreen() {
             setChurchStateErrors(nextChurchStateErrors);
             setChurchZipErrors(nextChurchZipErrors);
 
-            // Focus the first invalid church field (priority order).
+            
             for (let index = 0; index < churches.length; index++) {
                 if (nextChurchNameErrors[index]) {
                     scrollToField(`churchName-${index}`);
@@ -673,11 +672,11 @@ export default function InterestFormScreen() {
         scrollToField
     ]);
 
-    // Submit handler
+    
     const handleSubmit = useCallback(() => {
         if (!validateForm()) return;
 
-        // Clear any previous server-side error message.
+        
         setSubmitErrorText("");
 
         const rawPersonal = (formData.phoneNumber || "").replace(/[^\d]/g, "");
@@ -745,7 +744,7 @@ export default function InterestFormScreen() {
                         styles.scrollContent,
                     ]}
                 >
-                    {/* Loading Metadata */}
+                    {}
                     {isLoadingMetadata && (
                         <View style={{ padding: 20, alignItems: 'center' }}>
                             <ActivityIndicator color="#FFD700" />
@@ -753,7 +752,7 @@ export default function InterestFormScreen() {
                         </View>
                     )}
 
-                    {/* Personal Information Section */}
+                    {}
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Personal Information</Text>
                         <View style={styles.row}>
@@ -853,7 +852,7 @@ export default function InterestFormScreen() {
 
                     <View style={styles.divider} />
 
-                    {/* Church Information Sections */}
+                    {}
                     <View onLayout={registerFieldLayout("churchList")}>
                         {churchEntriesError && (
                             <Text style={styles.errorText}>
@@ -1027,7 +1026,7 @@ export default function InterestFormScreen() {
                                     </View>
                               
 
-                                       {/* Country */}
+                                       {}
                                        <View
                                         style={styles.halfWidth}
                                         onLayout={registerFieldLayout(`churchCountry-${index}`)}
@@ -1100,8 +1099,7 @@ export default function InterestFormScreen() {
 
                                
 
-
-                                        {/* State / Province */}
+                                        {}
                                         <View
                                         style={styles.halfWidth}
                                         onLayout={registerFieldLayout(`churchState-${index}`)}
@@ -1141,7 +1139,7 @@ export default function InterestFormScreen() {
                                     </View>
                                 </View>
 
-                                {/* Add More Church Button */}
+                                {}
                                 {index === (formData.churchDetails?.length || 1) - 1 && (
                                     <TouchableOpacity
                                         style={styles.addMoreButton}
@@ -1160,11 +1158,11 @@ export default function InterestFormScreen() {
 
                     <View style={styles.divider} />
 
-                    {/* Other Information Section */}
+                    {}
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Other Information</Text>
 
-                        {/* Title Dropdown */}
+                        {}
                         <View onLayout={registerFieldLayout("title")}>
                             <TouchableOpacity
                                 style={styles.dropdown}
@@ -1286,7 +1284,7 @@ export default function InterestFormScreen() {
                             )}
                         </View>
 
-                        {/* Interests Dropdown */}
+                        {}
                         <View onLayout={registerFieldLayout("interests")}>
                             <TouchableOpacity
                                 style={styles.dropdown}
@@ -1337,7 +1335,7 @@ export default function InterestFormScreen() {
                             </View>
                         )}
 
-                        {/* Comments */}
+                        {}
                         <TextInput
                             style={[styles.input, styles.textArea]}
                             placeholder="Comments"
@@ -1350,12 +1348,12 @@ export default function InterestFormScreen() {
                             editable={!isLoading}
                         />
 
-                        {/* Server-side submit error (only show here if it's not mapped to the email field) */}
+                        {}
                         {submitErrorText && !emailError && (
                             <Text style={styles.errorText}>{submitErrorText}</Text>
                         )}
 
-                        {/* Submit Button */}
+                        {}
                         <TouchableOpacity
                             style={[
                                 styles.submitButton,
@@ -1474,8 +1472,6 @@ export default function InterestFormScreen() {
     );
 }
 
-
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -1493,7 +1489,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     input: {
-        // backgroundColor: "rgba(255,255,255,0.15)",
+        
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.3)",
         borderRadius: 10,
@@ -1545,7 +1541,7 @@ const styles = StyleSheet.create({
         color: "#fff",
     },
     dropdown: {
-        // backgroundColor: "rgba(255,255,255,0.15)",
+        
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.3)",
         borderRadius: 10,
@@ -1711,7 +1707,7 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     interestsMenu: {
-        // backgroundColor: "rgba(255,255,255,0.95)",
+        
         borderRadius: 10,
         marginBottom: 12,
         padding: 12,

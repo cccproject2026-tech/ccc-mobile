@@ -37,7 +37,7 @@ export default function Survey() {
   const { appointments = [] } = useAppointments({ userId: user?.id });
   const { meetingMap } = useAssessmentMeetingMap(appointments);
 
-  // CHANGED: Use assigned assessments instead of all assessments
+  
   const {
     data: assessments,
     isLoading,
@@ -51,14 +51,14 @@ export default function Survey() {
   const [tabs, setTabs] = useState("All");
   const { bottom } = useSafeAreaInsets();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  // PMP Bottom Sheet state
+  
   const pmpBottomSheetRef = useRef<BottomSheetModal>(null);
   const [selectedAssessment, setSelectedAssessment] =
     useState<Assessment | null>(null);
-  // change Mode Modal state
+  
   const [changeModeModalVisible, setChangeModeModalVisible] = useState(false);
   const [selectedMode, setSelectedMode] = React.useState("Zoom");
-  // Mock sections data
+  
   const sections = useMemo(
     () => [
       {
@@ -93,12 +93,12 @@ export default function Survey() {
     [],
   );
 
-  // Handle pull to refresh
+  
   const handleRefresh = () => {
     refetch();
   };
 
-  // Apply search filter
+  
   const searchedAssessments = useMemo(() => {
     if (!search.trim()) return assessments;
 
@@ -110,7 +110,7 @@ export default function Survey() {
     );
   }, [assessments, search]);
 
-  // Status keys for tabs
+  
   const statusKeys = [
     { key: "Due", label: "Due" },
     { key: "Not Started", label: "Not Started" },
@@ -118,7 +118,7 @@ export default function Survey() {
     { key: "Completed", label: "Completed" },
   ];
 
-  // Calculate available tabs with counts
+  
   const availableTabs = useMemo(() => {
     return [
       { key: "All", label: "All", badge: assignedCount },
@@ -131,13 +131,13 @@ export default function Survey() {
     ];
   }, [searchedAssessments, assignedCount]);
 
-  // Filter by selected tab
+  
   const filteredAssessments = useMemo(() => {
     if (tabs === "All") return searchedAssessments;
     return searchedAssessments.filter((item) => item.status === tabs);
   }, [searchedAssessments, tabs]);
 
-  // ... rest of your handlers remain the same ...
+  
 
   const handleCardPress = (assessment: Assessment) => {
     router.push({
@@ -252,7 +252,7 @@ export default function Survey() {
   }, [selectedAssessment?.id, selectedAssessment?.title]);
 
   const handleDownload = useCallback(async () => {
-    // Direct download from the bottom sheet (no navigation).
+    
     await sharePdfFromHtml({
       html: reportHtml,
       fileName: `${(selectedAssessment?.title || "Assessment").replaceAll(
@@ -268,7 +268,7 @@ export default function Survey() {
 
   const currentSectionData = sections[0];
 
-  // Loading state (initial load only)
+  
   if (isLoading && !isRefetching) {
     return (
       <GradientBackground style={styles.centerContainer} decorativeOrbs>
@@ -278,7 +278,7 @@ export default function Survey() {
     );
   }
 
-  // Error state
+  
   if (error && !assessments.length) {
     return (
       <GradientBackground style={styles.centerContainer} decorativeOrbs>
@@ -291,7 +291,7 @@ export default function Survey() {
 
   const handleReschedule = (appointment: any) => {
     console.log("Reschedule appointment", appointment);
-    // Navigate to reschedule screen
+    
   };
   const handleChangeMode = (appointment: any) => {
     setChangeModeModalVisible(true);
@@ -413,16 +413,16 @@ export default function Survey() {
                           },
                           onSelect: () => handleChangeMode(assessment),
                         },
-                        // {
-                        //   key: "cancel",
-                        //   title: "Cancel Meeting",
-                        //   destructive: true,
-                        //   icon: {
-                        //     ios: "trash",
-                        //     android: "ic_menu_delete",
-                        //   },
-                        //    onSelect: () => handleCancel(assessment),
-                        // },
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                       ]}
                     />
                     <View style={styles.dividerWithMargin} />
@@ -448,11 +448,8 @@ export default function Survey() {
         totalSections={sections.length}
       />
 
-      {/* {changeMeetingMode} */}
-      {/* <AssessmentMeetingOptionModal
-        isModalVisible={isModalVisible}
-        setVisisible={(val: boolean) => setIsModalVisible(val)}
-      /> */}
+      {}
+      {}
     </>
   );
 }

@@ -17,7 +17,7 @@ const assessmentImages = [
 
 // Helper function to map API assessment to component Assessment type
 const mapApiAssessmentToAssessment = (apiAssessment: ApiAssessment): Assessment => {
-  // Infer type from name or default to 'PMP'
+  
   const inferType = (name: string): 'CMA' | 'PMP' => {
     const nameLower = name.toLowerCase();
     if (nameLower.includes('cma') || nameLower.includes('church')) {
@@ -41,7 +41,7 @@ const mapApiAssessmentToAssessment = (apiAssessment: ApiAssessment): Assessment 
         questions: [
           {
             id: layer._id,
-            text: layer.title, // Layer title is the question
+            text: layer.title,
             type: 'radio' as const,
             options: layer.choices.map((c) => ({
               label: c.text,
@@ -63,10 +63,10 @@ export default function SelectAssessmentPage() {
     new Set()
   );
 
-  // Use TanStack Query hook for assessments
+  
   const { data: apiAssessments, isLoading: loading, error: queryError, refetch } = useAssessments();
 
-  // Refetch when screen comes into focus
+  
   useFocusEffect(
     useCallback(() => {
       refetch();
@@ -114,10 +114,10 @@ export default function SelectAssessmentPage() {
 
   const handleSelectAll = () => {
     if (selectedAssessments.size === filteredAssessments.length) {
-      // Deselect all
+      
       setSelectedAssessments(new Set());
     } else {
-      // Select all visible items
+      
       setSelectedAssessments(new Set(filteredAssessments.map((a) => a.id)));
     }
   };
@@ -131,7 +131,7 @@ export default function SelectAssessmentPage() {
       />
 
       <View style={{ paddingHorizontal: 16 }}>
-        {/* Close and Share Icons */}
+        {}
         <View
           style={{
             flexDirection: "row",
@@ -156,7 +156,7 @@ export default function SelectAssessmentPage() {
           </Pressable>
         </View>
 
-        {/* Search Bar with Select All */}
+        {}
         <View
           style={{
             flexDirection: "row",
@@ -186,7 +186,7 @@ export default function SelectAssessmentPage() {
         </Pressable>
       </View>
 
-      {/* Assessment Cards List */}
+      {}
       <View style={{ flex: 1, marginTop: 16 }}>
         {loading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -247,7 +247,7 @@ export default function SelectAssessmentPage() {
                     borderBottomColor: "#FFFFFF73",
                   }}
                 >
-                  {/* Checkbox */}
+                  {}
                   <Pressable
                     onPress={() => toggleSelection(assessment.id)}
                     hitSlop={8}
@@ -271,7 +271,7 @@ export default function SelectAssessmentPage() {
                     </View>
                   </Pressable>
 
-                  {/* Image Thumbnail */}
+                  {}
                   <View
                     style={{
                       flexDirection: "row",
@@ -303,7 +303,7 @@ export default function SelectAssessmentPage() {
                       />
                     </View>
 
-                    {/* Title and Description */}
+                    {}
                     <View style={{ flex: 1, gap: 4 }}>
                       <Text
                         style={{

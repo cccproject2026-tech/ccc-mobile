@@ -68,7 +68,7 @@ export default function RoadmapDetail() {
     const [selectedOutcome, setSelectedOutcome] = useState('');
     const [search, setSearch] = useState('');
 
-    // Get phase number from phase string
+    
     const phaseNumber = useMemo(() => {
         if (!roadmap?.phase) return null;
         const match = roadmap.phase.match(/\d+/);
@@ -206,7 +206,7 @@ export default function RoadmapDetail() {
         );
     }
 
-    // Error or not found state
+    
     if (error || !roadmap) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -235,7 +235,7 @@ export default function RoadmapDetail() {
                 <TopBar role="mentor" showUserName />
             </View>
 
-            {/* Header */}
+            {}
             <View style={[styles.section, { paddingHorizontal: horizontalPadding, maxWidth }]}>
                 <View style={styles.headerRow}>
                     <TouchableOpacity
@@ -295,7 +295,7 @@ export default function RoadmapDetail() {
                 </View>
             )}
 
-            {/* Content */}
+            {}
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={[
@@ -342,7 +342,7 @@ export default function RoadmapDetail() {
                 )}
             </ScrollView>
 
-            {/* Modals */}
+            {}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={outcomeMenuItems()}

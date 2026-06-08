@@ -21,35 +21,35 @@ export default function ProgressScreen() {
   const [roadmapTabs, setRoadmapTabs] = React.useState("All");
   const [assessmentTabs, setAssessmentTabs] = React.useState("All");
 
-  // Fetch progress data for the current user
+  
   const { data: progressData, isLoading: isLoadingProgress } = useProgress();
 
-  // Fetch all roadmaps
+  
   const { data: allRoadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
 
-  // Fetch all assessments
+  
   const { data: allAssessments, isLoading: isLoadingAssessments } = useAssessments();
 
-  // Get assigned roadmap IDs from progress
+  
   const assignedRoadmapIds = useMemo(() => {
     return progressData?.roadmaps.items.map((item) => item.roadMapId) || [];
   }, [progressData]);
 
-  // Get assigned assessment IDs from progress
+  
   const assignedAssessmentIds = useMemo(() => {
     return progressData?.assessments.items.map((item) => item.assessmentId) || [];
   }, [progressData]);
 
-  // Format roadmaps for ProgressCard
+  
   const roadmapsData = useMemo(() => {
     if (!allRoadmaps || !progressData) return [];
 
-    // Filter to only assigned roadmaps
+    
     const assignedRoadmaps = allRoadmaps.filter((roadmap) =>
       assignedRoadmapIds.includes(roadmap._id)
     );
 
-    // Create a map of progress data
+    
     const progressMap = new Map();
     progressData.roadmaps.items.forEach((item) => {
       progressMap.set(item.roadMapId, item);
@@ -59,7 +59,7 @@ export default function ProgressScreen() {
       const progress = progressMap.get(roadmap._id);
       const roadmapCard = getRoadmapCard(roadmap);
 
-      // Map status to ProgressCard format
+      
       let status: 'Due' | 'In Progress' | 'Not Started Yet' | 'Completed' = 'Not Started Yet';
       if (roadmapCard.status === 'completed') {
         status = 'Completed';
@@ -69,7 +69,7 @@ export default function ProgressScreen() {
         status = 'In Progress';
       }
 
-      // Calculate task status
+      
       const taskStatus = {
         notStarted: roadmapCard.status === 'initial',
         started: roadmapCard.status !== 'initial',
@@ -93,16 +93,16 @@ export default function ProgressScreen() {
     });
   }, [allRoadmaps, progressData, assignedRoadmapIds]);
 
-  // Format assessments for ProgressCard
+  
   const assessmentsData = useMemo(() => {
     if (!allAssessments || !progressData) return [];
 
-    // Filter to only assigned assessments
+    
     const assignedAssessments = allAssessments.filter((assessment) =>
       assignedAssessmentIds.includes(assessment._id)
     );
 
-    // Create a map of progress data
+    
     const progressMap = new Map();
     progressData.assessments.items.forEach((item) => {
       progressMap.set(item.assessmentId, item);
@@ -112,7 +112,7 @@ export default function ProgressScreen() {
       const assessment = mapApiToFrontend(apiAssessment);
       const progress = progressMap.get(apiAssessment._id);
 
-      // Map status to ProgressCard format
+      
       let status: 'Due' | 'Completed' | 'due' = 'Due';
       if (assessment.status === 'Completed') {
         status = 'Completed';
@@ -207,7 +207,7 @@ export default function ProgressScreen() {
                 width: "95%",
                 borderWidth: 1,
                 borderColor: "white",
-                //   backgroundColor: "red",
+                
                 paddingVertical: 20,
                 paddingHorizontal: 10,
                 borderRadius: 10,
@@ -303,9 +303,9 @@ export default function ProgressScreen() {
                 borderColor: "white",
                 borderRadius: 10,
                 marginHorizontal: 16,
-                // marginTop: 16,
+                
                 paddingVertical: 10,
-                // width:"100%"
+                
               }}
             >
               <View
@@ -409,7 +409,7 @@ export default function ProgressScreen() {
               >
                 Revitalization Roadmap Progress
               </Text>
-              {/* Tabs Section */}
+              {}
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -453,7 +453,7 @@ export default function ProgressScreen() {
               </View>
             </View>
 
-            {/* Assessment Progress */}
+            {}
             <View
               className="flex flex-col gap-5 mt-5"
               style={{ marginTop: 20 }}
@@ -464,7 +464,7 @@ export default function ProgressScreen() {
               >
                 Assessment Progress
               </Text>
-              {/* Tabs Section */}
+              {}
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}

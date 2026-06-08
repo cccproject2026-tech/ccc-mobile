@@ -92,9 +92,9 @@ export default function RevitalizationCard({
       onPress={handleNavigation}
       className="w-full  bg-[#46660] rounded-[10px] p-4 my-2.5  border border-white/45"
     >
-      {/* Main Content Row */}
+      {}
       <View className="flex-row w-full">
-        {/* Image Section - Fixed Width */}
+        {}
         <View className="w-[110px]  mr-3 flex-shrink-0">
         <View className="w-[110px] h-[100px] mr-3 flex-shrink-0">
           <View className="relative w-full">
@@ -112,7 +112,7 @@ export default function RevitalizationCard({
             )}
           </View>
           </View>
-          {/* Completion Time */}
+          {}
           {data?.time && (
             <Text className="mt-2 text-xs font-semibold text-white" numberOfLines={2}>
               {data?.time}
@@ -120,9 +120,9 @@ export default function RevitalizationCard({
           )}
         </View>
 
-        {/* Content Section - Flexible */}
+        {}
         <View className="flex-1">
-          {/* Title */}
+          {}
           <Text
             className="mb-1 text-base font-semibold text-white"
             numberOfLines={2}
@@ -130,7 +130,7 @@ export default function RevitalizationCard({
             {data?.title}
           </Text>
 
-          {/* Description */}
+          {}
           <Text
             className="text-[#F4F2F2B5] text-sm font-medium leading-[18px] mb-2"
             numberOfLines={2}
@@ -138,7 +138,7 @@ export default function RevitalizationCard({
             {data?.description}
           </Text>
 
-          {/* Status Badge - Responsive */}
+          {}
           <View className="self-start px-3 py-1 mb-2 border rounded-lg border-white/20">
             <Text className="text-sm font-medium text-white">
               Status{" "}
@@ -152,7 +152,7 @@ export default function RevitalizationCard({
             </Text>
           </View>
 
-          {/* Conditional Content Based on Status */}
+          {}
           {data?.sessionDate && data?.status === "Not Started" && (
             <View className="self-start px-3 py-2 border rounded-lg border-white/40">
               <Text className="mb-1 text-sm font-medium text-white">
@@ -193,7 +193,7 @@ export default function RevitalizationCard({
         </View>
       </View>
 
-      {/* Session Dates - Full Width Below */}
+      {}
       {data?.showBothDate &&
         data?.sessionDate &&
         data?.status === "Not Started Yet" && (
@@ -223,7 +223,7 @@ export default function RevitalizationCard({
           </View>
         )}
 
-      {/* Meeting Banner */}
+      {}
       {data?.showBothDate && data?.meeting && (
         <LinearGradient
           colors={["#B83AF3", "#21B6E9"]}

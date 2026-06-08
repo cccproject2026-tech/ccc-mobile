@@ -28,9 +28,9 @@ export interface PreSurveyQuestion {
 
 export interface AssessmentSection {
   title: string;
-  subtitle?: string; // Optional subtitle for section
-  questionGroups: QuestionGroup[]; // Changed from questions to questionGroups
-  // Optional per-section CDP recommendations (levels 1–4)
+  subtitle?: string;
+  questionGroups: QuestionGroup[];
+  
   recommendations?: CreateAssessmentSectionRecommendation[];
 }
 

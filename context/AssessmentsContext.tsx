@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 export interface AssessmentResponse {
-    assessmentId: string; // Unique assessment ID
+    assessmentId: string;
     assessmentType: 'CMA' | 'PMP';
     assessmentTitle: string;
     preSurveyAnswers?: Record<string, string>;

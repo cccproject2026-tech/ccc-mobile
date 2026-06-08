@@ -122,17 +122,17 @@ const TEXT_SECONDARY  = "rgba(255,255,255,0.72)";
 const TEXT_MUTED      = "rgba(255,255,255,0.42)";
 
 // Complete btn – deep emerald that matches the dark-blue scene
-const COMPLETE_BG       = "#059669"; // emerald-600
+const COMPLETE_BG       = "#059669";
 const COMPLETE_BG_DONE  = "rgba(5,150,105,0.38)";
 const COMPLETE_BORDER   = "rgba(6,95,70,0.55)";
 const COMPLETE_ICON_BG  = "#ECFDF5";
 const COMPLETE_ICON_CLR = "#065F46";
 
 // View-details btn – mid-blue that sings against the gradient
-const VIEW_BG     = "rgba(99,179,237,0.18)"; // sky-300 tint
+const VIEW_BG     = "rgba(99,179,237,0.18)";
 const VIEW_BORDER = "rgba(147,210,255,0.38)";
-const VIEW_TEXT   = "#BAE6FD"; // sky-200
-const VIEW_ICON   = "#7DD3FC"; // sky-300
+const VIEW_TEXT   = "#BAE6FD";
+const VIEW_ICON   = "#7DD3FC";
 
 const TAB_SCENE_BOTTOM = Colors.darkBlueGradientOne;
 
@@ -163,7 +163,7 @@ const SessionRow = React.memo(function SessionRow({
 
   return (
     <View style={[styles.card, isCurrent && styles.cardCurrent]}>
-      {/* Current stripe accent */}
+      {}
       {isCurrent && <View style={styles.cardAccentStripe} />}
 
       <Pressable
@@ -180,7 +180,7 @@ const SessionRow = React.memo(function SessionRow({
         accessibilityRole="button"
         accessibilityLabel={`${sessionOrdinalLabel(item.sessionNumber)}${sessionTopic ? `, ${sessionTopic}` : ""}, view details`}
       >
-        {/* Pastor identity row */}
+        {}
         {(item.pastorName?.trim() || item.pastorProfilePicture) ? (
           <View style={styles.pastorIdentityRow}>
             <View style={styles.pastorAvatarWrap}>
@@ -200,7 +200,7 @@ const SessionRow = React.memo(function SessionRow({
           </View>
         ) : null}
 
-        {/* Header row */}
+        {}
         <View style={styles.cardTop}>
           <View style={styles.cardTitleBlock}>
             <View style={styles.cardTitleTextCol}>
@@ -232,7 +232,7 @@ const SessionRow = React.memo(function SessionRow({
           </View>
         </View>
 
-        {/* Meta */}
+        {}
         <View style={styles.metaDivider} />
         <View style={styles.metaBlock}>
           <View style={styles.metaChip}>
@@ -252,9 +252,9 @@ const SessionRow = React.memo(function SessionRow({
         <View style={styles.metaDivider} />
       </Pressable>
 
-      {/* Action buttons — full-width stacked */}
+      {}
       <View style={styles.sessionActionsStack}>
-        {/* Complete session */}
+        {}
         <Pressable
           onPress={onRequestComplete}
           disabled={completeDisabled}
@@ -295,7 +295,7 @@ const SessionRow = React.memo(function SessionRow({
           )}
         </Pressable>
 
-        {/* View details */}
+        {}
         <Pressable
           onPress={onView}
           accessibilityRole="button"
@@ -385,7 +385,7 @@ const PastorAvatarTab = React.memo(function PastorAvatarTab({
           </View>
         </LinearGradient>
 
-        {/* Progress arc overlay – simple count badge */}
+        {}
         <View style={[styles.progressBadge, selected && styles.progressBadgeSelected]}>
           <Text style={styles.progressBadgeText}>{completed}/{total}</Text>
         </View>
@@ -640,7 +640,7 @@ export default function SessionsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AppGradientBackground style={styles.gradient}>
 
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <View style={styles.headerTopRow}>
             <View style={styles.headerLeadingRow}>
@@ -872,7 +872,7 @@ const styles = StyleSheet.create({
   },
   pastorAvatarInnerDiskSelected: { backgroundColor: "#264873" },
 
-  // small badge bottom-right of avatar
+  
   progressBadge: {
     position: "absolute",
     bottom: -2,
@@ -928,7 +928,7 @@ const styles = StyleSheet.create({
     opacity: 0.92,
   },
 
-  // pastor identity inside card
+  
   pastorIdentityRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -961,7 +961,7 @@ const styles = StyleSheet.create({
   },
   pastorIdentityName: { color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700" },
 
-  // card header
+  
   cardTop: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1015,7 +1015,7 @@ const styles = StyleSheet.create({
   },
   currentPillText: { color: "#FDE68A", fontSize: 11, fontWeight: "800" },
 
-  // meta
+  
   metaDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: GLASS_BORDER,
@@ -1046,7 +1046,7 @@ const styles = StyleSheet.create({
   actionBtn: {
     width: "100%",
     minHeight: 52,
-    borderRadius: 999,          // pill shape matching screenshot
+    borderRadius: 999,
     overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
@@ -1070,7 +1070,7 @@ const styles = StyleSheet.create({
 
   // Complete – solid bright green (matches screenshot top btn)
   actionBtnComplete: {
-    backgroundColor: "#22C55E",   // green-500 — vibrant, matches the image
+    backgroundColor: "#22C55E",
     borderWidth: 1,
     borderColor: "rgba(20,83,45,0.4)",
     ...Platform.select({

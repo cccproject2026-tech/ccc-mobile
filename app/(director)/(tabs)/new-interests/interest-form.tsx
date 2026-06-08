@@ -145,7 +145,7 @@ export default function InterestFormScreen() {
     const handleEdit = () => setIsEditMode(true);
     const handleCancel = () => setIsEditMode(false);
     const handleSaveChanges = () => {
-        // Save logic here
+        
         setIsEditMode(false);
     };
 
@@ -197,8 +197,6 @@ export default function InterestFormScreen() {
             textColor: '#DC2626',
         },
     ];
-
-
 
     const handleDeleteSection = (sectionId: string) => {
         setSections(prevSections => prevSections.filter(s => s.id !== sectionId));
@@ -262,7 +260,7 @@ export default function InterestFormScreen() {
 
         fields.forEach((field, index) => {
             if (field.type === 'checkbox') {
-                // Render previous row if exists
+                
                 if (currentRow.length > 0) {
                     rows.push(
                         <View key={`row-${index}`} style={styles.row}>
@@ -275,7 +273,7 @@ export default function InterestFormScreen() {
                     );
                     currentRow = [];
                 }
-                return; // Handle checkboxes separately
+                return;
             }
 
             if (field.width === 'full') {
@@ -337,7 +335,7 @@ export default function InterestFormScreen() {
                     contentContainerStyle={{ paddingBottom: bottom + 24 }}
                     extraScrollHeight={24}
                 >
-                    {/* Header */}
+                    {}
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => router.back()}>
                             <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -347,7 +345,7 @@ export default function InterestFormScreen() {
                         </Text>
                     </View>
 
-                    {/* Render Sections */}
+                    {}
                     {sections.map((section, sectionIndex) => {
                         const checkboxFields = section.fields.filter(f => f.type === 'checkbox');
                         const otherFields = section.fields.filter(f => f.type !== 'checkbox');
@@ -355,7 +353,7 @@ export default function InterestFormScreen() {
                         return (
                             <React.Fragment key={section.id}>
                                 {isEditMode ? (
-                                    // EDIT MODE
+                                    
                                     <View style={styles.sectionCard}>
                                         <View style={styles.sectionHeader}>
                                             <Text style={styles.sectionTitleEdit}>{section.title}</Text>
@@ -367,7 +365,7 @@ export default function InterestFormScreen() {
                                             </TouchableOpacity>
                                         </View>
 
-                                        {/* Section Menu */}
+                                        {}
                                         <ContextMenu
                                             visible={activeMenuSection === section.id}
                                             items={getMenuItems(section.id)}
@@ -379,7 +377,7 @@ export default function InterestFormScreen() {
                                         <View style={styles.sectionContent}>
                                             {renderFields(otherFields)}
 
-                                            {/* CHECKBOXES WITH INTERESTS WRAPPER IN EDIT MODE */}
+                                            {}
                                             {checkboxFields.length > 0 && (
                                                 <>
                                                     <View style={[styles.interestsHeader, {
@@ -406,12 +404,12 @@ export default function InterestFormScreen() {
                                         </View>
                                     </View>
                                 ) : (
-                                    // VIEW MODE
+                                    
                                     <View style={styles.sectionContainer}>
                                         <Text style={styles.sectionTitle}>{section.title}</Text>
                                         {renderFields(otherFields)}
 
-                                        {/* CHECKBOXES WITH INTERESTS WRAPPER IN VIEW MODE */}
+                                        {}
                                         {checkboxFields.length > 0 && (
                                             <>
                                                 <View style={[styles.interestsHeader, {
@@ -446,7 +444,7 @@ export default function InterestFormScreen() {
                     })}
                 </KeyboardSafeContainer>
 
-                {/* Bottom Buttons */}
+                {}
                 {isEditMode ? (
                     <View style={[styles.bottomButtons, { paddingBottom: bottom + 20 }]}>
                         <Pressable style={styles.cancelButton} onPress={handleCancel}>
@@ -478,7 +476,6 @@ export default function InterestFormScreen() {
     );
 }
 
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -499,7 +496,7 @@ const styles = StyleSheet.create({
         color: '#fff',
     },
 
-    // VIEW MODE STYLES
+    
     sectionContainer: {
         paddingHorizontal: 16,
         marginBottom: 20,
@@ -526,7 +523,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
     },
 
-    // EDIT MODE STYLES
+    
     sectionCard: {
         marginHorizontal: 16,
         marginBottom: 20,
@@ -581,7 +578,7 @@ const styles = StyleSheet.create({
         color: '#fff',
     },
 
-    // BOTTOM BUTTONS
+    
     bottomContainer: {
         position: 'absolute',
         bottom: 0,
@@ -645,7 +642,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#fff',
     },
-
 
     interestsHeader: {
         flexDirection: 'row',

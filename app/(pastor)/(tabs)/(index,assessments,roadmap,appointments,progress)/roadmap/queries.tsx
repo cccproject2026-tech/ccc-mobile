@@ -103,7 +103,7 @@ export default function QueriesScreen() {
 
     const renderQuery = ({ item }: { item: any }) => (
         <View style={styles.queryCard}>
-            {/* USER QUESTION */}
+            {}
             <View style={styles.questionSection}>
                 <View style={styles.queryHeader}>
                     <Ionicons name="person-circle-outline" size={40} color="#FFFFFF" />
@@ -117,7 +117,7 @@ export default function QueriesScreen() {
                 <Text style={styles.queryText}>{item.actualQueryText}</Text>
             </View>
 
-            {/* RESPONSE */}
+            {}
             {item.status === "answered" ? (
                 <View style={styles.responseSection}>
                     <View style={styles.queryHeader}>
@@ -191,7 +191,7 @@ export default function QueriesScreen() {
                 })}
             </View>
 
-            {/* CONTENT */}
+            {}
             {selectedTab === 'NEW' ? (
                 <KeyboardSafeContainer
                     style={styles.scrollArea}
@@ -268,7 +268,6 @@ export default function QueriesScreen() {
         </GradientBackground>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: {

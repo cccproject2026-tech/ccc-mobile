@@ -42,10 +42,10 @@ const HeaderHero: React.FC<Props> = ({
     const previousPeriodRef = useRef<'morning' | 'afternoon' | 'evening' | null>(null);
 
     // If external clock/date provided, use them (backward compatibility)
-    // Otherwise, manage state internally
+    
     const useInternalState = externalClock === undefined && externalDate === undefined;
 
-    // Get current greeting period
+    
     const getGreetingPeriod = useCallback((date: Date): 'morning' | 'afternoon' | 'evening' => {
         const h = date.getHours();
         if (h < 12) return 'morning';
@@ -60,7 +60,7 @@ const HeaderHero: React.FC<Props> = ({
             const currentTime = new Date();
             setNow(currentTime);
             
-            // Check if greeting period changed
+            
             const currentPeriod = getGreetingPeriod(currentTime);
             if (onGreetingPeriodChange && previousPeriodRef.current !== currentPeriod) {
                 previousPeriodRef.current = currentPeriod;
@@ -68,10 +68,10 @@ const HeaderHero: React.FC<Props> = ({
             }
         };
 
-        // Update immediately
+        
         updateTime();
         
-        // Set interval to update every second
+        
         const id = setInterval(updateTime, 1000);
         return () => clearInterval(id);
     }, [useInternalState, onGreetingPeriodChange]);
@@ -136,7 +136,7 @@ const HeaderHero: React.FC<Props> = ({
                     notifications={3}
                     showUserName={false}
                     role={role}
-                // ...other TopBar props
+                
                 />
             </View>
 

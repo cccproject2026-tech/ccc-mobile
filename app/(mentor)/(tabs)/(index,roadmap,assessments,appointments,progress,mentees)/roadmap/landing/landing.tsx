@@ -242,7 +242,7 @@ export default function Landing() {
     [resubmittedJourneyTabs],
   );
 
-  // Reset tab if it becomes invalid
+  
   useEffect(() => {
     if (mentorPastorRoadmapView !== "resubmitted") return;
     const valid = new Set(resubmittedJourneyTabs.map((t) => t.key));
@@ -253,12 +253,12 @@ export default function Landing() {
   const filteredResubmittedTasks = useMemo(() => {
     let list = [...resubmittedTasks];
 
-    // Filter by journey tab
+    
     if (resubmittedJourneyTab !== "all") {
       list = list.filter((entry) => entry.phaseId === resubmittedJourneyTab);
     }
 
-    // Sort by most recently resubmitted first
+    
     list.sort((a, b) => {
       const ta = new Date(a.resubmittedAt).getTime();
       const tb = new Date(b.resubmittedAt).getTime();
@@ -266,7 +266,7 @@ export default function Landing() {
       return 0;
     });
 
-    // Filter by search
+    
     const q = resubmittedSearch.trim().toLowerCase();
     if (q) {
       list = list.filter((entry) => {

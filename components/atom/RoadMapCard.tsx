@@ -9,8 +9,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type Props = {
 
-    metricLabel?: string; // "5 Mentees" or "Last Contacted"
-    metricValue?: string; // "" or "5 Days Ago"
+    metricLabel?: string;
+    metricValue?: string;
     avatar?: any;
     onCall?: () => void;
     onChat?: () => void;
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: isSmallDevice ? 8 : 10,
         flex: 1,
-        minWidth: 0, // Prevent overflow
+        minWidth: 0,
     },
     avatar: {
         width: getImageSize(isSmallDevice ? 16 : isMediumDevice ? 17 : 25),
@@ -99,14 +99,14 @@ const styles = StyleSheet.create({
     },
     info: {
         flex: 1,
-        minWidth: 0, // Prevent overflow
+        minWidth: 0,
     },
     name: {
         color: '#EAF7FF',
         fontSize: isSmallDevice ? 14 : 15,
         fontWeight: '700',
         marginBottom: 2,
-        maxWidth: SCREEN_WIDTH * 0.5, // Limit to 40% of screen width
+        maxWidth: SCREEN_WIDTH * 0.5,
     },
     role: {
         color: '#CFE9F3',
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: isSmallDevice ? 4 : 6,
         flexShrink: 0,
-        maxWidth: SCREEN_WIDTH * 0.4, // Limit to 40% of screen width
+        maxWidth: SCREEN_WIDTH * 0.4,
     },
     metricContainer: {
         alignItems: 'flex-end',

@@ -42,12 +42,12 @@ export const useAssignedMentors = (
     const query = useQuery({
         queryKey: ['assigned-mentors', menteeId],
         queryFn: () => mentorsService.getAssignedMentors(menteeId!),
-        staleTime: 2000, // 2 seconds (was 5 minutes)
+        staleTime: 2000,
         retry: 2,
-        enabled: Boolean(menteeId), // Only run query if menteeId exists
+        enabled: Boolean(menteeId),
     });
 
-    // Transform the data
+    
     const transformedMentors = query.data?.map(transformAssignedMentor) ?? [];
 
     return {

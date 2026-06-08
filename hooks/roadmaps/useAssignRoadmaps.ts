@@ -16,7 +16,7 @@ export function useAssignRoadmaps() {
         onSuccess: () => {
             console.log("✅ Roadmaps assigned successfully");
 
-            // Invalidate relevant queries to refresh the UI
+            
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.all
             });

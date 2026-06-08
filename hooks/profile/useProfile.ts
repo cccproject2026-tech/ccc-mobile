@@ -1,4 +1,4 @@
-// hooks/useProfile.ts
+
 import { profileService } from "@/services/profile.service";
 import { notificationsService } from "@/services/notifications.service";
 import { useAuthStore } from "@/stores/auth.store";
@@ -17,9 +17,6 @@ export const profileKeys = {
     [...profileKeys.all, "combined", userId] as const,
 };
 
-// ============================================
-// INDIVIDUAL QUERY HOOKS
-// ============================================
 export const useUserProfile = () => {
   const { user } = useAuthStore();
 
@@ -35,8 +32,8 @@ export const useUserProfile = () => {
       return profile;
     },
     enabled: !!user?.id,
-    staleTime: 2000, // 2 seconds (was 10 minutes)
-    gcTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 2000,
+    gcTime: 1000 * 60 * 30,
     retry: 1,
   });
 };
@@ -56,33 +53,30 @@ export const useInterests = () => {
       return interests;
     },
     enabled: !!user?.email,
-    staleTime: 2000, // 2 seconds (was 5 minutes)
-    gcTime: 1000 * 60 * 20, // 20 minutes
+    staleTime: 2000,
+    gcTime: 1000 * 60 * 20,
     retry: 1,
   });
 };
 
-// ============================================
-// OPTIMIZED COMBINED PROFILE HOOK
-// ============================================
 export const useProfile = () => {
   const { user } = useAuthStore();
 
-  // Use individual hooks for parallel queries
+  
   const userQuery = useUserProfile();
   const interestQuery = useInterests();
   const progressQuery = useProgress();
 
-  // Derive combined loading state
+  
   const isLoading =
     userQuery.isLoading || interestQuery.isLoading || progressQuery.isLoading;
 
-  // Derive combined error state
+  
   const isError =
     userQuery.isError || interestQuery.isError || progressQuery.isError;
   const error = userQuery.error || interestQuery.error || progressQuery.error;
 
-  // Compute combined profile data
+  
   const data: CombinedProfile | undefined = user?.id
     ? {
         user: userQuery.data || null,
@@ -95,7 +89,7 @@ export const useProfile = () => {
       }
     : undefined;
 
-  // Check if all queries are successful
+  
   const isSuccess =
     userQuery.isSuccess && interestQuery.isSuccess && progressQuery.isSuccess;
 
@@ -105,16 +99,13 @@ export const useProfile = () => {
     isError,
     error,
     isSuccess,
-    // Individual query states for granular control
+    
     userQuery,
     interestQuery,
     progressQuery,
   };
 };
 
-// ============================================
-// MUTATION HOOK FOR PROFILE UPDATES
-// ============================================
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -127,7 +118,7 @@ export const useUpdateProfile = () => {
 
       console.log("📤 Starting profile update with data:", updates);
 
-      // Separate user fields from interest fields
+      
       const userUpdates: Partial<any> = {};
       const interestUpdates: Partial<any> = {};
 
@@ -139,7 +130,7 @@ export const useUpdateProfile = () => {
       if (updates.avatar !== undefined)
         userUpdates.profilePicture = updates.avatar;
 
-      // Everything else goes to interests
+      
       if (updates.phoneNumber !== undefined)
         interestUpdates.phoneNumber = updates.phoneNumber;
       if (updates.churches !== undefined) {
@@ -167,7 +158,7 @@ export const useUpdateProfile = () => {
         interestUpdates.comments = updates.comments;
       if (updates.bio !== undefined) interestUpdates.profileInfo = updates.bio;
 
-      // Execute both updates in parallel
+      
       const [userRes, interestRes] = await Promise.allSettled([
         Object.keys(userUpdates).length > 0
           ? profileService.updateUserProfile(user.id, userUpdates)
@@ -177,7 +168,7 @@ export const useUpdateProfile = () => {
           : Promise.resolve(null),
       ]);
 
-      // Handle errors
+      
       if (userRes.status === "rejected") {
         console.error("❌ User profile update failed:", userRes.reason);
         throw userRes.reason;
@@ -216,21 +207,15 @@ export const useUpdateProfile = () => {
   });
 };
 
-// ============================================
-// ADDITIONAL HOOKS
-// ============================================
 export const useGetAllUsers = (role?: string) => {
   return useQuery({
     queryKey: ["users", "all", role || ""],
     queryFn: () => profileService.getAllUsers(role),
-    staleTime: 2000, // 2 seconds (was 10 minutes)
-    gcTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 2000,
+    gcTime: 1000 * 60 * 30,
   });
 };
 
-// ============================================
-// PROFILE PICTURE UPLOAD MUTATION
-// ============================================
 export const useUploadProfilePicture = () => {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -268,11 +253,6 @@ export const useUploadProfilePicture = () => {
   });
 };
 
-// ============================================
-// DOCUMENT MANAGEMENT HOOKS
-// ============================================
-
-// Get documents
 export const useDocuments = () => {
   const { user } = useAuthStore();
 
@@ -288,8 +268,8 @@ export const useDocuments = () => {
       return documents;
     },
     enabled: !!user?.id,
-    staleTime: 2000, // 2 seconds (was 5 minutes)
-    gcTime: 1000 * 60 * 20, // 20 minutes
+    staleTime: 2000,
+    gcTime: 1000 * 60 * 20,
     retry: 1,
   });
 };
@@ -308,13 +288,12 @@ export const useDocumentsByUserId = (userId: string | undefined) => {
       return documents;
     },
     enabled: !!userId,
-    staleTime: 2000, // 2 seconds (was 5 minutes)
-    gcTime: 1000 * 60 * 20, // 20 minutes
+    staleTime: 2000,
+    gcTime: 1000 * 60 * 20,
     retry: 1,
   });
 };
 
-// Upload document
 export const useUploadDocument = () => {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -331,7 +310,7 @@ export const useUploadDocument = () => {
     onSuccess: async (newDocument) => {
       console.log("✅ Document uploaded successfully, invalidating cache...");
 
-      // Invalidate documents query to refetch
+      
       await queryClient.invalidateQueries({
         queryKey: ["documents", user?.id || ""],
       });
@@ -344,7 +323,6 @@ export const useUploadDocument = () => {
   });
 };
 
-// Delete document
 export const useDeleteDocument = () => {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -361,7 +339,7 @@ export const useDeleteDocument = () => {
     onSuccess: async () => {
       console.log("✅ Document deleted successfully, invalidating cache...");
 
-      // Invalidate documents query to refetch
+      
       await queryClient.invalidateQueries({
         queryKey: ["documents", user?.id || ""],
       });
@@ -393,8 +371,8 @@ export const useNotifications = (userId?: string) => {
       );
     },
     enabled: !!userId,
-    staleTime: 2000, // 2 seconds (was 5 minutes)
-    gcTime: 1000 * 60 * 20, // 20 minutes
+    staleTime: 2000,
+    gcTime: 1000 * 60 * 20,
     retry: 1,
   });
 };

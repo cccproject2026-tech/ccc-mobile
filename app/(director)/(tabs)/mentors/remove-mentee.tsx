@@ -148,7 +148,7 @@ export default function RemoveMenteeScreen() {
             colors={['#176192', '#1D548D', '#264387']}
             style={[styles.container, { paddingTop: Platform.OS === 'ios' ? top : top + 10 }]}
         >
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -162,12 +162,12 @@ export default function RemoveMenteeScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
+            {}
             <View style={styles.searchContainer}>
                 <SearchBar value={search} onChangeValue={setSearch} />
             </View>
 
-            {/* Sort By */}
+            {}
             <View style={styles.sortContainer}>
                 <Text style={styles.sortLabel}>Sort by</Text>
                 <Pressable style={styles.sortButton} onPress={() => setFilterModalVisible(true)}>
@@ -176,7 +176,7 @@ export default function RemoveMenteeScreen() {
                 </Pressable>
             </View>
 
-            {/* Mentees List */}
+            {}
             <FlatList
                 data={filteredMentees}
                 keyExtractor={(item) => item.id}
@@ -196,7 +196,7 @@ export default function RemoveMenteeScreen() {
                 showsVerticalScrollIndicator={false}
             />
 
-            {/* Sticky Bottom Remove Container */}
+            {}
             <View style={[styles.bottomContainer, { paddingBottom: bottom + 16 }]}>
                 <View style={styles.selectedNamesContainer}>
                     <Text style={styles.selectedNamesText} numberOfLines={1}>
@@ -204,7 +204,7 @@ export default function RemoveMenteeScreen() {
                     </Text>
                 </View>
 
-                {/* Gradient Border Button */}
+                {}
                 <LinearGradient
                     colors={['#7C3AED', '#38BDF8']}
                     start={{ x: 0, y: 0 }}

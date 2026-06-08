@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 interface ProfileUIStore {
-    // UI-only state
+    
     isEditingProfile: boolean;
     setIsEditingProfile: (editing: boolean) => void;
     selectedChurchId: string | null;

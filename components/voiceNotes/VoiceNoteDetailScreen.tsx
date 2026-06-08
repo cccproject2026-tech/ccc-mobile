@@ -44,7 +44,7 @@ export function VoiceNoteDetailScreen() {
       <SafeAreaView style={styles.container} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="#fff" />
@@ -63,19 +63,19 @@ export function VoiceNoteDetailScreen() {
           </View>
         </View>
 
-        {/* Audio Player */}
+        {}
         <View style={styles.playerSection}>
           <AudioPlayerCard audioUri={voiceNote.audioUrl} title="Audio Playback" />
         </View>
 
-        {/* Processing Status */}
+        {}
         {isProcessing && (
           <View style={styles.statusSection}>
             <ProcessingStatus status={voiceNote.status} />
           </View>
         )}
 
-        {/* Tabs */}
+        {}
         {!isProcessing && (
           <View style={styles.tabsContainer}>
             <View style={styles.tabBar}>
@@ -127,7 +127,7 @@ export function VoiceNoteDetailScreen() {
           </View>
         )}
 
-        {/* Failed state */}
+        {}
         {voiceNote.status === "failed" && (
           <View style={styles.failedContainer}>
             <ProcessingStatus status="failed" />

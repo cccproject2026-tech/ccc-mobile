@@ -52,7 +52,7 @@ export default function MentorAssessmentsLibrary() {
     useState<Assessment | null>(null);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
 
-  // Get current user for TopBar
+  
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function MentorAssessmentsLibrary() {
     }
   }, [menteeId]);
 
-  // Fetch only mentees assigned to this mentor
+  
   const { data: menteesData } = useMentees(100, user?.id);
 
   // Format mentees for display (ensure avatar always has valid source)
@@ -93,12 +93,12 @@ export default function MentorAssessmentsLibrary() {
 
   const deleteAssessmentMutation = useDeleteAssessment();
 
-  // Handle pull to refresh
+  
   const handleRefresh = () => {
     refetch();
   };
 
-  // Apply search filter
+  
   const searchedAssessments = useMemo(() => {
     if (!search.trim()) return assessments;
 
@@ -110,7 +110,7 @@ export default function MentorAssessmentsLibrary() {
     );
   }, [assessments, search]);
 
-  // Status keys for tabs
+  
   const statusKeys = [
     { key: "Due", label: "Due" },
     { key: "Not Started", label: "Not Started" },
@@ -118,7 +118,7 @@ export default function MentorAssessmentsLibrary() {
     { key: "Completed", label: "Completed" },
   ];
 
-  // Calculate available tabs with counts
+  
   const availableTabs = useMemo(() => {
     return [
       { key: "All", label: "All", badge: assignedCount },
@@ -131,7 +131,7 @@ export default function MentorAssessmentsLibrary() {
     ];
   }, [searchedAssessments, assignedCount]);
 
-  // Filter by selected tab
+  
   const filteredAssessments = useMemo(() => {
     if (tabs === "All") return searchedAssessments;
     return searchedAssessments.filter((item) => item.status === tabs);
@@ -217,7 +217,7 @@ export default function MentorAssessmentsLibrary() {
       onError: (error) => {
         console.error("Failed to delete assessment:", error);
         setAssessmentToDelete(null);
-        // You can add an Alert here if needed
+        
       },
     });
   };
@@ -289,7 +289,7 @@ export default function MentorAssessmentsLibrary() {
           />
         </View>
 
-        {/* Avatars Row - fixed width per item so long names don't break layout */}
+        {}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -299,7 +299,7 @@ export default function MentorAssessmentsLibrary() {
             gap: 14,
           }}
         >
-          {/* Library pill */}
+          {}
           <Pressable
             onPress={() => setSelectedMentee(null)}
             style={styles.menteeAvatarItem}
@@ -351,7 +351,7 @@ export default function MentorAssessmentsLibrary() {
         />
       </View>
 
-      {/* Status Tabs - Only show when a mentee is selected */}
+      {}
       {selectedMentee && (
         <View style={{ marginTop: 10 }}>
           <View style={styles.tabStripWrap}>
@@ -369,7 +369,7 @@ export default function MentorAssessmentsLibrary() {
         </View>
       )}
 
-      {/* Cards List */}
+      {}
       <View style={{ flex: 1 }}>
         {isLoading && !isRefetching ? (
           <View style={styles.centerContainer}>
@@ -448,7 +448,7 @@ export default function MentorAssessmentsLibrary() {
         )}
       </View>
 
-      {/* Assessment Menu Bottom Sheet */}
+      {}
       <AssessmentMenuBottomSheet
         ref={bottomSheetRef}
         assessment={selectedAssessment}

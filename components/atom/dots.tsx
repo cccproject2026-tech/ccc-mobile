@@ -5,12 +5,12 @@ import { TouchableOpacity, View } from "react-native"
 
 type ProgressDotsProps = {
     total?: number
-    activeIndex?: number // controlled
-    defaultIndex?: number // uncontrolled initial
+    activeIndex?: number
+    defaultIndex?: number
     onChange?: (index: number) => void
     className?: string
-    dotSize?: number // px
-    trackThickness?: number // px
+    dotSize?: number
+    trackThickness?: number
     wrapperClass?: string
 }
 

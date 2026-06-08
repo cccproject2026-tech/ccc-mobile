@@ -34,46 +34,46 @@ export default function MenteeProgressScreen() {
   const deleteFinalCommentMutation = useDeleteFinalComment();
 
 
-  // Fetch mentee data
+  
   const { data: menteesData, isLoading: isLoadingMentees } = useMentees();
   const mentee = useMemo(() => {
     return menteesData?.mentees?.find((m) => m.id === menteeId);
   }, [menteesData, menteeId]);
 
-  // Fetch progress data for the mentee
+  
   const { data: progressData, isLoading: isLoadingProgress } = useProgressByUserId(menteeId);
 
-  // Fetch all roadmaps
+  
   const { data: allRoadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
 
-  // Fetch all assessments
+  
   const { data: allAssessments, isLoading: isLoadingAssessments } = useAssessments();
 
-  // Get existing final comments from progress data
+  
   const existingComments = useMemo(() => {
     return progressData?.finalComments || [];
   }, [progressData?.finalComments]);
 
-  // Get assigned roadmap IDs from progress
+  
   const assignedRoadmapIds = useMemo(() => {
     return progressData?.roadmaps.items.map((item) => item.roadMapId) || [];
   }, [progressData]);
 
-  // Get assigned assessment IDs from progress
+  
   const assignedAssessmentIds = useMemo(() => {
     return progressData?.assessments.items.map((item) => item.assessmentId) || [];
   }, [progressData]);
 
-  // Format roadmaps for ProgressCard
+  
   const roadmapsData = useMemo(() => {
     if (!allRoadmaps || !progressData) return [];
 
-    // Filter to only assigned roadmaps
+    
     const assignedRoadmaps = allRoadmaps.filter((roadmap) =>
       assignedRoadmapIds.includes(roadmap._id)
     );
 
-    // Create a map of progress data
+    
     const progressMap = new Map();
     progressData.roadmaps.items.forEach((item) => {
       progressMap.set(item.roadMapId, item);
@@ -83,7 +83,7 @@ export default function MenteeProgressScreen() {
       const progress = progressMap.get(roadmap._id);
       const roadmapCard = getRoadmapCard(roadmap);
 
-      // Map status to ProgressCard format
+      
       let status: 'Due' | 'In Progress' | 'Not Started Yet' | 'Completed' = 'Not Started Yet';
       if (roadmapCard.status === 'completed') {
         status = 'Completed';
@@ -93,7 +93,7 @@ export default function MenteeProgressScreen() {
         status = 'In Progress';
       }
 
-      // Calculate task status
+      
       const taskStatus = {
         notStarted: roadmapCard.status === 'initial',
         started: roadmapCard.status !== 'initial',
@@ -117,16 +117,16 @@ export default function MenteeProgressScreen() {
     });
   }, [allRoadmaps, progressData, assignedRoadmapIds]);
 
-  // Format assessments for ProgressCard
+  
   const assessmentsData = useMemo(() => {
     if (!allAssessments || !progressData) return [];
 
-    // Filter to only assigned assessments
+    
     const assignedAssessments = allAssessments.filter((assessment) =>
       assignedAssessmentIds.includes(assessment._id)
     );
 
-    // Create a map of progress data
+    
     const progressMap = new Map();
     progressData.assessments.items.forEach((item) => {
       progressMap.set(item.assessmentId, item);
@@ -136,7 +136,7 @@ export default function MenteeProgressScreen() {
       const assessment = mapApiToFrontend(apiAssessment);
       const progress = progressMap.get(apiAssessment._id);
 
-      // Map status to ProgressCard format
+      
       let status: 'Due' | 'Completed' | 'due' = 'Due';
       if (assessment.status === 'Completed') {
         status = 'Completed';
@@ -287,7 +287,7 @@ export default function MenteeProgressScreen() {
     }
 
     if (editingCommentId) {
-      // Update existing comment
+      
       updateFinalCommentMutation.mutate(
         {
           userId: menteeId,
@@ -306,7 +306,7 @@ export default function MenteeProgressScreen() {
         }
       );
     } else {
-      // Add new comment
+      
       addFinalCommentMutation.mutate(
         {
           userId: menteeId,
@@ -320,7 +320,7 @@ export default function MenteeProgressScreen() {
           },
           onError: (error) => {
             console.error("Failed to submit final comment:", error);
-            // You might want to show an error toast here
+            
           },
         }
       );
@@ -343,7 +343,7 @@ export default function MenteeProgressScreen() {
           >
             <PastorNavigationHeader showNameTag={true} />
 
-            {/* Header Section */}
+            {}
             <View style={styles.headerContainer}>
               <View style={styles.headerContent}>
                 <TouchableOpacity
@@ -366,7 +366,7 @@ export default function MenteeProgressScreen() {
               </View>
             </View>
 
-            {/* Separator */}
+            {}
             <View className="h-[0.5px] bg-white/30 mt-1 mb-4" />
 
             <View
@@ -591,7 +591,7 @@ export default function MenteeProgressScreen() {
               >
                 Revitalization Roadmap Progress
               </Text>
-              {/* Tabs Section */}
+              {}
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -635,7 +635,7 @@ export default function MenteeProgressScreen() {
               </View>
             </View>
 
-            {/* Assessment Progress */}
+            {}
             <View
               className="flex flex-col gap-5 mt-5"
               style={{ marginTop: 20 }}
@@ -646,7 +646,7 @@ export default function MenteeProgressScreen() {
               >
                 Assessment Progress
               </Text>
-              {/* Tabs Section */}
+              {}
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -692,7 +692,7 @@ export default function MenteeProgressScreen() {
         </SafeAreaView>
       </LinearGradient>
 
-      {/* Final Comments Modal */}
+      {}
       <Modal
         visible={showCommentsModal}
         transparent
@@ -701,7 +701,7 @@ export default function MenteeProgressScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            {/* Header with gradient border */}
+            {}
             <View style={styles.modalHeaderBorder}>
               <LinearGradient
                 colors={["#8B5CF6", "#3B82F6"]}
@@ -723,14 +723,14 @@ export default function MenteeProgressScreen() {
               </LinearGradient>
             </View>
 
-            {/* Content */}
+            {}
             <View style={styles.modalContent}>
-              {/* Display existing comments */}
+              {}
               {existingComments.length > 0 && !editingCommentId && (
                 <View style={styles.commentsDisplay}>
                   {existingComments.map((comment, index) => (
                     <View key={comment._id} style={index > 0 ? styles.commentSeparator : undefined}>
-                      {/* Edit and Delete button row */}
+                      {}
                       <View style={styles.commentHeader}>
                         <TouchableOpacity
                           onPress={() => handleEditComment(comment._id, comment.comment)}
@@ -761,7 +761,7 @@ export default function MenteeProgressScreen() {
                 </View>
               )}
 
-              {/* Input for new comment or editing (only if less than 2 comments OR editing) */}
+              {}
               {(existingComments.length < 2 || editingCommentId) && (
                 <TextInput
                   style={styles.commentsInput}
@@ -781,7 +781,7 @@ export default function MenteeProgressScreen() {
                 </Text>
               )}
 
-              {/* Buttons */}
+              {}
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={styles.cancelButton}

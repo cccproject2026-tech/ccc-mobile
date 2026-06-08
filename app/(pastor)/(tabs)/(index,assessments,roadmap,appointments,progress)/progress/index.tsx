@@ -61,7 +61,7 @@ export default function ProgressScreen() {
   const { data: roadmaps, isLoading: isRoadmapsLoading, refetch: refetchRoadmaps, isRefetching: isRoadmapsRefetching } = useRoadmaps('pastor');
   const { data: assessments } = useAssignedAssessments();
 
-  // Overall Pie Progress
+  
   const overallProgress = useMemo(() => {
     const completedPercentage = round1(progressData?.overallProgress ?? 0);
     const remainingPercentage = round1(100 - completedPercentage);
@@ -74,7 +74,7 @@ export default function ProgressScreen() {
   console.log("========================================");
   const availableTabs = [{ tab: "All" }, { tab: "Completed" }, { tab: "Remaining" }];
 
-  // Filter Roadmaps
+  
   const filteredRoadmaps = useMemo(() => {
     if (!roadmaps) return [];
     const sorted = [...roadmaps].sort((a, b) => toEpochMs(b.updatedAt) - toEpochMs(a.updatedAt));
@@ -85,7 +85,7 @@ export default function ProgressScreen() {
     }
   }, [roadmaps, roadmapTabs]);
 
-  // Filter Assessments
+  
   const filteredAssessments = useMemo(() => {
     if (!assessments) return [];
     const sorted = [...assessments].sort((a, b) => getAssessmentActivityEpochMs(b) - getAssessmentActivityEpochMs(a));
@@ -118,10 +118,10 @@ export default function ProgressScreen() {
     };
   }, [roadmaps, assessments]);
 
-  // Refresh
+  
   const handleRefresh = useCallback(() => refetchRoadmaps(), [refetchRoadmaps]);
 
-  // Navigate to Roadmap
+  
   const handleRoadmapPress = useCallback(
     (roadmapId: string, hasNested: boolean, nestedCount: number, firstNestedId?: string) => {
       if (!hasNested || nestedCount === 0) return;
@@ -160,7 +160,7 @@ export default function ProgressScreen() {
 
   const isLoading = isProgressLoading || isRoadmapsLoading;
 
-  // Loading screen
+  
   if (isLoading) {
     return (
       <AppGradientBackground>
@@ -173,7 +173,7 @@ export default function ProgressScreen() {
     );
   }
 
-  // Error screen
+  
   if (progressError) {
     return (
       <AppGradientBackground>
@@ -223,10 +223,10 @@ export default function ProgressScreen() {
       <View style={styles.bgCircleTop} pointerEvents="none" />
       <View style={styles.bgCircleBottom} pointerEvents="none" />
       <View style={styles.scrollContainer}>
-        {/* Top Bar */}
+        {}
         <TopBar role="pastor" showUserName />
 
-        {/* Header */}
+        {}
         <View style={styles.heroHeader}>
           <View style={styles.pill}>
             <View style={styles.pillDots}>
@@ -257,7 +257,7 @@ export default function ProgressScreen() {
           </View>
         </View>
 
-        {/* Body */}
+        {}
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -277,12 +277,12 @@ export default function ProgressScreen() {
           }
         >
           <View style={styles.contentWrap}>
-          {/* Pie Chart */}
+          {}
           <View style={styles.surfaceCard}>
             <ProgressPieChart data={overallProgress} title="Overall Progress" />
           </View>
 
-          {/* Bar Chart */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{currentTitle}</Text>
             <View style={styles.chartWrapper}>
@@ -295,17 +295,17 @@ export default function ProgressScreen() {
             </View>
           </View>
 
-          {/* Roadmaps */}
+          {}
           <View style={styles.surfaceCard}>
             <View style={styles.blockHeaderRow}>
               <Text style={styles.blockTitle}>Roadmap progress</Text>
               <Text style={styles.blockHint}>Latest 5</Text>
             </View>
 
-            {/* Tabs */}
+            {}
             <FilterTabs value={roadmapTabs} onChange={setRoadmapTabs} />
 
-            {/* Roadmap Cards */}
+            {}
             <View style={styles.cardListContainer}>
               {filteredRoadmaps.length > 0 ? (
                 filteredRoadmaps.map((roadmap, index) => {
@@ -342,17 +342,17 @@ export default function ProgressScreen() {
             </View>
           </View>
 
-          {/* Assessments */}
+          {}
           <View style={styles.surfaceCard}>
             <View style={styles.blockHeaderRow}>
               <Text style={styles.blockTitle}>Assessment progress</Text>
               <Text style={styles.blockHint}>Latest 5</Text>
             </View>
 
-            {/* Tabs */}
+            {}
             <FilterTabs value={assessmentTabs} onChange={setAssessmentTabs} />
 
-            {/* Assessment Cards */}
+            {}
             <View style={styles.cardListContainer}>
               {filteredAssessments.length > 0 ? (
                 filteredAssessments.map((a, i) => (

@@ -1,4 +1,4 @@
-// hooks/progress/useAssignRoadmap.ts
+
 import { progressService } from '@/services/progress.service';
 import { AssignRoadmapRequest } from '@/types/progress.types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ export const useAssignRoadmap = () => {
             progressService.assignRoadmap(payload),
 
         onSuccess: (data, variables) => {
-            // Invalidate progress queries for all affected users
+            
             variables.userIds.forEach((userId) => {
                 queryClient.invalidateQueries({
                     queryKey: progressKeys.user(userId),

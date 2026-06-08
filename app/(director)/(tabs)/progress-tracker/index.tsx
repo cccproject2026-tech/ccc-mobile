@@ -13,7 +13,6 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
-
 export default function ProgressTracker() {
     const router = useRouter();
     const [search, setSearch] = useState('');
@@ -41,8 +40,6 @@ export default function ProgressTracker() {
             }
         ];
     };
-
-
 
     const menuItems = [
         {
@@ -84,7 +81,7 @@ export default function ProgressTracker() {
                 handleCloseModal();
                 setTimeout(() => {
                     router.push(`/(director)/(tabs)/mentees/notes`);
-                    // router.push(`/(director)/(tabs)/mentees/${selectedMentee?.id}/mentor-notes`);
+                    
                 }, 300);
             }
         },
@@ -95,8 +92,6 @@ export default function ProgressTracker() {
 
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
-
-
     const handleMenuPress = useCallback((mentee: Mentee) => {
         setSelectedMentee(mentee);
         // Use setTimeout to ensure state is updated before opening
@@ -105,17 +100,12 @@ export default function ProgressTracker() {
         }, 0);
     }, []);
 
-
-
     const handleCloseModal = useCallback(() => {
         bottomSheetModalRef.current?.dismiss();
         setTimeout(() => {
             setSelectedMentee(null);
         }, 300);
     }, []);
-
-
-
 
     const filterOptions = useMemo(() => getFilterOptions(), []);
 
@@ -137,15 +127,12 @@ export default function ProgressTracker() {
         return filtered;
     }, [search, activeTab]);
 
-
-
     const tabs = [
         { key: 'all', label: 'New', badge: 1 },
         { key: 'mentor-wise', label: 'Pending' },
         { key: 'in-progress', label: 'Accepted' },
         { key: 'completed', label: 'Completed' },
     ];
-
 
     const mockMentors: MentorData[] = [
         {
@@ -183,7 +170,7 @@ export default function ProgressTracker() {
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View className="flex-1 pt-6">
-                    {/* Header */}
+                    {}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: 'white/30' }}>
                         <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -200,7 +187,7 @@ export default function ProgressTracker() {
                         </View>
                     </View>
 
-                    {/* Search Bar */}
+                    {}
                     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
                         <SearchBar value={search} onChangeValue={setSearch} />
                     </View>
@@ -211,7 +198,7 @@ export default function ProgressTracker() {
                         onChange={(tabKey) => setActiveTab(tabKey as typeof activeTab)}
                     />
 
-                    {/* Content List */}
+                    {}
                     <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
                         {activeTab === 'mentor-wise' ? (
                             mockMentors.map((mentor) => (

@@ -29,7 +29,7 @@ export async function sharePdfFromHtml({
     }
     const targetUri = `${baseDir}${safeName}`;
 
-    // Keep a stable filename for share sheets.
+    
     await FileSystem.copyAsync({ from: uri, to: targetUri });
 
     const canShare = await Sharing.isAvailableAsync();

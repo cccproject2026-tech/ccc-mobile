@@ -3,7 +3,7 @@ import { apiClient } from './api/client';
 import { ENDPOINTS } from './api/endpoints';
 
 export const profileService = {
-    // Get current user's details
+    
     getMyProfile: async (userId: string): Promise<User> => {
         console.log('📤 Fetching profile for user:', userId);
 
@@ -15,7 +15,7 @@ export const profileService = {
         return response.data.data;
     },
 
-    // Get current user's interest details
+    
     getInterestDetails: async (email: string): Promise<InterestFormData> => {
         console.log('📤 Fetching interest details for user:', email);
 
@@ -59,7 +59,7 @@ export const profileService = {
         return response.data.data;
     },
 
-    // Get user by ID (if needed)
+    
     getUserById: async (userId: string): Promise<User> => {
         const response = await apiClient.get<{ success: boolean; data: User }>(
             ENDPOINTS.USERS.GET_USER(userId)
@@ -73,7 +73,7 @@ export const profileService = {
         );
         return response.data.data;
     },
-    // Upload avatar
+    
     uploadProfilePicture: async (userId: string, file: any): Promise<User> => {
         console.log('📤 Uploading profile picture for user:', userId);
 
@@ -108,7 +108,7 @@ export const profileService = {
         return response.data.data;
     },
 
-    // Upload document
+    
     uploadDocument: async (userId: string, file: any): Promise<Document> => {
         console.log('📤 Uploading document for user:', userId);
 
@@ -133,7 +133,7 @@ export const profileService = {
         return response.data.data;
     },
 
-    // Delete document
+    
     deleteDocument: async (userId: string, documentUrl: string): Promise<void> => {
         console.log('📤 Deleting document for user:', userId, documentUrl);
 

@@ -51,7 +51,7 @@ export default function PreSurveySection({
             return;
         }
 
-        // Save to draft store temporarily
+        
         saveDraft(assessmentId, {
             assessmentId,
             assessmentType: assessment.type,
@@ -68,7 +68,7 @@ export default function PreSurveySection({
 
     return (
         <>
-            {/* Header Section */}
+            {}
             <View style={styles.headerContainer}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={onCancel} style={styles.backButton}>
@@ -81,7 +81,7 @@ export default function PreSurveySection({
                 </View>
             </View>
 
-            {/* Scrollable Content */}
+            {}
             <KeyboardSafeContainer
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -89,7 +89,7 @@ export default function PreSurveySection({
                 bottomOffset={20}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Questions Section */}
+                {}
                 <View style={styles.questionsSection}>
                     <Text style={styles.sectionTitle}>Please Answer these Questions :</Text>
 
@@ -111,7 +111,7 @@ export default function PreSurveySection({
                     ))}
                 </View>
 
-                {/* Buttons */}
+                {}
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         style={styles.cancelButton}

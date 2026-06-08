@@ -101,7 +101,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
         );
 
         const handleTypeSelect = (type: 'Single Roadmap' | 'Phase') => {
-            // Don't allow changing type in edit mode
+            
             if (isEditMode) return;
             setFormData(prev => ({ ...prev, type }));
             setShowTypeDropdown(false);
@@ -151,7 +151,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
         const validateForm = () => {
             const errors: string[] = [];
 
-            // Check required fields based on type
+            
             const nameLabel = formData.type === 'Phase' ? 'Name of Phase' : 'Roadmap Name';
             const subheadingLabel = formData.type === 'Phase' ? 'Name of Subtitle for Phase' : 'Roadmap Subheading';
             const completionLabel = formData.type === 'Phase' ? 'Completion Time for the Phase' : 'Completion Time for the Roadmap';
@@ -168,7 +168,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                 errors.push(`${completionLabel} is required`);
             }
 
-            // For Phase type, at least one division should be added
+            
             if (formData.type === 'Phase' && formData.divisions.length === 0) {
                 errors.push('At least one division is required for Phase type');
             }
@@ -217,7 +217,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                     onNext(formData);
                 }
             } else {
-                // For Single Roadmap type, navigate to roadmap-form page
+                
                 const queryParams = {
                     name: formData.name,
                     subheading: formData.subheading,
@@ -257,12 +257,12 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                 <BottomSheetView
                     style={[styles.contentContainer, { paddingBottom: bottom + 20 }]}
                 >
-                    {/* Close Button */}
+                    {}
                     <Pressable style={styles.closeButton} onPress={handleCancel}>
                         <Ionicons name="close" size={28} color="#fff" />
                     </Pressable>
 
-                    {/* Header */}
+                    {}
                     <LinearGradient
                         colors={["#7C3AED", "#38BDF8"]}
                         start={{ x: 0, y: 0 }}
@@ -276,11 +276,11 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                         </View>
                     </LinearGradient>
 
-                    {/* Form Content */}
+                    {}
                     <View style={styles.formWrapper}>
                         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                             <View style={styles.formContainer}>
-                                {/* Type Dropdown */}
+                                {}
                                 <View style={styles.fieldContainer}>
                                     <Text style={styles.fieldLabel}>Type</Text>
                                     <Pressable
@@ -317,7 +317,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                     )}
                                 </View>
 
-                                {/* Dynamic Name Field */}
+                                {}
                                 <View style={styles.fieldContainer}>
                                     <Text style={styles.fieldLabel}>
                                         {formData.type === "Phase"
@@ -339,7 +339,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                     />
                                 </View>
 
-                                {/* Dynamic Subheading Field */}
+                                {}
                                 <View style={styles.fieldContainer}>
                                     <Text style={styles.fieldLabel}>
                                         {formData.type === "Phase"
@@ -364,7 +364,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                     />
                                 </View>
 
-                                {/* Dynamic Completion Time Field */}
+                                {}
                                 <View style={styles.fieldContainer}>
                                     <Text style={styles.fieldLabel}>
                                         {formData.type === "Phase"
@@ -385,12 +385,12 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                     />
                                 </View>
 
-                                {/* Division of Phase - Always show */}
+                                {}
                                 {formData.type === "Phase" && (
                                     <View style={styles.fieldContainer}>
                                         <Text style={styles.fieldLabel}>Division of Phase</Text>
 
-                                        {/* Add Division Input */}
+                                        {}
                                         <View style={styles.divisionInputContainer}>
                                             <TextInput
                                                 key={`division-input-${formData.divisions.length}`}
@@ -409,7 +409,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                             </TouchableOpacity>
                                         </View>
 
-                                        {/* Division Tags */}
+                                        {}
                                         {formData.divisions.length > 0 && (
                                             <View style={styles.tagsContainer}>
                                                 {formData.divisions.map((division, index) => (
@@ -432,7 +432,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                                     </View>
                                 )}
 
-                                {/* Upload Banner Button */}
+                                {}
                                 {formData.bannerImage ? (
                                     <View style={styles.imagePreviewContainer}>
                                         <Image source={{ uri: formData.bannerImage }} style={styles.imagePreview} />
@@ -453,7 +453,7 @@ const CreateRoadmapModal = forwardRef<BottomSheetModal, CreateRoadmapModalProps>
                             </View>
                         </ScrollView>
 
-                        {/* Action Buttons */}
+                        {}
                         <View style={styles.actionButtons}>
                             <TouchableOpacity
                                 style={styles.cancelButton}
@@ -504,12 +504,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     closeButton: {
-        // position: 'absolute',
-        // top: 20,
-        // right: 20,
-        // zIndex: 10,
-        // width: 40,
-        // height: 40,
+        
+        
+        
+        
+        
+        
         alignItems: "flex-end",
         justifyContent: "center",
         marginVertical: 15,

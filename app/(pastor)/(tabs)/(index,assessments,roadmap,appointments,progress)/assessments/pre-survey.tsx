@@ -30,11 +30,11 @@ export default function PreSurveyPage() {
         return mapApiToFrontend(data as ApiAssessment);
     }, [data]);
 
-    // Get store methods
+    
     const saveDraft = useAssessmentStore((state) => state.saveDraft);
     const getDraft = useAssessmentStore((state) => state.getDraft);
 
-    // Load previous answers if they exist
+    
     const previousResponse = getDraft(assessmentId as string);
     const [answers, setAnswers] = useState<Record<string, string>>(
         previousResponse?.preSurveyAnswers || {}
@@ -47,7 +47,7 @@ export default function PreSurveyPage() {
     const handleSubmit = async () => {
         if (!assessment) return;
 
-        // Basic validation (check required fields)
+        
         const requiredQuestions = assessment.preSurvey?.filter(q => q.required) || [];
         const allAnswered = requiredQuestions.every(q => answers[q.id] && answers[q.id].trim() !== '');
 
@@ -56,7 +56,7 @@ export default function PreSurveyPage() {
             return;
         }
 
-        // Save pre-survey responses to store
+        
         saveDraft(assessmentId as string, {
             assessmentId: assessmentId as string,
             assessmentType: assessment.type,
@@ -67,13 +67,13 @@ export default function PreSurveyPage() {
             currentSectionIndex: 0,
         });
 
-        // Navigate to main assessment questions
+        
         router.push({
             pathname: '/assessments/answer-questions',
             params: {
                 assessmentId,
                 viewMode: 'false',
-                hasPreSurvey: 'false', // Pre-survey completed
+                hasPreSurvey: 'false',
                 scheduleMeeting: 'true'
             },
         });
@@ -83,7 +83,7 @@ export default function PreSurveyPage() {
         router.back();
     };
 
-    // Loading state
+    
     if (isLoading) {
         return (
             <AppGradientBackground
@@ -95,7 +95,7 @@ export default function PreSurveyPage() {
         );
     }
 
-    // Error state
+    
     if (error || !assessment) {
         return (
             <AppGradientBackground
@@ -110,7 +110,7 @@ export default function PreSurveyPage() {
         );
     }
 
-    // No pre-survey questions
+    
     if (!assessment.preSurvey || assessment.preSurvey.length === 0) {
         return (
             <AppGradientBackground
@@ -132,7 +132,7 @@ export default function PreSurveyPage() {
                 showNotifications={true}
             />
 
-            {/* Header Section */}
+            {}
             <View style={styles.headerContainer}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -145,7 +145,7 @@ export default function PreSurveyPage() {
                 </View>
             </View>
 
-            {/* Scrollable Content */}
+            {}
             <KeyboardSafeContainer
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -153,7 +153,7 @@ export default function PreSurveyPage() {
                 bottomOffset={20}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Questions Section */}
+                {}
                 <View style={styles.questionsSection}>
                     <Text style={styles.sectionTitle}>Please Answer these Questions :</Text>
 
@@ -175,7 +175,7 @@ export default function PreSurveyPage() {
                     ))}
                 </View>
 
-                {/* Buttons */}
+                {}
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         style={styles.cancelButton}

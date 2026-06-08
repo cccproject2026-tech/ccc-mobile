@@ -61,7 +61,7 @@ export default function GetStartedScreen() {
 
             <View style={styles.content}>
 
-                {/* Brand mark */}
+                {}
                 <View style={styles.brandMark}>
                     <View style={styles.brandOuter}>
                         <View style={styles.brandInner}>
@@ -70,7 +70,7 @@ export default function GetStartedScreen() {
                     </View>
                 </View>
 
-                {/* Heading */}
+                {}
                 <View style={styles.headingBlock}>
                     <Text style={styles.eyebrow}>Center for Community Change</Text>
                     <Text style={styles.title}>
@@ -81,14 +81,14 @@ export default function GetStartedScreen() {
                     </Text>
                 </View>
 
-                {/* Divider */}
+                {}
                 <View style={styles.dividerRow}>
                     <View style={styles.dividerLine} />
                     <Ionicons name="leaf-outline" size={14} color={accent.mint} />
                     <View style={styles.dividerLine} />
                 </View>
 
-                {/* Role cards */}
+                {}
                 <View style={styles.cards}>
 
                     <Pressable

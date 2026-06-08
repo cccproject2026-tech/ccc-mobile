@@ -9,8 +9,8 @@ interface UseCreateAppointmentOptions {
 
 interface RescheduleAppointmentPayload {
     appointmentId: string;
-    newDate: string; // ISO date string
-    startTime: string; // e.g., "9"
+    newDate: string;
+    startTime: string;
     startPeriod: 'AM' | 'PM';
 }
 
@@ -18,7 +18,7 @@ export const useCreateAppointment = (options?: UseCreateAppointmentOptions) => {
     const { onSuccess, onError } = options || {};
     const queryClient = useQueryClient();
 
-    // Create appointment mutation
+    
     const createMutation = useMutation({
         mutationFn: (payload: CreateAppointmentPayload) =>
             appointmentService.createAppointment(payload),
@@ -35,7 +35,7 @@ export const useCreateAppointment = (options?: UseCreateAppointmentOptions) => {
         },
     });
 
-    // Reschedule appointment mutation
+    
     const rescheduleMutation = useMutation({
         mutationFn: async (payload: RescheduleAppointmentPayload) => {
             // Call the reschedule API endpoint
@@ -63,17 +63,17 @@ export const useCreateAppointment = (options?: UseCreateAppointmentOptions) => {
     });
 
     return {
-        // Create methods
+        
         createAppointment: createMutation.mutate,
         createAppointmentAsync: createMutation.mutateAsync,
         isCreating: createMutation.isPending,
 
-        // Reschedule methods
+        
         rescheduleAppointment: rescheduleMutation.mutate,
         rescheduleAppointmentAsync: rescheduleMutation.mutateAsync,
         isRescheduling: rescheduleMutation.isPending,
 
-        // Common status
+        
         isSuccess: createMutation.isSuccess || rescheduleMutation.isSuccess,
         isError: createMutation.isError || rescheduleMutation.isError,
         error: createMutation.error || rescheduleMutation.error,

@@ -125,10 +125,10 @@ export default function Assignment() {
           >
             <PastorNavigationHeader />
 
-            {/* Header Section */}
+            {}
             <Header title="Assignments" showSettings={false} />
 
-            {/* Tabs Section */}
+            {}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -153,7 +153,7 @@ export default function Assignment() {
               ))}
             </ScrollView>
 
-            {/* Content Section */}
+            {}
             <View
               style={{
                 marginVertical: 10,
@@ -173,7 +173,7 @@ export default function Assignment() {
           </ScrollView>
         </SafeAreaView>
 
-        {/* Modal */}
+        {}
         <RoadMapOutcomeModal
           isMenuVisible={isRoadmapModalVisible}
           closeMenu={() => setIsRoadmapModalVisible(false)}

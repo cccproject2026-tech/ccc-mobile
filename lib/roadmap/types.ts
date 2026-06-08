@@ -1,47 +1,10 @@
-// import { ExternalPathString, RelativePathString, Route } from "expo-router";
-// import { ImageSourcePropType } from "react-native";
-
 import { ExternalPathString, RelativePathString, Route } from "expo-router";
 import { ImageSourcePropType } from "react-native";
 
 export type PhaseCode = 'JUMP_START' | 'PHASE_1' | 'PHASE_2' | 'PHASE_3';
 export type Status = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
-// export type CommentStatus = 'UNREAD' | 'READ' | 'ARCHIVED';
+
 export type QueryStatus = 'PENDING' | 'ANSWERED';
-
-
-
-
-// export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due';
-
-// export interface RoadmapCardData {
-//     image?: string | number;
-//     title: string;
-//     description?: string;
-//     completionTime?: string;
-//     status?: RoadmapCardStatus;
-//     completedDate?: string;
-//     taskProgress?: {
-//         completed: number;
-//         total: number;
-//     };
-//     showArrow?: boolean;
-//     showCheckmark?: boolean;
-// }
-// export interface Division {
-//     id: string;
-//     phaseId: string;
-//     name: string;
-//     description?: string;
-//     tasks: string[];
-//     order?: number;
-//     meta?: {
-//         icon?: string;
-//         color?: string;
-//         [key: string]: any;
-//     };
-// }
-
 
 export interface QueryAuthor {
     id: string;
@@ -57,7 +20,7 @@ export interface QueryResponse {
     author: {
         id: string;
         name: string;
-        role?: string; // e.g., "Mentor", "Admin"
+        role?: string;
         avatar?: ImageSourcePropType;
     };
 }
@@ -68,13 +31,9 @@ export interface Query {
     question: string;
     timestamp: string;
     status: QueryStatus;
-    responses?: string[]; // Array of response IDs
+    responses?: string[];
     hasResponse: boolean;
 }
-
-// types/roadmap-comments.types.ts
-
-
 
 export interface Phase {
     id: string;
@@ -167,7 +126,7 @@ export interface Task {
     comments?: string[];
     divisionId?: string;
     queries?: string[];
-    extras?: Extra[]; // ✅ Added for compatibility with new DynamicFormTask
+    extras?: Extra[];
     meta?: {
         coverImage?: string;
         completionTimeMonths?: string;
@@ -178,19 +137,6 @@ export interface Task {
         [key: string]: any;
     };
 }
-
-// export interface RevitalizationData {
-//     program: Program;
-//     phases: Record<string, Phase>;
-//     tasks: Record<string, Task>;
-//     divisions?: Record<string, Division>;
-//     comments?: Record<string, Comment>;
-//     queries?: Record<string, Query>;
-//     queryResponses?: Record<string, QueryResponse>;
-// }
-
-
-// lib/roadmap/types.ts
 
 // ============= BACKEND TYPES =============
 
@@ -283,8 +229,6 @@ export interface ExtraCheckbox {
     buttonName: string | null;
 }
 
-// ============= UI TYPES =============
-
 export type RoadmapCardStatus = 'initial' | 'in-progress' | 'completed' | 'due' | 'submitted';
 
 export interface RoadmapCardData {
@@ -311,8 +255,6 @@ export interface RoadmapCardData {
     /** ISO timestamp of the latest resubmission. */
     resubmittedAt?: string;
 }
-
-// ============= SUBMISSION TYPES =============
 
 export type SubmissionStatus =
     | 'submitted'
@@ -365,8 +307,6 @@ export interface LatestSubmissionApiResponse {
     data: TaskSubmission | null;
 }
 
-// ============= EXTRAS TYPES =============
-
 export interface CreateExtrasDto {
     userId: string;
     roadMapId: string;
@@ -401,18 +341,14 @@ export interface GetExtrasResponse {
     data?: ExtrasResponseDto | null;
 }
 
-// ============= COMMENT TYPES =============
-
 export interface RoadmapCommentAuthor {
     _id: string;
     email: string;
     firstName: string;
     lastName: string;
     profilePicture: string;
-    role: string; // mentor | director | pastor
+    role: string;
 }
-
-
 
 export interface RoadmapCommentsThread {
     _id: string;
@@ -464,7 +400,7 @@ export interface RoadmapQuery {
     actualQueryText: string;
     createdDate: string;
 
-    // Answer Fields
+    
     repliedAnswer?: string;
     repliedDate?: string;
     repliedMentorId?: MentorInfo | string;
@@ -482,7 +418,6 @@ export interface SubmitQueryResponse {
         queries: RoadmapQuery[];
     };
 }
-
 
 export interface RoadmapQueryThread {
     _id: string;

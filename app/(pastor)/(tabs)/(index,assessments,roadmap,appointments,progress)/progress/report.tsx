@@ -1,4 +1,4 @@
-// app/assessments/pmp-report.tsx
+
 import { getFontSize, getSpacing, isSmallDevice } from '@/utils/responsive';
 import { sharePdfFromHtml } from '@/utils/pdf';
 import { Ionicons } from '@expo/vector-icons';
@@ -207,7 +207,7 @@ export default function PMPReportScreen() {
                 <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
                     <Ionicons name="close" size={getFontSize(28)} color="#1E3A8A" />
                 </TouchableOpacity>
-                {/* Header with Logo */}
+                {}
                 <View style={styles.header}>
                     <Image
                         source={require('@/assets/images/ccc-logo-1.jpg')}
@@ -216,17 +216,17 @@ export default function PMPReportScreen() {
                     />
                 </View>
 
-                {/* User Info */}
+                {}
                 <Text style={styles.userName}>{userName}</Text>
                 <Text style={styles.completedDate}>Completed on: {completedDate}</Text>
 
-                {/* Survey Name */}
+                {}
                 <View style={styles.surveyNameContainer}>
                     <Text style={styles.surveyNameLabel}>Survey Name :</Text>
                     <Text style={styles.surveyNameValue}>{assessmentTitle}</Text>
                 </View>
 
-                {/* Sections */}
+                {}
                 {sections.map((section, index) => (
                     <View key={index} style={styles.sectionContainer}>
                         <View style={styles.sectionHeader}>
@@ -268,8 +268,8 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         position: 'relative',
-        // top: getSpacing(20),
-        // right: getSpacing(20),
+        
+        
         alignSelf: 'flex-end',
         zIndex: 10,
         padding: getSpacing(8),
@@ -279,12 +279,12 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: getSpacing(isSmallDevice ? 20 : 24),
-        // paddingTop: getSpacing(12),
+        
     },
     header: {
         alignItems: 'center',
-        // marginBottom: getSpacing(24),
-        // paddingTop: getSpacing(24),
+        
+        
     },
     logo: {
         width: SCREEN_WIDTH * 1.5,

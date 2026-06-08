@@ -101,7 +101,7 @@ export default function NotificationScreen() {
 const styles = StyleSheet.create({
     root: { flex: 1 },
 
-    // Header
+    
     appBar: {
         width: "100%",
         flexDirection: "row",
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.16)",
     },
 
-    // List
+    
     listContent: {
         paddingTop: 12,
         paddingBottom: 32,

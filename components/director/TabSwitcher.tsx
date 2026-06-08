@@ -57,7 +57,7 @@ export const TabSwitcher: React.FC<TabSwitcherProps> = ({ tabs, activeTab, onCha
                                 </Text>
                             </Pressable>
 
-                            {/* Badge only shows on ACTIVE tab with count */}
+                            {}
                             {isActive && hasBadge && (
                                 <View style={styles.badge}>
                                     <Text style={styles.badgeText}>
@@ -82,10 +82,10 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: getSpacing(16),
-        paddingVertical: getSpacing(4), // Add vertical padding for badge space
+        paddingVertical: getSpacing(4),
     },
     tabWrapper: {
-        position: 'relative', // Added wrapper for badge positioning
+        position: 'relative',
     },
     tabButton: {
         paddingHorizontal: getSpacing(isAndroid ? 16 : 20),
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.5)',
         alignItems: 'center',
         justifyContent: 'center',
-        // minHeight: getSpacing(isAndroid ? 44 : 48),
+        
     },
     tabMarginLeft: {
         marginLeft: getSpacing(8),

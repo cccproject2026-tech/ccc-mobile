@@ -35,7 +35,7 @@ const AcceptedUserCard = ({
 
     return (
         <CardWrapper {...wrapperProps as any}>
-            {/* Selection Checkbox (only in selectable mode) */}
+            {}
             {selectable && (
                 <View style={styles.checkboxContainer}>
                     <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -44,9 +44,9 @@ const AcceptedUserCard = ({
                 </View>
             )}
 
-            {/* Top Row - Profile and Info */}
+            {}
             <View style={styles.topRow}>
-                {/* Profile Image */}
+                {}
                 <View style={styles.profileImageContainer}>
                     {data.profileImage ? (
                         <Image
@@ -59,12 +59,12 @@ const AcceptedUserCard = ({
                     )}
                 </View>
 
-                {/* User Info */}
+                {}
                 <View style={styles.userInfoContainer}>
                     <Text style={styles.userName} numberOfLines={1}>{data.name}</Text>
                     <Text style={styles.userRole} numberOfLines={1}>{data.role}</Text>
 
-                    {/* Mentors Section */}
+                    {}
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Mentors : </Text>
                         {data.mentorsAssigned ? (
@@ -76,7 +76,7 @@ const AcceptedUserCard = ({
                         )}
                     </View>
 
-                    {/* Login Status */}
+                    {}
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Login : </Text>
                         {data.hasLoggedIn ? (
@@ -90,9 +90,9 @@ const AcceptedUserCard = ({
                 </View>
             </View>
 
-            {/* Bottom Row - Contact Icons and Assign Button */}
+            {}
             <View style={styles.bottomRow}>
-                {/* Contact Icons */}
+                {}
                 <View style={styles.contactIcons}>
                     <TouchableOpacity
                         style={styles.iconButton}
@@ -132,7 +132,7 @@ const AcceptedUserCard = ({
                     </TouchableOpacity>
                 </View>
 
-                {/* Assign Button (only show if not in selectable mode) */}
+                {}
                 {!selectable && showAssignButton && (
                     <LinearGradient
                         colors={["#7C3AED", "#38BDF8"]}

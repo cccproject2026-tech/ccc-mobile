@@ -1,4 +1,4 @@
-// components/roadmap/tasks/FormTask.tsx
+
 import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
 import { FormSchema, Task } from '@/lib/roadmap/types';
 import { useState } from 'react';
@@ -26,7 +26,7 @@ export function FormTask({ item }: Props) {
 
     return (
         <>
-            {/* Form fields */}
+            {}
             {schema.fields.map(field => (
                 <View key={field.id} style={styles.fieldContainer}>
                     <Text style={styles.fieldLabel}>
@@ -47,7 +47,7 @@ export function FormTask({ item }: Props) {
                 </View>
             ))}
 
-            {/* Submit button */}
+            {}
             <Pressable style={styles.submitButton} onPress={handleSubmit}>
                 <Text style={styles.submitText}>
                     {schema.submitLabel || 'Submit'}

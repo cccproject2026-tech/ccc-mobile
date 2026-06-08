@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     progressContainer: {
         height: 8,
         flex: 1,
-        // Using the requested dark blue color for the track
+        
         backgroundColor: 'rgba(24, 44, 91, 1)',
         borderRadius: 4,
         overflow: 'hidden',

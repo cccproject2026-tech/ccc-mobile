@@ -28,7 +28,7 @@ export function SignatureTask({ item, onSuccess }: Props) {
 
     return (
         <>
-            {/* View timeline link */}
+            {}
             {item.meta?.viewTimelineUrl && (
                 <Pressable style={styles.timelineLink}>
                     <Text style={styles.timelineLinkText}>
@@ -37,7 +37,7 @@ export function SignatureTask({ item, onSuccess }: Props) {
                 </Pressable>
             )}
 
-            {/* Agreement checkbox */}
+            {}
             <Pressable
                 style={styles.checkboxRow}
                 onPress={() => setAgreed(!agreed)}
@@ -50,7 +50,7 @@ export function SignatureTask({ item, onSuccess }: Props) {
                 </Text>
             </Pressable>
 
-            {/* Signature button */}
+            {}
             <Pressable
                 style={[styles.signButton, !agreed && styles.signButtonDisabled]}
                 onPress={handleSign}

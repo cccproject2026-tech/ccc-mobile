@@ -40,7 +40,7 @@ export const useMenteeByEmail = (email: string | undefined) => {
             };
         },
         enabled: !!email,
-        staleTime: 2000, // 2 seconds (was 5 minutes)
+        staleTime: 2000,
         retry: 2,
     });
 };

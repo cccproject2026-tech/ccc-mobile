@@ -101,7 +101,7 @@ export default function CommentsScreen() {
                 payload: {
                     text: commentText.trim(),
                     userId: user.id,
-                    mentorId: user.id, // For mentor, mentorId is the same as userId
+                    mentorId: user.id,
                 },
             });
 
@@ -178,7 +178,7 @@ export default function CommentsScreen() {
                 keyboardVerticalOffset={100}
             >
                 <View style={{ flex: 1 }}>
-                    {/* Comment Input Section */}
+                    {}
                     <View style={styles.inputSection}>
                         <TextAreaField
                             ref={commentInputRef}
@@ -207,7 +207,7 @@ export default function CommentsScreen() {
                         </View>
                     </View>
 
-                    {/* Comments List */}
+                    {}
                     <View style={styles.commentsHeader}>
                         <Text style={styles.commentsHeaderText}>All Comments</Text>
                     </View>

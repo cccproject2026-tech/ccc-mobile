@@ -90,10 +90,10 @@ const Appointments = () => {
     return map;
   }, [appointments]);
 
-  // Fetch assigned mentors
+  
   const { mentors: assignedMentors, isLoading: isLoadingMentors } = useAssignedMentors(user.id);
 
-  // Update appointment (for change mode)
+  
   const { updateAppointmentAsync, isUpdating } = useUpdateAppointment();
   const { mutateAsync: cancelAppointmentAsync } = useCancelAppointment();
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
@@ -113,7 +113,7 @@ const Appointments = () => {
     // Combine assigned mentors and mentors found in existing appointments
     const mentorMap = new Map<string, Mentor>();
 
-    // Add assigned mentors first
+    
     assignedMentors.forEach(mentor => {
       mentorMap.set(mentor.id, mentor);
     });
@@ -185,7 +185,7 @@ const Appointments = () => {
     return upcoming.filter((a) => !selectedIds.has(a.id)).slice(0, 3);
   }, [getUpcomingAppointments, finalSelectedDateAppointments]);
 
-  // ✅ Removed duplicate declaration (moved to top)
+  
 
   const handleReschedule = (appointment: Appointment) => {
     openScheduleMeeting(router, user?.role, {
@@ -231,9 +231,9 @@ const Appointments = () => {
   const meetingModes: AppointmentPlatform[] = [
     'zoom',
     'google_meet',
-    // 'teams',
-    // 'phone',
-    // 'in_person',
+    
+    
+    
   ];
 
   const getModeLabel = (mode: AppointmentPlatform): string => {
@@ -525,7 +525,7 @@ const Appointments = () => {
         </>
       </LinearGradient>
 
-      {/* Scheduling moved to /schedule-meeting pages */}
+      {}
 
       <Modal
         visible={changeModeModalVisible}
@@ -623,8 +623,6 @@ const Appointments = () => {
 
 export default Appointments;
 
-
-
 const styles = StyleSheet.create({
   screenContent: {
     width: "100%",
@@ -634,7 +632,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  // Calendar Container
+  
   calendarContainer: {
     width: "100%",
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -645,7 +643,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
 
-  // Calendar Header with Icon
+  
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -696,13 +694,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // Wrapper to control calendar height
+  
   calendarWrapper: {
-    maxHeight: 340, // Reduced from default height
+    maxHeight: 340,
     overflow: 'hidden',
   },
 
-  // Appointments Container
+  
   appointmentsContainer: {
     marginTop: 14,
     position: "relative",

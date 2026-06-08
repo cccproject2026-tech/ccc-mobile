@@ -24,7 +24,7 @@ export default function QueriesCard({
     <View className="px-4 mt-5">
       {answeredQueries.map((query) => (
         <View key={query.id}>
-          {/* Question Section */}
+          {}
           <View className="mb-5">
             <View className="flex-row items-center mb-3">
               <Image
@@ -47,7 +47,7 @@ export default function QueriesCard({
             </Text>
           </View>
 
-          {/* Answer Section */}
+          {}
           <View className="bg-[#1A4882] rounded-2xl p-4 mb-5 border-white/30 border-[1px]">
             {!waiting ? (
               <>

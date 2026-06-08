@@ -14,7 +14,7 @@ const QueryForm = () => {
   const [queryText, setQueryText] = useState("");
 
   const handleSubmit = () => {
-    // Your submit logic here
+    
     console.log("Query submitted:", queryText);
   };
 

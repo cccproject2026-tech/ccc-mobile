@@ -115,7 +115,7 @@ export const PastorNavigationHeader: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   gradientBorder: {
-    padding: 2, // thickness of the gradient border
+    padding: 2,
     borderRadius: 12,
   },
   innerContainer: {
@@ -127,20 +127,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   text: {
-    color: "#E2E8F0", // light text color
+    color: "#E2E8F0",
     fontSize: 18,
     fontWeight: "500",
   },
-  // container: {
-  //   // position: "absolute",
-  //   top: 30, // Adjust based on your status bar height
-  //   zIndex: 1000,
-  //   width: "100%",
-  //   paddingHorizontal: 16,
-  // },
-  // hamburgerButton: {
-  //   padding: 8,
-  //   // backgroundColor: 'rgba(0, 0, 0, 0.1)',
-  //   borderRadius: 8,
-  // },
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 });

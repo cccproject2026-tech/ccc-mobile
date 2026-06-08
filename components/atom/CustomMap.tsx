@@ -1,4 +1,4 @@
-// components/MapWithPins.tsx
+
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
@@ -40,9 +40,9 @@ const CustomMap: React.FC<CustomMapProps> = ({
   style = {}, 
   navigation,
   initialRegion = {
-    latitude: 20.5937, // Center of India
+    latitude: 20.5937,
     longitude: 78.9629,
-    latitudeDelta: 30, // Zoom level
+    latitudeDelta: 30,
     longitudeDelta: 30,
   }
 }) => {
@@ -76,7 +76,7 @@ const CustomMap: React.FC<CustomMapProps> = ({
             }}
             onPress={() => handleMarkerPress(user)}
           >
-            {/* Custom Marker with Profile Image */}
+            {}
             <View style={styles.markerContainer}>
               <View style={[styles.markerRing, { borderColor: user.color }]}>
                 <Image source={user.profilePic} style={styles.profileImage} />
@@ -86,7 +86,7 @@ const CustomMap: React.FC<CustomMapProps> = ({
               />
             </View>
 
-            {/* Callout (popup when marker is pressed) */}
+            {}
             <Callout tooltip>
               <View style={styles.calloutContainer}>
                 <Image source={user.profilePic} style={styles.calloutImage} />
@@ -103,7 +103,7 @@ const CustomMap: React.FC<CustomMapProps> = ({
         ))}
       </MapView>
 
-      {/* Modal */}
+      {}
       <Modal
         visible={modalVisible}
         transparent
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5, // for Android
+    elevation: 5,
   },
   map: {
     width: "100%",

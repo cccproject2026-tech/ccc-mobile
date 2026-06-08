@@ -83,13 +83,13 @@ const RoadmapHeader = ({ handleOpenCreateRoadmapModal, activeTab }: Props) => {
       },
     ];
 
-    // For now, return the same data for all periods
-    // You can customize this based on the title parameter
+    
+    
     return fourMonthsData;
   };
   return (
     <View style={styles.navigationBar}>
-      {/* Left Section - Back Button + Title with Subtitle */}
+      {}
       <View style={styles.navigationLeft}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
@@ -100,9 +100,9 @@ const RoadmapHeader = ({ handleOpenCreateRoadmapModal, activeTab }: Props) => {
         </View>
       </View>
 
-      {/* Right Section - Pill Buttons + Menu */}
+      {}
       <View style={styles.navigationRight}>
-        {/* Select Button - Only show for roadmap library tab */}
+        {}
         {activeTab === "roadmap-library" && (
           <TouchableOpacity
             style={styles.actionButton}
@@ -117,7 +117,7 @@ const RoadmapHeader = ({ handleOpenCreateRoadmapModal, activeTab }: Props) => {
           </TouchableOpacity>
         )}
 
-        {/* Roadmap Button */}
+        {}
         <TouchableOpacity
           style={styles.actionButton}
           onPress={handleOpenCreateRoadmapModal}
@@ -126,7 +126,7 @@ const RoadmapHeader = ({ handleOpenCreateRoadmapModal, activeTab }: Props) => {
           <Text style={styles.actionButtonText}>Roadmap</Text>
         </TouchableOpacity>
 
-        {/* Three Dots Menu */}
+        {}
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => setShowOutcomeMenu(!showOutcomeMenu)}
@@ -135,7 +135,7 @@ const RoadmapHeader = ({ handleOpenCreateRoadmapModal, activeTab }: Props) => {
         </TouchableOpacity>
       </View>
 
-      {/* Outcome Context Menu */}
+      {}
       <ContextMenu
         visible={showOutcomeMenu}
         items={getOutcomeMenuItems()}

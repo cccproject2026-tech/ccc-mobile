@@ -34,7 +34,7 @@ export default function ProgressTracker() {
   const getFilterOptions = (): FilterOption[] => {
     return [
       { label: "Course Completion", options: ["Latest", "Oldest"], isExpandable: true },
-      // TODO: Replace with dynamic state list from backend metadata if available
+      
       { label: "State", options: [], isExpandable: true },
       { label: "Conference", isExpandable: true },
     ];
@@ -57,7 +57,7 @@ export default function ProgressTracker() {
       filtered = filtered.filter((m) => !m.hasCompleted);
     }
 
-    // Default sort: latest completion / creation first
+    
     filtered = [...filtered].sort((a, b) => {
       const aDate = a.completedOn ?? a.updatedAt ?? a.createdAt ?? "";
       const bDate = b.completedOn ?? b.updatedAt ?? b.createdAt ?? "";
@@ -144,7 +144,7 @@ export default function ProgressTracker() {
               </View>
             )}
 
-            {/* Header Row */}
+            {}
             <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, marginBottom: 16 }}>
               <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center" }}>
                 <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -161,15 +161,15 @@ export default function ProgressTracker() {
               </View>
             </View>
 
-            {/* Search */}
+            {}
             <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
               <SearchBar value={search} onChangeValue={setSearch} />
             </View>
 
-            {/* Tabs */}
+            {}
             <TabSwitcher tabs={tabs} activeTab={activeTab} onChange={(k: string) => setActiveTab(k as any)} />
 
-            {/* List */}
+            {}
             {!isLoading && !isError && (
               <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
                 <View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 }}>

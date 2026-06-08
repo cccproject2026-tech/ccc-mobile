@@ -86,7 +86,7 @@ export function useResubmittedTasks(
                         // Submissions API not available — fall through to legacy
                     }
 
-                    // Strategy 2: Legacy fallback — check extras timestamps
+                    
                     try {
                         const extras = await roadmapService.getRoadmapExtras(
                             phaseId,
@@ -120,7 +120,7 @@ export function useResubmittedTasks(
                             });
                         }
                     } catch {
-                        // No extras either — skip
+                        
                     }
                 }),
             );

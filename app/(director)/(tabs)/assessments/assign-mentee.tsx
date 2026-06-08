@@ -32,7 +32,7 @@ export default function AssignAssessmentMenteeScreen() {
     const [selectedMentees, setSelectedMentees] = useState<Set<string>>(new Set());
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-    // Auto-close success modal after 3 seconds
+    
     useEffect(() => {
         if (showSuccessModal) {
             const timer = setTimeout(() => {
@@ -115,10 +115,10 @@ export default function AssignAssessmentMenteeScreen() {
             colors={['#176192', '#1D548D', '#264387']}
             style={[styles.container]}
         >
-            {/* Top Bar */}
+            {}
             <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -129,19 +129,19 @@ export default function AssignAssessmentMenteeScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
+            {}
             <View style={styles.searchContainer}>
                 <SearchBar value={search} onChangeValue={setSearch} />
             </View>
 
-            {/* Select All */}
+            {}
             <View style={styles.selectAllContainer}>
                 <TouchableOpacity style={styles.selectAllButton} onPress={handleSelectAll}>
                     <Text style={styles.selectAllText}>Select All</Text>
                 </TouchableOpacity>
             </View>
 
-            {/* Mentees List */}
+            {}
             {isLoadingMentees ? (
                 <View style={[styles.loadingContainer, { paddingBottom: 100 + bottom }]}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -181,7 +181,7 @@ export default function AssignAssessmentMenteeScreen() {
                 />
             )}
 
-            {/* Sticky Bottom Assign Container */}
+            {}
             <View style={[styles.bottomContainer, { paddingBottom: bottom + 16 }]}>
                 <View style={styles.selectedNamesContainer}>
                     <Text style={styles.selectedNamesText} numberOfLines={1}>
@@ -212,7 +212,7 @@ export default function AssignAssessmentMenteeScreen() {
                 </LinearGradient>
             </View>
 
-            {/* Success Modal */}
+            {}
             <AssessmentAssignedSuccessModal
                 visible={showSuccessModal}
                 onClose={() => {

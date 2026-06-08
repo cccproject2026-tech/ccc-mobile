@@ -26,7 +26,7 @@ interface AssessmentSelectionModalProps {
   assessments?: Assessment[];
 }
 
-// Mock assessments data
+
 const defaultAssessments: Assessment[] = [
   {
     id: "1",
@@ -97,7 +97,7 @@ const AssessmentSelectionModal: React.FC<AssessmentSelectionModalProps> = ({
       onRequestClose={handleClose}
     >
       <View style={styles.container}>
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Choose Assessment</Text>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
@@ -105,7 +105,7 @@ const AssessmentSelectionModal: React.FC<AssessmentSelectionModalProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Search Bar */}
+        {}
         <View style={styles.searchContainer}>
           <SearchBar
             value={searchQuery}
@@ -115,7 +115,7 @@ const AssessmentSelectionModal: React.FC<AssessmentSelectionModalProps> = ({
           />
         </View>
 
-        {/* Assessment List */}
+        {}
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -166,7 +166,7 @@ const AssessmentSelectionModal: React.FC<AssessmentSelectionModalProps> = ({
           ))}
         </ScrollView>
 
-        {/* Bottom Bar with Selected Info and Select Button */}
+        {}
         <View style={styles.bottomBar}>
           <Text style={styles.selectedText} numberOfLines={1}>
             {selectedAssessment?.name || "No assessment selected"}

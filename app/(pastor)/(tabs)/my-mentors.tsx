@@ -36,7 +36,7 @@ export default function MyMentorsScreen() {
   const { user } = useAuthStore();
   const { mentors, isLoading, isError } = useAssignedMentors(user?.id ?? null);
 
-  // Filter mentors based on search text
+  
   const filteredMentors = useMemo(() => {
     if (!mentors) return [];
     if (!searchText.trim()) return mentors;
@@ -78,9 +78,9 @@ export default function MyMentorsScreen() {
 
   const handleMail = (mentor: Mentor) => {
     console.log("Emailing", mentor.name);
-    // Implement email functionality
+    
     if (mentor.email) {
-      // Compose an email to the mentor's address
+      
       try {
         if (typeof Linking !== "undefined" && Linking.openURL) {
           Linking.openURL(`mailto:${mentor.email}`);
@@ -134,7 +134,7 @@ export default function MyMentorsScreen() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Title Row */}
+            {}
             <View style={styles.titleRow}>
               <TouchableOpacity onPress={() => router.back()} style={styles.backPill} activeOpacity={0.85}>
                 <Ionicons name="chevron-back" size={20} color="#fff" />
@@ -154,7 +154,7 @@ export default function MyMentorsScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Search */}
+            {}
             <View style={styles.searchBox}>
               <Ionicons name="search" size={18} color="rgba(255,255,255,0.55)" />
               <TextInput
@@ -166,7 +166,7 @@ export default function MyMentorsScreen() {
               />
             </View>
 
-            {/* Quick access */}
+            {}
             <View style={styles.quickAccessWrap}>
               <MentorProfileSwiper
                 mentors={filteredMentors.slice(0, 8)}
@@ -174,7 +174,7 @@ export default function MyMentorsScreen() {
               />
             </View>
 
-            {/* Mentors */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Mentors</Text>
               <View style={listToggle ? styles.mentorList : styles.mentorGrid}>

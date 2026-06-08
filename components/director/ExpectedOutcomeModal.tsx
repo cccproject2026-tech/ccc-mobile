@@ -55,21 +55,21 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
             onRequestClose={handleModalClose}
         >
             {showDownloadView ? (
-                // PDF Download View
+                
                 <View
                     style={[styles.container, { paddingTop: Platform.OS === 'android' ? top : 10, paddingBottom: bottom }]}
                 >
-                    {/* Header */}
+                    {}
                     <View style={styles.pdfHeader}>
                         <TouchableOpacity style={styles.pdfCloseButton} onPress={handleModalClose}>
                             <Ionicons name="close" size={24} color="#666" />
                         </TouchableOpacity>
                     </View>
 
-                    {/* Content */}
+                    {}
                     <ScrollView style={styles.pdfContent} showsVerticalScrollIndicator={false}>
                         <View style={styles.pdfCard}>
-                            {/* Organization Logo */}
+                            {}
                             <View style={styles.logoContainer}>
                                 <View style={styles.logoPlaceholder}>
                                     <View style={styles.logoIcon}>
@@ -87,13 +87,13 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
                                 </View>
                             </View>
 
-                            {/* Title with underline */}
+                            {}
                             <View style={styles.pdfTitleContainer}>
                                 <Text style={styles.pdfTitle}>{title}</Text>
                                 <View style={styles.titleUnderline} />
                             </View>
 
-                            {/* Outcomes */}
+                            {}
                             <View style={styles.pdfOutcomesContainer}>
                                 {outcomes.map((outcome, index) => (
                                     <View key={outcome.id} style={styles.pdfOutcomeItem}>
@@ -105,7 +105,7 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
                         </View>
                     </ScrollView>
 
-                    {/* Save PDF Button */}
+                    {}
                     <View style={styles.pdfBottomContainer}>
                         <TouchableOpacity style={styles.savePdfButton} onPress={handleSavePDF}>
                             <Ionicons name="download-outline" size={20} color="#007AFF" />
@@ -114,24 +114,24 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
                     </View>
                 </View>
             ) : (
-                // Original View
+                
                 <LinearGradient
                     colors={['#1a237e', '#283593', '#3949ab']}
                     style={[styles.container, { paddingTop: Platform.OS === 'android' ? top : 10, }]}
                 >
-                    {/* Header */}
+                    {}
                     <View style={styles.header}>
                         <TouchableOpacity style={styles.closeButton} onPress={handleModalClose}>
                             <Ionicons name="close" size={24} color="#fff" />
                         </TouchableOpacity>
                     </View>
 
-                    {/* Title */}
+                    {}
                     <View style={styles.titleContainer}>
                         <Text style={styles.title}>{title}</Text>
                     </View>
 
-                    {/* Action Buttons */}
+                    {}
                     <View style={styles.actionButtons}>
                         <TouchableOpacity style={styles.actionButton} onPress={onSelect}>
                             <Ionicons name="checkmark" size={20} color="#fff" />
@@ -143,7 +143,7 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
                         </TouchableOpacity>
                     </View>
 
-                    {/* Content */}
+                    {}
                     <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottom }}>
                         <View style={styles.outcomeContainer}>
                             {outcomes.map((outcome, index) => (
@@ -161,7 +161,7 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
                         </View>
                     </ScrollView>
 
-                    {/* Download Button */}
+                    {}
                 </LinearGradient>
             )}
         </Modal>
@@ -169,15 +169,15 @@ export const ExpectedOutcomeModal: React.FC<ExpectedOutcomeModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-    // Original styles
+    
     container: {
         flex: 1,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        // paddingHorizontal: 20,
-        // paddingVertical: 10,
+        
+        
     },
     closeButton: {
         padding: 8,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     },
     downloadContainer: {
         paddingHorizontal: 20,
-        // paddingVertical: 16,
+        
     },
     downloadButton: {
         flexDirection: 'row',
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
         textDecorationLine: 'underline',
     },
 
-    // PDF View styles
+    
     pdfContainer: {
         flex: 1,
         backgroundColor: '#f5f5f5',
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     },
     pdfContent: {
         flex: 1,
-        // paddingHorizontal: 20,
+        
     },
     pdfCard: {
         backgroundColor: '#fff',

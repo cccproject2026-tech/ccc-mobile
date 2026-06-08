@@ -111,7 +111,7 @@ const CustomDatePicker: React.FC<DatePickerProps> = ({
             onStartShouldSetResponder={() => true}
           >
             <View style={styles.pickerContainer}>
-              {/* Day Picker */}
+              {}
               <View style={styles.column}>
                 <TouchableOpacity
                   style={styles.arrowButton}
@@ -134,7 +134,7 @@ const CustomDatePicker: React.FC<DatePickerProps> = ({
 
               <Text style={styles.separator}>/</Text>
 
-              {/* Month Picker */}
+              {}
               <View style={styles.column}>
                 <TouchableOpacity
                   style={styles.arrowButton}
@@ -157,7 +157,7 @@ const CustomDatePicker: React.FC<DatePickerProps> = ({
 
               <Text style={styles.separator}>/</Text>
 
-              {/* Year Picker */}
+              {}
               <View style={styles.column}>
                 <TouchableOpacity
                   style={styles.arrowButton}
@@ -204,7 +204,7 @@ const CustomDatePicker: React.FC<DatePickerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    // width: '100%',
+    
   },
   input: {
     borderWidth: 2,

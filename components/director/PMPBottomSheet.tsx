@@ -99,17 +99,17 @@ const PMPBottomSheet = forwardRef<BottomSheetModal, PMPBottomSheetProps>(
                         ]}
                         showsVerticalScrollIndicator={false}
                     >
-                        {/* Close Button */}
+                        {}
                         <View style={styles.closeButtonRow}>
                             <Pressable onPress={onClose} style={styles.closeButton}>
                                 <Ionicons name="close" size={getFontSize(26)} color="#FFFFFF" />
                             </Pressable>
                         </View>
 
-                        {/* Title */}
+                        {}
                         <Text style={styles.mainTitle}>{title}</Text>
 
-                        {/* Section Header with Gradient Border */}
+                        {}
                         <View style={styles.sectionHeaderWrapper}>
                             <LinearGradient
                                 colors={['#7B2FF7', '#00D4FF']}
@@ -123,10 +123,10 @@ const PMPBottomSheet = forwardRef<BottomSheetModal, PMPBottomSheetProps>(
                             </LinearGradient>
                         </View>
 
-                        {/* Level Text */}
+                        {}
                         <Text style={styles.levelText}>{levelText}</Text>
 
-                        {/* Plans Card */}
+                        {}
                         <View style={styles.plansCard}>
                             <View style={styles.cardTitleWrapper}>
                                 <Text style={styles.cardTitle}>Customized Development Plans</Text>
@@ -148,7 +148,7 @@ const PMPBottomSheet = forwardRef<BottomSheetModal, PMPBottomSheetProps>(
                             </View>
                         </View>
 
-                        {/* Navigation Buttons */}
+                        {}
                         <View style={styles.bottomButtonsRow}>
                             <View style={styles.leftButtons}>
                                 {showPreviousButton && onPrevious ? (

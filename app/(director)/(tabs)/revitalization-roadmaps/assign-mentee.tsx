@@ -38,7 +38,7 @@ export default function AssignMenteeScreen() {
     const [selectedFilter, setSelectedFilter] = useState('Latest Join');
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-    // Auto-close success modal after 3 seconds
+    
     useEffect(() => {
         if (showSuccessModal) {
             const timer = setTimeout(() => {
@@ -141,10 +141,10 @@ export default function AssignMenteeScreen() {
             colors={['#176192', '#1D548D', '#264387']}
             style={[styles.container]}
         >
-            {/* Top Bar */}
+            {}
             <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -155,19 +155,19 @@ export default function AssignMenteeScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
+            {}
             <View style={styles.searchContainer}>
                 <SearchBar value={search} onChangeValue={setSearch} />
             </View>
 
-            {/* Select All */}
+            {}
             <View style={styles.selectAllContainer}>
                 <TouchableOpacity style={styles.selectAllButton} onPress={handleSelectAll}>
                     <Text style={styles.selectAllText}>Select All</Text>
                 </TouchableOpacity>
             </View>
 
-            {/* Mentees List */}
+            {}
             {isLoadingMentees ? (
                 <View style={[styles.loadingContainer, { paddingBottom: 100 + bottom }]}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -207,7 +207,7 @@ export default function AssignMenteeScreen() {
                 />
             )}
 
-            {/* Sticky Bottom Assign Container */}
+            {}
             <View style={[styles.bottomContainer, { paddingBottom: bottom + 16 }]}>
                 <View style={styles.selectedNamesContainer}>
                     <Text style={styles.selectedNamesText} numberOfLines={1}>
@@ -249,7 +249,7 @@ export default function AssignMenteeScreen() {
                 filterOptions={filterOptions}
             />
 
-            {/* Success Modal */}
+            {}
             <Modal
                 visible={showSuccessModal}
                 transparent={true}
@@ -262,7 +262,7 @@ export default function AssignMenteeScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <View style={styles.modalContent}>
-                            {/* Success Text */}
+                            {}
                             <Text style={styles.successTitle}>Assigned Roadmap</Text>
                             <Text style={styles.successSubtitle}>Successfully</Text>
                         </View>
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#fff',
     },
-    // Success Modal Styles
+    
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',

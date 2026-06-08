@@ -24,7 +24,7 @@ export async function consumeGoogleCalendarOAuthReturnPath(
       return stored;
     }
   } catch {
-    // ignore
+    
   }
   const roleKey = String(role || '').toLowerCase();
   return DEFAULT_BY_ROLE[roleKey] ?? '/appointments';

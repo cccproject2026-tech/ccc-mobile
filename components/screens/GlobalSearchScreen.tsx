@@ -308,7 +308,6 @@ export default function GlobalSearchScreen() {
                 </View>
               )}
 
-
               {assessments.length > 0 && (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>{`Assessments (${assessments.length})`}</Text>

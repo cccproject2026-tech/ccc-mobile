@@ -2,14 +2,14 @@ import React from "react";
 import { Text, TextStyle, View, ViewStyle } from "react-native";
 import PieChart, { Slice } from "react-native-pie-chart";
 
-// Interface for pie chart data items
+
 interface PieChartDataItem {
   value: number;
   color: string;
   label: string;
 }
 
-// Props interface for the CustomPieChart component
+
 interface CustomPieChartProps {
   data?: PieChartDataItem[];
   widthAndHeight?: number;
@@ -28,10 +28,10 @@ const CustomPieChart: React.FC<CustomPieChartProps> = ({
   labelRadius = 1.2,
   style,
 }) => {
-  // Calculate total value for percentage calculations
+  
   const total = data.reduce((acc: number, item: PieChartDataItem) => acc + item.value, 0);
   const radius = widthAndHeight / 2;
-  let startAngle = -90; // Start from the top
+  let startAngle = -90;
 
   // Convert data to Slice format for the PieChart component
   const series: Slice[] = data.map((item: PieChartDataItem) => ({
@@ -39,7 +39,7 @@ const CustomPieChart: React.FC<CustomPieChartProps> = ({
     color: item.color,
   }));
 
-  // Function to get label styles based on label value
+  
   const getLabelStyle = (label: string): TextStyle => ({
     position: "absolute",
     fontSize: 12,
@@ -51,7 +51,7 @@ const CustomPieChart: React.FC<CustomPieChartProps> = ({
     borderRadius: 4,
   });
 
-  // Function to calculate label position
+  
   const calculateLabelPosition = (
     item: PieChartDataItem,
     currentStartAngle: number
@@ -60,7 +60,7 @@ const CustomPieChart: React.FC<CustomPieChartProps> = ({
     const middleAngle = currentStartAngle + sliceAngle / 2;
     const radians = (middleAngle * Math.PI) / 180;
 
-    // Adjusted label position (closer to pie edge)
+    
     const calculatedLabelRadius = radius * labelRadius;
     const x = radius + calculatedLabelRadius * Math.cos(radians);
     const y = radius + calculatedLabelRadius * Math.sin(radians);
@@ -68,7 +68,7 @@ const CustomPieChart: React.FC<CustomPieChartProps> = ({
     return { x, y };
   };
 
-  // Container styles
+  
   const containerStyle: ViewStyle = {
     width: "100%",
     height: 150,
@@ -92,12 +92,12 @@ const CustomPieChart: React.FC<CustomPieChartProps> = ({
         style={style}
       />
 
-      {/* Overlay Labels */}
+      {}
       <View style={overlayContainerStyle}>
         {data.map((item: PieChartDataItem, index: number) => {
           const { x, y } = calculateLabelPosition(item, startAngle);
           
-          // Update startAngle for next iteration
+          
           const sliceAngle = (item.value / total) * 360;
           startAngle += sliceAngle;
 
@@ -108,7 +108,7 @@ const CustomPieChart: React.FC<CustomPieChartProps> = ({
               key={`${item.label}-${index}`}
               style={{
                 ...labelStyle,
-                left: x - 12, // Adjust for better centering
+                left: x - 12,
                 top: y - 8,
               }}
             >

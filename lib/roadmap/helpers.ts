@@ -1,4 +1,4 @@
-// lib/roadmap/helpers.ts
+
 import { API_CONFIG } from '@/constants/config/api';
 import { taskCompletionMapKey } from '@/lib/roadmap/taskCompletionTimestamps';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
@@ -598,12 +598,12 @@ export function parseDurationMonths(duration: string): { min: number; max: numbe
     if (!duration) return { min: 1, max: 1 };
 
     // Match numbers, optionally separated by hyphen/dash, optionally followed by unit
-    // Handles: "10-12", "1 month", "2-3 months", "4 weeks"
+    
     const match = duration.match(/(\d+)(?:\s*[-–]\s*(\d+))?(?:\s*(month|week))?/i);
     if (match) {
         const min = parseInt(match[1], 10);
         const max = match[2] ? parseInt(match[2], 10) : min;
-        const unit = match[3] ? match[3].toLowerCase() : 'month'; // Default to month if no unit
+        const unit = match[3] ? match[3].toLowerCase() : 'month';
 
         if (unit.startsWith('week')) {
             return { min: Math.ceil(min / 4), max: Math.ceil(max / 4) };

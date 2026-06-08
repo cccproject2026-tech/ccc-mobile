@@ -25,9 +25,9 @@ export default function MenteeDocumentsScreen() {
   }>()
   const id = typeof menteeId === "string" ? menteeId : undefined
 
-  // Best-effort mentee lookup for display only.
+  
   // Do not block document viewing on this, because `useMentees()` params/data-shape can differ
-  // depending on navigation entry point.
+  
   const { data: menteesData, isLoading: isLoadingMentees } = useMentees()
   const mentee = useMemo(() => {
     return menteesData?.pages
@@ -35,10 +35,10 @@ export default function MenteeDocumentsScreen() {
       ?.find((m: any) => m.id === id)
   }, [menteeId, menteesData, id])
 
-  // Fetch documents for the mentee
+  
   const { data: documents, isLoading: isLoadingDocuments } = useDocumentsByUserId(id)
 
-  // Format date for display (US format)
+  
   const formatDocumentDate = React.useCallback((dateString?: string): string => {
     if (!dateString) return "Unknown date"
     const date = new Date(dateString)
@@ -51,25 +51,25 @@ export default function MenteeDocumentsScreen() {
     })
   }, [])
 
-  // Format documents for display
+  
   const formattedDocuments = useMemo(() => {
     if (!documents || documents.length === 0) return { recentUploads: [], library: [] }
 
-    // Sort by upload date (most recent first)
+    
     const sorted = [...documents].sort((a, b) => {
       const dateA = new Date(a.uploadedAt || 0).getTime()
       const dateB = new Date(b.uploadedAt || 0).getTime()
       return dateB - dateA
     })
 
-    // Recent uploads (last 5)
+    
     const recentUploads = sorted.slice(0, 5).map((doc, index) => ({
       id: doc.id || index.toString(),
       title: doc.fileName || "Document",
       time: formatDocumentDate(doc.uploadedAt),
     }))
 
-    // Library (all documents)
+    
     const library = sorted.map((doc, index) => ({
       id: doc.id || index.toString(),
       title: doc.fileName || "Document",

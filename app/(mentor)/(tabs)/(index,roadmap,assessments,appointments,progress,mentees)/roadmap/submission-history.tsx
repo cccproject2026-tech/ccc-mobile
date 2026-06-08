@@ -52,7 +52,7 @@ export default function MentorSubmissionHistoryScreen() {
                 contentContainerStyle={[styles.content, { paddingBottom: bottom + 40 }]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header */}
+                {}
                 <View style={styles.headerRow}>
                     <Pressable
                         onPress={() => {

@@ -15,35 +15,32 @@
  * ========================================================================
  */
 
-import GradientCalendar from '@/components/atom/calendar'; // Adjust import path
+import GradientCalendar from '@/components/atom/calendar';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-// ========================================================================
-// EXAMPLE 1: SPECIFIC AVAILABLE DATES
-// ========================================================================
+
 // Use Case: You have specific dates when appointments are available
-// Works across multiple months
-// ========================================================================
+
 export const Example1_SpecificDates = () => {
     const [selectedDate, setSelectedDate] = useState('2024-08-05');
 
-    // Define specific dates that are available for booking
-    // All other dates will be disabled
+    
+    
     const availableDates = [
-        // August 2024
+        
         '2024-08-05',
         '2024-08-08',
         '2024-08-14',
         '2024-08-22',
 
-        // September 2024
+        
         '2024-09-02',
         '2024-09-10',
         '2024-09-15',
         '2024-09-25',
 
-        // October 2024
+        
         '2024-10-01',
         '2024-10-12',
         '2024-10-20',
@@ -61,7 +58,7 @@ export const Example1_SpecificDates = () => {
                 selected={selectedDate}
                 setSelected={setSelectedDate}
                 availableDates={availableDates}
-                disablePastDates={true} // Can't select past dates
+                disablePastDates={true}
                 showHeader={true}
                 markToday={true}
             />
@@ -71,12 +68,7 @@ export const Example1_SpecificDates = () => {
     );
 };
 
-// ========================================================================
-// EXAMPLE 2: WEEKLY RECURRING AVAILABILITY
-// ========================================================================
-// Use Case: Available every Monday, Wednesday, Friday
-// Automatically applies pattern to all months
-// ========================================================================
+
 export const Example2_WeeklyRecurring = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
@@ -92,8 +84,8 @@ export const Example2_WeeklyRecurring = () => {
                 setSelected={setSelectedDate}
                 recurringAvailability={{
                     type: 'weekly',
-                    // 0 = Sunday, 1 = Monday, 2 = Tuesday, etc.
-                    daysOfWeek: [1, 3, 5], // Monday, Wednesday, Friday
+                    
+                    daysOfWeek: [1, 3, 5],
                 }}
                 disablePastDates={true}
                 showHeader={true}
@@ -104,11 +96,9 @@ export const Example2_WeeklyRecurring = () => {
     );
 };
 
-// ========================================================================
-// EXAMPLE 3: MONTHLY RECURRING AVAILABILITY
-// ========================================================================
+
 // Use Case: Available on 1st, 15th, and last day of every month
-// ========================================================================
+
 export const Example3_MonthlyRecurring = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
@@ -124,7 +114,7 @@ export const Example3_MonthlyRecurring = () => {
                 setSelected={setSelectedDate}
                 recurringAvailability={{
                     type: 'monthly',
-                    daysOfMonth: [1, 15, 30, 31], // 1st, 15th, and last days
+                    daysOfMonth: [1, 15, 30, 31],
                 }}
                 disablePastDates={true}
                 showHeader={true}
@@ -135,12 +125,9 @@ export const Example3_MonthlyRecurring = () => {
     );
 };
 
-// ========================================================================
-// EXAMPLE 4: CUSTOM RECURRING LOGIC (WEEKDAYS ONLY)
-// ========================================================================
+
 // Use Case: Available Monday to Friday, excluding weekends
-// Custom function for complex availability rules
-// ========================================================================
+
 export const Example4_CustomRecurring = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
@@ -156,11 +143,11 @@ export const Example4_CustomRecurring = () => {
                 setSelected={setSelectedDate}
                 recurringAvailability={{
                     type: 'custom',
-                    // Custom function to determine availability
+                    
                     customCheck: (dateStr) => {
                         const date = new Date(dateStr);
                         const dayOfWeek = date.getDay();
-                        // Return true for Monday (1) to Friday (5)
+                        
                         return dayOfWeek >= 1 && dayOfWeek <= 5;
                     },
                 }}
@@ -173,12 +160,12 @@ export const Example4_CustomRecurring = () => {
     );
 };
 
-// ========================================================================
+
 // EXAMPLE 5: RECURRING + BOOKED SLOTS (UNAVAILABLE DATES)
-// ========================================================================
+
 // Use Case: Recurring availability but some slots are already booked
 // Combines recurring pattern with specific unavailable dates
-// ========================================================================
+
 export const Example5_RecurringWithBookings = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
@@ -194,16 +181,16 @@ export const Example5_RecurringWithBookings = () => {
                 setSelected={setSelectedDate}
                 recurringAvailability={{
                     type: 'weekly',
-                    daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
+                    daysOfWeek: [1, 2, 3, 4, 5],
                 }}
                 // These dates are unavailable even though they match the pattern
                 unavailableDates={[
-                    '2024-08-05', // Already booked
-                    '2024-08-12', // Holiday
-                    '2024-08-19', // Fully booked
-                    '2024-08-26', // Team meeting
-                    '2024-09-02', // Labor Day
-                    '2024-09-16', // Booked
+                    '2024-08-05',
+                    '2024-08-12',
+                    '2024-08-19',
+                    '2024-08-26',
+                    '2024-09-02',
+                    '2024-09-16',
                 ]}
                 disablePastDates={true}
                 showHeader={true}
@@ -214,12 +201,9 @@ export const Example5_RecurringWithBookings = () => {
     );
 };
 
-// ========================================================================
-// EXAMPLE 6: VIEW PAST APPOINTMENTS (ALLOW PAST DATES)
-// ========================================================================
-// Use Case: View and select past appointments/dates
+
 // Useful for viewing history or rescheduling past appointments
-// ========================================================================
+
 export const Example6_AllowPastDates = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
@@ -233,8 +217,8 @@ export const Example6_AllowPastDates = () => {
             <GradientCalendar
                 selected={selectedDate}
                 setSelected={setSelectedDate}
-                disablePastDates={false} // Allow selecting past dates
-                markToday={true} // Show red dot on today
+                disablePastDates={false}
+                markToday={true}
                 showHeader={true}
             />
 
@@ -243,16 +227,11 @@ export const Example6_AllowPastDates = () => {
     );
 };
 
-// ========================================================================
-// EXAMPLE 7: DATE RANGE RESTRICTION (NEXT 3 MONTHS ONLY)
-// ========================================================================
-// Use Case: Limit bookings to next 3 months
-// Combines recurring availability with date range limits
-// ========================================================================
+
 export const Example7_DateRangeRestriction = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
-    // Calculate date range
+    
     const today = new Date();
     const threeMonthsLater = new Date(today);
     threeMonthsLater.setMonth(today.getMonth() + 3);
@@ -269,7 +248,7 @@ export const Example7_DateRangeRestriction = () => {
                 setSelected={setSelectedDate}
                 recurringAvailability={{
                     type: 'weekly',
-                    daysOfWeek: [1, 3, 5], // Mon, Wed, Fri
+                    daysOfWeek: [1, 3, 5],
                 }}
                 minDate={today.toISOString().split('T')[0]}
                 maxDate={threeMonthsLater.toISOString().split('T')[0]}
@@ -285,12 +264,9 @@ export const Example7_DateRangeRestriction = () => {
     );
 };
 
-// ========================================================================
+
 // EXAMPLE 8: COMBINED AVAILABILITY (SPECIFIC + RECURRING)
-// ========================================================================
-// Use Case: Mix specific dates with recurring pattern
-// If specific dates provided, recurring is ignored
-// ========================================================================
+
 export const Example8_CombinedAvailability = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
@@ -304,7 +280,7 @@ export const Example8_CombinedAvailability = () => {
             <GradientCalendar
                 selected={selectedDate}
                 setSelected={setSelectedDate}
-                // Specific dates take priority over recurring
+                
                 availableDates={[
                     '2024-08-05',
                     '2024-08-12',
@@ -324,12 +300,7 @@ export const Example8_CombinedAvailability = () => {
     );
 };
 
-// ========================================================================
-// EXAMPLE 9: CUSTOM STYLING & NO HEADER
-// ========================================================================
-// Use Case: Integrate calendar into custom UI design
-// Hide header and use custom gradient colors
-// ========================================================================
+
 export const Example9_CustomStyling = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
@@ -342,12 +313,12 @@ export const Example9_CustomStyling = () => {
                 setSelected={setSelectedDate}
                 recurringAvailability={{
                     type: 'weekly',
-                    daysOfWeek: [1, 2, 3, 4, 5], // Weekdays
+                    daysOfWeek: [1, 2, 3, 4, 5],
                 }}
-                gradientColors={["#2a5298", "#1e3a5f"]} // Custom gradient
-                showHeader={false} // Hide "Select Available Date" header
+                gradientColors={["#2a5298", "#1e3a5f"]}
+                showHeader={false}
                 disablePastDates={true}
-                markToday={false} // Don't mark today
+                markToday={false}
                 containerStyle={{ marginVertical: 20 }}
             />
 
@@ -356,20 +327,17 @@ export const Example9_CustomStyling = () => {
     );
 };
 
-// ========================================================================
-// EXAMPLE 10: ADVANCED - BUSINESS HOURS AVAILABILITY
-// ========================================================================
+
 // Use Case: Available weekdays, excluding holidays and specific dates
-// Real-world scheduling scenario
-// ========================================================================
+
 export const Example10_BusinessHours = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
-    // Company holidays
+    
     const holidays = [
-        '2024-09-02', // Labor Day
-        '2024-11-28', // Thanksgiving
-        '2024-12-25', // Christmas
+        '2024-09-02',
+        '2024-11-28',
+        '2024-12-25',
     ];
 
     return (
@@ -387,13 +355,13 @@ export const Example10_BusinessHours = () => {
                     customCheck: (dateStr) => {
                         const date = new Date(dateStr);
                         const dayOfWeek = date.getDay();
-                        // Monday to Friday only
+                        
                         return dayOfWeek >= 1 && dayOfWeek <= 5;
                     },
                 }}
                 unavailableDates={[
                     ...holidays,
-                    // Already booked slots
+                    
                     '2024-08-15',
                     '2024-08-22',
                     '2024-08-29',
@@ -408,9 +376,7 @@ export const Example10_BusinessHours = () => {
     );
 };
 
-// ========================================================================
-// PROPS REFERENCE
-// ========================================================================
+
 /**
  * REQUIRED PROPS:
  * - selected: string                    Current selected date (YYYY-MM-DD)
@@ -438,9 +404,7 @@ export const Example10_BusinessHours = () => {
  * - containerStyle?: ViewStyle          Custom container styling
  */
 
-// ========================================================================
-// STYLES
-// ========================================================================
+
 const styles = StyleSheet.create({
     container: {
         padding: 16,
@@ -473,9 +437,9 @@ const styles = StyleSheet.create({
     },
 });
 
-// ========================================================================
+
 // MAIN DEMO COMPONENT - ALL EXAMPLES IN ONE SCROLLABLE VIEW
-// ========================================================================
+
 export default function GradientCalendarDemo() {
     return (
         <ScrollView

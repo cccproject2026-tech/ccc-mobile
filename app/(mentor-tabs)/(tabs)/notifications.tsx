@@ -61,7 +61,7 @@ export default function NotificationScreen({
               alignItems: "center",
             }}
           >
-            {/* Header */}
+            {}
             <SectionHeader title="Notifications" subtitle="Updates and reminders." showBackButton style={{ width: "100%" }} />
             <ScrollView
               contentContainerStyle={styles.listContent}
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 72, // 4.5rem = 72px
+    marginHorizontal: 72,
   },
   image: {
     borderRadius: 8,
@@ -253,34 +253,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.8)",
   },
-  //   divider: {
-  //     height: 1,
-  //     backgroundColor: "rgba(255, 255, 255, 0.2)",
-  //     marginHorizontal: 56,
-  //     marginVertical: 16,
-  //   },
-  //   whiteText: {
-  //     fontFamily: "AlbertRegular",
-  //     color: "white",
-  //     fontSize: 14,
-  //     lineHeight: 24, // Equivalent to leading-6 in Tailwind
-  //   },
-  //   infoBox: {
-  //     flex: 1,
-  //     flexDirection: "row",
-  //     borderRadius: 8,
-  //     padding: 8,
-  //     borderWidth: 1,
-  //     borderColor: "rgba(255, 255, 255, 0.8)",
-  //     marginVertical: 8,
-  //   },
-  //   rowContainer: {
-  //     flexDirection: "row",
-  //     justifyContent: "space-between",
-  //     alignItems: "center",
-  //     gap: 12,
-  //     marginVertical: 8,
-  //   },
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   interestsContainer: {
     borderRadius: 8,
     padding: 8,

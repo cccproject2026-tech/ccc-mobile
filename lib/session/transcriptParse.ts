@@ -96,7 +96,7 @@ function createRoleResolver(opts?: TranscriptParseOptions) {
       }
     }
 
-    // Default: first distinct speaker = mentor, second = pastor (mentorship session).
+    
     const usedRoles = new Set(speakerRoleMap.values());
     const orderIndex = speakerOrder.indexOf(key);
     let nextRole: MentorshipTranscriptLine["role"];

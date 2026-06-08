@@ -148,7 +148,7 @@ export default function NewPastorNote() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
+        {}
           <View style={styles.header}>
           <View style={styles.headerTop}>
             <SquircleIconButton
@@ -184,7 +184,7 @@ export default function NewPastorNote() {
           </View>
         </View>
 
-        {/* Tab Buttons */}
+        {}
         <View style={styles.tabContainer}>
           <TouchableOpacity
             activeOpacity={0.8}
@@ -203,7 +203,7 @@ export default function NewPastorNote() {
           </TouchableOpacity>
         </View>
 
-        {/* Formatting Toolbar */}
+        {}
         <View style={styles.toolbarContainer}>
           <ScrollView
             horizontal

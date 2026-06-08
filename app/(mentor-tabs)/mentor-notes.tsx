@@ -95,7 +95,7 @@ export default function MentorNotes() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
 
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <SquircleIconButton
@@ -137,7 +137,7 @@ export default function MentorNotes() {
           </View>
         </View>
 
-        {/* Tab Buttons */}
+        {}
         <View style={styles.tabContainer}>
           <TouchableOpacity
             activeOpacity={0.8}
@@ -183,7 +183,7 @@ export default function MentorNotes() {
           </TouchableOpacity>
         </View>
 
-        {/* Notes List */}
+        {}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}

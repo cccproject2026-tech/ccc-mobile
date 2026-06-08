@@ -110,10 +110,10 @@ export default function ShareMedia() {
 
     const deleteDocument = useDeleteRoadmapDocument();
 
-    // Fetch roadmap data to get task title
+    
     const { data: roadmap, isLoading: isLoadingRoadmap } = useRoadmap(roadMapId || undefined);
 
-    // Fetch all documents for this roadmap item + extraName
+    
     const { data: docs = [] } = useRoadmapDocuments(
         roadMapId,
         resolvedNestedId || undefined,
@@ -155,14 +155,14 @@ export default function ShareMedia() {
     }, [activeTab, availableTabs]);
 
     const taskTitle = useMemo(() => {
-        // If no roadmap or taskId/nestedId, return default
+        
         if (!roadmap || (!taskId && !nestedId)) return 'Shared Media';
 
         try {
-            // Get all tasks from the roadmap
+            
             const tasks = getTasks(roadmap);
             
-            // Find the task by taskId or nestedId
+            
             const taskIdToFind = resolvedNestedId || taskId || nestedId;
             const task = tasks.find(t => String(t._id) === String(taskIdToFind));
             
@@ -236,7 +236,7 @@ export default function ShareMedia() {
         [deleteFiles],
     );
 
-    // ---------------- OUTCOME MENU + DATA (restored) ----------------
+    
     const outcomeMenuItems = useCallback((): MenuItem[] => [
         {
             id: 'outcome-4-months',
@@ -285,12 +285,12 @@ export default function ShareMedia() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
-    // ---------------- SELECTION HANDLERS ----------------
+    
 
     const toggleSelectionMode = useCallback(() => {
         setSelectionMode(prev => {
             if (prev) {
-                // turning OFF → clear selection
+                
                 setSelectedItems(new Set());
             }
             return !prev;
@@ -331,7 +331,7 @@ export default function ShareMedia() {
         );
     }, [selectedItems, currentMedia, deleteFiles]);
 
-    // ---------------- RENDER MEDIA ITEM ----------------
+    
 
     const renderMediaItem = useCallback(
         ({ item, index }: { item: RoadmapMedia; index: number }) => {
@@ -472,12 +472,12 @@ export default function ShareMedia() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                {/* Top Bar */}
+                {}
                 <View style={styles.topBarWrapper}>
                     <TopBar role="pastor" showUserName />
                 </View>
 
-                {/* Header */}
+                {}
                 <View style={styles.headerContainer}>
                     <View style={styles.headerRow}>
                         <TouchableOpacity onPress={() => router.back()}>
@@ -499,7 +499,7 @@ export default function ShareMedia() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Tabs */}
+                {}
                 <View style={styles.section}>
                     <View style={styles.fieldLabelRow}>
                         <Text style={styles.fieldLabelCaption} maxFontSizeMultiplier={1.1}>
@@ -547,10 +547,10 @@ export default function ShareMedia() {
                     ) : null}
                 </View>
 
-                {/* Media Grid */}
+                {}
                 <View style={styles.mediaContainer}>
                     <View style={styles.mediaBorderBox}>
-                        {/* Selection Header */}
+                        {}
                         {selectionMode && (
                             <>
                                 <View style={styles.selectionHeader}>
@@ -600,7 +600,7 @@ export default function ShareMedia() {
                             </>
                         )}
 
-                        {/* Empty state */}
+                        {}
                         {allDocs.length === 0 && (
                             <Text
                                 style={{
@@ -631,7 +631,7 @@ export default function ShareMedia() {
                             </View>
                         ) : null}
 
-                        {/* Media Grid */}
+                        {}
                         {activeTab !== 'files' && currentMedia.length > 0 &&
                             currentMedia
                                 .reduce<RoadmapMedia[][]>((rows, item, index) => {
@@ -670,7 +670,7 @@ export default function ShareMedia() {
                 </View>
             </ScrollView>
 
-            {/* Context Menu – full outcome menu restored */}
+            {}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={outcomeMenuItems()}
@@ -680,7 +680,7 @@ export default function ShareMedia() {
                 showIcons={false}
             />
 
-            {/* Outcome Modal – full behaviour restored */}
+            {}
             <ExpectedOutcomeModal
                 visible={showOutcomeModal}
                 onClose={() => setShowOutcomeModal(false)}

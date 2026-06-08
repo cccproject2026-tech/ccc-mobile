@@ -17,7 +17,7 @@ export const apiClient = axios.create({
     },
 });
 
-// ✅ ADDED: Log configuration on startup
+
 if (__DEV__) {
     console.log('\n🔧 API Client Configuration:');
     console.log('Base URL:', API_CONFIG.BASE_URL);

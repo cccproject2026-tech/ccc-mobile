@@ -166,7 +166,7 @@ export function validateSchedule(
   const now = new Date();
   const meetingDateTime = new Date(meetingDateIso);
 
-  // 1) Minimum notice
+  
   if (settings?.minSchedulingNoticeHours) {
     const hoursNotice =
       (meetingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
@@ -179,7 +179,7 @@ export function validateSchedule(
     }
   }
 
-  // 2) Max bookings per day
+  
   if (settings?.maxBookingsPerDay) {
     const bookingsOnDate = mentorAppointments.filter((apt) => {
       if (isCancelledStatus(apt.status)) return false;

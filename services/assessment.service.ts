@@ -11,7 +11,7 @@ import { apiClient } from "./api/client";
 import { ENDPOINTS } from "./api/endpoints";
 
 export const assessmentService = {
-  // Get all assessments
+  
   getAssessments: async (): Promise<ApiAssessment[]> => {
     console.log("📤 Fetching assessments");
     const response = await apiClient.get<ApiAssessment[]>(
@@ -24,7 +24,7 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Get assessment by ID
+  
   getAssessmentById: async (assessmentId: string): Promise<ApiAssessment> => {
     console.log("📤 Fetching assessment:", assessmentId);
     const response = await apiClient.get<ApiAssessment>(
@@ -34,7 +34,7 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Create new assessment
+  
   createAssessment: async (
     data: CreateAssessmentRequest,
   ): Promise<ApiAssessment> => {
@@ -47,7 +47,7 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Delete assessment
+  
   deleteAssessment: async (
     assessmentId: string,
   ): Promise<{ message: string }> => {
@@ -60,7 +60,7 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Update assessment instructions
+  
   updateInstructions: async (
     assessmentId: string,
     instructions: string[],
@@ -74,7 +74,7 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Assign assessment to users
+  
   assignAssessment: async (
     assessmentId: string,
     payload: AssignAssessmentToUsersRequest,
@@ -93,7 +93,7 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Submit pre-survey answers
+  
   submitPreSurvey: async (
     assessmentId: string,
     payload: SubmitPreSurveyPayload,
@@ -107,7 +107,7 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Submit assessment answers
+  
   submitAssessmentAnswers: async (
     assessmentId: string,
     payload: SubmitAnswersPayload,
@@ -122,7 +122,7 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Fetch submitted answers
+  
   fetchAnswers: async (
     assessmentId: string,
     userId: string,
@@ -150,7 +150,7 @@ export const assessmentService = {
     return response.data;
   },
 
-  // Send CDP recommendations (mentor → pastor)
+  
   sendRecommendation: async (
     assessmentId: string,
     payload: {

@@ -49,7 +49,7 @@ function buildLatestLegacyRoadmapSubmission(
 
   if (allExtras.length === 0) return null;
 
-  // Group by field name and look for duplicate versions.
+  
   const byName = new Map<string, any[]>();
   for (const e of allExtras) {
     const key = String(e.name);
@@ -90,7 +90,7 @@ async function persistSeenIds(ids: Set<string>): Promise<void> {
   try {
     await AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify([...ids]));
   } catch {
-    // silent
+    
   }
 }
 
@@ -262,7 +262,7 @@ export function useReviewCenterV2() {
           pastorId,
         ]);
 
-        // --- Roadmap submissions ---
+        
         const roadmapIds: string[] = (mentee.assignedRoadmapIds ?? [])
           .map((x: any) => String(x))
           .filter(Boolean)
@@ -275,7 +275,7 @@ export function useReviewCenterV2() {
             let submissions: TaskSubmission[] = [];
 
             // Prefer roadmap-level listing. If backend doesn't support it (or errors),
-            // fall back to per-task nestedRoadMapItemId fetches.
+            
             for (const candidateUserId of pastorIdCandidates) {
               try {
                 const allSubs = await roadmapService.getAllSubmissionsForUser(
@@ -287,7 +287,7 @@ export function useReviewCenterV2() {
                   break;
                 }
               } catch {
-                // try next candidate
+                
               }
             }
 
@@ -451,7 +451,7 @@ export function useReviewCenterV2() {
                   });
                 } catch (error) {
                   // If the backend rate-limits this roadmap+user, skip further extras
-                  // calls for this pair in the current query cycle.
+                  
                   if (isTooManyRequestsError(error)) {
                     blockedExtrasByRoadmapUser.add(roadmapUserKey);
                   }
@@ -475,12 +475,12 @@ export function useReviewCenterV2() {
               });
             }
           } catch {
-            // Skip this roadmap for the current pastor.
+            
             continue;
           }
         }
 
-        // --- Assessment submissions ---
+        
         const assessmentIds: string[] = (mentee.assignedAssessmentIds ?? [])
           .map((x: any) => String(x))
           .filter(Boolean)

@@ -1,4 +1,4 @@
-// utils/storage.ts
+
 import { User } from '@/types/auth.types';
 import * as SecureStore from 'expo-secure-store';
 
@@ -9,7 +9,7 @@ const KEYS = {
 } as const;
 
 export const storage = {
-    // ✅ Token management (Secure)
+    
     setTokens: async (accessToken: string, refreshToken: string) => {
         try {
             if (!accessToken || !refreshToken) {
@@ -77,7 +77,7 @@ export const storage = {
         }
     },
 
-    // ✅ User data (Secure)
+    
     setUserData: async (user: User) => {
         try {
             const userString = JSON.stringify(user);
@@ -109,7 +109,7 @@ export const storage = {
         }
     },
 
-    // Clear all storage
+    
     clearAll: async () => {
         try {
             await Promise.all([

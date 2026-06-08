@@ -76,16 +76,16 @@ export default function CreateAssessmentPage() {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
 
-  // Assessment Details
+  
   const [assessmentName, setAssessmentName] = useState("");
   const [briefDescription, setBriefDescription] = useState("");
 
-  // General Instructions
+  
   const [instructions, setInstructions] = useState<Instruction[]>([
     { id: "1", text: "" },
   ]);
 
-  // Sections (each section has its own recommendations for Level 1–4 CDP)
+  
   const [sections, setSections] = useState<Section[]>([
     {
       id: "1",
@@ -99,14 +99,14 @@ export default function CreateAssessmentPage() {
     },
   ]);
 
-  // Dropdown states for each section
+  
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
-  // Loading and success states
+  
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const createAssessmentMutation = useCreateAssessment();
 
-  // Image Upload
+  
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   const handleImagePicker = async () => {
@@ -307,7 +307,7 @@ export default function CreateAssessmentPage() {
   };
 
   const handleCreate = async () => {
-    // Validation
+    
     if (!assessmentName.trim()) {
       Alert.alert("Error", "Please enter an assessment name.");
       return;
@@ -318,7 +318,7 @@ export default function CreateAssessmentPage() {
       return;
     }
 
-    // Filter out empty instructions
+    
     const validInstructions = instructions
       .map((inst) => inst.text.trim())
       .filter((text) => text.length > 0);
@@ -331,7 +331,7 @@ export default function CreateAssessmentPage() {
         // Validate sections (each section includes its own recommendations for Level 1–4 CDP)
         const validSections = sections
             .map((section) => {
-                // Filter out empty layers and choices
+                
         const validLayers = section.layers
           .map((layer, index) => {
             const validChoices = layer.choices
@@ -423,7 +423,7 @@ export default function CreateAssessmentPage() {
     <AppGradientBackground style={{ flex: 1 }}>
       <TopBar role="mentor" showUserName notifications={3} />
 
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="arrow-back" size={24} color="#E2E8F0" />
@@ -431,7 +431,7 @@ export default function CreateAssessmentPage() {
         <Text style={styles.headerTitle}>Create - Assessment</Text>
       </View>
 
-      {/* Form Content */}
+      {}
       <KeyboardSafeContainer
         style={styles.scrollView}
         contentContainerStyle={{
@@ -440,7 +440,7 @@ export default function CreateAssessmentPage() {
         }}
         extraScrollHeight={24}
       >
-        {/* Assessment Details */}
+        {}
         <View style={styles.section}>
           <TextInput
             style={styles.input}
@@ -458,7 +458,7 @@ export default function CreateAssessmentPage() {
           />
         </View>
 
-        {/* General Instructions */}
+        {}
         <View style={styles.section}>
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>
@@ -484,7 +484,7 @@ export default function CreateAssessmentPage() {
           </View>
         </View>
 
-        {/* Sections */}
+        {}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Sections</Text>
@@ -517,7 +517,7 @@ export default function CreateAssessmentPage() {
                 numberOfLines={3}
               />
 
-              {/* Number of Layers */}
+              {}
               <View style={styles.layerCountContainer}>
                 <Text style={styles.layerCountLabel}>Number of Layers:</Text>
                 <View style={styles.layerCountControls}>
@@ -553,7 +553,7 @@ export default function CreateAssessmentPage() {
                 </View>
               </View>
 
-              {/* Layers */}
+              {}
               {section.layers.map((layer, layerIndex) => (
                 <View key={layer.id} style={styles.layerSection}>
                   <Text style={styles.layerTitle}>Layer {layerIndex + 1}</Text>
@@ -579,7 +579,7 @@ export default function CreateAssessmentPage() {
                 </View>
               ))}
 
-              {/* Per-section CDP: Level 1–4 Customized Development Plans */}
+              {}
               <View style={styles.cdpSection}>
                 <Text style={styles.cdpSectionTitle}>
                   Customized Development Plans (this section)
@@ -622,7 +622,7 @@ export default function CreateAssessmentPage() {
           ))}
         </View>
 
-        {/* Image Upload */}
+        {}
         <View style={styles.uploadContainer}>
           <TouchableOpacity
             style={styles.uploadButton}
@@ -639,7 +639,7 @@ export default function CreateAssessmentPage() {
           )}
         </View>
 
-        {/* Action Buttons */}
+        {}
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.cancelButton}
@@ -661,7 +661,7 @@ export default function CreateAssessmentPage() {
         </View>
       </KeyboardSafeContainer>
 
-      {/* Success Modal */}
+      {}
       <AssessmentCreatedSuccessModal
         visible={showSuccessModal}
         onClose={handleSuccessModalClose}

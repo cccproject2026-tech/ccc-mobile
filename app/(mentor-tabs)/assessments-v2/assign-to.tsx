@@ -40,12 +40,12 @@ export default function AssignToPage() {
     new Set()
   );
 
-  // Use infinite query hook
+  
   const { data: menteesData, isLoading: loading, error: menteesError, refetch } = useMentees();
 
   const assignAssessmentMutation = useAssignAssessment();
 
-  // Map mentees to display format
+  
   const mentees: MenteeDisplay[] = useMemo(() => {
     if (!menteesData?.pages) return [];
     const allMentees = menteesData.pages.flatMap(page => page.mentees);
@@ -56,8 +56,6 @@ export default function AssignToPage() {
       avatar: icons.myProfile,
     }));
   }, [menteesData]);
-
-
 
   const error = menteesError ? 'Failed to load mentees. Please try again.' : null;
 
@@ -85,10 +83,10 @@ export default function AssignToPage() {
 
   const handleSelectAll = () => {
     if (selectedMentees.size === filteredMentees.length) {
-      // Deselect all
+      
       setSelectedMentees(new Set());
     } else {
-      // Select all visible items
+      
       setSelectedMentees(new Set(filteredMentees.map((m) => m.id)));
     }
   };
@@ -97,7 +95,7 @@ export default function AssignToPage() {
     return Array.from(selectedMentees)
       .map((id) => mentees.find((m) => m.id === id)?.name)
       .filter(Boolean)
-      .slice(0, 3); // Show max 3 names
+      .slice(0, 3);
   }, [selectedMentees, mentees]);
 
   const handleAssign = async () => {
@@ -138,7 +136,7 @@ export default function AssignToPage() {
         role="mentor"
       />
 
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="arrow-back" size={24} color="#E2E8F0" />
@@ -147,7 +145,7 @@ export default function AssignToPage() {
       </View>
 
       <View style={{ paddingHorizontal: 16 }}>
-        {/* Search Bar */}
+        {}
         <View style={{ marginTop: 14 }}>
           <SearchBar
             value={search}
@@ -156,7 +154,7 @@ export default function AssignToPage() {
           />
         </View>
 
-        {/* Select All */}
+        {}
         <Pressable
           onPress={handleSelectAll}
           hitSlop={8}
@@ -166,7 +164,7 @@ export default function AssignToPage() {
         </Pressable>
       </View>
 
-      {/* Mentees List */}
+      {}
       <View style={{ flex: 1, marginTop: 16 }}>
         {loading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -216,7 +214,7 @@ export default function AssignToPage() {
                   key={mentee.id}
                   style={styles.menteeCard}
                 >
-                  {/* Avatar */}
+                  {}
                   <View style={styles.avatarContainer}>
                     <Image
                       source={mentee.avatar}
@@ -225,12 +223,12 @@ export default function AssignToPage() {
                     />
                   </View>
 
-                  {/* Name */}
+                  {}
                   <Text style={styles.menteeName} numberOfLines={1}>
                     {mentee.name}
                   </Text>
 
-                  {/* Checkbox */}
+                  {}
                   <Pressable
                     onPress={() => toggleSelection(mentee.id)}
                     hitSlop={8}
@@ -256,7 +254,7 @@ export default function AssignToPage() {
         )}
       </View>
 
-      {/* Bottom Action Bar */}
+      {}
       <View
         style={[
           styles.bottomActionBar,
@@ -294,7 +292,7 @@ export default function AssignToPage() {
         </TouchableOpacity>
       </View>
 
-      {/* Success Modal */}
+      {}
       <AssessmentAssignedSuccessModal
         visible={showSuccessModal}
         onClose={handleSuccessModalClose}

@@ -118,9 +118,9 @@ export default function ScheduleMeetingTimeScreen() {
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
 
-  // Availability owner (mentor hosting the grid).
+  
   const availabilityOwnerId = isMentor ? user?.id : draft.person?.id;
-  // Booker whose Google calendar may also block slots.
+  
   const participantUserId = isMentor ? draft.person?.id : user?.id;
 
   // Booker whose existing appointments block duplicate slot picks.
@@ -219,7 +219,7 @@ export default function ScheduleMeetingTimeScreen() {
     availabilityOwnerId || null,
     {
       enabled: Boolean(availabilityOwnerId),
-      // IMPORTANT: availability belongs to mentor participant; avoid "pastor" defaults.
+      
       role: "mentor",
     },
   );
@@ -235,12 +235,12 @@ export default function ScheduleMeetingTimeScreen() {
       mentorId: availabilityOwnerId || null,
       month: currentMonth,
       year: currentYear,
-      // IMPORTANT: availability belongs to mentor participant; avoid "pastor" defaults.
+      
       role: "mentor",
     },
     {
       enabled: Boolean(availabilityOwnerId),
-      // IMPORTANT: never show generated/fake availability in scheduling flow.
+      
       allowDefaultForMentee: false,
       staleTimeMs: 2000,
     },
@@ -371,7 +371,7 @@ export default function ScheduleMeetingTimeScreen() {
   }, [availableDates, draft.selectedDayYmd, selectNearestBookableDay]);
 
   useEffect(() => {
-    // reset time when day changes
+    
     setSlot(null);
   }, [draft.selectedDayYmd, setSlot]);
 

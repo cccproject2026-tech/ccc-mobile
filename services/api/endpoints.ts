@@ -1,7 +1,7 @@
 import { UserRole } from "@/types";
 
 export const ENDPOINTS = {
-  // Authentication (Unauthenticated routes)
+  
   AUTH: {
     LOGIN: "/auth/login",
     SEND_OTP: "/auth/send-otp",
@@ -19,7 +19,7 @@ export const ENDPOINTS = {
     STATUS: "/google-calendar/status",
   },
 
-  // Users
+  
   USERS: {
     GET_ALL_USERS: (role?: UserRole) => `/users?role=${role}`,
     GET_USER: (userId: string) => `/users/${userId}`,
@@ -56,7 +56,7 @@ export const ENDPOINTS = {
     GET_ASSIGNED_MENTEES: (mentorId: string) => `/users/${mentorId}/assigned`,
     GET_ALL_MENTEES: "/users?role=pastor",
   },
-  // Home
+  
   HOME: {
     MENTEES: "/home/mentees",
     MENTORS: "/home/mentors",
@@ -65,13 +65,13 @@ export const ENDPOINTS = {
     GET_MENTEE_BY_EMAIL: (email: string) => `/home/mentee/${email}`,
   },
 
-  // Profile (Authenticated routes)
+  
   PROFILE: {
     UPDATE_PROFILE: "/users/me",
     UPLOAD_AVATAR: "/users/me/avatar",
   },
 
-  // Assessments
+  
   ASSESSMENTS: {
     GET_ASSESSMENTS: "/assessment",
     GET_ASSESSMENT_BY_ID: (assessmentId: string) =>
@@ -165,7 +165,7 @@ export const ENDPOINTS = {
     UPDATE_STATUS: (id: string) => `/interests/request/${id}`,
   },
 
-  // Progress
+  
   PROGRESS: {
     GET: (userId: string) => `/progress/${userId}`,
     ASSIGN_ASSESSMENT: "/progress/assign-assessment",

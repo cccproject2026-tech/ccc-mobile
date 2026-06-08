@@ -16,10 +16,10 @@ export default function ItemDetail() {
     const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string; returnTo?: string }>();
     const router = useRouter();
 
-    // Fetch parent roadmap
+    
     const { data: roadmap, isLoading, error } = useRoadmap(phaseId, false);
 
-    // Find the specific nested roadmap (task)
+    
     const task = useMemo<NestedRoadmap | undefined>(() => {
         return roadmap?.roadmaps?.find(r => r._id === itemId);
     }, [roadmap, itemId]);
@@ -94,7 +94,7 @@ export default function ItemDetail() {
         { id: '6', text: 'Church members will begin to feel a sense of hope for the future.' },
     ], []);
 
-    // Parse duration to extract months range
+    
     const parseDurationMonths = useCallback((duration: string | undefined): string => {
         if (!duration) return '1 - 2';
         // Try to extract numbers from duration string (e.g., "3 months" -> "3", "2-4 weeks" -> "2 - 4")
@@ -107,7 +107,7 @@ export default function ItemDetail() {
         return '1 - 2';
     }, []);
 
-    // Loading state
+    
     if (isLoading) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -124,7 +124,7 @@ export default function ItemDetail() {
         );
     }
 
-    // Error state
+    
     if (error) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -144,7 +144,7 @@ export default function ItemDetail() {
         );
     }
 
-    // Task not found state
+    
     if (!task || !roadmap) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -164,7 +164,7 @@ export default function ItemDetail() {
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
             </View>
 
-            {/* Header */}
+            {}
 
             <View style={{
                 flexDirection: 'row',
@@ -176,12 +176,12 @@ export default function ItemDetail() {
                 borderBottomWidth: 1,
                 borderBottomColor: 'rgba(255, 255, 255, 0.2)',
             }}>
-                {/* Left side - Back button and Text */}
+                {}
                 <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     flex: 1,
-                    marginRight: getSpacing(12), // Add space before right elements
+                    marginRight: getSpacing(12),
                 }}>
                     <TouchableOpacity
                         onPress={() => {
@@ -192,7 +192,7 @@ export default function ItemDetail() {
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
 
-                    {/* Text Container with flex to prevent overflow */}
+                    {}
                     <View style={{ flex: 1, marginRight: getSpacing(8) }}>
                         <Text
                             style={{
@@ -222,7 +222,7 @@ export default function ItemDetail() {
                     </View>
                 </View>
 
-                {/* Right side - Phase badge and menu */}
+                {}
                 <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -292,9 +292,9 @@ export default function ItemDetail() {
                 </TouchableOpacity>
             </View>
 
-            {/* Content */}
+            {}
             <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
-                {/* Cover Image */}
+                {}
                 <View className="relative mb-0 overflow-hidden rounded-3xl" style={{ height: 220, backgroundColor: '#1a1a1a' }}>
                     {task.imageUrl ? (
                         <Image
@@ -306,7 +306,7 @@ export default function ItemDetail() {
                         <View style={{ width: '100%', height: '100%', backgroundColor: '#2a2a2a' }} />
                     )}
 
-                    {/* Title overlay */}
+                    {}
                     <View style={{ position: 'absolute', bottom: 24, left: 0, paddingHorizontal: 24 }}>
                         <View style={{
                             backgroundColor: 'rgba(50, 50, 80, 0.7)',
@@ -320,14 +320,14 @@ export default function ItemDetail() {
                     </View>
                 </View>
 
-                {/* Completion Time */}
+                {}
                 <View className="px-6 py-4 border-b border-white/20" style={{ borderBottomLeftRadius: 50, borderBottomRightRadius: 50 }}>
                     <Text className="text-base font-normal text-right text-white">
                         Completion Time Months {parseDurationMonths(task.duration)}
                     </Text>
                 </View>
 
-                {/* Roadmap Section */}
+                {}
                 <Text className="px-1 mt-6 mb-3 text-xl font-semibold text-white">Roadmap</Text>
                 <View className="p-5 mb-6 rounded-2xl" style={{ backgroundColor: 'rgba(64, 156, 186, 0.5)' }}>
                     <Text className="text-base leading-6 text-white">
@@ -335,7 +335,7 @@ export default function ItemDetail() {
                     </Text>
                 </View>
 
-                {/* Description Section */}
+                {}
                 <Text className="px-1 mb-3 text-xl font-semibold text-white">Description</Text>
                 <View className="p-6 mb-6 rounded-2xl" style={{ backgroundColor: 'rgba(64, 156, 186, 0.5)' }}>
                     <Text className="text-base leading-6 text-white">
@@ -346,7 +346,7 @@ export default function ItemDetail() {
                 <DynamicFormTask task={task} parentRoadmap={roadmap} phaseId={phaseId} itemId={itemId} />
             </ScrollView>
 
-            {/* Modals */}
+            {}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={outcomeMenuItems()}

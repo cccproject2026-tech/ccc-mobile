@@ -1,62 +1,3 @@
-// import { Mentee } from '@/components/director/MenteeCard';
-// import { menteesService } from '@/services/mentees.service';
-// import { useQuery } from '@tanstack/react-query';
-
-// const transformMentee = (mentee: any): Mentee => {
-//     return {
-//         id: mentee.id,
-//         name: `${mentee.firstName} ${mentee.lastName}`.trim(),
-//         role: mentee.role || undefined,
-//         profilePicture: mentee.profilePicture || undefined,
-//         description: mentee.description || mentee.profileInfo || undefined,
-
-//         // Status mapping
-//         status: mentee.status as 'new' | 'pending' | 'approved' | 'rejected',
-
-//         // Completed + certificate fields
-//         isCompleted: mentee.hasCompleted ?? false,
-//         hasCertificate: mentee.hasIssuedCertificate ?? false,
-
-//         // Backend does NOT return a completion date
-//         completedOn: mentee.hasCompleted ? mentee.updatedAt : undefined,
-
-//         // Not provided by backend
-//         lastContacted: undefined,
-//         totalMentors: undefined,
-//         phase: undefined,
-//         phaseNumber: undefined,
-//         progress: undefined,
-//         isFieldMentor: undefined,
-//         scholarshipAmount: undefined,
-//         dateOfApproval: undefined,
-//     };
-// };
-
-// export const useMentees = () => {
-//     const query = useQuery({
-//         queryKey: ['mentees'],
-//         queryFn: () => menteesService.getMentees(),
-//         staleTime: 2000,
-//         retry: 2,
-//     });
-
-//     const transformedData = query.data
-//         ? {
-//             mentees: query.data.mentees.map(transformMentee),
-//             total: query.data.total,
-//         }
-//         : undefined;
-
-//     return {
-//         ...query,
-//         data: transformedData,
-//         mentees: transformedData?.mentees ?? [],
-//         total: transformedData?.total ?? 0,
-//     };
-// };
-
-
-// hooks/mentees/useMentees.ts
 import { apiClient } from '@/services/api/client';
 import { ENDPOINTS } from '@/services/api/endpoints';
 import { menteesService } from '@/services/mentees.service';
@@ -136,7 +77,7 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
                 },
             );
 
-            // merge
+            
             const mentees = backendMentees.map((m, idx) => {
                 const { profile, progress } = menteeDetails[idx] ?? {};
                 // Handle different roadmap structures (array or paginated object)
@@ -152,11 +93,11 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
                         if (!item) return undefined;
                         if (typeof item === "string") return item;
 
-                        // Common shapes:
-                        // - { roadMapId: "..." }
-                        // - { roadMapId: { _id: "..." } }
-                        // - { roadmapId: "..." } / { roadmapId: { _id: "..." } }
-                        // - { roadmap: { _id: "..." } }
+                        
+                        
+                        
+                        
+                        
                         const candidate =
                             item.roadMapId ??
                             item.roadmapId ??
@@ -177,12 +118,12 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
 
                 const firstRoadmap = roadmaps[0] ?? null;
 
-                // Handle different assessment structures
+                
                 const assessments = Array.isArray(progress?.assessments)
                     ? progress.assessments
                     : (progress?.assessments?.items ?? []);
 
-                // Extract assigned assessment IDs
+                
                 const assignedAssessmentIds = assessments.map((item: any) => item.assessmentId || item._id);
 
                 const interest = profile?.interest;

@@ -32,7 +32,7 @@ export default function ReportingProceduresScreen() {
 
     const handleAccept = () => {
         console.log('Accepted');
-        // Navigate to next page or show success
+        
     };
 
     const handleAddToPending = () => {

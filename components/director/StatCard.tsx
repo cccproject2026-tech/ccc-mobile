@@ -11,7 +11,7 @@ type Props = {
 };
 
 const StatCard: React.FC<Props> = ({ label, value }) => {
-    // Calculate responsive circle size based on screen width
+    
     const circleSize = isSmallDevice ? (SCREEN_WIDTH - 48) / 3 * 0.85 : (SCREEN_WIDTH - 48) / 3;
 
     return (

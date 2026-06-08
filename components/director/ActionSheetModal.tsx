@@ -64,7 +64,7 @@ const ActionBottomSheet = forwardRef<BottomSheetModal, ActionBottomSheetProps>(
             colors={[...GRADIENT_COLORS]}
             style={[styles.gradient, { paddingBottom: bottom + 20 }]}
           >
-            {/* Close */}
+            {}
             <View style={styles.closeBtn}>
               <Pressable onPress={onClose} hitSlop={8}>
                 <View style={styles.closeBtnBg}>
@@ -73,7 +73,7 @@ const ActionBottomSheet = forwardRef<BottomSheetModal, ActionBottomSheetProps>(
               </Pressable>
             </View>
 
-            {/* Header */}
+            {}
             <View style={styles.header}>
               {image ? (
                 <Image source={{ uri: image }} style={styles.avatar} />
@@ -96,7 +96,7 @@ const ActionBottomSheet = forwardRef<BottomSheetModal, ActionBottomSheetProps>(
 
             <View style={styles.divider} />
 
-            {/* Actions */}
+            {}
             <View style={styles.actionsWrap}>
               {actions.map((item, i) => (
                 <Pressable

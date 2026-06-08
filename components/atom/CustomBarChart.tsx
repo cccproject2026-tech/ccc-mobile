@@ -3,12 +3,12 @@ import { Dimensions, StyleSheet, Text, View, ViewStyle } from "react-native";
 import Svg, { G, Line, Rect, Text as SvgText } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
-const barWidth = 20; // Reduced width for smaller bars
-const barGap = 21; // Gap between bars
-const maxBarHeight = 5; // Maximum bar height
-const gridLineCount = 6; // Number of grid lines (0 to 5)
-const chartHeight = 150; // Height of the chart area
-const chartWidth = width - 40; // Width of the chart area
+const barWidth = 20;
+const barGap = 21;
+const maxBarHeight = 5;
+const gridLineCount = 6;
+const chartHeight = 150;
+const chartWidth = width - 40;
 
 interface DataSection {
   Total: number;
@@ -53,9 +53,9 @@ const defaultData: ChartData = {
 };
 
 const defaultColors: Colors = {
-  Total: ["#183476", "#FFFFFF"], // Gradient for Total
-  Completed: ["#1535A8", "#FFFFFF"], // Gradient for Completed
-  Remaining: ["#118FBA", "#FFFFFF"], // Gradient for Remaining
+  Total: ["#183476", "#FFFFFF"],
+  Completed: ["#1535A8", "#FFFFFF"],
+  Remaining: ["#118FBA", "#FFFFFF"],
 };
 
 // Normalize data to a scale of 0 to 5
@@ -86,29 +86,29 @@ const CustomBarChart: React.FC<CustomBarChartProps> = ({
   const roadmapTotalWidth = roadmapBarCount * customBarWidth + (roadmapBarCount - 1) * customBarGap;
   const assessmentsTotalWidth = assessmentsBarCount * customBarWidth + (assessmentsBarCount - 1) * customBarGap;
 
-  // Calculate the starting x-position to center the bars
+  
   const roadmapStartX = (customChartWidth - (roadmapTotalWidth + assessmentsTotalWidth + customBarGap * 3)) / 2;
-  const assessmentsStartX = roadmapStartX + roadmapTotalWidth + customBarGap * 2; // Added extra gap
+  const assessmentsStartX = roadmapStartX + roadmapTotalWidth + customBarGap * 2;
 
   const renderGridLines = (): React.ReactElement[] => {
     return [...Array(customGridLineCount).keys()].map((i) => (
       <G key={i}>
-        {/* Horizontal Grid Lines */}
+        {}
         <Line
-          x1={40} // Start grid lines after the y-axis labels
+          x1={40}
           y1={(customChartHeight / (customGridLineCount - 1)) * i}
           x2={customChartWidth}
           y2={(customChartHeight / (customGridLineCount - 1)) * i}
-          stroke="#E0E0E0" // Light gray color for grid lines
-          strokeWidth={1} // Ensure stroke width is visible
+          stroke="#E0E0E0"
+          strokeWidth={1}
         />
-        {/* Y-Axis Labels */}
+        {}
         <SvgText
-          x={30} // Position labels to the left of the grid lines
-          y={(customChartHeight / (customGridLineCount - 1)) * i + 8} // Adjusted y-coordinate with offset
+          x={30}
+          y={(customChartHeight / (customGridLineCount - 1)) * i + 8}
           fill="white"
           fontSize="10"
-          textAnchor="end" // Align text to the end (right-aligned)
+          textAnchor="end"
         >
           {customMaxBarHeight - i}
         </SvgText>
@@ -144,21 +144,21 @@ const CustomBarChart: React.FC<CustomBarChartProps> = ({
   return (
     <View style={[styles.container, containerStyle]}>
       <Svg width={customChartWidth} height={customChartHeight + 10}>
-        {/* Draw Grid Lines */}
+        {}
         {renderGridLines()}
 
-        {/* Roadmap Bars */}
+        {}
         <G>
           {renderBars(data.Roadmap, roadmapStartX, "Roadmap")}
         </G>
 
-        {/* Assessments Bars */}
+        {}
         <G>
           {renderBars(data.Assessments, assessmentsStartX, "Assessments")}
         </G>
       </Svg>
 
-      {/* Section Titles */}
+      {}
       <View style={styles.sectionTitleContainer}>
         <Text style={styles.sectionTitle}>Roadmap</Text>
         <Text style={styles.sectionTitle}>Assessments</Text>

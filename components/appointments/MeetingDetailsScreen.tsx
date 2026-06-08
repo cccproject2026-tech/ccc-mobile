@@ -397,7 +397,7 @@ export default function MeetingDetailsScreen() {
     await refetch();
   }, [refetch]);
 
-  // ── Mentor initials avatar
+  
   const initials = mentorName
     .split(" ")
     .slice(0, 2)
@@ -409,7 +409,7 @@ export default function MeetingDetailsScreen() {
     <AppGradientBackground style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* ── Header ── */}
+      {}
       <View style={[s.header, { paddingTop: insets.top + 6 }]}>
         <Pressable
           style={({ pressed }) => [s.headerBtn, pressed && { opacity: 0.7 }]}
@@ -430,7 +430,7 @@ export default function MeetingDetailsScreen() {
         </Pressable>
       </View>
 
-      {/* ── Body ── */}
+      {}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[
@@ -458,13 +458,13 @@ export default function MeetingDetailsScreen() {
           />
         ) : (
           <>
-            {/* ── Hero card ── */}
+            {}
             <View style={s.heroCard}>
-              {/* Accent stripe */}
+              {}
               <View style={s.heroStripe} />
 
               <View style={s.heroTop}>
-                {/* Avatar */}
+                {}
                 <View style={s.avatar}>
                   <Text style={s.avatarText}>{initials}</Text>
                 </View>
@@ -477,7 +477,7 @@ export default function MeetingDetailsScreen() {
                 </View>
               </View>
 
-              {/* Date / time strip */}
+              {}
               <View style={s.timeStrip}>
                 <View style={s.timeChip}>
                   <Ionicons name="calendar-outline" size={13} color={COLORS.accent} />
@@ -496,7 +496,7 @@ export default function MeetingDetailsScreen() {
                 </View>
               </View>
 
-              {/* Actions */}
+              {}
               <View style={s.heroActions}>
                 <Pressable
                   style={[s.joinBtn, (!meetingLink || isOpening) && { opacity: 0.5 }]}
@@ -524,7 +524,7 @@ export default function MeetingDetailsScreen() {
               </View>
             </View>
 
-            {/* ── Join Details ── */}
+            {}
             <View style={s.section}>
               <View style={s.sectionHeader}>
                 <View style={s.sectionDot} />
@@ -582,7 +582,7 @@ const emptyStyles = StyleSheet.create({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  // Header
+  
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -623,14 +623,14 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Scroll
+  
   scroll: {
     paddingHorizontal: 16,
     paddingTop: 4,
     gap: 24,
   },
 
-  // Hero card
+  
   heroCard: {
     borderRadius: 22,
     borderWidth: 1,
@@ -641,7 +641,7 @@ const s = StyleSheet.create({
   heroStripe: {
     height: 4,
     width: "100%",
-    // backgroundColor: "#FACC15",
+    
   },
   heroTop: {
     flexDirection: "row",
@@ -681,7 +681,7 @@ const s = StyleSheet.create({
     letterSpacing: 0.1,
   },
 
-  // Time strip
+  
   timeStrip: {
     flexDirection: "row",
     alignItems: "center",
@@ -714,7 +714,7 @@ const s = StyleSheet.create({
     backgroundColor: COLORS.whiteLow,
   },
 
-  // Hero actions
+  
   heroActions: {
     flexDirection: "row",
     gap: 10,
@@ -753,7 +753,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Sections
+  
   section: {
     gap: 12,
   },
@@ -775,7 +775,7 @@ const s = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // Empty card
+  
   emptyCard: {
     borderRadius: 20,
     borderWidth: 1,
@@ -791,7 +791,7 @@ const s = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // States
+  
   center: {
     paddingVertical: 60,
     alignItems: "center",

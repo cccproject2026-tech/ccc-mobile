@@ -126,14 +126,14 @@ export default function Mentees() {
 
     const filterOptions = useMemo(() => getFilterOptions(), []);
 
-    // ============================
-    // TAB + SEARCH FILTERING
-    // ============================
+    
+    
+    
     const filteredMentees = useMemo(() => {
         const menteeList = Array.isArray(mentees) ? mentees : mentees?.mentees || [];
         let filtered = menteeList;
 
-        // Search filter
+        
         if (search) {
             filtered = filtered.filter((mentee) =>
                 mentee.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -142,7 +142,7 @@ export default function Mentees() {
             );
         }
 
-        // TAB FILTERING BASED ON PROGRESS
+        
         if (activeTab === 'not-started') {
             filtered = filtered.filter(
                 (mentee) => (mentee.progress ?? 0) === 0
@@ -166,9 +166,9 @@ export default function Mentees() {
         return filtered;
     }, [mentees, search, activeTab]);
 
-    // ============================
-    // TAB BADGE COUNTS
-    // ============================
+    
+    
+    
     const menteeList = Array.isArray(mentees) ? mentees : mentees?.mentees || [];
 
     const notStartedCount = useMemo(
@@ -202,9 +202,9 @@ export default function Mentees() {
     ];
 
 
-    // ============================
-    // LOADING / ERROR STATES
-    // ============================
+    
+    
+    
     if (isLoading) {
         return (
             <LinearGradient
@@ -239,9 +239,9 @@ export default function Mentees() {
         );
     }
 
-    // ============================
-    // MAIN UI
-    // ============================
+    
+    
+    
     return (
         <LinearGradient
             colors={['#176192', '#1D548D', '#264387']}
@@ -251,7 +251,7 @@ export default function Mentees() {
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View style={styles.contentContainer}>
-                    {/* Header */}
+                    {}
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                             <Ionicons name="chevron-back" size={getIconSize(28)} color="#fff" />
@@ -274,12 +274,12 @@ export default function Mentees() {
                         </View>
                     </View>
 
-                    {/* Search Bar */}
+                    {}
                     <View style={styles.searchContainer}>
                         <SearchBar value={search} onChangeValue={setSearch} />
                     </View>
 
-                    {/* TabSwitcher */}
+                    {}
                     <TabSwitcher
                         tabs={tabs}
                         activeTab={activeTab}
@@ -290,7 +290,7 @@ export default function Mentees() {
                         <MentorProfileSwiper />
                     </View>
 
-                    {/* Sort */}
+                    {}
                     <View style={styles.sortContainer}>
                         <Text style={styles.sortLabel}>Sort by</Text>
                         <Pressable
@@ -304,7 +304,7 @@ export default function Mentees() {
                         </Pressable>
                     </View>
 
-                    {/* Mentee List */}
+                    {}
                     <FlatList
                         style={styles.flatList}
                         data={filteredMentees}
@@ -339,7 +339,7 @@ export default function Mentees() {
                     />
                 </View>
 
-                {/* MODALS */}
+                {}
                 <ActionBottomSheet
                     ref={bottomSheetModalRef}
                     title={selectedMentee?.username || selectedMentee?.firstName || ''}

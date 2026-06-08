@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 type StatusTabKey = 'ALL' | 'DUE' | 'NOT_STARTED' | 'COMPLETED';
-type TabKey = StatusTabKey | string; // string for division IDs
+type TabKey = StatusTabKey | string;
 
 export default function PhaseDetail() {
     const { phaseId } = useLocalSearchParams<{ phaseId: string }>();
@@ -24,14 +24,14 @@ export default function PhaseDetail() {
     // Fetch roadmap from API
     const { data: roadmap, isLoading, error } = useRoadmap(phaseId);
 
-    // Get phase number from roadmap.phase
+    
     const phaseNumber = useMemo(() => {
         if (!roadmap?.phase) return null;
         const match = roadmap.phase.match(/\d+/);
         return match ? parseInt(match[0], 10) : null;
     }, [roadmap]);
 
-    // Get divisions from roadmap.divisions array
+    
     const phaseDivisions = useMemo(() => {
         if (!roadmap?.divisions || roadmap.divisions.length === 0) return [];
         return roadmap.divisions.map((division, index) => ({
@@ -42,7 +42,7 @@ export default function PhaseDetail() {
 
     const hasDivisions = phaseDivisions.length > 0;
 
-    // Get all tasks (nested roadmaps)
+    
     const allTasks = useMemo(() => {
         return roadmap ? getTasks(roadmap) : [];
     }, [roadmap]);
@@ -62,7 +62,7 @@ export default function PhaseDetail() {
         }
     }, [hasDivisions, phaseDivisions, activeTab]);
 
-    // Outcome menu
+    
     const outcomeMenuItems = useCallback((): MenuItem[] => [
         {
             id: 'edit-phase',
@@ -143,7 +143,7 @@ export default function PhaseDetail() {
     // Generate tabs: division tabs replace "All" tab, but status tabs remain
     const tabs = useMemo(() => {
         if (hasDivisions) {
-            // Division tabs + status filter tabs (without "All")
+            
             const divisionTabs = phaseDivisions.map(division => ({
                 key: division.id,
                 label: division.name,
@@ -157,7 +157,7 @@ export default function PhaseDetail() {
 
             return [...divisionTabs, ...statusTabs];
         } else {
-            // Standard tabs with "All"
+            
             return [
                 { key: 'ALL', label: 'All' },
                 { key: 'DUE', label: 'Due' },
@@ -167,28 +167,28 @@ export default function PhaseDetail() {
         }
     }, [hasDivisions, phaseDivisions]);
 
-    // Check if activeTab is a division ID
+    
     const isDivisionTab = useMemo(() => {
         return hasDivisions && phaseDivisions.some(d => d.id === activeTab);
     }, [hasDivisions, phaseDivisions, activeTab]);
 
-    // Filter tasks based on active tab
+    
     const filteredTasks = useMemo(() => {
         if (!roadmap) return [];
 
         let tasksToFilter: NestedRoadmap[] = [];
 
-        // Determine which tasks to filter
+        
         if (isDivisionTab) {
-            // Get tasks for the selected division
+            
             const groupedTasks = getTasksByDivision(roadmap);
             tasksToFilter = groupedTasks[activeTab as string] || [];
         } else if (activeTab === 'ALL') {
-            // Show all tasks (only for phases without divisions)
+            
             tasksToFilter = allTasks;
         } else {
-            // Apply status filter (DUE, NOT_STARTED, COMPLETED)
-            // For phases with divisions, filter across ALL tasks
+            
+            
             tasksToFilter = allTasks.filter(task => {
                 const status = task.status;
 
@@ -204,7 +204,7 @@ export default function PhaseDetail() {
             });
         }
 
-        // Apply search filter
+        
         if (search.trim()) {
             const searchLower = search.toLowerCase();
             tasksToFilter = tasksToFilter.filter(task =>
@@ -217,7 +217,7 @@ export default function PhaseDetail() {
         return tasksToFilter;
     }, [roadmap, isDivisionTab, activeTab, allTasks, search]);
 
-    // Loading state
+    
     if (isLoading) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -234,7 +234,7 @@ export default function PhaseDetail() {
         );
     }
 
-    // Error state
+    
     if (error) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -254,7 +254,7 @@ export default function PhaseDetail() {
         );
     }
 
-    // No roadmap found
+    
     if (!roadmap) {
         return (
             <AppGradientBackground style={{ flex: 1 }}>
@@ -274,7 +274,7 @@ export default function PhaseDetail() {
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
             </View>
 
-            {/* Header */}
+            {}
             <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -285,7 +285,7 @@ export default function PhaseDetail() {
                 borderBottomWidth: 1,
                 borderBottomColor: 'rgba(255, 255, 255, 0.2)',
             }}>
-                {/* Left side - Back button and Text */}
+                {}
                 <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -299,7 +299,7 @@ export default function PhaseDetail() {
                         <Ionicons name="chevron-back" size={28} color="#fff" />
                     </TouchableOpacity>
 
-                    {/* Text Container with flex to prevent overflow */}
+                    {}
                     <View style={{ flex: 1, marginRight: getSpacing(8) }}>
                         <Text
                             style={{
@@ -329,7 +329,7 @@ export default function PhaseDetail() {
                     </View>
                 </View>
 
-                {/* Right side - Phase badge, task button and menu */}
+                {}
                 <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -381,19 +381,19 @@ export default function PhaseDetail() {
                 </View>
             </View>
 
-            {/* Search & Tabs */}
+            {}
             <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
                 <SearchBar value={search} onChangeValue={setSearch} />
             </View>
 
-            {/* Tabs: Division tabs (replacing "All") + Status filter tabs */}
+            {}
             <TabSwitcher
                 tabs={tabs}
                 activeTab={activeTab}
                 onChange={(key) => setActiveTab(key as TabKey)}
             />
 
-            {/* Content */}
+            {}
             <ScrollView contentContainerStyle={{ padding: 16 }}>
                 {filteredTasks.length > 0 ? (
                     filteredTasks.map(task => {
@@ -418,7 +418,7 @@ export default function PhaseDetail() {
                 )}
             </ScrollView>
 
-            {/* Modals */}
+            {}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={outcomeMenuItems()}

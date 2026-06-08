@@ -1,4 +1,4 @@
-// hooks/roadmaps/useRoadmaps.ts
+
 import {
     AddCommentRequest,
     CreateExtrasDto,
@@ -31,9 +31,8 @@ import { useMutation, useQuery, useQueries, useQueryClient } from "@tanstack/rea
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { progressKeys, useProgress } from "../progress/useProgress";
 
-// ============================================
 // ROADMAP QUERY KEYS
-// ============================================
+
 export const roadmapKeys = {
     all: ['roadmaps'] as const,
     lists: () => [...roadmapKeys.all, 'list'] as const,
@@ -46,10 +45,6 @@ export const roadmapKeys = {
         [...roadmapKeys.all, 'extras', roadmapId, nestedId, userId] as const,
     comments: (roadmapId: string, userId: string) => [...roadmapKeys.all, 'comments', roadmapId, userId] as const,
 };
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
 
 /**
  * Maps progress status to roadmap status with proper type safety
@@ -102,7 +97,7 @@ export function mergeRoadmapWithProgress(
         return roadmap;
     }
 
-    // Map nested roadmaps with their progress
+    
     const updatedNestedRoadmaps = roadmap.roadmaps.map((nestedRoadmap) => {
         if (!nestedRoadmap) return nestedRoadmap;
 
@@ -154,7 +149,7 @@ export function mergeRoadmapWithProgress(
             ? 'completed'
             : mapProgressStatus(progressItem.status);
 
-    // Return roadmap with updated status and nested roadmaps
+    
     return {
         ...roadmap,
         status: resolvedParentStatus,
@@ -399,9 +394,6 @@ function useAssessmentAnswerStatusOverlay(
     };
 }
 
-// ============================================
-// FETCH ALL ROADMAPS (ADMIN/DIRECTOR USE)
-// ============================================
 export const useAllRoadmaps = () => {
     return useQuery({
         queryKey: roadmapKeys.lists(),
@@ -414,14 +406,11 @@ export const useAllRoadmaps = () => {
             return response.data.data as Roadmap[];
         },
         staleTime: 0,
-        // gcTime: 1000 , // 10 seconds
+        
         retry: 1,
     });
 };
 
-// ============================================
-// FETCH ASSIGNED ROADMAPS WITH PROGRESS (PASTOR USE)
-// ============================================
 export const useAssignedRoadmaps = (userId?: string) => {
     const { user } = useAuthStore();
     const targetUserId = userId || user?.id;
@@ -456,7 +445,7 @@ export const useAssignedRoadmaps = (userId?: string) => {
 
             const allRoadmaps = response.data.data as Roadmap[];
 
-            // Filter to only assigned roadmaps
+            
             const assignedIdSet = new Set(
                 assignedRoadmapIdsKey.split(',').filter(Boolean),
             );
@@ -472,7 +461,7 @@ export const useAssignedRoadmaps = (userId?: string) => {
         retry: 1,
     });
 
-    // Merge roadmaps with progress data using useMemo for optimization
+    
     const roadmapsWithProgress = useMemo(() => {
         if (!roadmapsQuery.data || !progressData) {
             return roadmapsQuery.data || [];
@@ -538,14 +527,11 @@ export function useAssignedRoadmapsSnapshot(): Roadmap[] {
     );
 }
 
-// ============================================
-// SMART HOOK - AUTO-DETECTS USER ROLE
-// ============================================
 export function useRoadmaps(userRole?: UserRole, userId?: string) {
     // If role is not provided, default to 'pastor' for safety
     const role = userRole || 'pastor';
 
-    // Use different hooks based on role
+    
     const allRoadmapsQuery = useAllRoadmaps();
     const assignedRoadmapsQuery = useAssignedRoadmaps(userId);
 
@@ -563,9 +549,6 @@ export function useRoadmaps(userRole?: UserRole, userId?: string) {
     };
 }
 
-// ============================================
-// FETCH SINGLE ROADMAP BY ID WITH PROGRESS
-// ============================================
 export function useRoadmap(roadmapId: string | undefined, userId?: string, includeProgress: boolean = true) {
     const {
         data: progressData,
@@ -582,7 +565,7 @@ export function useRoadmap(roadmapId: string | undefined, userId?: string, inclu
         retry: 1,
     });
 
-    // Merge with progress if requested
+    
     const roadmapWithProgress = useMemo(() => {
         if (!includeProgress || !roadmapQuery.data || !progressData) {
             return roadmapQuery.data;
@@ -647,10 +630,6 @@ export function useRoadmap(roadmapId: string | undefined, userId?: string, inclu
     };
 }
 
-// ============================================
-// ROADMAP EXTRAS HOOKS
-// ============================================
-
 /**
  * Hook for fetching roadmap extras/saved form data
  */
@@ -712,7 +691,7 @@ export function useRoadmapExtras(
     userId?: string,
     options?: { enabled?: boolean },
 ) {
-    // Validate that roadmapId is a valid truthy string
+    
     const isValidRoadmapId = !!roadmapId && typeof roadmapId === 'string' && roadmapId.trim() !== '';
 
     // Only pass valid IDs (not undefined, not empty string, not "undefined")
@@ -754,7 +733,7 @@ export function useRoadmapExtras(
             !!validUserId &&
             (options?.enabled ?? true),
         staleTime: 0,
-        // gcTime: 1000 ,
+        
     });
 }
 
@@ -770,7 +749,7 @@ export function useCreateRoadmapExtras() {
         onSuccess: (data, variables) => {
             console.log("✅ Roadmap extras created successfully");
 
-            // Invalidate relevant queries
+            
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.extras(variables.roadMapId, variables.nestedRoadMapItemId, variables.userId)
             });
@@ -825,7 +804,6 @@ export function useUploadRoadmapDocument() {
     });
 }
 
-
 export const useRoadmapDocuments = (
     roadMapId?: string,
     nestedId?: string,
@@ -873,7 +851,7 @@ export const useRoadmapDocuments = (
 
             console.log("Fetched and flattened roadmap documents:", flatFiles);
 
-            // Filter by field name ("extraName")
+            
             if (extraName) {
                 const norm = (v: any) => String(v ?? "").trim().toLowerCase();
                 const wanted = norm(extraName);
@@ -885,11 +863,9 @@ export const useRoadmapDocuments = (
         },
         enabled: !!roadMapId && !!nestedId && !!userId,
         staleTime: 0,
-        // gcTime: 1000 ,
+        
     });
 };
-
-
 
 export const useDeleteRoadmapDocument = () => {
     const queryClient = useQueryClient();
@@ -924,8 +900,6 @@ export const useDeleteRoadmapDocument = () => {
     });
 };
 
-
-
 /**
  * Hook for updating roadmap extras
  */
@@ -947,7 +921,7 @@ export function useUpdateRoadmapExtras() {
         onSuccess: (data, variables) => {
             console.log("✅ Roadmap extras updated successfully");
 
-            // Invalidate relevant queries
+            
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.extras(variables.roadMapId, variables.nestedRoadMapItemId, variables.userId)
             });
@@ -1049,7 +1023,7 @@ export function useSubmitRoadmapQuery() {
         onSuccess: (data, variables) => {
             console.log("✅ Roadmap query submitted successfully");
 
-            // Invalidate relevant queries to refresh queries list
+            
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.detail(variables.roadmapId)
             });
@@ -1082,7 +1056,7 @@ export function useReplyRoadmapQuery() {
         onSuccess: (data, variables) => {
             console.log("✅ Roadmap query reply submitted successfully");
 
-            // Invalidate relevant queries to refresh queries list
+            
             queryClient.invalidateQueries({
                 queryKey: roadmapKeys.detail(variables.roadmapId)
             });
@@ -1099,7 +1073,6 @@ export function useReplyRoadmapQuery() {
     });
 }
 
-
 export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
     return useQuery({
         queryKey: roadmapKeys.queries(roadmapId!, userId!),
@@ -1108,7 +1081,7 @@ export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
 
             const threads = await roadmapService.getRoadmapQueries(roadmapId, userId);
 
-            // Flatten threads → single list of queries with threadId
+            
             const flat = threads.flatMap(t =>
                 t.queries.map(q => ({
                     ...q,
@@ -1122,7 +1095,7 @@ export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
         },
         enabled: !!roadmapId && !!userId,
         // Avoid hammering the backend (429/503) by not refetching on focus
-        // and by treating results as fresh briefly.
+        
         staleTime: 60000,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
@@ -1134,7 +1107,6 @@ export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000),
     });
 };
-
 
 export function useRoadmapComments(
     roadMapId?: string | string[],

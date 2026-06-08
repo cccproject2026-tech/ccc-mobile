@@ -42,7 +42,7 @@ export function ChecklistCard({
     [internalSelected, isControlled, onSelectionChange, selectable, selectedIndices]
   );
 
-  // 3–5 color palette
+  
   const theme = useMemo(
     () => ({
       outline: '#FFFFFF73',
@@ -67,7 +67,7 @@ export function ChecklistCard({
             accessibilityState={{ checked }}
             className='flex flex-row items-center'
           >
-            {/* Checkbox */}
+            {}
             <View
               style={[
                 styles.checkbox,
@@ -82,7 +82,7 @@ export function ChecklistCard({
               ) : null}
             </View>
 
-            {/* Text */}
+            {}
             <Text
               style={[
                 styles.text,

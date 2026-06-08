@@ -1,5 +1,5 @@
 import { Button } from "@/components/atom/buttons";
-// import { CheckBox } from "@/components/atom/checkBox"
+
 import { OptionsModal } from "@/components/atom/modals";
 import { RoadMapOutcomeModal } from "@/components/atom/RoadMapOutcomeModal";
 import { Tab } from "@/components/atom/tab";
@@ -70,10 +70,10 @@ export default function DetailedAssignment() {
           >
             <PastorNavigationHeader />
 
-            {/* Header Section */}
+            {}
             <Header title="Assignment" />
 
-            {/* Tabs Section */}
+            {}
             {!surveyGuideLines && (
               <View
                 style={{
@@ -96,7 +96,7 @@ export default function DetailedAssignment() {
               </View>
             )}
 
-            {/* Content Section */}
+            {}
             <View
               style={{
                 marginVertical: 10,
@@ -155,14 +155,14 @@ export default function DetailedAssignment() {
                           {data?.time}
                         </Text>
                       </View>
-                      {/* Separator */}
+                      {}
                       <View className="h-[0.5px] bg-white/30 mt-3" />
 
                       <View style={styles.sectionMargin}>
                         <Text style={styles.whiteText}>Roadmap</Text>
                       </View>
 
-                      {/* Intro Summary */}
+                      {}
                       <View style={styles.summaryContainer}>
                         <Text style={styles.whiteText}>
                           {data?.title == "Jump-start"
@@ -174,7 +174,7 @@ export default function DetailedAssignment() {
                         <Text style={styles.whiteText}>Description</Text>
                       </View>
 
-                      {/* Description List */}
+                      {}
                       <View
                         style={[
                           styles.summaryContainer,
@@ -230,9 +230,7 @@ export default function DetailedAssignment() {
                               justifyContent: "space-between",
                             }}
                           >
-                            {/* <View>
-                              <CheckBox style={{ padding: 10 }} />
-                            </View> */}
+                            {}
                             <View style={{ width: "80%" }}>
                               <Text
                                 style={[
@@ -256,7 +254,7 @@ export default function DetailedAssignment() {
                             <Text style={styles.whiteText}>Notes</Text>
                           </View>
 
-                          {/* Notes Input */}
+                          {}
                           <View className="h-32 p-2 bg-transparent border rounded-lg border-white/40">
                             <TextInput
                               placeholder="Write Your Notes here..."
@@ -324,13 +322,13 @@ export default function DetailedAssignment() {
                       >
                         <Button
                           type="cancel"
-                          // title={
-                          //   data?.signature
-                          //     ? "Signature Required here"
-                          //     : data?.survey
-                          //     ? "Take PMP Survey"
-                          //     : `${data?.title + " Completed"}`
-                          // }
+                          
+                          
+                          
+                          
+                          
+                          
+                          
                           title='Upload Strategy'
                           icon={icons.upload}
                           onPress={() =>
@@ -405,7 +403,7 @@ export default function DetailedAssignment() {
                   >
                     Assessments Guidelines
                   </Text>
-                  {/* <ListCard list={List} /> */}
+                  {}
                   <View
                     style={{
                       width: "100%",
@@ -417,10 +415,10 @@ export default function DetailedAssignment() {
                       type="cancel"
                       title={"Start Now"}
                       onPress={() =>
-                        // router.push({
-                        //   pathname: "/(pastor-tabs)/roadmap/survey",
-                        //   params: { data: JSON.stringify(data) }
-                        // })
+                        
+                        
+                        
+                        
 
                         console.log("pressed")
                       }
@@ -433,7 +431,7 @@ export default function DetailedAssignment() {
           </ScrollView>
         </SafeAreaView>
 
-        {/* Modals */}
+        {}
         <OptionsModal
           isMenuVisible={isModalVisible}
           closeMenu={() => setIsModalVisible(false)}

@@ -1,4 +1,4 @@
-// components/profile/ProfileSections.tsx
+
 import React from 'react';
 import {
     View,
@@ -15,7 +15,6 @@ import { ChurchInfo } from '@/types/profile.types';
 import { TITLE_OPTIONS } from '@/lib/profile/mock';
 import { roadmapTheme } from '@/components/ui/design-system';
 
-// ✅ FIXED: Proper interface with all required props
 interface ProfileSectionsProps {
     isEditing: boolean;
     profileData: any;
@@ -207,7 +206,7 @@ export const ChurchInfoSection = ({
                                 )}
                             </View>
 
-                            {/* Church Name */}
+                            {}
                             <View style={styles.editFieldContainer}>
                                 <Text style={styles.fieldLabel}>Church Name :</Text>
                                 <TextInput
@@ -221,7 +220,7 @@ export const ChurchInfoSection = ({
                                 />
                             </View>
 
-                            {/* Phone and Website */}
+                            {}
                             <View style={styles.row}>
                                 <View style={[styles.editFieldContainer, styles.halfInput]}>
                                     <Text style={styles.fieldLabel}>Phone :</Text>
@@ -250,7 +249,7 @@ export const ChurchInfoSection = ({
                                 </View>
                             </View>
 
-                            {/* Address */}
+                            {}
                             <View style={styles.editFieldContainer}>
                                 <Text style={styles.fieldLabel}>Address :</Text>
                                 <TextInput
@@ -264,7 +263,7 @@ export const ChurchInfoSection = ({
                                 />
                             </View>
 
-                            {/* City, State, Country */}
+                            {}
                             <View style={styles.row}>
                                 <View style={[styles.editFieldContainer, styles.halfInput]}>
                                     <Text style={styles.fieldLabel}>City :</Text>
@@ -292,7 +291,7 @@ export const ChurchInfoSection = ({
                                 </View>
                             </View>
 
-                            {/* Zip and Country */}
+                            {}
                             <View style={styles.row}>
                                 <View style={[styles.editFieldContainer, styles.halfInput]}>
                                     <Text style={styles.fieldLabel}>Zip Code :</Text>
@@ -379,7 +378,7 @@ export const OtherInfoSection = ({
             <View style={[styles.editSection, styles.lastEditSection]}>
                 <Text style={styles.sectionTitle}>Other Information</Text>
 
-                {/* Title Dropdown */}
+                {}
                 <View style={styles.editFieldContainer}>
                     <Text style={styles.fieldLabel}>Title :</Text>
                     <TouchableOpacity
@@ -410,7 +409,7 @@ export const OtherInfoSection = ({
                     )}
                 </View>
 
-                {/* Years and Conference */}
+                {}
                 <View style={styles.row}>
                     <View style={[styles.editFieldContainer, styles.halfInput]}>
                         <Text style={styles.fieldLabel}>Years in Ministry :</Text>
@@ -435,7 +434,7 @@ export const OtherInfoSection = ({
                     </View>
                 </View>
 
-                {/* Community Service Projects */}
+                {}
                 <View style={styles.editFieldContainer}>
                     <Text style={styles.fieldLabel}>Community Service Projects :</Text>
                     <TextInput
@@ -449,7 +448,7 @@ export const OtherInfoSection = ({
                     />
                 </View>
 
-                {/* Interests */}
+                {}
                 <View style={styles.editFieldContainer}>
                     <Text style={styles.fieldLabel}>Interests :</Text>
                     <TextInput
@@ -464,7 +463,7 @@ export const OtherInfoSection = ({
                     />
                 </View>
 
-                {/* Comments */}
+                {}
                 <View style={styles.editFieldContainer}>
                     <Text style={styles.fieldLabel}>Comments :</Text>
                     <TextInput

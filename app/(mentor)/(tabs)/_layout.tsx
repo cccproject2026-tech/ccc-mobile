@@ -138,7 +138,7 @@ export default function MentorTabLayout() {
                         },
                     }}
                 >
-                    {/* VISIBLE TABS */}
+                    {}
                     <Tabs.Screen
                         name="mentee-progress"
                         options={{
@@ -167,7 +167,7 @@ export default function MentorTabLayout() {
                         }}
                     />
 
-                    {/* HIDDEN ROUTES - Profile sub-routes */}
+                    {}
                     <Tabs.Screen name="profile/my-profile" options={{ href: null }} />
                     <Tabs.Screen name="profile/certificate" options={{ href: null }} />
                     <Tabs.Screen name="profile/grant" options={{ href: null }} />
@@ -178,7 +178,7 @@ export default function MentorTabLayout() {
                     <Tabs.Screen name="profile/new-note" options={{ href: null }} />
                     <Tabs.Screen name="profile/note-detail" options={{ href: null }} />
 
-                    {/* HIDDEN ROUTES - Parallel route group segments (auto-generated from folder name) */}
+                    {}
                     <Tabs.Screen name="(index)" options={{ href: null }} />
                     <Tabs.Screen name="(roadmap)" options={{ href: null }} />
                     <Tabs.Screen name="(assessments)" options={{ href: null }} />
@@ -186,12 +186,12 @@ export default function MentorTabLayout() {
                     <Tabs.Screen name="(progress)" options={{ href: null }} />
                     <Tabs.Screen name="(mentees)" options={{ href: null }} />
 
-                    {/* HIDDEN ROUTES - Other screens at tabs root */}
+                    {}
                     <Tabs.Screen name="notifications" options={{ href: null }} />
                     <Tabs.Screen name="my-mentors" options={{ href: null }} />
                     <Tabs.Screen name="mentees" options={{ href: null }} />
                     <Tabs.Screen name="discover" options={{ href: null }} />
-                    {/* sessions/* are stack-only (no tab bar); opened via dashboard / links */}
+                    {}
                     <Tabs.Screen name="sessions/index" options={{ href: null }} />
                     <Tabs.Screen name="sessions/[id]" options={{ href: null }} />
                     <Tabs.Screen name="sessions/insights" options={{ href: null }} />

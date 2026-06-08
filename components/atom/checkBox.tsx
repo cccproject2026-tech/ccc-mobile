@@ -22,7 +22,7 @@ const CheckBox: React.FC<CheckBoxProps> = ({ type, value, setValue }) => {
         onPress={() => setValue(!value)}
       >
         {value ? (
-          // <RemixIcon name="check-fill" color="#FFFFFFFF"></RemixIcon>
+          
           <></>
         ) : null}
       </TouchableOpacity>

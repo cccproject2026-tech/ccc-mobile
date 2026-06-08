@@ -39,9 +39,9 @@ export default function CreateRoadmapScreen() {
     const phaseLoopTotal = params.phaseLoopTotal ? parseInt(params.phaseLoopTotal as string, 10) : undefined;
     const isTaskFlow = isNestedRoadmap || isNestedEdit || phaseLoopActive;
 
-    // Fetch roadmap data if in edit mode
+    
     // For nested edit, we fetch the parent to get phase context and nested roadmap data
-    // For regular edit, we fetch the roadmap directly
+    
     const roadmapQuery = useRoadmap(
         isEditMode && roadmapId ? roadmapId : undefined
     );
@@ -241,7 +241,7 @@ export default function CreateRoadmapScreen() {
     }, [availableDivisions, formData.selectedDivision]);
 
     useEffect(() => {
-        // Load current roadmap data if in phase flow
+        
         if (isPhaseFlow && state.currentRoadmap) {
             setFormData({
                 name: state.currentRoadmap.name,
@@ -254,10 +254,10 @@ export default function CreateRoadmapScreen() {
     }, [isPhaseFlow, state.currentRoadmap, availableDivisions]);
 
     useEffect(() => {
-        // Pre-fill form data when in edit mode
+        
         if (isEditMode) {
             if (isNestedEdit && editingNestedRoadmap) {
-                // Editing a nested roadmap within a phase
+                
                 setFormData({
                     name: editingNestedRoadmap.name,
                     subheading: editingNestedRoadmap.roadMapDetails || editingNestedRoadmap.description || '',
@@ -266,7 +266,7 @@ export default function CreateRoadmapScreen() {
                     selectedDivision: editingNestedRoadmap.phase || availableDivisions[0] || 'Church'
                 });
             } else if (editRoadmapData && !isNestedEdit) {
-                // Edit main/single roadmap
+                
                 setFormData({
                     name: editRoadmapData.name,
                     subheading: editRoadmapData.roadMapDetails || editRoadmapData.description || '',
@@ -286,7 +286,7 @@ export default function CreateRoadmapScreen() {
             style={[styles.container, { paddingBottom: bottom }]}
         >
             <View style={styles.content}>
-                {/* Header */}
+                {}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -314,7 +314,7 @@ export default function CreateRoadmapScreen() {
                     </View>
                 ) : (
                     <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                        {/* Banner Section - Show Phase Context Banner for Phase Flow */}
+                        {}
                         {isPhaseFlow && state.phaseDetails && (
                             <View style={styles.phaseBannerSection}>
                                 <View style={styles.phaseBannerContainer}>
@@ -340,7 +340,7 @@ export default function CreateRoadmapScreen() {
                             </View>
                         )}
 
-                        {/* Banner Section - Show for Edit Mode */}
+                        {}
                         {isEditMode && editRoadmapData && (
                             <View style={styles.bannerSection}>
                                 <View style={styles.bannerImageContainer}>
@@ -366,9 +366,9 @@ export default function CreateRoadmapScreen() {
                             </View>
                         )}
 
-                    {/* Form Fields */}
+                    {}
                     <View style={styles.formContainer}>
-                        {/* Name */}
+                        {}
                         <View style={styles.fieldContainer}>
                             <Text style={styles.fieldLabel}>
                                 {isTaskFlow ? 'Task Name' : 'Roadmap Name'}
@@ -382,7 +382,7 @@ export default function CreateRoadmapScreen() {
                             />
                         </View>
 
-                        {/* Subheading/Description */}
+                        {}
                         <View style={styles.fieldContainer}>
                             <Text style={styles.fieldLabel}>
                                 {isTaskFlow ? 'Task Description' : 'Roadmap Subheading'}
@@ -399,7 +399,7 @@ export default function CreateRoadmapScreen() {
                             />
                         </View>
 
-                        {/* Duration/Completion Time */}
+                        {}
                         <View style={styles.fieldContainer}>
                             <Text style={styles.fieldLabel}>
                                 {isTaskFlow ? 'Duration' : 'Completion Time for the Roadmap'}
@@ -413,7 +413,7 @@ export default function CreateRoadmapScreen() {
                             />
                         </View>
 
-                        {/* Division Selection - Only show for non-task roadmaps */}
+                        {}
                         {!isTaskFlow && (
                             <View style={styles.fieldContainer}>
                                 <Text style={styles.fieldLabel}>
@@ -421,7 +421,7 @@ export default function CreateRoadmapScreen() {
                                 </Text>
                                 <View style={styles.radioContainer}>
                                     {availableDivisions.map((division) => {
-                                        // Capitalize first letter of each word for display
+                                        
                                         const displayName = division
                                             .split(' ')
                                             .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -446,7 +446,7 @@ export default function CreateRoadmapScreen() {
                             </View>
                         )}
 
-                        {/* Banner Image Section */}
+                        {}
                         <View style={styles.fieldContainer}>
                             <Text style={styles.fieldLabel}>Banner Image for the Roadmap</Text>
                             {formData.bannerImage ? (

@@ -107,7 +107,7 @@ export default function MenteesLocation() {
                 <TopBar notifications={3} showUserName={true} showNotifications={true} />
 
                 <View className="flex-1 pt-6">
-                    {/* Header */}
+                    {}
                     <View className="flex-row items-center justify-between px-4 pb-3 mb-4 border-b border-white/30">
                         <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
                             <Ionicons name="chevron-back" size={28} color="#fff" />
@@ -127,12 +127,12 @@ export default function MenteesLocation() {
                         </View>
                     </View>
 
-                    {/* Search Bar */}
+                    {}
                     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
                         <SearchBar value={search} onChangeValue={setSearch} />
                     </View>
 
-                    {/* Profile Swiper */}
+                    {}
                     <View
                         className="mb-4"
                         style={{
@@ -143,7 +143,7 @@ export default function MenteesLocation() {
                         <MentorProfileSwiper />
                     </View>
 
-                    {/* Map View */}
+                    {}
                     <View style={styles.mapContainer}>
                         <MapView
                             provider={PROVIDER_DEFAULT}
@@ -180,7 +180,7 @@ export default function MenteesLocation() {
                             ))}
                         </MapView>
 
-                        {/* Fullscreen Button */}
+                        {}
                         <TouchableOpacity style={styles.fullscreenButton}>
                             <Ionicons name="expand-outline" size={24} color="#1A5B77" />
                         </TouchableOpacity>

@@ -136,7 +136,7 @@ export default function MenteesLocation() {
                         <MentorProfileSwiper />
                     </View>
 
-                    {/* Map View */}
+                    {}
                     <View style={styles.mapContainer}>
                         <MapView
                             provider={PROVIDER_DEFAULT}

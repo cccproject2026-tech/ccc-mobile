@@ -14,9 +14,9 @@ import {
 const meetingModes: AppointmentPlatform[] = [
   "zoom",
   "google_meet",
-  // 'teams',
-  // 'phone',
-  // 'in_person',
+  
+  
+  
 ];
 export interface ResheduleMeetingModal {
   isModalVisible: boolean;
@@ -33,7 +33,7 @@ export const AssessmentResheduleMeetingModal = ({
   const [selectedAppointmentForMode, setSelectedAppointmentForMode] =
     React.useState<Appointment | null>(null);
 
-  // Get mode label
+  
   const getModeLabel = useCallback((mode: AppointmentPlatform): string => {
     const labels: Record<AppointmentPlatform, string> = {
       zoom: "Zoom",
@@ -54,8 +54,8 @@ export const AssessmentResheduleMeetingModal = ({
         payload: { platform: selectedMode },
       });
       setVisisible(false);
-      //setModeSuccessText(`Meeting Mode has been\nChanged to ${getModeLabel(selectedMode)}`);
-      //setShowModeSuccess(true);
+      
+      
       setSelectedAppointmentForMode(null);
     } catch (error) {
       Alert.alert("Error", "Failed to change meeting mode");
@@ -111,7 +111,7 @@ export const AssessmentResheduleMeetingModal = ({
             <Pressable
               onPress={() => {
                 setVisisible(false);
-                //setSelectedItem(item);
+                
               }}
               style={{ marginLeft: 8 }}
               disabled={isUpdating}

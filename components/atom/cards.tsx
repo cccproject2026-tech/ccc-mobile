@@ -21,10 +21,9 @@ import CheckBox from "./checkBox";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Dynamic responsive calculations
-const getResponsiveCardPadding = () => SCREEN_WIDTH * 0.03; // 3% of screen width
-const getResponsiveIconSize = () => Math.max(16, SCREEN_WIDTH * 0.055); // Min 16px, max ~5.5% of width
-const getResponsiveFontSize = (baseSize: number) => Math.max(10, SCREEN_WIDTH * (baseSize / 375)); // Base on 375px width
+const getResponsiveCardPadding = () => SCREEN_WIDTH * 0.03;
+const getResponsiveIconSize = () => Math.max(16, SCREEN_WIDTH * 0.055);
+const getResponsiveFontSize = (baseSize: number) => Math.max(10, SCREEN_WIDTH * (baseSize / 375));
 const getResponsiveSpacing = (baseSpacing: number) => SCREEN_WIDTH * (baseSpacing / 375);
 
 export const AppointmentCard = ({
@@ -538,7 +537,7 @@ export const RoadMapCard = ({
   data: any;
   dataKey: string;
 }) => {
-  // Dynamic styles based on screen width
+  
   const dynamicStyles = {
     cardPadding: getResponsiveCardPadding(),
     iconSize: getResponsiveIconSize(),
@@ -710,16 +709,16 @@ export const DetailedMentorCard = ({
         position: "relative",
       }}
     >
-      {/* Three dot menu - top right */}
+      {}
       <View style={{ position: "absolute", top: 16, right: 16, zIndex: 1 }}>
         <TouchableOpacity onPress={onMenuPress}>
           <Image source={icons.menuVertical} style={styles.MentorIcon} />
         </TouchableOpacity>
       </View>
 
-      {/* Main content */}
+      {}
       <View style={{ flexDirection: "row" }}>
-        {/* Profile Image */}
+        {}
         <View style={{ marginRight: 16, width: "35%" }}>
           <Image
             source={icons.dummyUser}
@@ -761,7 +760,7 @@ export const DetailedMentorCard = ({
           </View>
         </View>
 
-        {/* Text content */}
+        {}
         <View style={{ flex: 1, paddingRight: 20 }}>
           <Text
             style={{
@@ -822,7 +821,7 @@ export const CommentsCard = ({
                 : icons.profile2
           }
           style={{ width: 60, height: 60, borderRadius: 999999 }}
-        // resizeMode={"contain"}
+        
         />
       </View>
       <View style={styles.appointmentDetails}>
@@ -969,14 +968,14 @@ export const ListCard = ({
       <View
         style={{
           width: "100%",
-          // padding: 10,
+          
           borderRadius: 14,
-          // shadowColor: "#000",
-          // shadowOffset: { width: 0, height: 2 },
+          
+          
         }}
       >
         {/* <View style={[styles.modalContainer,{...{height:600}}]}> */}
-        {/* <ScrollView> */}
+        {}
         <View
           style={{
             width: "100%",
@@ -989,13 +988,13 @@ export const ListCard = ({
             style={{
               width: "100%",
               flex: 1,
-              // paddingHorizontal:10,
+              
               flexDirection: "column",
-              // backgroundColor: "#161b5f", // Same as parent's background
+              
               borderRadius: 8,
-              // paddingHorizontal: 20,
+              
               paddingVertical: 8,
-              // gap: 20,
+              
               borderWidth: 1,
               borderColor: "white",
             }}
@@ -1060,8 +1059,8 @@ export const ListCard = ({
             ))}
           </View>
         </View>
-        {/* </ScrollView> */}
-        {/* </View> */}
+        {}
+        {}
       </View>
     </View>
   );
@@ -1171,7 +1170,6 @@ export const InputCard = ({
     </View>
   );
 };
-
 
 export const AssessmentCard = ({
   data,
@@ -1482,7 +1480,7 @@ export const ProgressCard = ({
 
   const handlePress = () => {
     if (isMentorView) {
-      // Navigate to Mentor Detail Screen
+      
       navigation.push({
         pathname: "/(mentor)/roadmap/[phaseId]/[itemId]",
         params: { 
@@ -1493,7 +1491,7 @@ export const ProgressCard = ({
         },
       });
     } else {
-      // Standard Pastor logic
+      
       data.subPhase
         ? navigation.push({
           pathname: "/(pastor-tabs)/roadmap/sub-phases",
@@ -1697,18 +1695,18 @@ export const ProgressCard = ({
 };
 
 const styles = StyleSheet.create({
-  // Appointment Card Styling
+  
 
   appointmentBox: {
     width: "100%",
-    backgroundColor: "#14517d", // customBlueOne
+    backgroundColor: "#14517d",
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
+    borderColor: "rgba(255, 255, 255, 0.8)",
     marginBottom: 16,
   },
   appointmentImage: {
@@ -1728,7 +1726,7 @@ const styles = StyleSheet.create({
     fontFamily: "AlbertSans-Medium",
   },
   timeText: {
-    color: "#FFC107", // customYellow
+    color: "#FFC107",
     fontFamily: "AlbertSans-Medium",
     marginHorizontal: 4,
   },
@@ -1763,12 +1761,12 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     marginHorizontal: 16,
     marginTop: 32,
   },
 
-  // RoadMap Card Styling
+  
 
   roadmapItem: {
     backgroundColor: "#124b74",
@@ -1777,8 +1775,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.8)", // customWhiteEighty
-    minHeight: Math.max(50, SCREEN_WIDTH * 0.15), // Dynamic minimum height
+    borderColor: "rgba(255, 255, 255, 0.8)",
+    minHeight: Math.max(50, SCREEN_WIDTH * 0.15),
   },
   leftContent: {
     flexDirection: "row",
@@ -1795,22 +1793,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flexShrink: 0,
-    maxWidth: SCREEN_WIDTH * 0.35, // Limit right content to 35% of screen
+    maxWidth: SCREEN_WIDTH * 0.35,
   },
   roadmapText: {
-    color: "#FFFFFF", // white
+    color: "#FFFFFF",
     fontFamily: "AlbertMedium",
     lineHeight: 18,
     marginVertical: 1,
   },
   statusText: {
-    color: "#FFD700", // customYellow
+    color: "#FFD700",
     fontFamily: "AlbertMedium",
     fontSize: 14,
     padding: 8,
   },
   statusTextWhite: {
-    color: "#FFFFFF", // white
+    color: "#FFFFFF",
     fontFamily: "AlbertMedium",
     fontSize: getFontSize(isSmallDevice ? 10 : 12),
     paddingHorizontal: getSpacing(isSmallDevice ? 4 : 8),
@@ -1824,40 +1822,40 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 0.5,
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // customWhiteTwenty
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     marginHorizontal: 16,
     marginTop: 32,
   },
 
-  // Card Box styling
+  
 
   gradientContainer: {
     height: 100,
     marginBottom: 15,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16, // rounded-xl
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#FFFFFF", // white
+    borderColor: "#FFFFFF",
     padding: 10,
-    // width: "50%",
+    
   },
   icon: {
     width: 28,
     height: 28,
   },
 
-  //   Mentor Card Styling
+  
 
   mentorCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#1A4882", // bg-customBlueFour
-    paddingVertical: 12, // py-2
-    borderRadius: 8, // rounded-lg
-    borderWidth: 1, // border
-    borderColor: "rgba(255, 255, 255, 0.8)", // border-customWhiteEighty
+    backgroundColor: "#1A4882",
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.8)",
   },
   mentorDetails: {
     flexDirection: "row",
@@ -1867,26 +1865,26 @@ const styles = StyleSheet.create({
   mentorImage: {
     width: 20,
     height: 20,
-    borderRadius: 10, // rounded-md
-    marginHorizontal: 8, // mx-2
+    borderRadius: 10,
+    marginHorizontal: 8,
   },
   mentorText: {
-    color: "#FFFFFF", // text-white
-    fontFamily: "AlbertMedium", // font-albertMedium
-    fontSize: 12, // text-sm
-    paddingHorizontal: 4, // px-1
+    color: "#FFFFFF",
+    fontFamily: "AlbertMedium",
+    fontSize: 12,
+    paddingHorizontal: 4,
   },
   mentorIconContainer: {
     flexDirection: "row",
-    gap: 14, // gap-1
-    paddingHorizontal: 8, // px-2
+    gap: 14,
+    paddingHorizontal: 8,
   },
   MentorIcon: {
     width: 18,
     height: 18,
   },
 
-  // Notification Card Styling
+  
 
   NotificationBox: {
     width: "100%",
@@ -1950,7 +1948,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
 
-  // ListCard styling
+  
 
   overlay: {
     paddingVertical: 10,
@@ -1986,8 +1984,8 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     paddingVertical: 8,
   },
-  // separator: {
-  //   borderWidth: 0.4,
-  //   marginVertical: 4,
-  // },
+  
+  
+  
+  
 });

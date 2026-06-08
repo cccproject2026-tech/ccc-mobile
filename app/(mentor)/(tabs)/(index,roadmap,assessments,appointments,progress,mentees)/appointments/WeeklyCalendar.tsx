@@ -11,7 +11,7 @@ import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface WeeklyCalendarProps {
-  selectedDate: string; // ISO format (YYYY-MM-DD)
+  selectedDate: string;
   onDateSelect: (date: string) => void;
 }
 
@@ -21,15 +21,15 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 }) => {
   const selected = new Date(selectedDate);
 
-  // Calculate the start of the week for the selected date
-  const weekStart = startOfWeek(selected, { weekStartsOn: 0 }); // Sunday start
+  
+  const weekStart = startOfWeek(selected, { weekStartsOn: 0 });
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }).map((_, i) => {
       const date = addDays(weekStart, i);
       return {
         date,
-        dayName: format(date, "EEEEEE").toUpperCase(), // S M T W T F S
+        dayName: format(date, "EEEEEE").toUpperCase(),
         dayNumber: format(date, "d"),
         isSelected: isSameDay(date, selected),
         dateStr: format(date, "yyyy-MM-dd"),
@@ -96,14 +96,14 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           </Pressable>
         ))}
       </View>
-      {/* </LinearGradient> */}
+      {}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    // borderRadius: 20,
+    
     marginVertical: 10,
     overflow: "hidden",
   },
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
-    // borderRadius: 20,
+    
   },
   navBar: {
     borderWidth: 1,
@@ -166,8 +166,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   selectedDateCircle: {
-    // color: '#FFFFFF',
-    // backgroundColor: '#FFFFFF',
+    
+    
   },
   dayNumber: {
     fontSize: 14,

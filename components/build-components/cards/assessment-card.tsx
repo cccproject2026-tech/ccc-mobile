@@ -56,7 +56,7 @@ export default function AssessmentCard({
   /** Mentor assessment library — hide completed/submitted date lines on template cards. */
   hideCompletionMeta?: boolean;
 }) {
-  // iOS compression factors
+  
   const fontCompress = isIOS ? 0.92 : 1;
   const spacingCompress = isIOS ? 0.85 : 1;
   const imageCompress = isIOS ? 0.92 : 1;
@@ -73,7 +73,7 @@ export default function AssessmentCard({
     });
   };
 
-  // Update appointment
+  
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
 
   const handleChooseMode = () => {
@@ -99,7 +99,7 @@ export default function AssessmentCard({
         ? "#6FD4BE"
         : "rgba(255,255,255,0.92)";
 
-  /* Change Meeting Mode Modal */
+  
   const changeMeetingMode = () => (
     <Modal
       visible={changeModeModalVisible}
@@ -228,7 +228,7 @@ export default function AssessmentCard({
 
   return (
     <View style={styles.container}>
-      {/* Three dots menu button */}
+      {}
       {user?.role !== "pastor" && onMenuPress && (
         <TouchableOpacity
           onPress={(e) => {
@@ -453,7 +453,7 @@ export default function AssessmentCard({
                   },
                 ]}
                 onPress={(event) => {
-                  // Prevent parent card press from triggering.
+                  
               
                   event?.stopPropagation?.();
                   onCustomizedPress?.();
@@ -531,19 +531,19 @@ export default function AssessmentCard({
           cardBackground: "rgba(255, 255, 255, 0.1)",
         }}
         mode="reschedule"
-        // existingAppointment={{
-        //   //         id: string,
-        //   // userId: string,
-        //   mentorId: data.mentorId,
-        //   meetingDate: data.meetingDate, // ISO Date
-        //   // endTime: string, // ISO Date
-        //   // platform: AppointmentPlatform,
-        //   // meetingLink?: string,
-        //   // notes?: string,
-        //   // status: AppointmentStatus,
-        //   // createdAt?: string,
-        //   // updatedAt?: string,
-        // }}
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
       />
     </View>
   );
@@ -716,5 +716,5 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: 2,
   },
-  // (legacy styles kept in file previously; no longer used by this component)
+  
 });

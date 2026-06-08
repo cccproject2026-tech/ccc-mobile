@@ -55,7 +55,6 @@ export default function VerifyEmailScreen() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isOtpVerified, setIsOtpVerified] = useState(false);
 
-
     const userEmail = interestEmail || email || interestData?.email || '';
     const isLoading = isSending || isVerifying || isSettingPassword;
 
@@ -244,7 +243,7 @@ export default function VerifyEmailScreen() {
                                     Please enter it to verify your Email ID.
                                 </Text>
 
-                                {/* NEW OTP INPUT USING react-native-otp-entry */}
+                                {}
                                 <OtpInput
                                     numberOfDigits={6}
                                     onTextChange={(value) => setOtp(value.split(""))}
@@ -289,7 +288,6 @@ export default function VerifyEmailScreen() {
                                 </TouchableOpacity>
                             </>
                         )}
-
 
                         {step === 3 && isOtpVerified && (
                             <>

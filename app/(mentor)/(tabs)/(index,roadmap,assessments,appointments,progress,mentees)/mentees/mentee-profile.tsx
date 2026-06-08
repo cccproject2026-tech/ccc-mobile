@@ -23,10 +23,10 @@ export default function MenteeProfileScreen() {
   const { menteeId, email: emailParam } = useLocalSearchParams<{ menteeId?: string; email?: string }>()
   const { user } = useAuthStore()
 
-  // Get assigned mentees list to look up email if needed
+  
   const { data: menteesData } = useMentees(10, user?.id)
   console.log(menteesData, "menteesData");
-  // Get email from param or look it up from menteeId
+  
   const email = useMemo(() => {
     if (emailParam) return emailParam
     if (menteeId) {
@@ -39,7 +39,7 @@ export default function MenteeProfileScreen() {
     return undefined
   }, [emailParam, menteeId, menteesData])
   console.log(email, "email", menteeId, "menteeId");
-  // Fetch mentee data by email
+  
   const { data: menteeData, isLoading, isError } = useMenteeByEmail(email)
   console.log(menteeData, "menteeData");
   console.log(email, "email", menteeId, "menteeId");
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 
-  // Loading / error states
+  
   centerState: {
     flex: 1,
     alignItems: "center",
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   ghostBtnText: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
   pressed: { opacity: 0.88 },
 
-  // Profile header card
+  
   profileCard: { padding: 16 },
   profileHeader: { flexDirection: "row", alignItems: "center", gap: 14 },
   avatarRing: {
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
 
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: roadmapTheme.divider, marginVertical: 14 },
 
-  // Progress
+  
   progressSection: { gap: 10 },
   progressHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   progressLabel: { color: "rgba(255,255,255,0.78)", fontSize: 13, fontWeight: "700" },
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(20,83,45,0.35)",
   },
 
-  // Sections
+  
   sectionBlock: { gap: 8 },
   sectionLabel: {
     color: "rgba(255,255,255,0.75)",

@@ -45,7 +45,7 @@ const CommentBottomSheet = forwardRef<BottomSheetModal, CommentBottomSheetProps>
         ref
     ) => {
         const { bottom } = useSafeAreaInsets();
-        const snapPoints = useMemo(() => ['75%'], []); // Increased height for comments
+        const snapPoints = useMemo(() => ['75%'], []);
         const [comment, setComment] = useState('');
         const [showInput, setShowInput] = useState(false);
 
@@ -56,7 +56,7 @@ const CommentBottomSheet = forwardRef<BottomSheetModal, CommentBottomSheetProps>
                 setShowInput(true);
             } else {
                 setComment('');
-                setShowInput(comments.length === 0); // Show input if no comments
+                setShowInput(comments.length === 0);
             }
         }, [editingCommentId, comments]);
 
@@ -192,7 +192,7 @@ const CommentBottomSheet = forwardRef<BottomSheetModal, CommentBottomSheetProps>
                                 <>
                                     <Pressable
                                         onPress={() => {
-                                            // setShowInput(false);
+                                            
                                             setComment('');
                                             if (editingCommentId) {
                                                 onClose();
@@ -313,23 +313,23 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
 
-    // 1. Primary Card Container
+    
     commentCard: {
         backgroundColor: 'rgba(42, 70, 135, 0.6)',
         borderRadius: 16,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.25)',
-        padding: 24, // Main padding for content
-        paddingBottom: 20, // Slightly less padding at the bottom for better flow
+        padding: 24,
+        paddingBottom: 20,
         marginBottom: 20,
     },
 
-    // 2. Top Row for Edit Button
+    
     editRow: {
-        // Aligns the edit button to the right
+        
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        // Matches the spacing from the image
+        
         marginBottom: 24,
     },
 
@@ -350,25 +350,25 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 
-    // 3. Comment Text
+    
     commentText: {
         color: '#FFFFFF',
         fontSize: 16,
         lineHeight: 26,
-        // Separates text from the author row below
+        
         marginBottom: 28,
     },
 
-    // 4. Author Row
+    
     authorRow: {
-        // Aligns the entire author container to the right
+        
         flexDirection: 'row',
         justifyContent: 'flex-end',
         alignItems: 'center',
         gap: 12,
     },
 
-    // The following styles are used by authorRow children:
+    
     divider: {
         width: 10,
         height: 2,
@@ -406,8 +406,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         gap: 12,
         marginTop: 8,
-        // maxWidth: "90%",
-        // alignSelf: 'center',
+        
+        
     },
     cancelButton: {
         flex: 1,
@@ -453,7 +453,5 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 });
-
-
 
 export default CommentBottomSheet;

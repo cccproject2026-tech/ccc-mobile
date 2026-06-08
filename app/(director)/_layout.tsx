@@ -5,7 +5,6 @@ import { Drawer } from 'expo-router/drawer';
 import React from 'react';
 import { Platform } from 'react-native';
 
-
 export default function DirectorDrawerLayout() {
     return (
         <PhaseCreationProvider>

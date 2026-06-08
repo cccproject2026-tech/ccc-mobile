@@ -146,7 +146,7 @@ export default function DocumentsScreen() {
                 showBackButton={false}
             />
 
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => router.push('/(director)/(tabs)/profile')} style={styles.backButton}>
@@ -164,7 +164,7 @@ export default function DocumentsScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Tabs */}
+            {}
             <View style={styles.tabContainer}>
                 <Pressable
                     style={[
@@ -200,7 +200,7 @@ export default function DocumentsScreen() {
                 </Pressable>
             </View>
 
-            {/* Documents List */}
+            {}
             {
                 activeTab === 'myDocuments' ? (
                     <FlatList

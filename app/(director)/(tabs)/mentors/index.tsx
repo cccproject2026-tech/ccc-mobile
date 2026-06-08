@@ -20,7 +20,6 @@ import { Dimensions, FlatList, Pressable, StyleSheet, Text, TouchableOpacity, Vi
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
-
 export const mockMentors: MentorData[] = [
     {
         id: '1',
@@ -96,9 +95,6 @@ export const mockMentors: MentorData[] = [
     },
 ];
 
-
-
-
 export default function Mentors() {
     const router = useRouter();
     const [search, setSearch] = useState('');
@@ -109,7 +105,7 @@ export default function Mentors() {
     const [selectedMentor, setSelectedMentor] = useState<MentorData | null>(null);
     const { bottom } = useSafeAreaInsets();
 
-    // Memoize screen dimensions to avoid recalculation
+    
     const screenDimensions = useMemo(() => Dimensions.get('window'), []);
 
     const menuItemsMentor = [
@@ -301,7 +297,7 @@ export default function Mentors() {
                     filterOptions={filterOptions}
                 />
 
-                {/* Bottom Sheet Modal - Outside ScrollView */}
+                {}
                 {selectedMentor && (
                     <ActionBottomSheet
                         ref={bottomSheetModalRef}

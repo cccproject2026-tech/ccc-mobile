@@ -95,16 +95,16 @@ export default function LoginFormScreen() {
                 >
                  
 
-                    {/* Heading */}
+                    {}
                     <View style={styles.headingBlock}>
                         <Text style={styles.headingTitle}>Welcome back</Text>
                         <Text style={styles.headingSubtitle}>Log in to continue your journey.</Text>
                     </View>
 
-                    {/* Form */}
+                    {}
                     <View style={styles.form}>
 
-                        {/* Email */}
+                        {}
                         <View style={styles.fieldWrap}>
                             <Text style={styles.fieldLabel}>Email or Username</Text>
                             <View style={styles.inputRow}>
@@ -124,7 +124,7 @@ export default function LoginFormScreen() {
                             </View>
                         </View>
 
-                        {/* Password */}
+                        {}
                         <View style={styles.fieldWrap}>
                             <View style={styles.fieldLabelRow}>
                                 <Text style={styles.fieldLabel}>Password</Text>
@@ -153,7 +153,7 @@ export default function LoginFormScreen() {
                             </View>
                         </View>
 
-                        {/* Error */}
+                        {}
                         {loginErrorMessage && (
                             <View style={styles.errorBox}>
                                 <Ionicons name="alert-circle" size={16} color="#FCA5A5" />
@@ -161,7 +161,7 @@ export default function LoginFormScreen() {
                             </View>
                         )}
 
-                        {/* Login button */}
+                        {}
                         <TouchableOpacity
                             style={[styles.loginBtn, isLoading && styles.loginBtnDisabled]}
                             onPress={handleLogin}
@@ -181,14 +181,14 @@ export default function LoginFormScreen() {
 
                     </View>
 
-                    {/* Divider */}
+                    {}
                     <View style={styles.orRow}>
                         <View style={styles.orLine} />
                         <Text style={styles.orText}>New here?</Text>
                         <View style={styles.orLine} />
                     </View>
 
-                    {/* Submit Interest */}
+                    {}
                     <View style={styles.interestWrap}>
                         <TouchableOpacity style={styles.interestBtn} onPress={handleNewUser} disabled={isLoading} activeOpacity={0.85}>
                             <Text style={styles.interestBtnText}>Submit Interest</Text>
@@ -199,7 +199,7 @@ export default function LoginFormScreen() {
                         </Text>
                     </View>
 
-                    {/* University logo */}
+                    
                     <View style={styles.universityWrap}>
                         <Image source={icons.universityIcon} style={styles.universityLogo} resizeMode="contain" />
                     </View>
@@ -214,7 +214,6 @@ const styles = StyleSheet.create({
     gradient: { flex: 1 },
     scroll:   { flexGrow: 1, paddingHorizontal: 24 },
 
-    // Logo card
     logoCard: {
         backgroundColor: "#fff",
         borderRadius: 12,
@@ -233,15 +232,12 @@ const styles = StyleSheet.create({
     },
     logo: { width: "100%", height: 72 },
 
-    // Heading
     headingBlock: { marginBottom: 18, gap: 5, marginTop: 100 },
     headingTitle:    { fontSize: 22, fontWeight: "700", color: "#fff",                   letterSpacing: -0.3 },
     headingSubtitle: { fontSize: 13, fontWeight: "400", color: "rgba(255,255,255,0.5)" },
 
-    // Form
     form: { gap: 14, marginBottom: 18 },
 
-    // Field
     fieldWrap:     { gap: 6 },
     fieldLabelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     fieldLabel:    { color: "rgba(255,255,255,0.65)", fontSize: 12, fontWeight: "600", letterSpacing: 0.3 },
@@ -265,7 +261,6 @@ const styles = StyleSheet.create({
     },
     eyeBtn: { paddingLeft: 10, paddingVertical: 14 },
 
-    // Error
     errorBox: {
         flexDirection: "row",
         alignItems: "center",
@@ -279,7 +274,6 @@ const styles = StyleSheet.create({
     },
     errorText: { color: "#FCA5A5", fontSize: 13, fontWeight: "500", flex: 1, lineHeight: 18 },
 
-    // Login button
     loginBtn: {
         flexDirection: "row",
         alignItems: "center",
@@ -299,12 +293,10 @@ const styles = StyleSheet.create({
     loginBtnText:  { color: accent.tealDeep, fontSize: 16, fontWeight: "700" },
     loginBtnArrow: { width: 30, height: 30, borderRadius: 15, backgroundColor: "rgba(232, 200, 138, 0.35)", alignItems: "center", justifyContent: "center" },
 
-    // OR divider
     orRow:  { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
     orLine: { flex: 1, height: 1, backgroundColor: "rgba(111, 212, 190, 0.22)" },
     orText: { color: "rgba(232, 200, 138, 0.95)", fontSize: 12, fontWeight: "600" },
 
-    // Submit interest
     interestWrap: { gap: 9, marginBottom: 28 },
     interestBtn: {
         flexDirection: "row",
@@ -320,7 +312,6 @@ const styles = StyleSheet.create({
     interestBtnText: { color: "#fff", fontSize: 15, fontWeight: "600" },
     interestHint:    { color: "rgba(255,255,255,0.35)", fontSize: 11, lineHeight: 17, textAlign: "center" },
 
-    // University
     universityWrap: { alignItems: "center", marginBottom: 6 },
     universityLogo: { width: 200, height: 44, opacity: 0.65 },
 });

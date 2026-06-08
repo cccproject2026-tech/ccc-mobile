@@ -256,7 +256,7 @@ export const useMentorFocusItems = () => {
     retry: 2,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      // 1) Pastor queries
+      
       const pastorQueryTemp: { item: PastorFocusItem; sortAtMs: number }[] = [];
       const seenQueryIds = new Set<string>();
       const samplePastors: string[] = [];
@@ -367,7 +367,7 @@ export const useMentorFocusItems = () => {
         MAX_ITEMS_PER_SECTION,
       );
 
-      // 2) Survey submissions (pastor -> mentor review)
+      
       const surveySubmissionTemp: { item: PastorFocusItem; sortAtMs: number }[] = [];
       const seenSubmissionKeys = new Set<string>();
 
@@ -432,7 +432,7 @@ export const useMentorFocusItems = () => {
         }
       });
 
-      // Time order: oldest first (more urgent items first).
+      
       surveySubmissionTemp.sort((a, b) => a.sortAtMs - b.sortAtMs);
       const surveySubmissions = clampByLimit(
         surveySubmissionTemp.map((x) => x.item),

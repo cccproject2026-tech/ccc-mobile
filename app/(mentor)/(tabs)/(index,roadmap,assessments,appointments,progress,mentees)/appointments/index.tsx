@@ -78,15 +78,15 @@ const Appointments: React.FC = () => {
   });
   const { bottom } = useSafeAreaInsets();
 
-  // Bottom sheet ref
+  
   const scheduleMeetingBottomSheetRef = React.useRef<BottomSheetModal>(null);
   const [rescheduleData, setRescheduleData] = React.useState<any>(null);
   const { openSheet, assessmentId } = useLocalSearchParams();
 
-  // Get current user
+  
   const { user } = useAuthStore();
 
-  // Fetch appointments for mentor
+  
   const {
     appointments,
     isLoading: isLoadingAppointments,
@@ -101,7 +101,7 @@ const Appointments: React.FC = () => {
     isPending: isCancelling,
   } = useCancelAppointment();
 
-  // Fetch only mentees assigned to this mentor
+  
   const {
     data: menteesData,
     fetchNextPage,
@@ -109,12 +109,12 @@ const Appointments: React.FC = () => {
     isFetchingNextPage,
   } = useMentees(10, user?.id);
 
-  // Flatten paginated mentees data
+  
   const allMentees = useMemo(() => {
     return menteesData?.pages.flatMap((page) => page.mentees) || [];
   }, [menteesData]);
 
-  // Format mentors from mentees data
+  
   const mentors: Partial<Mentor>[] = useMemo(() => {
     return allMentees.map((mentee) => ({
       id: mentee.id,
@@ -131,7 +131,7 @@ const Appointments: React.FC = () => {
     if (openSheet === "true" && scheduleMeetingBottomSheetRef.current) {
       setTimeout(() => {
         scheduleMeetingBottomSheetRef.current?.present();
-      }, 200); // Ensure sheet presents after mount
+      }, 200);
     }
   }, [openSheet]);
 
@@ -146,7 +146,7 @@ const Appointments: React.FC = () => {
     });
   }, [deviceTz.timeZone]);
 
-  // Helper function to get platform icon
+  
   const getPlatformIcon = React.useCallback((platform: string) => {
     switch (platform) {
       case "zoom":
@@ -160,7 +160,7 @@ const Appointments: React.FC = () => {
     }
   }, []);
 
-  // Helper function to get mode label
+  
   const getModeLabel = React.useCallback((platform: string) => {
     switch (platform) {
       case "zoom":
@@ -178,7 +178,7 @@ const Appointments: React.FC = () => {
     }
   }, []);
 
-  // Get mentee name from userId
+  
   const getMenteeName = React.useCallback(
     (userId: string) => {
       const mentee = allMentees?.find((m) => m.id === userId);
@@ -193,7 +193,7 @@ const Appointments: React.FC = () => {
     [allMentees],
   );
 
-  // Format appointments for display
+  
   const formattedAppointments = useMemo(() => {
     if (!appointments || !getAppointmentsByDate) return [];
     const dateAppointments = getAppointmentsByDate(selectedDate);
@@ -228,7 +228,7 @@ const Appointments: React.FC = () => {
         role: "Mentee",
         mode: getModeLabel(apt.platform),
         icon: getPlatformIcon(apt.platform),
-        appointment: apt, // Keep original appointment data for handlers
+        appointment: apt,
       };
     });
   }, [
@@ -291,7 +291,7 @@ const Appointments: React.FC = () => {
           role: "Mentee",
           mode: getModeLabel(apt.platform),
           icon: getPlatformIcon(apt.platform),
-          appointment: apt, // Keep original appointment data for handlers
+          appointment: apt,
         };
       }
     });
@@ -311,7 +311,7 @@ const Appointments: React.FC = () => {
 
   const handleViewDetails = (appointment: any) => {
     console.log("View details", appointment);
-    // Navigate to appointment details
+    
   };
 
   const handleReschedule = (appointment: any) => {
@@ -362,12 +362,12 @@ const Appointments: React.FC = () => {
     );
   };
 
-  // Handle new meeting button press
+  
   const handleNewMeeting = () => {
     openScheduleMeeting(router, user?.role, { mode: "schedule" });
   };
 
-  // Handle close bottom sheet
+  
   const handleCloseScheduleBottomSheet = () => {
     setRescheduleData(null);
   };
@@ -413,7 +413,7 @@ const Appointments: React.FC = () => {
             <TopBar role="mentor" showUserName />
           </View>
           <View style={{ flex: 1 }}>
-            {/* Header */}
+            {}
             <Header
               title="Schedule"
               hideSearchBar={true}
@@ -426,7 +426,7 @@ const Appointments: React.FC = () => {
               <GoogleCalendarScheduleBanner />
             </View>
 
-            {/* Tab Switcher */}
+            {}
             <View style={styles.tabContainer}>
               <Pressable
                 style={[
@@ -462,7 +462,7 @@ const Appointments: React.FC = () => {
               </Pressable>
             </View>
 
-            {/* Main content */}
+            {}
             <ScrollView
               style={{ flex: 1 }}
               contentContainerStyle={{ paddingBottom: bottom }}
@@ -471,9 +471,9 @@ const Appointments: React.FC = () => {
               <View
                 style={styles.screenContent}
               >
-                {/* Calendar */}
+                {}
                 <View style={styles.calendarContainer}>
-                  {/* Heading with Icon */}
+                  {}
                   <View style={styles.calendarHeader}>
                     <View style={styles.calendarHeaderLeft}>
                       <View style={styles.calendarIconWrap}>
@@ -515,7 +515,7 @@ const Appointments: React.FC = () => {
                   />
                 </View>
 
-                {/* Selected Date Appointments */}
+                {}
                 {selectedDateAppointments.length > 0 && (
                   <View style={styles.appointmentsContainer}>
                     <View style={styles.sectionHeader}>
@@ -613,7 +613,7 @@ const Appointments: React.FC = () => {
                   </View>
                 )}
 
-                {/* No appointments message */}
+                {}
                 {selectedDateAppointments.length === 0 && (
                   <View style={styles.appointmentsContainer}>
                     <View style={styles.sectionHeader}>
@@ -634,7 +634,7 @@ const Appointments: React.FC = () => {
                   </View>
                 )}
 
-                {/* Selected Date Appointments */}
+                {}
                 {allUpcomingAppointments?.length > 0 &&
                   allUpcomingAppointments[0] && (
                     <View style={styles.appointmentsContainer}>
@@ -739,9 +739,9 @@ const Appointments: React.FC = () => {
         </>
       </AppGradientBackground>
 
-      {/* Scheduling moved to /schedule-meeting pages */}
+      {}
 
-      {/* Change Meeting Mode Modal */}
+      {}
       <Modal
         visible={changeModeModalVisible}
         transparent
@@ -867,13 +867,13 @@ const Appointments: React.FC = () => {
           </LinearGradient>
         </View>
       </Modal>
-      {/* Success Modal for Meeting Mode Change */}
+      {}
       <SimpleSuccessModal
         visible={showModeSuccess}
         onClose={() => setShowModeSuccess(false)}
         title={modeSuccessText}
       />
-      {/* General Success Modal */}
+      {}
       <SimpleSuccessModal
         visible={responseModal.visible}
         onClose={() => setResponseModal({ ...responseModal, visible: false })}
@@ -893,7 +893,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  // Tab Container
+  
   tabContainer: {
     flexDirection: "row",
     marginHorizontal: 16,
@@ -920,7 +920,7 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: "#1E3A6F",
   },
-  // Calendar Container
+  
   calendarContainer: {
     width: "100%",
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -931,7 +931,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
 
-  // Calendar Header with Icon
+  
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -982,13 +982,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // Wrapper to control calendar height
+  
   calendarWrapper: {
-    maxHeight: 340, // Reduced from default height
+    maxHeight: 340,
     overflow: "hidden",
   },
 
-  // Appointments Container
+  
   appointmentsContainer: {
     marginTop: 14,
     position: "relative",

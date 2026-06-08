@@ -74,7 +74,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
 
-  // Fetch profile data from React Query
+  
   const { data: apiProfileData, isLoading, isError } = useProfile();
   const updateProfile = useUpdateProfile();
   const uploadProfilePicture = useUploadProfilePicture();
@@ -126,7 +126,7 @@ export default function ProfileScreen() {
     }
   }, [apiProfileData, isFormInitialized]);
 
-  // Handle image selection
+  
   const pickImage = useCallback(async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -217,7 +217,7 @@ export default function ProfileScreen() {
 
   const handleCancel = () => {
     setIsEditMode(false);
-    setIsFormInitialized(false); // Trigger re-init from api data
+    setIsFormInitialized(false);
     setSelectedImageFile(null);
   };
 
@@ -427,7 +427,7 @@ export default function ProfileScreen() {
               )}
             </CommonCard>
 
-            {/* Detailed Personal Info */}
+            {}
             <CommonCard style={styles.sectionCard}>
               <View style={styles.sectionGroup}>
                 <Text style={styles.sectionTitle}>Personal Information</Text>
@@ -484,7 +484,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.divider} />
 
-              {/* Church Information */}
+              {}
               {(() => {
                 const churches = isEditMode ? formData.churches : interest?.churchDetails;
                 const churchArray = Array.isArray(churches) ? churches : [];
@@ -613,7 +613,7 @@ export default function ProfileScreen() {
               )}
 
               <View style={styles.divider} />
-              {/* Other Information */}
+              {}
               <Text style={styles.sectionTitle}>Other Information</Text>
 
               <View style={styles.editStack}>

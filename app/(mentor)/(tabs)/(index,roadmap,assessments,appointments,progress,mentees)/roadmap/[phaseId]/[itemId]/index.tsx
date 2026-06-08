@@ -34,12 +34,12 @@ export default function ItemDetail() {
     );
     const { user } = useAuthStore();
     const isLibraryMode = isRoadmapLibraryMode(libraryMode);
-    // Library = template preview; mentee flow uses pastor progress
+    
     const targetUserId = isLibraryMode ? undefined : menteeId || user?.id;
     const headerTitle = isLibraryMode
         ? "Roadmap Library"
         : menteeName?.trim() || undefined;
-    // Fetch parent roadmap
+    
     const { data: roadmap, isLoading, error } = useRoadmap(
         phaseId,
         targetUserId,
@@ -56,7 +56,7 @@ export default function ItemDetail() {
     const [selectedOutcome, setSelectedOutcome] = useState('');
     const [activeTab, setActiveTab] = useState<'overview' | 'comments' | 'queries'>('overview');
 
-    // Find the specific nested roadmap (task)
+    
     const task = useMemo<NestedRoadmap | undefined>(
         () => resolveRoadmapDetailTask(roadmap, itemId),
         [roadmap, itemId],
@@ -68,7 +68,7 @@ export default function ItemDetail() {
         ? `Roadmap Library > ${roadmap?.name ?? ""}`
         : `My Mentee > ${menteeName ?? ""} > ${roadmap?.name ?? ""}`;
 
-    // Get phase number
+    
     const phaseNumber = useMemo(() => {
         if (!roadmap?.phase) return null;
         const match = roadmap.phase.match(/\d+/);
@@ -133,7 +133,7 @@ export default function ItemDetail() {
         return `${day} ${month} ${year}`;
     };
 
-    // Loading state
+    
     if (isLoading) {
         return (
             <AppGradientBackground style={styles.container}>
@@ -148,7 +148,7 @@ export default function ItemDetail() {
         );
     }
 
-    // Error or not found state
+    
     if (error || !roadmap || !task) {
         return (
             <AppGradientBackground style={styles.container}>
@@ -177,7 +177,7 @@ export default function ItemDetail() {
                 <TopBar role="mentor" showUserName customTitle={headerTitle} />
             </View>
 
-            {/* Header */}
+            {}
             <View style={styles.headerContainer}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity
@@ -216,7 +216,7 @@ export default function ItemDetail() {
 
             </View>
 
-            {/* Tabs — equal width pills, consistent with roadmap design system */}
+            {}
             <View style={styles.tabRow}>
                 <TouchableOpacity
                     onPress={() => setActiveTab('overview')}
@@ -343,9 +343,9 @@ export default function ItemDetail() {
                 )}
             </View>
 
-            {/* Content */}
+            {}
             <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-                {/* Cover Image */}
+                {}
                 <View style={styles.coverImageContainer}>
                     {task.imageUrl ? (
                         <Image
@@ -372,7 +372,7 @@ export default function ItemDetail() {
                     </View>
                 )}
 
-                {/* Completion Time / Status */}
+                {}
                 <View style={styles.completionBox}>
                     {task.status === 'completed' ? (
                         <View style={styles.completionContainer}>
@@ -399,7 +399,7 @@ export default function ItemDetail() {
                     </View>
                 )}
 
-                {/* Roadmap Section */}
+                {}
                 <Text style={styles.sectionTitle}>Roadmap</Text>
                 <View style={styles.sectionBox}>
                     <Text style={styles.sectionText}>
@@ -407,7 +407,7 @@ export default function ItemDetail() {
                     </Text>
                 </View>
 
-                {/* Description Section */}
+                {}
                 <Text style={styles.sectionTitle}>Description</Text>
                 <View style={styles.sectionBox}>
                     <Text style={styles.sectionText}>
@@ -425,7 +425,7 @@ export default function ItemDetail() {
                 />
             </ScrollView>
 
-            {/* Modals */}
+            {}
             <ContextMenu
                 visible={showOutcomeMenu}
                 items={outcomeMenuItems()}
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         borderWidth: .5,
         borderColor: '#FFFFFF',
-        // backgroundColor: 'rgba(64,156,186,0.5)',
+        
     },
     sectionText: { fontSize: 16, lineHeight: 22, color: '#FFFFFF' },
 });

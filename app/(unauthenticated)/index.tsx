@@ -36,7 +36,7 @@ export default function LoginScreen() {
 
     const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
-    // Check if user is pending approval
+    
     const isPending =
         interestStatus === 'pending' || interestStatus === 'new';
     const hasSubmittedApplication =
@@ -66,7 +66,7 @@ export default function LoginScreen() {
                 : '') ||
         'Pastor';
 
-    // Check approval status periodically when pending
+    
     const {
         isLoading: isCheckingStatus,
         isFetching,
@@ -90,20 +90,20 @@ export default function LoginScreen() {
         await refetch();
     }, [isPending, isFetching, refetch]);
 
-    // Navigate to login or password setup
+    
     const handleLoginClick = useCallback(() => {
         if (interestStatus === 'accepted') {
-            // User has been approved - go to set password
+            
             console.log('→ Navigating to set password');
             router.push('/(unauthenticated)/set-password');
         } else {
-            // Go to normal login
+            
             console.log('→ Navigating to login form');
             router.push('/(unauthenticated)/login-form');
         }
     }, [interestStatus]);
 
-    // Navigate to interest form
+    
     const handleInterestFormPress = useCallback(() => {
         console.log('→ Navigating to interest form');
         router.push('/(unauthenticated)/interest-form');
@@ -383,7 +383,7 @@ export default function LoginScreen() {
 
                         <View style={styles.divider} />
 
-                        {/* Contact Information */}
+                        {}
                         <View style={styles.contactCard}>
                             <Text style={styles.contactTitle}>Contact Information</Text>
                             <View style={styles.contactRow}>
@@ -407,7 +407,6 @@ export default function LoginScreen() {
         </>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: {
@@ -471,7 +470,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.12)",
     },
 
-    // Top Section
+    
     topSection: {
         position: "relative",
         marginTop: 16,
@@ -502,7 +501,7 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
 
-    // Contact Card
+    
     contactCard: {
         marginTop: 16,
         backgroundColor: "rgba(255,255,255,0.08)",
@@ -538,19 +537,19 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
-    // Status Button (collapsed state)
+    
     statusButtonWrapper: {
         alignSelf: "flex-start",
-        // borderRadius: 8,
+        
         marginTop: 12,
         overflow: "hidden",
     },
     statusButtonGradient: {
-        // borderRadius: 8,
-        // padding: 2,
+        
+        
     },
     statusButtonContent: {
-        // backgroundColor: "#176192",
+        
         borderRadius: 6,
         flexDirection: "row",
         alignItems: "center",
@@ -565,7 +564,7 @@ const styles = StyleSheet.create({
         color: "#fff",
     },
 
-    // Approval Panel (expanded state)
+    
     approvalPanelExpanded: {
         flex: 1,
         backgroundColor: "rgba(255,255,255,0.1)",
@@ -593,7 +592,7 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     },
 
-    // Legacy: Waiting for Approval Badge (keeping for backward compatibility)
+    
     approvalBadgeWrapper: {
         alignSelf: "flex-end",
         marginRight: 0,
@@ -625,14 +624,14 @@ const styles = StyleSheet.create({
         color: "#fff",
     },
 
-    // Divider
+    
     divider: {
         height: 1,
         backgroundColor: "rgba(255,255,255,0.3)",
         marginVertical: 18,
     },
 
-    // Log In Button
+    
     logInButton: {
         backgroundColor: "#fff",
         borderRadius: 10,
@@ -646,13 +645,13 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 
-    // Join Program (top block before videos/contact)
+    
     joinSection: {
         marginTop: 16,
         marginBottom: 16,
     },
 
-    // Pending / Under review section (inline on this page)
+    
     bgGlowOne: {
         position: "absolute",
         top: -120,
@@ -945,7 +944,7 @@ const styles = StyleSheet.create({
         fontWeight: "500",
     },
 
-    // Action Buttons
+    
     actionButtonWrapper: {
         marginTop: 48,
         marginBottom: 24,
@@ -976,7 +975,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.3)",
     },
 
-    // Pending Message
+    
     pendingMessageContainer: {
         backgroundColor: "rgba(255,255,255,0.1)",
         borderRadius: 12,
@@ -1002,7 +1001,7 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
 
-    // Logo
+    
     logoContainer: {
         alignItems: "center",
         marginTop: 48,

@@ -8,14 +8,14 @@ export type SessionRecordingStatus =
   | "FAILED";
 
 export interface CreateAppointmentPayload {
-    userId: string; // MongoId - REQUIRED
-    mentorId: string; // MongoId - REQUIRED
-    meetingDate: string; // ISO Date - REQUIRED
-    platform: AppointmentPlatform; // REQUIRED
-    meetingLink?: string; // OPTIONAL
-    notes?: string; // OPTIONAL
-    sessionMode?: SessionMode; // OPTIONAL (defaults to ONLINE on older flows)
-    meetingLocation?: string; // OPTIONAL (in-person location)
+    userId: string;
+    mentorId: string;
+    meetingDate: string;
+    platform: AppointmentPlatform;
+    meetingLink?: string;
+    notes?: string;
+    sessionMode?: SessionMode;
+    meetingLocation?: string;
     /** Host-initiated flow role (mentor, director, pastor, …). */
     initiatorRole?: string;
     /**
@@ -38,8 +38,8 @@ export interface Appointment {
     id: string;
     userId: string;
     mentorId: string;
-    meetingDate: string; // ISO Date
-    endTime: string; // ISO Date
+    meetingDate: string;
+    endTime: string;
     platform: AppointmentPlatform;
     meetingLink?: string;
     /** Present when backend creates a Zoom meeting; join URL may appear here if meetingLink is empty. */
@@ -96,7 +96,6 @@ export interface AppointmentFilter {
     endDate?: string;
 }
 
-
 export interface TimeSlot {
     startTime: string;
     startPeriod: 'AM' | 'PM';
@@ -106,14 +105,14 @@ export interface TimeSlot {
 }
 
 export interface MonthlyAvailabilityDay {
-    date: string; // Format: "2025-11-01"
-    day: number; // Day of week: 0 (Sunday) - 6 (Saturday)
+    date: string;
+    day: number;
     slots: TimeSlot[];
 }
 
 export interface WeeklySlot {
-    day: number; // Day of week: 0 (Sunday) - 6 (Saturday)
-    date: string; // ISO format: "2025-11-17T00:00:00.000Z"
+    day: number;
+    date: string;
     rawSlots: TimeSlot[];
 }
 
@@ -138,8 +137,8 @@ export interface GetMonthlyAvailabilityApiResponse {
 }
 
 export interface WeeklySlotInput {
-    day: number; // Day of week: 0 (Sunday) - 6 (Saturday)
-    date: string; // Format: "2025-11-17"
+    day: number;
+    date: string;
     slots: {
         startTime: string;
         startPeriod: 'AM' | 'PM';
@@ -151,14 +150,14 @@ export interface WeeklySlotInput {
 export interface SetAvailabilityPayload {
     mentorId: string;
     weeklySlots: WeeklySlotInput[];
-    meetingDuration: number; // in minutes
+    meetingDuration: number;
     minSchedulingNoticeHours: number;
     maxBookingsPerDay: number;
 }
 
 export interface WeeklySlotResponse {
     day: number;
-    date: string; // ISO format: "2025-11-17T00:00:00.000Z"
+    date: string;
     rawSlots: TimeSlot[];
     slots: TimeSlot[];
     _id: string;

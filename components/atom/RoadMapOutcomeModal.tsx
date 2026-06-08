@@ -27,7 +27,7 @@ export const RoadMapOutcomeModal = ({
   const [currentStep, setCurrentStep] = useState<ModalStep>("SELECTION");
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>("");
 
-  // Reset state when modal opens
+  
   useEffect(() => {
     if (isMenuVisible) {
       setCurrentStep("SELECTION");
@@ -154,7 +154,7 @@ export const RoadMapOutcomeModal = ({
         </TouchableOpacity>
         
         <View style={styles.previewHeader}>
-            {/* Logo placeholder - using text as placeholder based on image description "The Center for Community Change" */}
+            {}
             <View style={styles.logoPlaceholder}>
                 {/* <Image source={require('@/assets/images/logo.png')} style={{width: 40, height: 40, resizeMode: 'contain'}} /> */}
                 <View>
@@ -236,11 +236,11 @@ const styles = StyleSheet.create({
   },
   modalContentDownload: {
     width: "90%",
-    height: 650, // Slightly taller for preview
+    height: 650,
     backgroundColor: "transparent", 
   },
   
-  // Selection Step Styles
+  
   selectionContainer: {
     backgroundColor: "white",
     borderRadius: 14,
@@ -253,11 +253,11 @@ const styles = StyleSheet.create({
   },
   timeframeText: {
     fontSize: 16,
-    color: "#14507C", // Dark blue color
+    color: "#14507C",
     fontWeight: "500",
   },
 
-  // Detail Step Styles
+  
   detailGradient: {
     flex: 1,
     borderRadius: 14,
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     right: 4,
   },
 
-  // Download Preview Step Styles
+  
   downloadPreviewContainer: {
     flex: 1,
     backgroundColor: "white",
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#87CEEB', // Sky blue divider
+    backgroundColor: '#87CEEB',
     width: '100%',
   },
   previewScroll: {
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   previewBullet: {
     marginRight: 10,
     fontSize: 12,
-    color: '#F4C430', // Gold color for star
+    color: '#F4C430',
   },
   previewListText: {
     fontSize: 13,

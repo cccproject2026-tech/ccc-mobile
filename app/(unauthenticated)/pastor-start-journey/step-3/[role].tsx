@@ -52,7 +52,7 @@ export default function PastorJourneyStep3Screen() {
                 try {
                     await markPastorMentorIntroStart(user.id);
                 } catch {
-                    /* non-blocking */
+                    
                 }
             }
             router.replace("/(pastor)/(tabs)");
@@ -79,7 +79,7 @@ export default function PastorJourneyStep3Screen() {
                 <View style={styles.bgCircleTop} />
                 <View style={styles.bgCircleBottom} />
 
-                {/* Top bar */}
+                {}
                 <View style={styles.topBar}>
                     <Pressable onPress={handleBack} hitSlop={12} style={styles.backBtn}>
                         <Ionicons name="chevron-back" size={20} color="rgba(255,255,255,0.9)" />
@@ -89,10 +89,10 @@ export default function PastorJourneyStep3Screen() {
                     </Pressable>
                 </View>
 
-                {/* Content */}
+                {}
                 <View style={styles.content}>
 
-                    {/* Icon */}
+                    {}
                     <View style={styles.illustrationArea}>
                         <View style={styles.outerRing}>
                             <View style={styles.innerRing}>
@@ -103,7 +103,7 @@ export default function PastorJourneyStep3Screen() {
                         </View>
                     </View>
 
-                    {/* Quote */}
+                    {}
                     <View style={styles.quoteBlock}>
                         <Text style={styles.quoteMark}>"</Text>
                         <Text style={styles.quoteText}>
@@ -120,7 +120,7 @@ export default function PastorJourneyStep3Screen() {
                         <View style={styles.dividerLine} />
                     </View>
 
-                    {/* Ready section */}
+                    
                     <View style={styles.readyBlock}>
                         <Text style={styles.readyEyebrow}>You're all set</Text>
                         <Text style={styles.readyTitle}>
@@ -136,10 +136,10 @@ export default function PastorJourneyStep3Screen() {
 
                 </View>
 
-                {/* Bottom actions */}
+                
                 <View style={styles.bottomArea}>
 
-                    {/* New user — primary */}
+                    
                     <Pressable onPress={handleStart} style={styles.startBtn}>
                         <View style={styles.startBtnLeft}>
                             <Text style={styles.startBtnLabel}>New here?</Text>
@@ -150,7 +150,7 @@ export default function PastorJourneyStep3Screen() {
                         </View>
                     </Pressable>
 
-                    {/* Existing user — secondary, equal weight */}
+                    
                     {!isLoggedInPastor && (
                         <Pressable onPress={handleLogin} style={styles.loginBtn}>
                             <View style={styles.loginBtnLeft}>
@@ -196,7 +196,6 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.04)",
     },
 
-    // Top bar
     topBar: {
         flexDirection: "row",
         alignItems: "center",
@@ -219,12 +218,10 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 
-    // Content
     content: {
         flex: 1,
     },
 
-    // Illustration
     illustrationArea: {
         alignItems: "center",
         marginBottom: 28,
@@ -258,7 +255,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
 
-    // Quote
     quoteBlock: {
         marginBottom: 22,
     },
@@ -302,7 +298,6 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.12)",
     },
 
-    // Ready block
     readyBlock: {
         gap: 6,
     },
@@ -335,14 +330,12 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 
-    // Bottom
     bottomArea: {
         gap: 10,
         paddingTop: 4,
         paddingBottom: 24,
     },
 
-    // Start button (new user)
     startBtn: {
         width: "100%",
         borderRadius: 999,
@@ -381,7 +374,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
 
-    // Login button (existing user)
     loginBtn: {
         width: "100%",
         borderRadius: 999,

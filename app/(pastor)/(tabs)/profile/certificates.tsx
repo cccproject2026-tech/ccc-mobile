@@ -34,18 +34,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function Certificate() {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
-  // Fetch actual profile data from stores
+  
   const { data: profileData, isLoading, isError } = useProfile();
   const updateProfile = useUpdateProfile();
 
-  // Local UI state
+  
   const [isEditMode, setIsEditMode] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [showTitleDropdown, setShowTitleDropdown] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Form state (only when editing)
+  
   const [formData, setFormData] = useState<UpdateProfileData>({
     firstName: '',
     lastName: '',
@@ -81,7 +81,7 @@ export default function Certificate() {
     }
   }, [isEditMode, profileData]);
 
-  // ============= HANDLERS =============
+  
   const updateField = useCallback(
     (field: keyof UpdateProfileData, value: any) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
@@ -160,8 +160,6 @@ export default function Certificate() {
     ]);
   }, []);
 
-
-
   const sanitizeChurches = (
     churches: ChurchInfo[] | undefined
   ): ChurchInfo[] => {
@@ -227,7 +225,6 @@ export default function Certificate() {
     setShowConfirmModal(false);
   }, []);
 
-
   const handleSuccessModalClose = useCallback(() => {
     setShowSuccessModal(false);
   }, []);
@@ -240,7 +237,7 @@ export default function Certificate() {
     [updateField]
   );
 
-  // ============= LOADING & ERROR STATES =============
+  
   if (isLoading) {
     return (
       <AppGradientBackground style={styles.container}>
@@ -270,7 +267,7 @@ export default function Certificate() {
     );
   }
 
-  // ============= MAIN RENDER =============
+  
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -323,7 +320,7 @@ export default function Certificate() {
             style={{ flex: 1 }}
             contentContainerStyle={{ paddingBottom: bottom + 20 }}
           >
-            {/* Profile Header Section */}
+            {}
             <View style={styles.profileHeaderSection}>
               <LinearGradient
                 colors={[
@@ -371,7 +368,7 @@ export default function Certificate() {
 
             <View style={styles.divider} />
 
-            {/* Download Certificate Button */}
+            {}
             {profileData.user.hasIssuedCertificate && (
               <LinearGradient
                 colors={['#21B6E9', '#B83AF3']}
@@ -391,7 +388,7 @@ export default function Certificate() {
                 </View>
               </LinearGradient>
             )}
-            {/* Mentor Invitation */}
+            {}
             <LinearGradient
               colors={['#21B6E9', '#B83AF3']}
               start={{ x: 0, y: 0 }}
@@ -421,7 +418,7 @@ export default function Certificate() {
 
             <View style={styles.divider} />
 
-            {/* Profile Sections Using Reusable Components */}
+            {}
             <View style={styles.profileSectionsContainer}>
               <ProfileInfoSection
                 isEditing={isEditMode}
@@ -487,7 +484,7 @@ export default function Certificate() {
           </ScrollView>
         </View>
 
-        {/* MODALS */}
+        {}
         <ConfirmModal
           visible={showConfirmModal}
           title="Are you sure you want to save changes?"

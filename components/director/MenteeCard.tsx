@@ -9,8 +9,6 @@ import { Dimensions, Image, Pressable, StyleSheet, Text, TouchableOpacity, View 
 // Dimensions import is kept for existing style consistency (some builds rely on it elsewhere)
 Dimensions.get('window');
 
-
-
 /** `roadmap`: mentor “Pastor roadmaps” list — frosted card, email-first subtext, consistent % */
 export type MenteeCardVariant = 'default' | 'roadmap';
 
@@ -74,7 +72,7 @@ export default function MenteeCard({
               'Tap to view roadmaps';
     const phaseShownInSubtext = variant === 'roadmap' && !emailRaw && !!data.phase;
 
-    // LIST VIEW (Compact)
+    
     if (layout === 'list') {
         return (
             <Pressable style={[styles.listContainer, isSelected && styles.selectedCard, disabled && styles.disabledCard]}
@@ -154,7 +152,7 @@ export default function MenteeCard({
         );
     }
 
-    // CARD VIEW (For selection mode - remove/assign)
+    
     if (layout === 'card' && isSelectionMode) {
         return (
             <TouchableOpacity
@@ -255,7 +253,7 @@ export default function MenteeCard({
             onPress={onPress}
             activeOpacity={0.85}
         >
-            {/* Chevron Icon on Right */}
+            {}
             {onMenuPress ? (
                 <TouchableOpacity style={styles.menuButton} onPress={(e) => { e.stopPropagation(); onMenuPress(); }}>
                     <Ionicons name="ellipsis-vertical" size={getIconSize(20)} color="#fff" />
@@ -266,7 +264,7 @@ export default function MenteeCard({
                 </View>
             )}
 
-            {/* Top Badges */}
+            {}
             {(data.hasCompleted || data.hasIssuedCertificate || data.isFieldMentor) && (
                 <View style={styles.topBadges}>
                     {data.hasCompleted && (
@@ -287,7 +285,7 @@ export default function MenteeCard({
                 </View>
             )}
 
-            {/* Top Section */}
+            {}
             <View style={[styles.topSection, isRoadmapVariant && !contactRowVisible && styles.topSectionRoadmapTight]}>
                 <View style={[styles.imageContainer, isRoadmapVariant && styles.imageContainerRoadmap]}>
                     {data.profilePicture ? (
@@ -316,7 +314,7 @@ export default function MenteeCard({
                         </View>
                     )}
 
-                    {/* SCHOLARSHIP INFO */}
+                    {}
                     {data.scholarshipAmount && (
                         <View style={{ marginTop: getSpacing(6) }}>
                             <Text style={{ fontSize: getFontSize(12), color: '#fff', flexWrap: 'wrap' }}>
@@ -335,7 +333,7 @@ export default function MenteeCard({
                         </View>
                     )}
 
-                    {/* LEGACY INFO (when not showing scholarship) */}
+                    {}
                     {!data.scholarshipAmount && !data.hasCompleted && (
                         <>
                             {data.lastContacted && (
@@ -356,7 +354,7 @@ export default function MenteeCard({
                 </View>
             </View>
 
-            {/* Contact Icons Row — hidden on roadmap when empty so progress sits flush (no seam) */}
+            {}
             {contactRowVisible ? (
                 <View style={[styles.contactRow, isRoadmapVariant && styles.contactRowRoadmap]}>
                     <View style={styles.contactIcons}>
@@ -390,7 +388,7 @@ export default function MenteeCard({
                 </View>
             ) : null}
 
-            {/* Conditional Rendering Based on State */}
+            {}
             {(() => {
                 if (!data.hasCompleted && data.progress !== undefined && data.progress < 100) {
                     const pct = Math.max(0, Math.min(100, data.progress));
@@ -455,8 +453,6 @@ export default function MenteeCard({
         </TouchableOpacity>
     );
 }
-
-
 
 const styles = StyleSheet.create({
     listContainer: {

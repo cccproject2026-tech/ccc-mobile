@@ -1,60 +1,3 @@
-// // // lib/roadmap/mappers.ts
-// // import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
-// // import { Phase, RevitalizationData } from '@/lib/roadmap/types';
-
-// // export function usePhaseToCard(data: RevitalizationData, phase: Phase) {
-// //     const { progress } = useRoadmapProgress();
-// //     const items = phase.items.map(id => data.items[id]);
-
-// //     // FIX: Use progress context to get actual status
-// //     const completed = items.filter(i => {
-// //         const actualStatus = progress[i.id]?.status || i.status;
-// //         return actualStatus === 'COMPLETED';
-// //     }).length;
-
-// //     const total = items.length;
-
-// //     const anyDue = items.some(i => {
-// //         const actualStatus = progress[i.id]?.status || i.status;
-// //         return i.dueDate && actualStatus !== 'COMPLETED';
-// //     });
-
-// //     const anyInProgress = items.some(i => {
-// //         const actualStatus = progress[i.id]?.status || i.status;
-// //         return actualStatus === 'IN_PROGRESS';
-// //     });
-
-// //     const allCompleted = completed === total && total > 0;
-
-// //     const status: 'initial' | 'in-progress' | 'completed' | 'due' =
-// //         allCompleted ? 'completed' : anyDue ? 'due' : anyInProgress || completed > 0 ? 'in-progress' : 'initial';
-
-// //     const completedDate = allCompleted
-// //         ? new Date().toISOString().slice(0, 10)
-// //         : undefined;
-
-// //     // FIX: Only show progress bar when status is in-progress or due
-// //     const taskProgress =
-// //         (status === 'in-progress' || status === 'due') && total > 0
-// //             ? { completed, total }
-// //             : undefined;
-
-// //     return {
-// //         image: phase.coverImage,
-// //         title: phase.title,
-// //         description: phase.subtitle,
-// //         completionTime: `Completion Time\nMonths ${phase.estMonthsMin} – ${phase.estMonthsMax}`,
-// //         status,
-// //         completedDate,
-// //         taskProgress,
-// //         showArrow: true,
-// //         showCheckmark: allCompleted,
-// //     } as const;
-// // }
-
-
-// // lib/roadmap/mappers.ts - SINGLE HOOK FOR CARD DATA
-// lib/roadmap/mappers.ts
 import {
     formatDate,
     formatPastorCompletedRelativeLabel,
@@ -74,7 +17,7 @@ import { NestedRoadmap, Roadmap, RoadmapCardData } from './types';
  */
 export function getRoadmapCard(roadmap: Roadmap): RoadmapCardData {
     if (!roadmap) {
-        // Return a default card if roadmap is undefined
+        
         return {
             image: undefined,
             title: 'Unknown Roadmap',

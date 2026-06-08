@@ -19,21 +19,21 @@ import { SafeAreaView } from "react-native-safe-area-context"
 export default function MenteeProfileScreen() {
   const { menteeId, email: emailParam } = useLocalSearchParams<{ menteeId?: string; email?: string }>()
   
-  // Get mentees list to look up email if needed
+  
   const { data: menteesData } = useMentees()
   
-  // Get email from param or look it up from menteeId
+  
   const email = useMemo(() => {
     if (emailParam) return emailParam
     if (menteeId) {
-      // Look up email from mentees list
+      
       const mentee = menteesData?.mentees?.find((m) => m.id === menteeId)
       return mentee?.email
     }
     return undefined
   }, [emailParam, menteeId, menteesData])
 
-  // Fetch mentee data by email
+  
   const { data: menteeData, isLoading, isError } = useMenteeByEmail(email)
 
   // Map API data to UI structure
@@ -181,7 +181,7 @@ export default function MenteeProfileScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.contentContainer}>
-          {/* Top Navigation Bar */}
+          {}
           <View style={styles.topNav}>
             <TouchableOpacity activeOpacity={0.8}>
               <Ionicons name="menu" size={26} color="#FFFFFF" />
@@ -207,7 +207,7 @@ export default function MenteeProfileScreen() {
             </View>
           </View>
 
-          {/* Header with Back Button */}
+          {}
           <View style={styles.headerRow}>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -225,7 +225,7 @@ export default function MenteeProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Profile Card */}
+          {}
           <View style={styles.profileCard}>
             <View style={styles.profileHeader}>
               <View style={styles.avatarContainer}>
@@ -251,7 +251,7 @@ export default function MenteeProfileScreen() {
               </View>
             </View>
 
-            {/* Progress Bar */}
+            {}
             <View style={styles.progressSection}>
               <View style={styles.progressHeader}>
                 <Text style={styles.progressLabel}>Progress</Text>
@@ -289,7 +289,7 @@ export default function MenteeProfileScreen() {
               )}
             </View>
 
-            {/* Documents Button */}
+            {}
             <LinearGradient
               colors={["#2B5A8F", "#1E4068"]}
               start={{ x: 0, y: 0 }}

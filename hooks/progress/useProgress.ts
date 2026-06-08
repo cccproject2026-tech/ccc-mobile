@@ -3,9 +3,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { AddFinalCommentRequest, DeleteFinalCommentRequest, ProgressData, UpdateFinalCommentRequest } from "@/types/progress.types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-// ============================================
 // PROGRESS QUERY KEYS
-// ============================================
+
 export const progressKeys = {
     all: ['progress'] as const,
     user: (userId: string) => [...progressKeys.all, 'user', userId] as const,
@@ -14,9 +13,6 @@ export const progressKeys = {
     finalComments: (userId: string) => [...progressKeys.all, 'final-comments', userId] as const,
 };
 
-// ============================================
-// MAIN PROGRESS HOOK
-// ============================================
 export const useProgress = (userId?: string) => {
     const { user } = useAuthStore();
     const targetUserId = userId || user?.id;
@@ -28,7 +24,7 @@ export const useProgress = (userId?: string) => {
 
             const response = await progressService.getProgress(targetUserId);
 
-            // Handle null data case (no progress record)
+            
             if (!response.success || !response.data) {
                 return {
                     overallProgress: 0,
@@ -75,10 +71,6 @@ export const useProgress = (userId?: string) => {
         refetchOnWindowFocus: false,
     });
 };
-
-// ============================================
-// GRANULAR PROGRESS HOOKS
-// ============================================
 
 /**
  * Hook to get assigned roadmap IDs for the current user
@@ -210,7 +202,7 @@ export const useProgressByUserId = (userId: string | undefined) => {
 
             const response = await progressService.getProgress(userId);
 
-            // Handle null data case (no progress record)
+            
             if (!response.success || !response.data) {
                 return {
                     overallProgress: 0,
@@ -271,7 +263,7 @@ export const useFinalComments = (userId: string | undefined) => {
         },
         enabled: !!userId,
         staleTime: 0,
-        // gcTime: 1000 * 60 * 10, // 10 minutes cache retention
+        
     });
 };
 

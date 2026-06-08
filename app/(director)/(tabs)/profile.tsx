@@ -99,7 +99,7 @@ export default function ProfileScreen() {
 
   const pickImage = async () => {
     try {
-      // Request permission first
+      
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -112,9 +112,9 @@ export default function ProfileScreen() {
         return;
       }
 
-      // Launch image picker
+      
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"], // Restrict to images only
+        mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -171,7 +171,7 @@ export default function ProfileScreen() {
     setHasProfile(true);
   };
 
-  // STATE 1: Empty Profile (No profile created yet)
+  
   if (!hasProfile && !isEditing) {
     return (
       <LinearGradient
@@ -203,7 +203,7 @@ export default function ProfileScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Profile Header - No Image */}
+          {}
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
               <View style={styles.emptyAvatar}>
@@ -227,7 +227,7 @@ export default function ProfileScreen() {
             <Text style={styles.role}>Director</Text>
           </View>
 
-          {/* Action Buttons */}
+          {}
           <View style={styles.actionButtons}>
             <TouchableOpacity
               onPress={() => router.push("/(director)/(tabs)/documents")}
@@ -248,7 +248,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Profile Information Section */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Profile Information</Text>
             <TextInput
@@ -260,7 +260,7 @@ export default function ProfileScreen() {
             />
           </View>
           <View>
-            {/* Personal Information Section */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Personal Information</Text>
               <View style={styles.row}>
@@ -291,7 +291,7 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Current Church Information Section */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
                 Current Church Information
@@ -354,7 +354,7 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Other Information Section */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Other Information</Text>
               <View style={[styles.input, styles.dropdownInput]}>
@@ -380,7 +380,7 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Submit Button */}
+            {}
             <TouchableOpacity
               style={[
                 styles.submitButton,
@@ -399,7 +399,7 @@ export default function ProfileScreen() {
     );
   }
 
-  // STATE 2: Filled Profile (View Mode)
+  
   if (hasProfile && !isEditing) {
     return (
       <LinearGradient
@@ -431,7 +431,7 @@ export default function ProfileScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Profile Header - With Image */}
+          {}
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
               {profileImage ? (
@@ -447,7 +447,7 @@ export default function ProfileScreen() {
             <Text style={styles.role}>Director</Text>
           </View>
 
-          {/* Action Buttons */}
+          {}
           <View style={styles.actionButtons}>
             <TouchableOpacity
               style={styles.actionButton}
@@ -468,7 +468,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Profile Information Section */}
+          {}
           <View
             style={{
               marginBottom: 16,
@@ -512,7 +512,7 @@ export default function ProfileScreen() {
               borderRadius: 12,
             }}
           >
-            {/* Personal Information Section */}
+            {}
             <View style={styles.viewSection}>
               <Text style={styles.sectionTitle}>Personal Information</Text>
               <View style={styles.row}>
@@ -541,7 +541,7 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Churches */}
+            {}
             {profileData.churches.map((church, index) => (
               <View key={index} style={styles.viewSection}>
                 <Text style={styles.sectionTitle}>
@@ -596,7 +596,7 @@ export default function ProfileScreen() {
               </View>
             ))}
 
-            {/* Other Information Section */}
+            {}
             <View style={styles.viewSection}>
               <Text style={styles.sectionTitle}>Other Information</Text>
               <View style={styles.viewField}>
@@ -623,7 +623,7 @@ export default function ProfileScreen() {
     );
   }
 
-  // STATE 3: Edit Mode
+  
   return (
     <LinearGradient
       colors={["#176192", "#1D548D", "#264387"]}
@@ -654,7 +654,7 @@ export default function ProfileScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Header - With Edit Badge */}
+        {}
         <View
           style={{
             alignItems: "center",
@@ -680,7 +680,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Profile Information Section */}
+        {}
         <View style={styles.editSection}>
           <View style={styles.editSectionHeader}>
             <Text style={styles.editSectionTitle}>Profile Information</Text>
@@ -713,7 +713,7 @@ export default function ProfileScreen() {
             borderRadius: 12,
           }}
         >
-          {/* Personal Information Section */}
+          {}
           <View style={styles.editSection}>
             <Text style={styles.sectionTitle}>Personal Information</Text>
             <View style={styles.row}>
@@ -760,7 +760,7 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* Churches */}
+          {}
           {profileData.churches.map((church, index) => (
             <View key={index} style={styles.editSection}>
               <View style={styles.editSectionHeader}>
@@ -870,7 +870,7 @@ export default function ProfileScreen() {
             </View>
           ))}
 
-          {/* Other Information Section */}
+          {}
           <View
             style={[
               styles.editSection,
@@ -915,7 +915,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Action Buttons */}
+        {}
         <View style={styles.editActions}>
           <TouchableOpacity
             style={[styles.actionButton2, styles.cancelButton]}
@@ -938,7 +938,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: Colors.lightBlueGradientOne,
+    
   },
   scrollView: {
     flex: 1,
@@ -1050,28 +1050,28 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   section: {
-    // backgroundColor: 'rgba(58, 124, 165, 0.25)',
-    // borderWidth: 1,
-    // borderColor: 'rgba(255,255,255,0.4)',
-    // borderRadius: 12,
-    // padding: 16,
+    
+    
+    
+    
+    
     marginBottom: 16,
   },
   viewSection: {
-    // backgroundColor: 'rgba(58, 124, 165, 0.25)',
-    // borderWidth: 1,
-    // borderColor: 'rgba(255,255,255,0.4)',
-    // borderRadius: 12,
-    // padding: 16,
+    
+    
+    
+    
+    
     marginBottom: 16,
   },
 
   editSection: {
-    // backgroundColor: 'rgba(58, 124, 165, 0.25)',
-    // borderWidth: 1,
-    // borderColor: 'rgba(255,255,255,0.6)',
-    // borderRadius: 12,
-    // padding: 16,
+    
+    
+    
+    
+    
     borderBottomColor: "#ccc",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomStartRadius: 50,
@@ -1101,7 +1101,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   profileInputContainer: {
-    // backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.6)",
     borderRadius: 12,
@@ -1121,21 +1121,21 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
 
-  // editSection: {
-  //   marginBottom: 16,
-  // },
+  
+  
+  
   sectionTitle: {
     fontSize: 14,
     fontWeight: "600",
     color: "#fff",
     marginBottom: 12,
   },
-  // editSectionHeader: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   alignItems: 'center',
-  //   marginBottom: 12,
-  // },
+  
+  
+  
+  
+  
+  
   input: {
     backgroundColor: "transparent",
     borderWidth: 1,
@@ -1197,7 +1197,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   viewField: {
-    // backgroundColor: 'rgba(58, 124, 165, 0.4)',
+    
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.6)",
     borderRadius: 8,
@@ -1233,7 +1233,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   editInput: {
-    // backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.6)",
     borderRadius: 8,
