@@ -1302,7 +1302,7 @@ export function MentorTaskView({
     const showSaveProgress =
         !isPreviewMode &&
         !isReadOnly &&
-        !isTaskCompleted &&
+        (!isTaskCompleted || isResubmitting) &&
         !hasOnlyAssessments;
 
     return (
