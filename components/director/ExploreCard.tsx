@@ -82,7 +82,7 @@ const ExploreCard: React.FC<Props> = ({
                     styles.title,
                     isFrosted ? (compact ? styles.titleFrostedCompact : styles.titleFrosted) : undefined,
                 ]}
-                numberOfLines={compact && isFrosted ? 3 : 2}
+                numberOfLines={2}
                 adjustsFontSizeToFit={compact && isFrosted}
                 minimumFontScale={0.82}
             >

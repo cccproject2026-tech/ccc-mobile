@@ -31,8 +31,7 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
+
 
 # typescript
 *.tsbuildinfo
@@ -51,6 +50,5 @@ ios
 .expo/
 node_modules/
 build/
-.env
 agent_tsc*.txt
 tmp-utf8-test.txt

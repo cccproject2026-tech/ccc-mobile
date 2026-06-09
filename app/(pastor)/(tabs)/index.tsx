@@ -381,7 +381,7 @@ export default function PastorDashboard() {
   const focusTiles = useMemo(
     () => [
       {
-        icon: "sparkles-outline" as const,
+        icon: "mail-unread-outline" as const,
         line1: "New",
         line2: "Assignments",
         sheetTitle: "New Assignments",
