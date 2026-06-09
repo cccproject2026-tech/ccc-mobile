@@ -27,8 +27,18 @@ export const useMenteeAssessments = (menteeId: string | null | undefined) => {
     }, [assessmentProgress]);
 
     const assignedAssessmentIds = useMemo(() => {
-        return Array.from(progressMap.keys());
-    }, [progressMap]);
+        if (!menteeId) return [];
+
+        const ids = new Set<string>(progressMap.keys());
+
+        allAssessments?.forEach((assessment) => {
+            if (assessment.assignments?.some((a) => a.userId === menteeId)) {
+                ids.add(assessment._id);
+            }
+        });
+
+        return Array.from(ids);
+    }, [allAssessments, menteeId, progressMap]);
 
     const { answersMap, isLoadingAnswers } = useAssessmentAnswersMap(
         menteeId ? assignedAssessmentIds : [],
@@ -51,6 +61,10 @@ export const useMenteeAssessments = (menteeId: string | null | undefined) => {
             const frontendAssessment = mapApiToFrontend(apiAssessment);
             const progress = progressMap.get(apiAssessment._id);
             const answerDoc = answersMap.get(apiAssessment._id);
+            const userAssignment = apiAssessment.assignments?.find(
+                (a) => a.userId === menteeId,
+            );
+            const assignedAt = userAssignment?.assignedAt;
             const expectedSections =
                 progress?.totalSections ?? apiAssessment.sections?.length ?? 0;
 
@@ -69,6 +83,7 @@ export const useMenteeAssessments = (menteeId: string | null | undefined) => {
 
             return {
                 ...frontendAssessment,
+                assignedAt: assignedAt ?? frontendAssessment.assignedAt,
                 status,
                 isInProgress,
                 progressPercentage: progress?.progressPercentage,
