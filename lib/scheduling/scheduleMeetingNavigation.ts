@@ -1,6 +1,6 @@
 import type { Href, Router } from "expo-router";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
-import { safeGoBack } from "@/utils/navigation";
+import { buildReturnTo, safeGoBack } from "@/utils/navigation";
 
 export type ScheduleMeetingMode = "schedule" | "reschedule";
 
@@ -86,7 +86,7 @@ export function leaveScheduleMeetingPersonStep(
   role: string | undefined,
   returnTo?: string,
 ): void {
-  safeGoBack(router, { fallback: appointmentsRouteForRole(role), returnTo });
+  safeGoBack(router, { fallback: appointmentsRouteForRole(role), returnTo, role });
   // Reset after leaving so confirm/time screens don't react to an empty draft while still mounted.
   setTimeout(() => useScheduleMeetingStore.getState().reset(), 0);
 }
@@ -98,13 +98,15 @@ export function exitScheduleMeetingFlow(
   options?: { assessmentId?: string; message?: string },
 ): void {
   if (options?.assessmentId) {
-    router.replace({
-      pathname: "/assessments/survey-guidelines",
-      params: {
+    const href = buildReturnTo(
+      "/assessments/survey-guidelines",
+      {
         assessmentId: options.assessmentId,
         ...(options.message ? { message: options.message } : {}),
       },
-    } as never);
+      role,
+    );
+    router.replace(href as never);
   } else {
     router.replace(appointmentsRouteForRole(role));
   }

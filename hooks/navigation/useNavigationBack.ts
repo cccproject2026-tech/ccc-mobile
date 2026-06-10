@@ -4,6 +4,7 @@ import {
   getReturnToParam,
   safeGoBack,
 } from "@/utils/navigation";
+import { useAuthStore } from "@/stores/auth.store";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { useCallback, useMemo } from "react";
@@ -21,6 +22,7 @@ export function useNavigationBack(fallback?: Href) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useLocalSearchParams();
+  const { user } = useAuthStore();
 
   const returnToFromRoute = useMemo(
     () => getReturnToParam(params as { returnTo?: string | string[] }),
@@ -32,13 +34,14 @@ export function useNavigationBack(fallback?: Href) {
       buildReturnTo(
         pathname,
         params as Record<string, string | string[] | undefined>,
+        user?.role,
       ),
-    [pathname, params],
+    [pathname, params, user?.role],
   );
 
   const handleBack = useCallback(() => {
-    safeGoBack(router, { returnTo: returnToFromRoute, fallback });
-  }, [router, returnToFromRoute, fallback]);
+    safeGoBack(router, { returnTo: returnToFromRoute, fallback, role: user?.role });
+  }, [router, returnToFromRoute, fallback, user?.role]);
 
   const appendReturnToParams = useCallback(
     (nextParams: Record<string, string | undefined>) =>

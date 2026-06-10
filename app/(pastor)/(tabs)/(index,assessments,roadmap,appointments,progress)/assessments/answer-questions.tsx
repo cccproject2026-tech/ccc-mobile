@@ -335,9 +335,11 @@ export default function AnswerQuestionPage() {
     setTimeout(() => {
       openScheduleMeeting(router, user?.role, {
         assessmentId: assessmentId as string,
-        returnTo: buildReturnTo("/assessments/survey-guidelines", {
-          assessmentId: assessmentId as string,
-        }),
+        returnTo: buildReturnTo(
+          "/assessments/survey-guidelines",
+          { assessmentId: assessmentId as string },
+          user?.role,
+        ),
       });
     }, 300);
   };

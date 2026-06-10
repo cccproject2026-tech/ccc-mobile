@@ -87,7 +87,7 @@ const TopBar: React.FC<Props> = ({
         if (onPressBack) {
             onPressBack();
         } else {
-            safeGoBack(router, { returnTo });
+            safeGoBack(router, { returnTo, role: role || user?.role });
         }
     };
 
