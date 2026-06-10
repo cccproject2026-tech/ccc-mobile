@@ -272,7 +272,14 @@ export function shouldUpdateTaskExtras(
     return false;
 }
 
-/** Mark tasks completed when pastor saved locally but progress API still lags. */
+export function isSingleOnboardingRoadmap(roadmap: Roadmap | undefined | null): boolean {
+    return String(roadmap?.type ?? '').trim().toLowerCase() === 'single';
+}
+
+/**
+ * Attach locally recorded completion time to tasks already marked completed by
+ * backend progress merge. Never promotes status to completed from AsyncStorage alone.
+ */
 export function applyLocalTaskCompletionOverrides(
     roadmap: Roadmap,
     localCompletionMs?: Record<string, number>,
@@ -285,26 +292,19 @@ export function applyLocalTaskCompletionOverrides(
     let changed = false;
     const roadmaps = roadmap.roadmaps.map((task) => {
         if (!task?._id) return task;
+        if (normalizeNestedTaskStatus(task.status) !== 'completed') return task;
+
         const key = taskCompletionMapKey(phaseId, String(task._id));
         const localMs = localCompletionMs[key];
         if (!localMs || localMs <= 0) return task;
-        if (normalizeNestedTaskStatus(task.status) === 'completed') return task;
+        if (task.completedOn) return task;
+
         changed = true;
-        return { ...task, status: 'completed' as const };
+        return { ...task, completedOn: new Date(localMs).toISOString() };
     });
 
     if (!changed) return roadmap;
-
-    const withTasks = { ...roadmap, roadmaps };
-    const { completed, total } = getCompletionStats(withTasks);
-    let status = roadmap.status;
-    if (total > 0 && completed >= total) {
-        status = 'completed';
-    } else if (completed > 0) {
-        status = 'in-progress';
-    }
-
-    return { ...withTasks, status };
+    return { ...roadmap, roadmaps };
 }
 
 /** Last saved value per field name (ignores duplicate rows from repeated saves). */

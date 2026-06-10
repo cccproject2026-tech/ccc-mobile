@@ -18,6 +18,7 @@ import {
     collectDefinitionExtras,
     hasSavableFormExtras,
     isAssessmentOnlyTask,
+    isSingleOnboardingRoadmap,
     normalizeMongoId,
     normalizeNestedTaskStatus,
     resolveRoadmapDocumentUrl,
@@ -97,7 +98,21 @@ export function mergeRoadmapWithProgress(
         return roadmap;
     }
 
-    
+    const isSingleOnboarding = isSingleOnboardingRoadmap(roadmap);
+
+    const parentEffectiveTotal =
+        progressItem.totalSteps > 0
+            ? progressItem.totalSteps
+            : roadmap.roadmaps.reduce(
+                  (sum, nested) =>
+                      sum + resolveNestedTotalSteps(nested, { totalSteps: 0 }),
+                  0,
+              ) || 1;
+    const parentStepsComplete =
+        progressItem.status === 'completed' ||
+        (parentEffectiveTotal > 0 &&
+            progressItem.completedSteps >= parentEffectiveTotal);
+
     const updatedNestedRoadmaps = roadmap.roadmaps.map((nestedRoadmap) => {
         if (!nestedRoadmap) return nestedRoadmap;
 
@@ -112,17 +127,20 @@ export function mergeRoadmapWithProgress(
         }
 
         const effectiveTotal = resolveNestedTotalSteps(nestedRoadmap, nestedProgress);
-        const stepsComplete =
+        const nestedStepsComplete =
             nestedProgress.status === 'completed' ||
             (effectiveTotal > 0 &&
                 nestedProgress.completedSteps >= effectiveTotal);
+        const stepsComplete = isSingleOnboarding
+            ? parentStepsComplete && nestedStepsComplete
+            : nestedStepsComplete;
         const mappedStatus = mapProgressStatus(nestedProgress.status);
         const resolvedStatus: 'not started' | 'in-progress' | 'completed' | 'submitted' =
             stepsComplete
                 ? 'completed'
                 : mappedStatus === 'submitted'
                   ? 'submitted'
-                  : nestedProgress.completedSteps > 0
+                  : nestedProgress.completedSteps > 0 || !parentStepsComplete
                     ? 'in-progress'
                     : mappedStatus;
 
@@ -133,17 +151,6 @@ export function mergeRoadmapWithProgress(
         } as NestedRoadmap;
     });
 
-    const parentEffectiveTotal =
-        progressItem.totalSteps > 0
-            ? progressItem.totalSteps
-            : updatedNestedRoadmaps.reduce(
-                  (sum, nested) => sum + resolveNestedTotalSteps(nested, { totalSteps: 0 }),
-                  0,
-              ) || 1;
-    const parentStepsComplete =
-        progressItem.status === 'completed' ||
-        (parentEffectiveTotal > 0 &&
-            progressItem.completedSteps >= parentEffectiveTotal);
     const resolvedParentStatus: 'not started' | 'in-progress' | 'completed' | 'submitted' =
         parentStepsComplete
             ? 'completed'
