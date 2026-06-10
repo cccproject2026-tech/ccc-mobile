@@ -1,3 +1,4 @@
+import { isJumpstartBlockingMessage } from "@/lib/roadmap/jumpstartErrorMatch";
 import { useAuthStore } from "@/stores/auth.store";
 import { navigateToWelcomeCenter } from "@/utils/auth-navigation";
 import { storage } from "@/utils/storage";
@@ -28,6 +29,27 @@ function extractTokensFromRefreshResponse(body: unknown): {
     refreshToken:
       typeof nested.refreshToken === "string" ? nested.refreshToken : undefined,
   };
+}
+
+function isQuietExpectedApiError(
+  status: number,
+  url: string,
+  message: unknown,
+): boolean {
+  const msg = String(message ?? "");
+  if (status === 404) return true;
+
+  if (status === 400 && isJumpstartBlockingMessage(msg)) return true;
+
+  if (status === 400 && url.includes("transcript-summary")) {
+    return /missing|too short/i.test(msg);
+  }
+
+  if (status === 400 && url.includes("/extras")) {
+    return /already exist|use patch/i.test(msg);
+  }
+
+  return false;
 }
 
 const processQueue = (error: any, token: string | null = null) => {
@@ -228,8 +250,14 @@ apiClient.interceptors.response.use(
     // Already-shaped API error (no Axios config) — e.g. re-thrown; don't label as "Network"
     if (typeof err.statusCode === "number" && !err.config) {
       if (__DEV__) {
-        if (err.statusCode === 404) {
-          console.log("📭 404", err.message);
+        if (
+          isQuietExpectedApiError(
+            err.statusCode,
+            "",
+            err.message,
+          )
+        ) {
+          console.log(`📭 ${err.statusCode}`, err.message);
         } else {
           console.error("❌ API Error:", {
             message: err.message,
@@ -255,8 +283,8 @@ apiClient.interceptors.response.use(
         };
         if (__DEV__) {
           const url = err.config?.url ?? "";
-          if (st === 404) {
-            console.log(`📭 404 ${url}`, apiError.message);
+          if (isQuietExpectedApiError(st, url, apiError.message)) {
+            console.log(`📭 ${st} ${url}`, apiError.message);
           } else {
             console.error("❌ API Error:", apiError);
           }
@@ -308,18 +336,8 @@ apiClient.interceptors.response.use(
     };
 
     if (__DEV__) {
-      const isExpectedTranscriptSummaryGap =
-        url.includes("transcript-summary") &&
-        status === 400 &&
-        /missing|too short/i.test(String(apiError.message ?? ""));
-
-      const isExpectedExtrasConflict =
-        url.includes("/extras") &&
-        status === 400 &&
-        /already exist|use patch/i.test(String(apiError.message ?? ""));
-
       // 404 / expected handled upstream — avoid red ERROR noise in Metro
-      if (status === 404 || isExpectedTranscriptSummaryGap || isExpectedExtrasConflict) {
+      if (isQuietExpectedApiError(status, url, apiError.message)) {
         console.log(`📭 ${status} ${method} ${url}`, apiError.message);
       } else {
         // Try to surface a small response snippet for non-JSON bodies (common for 503 via proxies).

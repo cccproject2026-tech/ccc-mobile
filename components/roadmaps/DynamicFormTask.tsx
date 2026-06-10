@@ -24,8 +24,8 @@ import {
     shouldUpdateTaskExtras,
 } from "@/lib/roadmap/helpers";
 import {
-    getJumpstartErrorTitle,
     isJumpstartBlockingError,
+    presentJumpstartBlockingError,
 } from "@/lib/roadmap/jumpstartErrors";
 import { saveTaskRoadmapExtras } from "@/lib/roadmap/saveTaskExtras";
 import { extractApiErrorMessage } from "@/utils/availability/api-error";
@@ -275,10 +275,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
             return true;
         } catch (error) {
             if (isJumpstartBlockingError(error)) {
-                Alert.alert(
-                    getJumpstartErrorTitle(error),
-                    extractApiErrorMessage(error),
-                );
+                presentJumpstartBlockingError(error);
                 return false;
             }
             console.warn(
@@ -387,14 +384,11 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                 router.back();
             }, 1800);
         } catch (err: unknown) {
-            console.error("❌ Submission error:", err);
             if (isJumpstartBlockingError(err)) {
-                Alert.alert(
-                    getJumpstartErrorTitle(err),
-                    extractApiErrorMessage(err),
-                );
+                presentJumpstartBlockingError(err);
                 return;
             }
+            console.error("❌ Submission error:", err);
             Alert.alert(
                 "Submission Failed",
                 extractApiErrorMessage(err) || "Failed to submit. Please try again.",

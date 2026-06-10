@@ -11,8 +11,8 @@ import {
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import {
-  getJumpstartErrorTitle,
   isJumpstartBlockingError,
+  presentJumpstartBlockingError,
 } from "@/lib/roadmap/jumpstartErrors";
 import { extractApiErrorMessage } from "@/utils/availability/api-error";
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
@@ -149,10 +149,7 @@ export default function AnswerQuestionPage() {
       return true;
     } catch (triggerError) {
       if (isJumpstartBlockingError(triggerError)) {
-        Alert.alert(
-          getJumpstartErrorTitle(triggerError),
-          extractApiErrorMessage(triggerError),
-        );
+        presentJumpstartBlockingError(triggerError);
         return false;
       }
       console.warn(
@@ -315,14 +312,11 @@ export default function AnswerQuestionPage() {
         }, 2000);
       }
     } catch (error) {
-      console.error("Failed to submit assessment:", error);
       if (isJumpstartBlockingError(error)) {
-        Alert.alert(
-          getJumpstartErrorTitle(error),
-          extractApiErrorMessage(error),
-        );
+        presentJumpstartBlockingError(error);
         return;
       }
+      console.error("Failed to submit assessment:", error);
       Alert.alert(
         "Error",
         extractApiErrorMessage(error) || "Failed to submit assessment. Please try again.",
