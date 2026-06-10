@@ -153,6 +153,7 @@ export default function ScheduleMeetingTimeScreen() {
   const lastSlotSyncSkipRef = useRef<string | null>(null);
 
   const prevAvailabilityOwnerRef = useRef<string | null>(null);
+  const prevSelectedDayRef = useRef<string | undefined>(undefined);
 
   const setScanningForBookableMonth = useCallback((scanning: boolean) => {
     setIsScanningForBookableMonth((prev) => (prev === scanning ? prev : scanning));
@@ -191,6 +192,7 @@ export default function ScheduleMeetingTimeScreen() {
     prevAvailabilityOwnerRef.current = availabilityOwnerId;
     if (!ownerChanged) return;
 
+    prevSelectedDayRef.current = undefined;
     setGoogleFilteredSlots(null);
     setCalendarSlotSyncLoading(false);
     setCalendarSlotSyncError(null);
@@ -384,11 +386,14 @@ export default function ScheduleMeetingTimeScreen() {
     }
   }, [availableDates, draft.selectedDayYmd, selectNearestBookableDay]);
 
+  // Clear slot only when the selected day changes — not when the user picks a time.
   useEffect(() => {
-    if (draft.selectedSlot !== null) {
+    const prev = prevSelectedDayRef.current;
+    prevSelectedDayRef.current = draft.selectedDayYmd;
+    if (prev !== undefined && prev !== draft.selectedDayYmd) {
       setSlot(null);
     }
-  }, [draft.selectedDayYmd, draft.selectedSlot, setSlot]);
+  }, [draft.selectedDayYmd, setSlot]);
 
   const timeSlots = useMemo(
     () => (draft.selectedDayYmd ? getTimeSlotsForDate(draft.selectedDayYmd) : []),
@@ -443,7 +448,11 @@ export default function ScheduleMeetingTimeScreen() {
       setCalendarSlotSyncError(result.error ?? null);
       setCalendarSlotSyncLoading(false);
 
-      if (draft.selectedSlot && !filtered.some((s) => s.apiSlot._id === draft.selectedSlot?._id)) {
+      const selectedSlot = useScheduleMeetingStore.getState().draft.selectedSlot;
+      if (
+        selectedSlot &&
+        !filtered.some((s) => s.apiSlot._id === selectedSlot._id)
+      ) {
         setSlot(null);
       }
     })();
@@ -455,7 +464,6 @@ export default function ScheduleMeetingTimeScreen() {
   }, [
     availabilityOwnerId,
     draft.selectedDayYmd,
-    draft.selectedSlot,
     googleCalendarConnected,
     meetingDurationMinutes,
     participantUserId,
