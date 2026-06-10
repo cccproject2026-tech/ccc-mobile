@@ -163,18 +163,16 @@ export function validateSchedule(
     };
   }
 
-  const now = new Date();
   const meetingDateTime = new Date(meetingDateIso);
-
-  
-  if (settings?.minSchedulingNoticeHours) {
+  const minNoticeHours = resolveMinSchedulingNoticeHours(settings);
+  if (minNoticeHours > 0) {
     const hoursNotice =
-      (meetingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-    if (hoursNotice < settings.minSchedulingNoticeHours) {
+      (meetingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+    if (hoursNotice <= 0 || hoursNotice < minNoticeHours) {
       return {
         code: "min_notice",
         title: "Notice period required",
-        message: `This mentor requires at least ${settings.minSchedulingNoticeHours} hours notice for appointments.`,
+        message: `This mentor requires at least ${minNoticeHours} hours notice for appointments.`,
       };
     }
   }
@@ -225,17 +223,34 @@ export function ymdFromSelectedDate(selectedDate: string): string {
 /** Narrow helper type used by the schedulers today. */
 export type SlotLike = Pick<TimeSlot, "startTime" | "startPeriod">;
 
-/** True when the slot start is at least `minHours` after now. */
+/** Product default when mentor availability has no notice rule saved yet. */
+export const DEFAULT_MIN_SCHEDULING_NOTICE_HOURS = 2;
+
+export function resolveMinSchedulingNoticeHours(
+  settings?: WeeklyAvailability | null,
+): number {
+  const configured = settings?.minSchedulingNoticeHours;
+  if (typeof configured === "number" && configured >= 0) {
+    return configured;
+  }
+  return DEFAULT_MIN_SCHEDULING_NOTICE_HOURS;
+}
+
+function slotStartHoursFromNow(dayYmd: string, slot: SlotLike): number {
+  const meetingDateIso = appointmentService.createMeetingDate(dayYmd, slot);
+  return (new Date(meetingDateIso).getTime() - Date.now()) / (1000 * 60 * 60);
+}
+
+/** True when the slot start is in the future and meets the notice window. */
 export function isSlotWithinMinNotice(
   dayYmd: string,
   slot: SlotLike,
   minHours: number,
 ): boolean {
-  if (!minHours || minHours <= 0) return true;
   if (!dayYmd || !slot?.startTime) return false;
-  const meetingDateIso = appointmentService.createMeetingDate(dayYmd, slot);
-  const hoursNotice =
-    (new Date(meetingDateIso).getTime() - Date.now()) / (1000 * 60 * 60);
+  const hoursNotice = slotStartHoursFromNow(dayYmd, slot);
+  if (hoursNotice <= 0) return false;
+  if (!minHours || minHours <= 0) return true;
   return hoursNotice >= minHours;
 }
 
@@ -244,8 +259,7 @@ export function filterSlotsByMinNotice(
   slots: TimeSlot[],
   settings?: WeeklyAvailability | null,
 ): TimeSlot[] {
-  const min = settings?.minSchedulingNoticeHours;
-  if (!min || min <= 0) return slots;
+  const min = resolveMinSchedulingNoticeHours(settings);
   return slots.filter((s) => isSlotWithinMinNotice(dayYmd, s, min));
 }
 

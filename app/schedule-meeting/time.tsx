@@ -34,6 +34,7 @@ import {
   filterSlotsByMinNotice,
   isMentorSlotTaken,
   isUserBookedAtSlot,
+  resolveMinSchedulingNoticeHours,
 } from "@/utils/appointments/validation";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -290,7 +291,7 @@ export default function ScheduleMeetingTimeScreen() {
     return Array.from(set).sort();
   }, [mergedAvailability, schedulingSettings, userAppointments, mentorAppointments, excludeAppointmentId]);
 
-  const minNoticeHours = schedulingSettings?.minSchedulingNoticeHours ?? 0;
+  const minNoticeHours = resolveMinSchedulingNoticeHours(schedulingSettings);
 
   const getTimeSlotsForDate = useCallback(
     (dateString: string) => {
