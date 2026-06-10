@@ -23,7 +23,12 @@ import {
     savedExtrasToFormValues,
     shouldUpdateTaskExtras,
 } from "@/lib/roadmap/helpers";
+import {
+    getJumpstartErrorTitle,
+    isJumpstartBlockingError,
+} from "@/lib/roadmap/jumpstartErrors";
 import { saveTaskRoadmapExtras } from "@/lib/roadmap/saveTaskExtras";
+import { extractApiErrorMessage } from "@/utils/availability/api-error";
 import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
@@ -232,7 +237,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         return fieldErrors;
     };
 
-    const ensureJumpstartTriggered = async () => {
+    const ensureJumpstartTriggered = async (): Promise<boolean> => {
         const user = currentUser;
         // Must match GET/PATCH/create: same `roadmapId` as route `phaseId`, not a different "Jumpstart" roadmap from assigned list.
         const extrasRoadmapId = isMongoObjectId(roadmapId) ? roadmapId : undefined;
@@ -243,11 +248,11 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                 extrasRoadmapId,
                 userId: user?.id,
             });
-            return;
+            return true;
         }
 
         if (jumpstartTriggeredUsersRef.current.has(user.id)) {
-            return;
+            return true;
         }
 
         console.log("STEP 1: Jumpstart trigger (POST)", {
@@ -267,11 +272,20 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
             if (response?.success || response?.alreadyExists) {
                 jumpstartTriggeredUsersRef.current.add(user.id);
             }
+            return true;
         } catch (error) {
+            if (isJumpstartBlockingError(error)) {
+                Alert.alert(
+                    getJumpstartErrorTitle(error),
+                    extractApiErrorMessage(error),
+                );
+                return false;
+            }
             console.warn(
                 "[Jumpstart Trigger] Failed (non-blocking). Continuing extras flow.",
                 error,
             );
+            return true;
         }
     };
 
@@ -294,7 +308,8 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         }
 
         try {
-            await ensureJumpstartTriggered();
+            const jumpstartOk = await ensureJumpstartTriggered();
+            if (!jumpstartOk) return;
 
             const usePatchForExtras =
                 isUpdateMode ||
@@ -371,9 +386,19 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                 setShowSuccessModal(false);
                 router.back();
             }, 1800);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("❌ Submission error:", err);
-            Alert.alert("Submission Failed", err?.message || "Failed to submit. Please try again.");
+            if (isJumpstartBlockingError(err)) {
+                Alert.alert(
+                    getJumpstartErrorTitle(err),
+                    extractApiErrorMessage(err),
+                );
+                return;
+            }
+            Alert.alert(
+                "Submission Failed",
+                extractApiErrorMessage(err) || "Failed to submit. Please try again.",
+            );
         }
     };
 

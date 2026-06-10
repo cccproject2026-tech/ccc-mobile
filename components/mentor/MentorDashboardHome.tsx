@@ -31,7 +31,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const EXPLORE_TILES = [
   {
     icon: "document-text-outline",
-    title: "Session\nNotes",
+    title: "Personal\nNotes",
     route: "/(mentor)/(tabs)/profile/notes",
   },
   {

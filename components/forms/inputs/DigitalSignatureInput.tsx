@@ -70,6 +70,8 @@ export function DigitalSignatureInput({
                     webStyle={webStyle}
                     autoClear={false}
                     backgroundColor="transparent"
+                    imageType="image/jpeg"
+                    dataTrim
                     clearText={clearButtonLabel}
                     descriptionText=""
                 />

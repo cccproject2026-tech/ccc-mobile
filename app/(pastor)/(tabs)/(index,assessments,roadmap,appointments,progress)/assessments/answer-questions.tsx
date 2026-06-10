@@ -10,6 +10,11 @@ import {
 } from "@/hooks/assessments/useSubmitAnswers";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
+import {
+  getJumpstartErrorTitle,
+  isJumpstartBlockingError,
+} from "@/lib/roadmap/jumpstartErrors";
+import { extractApiErrorMessage } from "@/utils/availability/api-error";
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
 import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { buildReturnTo } from "@/utils/navigation";
@@ -99,7 +104,7 @@ export default function AnswerQuestionPage() {
   }, [jumpstartRoadmapId, assignedRoadmaps]);
 
   
-  const ensureJumpstartTriggered = async () => {
+  const ensureJumpstartTriggered = async (): Promise<boolean> => {
     console.log("ensureJumpstartTriggered CALLED");
     console.log("Check conditions", {
       isViewMode,
@@ -128,7 +133,7 @@ export default function AnswerQuestionPage() {
     }
 
     if (!debugRoadmapId || !debugUserId) {
-      return;
+      return true;
     }
 
     try {
@@ -141,11 +146,20 @@ export default function AnswerQuestionPage() {
       if (response.alreadyExists || response.success) {
         jumpstartTriggeredUsersRef.current.add(debugUserId);
       }
+      return true;
     } catch (triggerError) {
+      if (isJumpstartBlockingError(triggerError)) {
+        Alert.alert(
+          getJumpstartErrorTitle(triggerError),
+          extractApiErrorMessage(triggerError),
+        );
+        return false;
+      }
       console.warn(
         "[Jumpstart Trigger] Failed (non-blocking). Continuing assessment flow.",
         triggerError,
       );
+      return true;
     }
   };
 
@@ -282,7 +296,8 @@ export default function AnswerQuestionPage() {
       };
 
       
-      await ensureJumpstartTriggered();
+      const jumpstartOk = await ensureJumpstartTriggered();
+      if (!jumpstartOk) return;
 
       console.log("STEP 2: Saving extras");
       await submitAssessmentAnswers.mutateAsync({
@@ -301,7 +316,17 @@ export default function AnswerQuestionPage() {
       }
     } catch (error) {
       console.error("Failed to submit assessment:", error);
-      Alert.alert("Error", "Failed to submit assessment. Please try again.");
+      if (isJumpstartBlockingError(error)) {
+        Alert.alert(
+          getJumpstartErrorTitle(error),
+          extractApiErrorMessage(error),
+        );
+        return;
+      }
+      Alert.alert(
+        "Error",
+        extractApiErrorMessage(error) || "Failed to submit assessment. Please try again.",
+      );
     }
   };
 

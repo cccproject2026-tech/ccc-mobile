@@ -22,7 +22,12 @@ import {
     savedExtrasToFormValues,
     shouldUpdateTaskExtras,
 } from "@/lib/roadmap/helpers";
+import {
+    getJumpstartErrorTitle,
+    isJumpstartBlockingError,
+} from "@/lib/roadmap/jumpstartErrors";
 import { saveTaskRoadmapExtras } from "@/lib/roadmap/saveTaskExtras";
+import { extractApiErrorMessage } from "@/utils/availability/api-error";
 import {
     readTaskCompletionTimestamps,
     recordTaskCompletionTimestamp,
@@ -520,6 +525,13 @@ export function MentorTaskView({
                         jumpstartTriggeredUsersRef.current.add(targetUserId);
                     }
                 } catch (error) {
+                    if (isJumpstartBlockingError(error)) {
+                        Alert.alert(
+                            getJumpstartErrorTitle(error),
+                            extractApiErrorMessage(error),
+                        );
+                        return;
+                    }
                     console.warn(
                         "[Jumpstart Trigger] Failed (non-blocking). Continuing save flow.",
                         error,
@@ -574,10 +586,6 @@ export function MentorTaskView({
             const pendingFilesSnapshot = { ...pendingFiles };
             setPendingFiles({});
 
-            if (roadmapId && itemId && targetUserId) {
-                await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, Date.now());
-            }
-
             // Also create/update extras for backward compatibility with progress tracking
             const extrasArray = responsesArray;
             await saveTaskRoadmapExtras({
@@ -589,6 +597,10 @@ export function MentorTaskView({
                 createExtras: (payload) => createExtras.mutateAsync(payload),
                 updateExtras: (vars) => updateExtras.mutateAsync(vars),
             });
+
+            if (roadmapId && itemId && targetUserId) {
+                await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, Date.now());
+            }
 
             // Upload files to legacy extras endpoint too
             for (const [extraName, files] of Object.entries(pendingFilesSnapshot)) {
@@ -614,9 +626,19 @@ export function MentorTaskView({
                     router.back();
                 }, 1800);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("❌ Submission error:", err);
-            Alert.alert("Submission Failed", err?.message || "Failed to submit. Please try again.");
+            if (isJumpstartBlockingError(err)) {
+                Alert.alert(
+                    getJumpstartErrorTitle(err),
+                    extractApiErrorMessage(err),
+                );
+                return;
+            }
+            Alert.alert(
+                "Submission Failed",
+                extractApiErrorMessage(err) || "Failed to submit. Please try again.",
+            );
         }
     };
 

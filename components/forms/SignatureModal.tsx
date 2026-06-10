@@ -30,10 +30,16 @@ const webStyle = `
 
 type SignatureRef = { readSignature: () => void; clearSignature: () => void } | null;
 
+/** Keep exported signature images small enough for reliable API uploads. */
+const MAX_SIGNATURE_WIDTH = 600;
+const MAX_SIGNATURE_HEIGHT = 200;
+
 export function SignatureModal({ visible, onSave, onClose }: Props) {
     const signatureRef = useRef<SignatureRef>(null);
     const [saveRequested, setSaveRequested] = useState(false);
     const { width, height } = useWindowDimensions();
+    const canvasWidth = Math.min(width - 32, MAX_SIGNATURE_WIDTH);
+    const canvasHeight = Math.min(Math.round(height * 0.3), MAX_SIGNATURE_HEIGHT);
 
     const handleOK = (signature: string) => {
         if (saveRequested) {
@@ -73,7 +79,8 @@ export function SignatureModal({ visible, onSave, onClose }: Props) {
                         backgroundColor="#ffffff"
                         penColor="#000000"
                         imageType="image/jpeg"
-                        style={[styles.canvas, { width: width - 32, height: height * 0.3 }]}
+                        dataTrim
+                        style={[styles.canvas, { width: canvasWidth, height: canvasHeight }]}
                     />
                 </View>
 
