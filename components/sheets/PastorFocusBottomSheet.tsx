@@ -5,10 +5,9 @@ import {
   BottomSheetBackgroundProps,
   BottomSheetFlatList,
   BottomSheetModal,
-  useBottomSheetModal,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { forwardRef, useCallback, useMemo } from "react";
+import { forwardRef, useCallback, useMemo, useRef } from "react";
 import {
   Animated,
   ListRenderItem,
@@ -267,8 +266,24 @@ const PastorFocusBottomSheet = forwardRef<
   ) => {
     const { bottom } = useSafeAreaInsets();
     const { height: windowHeight } = useWindowDimensions();
-    const { dismiss } = useBottomSheetModal();
+    const bottomSheetRef = useRef<BottomSheetModal>(null);
     const snapPoints = useMemo(() => ["90%"], []);
+
+    const setBottomSheetRef = useCallback(
+      (instance: BottomSheetModal | null) => {
+        bottomSheetRef.current = instance;
+        if (typeof ref === "function") {
+          ref(instance);
+        } else if (ref) {
+          ref.current = instance;
+        }
+      },
+      [ref],
+    );
+
+    const handleClose = useCallback(() => {
+      bottomSheetRef.current?.dismiss();
+    }, []);
     const sheetListHeight = useMemo(
       () => Math.floor(windowHeight * 0.9),
       [windowHeight],
@@ -322,7 +337,7 @@ const PastorFocusBottomSheet = forwardRef<
               ) : null}
               <Pressable
                 style={styles.inlineCloseButton}
-                onPress={() => dismiss()}
+                onPress={handleClose}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="close" size={20} color="#FFFFFF" />
@@ -349,7 +364,7 @@ const PastorFocusBottomSheet = forwardRef<
           </View>
         </View>
       ),
-      [dismiss, isLoading, onNewMeeting, subtitle, title, totalItems],
+      [handleClose, isLoading, onNewMeeting, subtitle, title, totalItems],
     );
 
     const renderRow: ListRenderItem<FocusListRow> = useCallback(
@@ -393,7 +408,7 @@ const PastorFocusBottomSheet = forwardRef<
 
     return (
       <BottomSheetModal
-        ref={ref}
+        ref={setBottomSheetRef}
         snapPoints={snapPoints}
         enableDynamicSizing={false}
         backdropComponent={renderBackdrop}
