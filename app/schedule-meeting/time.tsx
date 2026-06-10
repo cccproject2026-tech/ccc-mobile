@@ -147,8 +147,15 @@ export default function ScheduleMeetingTimeScreen() {
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
+  const [isScanningForBookableMonth, setIsScanningForBookableMonth] = useState(false);
+  const monthScanAttemptsRef = useRef(0);
+  const lastSlotSyncSkipRef = useRef<string | null>(null);
 
   const prevAvailabilityOwnerRef = useRef<string | null>(null);
+
+  const setScanningForBookableMonth = useCallback((scanning: boolean) => {
+    setIsScanningForBookableMonth((prev) => (prev === scanning ? prev : scanning));
+  }, []);
 
   // Drawer keeps this screen mounted (freezeOnBlur). Re-sync calendar + refetch on each visit.
   useFocusEffect(
@@ -160,6 +167,9 @@ export default function ScheduleMeetingTimeScreen() {
       setCalendarSlotSyncError(null);
       setCalendarConnectBanners([]);
       setCalendarBusyStripped(0);
+      monthScanAttemptsRef.current = 0;
+      lastSlotSyncSkipRef.current = null;
+      setScanningForBookableMonth(false);
       setSlot(null);
 
       const draftState = useScheduleMeetingStore.getState().draft;
@@ -193,7 +203,7 @@ export default function ScheduleMeetingTimeScreen() {
       void queryClient.refetchQueries({
         queryKey: ["appointments", "mentor", availabilityOwnerId],
       });
-    }, [availabilityOwnerId, overlapUserId, queryClient, setSlot]),
+    }, [availabilityOwnerId, overlapUserId, queryClient, setScanningForBookableMonth, setSlot]),
   );
 
   // New person / second booking in a row — drop stale month + slot sync from the prior session.
@@ -206,6 +216,9 @@ export default function ScheduleMeetingTimeScreen() {
     setGoogleFilteredSlots(null);
     setCalendarSlotSyncLoading(false);
     setCalendarSlotSyncError(null);
+    monthScanAttemptsRef.current = 0;
+    lastSlotSyncSkipRef.current = null;
+    setScanningForBookableMonth(false);
 
     if (!draft.selectedDayYmd) {
       const n = new Date();
@@ -246,9 +259,6 @@ export default function ScheduleMeetingTimeScreen() {
     },
   );
 
-  /** Only block the calendar when this month has never loaded — not on background refetch. */
-  const showMonthLoadingOverlay = isLoadingMonthly;
-
   const settings = weeklyAvailability;
   const weeklySlots = weeklyAvailability?.weeklySlots ?? [];
 
@@ -264,6 +274,15 @@ export default function ScheduleMeetingTimeScreen() {
       weeklySlots,
     );
   }, [currentMonth, currentYear, monthlyAvailability, weeklySlots]);
+
+  /** True when mentor has no bookable schedule after both weekly + monthly have loaded. */
+  const mentorHasNoAvailability = useMemo(() => {
+    if (isLoadingWeekly || isLoadingMonthly) return false;
+    return mergedAvailability.length === 0;
+  }, [isLoadingWeekly, isLoadingMonthly, mergedAvailability.length]);
+
+  /** Only block the calendar when the user picks a month — not during background auto-scan. */
+  const showMonthLoadingOverlay = isLoadingMonthly && !isScanningForBookableMonth;
 
   const schedulingSettings = useMemo((): WeeklyAvailability | null => {
     if (!weeklyAvailability) return null;
@@ -338,16 +357,31 @@ export default function ScheduleMeetingTimeScreen() {
     [availableDates, draft.selectedDayYmd, getTimeSlotsForDate, setDay],
   );
 
-  // If this month has no bookable days left, walk forward until we find some.
+  // If this month has no bookable days, try a few months ahead — but stop immediately
+  // when the mentor has no availability configured (avoids sequential empty API calls).
   useEffect(() => {
     if (isLoadingWeekly || isLoadingMonthly) return;
-    if (availableDates.length > 0) return;
 
-    const today = new Date();
-    const monthsAhead =
-      (currentYear - today.getFullYear()) * 12 + (currentMonth - 1 - today.getMonth());
-    if (monthsAhead >= 12) return;
+    if (availableDates.length > 0) {
+      monthScanAttemptsRef.current = 0;
+      setScanningForBookableMonth(false);
+      return;
+    }
 
+    if (mentorHasNoAvailability) {
+      monthScanAttemptsRef.current = 0;
+      setScanningForBookableMonth(false);
+      return;
+    }
+
+    const maxMonthsToScan = 3;
+    if (monthScanAttemptsRef.current >= maxMonthsToScan) {
+      setScanningForBookableMonth(false);
+      return;
+    }
+
+    monthScanAttemptsRef.current += 1;
+    setScanningForBookableMonth(true);
     const next = new Date(currentYear, currentMonth, 1);
     setCurrentMonth(next.getMonth() + 1);
     setCurrentYear(next.getFullYear());
@@ -357,6 +391,8 @@ export default function ScheduleMeetingTimeScreen() {
     currentYear,
     isLoadingMonthly,
     isLoadingWeekly,
+    mentorHasNoAvailability,
+    setScanningForBookableMonth,
   ]);
 
   useEffect(() => {
@@ -371,9 +407,10 @@ export default function ScheduleMeetingTimeScreen() {
   }, [availableDates, draft.selectedDayYmd, selectNearestBookableDay]);
 
   useEffect(() => {
-    
-    setSlot(null);
-  }, [draft.selectedDayYmd, setSlot]);
+    if (draft.selectedSlot !== null) {
+      setSlot(null);
+    }
+  }, [draft.selectedDayYmd, draft.selectedSlot, setSlot]);
 
   const timeSlots = useMemo(
     () => (draft.selectedDayYmd ? getTimeSlotsForDate(draft.selectedDayYmd) : []),
@@ -384,10 +421,10 @@ export default function ScheduleMeetingTimeScreen() {
 
   useEffect(() => {
     if (!availabilityOwnerId || !draft.selectedDayYmd || timeSlots.length === 0) {
-      setGoogleFilteredSlots(null);
-      setCalendarConnectBanners([]);
-      setCalendarBusyStripped(0);
-      setCalendarSlotSyncError(null);
+      setGoogleFilteredSlots((prev) => (prev === null ? prev : null));
+      setCalendarConnectBanners((prev) => (prev.length === 0 ? prev : []));
+      setCalendarBusyStripped((prev) => (prev === 0 ? prev : 0));
+      setCalendarSlotSyncError((prev) => (prev === null ? prev : null));
       return;
     }
 
@@ -508,7 +545,11 @@ export default function ScheduleMeetingTimeScreen() {
   // Selected day had slots locally but none remain after sync — try the next bookable date.
   useEffect(() => {
     if (calendarSlotSyncLoading || availableDates.length === 0) return;
-    if (displayTimeSlots.length > 0) return;
+
+    if (displayTimeSlots.length > 0) {
+      lastSlotSyncSkipRef.current = null;
+      return;
+    }
 
     const current = draft.selectedDayYmd;
     if (!current) {
@@ -523,13 +564,30 @@ export default function ScheduleMeetingTimeScreen() {
       return;
     }
 
-    selectNearestBookableDay(current);
+    const next = pickNearestBookableDay(
+      availableDates,
+      (ymd) => getTimeSlotsForDate(ymd).length > 0,
+      current,
+    );
+    if (!next || next === current || next === lastSlotSyncSkipRef.current) {
+      lastSlotSyncSkipRef.current = null;
+      return;
+    }
+    lastSlotSyncSkipRef.current = current;
+    setDay(next);
+    const cal = calendarYearMonthFromYmd(next);
+    if (cal) {
+      setCurrentMonth(cal.month);
+      setCurrentYear(cal.year);
+    }
   }, [
-    availableDates.length,
+    availableDates,
     calendarSlotSyncLoading,
     displayTimeSlots.length,
     draft.selectedDayYmd,
+    getTimeSlotsForDate,
     selectNearestBookableDay,
+    setDay,
     timeSlots.length,
   ]);
 
@@ -611,6 +669,8 @@ export default function ScheduleMeetingTimeScreen() {
               setSelected={(ymd: string) => setDay(ymd)}
               availableDates={availableDates}
               onMonthChange={(m, y) => {
+                monthScanAttemptsRef.current = 0;
+                setScanningForBookableMonth(false);
                 setCurrentMonth(m);
                 setCurrentYear(y);
               }}
@@ -624,7 +684,20 @@ export default function ScheduleMeetingTimeScreen() {
                 <Text style={styles.calendarLoadingText}>Loading {visibleMonthLabel}…</Text>
               </View>
             ) : null}
+            {isScanningForBookableMonth && isLoadingMonthly ? (
+              <View style={styles.scanningHint} pointerEvents="none">
+                <ActivityIndicator color="#8ec5eb" size="small" />
+                <Text style={styles.scanningHintText}>Looking for next available date…</Text>
+              </View>
+            ) : null}
           </View>
+
+          {mentorHasNoAvailability ? (
+            <Text style={styles.noAvailabilityBanner}>
+              This mentor has not set their availability yet. Please ask them to configure their
+              schedule, or try again later.
+            </Text>
+          ) : null}
 
           {isMonthlyError ? (
             <Text style={styles.monthlyWarning}>
@@ -779,6 +852,26 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.92)",
     fontWeight: "700",
     fontSize: 13,
+  },
+  scanningHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 8,
+  },
+  scanningHintText: {
+    color: "#8ec5eb",
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  noAvailabilityBanner: {
+    marginTop: 10,
+    color: "rgba(255, 209, 102, 0.95)",
+    fontWeight: "600",
+    fontSize: 13,
+    lineHeight: 18,
+    paddingHorizontal: 4,
   },
   monthlyWarning: {
     marginTop: 8,
