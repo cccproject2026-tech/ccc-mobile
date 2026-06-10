@@ -3,9 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const RETURN_PATH_KEY = 'ccc.googleCalendar.oauthReturnPath';
 
 const DEFAULT_BY_ROLE: Record<string, string> = {
-  mentor: '/appointments/availability',
-  pastor: '/appointments',
-  director: '/appointments',
+  mentor: '/(mentor)/(tabs)/appointments',
+  pastor: '/(pastor)/(tabs)/appointments',
+  director: '/(director)/(tabs)/appointments',
 };
 
 export async function saveGoogleCalendarOAuthReturnPath(pathname: string): Promise<void> {
@@ -27,5 +27,5 @@ export async function consumeGoogleCalendarOAuthReturnPath(
     
   }
   const roleKey = String(role || '').toLowerCase();
-  return DEFAULT_BY_ROLE[roleKey] ?? '/appointments';
+  return DEFAULT_BY_ROLE[roleKey] ?? '/(pastor)/(tabs)/appointments';
 }

@@ -1,9 +1,17 @@
 import { getGoogleCalendarOAuthRedirectUrl } from '@/constants/googleCalendar';
 import {
-  handleGoogleCalendarOAuthSessionResult,
+  beginWebBrowserGoogleCalendarOAuth,
+  endWebBrowserGoogleCalendarOAuth,
+  markGoogleCalendarOAuthUrlHandled,
 } from '@/hooks/googleCalendar/useGoogleCalendarOAuthReturn';
-import { useGoogleCalendarStatus } from '@/hooks/googleCalendar/useGoogleCalendarStatus';
-import { getGoogleCalendarAuthUrl } from '@/services/googleCalendar.service';
+import {
+  invalidateAfterGoogleCalendarOAuth,
+  useGoogleCalendarStatus,
+} from '@/hooks/googleCalendar/useGoogleCalendarStatus';
+import {
+  getGoogleCalendarAuthUrl,
+  parseGoogleCalendarOAuthReturnUrl,
+} from '@/services/googleCalendar.service';
 import { useAuthStore } from '@/stores/auth.store';
 import type { GoogleCalendarStatus } from '@/types/googleCalendar.types';
 import { extractApiErrorMessage } from '@/utils/availability/api-error';
@@ -13,9 +21,11 @@ import {
 } from '@/utils/google-calendar/display-messages';
 import { saveGoogleCalendarOAuthReturnPath } from '@/utils/google-calendar/oauthReturnPath';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect, useState } from 'react';
+import Toast from 'react-native-toast-message';
 import {
   ActivityIndicator,
   Pressable,
@@ -47,6 +57,7 @@ export default function GoogleCalendarConnectButton({
   onStatusChange,
 }: Props) {
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const userId = useAuthStore((s) => s.user?.id)?.trim() ?? '';
 
@@ -76,16 +87,37 @@ export default function GoogleCalendarConnectButton({
       }
 
       const redirectUrl = getGoogleCalendarOAuthRedirectUrl();
-      const result = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
+      beginWebBrowserGoogleCalendarOAuth();
+      try {
+        const result = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
 
-      if (result.type === 'success' && result.url) {
-        await handleGoogleCalendarOAuthSessionResult(result.url);
-        onConnectionSynced?.();
-        return;
-      }
+        if (result.type === 'success' && result.url) {
+          // Handle in-place — deep-link listener must not open /oauth/google-calendar.
+          markGoogleCalendarOAuthUrlHandled(result.url);
+          const outcome = parseGoogleCalendarOAuthReturnUrl(result.url);
+          if (outcome.outcome === 'linked') {
+            invalidateAfterGoogleCalendarOAuth(queryClient, userId);
+            Toast.show({
+              type: 'floating',
+              text1: GOOGLE_CALENDAR_COPY.connected,
+              visibilityTime: 4500,
+            });
+          } else if (outcome.outcome === 'error') {
+            setErrorHint(
+              outcome.reason
+                ? shortenGoogleCalendarMessage(outcome.reason)
+                : GOOGLE_CALENDAR_COPY.connectFailed,
+            );
+          }
+          onConnectionSynced?.();
+          return;
+        }
 
-      if (result.type === 'cancel' || result.type === 'dismiss') {
-        setErrorHint(GOOGLE_CALENDAR_COPY.connectionCancelled);
+        if (result.type === 'cancel' || result.type === 'dismiss') {
+          setErrorHint(GOOGLE_CALENDAR_COPY.connectionCancelled);
+        }
+      } finally {
+        endWebBrowserGoogleCalendarOAuth();
       }
     } catch (e: unknown) {
       const msg = extractApiErrorMessage(e);
@@ -103,7 +135,7 @@ export default function GoogleCalendarConnectButton({
     } finally {
       setPending(false);
     }
-  }, [onConnectionSynced, pathname, userId]);
+  }, [onConnectionSynced, pathname, queryClient, userId]);
 
   const statusCopy = (() => {
     if (calendarStatus === 'expired') return { icon: '⚠', text: 'Reconnect Google Calendar' };

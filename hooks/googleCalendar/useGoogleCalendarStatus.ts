@@ -1,5 +1,6 @@
 import { getGoogleCalendarStatus } from '@/services/googleCalendar.service';
 import { useAuthStore } from '@/stores/auth.store';
+import { clearMergedAvailabilityCache } from '@/utils/google-calendar/google-calendar-scheduling';
 import type {
   GoogleCalendarConnectionStatus,
   GoogleCalendarStatus,
@@ -47,18 +48,22 @@ export async function refreshGoogleCalendarStatus(
   userId: string,
 ) {
   const key = googleCalendarStatusQueryKey(userId);
-  await queryClient.invalidateQueries({ queryKey: ['google-calendar-status'] });
   await queryClient.invalidateQueries({ queryKey: key, exact: true });
   await queryClient.refetchQueries({ queryKey: key, exact: true });
 }
 
-/** Shared post-OAuth cache refresh (matches ccc-web). */
-export async function invalidateAfterGoogleCalendarOAuth(
+/**
+ * Mark scheduling caches stale after OAuth. Does not await availability refetches
+ * (those are slow and run in the background while the schedule screen stays usable).
+ */
+export function invalidateAfterGoogleCalendarOAuth(
   queryClient: ReturnType<typeof useQueryClient>,
   userId: string,
 ) {
-  await queryClient.invalidateQueries({ queryKey: ['mentor-availability'] });
-  await queryClient.invalidateQueries({ queryKey: ['weekly-availability'] });
-  await queryClient.invalidateQueries({ queryKey: ['monthly-availability'] });
-  await refreshGoogleCalendarStatus(queryClient, userId);
+  clearMergedAvailabilityCache();
+
+  void queryClient.invalidateQueries({ queryKey: ['mentor-availability'] });
+  void queryClient.invalidateQueries({ queryKey: ['weekly-availability'] });
+  void queryClient.invalidateQueries({ queryKey: ['monthly-availability'] });
+  void refreshGoogleCalendarStatus(queryClient, userId);
 }

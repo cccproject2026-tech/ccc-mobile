@@ -1,3 +1,4 @@
+import { isWebBrowserGoogleCalendarOAuthActive } from '@/hooks/googleCalendar/useGoogleCalendarOAuthReturn';
 import { useAuthStore } from '@/stores';
 import { UserRole } from '@/types';
 import { getNotificationRoute, getRoleNotificationRoute } from '@/utils/notifications';
@@ -86,6 +87,7 @@ export default function AppNotificationsProvider({
 
                 if (
                     isMounted &&
+                    !isWebBrowserGoogleCalendarOAuthActive() &&
                     moduleName &&
                     responseId &&
                     lastHandledResponseId.current !== responseId
@@ -131,7 +133,7 @@ export default function AppNotificationsProvider({
             responseListener.current = Notifications.addNotificationResponseReceivedListener(
                 async (response: Notifications.NotificationResponse) => {
                     try {
-                        if (!isMounted) return;
+                        if (!isMounted || isWebBrowserGoogleCalendarOAuthActive()) return;
                         await invalidateNotifications();
                         lastHandledResponseId.current =
                             response.notification.request.identifier;
@@ -157,9 +159,10 @@ export default function AppNotificationsProvider({
         const appStateSubscription = AppState.addEventListener('change', async (state) => {
             if (state === 'active') {
                 try {
-                    await bootstrapNotifications();
+                    // Refresh badge only — do not re-run last-tap navigation (e.g. after Google OAuth browser).
+                    await invalidateNotifications();
                 } catch (error) {
-                    console.warn(`${TAG} bootstrap on active failed`, error);
+                    console.warn(`${TAG} invalidate on active failed`, error);
                 }
             }
         });

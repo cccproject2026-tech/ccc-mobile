@@ -6,122 +6,97 @@ import {
   GOOGLE_CALENDAR_COPY,
   shortenGoogleCalendarMessage,
 } from '@/utils/google-calendar/display-messages';
+import { isWebBrowserGoogleCalendarOAuthActive } from '@/hooks/googleCalendar/useGoogleCalendarOAuthReturn';
+import { leaveGoogleCalendarOAuthScreen } from '@/utils/google-calendar/oauthNavigation';
 import { consumeGoogleCalendarOAuthReturnPath } from '@/utils/google-calendar/oauthReturnPath';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
 import Toast from 'react-native-toast-message';
 
+function parseOutcomeFromParams(params: {
+  googleCalendar?: string;
+  reason?: string;
+}): ReturnType<typeof parseGoogleCalendarOAuthReturnUrl> {
+  if (!params.googleCalendar) {
+    return { outcome: 'unknown' };
+  }
+  const qs = new URLSearchParams();
+  qs.set('googleCalendar', String(params.googleCalendar));
+  if (params.reason) qs.set('reason', String(params.reason));
+  return parseGoogleCalendarOAuthReturnUrl(`dummy://cb?${qs.toString()}`);
+}
+
 /**
- * OAuth return landing route — matches deep link `cccpastormentor://oauth/google-calendar`.
- * Replaces the brief "+not-found" flash with a loading screen, then returns to schedule.
+ * OAuth return landing route — cold-start / background deep links only.
+ * In-app WebBrowser returns are handled inline in GoogleCalendarConnectButton.
  */
 export default function GoogleCalendarOAuthReturnScreen() {
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ googleCalendar?: string; reason?: string }>();
-  const { user, isAuthenticated } = useAuthStore();
-  const [statusText, setStatusText] = useState(GOOGLE_CALENDAR_COPY.connecting);
-  const startedRef = useRef(false);
+  const finishedRef = useRef(false);
 
   useEffect(() => {
-    if (startedRef.current) return;
+    if (finishedRef.current) return;
+    finishedRef.current = true;
 
-    const timer = setTimeout(() => {
-      if (startedRef.current) return;
-      startedRef.current = true;
+    void (async () => {
+      // In-app WebBrowser flow already handled on the schedule screen — go back, do not redirect.
+      if (isWebBrowserGoogleCalendarOAuthActive()) {
+        if (router.canGoBack()) router.back();
+        return;
+      }
 
-      void (async () => {
-        const authUser = useAuthStore.getState().user;
-        const authed = useAuthStore.getState().isAuthenticated;
+      const authUser = useAuthStore.getState().user;
+      const authed = useAuthStore.getState().isAuthenticated;
 
-        if (!authed || !authUser?.id) {
-          setStatusText(GOOGLE_CALENDAR_COPY.signInRequired);
-          router.replace('/');
-          return;
-        }
+      if (!authed || !authUser?.id) {
+        leaveGoogleCalendarOAuthScreen('/', authUser?.role);
+        return;
+      }
 
-        let outcome: ReturnType<typeof parseGoogleCalendarOAuthReturnUrl> = {
-          outcome: 'unknown',
-        };
+      let outcome = parseOutcomeFromParams(params);
 
-        if (params.googleCalendar) {
-          const qs = new URLSearchParams();
-          qs.set('googleCalendar', String(params.googleCalendar));
-          if (params.reason) qs.set('reason', String(params.reason));
-          outcome = parseGoogleCalendarOAuthReturnUrl(`dummy://cb?${qs.toString()}`);
-        } else {
+      if (outcome.outcome === 'unknown') {
+        try {
           const initialUrl = await Linking.getInitialURL();
           if (initialUrl?.includes('googleCalendar=')) {
             outcome = parseGoogleCalendarOAuthReturnUrl(initialUrl);
           }
+        } catch {
+          // fall through
         }
+      }
 
-        const returnPath = await consumeGoogleCalendarOAuthReturnPath(authUser.role);
+      let returnPath: string | null = null;
+      try {
+        returnPath = await consumeGoogleCalendarOAuthReturnPath(authUser.role);
+      } catch {
+        returnPath = null;
+      }
 
-        if (outcome.outcome === 'linked') {
-          setStatusText(GOOGLE_CALENDAR_COPY.connectedOpening);
-          try {
-            await invalidateAfterGoogleCalendarOAuth(queryClient, authUser.id);
-          } catch {
-            
-          }
-          Toast.show({
-            type: 'floating',
-            text1: GOOGLE_CALENDAR_COPY.connected,
-            visibilityTime: 4500,
-          });
-        } else if (outcome.outcome === 'error') {
-          setStatusText(GOOGLE_CALENDAR_COPY.connectFailedReturning);
-          Toast.show({
-            type: 'floating',
-            text1: outcome.reason
-              ? shortenGoogleCalendarMessage(outcome.reason)
-              : GOOGLE_CALENDAR_COPY.connectFailed,
-            visibilityTime: 6000,
-          });
-        } else {
-          setStatusText(GOOGLE_CALENDAR_COPY.returning);
-        }
+      if (outcome.outcome === 'linked') {
+        invalidateAfterGoogleCalendarOAuth(queryClient, authUser.id);
+        Toast.show({
+          type: 'floating',
+          text1: GOOGLE_CALENDAR_COPY.connected,
+          visibilityTime: 4500,
+        });
+      } else if (outcome.outcome === 'error') {
+        Toast.show({
+          type: 'floating',
+          text1: outcome.reason
+            ? shortenGoogleCalendarMessage(outcome.reason)
+            : GOOGLE_CALENDAR_COPY.connectFailed,
+          visibilityTime: 6000,
+        });
+      }
 
-        router.replace(returnPath as any);
-      })();
-    }, 80);
+      leaveGoogleCalendarOAuthScreen(returnPath, authUser.role);
+    })();
+  }, [params.googleCalendar, params.reason, queryClient]);
 
-    return () => clearTimeout(timer);
-  }, [params.googleCalendar, params.reason, queryClient, isAuthenticated, user?.id]);
-
-  return (
-    <AppGradientBackground style={styles.root}>
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-        <Text style={styles.title}>{statusText}</Text>
-        <Text style={styles.subtitle}>Please wait a moment</Text>
-      </View>
-    </AppGradientBackground>
-  );
+  // No loading UI — navigate away immediately (connection already succeeded).
+  return <AppGradientBackground style={{ flex: 1 }} />;
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    gap: 12,
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.72)',
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-});

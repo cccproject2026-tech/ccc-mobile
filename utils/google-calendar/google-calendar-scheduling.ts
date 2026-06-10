@@ -12,6 +12,66 @@ import {
 } from '@/utils/google-calendar/display-messages';
 
 const DEFAULT_DURATION_MIN = 60;
+const MERGED_AVAILABILITY_CACHE_TTL_MS = 60_000;
+
+type MergedCacheEntry = {
+  expires: number;
+  data?: unknown;
+  promise?: Promise<unknown>;
+};
+
+const mergedAvailabilityCache = new Map<string, MergedCacheEntry>();
+
+function mergedAvailabilityCacheKey(
+  mentorUserId: string,
+  params: { from: string; to: string; participantUserId?: string },
+): string {
+  return `${mentorUserId}|${params.from}|${params.to}|${params.participantUserId ?? ''}`;
+}
+
+/** Bust cached Google Free/Busy after OAuth link or disconnect. */
+export function clearMergedAvailabilityCache(): void {
+  mergedAvailabilityCache.clear();
+}
+
+async function fetchMergedAvailabilityCached(
+  fetchMergedAvailability: (
+    mentorUserId: string,
+    params: { from: string; to: string; participantUserId?: string },
+  ) => Promise<unknown>,
+  mentorUserId: string,
+  params: { from: string; to: string; participantUserId?: string },
+): Promise<unknown> {
+  const key = mergedAvailabilityCacheKey(mentorUserId, params);
+  const now = Date.now();
+  const hit = mergedAvailabilityCache.get(key);
+
+  if (hit?.data !== undefined && hit.expires > now) {
+    return hit.data;
+  }
+  if (hit?.promise) {
+    return hit.promise;
+  }
+
+  const promise = fetchMergedAvailability(mentorUserId, params)
+    .then((data) => {
+      mergedAvailabilityCache.set(key, {
+        expires: Date.now() + MERGED_AVAILABILITY_CACHE_TTL_MS,
+        data,
+      });
+      return data;
+    })
+    .catch((error) => {
+      mergedAvailabilityCache.delete(key);
+      throw error;
+    });
+
+  mergedAvailabilityCache.set(key, {
+    expires: now + MERGED_AVAILABILITY_CACHE_TTL_MS,
+    promise,
+  });
+  return promise;
+}
 
 function msMinutes(m: number): number {
   return m * 60_000;
@@ -86,11 +146,16 @@ export async function filterTimeSlotsAgainstGoogleCalendar(options: {
   }
 
   try {
-    const res = await options.fetchMergedAvailability(mentorForMerge, {
+    const mergeParams = {
       from: fromIso,
       to: toIso,
       ...(participantForMerge ? { participantUserId: participantForMerge } : {}),
-    });
+    };
+    const res = await fetchMergedAvailabilityCached(
+      options.fetchMergedAvailability,
+      mentorForMerge,
+      mergeParams,
+    );
 
     const g = extractMergedGoogleBundle(res);
     const busy = mergeBusyIntervals(g.mentor.busyIntervals, g.participant.busyIntervals);

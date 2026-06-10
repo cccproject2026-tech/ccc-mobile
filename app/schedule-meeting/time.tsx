@@ -25,7 +25,10 @@ import {
   GOOGLE_CALENDAR_COPY,
   shortenGoogleCalendarMessage,
 } from "@/utils/google-calendar/display-messages";
-import { filterTimeSlotsAgainstGoogleCalendar } from "@/utils/google-calendar/google-calendar-scheduling";
+import {
+  clearMergedAvailabilityCache,
+  filterTimeSlotsAgainstGoogleCalendar,
+} from "@/utils/google-calendar/google-calendar-scheduling";
 import {
   filterSlotsByExistingBookings,
   filterSlotsByMinNotice,
@@ -33,7 +36,6 @@ import {
   isUserBookedAtSlot,
 } from "@/utils/appointments/validation";
 import { Ionicons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -64,7 +66,6 @@ function pickNearestBookableDay(
 
 export default function ScheduleMeetingTimeScreen() {
   const { user } = useAuthStore();
-  const queryClient = useQueryClient();
   const routeParams = useLocalSearchParams<{
     drawerContext?: string;
     assessmentId?: string;
@@ -157,54 +158,31 @@ export default function ScheduleMeetingTimeScreen() {
     setIsScanningForBookableMonth((prev) => (prev === scanning ? prev : scanning));
   }, []);
 
-  // Drawer keeps this screen mounted (freezeOnBlur). Re-sync calendar + refetch on each visit.
+  // Drawer keeps this screen mounted (freezeOnBlur). Re-align month on revisit without
+  // forcing a full refetch storm (OAuth + focus used to duplicate slow network calls).
   useFocusEffect(
     useCallback(() => {
       if (!availabilityOwnerId) return;
 
-      setGoogleFilteredSlots(null);
-      setCalendarSlotSyncLoading(false);
-      setCalendarSlotSyncError(null);
-      setCalendarConnectBanners([]);
-      setCalendarBusyStripped(0);
       monthScanAttemptsRef.current = 0;
       lastSlotSyncSkipRef.current = null;
       setScanningForBookableMonth(false);
-      setSlot(null);
 
       const draftState = useScheduleMeetingStore.getState().draft;
       const ymd = draftState.selectedDayYmd;
-      const n = new Date();
-      let month = n.getMonth() + 1;
-      let year = n.getFullYear();
-
       if (ymd) {
         const cal = calendarYearMonthFromYmd(ymd);
         if (cal) {
-          month = cal.month;
-          year = cal.year;
+          setCurrentMonth(cal.month);
+          setCurrentYear(cal.year);
         }
       }
-
-      setCurrentMonth(month);
-      setCurrentYear(year);
-
-      void queryClient.refetchQueries({
-        queryKey: ["weekly-availability", availabilityOwnerId],
-      });
-      void queryClient.refetchQueries({
-        queryKey: ["monthly-availability", availabilityOwnerId, month, year],
-      });
-      if (overlapUserId) {
-        void queryClient.refetchQueries({
-          queryKey: ["appointments", "user", overlapUserId],
-        });
-      }
-      void queryClient.refetchQueries({
-        queryKey: ["appointments", "mentor", availabilityOwnerId],
-      });
-    }, [availabilityOwnerId, overlapUserId, queryClient, setScanningForBookableMonth, setSlot]),
+    }, [availabilityOwnerId, setScanningForBookableMonth]),
   );
+
+  const handleGoogleCalendarConnectionSynced = useCallback(() => {
+    clearMergedAvailabilityCache();
+  }, []);
 
   // New person / second booking in a row — drop stale month + slot sync from the prior session.
   useEffect(() => {
@@ -650,10 +628,7 @@ export default function ScheduleMeetingTimeScreen() {
             <GoogleCalendarConnectButton
               variant="dark"
               onStatusChange={(status) => setGoogleCalendarConnected(status === "connected")}
-              onConnectionSynced={() => {
-                queryClient.invalidateQueries({ queryKey: ["weekly-availability"] });
-                queryClient.invalidateQueries({ queryKey: ["monthly-availability"] });
-              }}
+              onConnectionSynced={handleGoogleCalendarConnectionSynced}
             />
           </View>
 
