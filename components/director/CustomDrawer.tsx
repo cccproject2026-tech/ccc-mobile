@@ -268,11 +268,6 @@ export default function CustomDrawerContent(props: CustomDrawerProps) {
             style={styles.footerLogo}
             resizeMode="contain"
           />
-          <Image
-            source={require("@/assets/logos/CCClogo.png")}
-            style={styles.footerCCCLogo}
-            resizeMode="contain"
-          />
         </View>
       </LinearGradient>
     </View>
@@ -424,17 +419,11 @@ const styles = StyleSheet.create({
   footerLogoRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     marginTop: 14,
   },
   footerLogo: {
     width: 32,
     height: 32,
     tintColor: "rgba(255,255,255,0.35)",
-  },
-  footerCCCLogo: {
-    width: 48,
-    height: 28,
-    tintColor: "rgba(255,255,255,0.55)",
   },
 });

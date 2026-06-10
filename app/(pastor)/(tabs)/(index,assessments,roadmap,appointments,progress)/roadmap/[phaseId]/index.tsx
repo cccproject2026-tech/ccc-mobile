@@ -129,7 +129,36 @@ export default function PastorRoadmapDetail() {
       <View style={styles.bgCircleTop} pointerEvents="none" />
       <View style={styles.bgCircleBottom} pointerEvents="none" />
 
-      <TopBar role="pastor" showUserName />
+      <View style={styles.stickyHeader}>
+        <TopBar role="pastor" showUserName />
+
+        <View
+          style={[
+            styles.headerRow,
+            {
+              paddingHorizontal: horizontalPadding,
+              maxWidth,
+              width: "100%",
+              alignSelf: maxWidth ? "center" : undefined,
+            },
+          ]}
+        >
+          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.92)" />
+          </Pressable>
+          <View style={styles.headerPillWrap}>
+            <View style={styles.pill}>
+              <View style={styles.pillDots}>
+                <View style={styles.pillDot} />
+                <View style={styles.pillDotGold} />
+              </View>
+              <Text style={styles.pillText} numberOfLines={1}>
+                {(roadmap as any)?.name || "Revitalization Roadmap"}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
 
       <KeyboardSafeContainer
         style={{ flex: 1 }}
@@ -149,23 +178,6 @@ export default function PastorRoadmapDetail() {
           <RefreshControl refreshing={!!isRefetching} onRefresh={refetch} tintColor="#fff" />
         }
       >
-        <View style={styles.headerRow}>
-          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.92)" />
-          </Pressable>
-          <View style={styles.headerPillWrap}>
-            <View style={styles.pill}>
-              <View style={styles.pillDots}>
-                <View style={styles.pillDot} />
-                <View style={styles.pillDotGold} />
-              </View>
-              <Text style={styles.pillText} numberOfLines={1}>
-                {(roadmap as any)?.name || "Revitalization Roadmap"}
-              </Text>
-            </View>
-          </View>
-        </View>
-
         <Text style={styles.title}>
           {phaseNumber ? `Phase ${phaseNumber}` : "Roadmap"} tasks
         </Text>
@@ -218,6 +230,7 @@ export default function PastorRoadmapDetail() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  stickyHeader: { zIndex: 10 },
   container: { width: "100%", alignSelf: "center" },
   bgCircleTop: {
     position: "absolute",

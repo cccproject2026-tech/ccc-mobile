@@ -242,7 +242,36 @@ export default function PastorRoadmapItemDetail() {
     <AppGradientBackground style={styles.root}>
       <View style={styles.bgCircleTop} pointerEvents="none" />
       <View style={styles.bgCircleBottom} pointerEvents="none" />
-      <TopBar role="pastor" showUserName />
+      <View style={styles.stickyHeader}>
+        <TopBar role="pastor" showUserName />
+
+        <View
+          style={[
+            styles.headerRow,
+            {
+              paddingHorizontal: horizontalPadding,
+              maxWidth,
+              width: "100%",
+              alignSelf: maxWidth ? "center" : undefined,
+            },
+          ]}
+        >
+          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.92)" />
+          </Pressable>
+          <View style={styles.headerPillWrap}>
+            <View style={styles.pill}>
+              <View style={styles.pillDots}>
+                <View style={styles.pillDot} />
+                <View style={styles.pillDotGold} />
+              </View>
+              <Text style={styles.pillText} numberOfLines={1}>
+                Task details
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
 
       <KeyboardSafeContainer
         style={{ flex: 1 }}
@@ -250,6 +279,7 @@ export default function PastorRoadmapItemDetail() {
         extraScrollHeight={100}
         extraHeight={120}
         enableResetScrollToCoords={false}
+        enableAutomaticScroll={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.container,
@@ -271,23 +301,6 @@ export default function PastorRoadmapItemDetail() {
           />
         }
       >
-        <View style={styles.headerRow}>
-          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.92)" />
-          </Pressable>
-          <View style={styles.headerPillWrap}>
-            <View style={styles.pill}>
-              <View style={styles.pillDots}>
-                <View style={styles.pillDot} />
-                <View style={styles.pillDotGold} />
-              </View>
-              <Text style={styles.pillText} numberOfLines={1}>
-                Task details
-              </Text>
-            </View>
-          </View>
-        </View>
-
         {!!error ? (
           <View style={styles.errorCard}>
             <Ionicons name="alert-circle-outline" size={22} color="#fff" />
@@ -490,6 +503,7 @@ export default function PastorRoadmapItemDetail() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  stickyHeader: { zIndex: 10 },
   container: { width: "100%", alignSelf: "center" },
   bgCircleTop: {
     position: "absolute",

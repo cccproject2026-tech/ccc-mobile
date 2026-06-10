@@ -482,8 +482,7 @@ export const MENU_ITEMS: MenuItem[] = [
       {
         id: "my-profile",
         label: "My Profile",
-        icon: icons.myProfile,
-        iconType: "image",
+        icon: "person-outline",
         route: "/(director)/(tabs)/profile",
       },
       {
@@ -589,8 +588,7 @@ export const PastorMenuItems: MenuItem[] = [
       {
         id: "myProfile",
         label: "My Profile",
-        icon: icons.myProfile,
-        iconType: "image",
+        icon: "person-outline",
         route: "/(pastor)/(tabs)/profile",
       },
       {
@@ -723,8 +721,7 @@ export const MentorMenuItems: MenuItem[] = [
       {
         id: "myProfile",
         label: "My Profile",
-        icon: icons.myProfile,
-        iconType: "image",
+        icon: "person-outline",
         route: "/(mentor)/profile/my-profile",
       },
       {

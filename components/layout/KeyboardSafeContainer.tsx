@@ -36,6 +36,8 @@ export type KeyboardSafeContainerProps = {
   /** Adds safe-area bottom inset to scroll content padding */
   useSafeAreaBottom?: boolean;
   bottomPadding?: number;
+  /** When false, prevents iOS from auto-scrolling to focused inputs on mount. */
+  enableAutomaticScroll?: boolean;
 } & Pick<ScrollViewProps, "refreshControl" | "onScroll"> &
   Pick<
     KeyboardAwareScrollViewProps,
@@ -68,6 +70,7 @@ export function KeyboardSafeContainer({
   onScroll,
   enableResetScrollToCoords = false,
   keyboardOpeningTime = 0,
+  enableAutomaticScroll = true,
 }: KeyboardSafeContainerProps) {
   const insets = useSafeAreaInsets();
   const bottomInset = useSafeAreaBottom ? insets.bottom : 0;
@@ -112,7 +115,7 @@ export function KeyboardSafeContainer({
         contentContainerStyle,
       ]}
       enableOnAndroid={enableOnAndroid}
-      enableAutomaticScroll
+      enableAutomaticScroll={enableAutomaticScroll}
       enableResetScrollToCoords={enableResetScrollToCoords}
       keyboardOpeningTime={keyboardOpeningTime}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
