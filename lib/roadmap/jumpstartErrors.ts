@@ -3,6 +3,8 @@ import {
     isJumpstartBlockingMessage,
     JUMPSTART_MENTOR_NO_AVAILABILITY_MSG,
     JUMPSTART_NO_MENTOR_MSG,
+    JUMPSTART_NO_SLOTS_MSG,
+    JUMPSTART_NO_SLOTS_NOTICE_MSG,
     matchesJumpstartBlockingMessage,
 } from "@/lib/roadmap/jumpstartErrorMatch";
 import { extractApiErrorMessage } from "@/utils/availability/api-error";
@@ -11,6 +13,8 @@ import { Alert } from "react-native";
 export {
     JUMPSTART_MENTOR_NO_AVAILABILITY_MSG,
     JUMPSTART_NO_MENTOR_MSG,
+    JUMPSTART_NO_SLOTS_MSG,
+    JUMPSTART_NO_SLOTS_NOTICE_MSG,
     isJumpstartBlockingMessage,
 };
 
@@ -38,6 +42,20 @@ function jumpstartErrorTitle(message: string): string {
         msg === JUMPSTART_MENTOR_NO_AVAILABILITY_MSG.toLowerCase()
     ) {
         return "Mentor Availability Required";
+    }
+
+    if (
+        msg.includes("minimum scheduling notice period") ||
+        msg === JUMPSTART_NO_SLOTS_NOTICE_MSG.toLowerCase()
+    ) {
+        return "Scheduling Notice Required";
+    }
+
+    if (
+        msg.includes("no available mentoring slots") ||
+        msg === JUMPSTART_NO_SLOTS_MSG.toLowerCase()
+    ) {
+        return "No Mentoring Slots Available";
     }
 
     return "Cannot Complete Jumpstart";

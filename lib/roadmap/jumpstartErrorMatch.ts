@@ -5,21 +5,35 @@ export const JUMPSTART_MENTOR_NO_AVAILABILITY_MSG =
 export const JUMPSTART_NO_MENTOR_MSG =
     "No mentor is assigned to your account. Please contact support before completing Jumpstart.";
 
+export const JUMPSTART_NO_SLOTS_MSG =
+    "No available mentoring slots were found for the assigned mentor. Please ask the mentor to update their availability.";
+
+export const JUMPSTART_NO_SLOTS_NOTICE_MSG =
+    "No available mentoring slots were found that satisfy the minimum scheduling notice period.";
+
 export function matchesJumpstartBlockingMessage(msg: string): boolean {
     if (!msg) return false;
 
     const normalized = msg.trim().toLowerCase();
     const availabilityNeedle = JUMPSTART_MENTOR_NO_AVAILABILITY_MSG.toLowerCase();
     const noMentorNeedle = JUMPSTART_NO_MENTOR_MSG.toLowerCase();
+    const noSlotsNeedle = JUMPSTART_NO_SLOTS_MSG.toLowerCase();
+    const noSlotsNoticeNeedle = JUMPSTART_NO_SLOTS_NOTICE_MSG.toLowerCase();
 
-    if (normalized === availabilityNeedle || normalized === noMentorNeedle) {
+    if (
+        normalized === availabilityNeedle ||
+        normalized === noMentorNeedle ||
+        normalized === noSlotsNeedle ||
+        normalized === noSlotsNoticeNeedle
+    ) {
         return true;
     }
 
     return (
         normalized.includes("not configured availability") ||
         normalized.includes("no mentor is assigned") ||
-        normalized.includes("mentor has no availability")
+        normalized.includes("mentor has no availability") ||
+        normalized.includes("no available mentoring slots")
     );
 }
 
