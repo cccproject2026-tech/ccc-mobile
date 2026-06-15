@@ -10,6 +10,7 @@ import {
   exitScheduleMeetingFlow,
   getScheduleMeetingBase,
 } from "@/lib/scheduling/scheduleMeetingNavigation";
+import { getReturnToParam } from "@/utils/navigation";
 import { saveAssessmentMeetingLink } from "@/lib/assessments/assessmentMeetings";
 import { appointmentService } from "@/services/appointments.service";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
@@ -36,16 +37,20 @@ function formatMeetingDateLabel(dateString: string): string {
 export default function ScheduleMeetingConfirmScreen() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const { drawerContext, assessmentId } = useLocalSearchParams<{
+  const { drawerContext, assessmentId, returnTo: returnToParam, appointmentId: routeAppointmentId } = useLocalSearchParams<{
     drawerContext?: string;
     assessmentId?: string;
+    returnTo?: string;
+    appointmentId?: string;
   }>();
+  const returnTo = getReturnToParam({ returnTo: returnToParam });
   const deviceTz = useMemo(() => getDeviceTimezone(), []);
-  const { draft } = useScheduleMeetingStore();
+  const { draft, setAppointmentId } = useScheduleMeetingStore();
   const [isDone, setIsDone] = useState(false);
   const insets = useSafeAreaInsets();
   const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
   const isAssessmentFlow = Boolean(assessmentId);
+  const rescheduleAppointmentId = draft.appointmentId ?? routeAppointmentId;
 
   const handleBack = useCallback(() => {
     router.replace({
@@ -53,27 +58,51 @@ export default function ScheduleMeetingConfirmScreen() {
       params: {
         drawerContext,
         ...(assessmentId ? { assessmentId } : {}),
+        ...(rescheduleAppointmentId
+          ? { appointmentId: rescheduleAppointmentId }
+          : {}),
+        ...(draft.rescheduleContext === "mentorship"
+          ? { rescheduleContext: "mentorship" }
+          : {}),
+        ...(returnTo ? { returnTo } : {}),
       },
     });
-  }, [assessmentId, drawerContext, scheduleBase]);
+  }, [
+    assessmentId,
+    drawerContext,
+    draft.rescheduleContext,
+    rescheduleAppointmentId,
+    returnTo,
+    scheduleBase,
+  ]);
 
-  // Drawer freezes screens — clear "done" from the previous booking when re-entering.
   useFocusEffect(
     useCallback(() => {
       setIsDone(false);
-    }, []),
+      if (routeAppointmentId) {
+        setAppointmentId(routeAppointmentId);
+      }
+    }, [routeAppointmentId, setAppointmentId]),
   );
 
-  const canSubmit = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
+  const canSubmit = Boolean(
+    draft.person?.id &&
+      draft.selectedDayYmd &&
+      draft.selectedSlot &&
+      (draft.mode !== "reschedule" || rescheduleAppointmentId),
+  );
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
   const availabilityOwnerId = isMentor ? user?.id : draft.person?.id;
 
   const { appointments: mentorAppointments } = useAppointments(
-    availabilityOwnerId ? { mentorId: availabilityOwnerId } : {},
+    availabilityOwnerId
+      ? { mentorId: availabilityOwnerId, futureOnly: false }
+      : {},
   );
   const { appointments: userAppointments } = useAppointments({
     userId: isMentor ? draft.person?.id : user?.id,
+    futureOnly: false,
   });
 
   const { availability: weeklyAvailability } = useWeeklyAvailability(
@@ -85,11 +114,13 @@ export default function ScheduleMeetingConfirmScreen() {
   );
 
   const existingAppointment = useMemo(() => {
-    if (!draft.appointmentId) return null;
-    
+    if (!rescheduleAppointmentId) return null;
+
     const all = [...mentorAppointments, ...userAppointments];
-    return all.find((a) => String(a.id) === String(draft.appointmentId)) ?? null;
-  }, [draft.appointmentId, mentorAppointments, userAppointments]);
+    return (
+      all.find((a) => String(a.id) === String(rescheduleAppointmentId)) ?? null
+    );
+  }, [rescheduleAppointmentId, mentorAppointments, userAppointments]);
 
   const { submit, isSubmitting } = useMeetingScheduler({
     mode: draft.mode,
@@ -97,6 +128,7 @@ export default function ScheduleMeetingConfirmScreen() {
     currentUserRole: user?.role,
     selectedPerson: draft.person ? { id: draft.person.id, name: draft.person.name, role: draft.person.role } : null,
     existingAppointment,
+    rescheduleAppointmentId,
     selectedDayYmd: draft.selectedDayYmd,
     selectedSlot: draft.selectedSlot,
     meetingOptionLabel: draft.meetingOptionLabel,
@@ -104,6 +136,7 @@ export default function ScheduleMeetingConfirmScreen() {
     mentorAppointments,
     userAppointments,
     assessmentId: assessmentId as string | undefined,
+    rescheduleContext: draft.rescheduleContext,
   });
 
   if (!canSubmit) return null;
@@ -155,15 +188,23 @@ export default function ScheduleMeetingConfirmScreen() {
                 try {
                   const result = await submit();
                   setIsDone(true);
-                  const text1 =
-                    draft.mode === "reschedule" ? "Meeting rescheduled" : "Meeting scheduled";
+                  const isMentorshipReschedule =
+                    draft.mode === "reschedule" &&
+                    draft.rescheduleContext === "mentorship";
+                  const text1 = isMentorshipReschedule
+                    ? "Session rescheduled"
+                    : draft.mode === "reschedule"
+                      ? "Meeting rescheduled"
+                      : "Meeting scheduled";
                   const calendarNote = getScheduleMeetingCalendarNote({
                     successHint: result.googleCalendarSuccessHint,
                     warnings: result.googleCalendarSyncWarnings,
                   });
                   const returningText = isAssessmentFlow
                     ? "Returning to assessment…"
-                    : "Returning to appointments…";
+                    : isMentorshipReschedule && returnTo
+                      ? "Returning to session…"
+                      : "Returning to appointments…";
                   const text2 = calendarNote
                     ? `${calendarNote} · ${returningText}`
                     : returningText;
@@ -207,6 +248,8 @@ export default function ScheduleMeetingConfirmScreen() {
                     exitScheduleMeetingFlow(router, user?.role, {
                       assessmentId: isAssessmentFlow ? assessmentId : undefined,
                       message: meetingMessage,
+                      returnTo:
+                        isMentorshipReschedule && returnTo ? returnTo : undefined,
                     });
                   }, 400);
                 } catch (e: any) {
@@ -230,7 +273,11 @@ export default function ScheduleMeetingConfirmScreen() {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.primaryText}>
-                  {draft.mode === "reschedule" ? "Reschedule meeting" : "Schedule meeting"}
+                  {draft.mode === "reschedule"
+                    ? draft.rescheduleContext === "mentorship"
+                      ? "Reschedule session"
+                      : "Reschedule meeting"
+                    : "Schedule meeting"}
                 </Text>
               )}
             </Pressable>

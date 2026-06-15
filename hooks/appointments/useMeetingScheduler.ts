@@ -1,5 +1,9 @@
 import { assessmentMeetingNote } from '@/lib/assessments/assessmentMeetings';
+import { mentorshipSessionKeys } from '@/hooks/roadmaps/useMentorshipSessions';
+import { useRescheduleMentorshipSession } from '@/hooks/roadmaps/useRescheduleMentorshipSession';
+import { pastorSessionKeys } from '@/hooks/roadmaps/usePastorSessions';
 import { appointmentService } from '@/services/appointments.service';
+import type { RescheduleContext } from '@/stores/scheduleMeeting.store';
 import type {
   Appointment,
   TimeSlot as APITimeSlot,
@@ -31,6 +35,8 @@ export type UseMeetingSchedulerParams = {
   selectedPerson: SchedulerPerson | null;
   /** For reschedule only. */
   existingAppointment?: Appointment | null;
+  /** Reschedule fallback when the appointment is not in the cached list yet. */
+  rescheduleAppointmentId?: string;
   /** YYYY-MM-DD */
   selectedDayYmd: string;
   selectedSlot: APITimeSlot | null;
@@ -40,6 +46,8 @@ export type UseMeetingSchedulerParams = {
   userAppointments?: Appointment[];
   /** Tags the appointment for assessment list meeting links. */
   assessmentId?: string;
+  /** Reschedule only — mentorship sessions use a dedicated backend endpoint. */
+  rescheduleContext?: RescheduleContext;
 };
 
 export type MeetingSchedulerSubmitResult = {
@@ -64,16 +72,22 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
     mentorAppointments = [],
     userAppointments = [],
     assessmentId,
+    rescheduleContext = 'appointment',
+    rescheduleAppointmentId,
   } = params;
 
   const queryClient = useQueryClient();
   const [isBooking, setIsBooking] = useState(false);
   const {
     rescheduleAppointmentAsync,
-    isRescheduling,
+    isRescheduling: isReschedulingAppointment,
   } = useCreateAppointment();
+  const {
+    mutateAsync: rescheduleMentorshipSessionAsync,
+    isPending: isReschedulingMentorship,
+  } = useRescheduleMentorshipSession();
 
-  const isSubmitting = isBooking || isRescheduling;
+  const isSubmitting = isBooking || isReschedulingAppointment || isReschedulingMentorship;
 
   async function submit(): Promise<MeetingSchedulerSubmitResult> {
     if (
@@ -90,6 +104,9 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       selectedSlot,
     );
 
+    const resolvedRescheduleId =
+      existingAppointment?.id ?? rescheduleAppointmentId;
+
     const issue = validateSchedule({
       meetingDateIso,
       meetingDayYmd: selectedDayYmd,
@@ -97,7 +114,7 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       mentorAppointments,
       userAppointments,
       excludeAppointmentId:
-        mode === "reschedule" ? existingAppointment?.id : undefined,
+        mode === "reschedule" ? resolvedRescheduleId : undefined,
     });
     if (issue) {
       const err = new Error(issue.message);
@@ -120,11 +137,36 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
         : undefined;
 
     if (mode === 'reschedule') {
-      if (!existingAppointment?.id) {
+      if (!resolvedRescheduleId) {
         throw new Error('Missing appointment to reschedule.');
       }
+
+      if (rescheduleContext === 'mentorship') {
+        if (!currentUserId) {
+          throw new Error('Missing mentor id.');
+        }
+        const data = await rescheduleMentorshipSessionAsync({
+          sessionId: resolvedRescheduleId,
+          mentorId: currentUserId,
+          newMeetingDate: meetingDateIso,
+        });
+        const updatedSession = data.session;
+        const meetingLink =
+          typeof updatedSession?.meetingLink === 'string'
+            ? updatedSession.meetingLink.trim() || undefined
+            : undefined;
+        return {
+          appointmentId: String(
+            updatedSession?.appointmentId ?? resolvedRescheduleId,
+          ),
+          meetingDate: meetingDateIso,
+          meetingLink,
+          googleCalendarSyncWarnings: [],
+        };
+      }
+
       const res = await rescheduleAppointmentAsync({
-        appointmentId: existingAppointment.id,
+        appointmentId: resolvedRescheduleId,
         newDate: meetingDateIso,
         startTime: selectedSlot.startTime,
         startPeriod: selectedSlot.startPeriod as any,
@@ -160,6 +202,8 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       await queryClient.invalidateQueries({ queryKey: ['appointments'] });
       await queryClient.invalidateQueries({ queryKey: ['weekly-availability'] });
       await queryClient.invalidateQueries({ queryKey: ['monthly-availability'] });
+      await queryClient.invalidateQueries({ queryKey: mentorshipSessionKeys.all });
+      await queryClient.invalidateQueries({ queryKey: pastorSessionKeys.all });
 
       const data = rawResponse.data;
       const created = (Array.isArray(data) ? data[0] : data) as Appointment;

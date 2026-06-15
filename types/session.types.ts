@@ -1,10 +1,18 @@
 import type { MentorshipInsightsPayload } from "@/types/mentorshipInsights.types";
+import type { MentoringRescheduleRequestSnippet } from "@/types/mentoringSessions.types";
 import type {
   SessionMode,
   SessionRecordingStatus,
 } from "@/types/appointment.types";
 
-export type MentorshipSessionStatus = "SCHEDULED" | "COMPLETED";
+export type MentorshipSessionStatus =
+  | "SCHEDULED"
+  | "COMPLETED"
+  | "IN_PROGRESS"
+  | "POSTPONED"
+  | "MISSED"
+  | "CANCELLED"
+  | "RESCHEDULED";
 
 /** Chat-style lines for session transcript (same shape as pastor meeting UI). */
 export type MentorshipTranscriptLine = {
@@ -45,6 +53,10 @@ export interface MentorshipSession {
   recordingStatus?: SessionRecordingStatus;
   recordingUrl?: string;
   meetingLocation?: string;
+  /** Populated when using unified mentoring-sessions API. */
+  rescheduleRequest?: MentoringRescheduleRequestSnippet | null;
+  mentorId?: string;
+  title?: string;
 }
 
 export interface MentorshipSessionsApiResponse {

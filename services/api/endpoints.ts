@@ -141,6 +141,16 @@ export const ENDPOINTS = {
       `/appointments/${appointmentId}/recording`,
   },
 
+  MENTORING_SESSIONS: {
+    RESCHEDULE: (sessionId: string) =>
+      `/mentoring-sessions/${sessionId}/reschedule`,
+    GET_DETAIL: (sessionId: string) => `/mentoring-sessions/${sessionId}`,
+    MENTOR_GROUPED: (mentorId: string) =>
+      `/mentoring-sessions/mentor/${mentorId}/grouped`,
+    MENTOR_RESCHEDULE_REQUESTS: (mentorId: string) =>
+      `/mentoring-sessions/mentor/${mentorId}/reschedule-requests`,
+  },
+
   ROADMAPS: {
     GET_ALL: "/roadmaps",
     CREATE: "/roadmaps",

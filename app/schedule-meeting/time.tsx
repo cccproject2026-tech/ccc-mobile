@@ -71,9 +71,14 @@ export default function ScheduleMeetingTimeScreen() {
     drawerContext?: string;
     assessmentId?: string;
     returnTo?: string;
+    rescheduleContext?: "appointment" | "mentorship";
+    appointmentId?: string;
+    mode?: "schedule" | "reschedule";
   }>();
-  const { drawerContext, assessmentId } = routeParams;
-  const { draft, setDay, setSlot, setPlatformLabel } = useScheduleMeetingStore();
+  const { drawerContext, assessmentId, rescheduleContext, appointmentId: routeAppointmentId } =
+    routeParams;
+  const { draft, setDay, setSlot, setPlatformLabel, setAppointmentId, setRescheduleContext, setMode } =
+    useScheduleMeetingStore();
   const insets = useSafeAreaInsets();
   const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
   const flowParams = useMemo(
@@ -82,8 +87,41 @@ export default function ScheduleMeetingTimeScreen() {
         drawerContext,
         assessmentId,
         returnTo: getReturnToParam(routeParams),
+        rescheduleContext:
+          rescheduleContext === "mentorship" ? "mentorship" : undefined,
+        mode: draft.mode,
+        appointmentId: draft.appointmentId ?? routeAppointmentId,
       }),
-    [assessmentId, drawerContext, routeParams.returnTo],
+    [
+      assessmentId,
+      draft.appointmentId,
+      draft.mode,
+      drawerContext,
+      rescheduleContext,
+      routeAppointmentId,
+      routeParams.returnTo,
+    ],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (routeAppointmentId) {
+        setAppointmentId(routeAppointmentId);
+      }
+      if (routeParams.mode) {
+        setMode(routeParams.mode);
+      }
+      if (rescheduleContext === "mentorship") {
+        setRescheduleContext("mentorship");
+      }
+    }, [
+      rescheduleContext,
+      routeAppointmentId,
+      routeParams.mode,
+      setAppointmentId,
+      setMode,
+      setRescheduleContext,
+    ]),
   );
 
   const handleBack = useCallback(() => {

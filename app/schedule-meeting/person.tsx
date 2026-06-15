@@ -7,6 +7,7 @@ import {
   buildScheduleFlowParams,
   getScheduleMeetingBase,
   leaveScheduleMeetingPersonStep,
+  type ScheduleMeetingMode,
 } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { getReturnToParam } from "@/utils/navigation";
 import { useMentees } from "@/hooks/mentees/useMentees";
@@ -20,10 +21,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function ScheduleMeetingPersonScreen() {
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
-  const { mode, appointmentId, personData } = useLocalSearchParams<{
+  const { mode, appointmentId, personData, rescheduleContext } = useLocalSearchParams<{
     mode?: "schedule" | "reschedule";
     appointmentId?: string;
     personData?: string;
+    rescheduleContext?: "appointment" | "mentorship";
   }>();
   const params = useLocalSearchParams<{
     drawerContext?: string;
@@ -38,14 +40,26 @@ export default function ScheduleMeetingPersonScreen() {
         drawerContext: params.drawerContext,
         assessmentId: params.assessmentId,
         returnTo: getReturnToParam(params),
+        rescheduleContext:
+          rescheduleContext === "mentorship" ? "mentorship" : "appointment",
+        mode: (mode as ScheduleMeetingMode) || "schedule",
+        appointmentId,
       }),
-    [params.assessmentId, params.drawerContext, params.returnTo],
+    [
+      appointmentId,
+      mode,
+      params.assessmentId,
+      params.drawerContext,
+      params.returnTo,
+      rescheduleContext,
+    ],
   );
 
   const {
     setMode,
     setAppointmentId,
     setPerson,
+    setRescheduleContext,
     reset,
   } = useScheduleMeetingStore();
 
@@ -59,7 +73,12 @@ export default function ScheduleMeetingPersonScreen() {
         reset();
       }
       setMode((mode as any) || "schedule");
-      setAppointmentId(appointmentId);
+      if (appointmentId) {
+        setAppointmentId(appointmentId);
+      }
+      setRescheduleContext(
+        rescheduleContext === "mentorship" ? "mentorship" : "appointment",
+      );
       if (personData) {
         try {
           const parsed = JSON.parse(String(personData));
@@ -87,11 +106,13 @@ export default function ScheduleMeetingPersonScreen() {
       params.drawerContext,
       params.preserveDraft,
       personData,
+      rescheduleContext,
       reset,
       scheduleBase,
       setAppointmentId,
       setMode,
       setPerson,
+      setRescheduleContext,
     ]),
   );
 

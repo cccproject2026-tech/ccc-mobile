@@ -1,4 +1,5 @@
 import type { Href, Router } from "expo-router";
+import type { RescheduleContext } from "@/stores/scheduleMeeting.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import { buildReturnTo, safeGoBack } from "@/utils/navigation";
 
@@ -30,6 +31,7 @@ export type ScheduleFlowParams = {
   preserveDraft?: string;
   mode?: ScheduleMeetingMode;
   appointmentId?: string;
+  rescheduleContext?: RescheduleContext;
 };
 
 /** Route params forwarded across person → time → confirm in the scheduler stack. */
@@ -43,6 +45,7 @@ export function buildScheduleFlowParams(
   if (options.preserveDraft) params.preserveDraft = options.preserveDraft;
   if (options.mode) params.mode = options.mode;
   if (options.appointmentId) params.appointmentId = options.appointmentId;
+  if (options.rescheduleContext) params.rescheduleContext = options.rescheduleContext;
   return params;
 }
 
@@ -57,6 +60,8 @@ export function openScheduleMeeting(
     assessmentId?: string;
     /** When set, back from the first scheduler screen restores this href. */
     returnTo?: string;
+    /** Reschedule only — mentorship sessions use PATCH /mentoring-sessions/:id/reschedule. */
+    rescheduleContext?: RescheduleContext;
   },
 ): void {
   const normalizedRole = String(role ?? "").toLowerCase();
@@ -68,6 +73,7 @@ export function openScheduleMeeting(
     assessmentId: options?.assessmentId,
     returnTo: options?.returnTo,
     appointmentId: options?.appointmentId,
+    rescheduleContext: options?.rescheduleContext ?? "appointment",
     ...(normalizedRole === "pastor" || normalizedRole === "mentor"
       ? { drawerContext: normalizedRole }
       : {}),
@@ -91,11 +97,11 @@ export function leaveScheduleMeetingPersonStep(
   setTimeout(() => useScheduleMeetingStore.getState().reset(), 0);
 }
 
-/** Leave the scheduler after booking — appointments list, or assessment guidelines when applicable. */
+/** Leave the scheduler after booking — appointments list, assessment guidelines, or custom returnTo. */
 export function exitScheduleMeetingFlow(
   router: Router,
   role: string | undefined,
-  options?: { assessmentId?: string; message?: string },
+  options?: { assessmentId?: string; message?: string; returnTo?: string },
 ): void {
   if (options?.assessmentId) {
     const href = buildReturnTo(
@@ -107,6 +113,8 @@ export function exitScheduleMeetingFlow(
       role,
     );
     router.replace(href as never);
+  } else if (options?.returnTo) {
+    router.replace(options.returnTo as Href);
   } else {
     router.replace(appointmentsRouteForRole(role));
   }

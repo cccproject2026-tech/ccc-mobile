@@ -35,6 +35,7 @@ import {
 import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
+import { openMentorshipSessionReschedule } from "@/lib/scheduling/openMentorshipSessionReschedule";
 import apiClient from "@/services/api";
 import { useAuthStore } from "@/stores";
 import type { AppointmentPlatform } from "@/types/appointment.types";
@@ -54,6 +55,7 @@ import {
     zoomUrlHasPasscodeQuery,
 } from "@/utils/meetingLinkDetails";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
+import { canRescheduleMentorshipSession } from "@/utils/mentorshipSessionReschedule";
 import {
     resolveDisplaySessionMode,
     resolveSessionModeFromSources,
@@ -643,6 +645,28 @@ export default function SessionDetailsScreen() {
   const isMeetingTypeLocked = isCompleted || isAppointmentCompleted;
   const canComplete = !!session?.appointmentId && !isCompleted;
   const canRedo = !!session?.appointmentId;
+  const canReschedule = canRescheduleMentorshipSession(session, appointment);
+  const pendingRescheduleRequest =
+    session?.rescheduleRequest?.status === "pending"
+      ? session.rescheduleRequest
+      : null;
+
+  const handleReschedule = () => {
+    if (!session || !canReschedule) {
+      Toast.show({
+        type: "error",
+        position: "top",
+        text1: "Cannot reschedule",
+        text2: "This session is not eligible for rescheduling.",
+      });
+      return;
+    }
+    openMentorshipSessionReschedule(router, user?.role, session, {
+      returnTo: sessionId
+        ? `/(mentor)/(tabs)/sessions/${encodeURIComponent(sessionId)}`
+        : undefined,
+    });
+  };
 
   useEffect(() => {
     // Reset local override when navigating to another session.
@@ -1122,8 +1146,33 @@ export default function SessionDetailsScreen() {
           
           <InsightsCard />
 
+          {pendingRescheduleRequest ? (
+            <View style={styles.rescheduleRequestCard}>
+              <Ionicons name="calendar-outline" size={20} color="#FDE68A" />
+              <View style={styles.rescheduleRequestContent}>
+                <Text style={styles.rescheduleRequestTitle}>Reschedule requested</Text>
+                <Text style={styles.rescheduleRequestText}>
+                  {pendingRescheduleRequest.reason?.trim()
+                    ? pendingRescheduleRequest.reason
+                    : "Your pastor asked to pick a new time for this session."}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           
           <View style={styles.actionsSection}>
+            {canReschedule ? (
+              <Pressable
+                style={[styles.secondaryButton, isMutating && styles.buttonDisabled]}
+                onPress={handleReschedule}
+                disabled={isMutating}
+              >
+                <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.secondaryButtonText}>Reschedule Session</Text>
+              </Pressable>
+            ) : null}
+
             <Pressable
               style={[styles.primaryButton, (!canComplete || isMutating) && styles.buttonDisabled]}
               onPress={() => setConfirmKind("complete")}
@@ -1282,6 +1331,27 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   actionsSection: { gap: SPACING.md, marginTop: SPACING.sm },
+  rescheduleRequestCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: SPACING.md,
+    backgroundColor: "rgba(250, 204, 21, 0.12)",
+    borderRadius: 14,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: "rgba(250, 204, 21, 0.28)",
+  },
+  rescheduleRequestContent: { flex: 1, gap: SPACING.xs },
+  rescheduleRequestTitle: {
+    color: "#FDE68A",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  rescheduleRequestText: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 13,
+    lineHeight: 18,
+  },
   primaryButton: {
     backgroundColor: "#22C55E",
     borderRadius: 14,

@@ -11,6 +11,9 @@ export type SchedulePerson = {
 
 export type ScheduleMeetingMode = "schedule" | "reschedule";
 
+/** Distinguishes generic appointments from mentorship journey sessions when rescheduling. */
+export type RescheduleContext = "appointment" | "mentorship";
+
 export type ScheduleMeetingDraft = {
   mode: ScheduleMeetingMode;
   person: SchedulePerson | null;
@@ -19,6 +22,8 @@ export type ScheduleMeetingDraft = {
   meetingOptionLabel: string;
   /** Optional: used to find appointment for reschedule. */
   appointmentId?: string;
+  /** Reschedule only — routes to the correct backend endpoint. */
+  rescheduleContext: RescheduleContext;
 };
 
 type ScheduleMeetingStore = {
@@ -29,6 +34,7 @@ type ScheduleMeetingStore = {
   setSlot: (slot: APITimeSlot | null) => void;
   setPlatformLabel: (label: string) => void;
   setAppointmentId: (id?: string) => void;
+  setRescheduleContext: (context: RescheduleContext) => void;
   reset: () => void;
 };
 
@@ -39,6 +45,7 @@ const initialDraft: ScheduleMeetingDraft = {
   selectedSlot: null,
   meetingOptionLabel: "Zoom",
   appointmentId: undefined,
+  rescheduleContext: "appointment",
 };
 
 export const useScheduleMeetingStore = create<ScheduleMeetingStore>((set) => ({
@@ -51,7 +58,13 @@ export const useScheduleMeetingStore = create<ScheduleMeetingStore>((set) => ({
   setPlatformLabel: (meetingOptionLabel) =>
     set((s) => ({ draft: { ...s.draft, meetingOptionLabel } })),
   setAppointmentId: (appointmentId) =>
-    set((s) => ({ draft: { ...s.draft, appointmentId } })),
+    set((s) =>
+      appointmentId
+        ? { draft: { ...s.draft, appointmentId } }
+        : s,
+    ),
+  setRescheduleContext: (rescheduleContext) =>
+    set((s) => ({ draft: { ...s.draft, rescheduleContext } })),
   reset: () => set({ draft: initialDraft }),
 }));
 
