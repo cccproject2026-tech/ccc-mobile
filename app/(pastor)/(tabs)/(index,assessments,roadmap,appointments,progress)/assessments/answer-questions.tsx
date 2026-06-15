@@ -16,6 +16,7 @@ import {
 } from "@/lib/roadmap/jumpstartErrors";
 import { extractApiErrorMessage } from "@/utils/availability/api-error";
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
+import { resolveRouteParamId } from "@/lib/roadmap/helpers";
 import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { buildReturnTo } from "@/utils/navigation";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
@@ -49,9 +50,13 @@ export default function AnswerQuestionPage() {
   const router = useRouter();
   
   const { user } = useAuthStore();
+  const resolvedAssessmentId = useMemo(
+    () => resolveRouteParamId(assessmentId),
+    [assessmentId],
+  );
   
   // Fetch assessment data from API
-  const { data, isLoading, error } = useAssessment(assessmentId as string);
+  const { data, isLoading, error } = useAssessment(resolvedAssessmentId);
   const assessment = useMemo(() => {
     if (!data) return null;
     return mapApiToFrontend(data as ApiAssessment);
@@ -67,12 +72,12 @@ export default function AnswerQuestionPage() {
     isLoading: isLoadingSubmitted,
     isError: isSubmittedAnswersError,
     error: submittedAnswersError,
-  } = useFetchAnswers(assessmentId as string, user?.id, isViewMode);
+  } = useFetchAnswers(resolvedAssessmentId, user?.id, isViewMode);
   
   
   const getDraft = useAssessmentStore((state) => state.getDraft);
   const setDraft = useAssessmentStore((state) => state.saveDraft);
-  const previousResponse = getDraft(assessmentId as string);
+  const previousResponse = getDraft(resolvedAssessmentId);
 
   
   const submitPreSurvey = useSubmitPreSurvey();
@@ -169,15 +174,13 @@ export default function AnswerQuestionPage() {
   >(undefined);
   
   useEffect(() => {
+    if (!isViewMode || isLoadingSubmitted || !assessment || !data || !user?.id) {
+      return;
+    }
+
     const answerDoc = submittedAnswers?.data;
-    if (
-      !isViewMode ||
-      isLoadingSubmitted ||
-      !answerDoc?.sections ||
-      !assessment ||
-      !data ||
-      !user?.id
-    ) {
+    if (!answerDoc?.sections?.length) {
+      setViewSectionAnswers({});
       return;
     }
 
@@ -194,7 +197,7 @@ export default function AnswerQuestionPage() {
     submittedAnswers,
     assessment,
     data,
-    assessmentId,
+    resolvedAssessmentId,
     user?.id,
     setDraft,
     isLoadingSubmitted,
@@ -244,7 +247,7 @@ export default function AnswerQuestionPage() {
       };
 
       await submitPreSurvey.mutateAsync({
-        assessmentId: assessmentId as string,
+        assessmentId: resolvedAssessmentId,
         payload,
       });
 
@@ -298,7 +301,7 @@ export default function AnswerQuestionPage() {
 
       console.log("STEP 2: Saving extras");
       await submitAssessmentAnswers.mutateAsync({
-        assessmentId: assessmentId as string,
+        assessmentId: resolvedAssessmentId,
         payload,
       });
 
@@ -328,10 +331,10 @@ export default function AnswerQuestionPage() {
     setShowModal(false);
     setTimeout(() => {
       openScheduleMeeting(router, user?.role, {
-        assessmentId: assessmentId as string,
+        assessmentId: resolvedAssessmentId,
         returnTo: buildReturnTo(
           "/assessments/survey-guidelines",
-          { assessmentId: assessmentId as string },
+          { assessmentId: resolvedAssessmentId },
           user?.role,
         ),
       });
@@ -371,13 +374,12 @@ export default function AnswerQuestionPage() {
 
   const submittedSections = submittedAnswers?.data?.sections || [];
 
-  
   if (
     isLoading ||
-    (isViewMode && isLoadingSubmitted) ||
     submitPreSurvey.isPending ||
     submitAssessmentAnswers.isPending ||
-    isTriggeringJumpstart
+    isTriggeringJumpstart ||
+    (isViewMode && (isLoadingSubmitted || viewSectionAnswers === undefined))
   ) {
     return (
       <AppGradientBackground
@@ -448,7 +450,7 @@ export default function AnswerQuestionPage() {
       {showPreSurvey ? (
         <PreSurveySection
           assessment={assessment}
-          assessmentId={assessmentId as string}
+          assessmentId={resolvedAssessmentId}
           onComplete={handlePreSurveyComplete}
           onCancel={handlePreSurveyCancel}
           hasExistingAnswers={hasPreSurveyAnswers}
@@ -456,7 +458,7 @@ export default function AnswerQuestionPage() {
       ) : (
         <AssessmentQuestionsSection
           assessment={assessment}
-          assessmentId={assessmentId as string}
+          assessmentId={resolvedAssessmentId}
           userRole={user?.role}
           isViewMode={isViewMode}
           openCdpOnLoad={openCdpOnLoad}

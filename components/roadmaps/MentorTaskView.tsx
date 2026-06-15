@@ -17,6 +17,7 @@ import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import {
     getEffectiveTaskExtras,
     isAssessmentOnlyTask,
+    normalizeMongoId,
     normalizeNestedTaskStatus,
     parseRoadmapTimestampMs,
     savedExtrasToFormValues,
@@ -445,12 +446,18 @@ export function MentorTaskView({
         return name;
     };
 
+    const getLinkedAssessmentId = useCallback(
+        (extra: Extra) => normalizeMongoId(extra.assessmentId),
+        [],
+    );
+
     const hasSubmittedAssessmentAnswers = useCallback(
         (linkedAssessmentId?: string) => {
-            if (!linkedAssessmentId) return false;
+            const normalizedId = normalizeMongoId(linkedAssessmentId);
+            if (!normalizedId) return false;
             const item = assessmentProgress?.items?.find(
                 (entry: { assessmentId?: string; status?: string }) =>
-                    entry.assessmentId === linkedAssessmentId,
+                    normalizeMongoId(entry.assessmentId) === normalizedId,
             );
             return (
                 item?.status === "completed" || item?.status === "in_progress"
@@ -459,42 +466,58 @@ export function MentorTaskView({
         [assessmentProgress?.items],
     );
 
+    const getAssessmentAnswerQuestionsPath = useCallback(() => {
+        const role = String(currentUser?.role ?? "").toLowerCase();
+        return role === "mentor"
+            ? "/(mentor)/assessments/answer-questions"
+            : "/(pastor)/assessments/answer-questions";
+    }, [currentUser?.role]);
+
+    const getAssessmentSurveyGuidelinesPath = useCallback(() => {
+        const role = String(currentUser?.role ?? "").toLowerCase();
+        return role === "mentor"
+            ? "/(mentor)/assessments/survey-guidelines"
+            : "/(pastor)/assessments/survey-guidelines";
+    }, [currentUser?.role]);
+
     const navigateToLinkedAssessment = useCallback(
         (extra: Extra) => {
-            const linkedAssessmentId = extra.assessmentId;
+            const linkedAssessmentId = getLinkedAssessmentId(extra);
             if (!linkedAssessmentId) return;
 
-            if (isPreviewMode) {
-                router.push({
-                    pathname: "/assessments/answer-questions",
-                    params: {
-                        assessmentId: linkedAssessmentId,
-                        viewMode: "true",
-                        hasPreSurvey: "false",
-                        targetUserId: targetUserId ?? "",
-                    },
-                });
-                return;
+            const viewParams: Record<string, string> = {
+                assessmentId: linkedAssessmentId,
+                viewMode: "true",
+                hasPreSurvey: "false",
+            };
+
+            if (isViewingPastor && targetUserId) {
+                viewParams.targetUserId = String(targetUserId);
             }
 
-            if (hasSubmittedAssessmentAnswers(linkedAssessmentId)) {
+            if (isPreviewMode || hasSubmittedAssessmentAnswers(linkedAssessmentId)) {
                 router.push({
-                    pathname: "/assessments/answer-questions",
-                    params: {
-                        assessmentId: linkedAssessmentId,
-                        viewMode: "true",
-                        hasPreSurvey: "false",
-                    },
+                    pathname: getAssessmentAnswerQuestionsPath() as any,
+                    params: viewParams,
                 });
                 return;
             }
 
             router.push({
-                pathname: "/assessments/survey-guidelines",
+                pathname: getAssessmentSurveyGuidelinesPath() as any,
                 params: { assessmentId: linkedAssessmentId },
             });
         },
-        [hasSubmittedAssessmentAnswers, isPreviewMode, router, targetUserId],
+        [
+            getAssessmentAnswerQuestionsPath,
+            getAssessmentSurveyGuidelinesPath,
+            getLinkedAssessmentId,
+            hasSubmittedAssessmentAnswers,
+            isPreviewMode,
+            isViewingPastor,
+            router,
+            targetUserId,
+        ],
     );
 
     /** Save progress — always creates a NEW submission record (never PATCH). */
@@ -1120,7 +1143,7 @@ export function MentorTaskView({
                 );
 
             case "ASSESSMENT": {
-                const linkedAssessmentId = extra.assessmentId;
+                const linkedAssessmentId = getLinkedAssessmentId(extra);
                 const hasSubmittedAnswers = hasSubmittedAssessmentAnswers(linkedAssessmentId);
                 const scheduleMeetingAfter = extra.checkboxes?.some(
                     (cb) => cb.name === "Schedule Meeting after the Assessment",
@@ -1168,7 +1191,7 @@ export function MentorTaskView({
                                     return;
                                 }
                                 router.push({
-                                    pathname: "/assessments/survey-guidelines",
+                                    pathname: getAssessmentSurveyGuidelinesPath() as any,
                                     params: { assessmentId: linkedAssessmentId },
                                 });
                             }}

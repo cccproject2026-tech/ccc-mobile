@@ -101,14 +101,32 @@ export function isAssessmentOnlyTask(extras: Extra[]): boolean {
 /** Normalize API ids that may arrive as strings or populated objects. */
 export function normalizeMongoId(value: unknown): string {
     if (value == null) return '';
-    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed.startsWith('{')) {
+            try {
+                return normalizeMongoId(JSON.parse(trimmed));
+            } catch {
+                return trimmed;
+            }
+        }
+        return trimmed;
+    }
     if (typeof value === 'object') {
-        const obj = value as { _id?: unknown; $oid?: unknown };
+        const obj = value as { _id?: unknown; $oid?: unknown; id?: unknown };
         if (typeof obj._id === 'string') return obj._id.trim();
         if (typeof obj.$oid === 'string') return obj.$oid.trim();
+        if (typeof obj.id === 'string') return obj.id.trim();
         if (obj._id != null) return normalizeMongoId(obj._id);
+        if (obj.id != null) return normalizeMongoId(obj.id);
     }
     return String(value).trim();
+}
+
+/** Normalize ids from expo-router search params (string | string[] | object). */
+export function resolveRouteParamId(value: unknown): string {
+    const raw = Array.isArray(value) ? value[0] : value;
+    return normalizeMongoId(raw);
 }
 
 export type AssessmentAnswerSectionSlice = {

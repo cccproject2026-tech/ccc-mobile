@@ -1,5 +1,60 @@
-import type { Assessment, AssessmentResponse, SubmitAnswersPayload, SubmitPreSurveyPayload, SubmittedAnswersResponse } from '@/types/assessment.types';
-import { ApiAssessment } from './types';
+import { normalizeMongoId } from '@/lib/roadmap/helpers';
+import type {
+    ApiAssessment,
+    ApiAssessmentLayer,
+    Assessment,
+    AssessmentResponse,
+    SubmitAnswersPayload,
+    SubmitPreSurveyPayload,
+    SubmittedAnswersResponse,
+} from '@/types/assessment.types';
+
+export function sectionAnswersHasData(
+    answers?: Record<number, Record<string, unknown>> | null,
+): boolean {
+    if (!answers) return false;
+    return Object.values(answers).some(
+        (section) => section != null && Object.keys(section).length > 0,
+    );
+}
+
+/**
+ * Map stored answer values to radio option values ("1"–"4") used by AnswerQuestionSection.
+ * Handles legacy submissions that saved Mongo choice ids instead of level indices.
+ */
+function resolveQuestionChoiceValue(
+    apiLayer: ApiAssessmentLayer,
+    selectedChoice: unknown,
+): string | undefined {
+    if (selectedChoice == null || selectedChoice === '') return undefined;
+
+    if (typeof selectedChoice === 'object') {
+        const choiceId = normalizeMongoId(
+            (selectedChoice as { _id?: unknown; id?: unknown })._id ??
+                (selectedChoice as { id?: unknown }).id,
+        );
+        if (choiceId) return resolveQuestionChoiceValue(apiLayer, choiceId);
+        return undefined;
+    }
+
+    const raw = String(selectedChoice).trim();
+    if (/^[1-4]$/.test(raw)) return raw;
+    if (/^[0-3]$/.test(raw)) return String(Number(raw) + 1);
+
+    const normalizedChoiceId = normalizeMongoId(raw);
+    const byId = apiLayer.choices.findIndex(
+        (c) => normalizeMongoId(c._id) === normalizedChoiceId,
+    );
+    if (byId >= 0) return String(byId + 1);
+
+    const lowered = raw.toLowerCase();
+    const byText = apiLayer.choices.findIndex(
+        (c) => String(c.text).trim().toLowerCase() === lowered,
+    );
+    if (byText >= 0) return String(byText + 1);
+
+    return raw;
+}
 
 /**
  * Format date to readable string
@@ -103,17 +158,35 @@ export function transformSubmittedAnswersToStore(
     // Transform section answers: one selectedChoice (choiceId) per layer
     const sectionAnswers: Record<number, Record<string, string>> = {};
 
-    submittedAnswers.sections.forEach((submittedSection) => {
-        const sectionIndex = apiAssessment.sections.findIndex(
-            section => section._id === submittedSection.sectionId
+    submittedAnswers.sections.forEach((submittedSection, submittedIndex) => {
+        const submittedSectionId = normalizeMongoId(submittedSection.sectionId);
+        let sectionIndex = apiAssessment.sections.findIndex(
+            (section) => normalizeMongoId(section._id) === submittedSectionId,
         );
 
-        if (sectionIndex !== -1) {
-            sectionAnswers[sectionIndex] = {};
-            submittedSection.layers.forEach((layer) => {
-                sectionAnswers[sectionIndex][layer.layerId] = layer.selectedChoice;
-            });
+        if (sectionIndex === -1 && submittedIndex < apiAssessment.sections.length) {
+            sectionIndex = submittedIndex;
         }
+
+        if (sectionIndex === -1) return;
+
+        const apiSection = apiAssessment.sections[sectionIndex];
+        sectionAnswers[sectionIndex] = {};
+
+        submittedSection.layers.forEach((layer, layerIndex) => {
+            const submittedLayerId = normalizeMongoId(layer.layerId);
+            const apiLayer =
+                apiSection.layers.find(
+                    (l) => normalizeMongoId(l._id) === submittedLayerId,
+                ) ?? apiSection.layers[layerIndex];
+
+            if (!apiLayer) return;
+
+            const choiceValue = resolveQuestionChoiceValue(apiLayer, layer.selectedChoice);
+            if (!choiceValue) return;
+
+            sectionAnswers[sectionIndex][normalizeMongoId(apiLayer._id)] = choiceValue;
+        });
     });
 
     return { preSurveyAnswers, sectionAnswers };

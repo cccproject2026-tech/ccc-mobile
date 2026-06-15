@@ -1,4 +1,5 @@
 import CdpPlansModal from '@/components/CdpPlansModal';
+import { sectionAnswersHasData } from '@/lib/assessments/helpers';
 import { useAssessmentStore } from '@/stores/assessment.store';
 import { Assessment, AssessmentQuestion, QuestionGroup } from '@/types/assessment.types';
 import { sharePdfFromHtml } from '@/utils/pdf';
@@ -74,9 +75,20 @@ export default function AssessmentQuestionsSection({
         (state) => state.getDraft(assessmentId)
     );
     const saveDraft = useAssessmentStore((state) => state.saveDraft);
+    const resolveViewAnswers = (
+        incoming?: Record<number, Record<string, any>>,
+    ): Record<number, Record<string, any>> => {
+        if (sectionAnswersHasData(incoming)) {
+            return incoming!;
+        }
+        if (sectionAnswersHasData(previousResponse?.sectionAnswers)) {
+            return previousResponse!.sectionAnswers!;
+        }
+        return incoming ?? {};
+    };
     const [answers, setAnswers] = useState<Record<number, Record<string, any>>>(
         isViewMode
-            ? (initialSectionAnswers || previousResponse?.sectionAnswers || {})
+            ? resolveViewAnswers(initialSectionAnswers)
             : (previousResponse?.sectionAnswers || {})
     );
     const [currentSectionIndex, setCurrentSectionIndex] = useState(
@@ -195,11 +207,11 @@ export default function AssessmentQuestionsSection({
 
     // In view mode, sync any incoming initial answers into local state
     useEffect(() => {
-        if (isViewMode && initialSectionAnswers) {
-            setAnswers(initialSectionAnswers);
-            setCurrentSectionIndex(0);
-        }
-    }, [isViewMode, initialSectionAnswers]);
+        if (!isViewMode) return;
+        const resolved = resolveViewAnswers(initialSectionAnswers);
+        setAnswers(resolved);
+        setCurrentSectionIndex(0);
+    }, [isViewMode, initialSectionAnswers, previousResponse?.sectionAnswers]);
 
     
     useEffect(() => {

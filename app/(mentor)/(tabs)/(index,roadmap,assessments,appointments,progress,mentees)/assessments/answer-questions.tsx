@@ -13,6 +13,7 @@ import {
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
 import { buildMentorCdpSections } from "@/lib/assessments/cdpRecommendations";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
+import { resolveRouteParamId } from "@/lib/roadmap/helpers";
 import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useAuthStore } from "@/stores";
 import { useAssessmentStore } from "@/stores/assessment.store";
@@ -53,12 +54,18 @@ export default function AnswerQuestionPage() {
   const { handleBack } = useNavigationBack("/(mentor)/assessments-v2" as const);
   const { user } = useAuthStore();
 
+  const resolvedAssessmentId = useMemo(
+    () => resolveRouteParamId(assessmentId),
+    [assessmentId],
+  );
+
   // Determine the user ID to fetch answers for: passed targetUserId (mentee) or current user (if fallback)
-  
-  const userIdToFetch = (targetUserId as string) || user?.id;
+  const userIdToFetch = useMemo(() => {
+    return resolveRouteParamId(targetUserId) || user?.id;
+  }, [targetUserId, user?.id]);
 
   // Fetch assessment data from API
-  const { data, isLoading, error } = useAssessment(assessmentId as string);
+  const { data, isLoading, error } = useAssessment(resolvedAssessmentId);
   const assessment = useMemo(() => {
     if (!data) return null;
     return mapApiToFrontend(data as ApiAssessment);
@@ -71,12 +78,12 @@ export default function AnswerQuestionPage() {
 
   // ONLY fetch submitted answers in VIEW MODE (not for regular editing)
   const { data: submittedAnswers, isLoading: isLoadingSubmitted } =
-    useFetchAnswers(assessmentId as string, userIdToFetch, isViewMode);
+    useFetchAnswers(resolvedAssessmentId, userIdToFetch, isViewMode);
 
   
   const getDraft = useAssessmentStore((state) => state.getDraft);
   const setDraft = useAssessmentStore((state) => state.saveDraft);
-  const previousResponse = getDraft(assessmentId as string);
+  const previousResponse = getDraft(resolvedAssessmentId);
 
   
   const submitPreSurvey = useSubmitPreSurvey();
@@ -92,15 +99,13 @@ export default function AnswerQuestionPage() {
 
   
   useEffect(() => {
+    if (!isViewMode || isLoadingSubmitted || !assessment || !data || !userIdToFetch) {
+      return;
+    }
+
     const answerDoc = submittedAnswers?.data;
-    if (
-      !isViewMode ||
-      isLoadingSubmitted ||
-      !answerDoc?.sections ||
-      !assessment ||
-      !data ||
-      !userIdToFetch
-    ) {
+    if (!answerDoc?.sections?.length) {
+      setViewSectionAnswers({});
       return;
     }
 
@@ -114,8 +119,8 @@ export default function AnswerQuestionPage() {
     setViewSectionAnswers(transformed.sectionAnswers);
 
     // Optionally persist into draft store (so other flows can reuse)
-    setDraft(assessmentId as string, {
-      assessmentId: assessmentId as string,
+    setDraft(resolvedAssessmentId, {
+      assessmentId: resolvedAssessmentId,
       assessmentType: assessment.type,
       assessmentTitle: assessment.title,
       preSurveyAnswers: transformed.preSurveyAnswers,
@@ -128,7 +133,7 @@ export default function AnswerQuestionPage() {
     submittedAnswers,
     assessment,
     data,
-    assessmentId,
+    resolvedAssessmentId,
     userIdToFetch,
     setDraft,
     isLoadingSubmitted,
@@ -171,7 +176,7 @@ export default function AnswerQuestionPage() {
       };
 
       await submitPreSurvey.mutateAsync({
-        assessmentId: assessmentId as string,
+        assessmentId: resolvedAssessmentId,
         payload,
       });
 
@@ -203,7 +208,7 @@ export default function AnswerQuestionPage() {
       selectedItems: Array<{ level: number; text: string }>;
     }>;
   }) => {
-    if (!targetUserId || !assessmentId) {
+    if (!targetUserId || !resolvedAssessmentId) {
       return;
     }
 
@@ -222,7 +227,7 @@ export default function AnswerQuestionPage() {
       return;
     }
 
-    const id = assessmentId as string;
+    const id = resolvedAssessmentId;
     const userId = targetUserId as string;
     try {
       const apiPayloads = pendingSections.map((section) => ({
@@ -294,7 +299,7 @@ export default function AnswerQuestionPage() {
       };
 
       await submitAssessmentAnswers.mutateAsync({
-        assessmentId: assessmentId as string,
+        assessmentId: resolvedAssessmentId,
         payload,
       });
 
@@ -364,8 +369,7 @@ export default function AnswerQuestionPage() {
     [assessment?.sections, data?.sections, submittedAnswers?.data?.sections],
   );
 
-  
-  if (isLoading || (isViewMode && isLoadingSubmitted)) {
+  if (isLoading || (isViewMode && (isLoadingSubmitted || viewSectionAnswers === undefined))) {
     return (
       <AppGradientBackground
         style={[
@@ -425,7 +429,7 @@ export default function AnswerQuestionPage() {
       {showPreSurvey ? (
         <PreSurveySection
           assessment={assessment}
-          assessmentId={assessmentId as string}
+          assessmentId={resolvedAssessmentId}
           onComplete={handlePreSurveyComplete}
           onCancel={handlePreSurveyCancel}
           hasExistingAnswers={hasPreSurveyAnswers}
@@ -433,7 +437,7 @@ export default function AnswerQuestionPage() {
       ) : (
         <AssessmentQuestionsSection
           assessment={assessment}
-          assessmentId={assessmentId as string}
+          assessmentId={resolvedAssessmentId}
           userRole={user?.role}
           isViewMode={isViewMode}
           openCdpOnLoad={openCdpOnLoad}

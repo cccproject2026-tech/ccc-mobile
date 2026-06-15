@@ -19,6 +19,7 @@ import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 import {
     getEffectiveTaskExtras,
     isAssessmentOnlyTask,
+    normalizeMongoId,
     normalizeNestedTaskStatus,
     savedExtrasToFormValues,
     shouldUpdateTaskExtras,
@@ -68,6 +69,20 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
     // Determine target user and if we are in read-only (mentor) mode
     const targetUserId = userId || currentUser?.id;
     const isMentorView = !!userId && userId !== currentUser?.id;
+    const getLinkedAssessmentId = (extra: { assessmentId?: unknown }) =>
+        normalizeMongoId(extra.assessmentId);
+    const getAssessmentAnswerQuestionsPath = () => {
+        const role = String(currentUser?.role ?? "").toLowerCase();
+        return role === "mentor"
+            ? "/(mentor)/assessments/answer-questions"
+            : "/(pastor)/assessments/answer-questions";
+    };
+    const getAssessmentSurveyGuidelinesPath = () => {
+        const role = String(currentUser?.role ?? "").toLowerCase();
+        return role === "mentor"
+            ? "/(mentor)/assessments/survey-guidelines"
+            : "/(pastor)/assessments/survey-guidelines";
+    };
 
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string | undefined>>({});
@@ -990,8 +1005,11 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                 );
 
             case "ASSESSMENT": {
+                const linkedAssessmentId = getLinkedAssessmentId(extra);
                 const isSpecificAssessmentCompleted = assessmentProgress?.items?.some(
-                    (item: any) => item.assessmentId === extra.assessmentId && item.status === 'completed'
+                    (item: any) =>
+                        normalizeMongoId(item.assessmentId) === linkedAssessmentId &&
+                        item.status === 'completed'
                 );
 
                 if (isSpecificAssessmentCompleted) {
@@ -1000,13 +1018,18 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                             <TouchableOpacity
                                 style={styles.centeredLinkButton}
                                 onPress={() => {
+                                    if (!linkedAssessmentId) return;
+                                    const viewParams: Record<string, string> = {
+                                        assessmentId: linkedAssessmentId,
+                                        viewMode: "true",
+                                        hasPreSurvey: "false",
+                                    };
+                                    if (isMentorView && targetUserId) {
+                                        viewParams.targetUserId = String(targetUserId);
+                                    }
                                     router.push({
-                                        pathname: "/assessments/answer-questions",
-                                        params: {
-                                            assessmentId: extra.assessmentId,
-                                            viewMode: "true",
-                                            hasPreSurvey: "false"
-                                        }
+                                        pathname: getAssessmentAnswerQuestionsPath() as any,
+                                        params: viewParams,
                                     });
                                 }}
                             >
@@ -1024,10 +1047,11 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                                             {
                                                 text: "Repeat",
                                                 onPress: () => {
+                                                    if (!linkedAssessmentId) return;
                                                     router.push({
-                                                        pathname: "/assessments/answer-questions",
+                                                        pathname: getAssessmentAnswerQuestionsPath() as any,
                                                         params: {
-                                                            assessmentId: extra.assessmentId,
+                                                            assessmentId: linkedAssessmentId,
                                                             hasPreSurvey: "true"
                                                         }
                                                     });
@@ -1057,21 +1081,23 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                         <Pressable
                             style={styles.button}
                             onPress={() => {
-                                if (extra.assessmentId) {
-                                    const hasScheduleMeeting = extra.checkboxes?.some(
-                                        cb => cb.name === 'Schedule Meeting after the Assessment'
-                                    );
-                                    router.push({
-                                        pathname: "/assessments/answer-questions",
-                                        params: {
-                                            assessmentId: extra.assessmentId,
-                                            hasPreSurvey: "true",
-                                            scheduleMeeting: hasScheduleMeeting ? "true" : "false"
-                                        }
-                                    });
-                                } else {
+                                if (!linkedAssessmentId) {
                                     Alert.alert("Error", "No assessment ID found for this task.");
+                                    return;
                                 }
+
+                                const hasScheduleMeeting = extra.checkboxes?.some(
+                                    cb => cb.name === 'Schedule Meeting after the Assessment'
+                                );
+                                router.push({
+                                    pathname: getAssessmentSurveyGuidelinesPath() as any,
+                                    params: {
+                                        assessmentId: linkedAssessmentId,
+                                        ...(hasScheduleMeeting
+                                            ? { scheduleMeeting: "true" }
+                                            : {}),
+                                    },
+                                });
                             }}
                         >
                             <Text style={styles.buttonText}>
