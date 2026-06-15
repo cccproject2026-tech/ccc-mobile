@@ -9,35 +9,67 @@ const PASTOR_TABS_GROUPED_PREFIX =
 const MENTOR_TABS_GROUPED_PREFIX =
   "/(mentor)/(tabs)/(index,roadmap,assessments,appointments,progress,mentees)";
 
-function tabsGroupedPrefixForRole(role?: string): string | undefined {
+function splitHref(href: string): { path: string; query: string } {
+  const qIndex = href.indexOf("?");
+  if (qIndex < 0) return { path: href, query: "" };
+  return { path: href.slice(0, qIndex), query: href.slice(qIndex) };
+}
+
+/** Map grouped-tab file paths to canonical Expo Router hrefs used by router.push. */
+function canonicalizeGroupedTabsHref(path: string, role?: string): string | undefined {
   const r = String(role ?? "").toLowerCase();
-  if (r === "pastor") return PASTOR_TABS_GROUPED_PREFIX;
-  if (r === "mentor") return MENTOR_TABS_GROUPED_PREFIX;
+
+  if (path.startsWith(MENTOR_TABS_GROUPED_PREFIX)) {
+    const rest = path.slice(MENTOR_TABS_GROUPED_PREFIX.length);
+    if (rest.startsWith("/roadmap")) {
+      return `/(mentor)/roadmap${rest.slice("/roadmap".length)}`;
+    }
+    if (rest.startsWith("/assessments")) {
+      return `/(mentor)${rest}`;
+    }
+    if (rest.startsWith("/review-center")) {
+      return `/(mentor)/(tabs)${rest}`;
+    }
+    return undefined;
+  }
+
+  if (path.startsWith(PASTOR_TABS_GROUPED_PREFIX)) {
+    const rest = path.slice(PASTOR_TABS_GROUPED_PREFIX.length);
+    if (rest.startsWith("/roadmap") || rest.startsWith("/assessments")) {
+      return `/(pastor)${rest}`;
+    }
+    return undefined;
+  }
+
+  if (r === "mentor" && path.startsWith("/roadmap")) {
+    return `/(mentor)/roadmap${path.slice("/roadmap".length)}`;
+  }
+  if (r === "mentor" && path.startsWith("/assessments")) {
+    return `/(mentor)${path}`;
+  }
+  if (r === "mentor" && path.startsWith("/review-center")) {
+    return `/(mentor)/(tabs)${path}`;
+  }
+  if (r === "pastor" && (path.startsWith("/roadmap") || path.startsWith("/assessments"))) {
+    return `/(pastor)${path}`;
+  }
+
   return undefined;
 }
 
-/** Expand tab-relative paths (e.g. `/assessments/survey-guidelines`) to full Expo Router hrefs. */
+/** Expand tab-relative paths (e.g. `/roadmap/landing/landing`) to navigable Expo Router hrefs. */
 export function normalizeReturnToHref(
   href?: string | null,
   role?: string,
 ): string | undefined {
   const trimmed = String(href ?? "").trim();
   if (!trimmed) return undefined;
+
+  const { path, query } = splitHref(trimmed);
+  const canonical = canonicalizeGroupedTabsHref(path, role);
+  if (canonical) return `${canonical}${query}`;
+
   if (trimmed.startsWith("/(")) return trimmed;
-
-  const qIndex = trimmed.indexOf("?");
-  const path = qIndex >= 0 ? trimmed.slice(0, qIndex) : trimmed;
-  const query = qIndex >= 0 ? trimmed.slice(qIndex) : "";
-
-  const prefix = tabsGroupedPrefixForRole(role);
-  if (
-    prefix &&
-    (path.startsWith("/review-center") ||
-      path.startsWith("/roadmap") ||
-      path.startsWith("/assessments"))
-  ) {
-    return `${prefix}${path}${query}`;
-  }
 
   return trimmed;
 }
@@ -84,22 +116,20 @@ export function appendReturnTo<T extends Record<string, unknown>>(
 }
 
 /**
- * When `returnTo` is set (cross-stack entry), restore that screen first.
- * Otherwise use stack `back()`, then `fallback`.
+ * Prefer stack `back()` when history exists, then `returnTo`, then `fallback`.
  */
 export function safeGoBack(
   router: Router,
   options?: { fallback?: Href; returnTo?: string; role?: string },
 ): void {
-  const returnTo = normalizeReturnToHref(options?.returnTo, options?.role);
-
-  if (returnTo) {
-    router.replace(returnTo as Href);
+  if (router.canGoBack()) {
+    router.back();
     return;
   }
 
-  if (router.canGoBack()) {
-    router.back();
+  const returnTo = normalizeReturnToHref(options?.returnTo, options?.role);
+  if (returnTo) {
+    router.replace(returnTo as Href);
     return;
   }
 
