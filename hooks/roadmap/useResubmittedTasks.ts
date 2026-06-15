@@ -1,6 +1,7 @@
 import { roadmapService } from "@/services/roadmap.service";
 import { getTasks } from "@/lib/roadmap/helpers";
 import type { NestedRoadmap, Roadmap, TaskSubmission } from "@/lib/roadmap/types";
+import { mapWithConcurrency } from "@/utils/apiConcurrency";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type ResubmittedEntry = {
@@ -56,8 +57,10 @@ export function useResubmittedTasks(
         setIsLoading(true);
         try {
             const results: ResubmittedEntry[] = [];
-            await Promise.all(
-                candidateTasks.map(async ({ task, phaseId, phaseTitle }) => {
+            await mapWithConcurrency(
+                candidateTasks,
+                2,
+                async ({ task, phaseId, phaseTitle }) => {
                     // Strategy 1: Try the new submissions API
                     try {
                         const submissions = await roadmapService.getTaskSubmissions(
@@ -122,7 +125,7 @@ export function useResubmittedTasks(
                     } catch {
                         
                     }
-                }),
+                },
             );
             setEntries(results);
         } finally {

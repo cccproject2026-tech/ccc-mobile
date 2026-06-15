@@ -227,6 +227,13 @@ export default function CdpPlansModal({
                                         <Text style={styles.listTitle}>Customized Development Plans</Text>
                                         <View style={styles.listTitleUnderline} />
                                         <View style={styles.listBox}>
+                                            {(section.recommendations ?? []).length === 0 ? (
+                                                <Text style={styles.emptyListText}>
+                                                    {mode === 'mentor'
+                                                        ? 'No development plans for this level yet. Use Add to create one, or confirm the assessment template includes Level recommendations.'
+                                                        : 'No recommendations available yet.'}
+                                                </Text>
+                                            ) : null}
                                             {(section.recommendations ?? []).map((item, idx) => {
                                                 const isSelected = mode === 'mentor' && (selectedRecommendations[section.sectionId] ?? []).includes(item);
                                                 return (
@@ -437,6 +444,11 @@ const styles = StyleSheet.create({
         paddingVertical: getSpacing(10),
         paddingHorizontal: getSpacing(14),
         backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    },
+    emptyListText: {
+        fontSize: getFontSize(13),
+        color: roadmapTheme.textMuted,
+        lineHeight: getFontSize(18),
     },
     itemRow: {
         flexDirection: 'row',

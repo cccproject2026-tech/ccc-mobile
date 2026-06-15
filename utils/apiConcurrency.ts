@@ -21,7 +21,8 @@ export async function withRetry<T>(
     } catch (e) {
       lastErr = e;
       const st = getHttpStatus(e);
-      const shouldRetry = st === 429 || st === 503;
+      // Do not retry 429 — it amplifies rate-limit storms; only retry transient 503.
+      const shouldRetry = st === 503;
       if (!shouldRetry || i === attempts - 1) throw e;
       await sleep(baseDelayMs * (i + 1) + Math.floor(Math.random() * 200));
     }

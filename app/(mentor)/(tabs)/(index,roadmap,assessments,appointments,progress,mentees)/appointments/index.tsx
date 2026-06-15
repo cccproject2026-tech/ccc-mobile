@@ -107,7 +107,7 @@ const Appointments: React.FC = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useMentees(10, user?.id);
+  } = useMentees(10, user?.id, { includeProgress: false });
 
   
   const allMentees = useMemo(() => {

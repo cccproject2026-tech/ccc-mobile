@@ -11,6 +11,7 @@ import {
   useSubmitPreSurvey,
 } from "@/hooks/assessments/useSubmitAnswers";
 import { transformSubmittedAnswersToStore } from "@/lib/assessments/helpers";
+import { buildMentorCdpSections } from "@/lib/assessments/cdpRecommendations";
 import { mapApiToFrontend } from "@/lib/assessments/mappers";
 import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useAuthStore } from "@/stores";
@@ -353,43 +354,15 @@ export default function AnswerQuestionPage() {
   };
 
   // Build mentor review sections from ANSWERS API (score + recommendations per section)
-  const mentorReviewSections = useMemo(() => {
-    if (!assessment || !data?.sections || !submittedAnswers?.data?.sections) {
-      return undefined;
-    }
-    console.log("Answer Sections:", submittedAnswers?.data?.sections);
-
-    // Drive mentor review sections purely from ANSWERS API; use assessment only for titles.
-    return submittedAnswers.data.sections.map((submittedSection) => {
-      const apiSectionIndex = data.sections.findIndex(
-        (s) => s._id === submittedSection.sectionId,
-      );
-      const apiSection = apiSectionIndex >= 0 ? data.sections[apiSectionIndex] : undefined;
-      const sectionScore = submittedSection.sectionScore;
-      const templateRecommendations = apiSection?.recommendations ?? [];
-      const levelMatchedTemplateRecommendations =
-        typeof sectionScore === "number" && sectionScore >= 1 && sectionScore <= 4
-          ? (templateRecommendations.find(
-              (recommendationLevel) => recommendationLevel.level === sectionScore,
-            )?.items ?? [])
-          : [];
-      const sentRecommendations = submittedSection.recommendations ?? [];
-      const mentorVisibleRecommendations =
-        sentRecommendations.length > 0
-          ? sentRecommendations
-          : levelMatchedTemplateRecommendations;
-
-      return {
-        sectionId: submittedSection.sectionId,
-        title:
-          assessment.sections[apiSectionIndex]?.title ??
-          apiSection?.title ??
-          "Section",
-        score: sectionScore,
-        recommendations: mentorVisibleRecommendations,
-      };
-    });
-  }, [assessment, data?.sections, submittedAnswers?.data?.sections]);
+  const mentorReviewSections = useMemo(
+    () =>
+      buildMentorCdpSections(
+        assessment?.sections ?? [],
+        data?.sections,
+        submittedAnswers?.data?.sections,
+      ),
+    [assessment?.sections, data?.sections, submittedAnswers?.data?.sections],
+  );
 
   
   if (isLoading || (isViewMode && isLoadingSubmitted)) {

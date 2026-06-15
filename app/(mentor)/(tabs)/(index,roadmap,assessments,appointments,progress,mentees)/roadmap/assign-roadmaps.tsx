@@ -44,7 +44,7 @@ const AssignRoadmaps = () => {
         hasNextPage, 
         fetchNextPage, 
         isFetchingNextPage 
-    } = useMentees(10, user?.id);
+    } = useMentees(10, user?.id, { includeProgress: false });
     
     const mentees = useMemo(() => data?.pages.flatMap((page) => page.mentees) ?? [], [data]);
 

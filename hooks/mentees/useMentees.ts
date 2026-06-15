@@ -5,8 +5,23 @@ import { Mentee } from '@/types/mentee.types';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { mapWithConcurrency, withRetry } from '@/utils/apiConcurrency';
 
-// Query key - include mentorId when filtering by assigned mentor
-const getMenteesKey = (mentorId?: string | null) => (mentorId ? ['mentees', 'assigned', mentorId] as const : ['mentees'] as const);
+export type UseMenteesOptions = {
+    /** Fetch GET /progress/:id per mentee. Disable on list screens that load progress on selection. */
+    includeProgress?: boolean;
+    /** Fetch GET /users/:id per mentee for profile enrichment. */
+    includeProfile?: boolean;
+};
+
+// Query key - include mentorId and enrichment flags when filtering by assigned mentor
+const getMenteesKey = (
+    mentorId?: string | null,
+    options?: UseMenteesOptions,
+) => {
+    const base = mentorId ? (['mentees', 'assigned', mentorId] as const) : (['mentees'] as const);
+    const includeProgress = options?.includeProgress !== false;
+    const includeProfile = options?.includeProfile !== false;
+    return [...base, includeProgress ? 'progress' : 'no-progress', includeProfile ? 'profile' : 'no-profile'] as const;
+};
 
 /** Normalize backend user (may have _id) to have id for progress API */
 const toMenteeWithId = (m: any): Mentee => ({ ...m, id: m.id ?? m._id });
@@ -41,11 +56,17 @@ function getCurrentRoadmapPhase(roadmaps: any[] = []) {
     return roadmapWithPhase[0] ?? null;
 }
 
-export const useMentees = (limit: number = 10, mentorId?: string | null) => {
+export const useMentees = (
+    limit: number = 10,
+    mentorId?: string | null,
+    options?: UseMenteesOptions,
+) => {
     const isAssignedOnly = Boolean(mentorId);
+    const includeProgress = options?.includeProgress !== false;
+    const includeProfile = options?.includeProfile !== false;
 
     return useInfiniteQuery({
-        queryKey: getMenteesKey(mentorId),
+        queryKey: getMenteesKey(mentorId, options),
         queryFn: async ({ pageParam = 1 }) => {
             // Mentor context: only assigned mentees. Otherwise: all pastors (e.g. director).
             const res = isAssignedOnly
@@ -54,23 +75,35 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
 
             const backendMentees: Mentee[] = (res.users ?? []).map(toMenteeWithId);
 
+            if (!includeProfile && !includeProgress) {
+                return {
+                    mentees: backendMentees,
+                    total: res.total ?? backendMentees.length,
+                    nextPage: isAssignedOnly ? undefined : (backendMentees.length === limit ? pageParam + 1 : undefined),
+                };
+            }
+
             // Avoid bursting the backend (429/503). Fetch in a small pool with retry/backoff.
             const menteeDetails = await mapWithConcurrency(
                 backendMentees,
-                3,
+                2,
                 async (m) => {
                     const [profileResult, progressResult] = await Promise.allSettled([
-                        getWithRetry(ENDPOINTS.USERS.GET_USER(m.id)),
-                        getWithRetry(ENDPOINTS.USERS.GET_PROGRESS(m.id)),
+                        includeProfile
+                            ? getWithRetry(ENDPOINTS.USERS.GET_USER(m.id))
+                            : Promise.resolve(null),
+                        includeProgress
+                            ? getWithRetry(ENDPOINTS.USERS.GET_PROGRESS(m.id))
+                            : Promise.resolve(null),
                     ]);
 
                     return {
                         profile:
-                            profileResult.status === "fulfilled"
+                            includeProfile && profileResult.status === "fulfilled"
                                 ? (profileResult.value as any).data?.data ?? null
                                 : null,
                         progress:
-                            progressResult.status === "fulfilled"
+                            includeProgress && progressResult.status === "fulfilled"
                                 ? (progressResult.value as any).data?.data ?? null
                                 : null,
                     };
@@ -136,9 +169,12 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
                     m.email ||
                     "";
                 const phaseSource = getCurrentRoadmapPhase(roadmaps) ?? firstRoadmap;
-                const completedOn = m.hasCompleted
-                    ? (progress?.updatedAt ?? progress?.completedAt ?? m.updatedAt)
-                    : undefined;
+                const completedOn =
+                    m.hasCompleted && includeProgress
+                        ? (progress?.updatedAt ?? progress?.completedAt ?? m.updatedAt)
+                        : m.hasCompleted
+                          ? m.completedOn ?? m.updatedAt
+                          : undefined;
 
                 return {
                     ...m,
@@ -149,12 +185,14 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
                     lastName: profile?.lastName ?? interest?.lastName ?? m.lastName,
                     phoneNumber: profile?.phoneNumber ?? interest?.phoneNumber ?? m.phoneNumber,
                     description,
-                    progress: progress?.overallRoadmapProgress ?? 0,
-                    phase: phaseSource?.phase,
-                    phaseNumber: phaseSource?.phaseNumber,
+                    progress: includeProgress
+                        ? (progress?.overallRoadmapProgress ?? 0)
+                        : m.progress,
+                    phase: includeProgress ? phaseSource?.phase : m.phase,
+                    phaseNumber: includeProgress ? phaseSource?.phaseNumber : m.phaseNumber,
                     completedOn,
-                    assignedRoadmapIds,
-                    assignedAssessmentIds,
+                    assignedRoadmapIds: includeProgress ? assignedRoadmapIds : m.assignedRoadmapIds,
+                    assignedAssessmentIds: includeProgress ? assignedAssessmentIds : m.assignedAssessmentIds,
                 };
             });
 
@@ -166,7 +204,7 @@ export const useMentees = (limit: number = 10, mentorId?: string | null) => {
         },
         initialPageParam: 1,
         getNextPageParam: (lastPage) => lastPage.nextPage,
-        staleTime: 2000,
+        staleTime: 60_000,
         retry: 1,
         enabled: !isAssignedOnly || Boolean(mentorId),
     });

@@ -28,6 +28,7 @@ import {
 } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { useResubmittedTasks, type ResubmittedEntry } from "@/hooks/roadmap/useResubmittedTasks";
+import { useStableFocusRefetch } from "@/hooks/roadmaps/useStableFocusRefetch";
 import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { formatRelativeTimestamp } from "@/utils/date";
 import { roadmapLibraryRouteParams } from "@/lib/roadmap/libraryMode";
@@ -107,7 +108,7 @@ export default function Landing() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useMentees(10, user?.id);
+  } = useMentees(10, user?.id, { includeProgress: false });
   const mentees = useMemo(() => menteesData?.pages.flatMap((page) => page.mentees) || [], [menteesData]);
 
   useEffect(() => {
@@ -157,11 +158,13 @@ export default function Landing() {
   const { timestamps: mentorCompletionTimestamps, reloadTimestamps } =
     useTaskCompletionTimestamps(selectedPastor?.id, pastorMergedRoadmaps);
 
-  useFocusEffect(
-    useCallback(() => {
+  useStableFocusRefetch(
+    () => {
+      if (!selectedPastor) return;
       reloadTimestamps();
       reloadResubmitted();
-    }, [reloadTimestamps, reloadResubmitted]),
+    },
+    `mentor-roadmap-landing-${selectedPastor?.id ?? "list"}`,
   );
 
   const mentorCompletedTasks = useMemo(
