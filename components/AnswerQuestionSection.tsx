@@ -4,7 +4,7 @@ import { Assessment, AssessmentQuestion, QuestionGroup } from '@/types/assessmen
 import { sharePdfFromHtml } from '@/utils/pdf';
 import { getFontSize, getSpacing } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Alert,
     StyleSheet,
@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import type { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 
 interface AssessmentQuestionsSectionProps {
@@ -93,9 +94,30 @@ export default function AssessmentQuestionsSection({
         }>
     >([]);
     const [showCdpModal, setShowCdpModal] = useState(false);
+    const sectionScrollRef = useRef<KeyboardAwareScrollView | null>(null);
 
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
+
+    useEffect(() => {
+        const scrollToTop = () => {
+            const scrollView = sectionScrollRef.current as (KeyboardAwareScrollView & {
+                scrollTo?: (options: { x?: number; y?: number; animated?: boolean }) => void;
+                scrollToPosition?: (x: number, y: number, animated?: boolean) => void;
+            }) | null;
+            if (!scrollView) return;
+
+            if (typeof scrollView.scrollToPosition === 'function') {
+                scrollView.scrollToPosition(0, 0, false);
+                return;
+            }
+
+            scrollView.scrollTo?.({ x: 0, y: 0, animated: false });
+        };
+
+        const frame = requestAnimationFrame(scrollToTop);
+        return () => cancelAnimationFrame(frame);
+    }, [currentSectionIndex]);
 
     // CDP is ready only when the ANSWERS API contains at least one recommendation.
     
@@ -510,6 +532,7 @@ export default function AssessmentQuestionsSection({
             )}
 
             <KeyboardSafeContainer
+                innerRef={sectionScrollRef}
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 extraScrollHeight={20}
