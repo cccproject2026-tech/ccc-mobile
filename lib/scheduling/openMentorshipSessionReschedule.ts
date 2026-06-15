@@ -1,10 +1,14 @@
 import type { Router } from "expo-router";
-import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
+import {
+  buildScheduleFlowParams,
+  getScheduleMeetingBase,
+} from "@/lib/scheduling/scheduleMeetingNavigation";
+import { seedRescheduleDraft } from "@/lib/scheduling/seedScheduleMeetingDraft";
 import type { MentorshipSession } from "@/types/session.types";
 
 /**
- * Opens the shared schedule-meeting flow to reschedule a mentorship session.
- * Uses PATCH /mentoring-sessions/:sessionId/reschedule on confirm (not appointments).
+ * Opens the schedule-meeting time picker directly for a mentorship session reschedule.
+ * Skips the person screen and pre-seeds the draft store.
  */
 export function openMentorshipSessionReschedule(
   router: Router,
@@ -23,16 +27,30 @@ export function openMentorshipSessionReschedule(
     options?.returnTo ??
     `/(mentor)/(tabs)/sessions/${encodeURIComponent(session.id)}`;
 
-  openScheduleMeeting(router, role, {
+  seedRescheduleDraft({
     mode: "reschedule",
     appointmentId: String(appointmentId),
     rescheduleContext: "mentorship",
-    returnTo,
-    personData: JSON.stringify({
+    person: {
       id: pastorId,
       name: pastorName,
       role: "pastor",
       profilePicture: session.pastorProfilePicture,
-    }),
+    },
   });
+
+  const normalizedRole = String(role ?? "").toLowerCase();
+  const base = getScheduleMeetingBase("mentor", normalizedRole);
+  const params = buildScheduleFlowParams({
+    mode: "reschedule",
+    appointmentId: String(appointmentId),
+    rescheduleContext: "mentorship",
+    returnTo,
+    drawerContext: "mentor",
+  });
+
+  router.push({
+    pathname: `${base}/time`,
+    params,
+  } as never);
 }

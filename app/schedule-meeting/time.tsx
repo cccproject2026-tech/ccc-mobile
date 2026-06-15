@@ -14,6 +14,7 @@ import {
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import {
   buildScheduleFlowParams,
+  exitScheduleMeetingFlow,
   getScheduleMeetingBase,
 } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { getReturnToParam } from "@/utils/navigation";
@@ -125,6 +126,11 @@ export default function ScheduleMeetingTimeScreen() {
   );
 
   const handleBack = useCallback(() => {
+    const returnTo = getReturnToParam(routeParams);
+    if (rescheduleContext === "mentorship" && returnTo) {
+      exitScheduleMeetingFlow(router, user?.role, { returnTo });
+      return;
+    }
     router.replace({
       pathname: `${scheduleBase}/person` as any,
       params: {
@@ -134,7 +140,16 @@ export default function ScheduleMeetingTimeScreen() {
         preserveDraft: "1",
       },
     });
-  }, [draft.appointmentId, draft.mode, flowParams, scheduleBase]);
+  }, [
+    draft.appointmentId,
+    draft.mode,
+    flowParams,
+    rescheduleContext,
+    routeParams,
+    router,
+    scheduleBase,
+    user?.role,
+  ]);
 
   const topBar = (
     <TopBar
@@ -167,9 +182,12 @@ export default function ScheduleMeetingTimeScreen() {
   const overlapUserId = isMentor ? draft.person?.id : user?.id;
   const { appointments: userAppointments } = useAppointments({
     userId: overlapUserId || undefined,
+    futureOnly: false,
   });
   const { appointments: mentorAppointments } = useAppointments(
-    availabilityOwnerId ? { mentorId: availabilityOwnerId } : {},
+    availabilityOwnerId
+      ? { mentorId: availabilityOwnerId, futureOnly: false }
+      : {},
   );
 
   const excludeAppointmentId =
@@ -627,7 +645,8 @@ export default function ScheduleMeetingTimeScreen() {
 
   // Only block the whole screen until weekly settings exist — monthly refetches on month change
   // must NOT replace the UI (that caused “loading same month” and missing next-month dates).
-  const showBlockingLoader = isLoadingWeekly;
+  // Block only when there is no cached availability yet (prefetch on session detail avoids this).
+  const showBlockingLoader = isLoadingWeekly && !weeklyAvailability;
   const weeklyFatalError = isWeeklyError;
 
   if (showBlockingLoader) {

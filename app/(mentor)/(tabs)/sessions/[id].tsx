@@ -36,6 +36,8 @@ import { useCompleteSession } from "@/hooks/roadmaps/useCompleteSession";
 import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
 import { openMentorshipSessionReschedule } from "@/lib/scheduling/openMentorshipSessionReschedule";
+import { prefetchScheduleMeetingData } from "@/lib/scheduling/prefetchScheduleMeetingData";
+import { canRescheduleMentorshipSession } from "@/utils/mentorshipSessionReschedule";
 import apiClient from "@/services/api";
 import { useAuthStore } from "@/stores";
 import type { AppointmentPlatform } from "@/types/appointment.types";
@@ -55,7 +57,6 @@ import {
     zoomUrlHasPasscodeQuery,
 } from "@/utils/meetingLinkDetails";
 import { phaseLabelForSessionNumber } from "@/utils/sessionPhase";
-import { canRescheduleMentorshipSession } from "@/utils/mentorshipSessionReschedule";
 import {
     resolveDisplaySessionMode,
     resolveSessionModeFromSources,
@@ -65,6 +66,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
 import {
@@ -376,6 +378,7 @@ const InsightsCard = () => {
 export default function SessionDetailsScreen() {
   const layout = usePastorMeetingLayout();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
@@ -557,7 +560,6 @@ export default function SessionDetailsScreen() {
       if (loadingTranscriptSummary) return;
       refetchMentorAppointments();
       refetchMenteeAppointments();
-      refetchSessions();
       getTranscriptSummary(appointmentId, false);
     }, 20000);
 
@@ -570,7 +572,6 @@ export default function SessionDetailsScreen() {
     loadingTranscriptSummary,
     refetchMentorAppointments,
     refetchMenteeAppointments,
-    refetchSessions,
   ]);
 
   useEffect(() => {
@@ -580,8 +581,7 @@ export default function SessionDetailsScreen() {
     const pollId = setInterval(() => {
       refetchMentorAppointments();
       refetchMenteeAppointments();
-      refetchSessions();
-    }, 15000);
+    }, 30000);
 
     return () => clearInterval(pollId);
   }, [
@@ -590,7 +590,6 @@ export default function SessionDetailsScreen() {
     appointment,
     refetchMentorAppointments,
     refetchMenteeAppointments,
-    refetchSessions,
   ]);
 
   const isScheduled = session?.status === "SCHEDULED";
@@ -645,7 +644,11 @@ export default function SessionDetailsScreen() {
   const isMeetingTypeLocked = isCompleted || isAppointmentCompleted;
   const canComplete = !!session?.appointmentId && !isCompleted;
   const canRedo = !!session?.appointmentId;
-  const canReschedule = canRescheduleMentorshipSession(session, appointment);
+  const canReschedule = canRescheduleMentorshipSession(
+    session,
+    appointment,
+    user?.id,
+  );
   const pendingRescheduleRequest =
     session?.rescheduleRequest?.status === "pending"
       ? session.rescheduleRequest
@@ -660,6 +663,9 @@ export default function SessionDetailsScreen() {
         text2: "This session is not eligible for rescheduling.",
       });
       return;
+    }
+    if (user?.id) {
+      prefetchScheduleMeetingData(queryClient, { mentorId: user.id });
     }
     openMentorshipSessionReschedule(router, user?.role, session, {
       returnTo: sessionId

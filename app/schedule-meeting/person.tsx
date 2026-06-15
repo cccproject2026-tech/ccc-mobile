@@ -116,13 +116,22 @@ export default function ScheduleMeetingPersonScreen() {
     ]),
   );
 
+  const hasPersonData = Boolean(personData);
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
 
   const { mentors: assignedMentors, isLoading: isLoadingMentors } = useAssignedMentors(
     !isMentor ? (user?.id ?? null) : null,
   );
 
-  const { data: menteesData, isLoading: isLoadingMentees } = useMentees(50, isMentor ? user?.id : undefined);
+  const { data: menteesData, isLoading: isLoadingMentees } = useMentees(
+    50,
+    isMentor ? user?.id : undefined,
+    {
+      enabled: isMentor && !hasPersonData,
+      includeProgress: false,
+      includeProfile: false,
+    },
+  );
 
   const people: SchedulePerson[] = useMemo(() => {
     if (isMentor) {

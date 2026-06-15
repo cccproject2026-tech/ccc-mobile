@@ -341,6 +341,18 @@ export const roadmapService = {
                     ? meetingLocationRaw.trim()
                     : undefined;
 
+            const mentorIdRaw =
+                embeddedAppointment?.mentorId ??
+                (embeddedAppointment as { mentor?: { _id?: string; id?: string } } | undefined)
+                    ?.mentor?._id ??
+                (embeddedAppointment as { mentor?: { _id?: string; id?: string } } | undefined)
+                    ?.mentor?.id ??
+                item?.mentorId;
+            const mentorId =
+                mentorIdRaw != null && String(mentorIdRaw).trim().length > 0
+                    ? String(mentorIdRaw)
+                    : undefined;
+
             return {
                 id,
                 sessionNumber,
@@ -349,6 +361,7 @@ export const roadmapService = {
                 mentorNote,
                 pastorNote,
                 appointmentId,
+                ...(mentorId ? { mentorId } : {}),
                 sessionMode,
                 ...(recordingStatus ? { recordingStatus } : {}),
                 ...(recordingUrl ? { recordingUrl } : {}),

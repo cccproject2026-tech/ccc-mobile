@@ -16,6 +16,7 @@ import { appointmentService } from "@/services/appointments.service";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
 import { getScheduleMeetingCalendarNote } from "@/utils/google-calendar/display-messages";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { isMentorRole } from "@/utils/userRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
@@ -92,7 +93,7 @@ export default function ScheduleMeetingConfirmScreen() {
       (draft.mode !== "reschedule" || rescheduleAppointmentId),
   );
 
-  const isMentor = String(user?.role || "").toLowerCase() === "mentor";
+  const isMentor = isMentorRole(user?.role);
   const availabilityOwnerId = isMentor ? user?.id : draft.person?.id;
 
   const { appointments: mentorAppointments } = useAppointments(

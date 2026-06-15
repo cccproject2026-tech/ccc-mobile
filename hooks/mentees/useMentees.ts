@@ -10,6 +10,8 @@ export type UseMenteesOptions = {
     includeProgress?: boolean;
     /** Fetch GET /users/:id per mentee for profile enrichment. */
     includeProfile?: boolean;
+    /** When false, skips the query entirely (e.g. person already chosen via route params). */
+    enabled?: boolean;
 };
 
 // Query key - include mentorId and enrichment flags when filtering by assigned mentor
@@ -64,6 +66,8 @@ export const useMentees = (
     const isAssignedOnly = Boolean(mentorId);
     const includeProgress = options?.includeProgress !== false;
     const includeProfile = options?.includeProfile !== false;
+    const queryEnabled =
+        options?.enabled !== false && (!isAssignedOnly || Boolean(mentorId));
 
     return useInfiniteQuery({
         queryKey: getMenteesKey(mentorId, options),
@@ -206,6 +210,6 @@ export const useMentees = (
         getNextPageParam: (lastPage) => lastPage.nextPage,
         staleTime: 60_000,
         retry: 1,
-        enabled: !isAssignedOnly || Boolean(mentorId),
+        enabled: queryEnabled,
     });
 };

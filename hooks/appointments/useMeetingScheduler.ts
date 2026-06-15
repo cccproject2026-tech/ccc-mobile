@@ -13,6 +13,8 @@ import {
   extractGoogleCalendarCreateOutcome,
   googleCalendarSuccessHintFromCreateResponse,
 } from '@/utils/google-calendar/google-calendar-scheduling';
+import { getAppointmentMentorId } from '@/utils/appointmentMentorId';
+import { isMentorRole, normalizeUserRole } from '@/utils/userRole';
 import { getAppointmentJoinUrl } from '@/utils/meetingLinkDetails';
 import { labelToPlatform } from '@/utils/appointments/platform';
 import { validateSchedule } from '@/utils/appointments/validation';
@@ -125,15 +127,20 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
 
     const platform = labelToPlatform(meetingOptionLabel);
 
-    const roleLower = String(currentUserRole || '').toLowerCase();
-    const isMentorUser = roleLower === 'mentor';
+    const isMentorUser = isMentorRole(currentUserRole);
 
     const payloadMentorId = isMentorUser ? currentUserId : selectedPerson.id;
     const payloadUserId = isMentorUser ? selectedPerson.id : currentUserId;
 
+    const normalizedRole = normalizeUserRole(currentUserRole);
     const initiatorRole =
-      roleLower === 'mentor' || roleLower === 'director' || roleLower === 'pastor'
-        ? roleLower
+      normalizedRole === 'mentor' ||
+      normalizedRole === 'field-mentor' ||
+      normalizedRole === 'director' ||
+      normalizedRole === 'pastor'
+        ? normalizedRole === 'field-mentor'
+          ? 'mentor'
+          : normalizedRole
         : undefined;
 
     if (mode === 'reschedule') {
@@ -145,9 +152,25 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
         if (!currentUserId) {
           throw new Error('Missing mentor id.');
         }
+
+        let appointmentForMentor = existingAppointment ?? null;
+        if (!getAppointmentMentorId(appointmentForMentor) && resolvedRescheduleId) {
+          appointmentForMentor = await appointmentService.getAppointmentById(
+            resolvedRescheduleId,
+          );
+        }
+
+        const payloadMentorId = getAppointmentMentorId(appointmentForMentor);
+        if (!payloadMentorId) {
+          throw new Error('Could not determine the assigned mentor for this session.');
+        }
+        if (String(payloadMentorId) !== String(currentUserId)) {
+          throw new Error('Only the assigned mentor may reschedule this session.');
+        }
+
         const data = await rescheduleMentorshipSessionAsync({
           sessionId: resolvedRescheduleId,
-          mentorId: currentUserId,
+          mentorId: payloadMentorId,
           newMeetingDate: meetingDateIso,
         });
         const updatedSession = data.session;
