@@ -58,11 +58,8 @@ function RootLayoutNav() {
     !!user &&
     (isPastorRole(role) || isMentorRole(role) || role === 'director');
 
-  if (!isReady) {
-    return <AuthBootstrapSplash />;
-  }
-
   return (
+    <>
     <Stack
       screenOptions={{
         headerShown: false,
@@ -106,6 +103,8 @@ function RootLayoutNav() {
 
       <Stack.Screen name="+not-found" />
     </Stack>
+    {!isReady && <AuthBootstrapSplash />}
+    </>
   );
 }
 

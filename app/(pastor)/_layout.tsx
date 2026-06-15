@@ -10,11 +10,13 @@ import { Platform } from 'react-native';
 
 export default function PastorDrawerLayout() {
     const { hasProfilePicture } = useOnboardingStore();
-    const { user, isAuthenticated } = useAuthStore();
+    const { user, isAuthenticated, hasHydrated, isInitialized } = useAuthStore();
 
     const router = useRouter();
 
     useEffect(() => {
+        if (!hasHydrated || !isInitialized) return;
+
         if (!isAuthenticated || !user) {
             console.log('⚠️ Not authenticated, redirecting to welcome');
             navigateToWelcomeCenter();
@@ -33,7 +35,7 @@ export default function PastorDrawerLayout() {
             }, 100);
             return () => clearTimeout(timeoutId);
         }
-    }, [isAuthenticated, user, hasProfilePicture, router]);
+    }, [hasHydrated, isInitialized, isAuthenticated, user, hasProfilePicture, router]);
 
     return (
         <Drawer

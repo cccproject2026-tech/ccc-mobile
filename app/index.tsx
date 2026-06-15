@@ -1,5 +1,7 @@
 import { icons } from '@/constants/images';
 import { useOnboardingStore } from '@/stores';
+import { useAuthStore } from '@/stores/auth.store';
+import { getAuthenticatedHomeRoute } from '@/utils/userRole';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, useRouter } from 'expo-router';
@@ -131,6 +133,12 @@ import {
         const { bottom } = useSafeAreaInsets();
         const { width, height } = useWindowDimensions();
         const {
+            isAuthenticated,
+            user,
+            hasHydrated: authHydrated,
+            isInitialized: authInitialized,
+        } = useAuthStore();
+        const {
             interestStatus,
             isEmailVerified,
             isPasswordSet,
@@ -183,6 +191,14 @@ import {
                 logoWidth: Math.min(200, width * 0.52),
             };
         }, [width, height]);
+
+        if (authHydrated && authInitialized && isAuthenticated && user) {
+            const homeRoute = getAuthenticatedHomeRoute(user.role);
+            if (homeRoute) {
+                return <Redirect href={homeRoute as any} />;
+            }
+            return <Redirect href="/(unauthenticated)/login-form" />;
+        }
 
         if (resumePath) {
             return <Redirect href={resumePath} />;
