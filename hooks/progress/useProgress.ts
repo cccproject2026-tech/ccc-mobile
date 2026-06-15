@@ -1,6 +1,7 @@
 import { progressService } from "@/services/progress.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { AddFinalCommentRequest, DeleteFinalCommentRequest, ProgressData, UpdateFinalCommentRequest } from "@/types/progress.types";
+import { getHttpStatus } from "@/utils/apiConcurrency";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // PROGRESS QUERY KEYS
@@ -12,6 +13,18 @@ export const progressKeys = {
     assessments: (userId: string) => [...progressKeys.all, 'assessments', userId] as const,
     finalComments: (userId: string) => [...progressKeys.all, 'final-comments', userId] as const,
 };
+
+/** Retrying 429 amplifies rate-limit storms — only retry transient failures once. */
+const shouldRetryProgressQuery = (failureCount: number, error: unknown) => {
+    if (getHttpStatus(error) === 429) return false;
+    return failureCount < 1;
+};
+
+const sharedProgressQueryOptions = {
+    staleTime: 60_000,
+    retry: shouldRetryProgressQuery,
+    refetchOnWindowFocus: false,
+} as const;
 
 export const useProgress = (userId?: string) => {
     const { user } = useAuthStore();
@@ -66,9 +79,7 @@ export const useProgress = (userId?: string) => {
             return progressData;
         },
         enabled: !!targetUserId,
-        staleTime: 60_000,
-        retry: 1,
-        refetchOnWindowFocus: false,
+        ...sharedProgressQueryOptions,
     });
 };
 
@@ -244,9 +255,7 @@ export const useProgressByUserId = (userId: string | undefined) => {
             return progressData;
         },
         enabled: !!userId,
-        staleTime: 60_000,
-        retry: 1,
-        refetchOnWindowFocus: false,
+        ...sharedProgressQueryOptions,
     });
 };
 

@@ -55,7 +55,7 @@ export default function MenteeProgressScreen() {
   const {
     data: menteesData,
     isLoading: isMenteesLoading,
-  } = useMentees(100, user?.id);
+  } = useMentees(100, user?.id, { includeProgress: false, includeProfile: false });
   const {
     data: progressData,
     isLoading: isProgressLoading,

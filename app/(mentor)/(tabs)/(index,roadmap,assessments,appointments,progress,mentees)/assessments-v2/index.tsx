@@ -62,7 +62,10 @@ export default function MentorAssessmentsLibrary() {
   }, [menteeId]);
 
   
-  const { data: menteesData } = useMentees(100, user?.id);
+  const { data: menteesData } = useMentees(100, user?.id, {
+    includeProgress: false,
+    includeProfile: false,
+  });
 
   // Format mentees for display (ensure avatar always has valid source)
   const mentees = useMemo(() => {
