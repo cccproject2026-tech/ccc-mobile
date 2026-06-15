@@ -3,55 +3,79 @@ import {
   formatCertificateDate,
   type CertificatePreviewData,
 } from '@/utils/certificateTemplate';
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 const CERTIFICATE_TEMPLATE = require('@/assets/images/certi.png');
-const CERTIFICATE_ASPECT_RATIO = 1402 / 1122;
+export const CERTIFICATE_ASPECT_RATIO = 1402 / 1122;
 
 type Props = CertificatePreviewData & {
   width?: number;
 };
 
-export default function CertificatePreview({
-  pastorName,
-  completionDate,
-  certificateId,
-  duration,
-  width = 320,
-}: Props) {
+const CertificatePreview = forwardRef<View, Props>(function CertificatePreview(
+  {
+    pastorName,
+    completionDate,
+    certificateId,
+    duration,
+    width = 320,
+  },
+  ref,
+) {
   const height = width / CERTIFICATE_ASPECT_RATIO;
 
   return (
-    <View style={[styles.container, { width, height }]}>
+    <View
+      ref={ref}
+      collapsable={false}
+      style={[styles.container, { width, height }]}
+    >
       <Image
         source={CERTIFICATE_TEMPLATE}
         style={styles.templateImage}
         resizeMode="contain"
       />
 
-      <Text style={styles.pastorName} numberOfLines={1}>
+      <Text
+        style={[styles.pastorName, { fontSize: width * 0.034 }]}
+        numberOfLines={1}
+      >
         {certificateText(pastorName, 'Pastor')}
       </Text>
 
-      <Text style={[styles.detail, styles.completionDate]} numberOfLines={1}>
+      <Text
+        style={[styles.detail, styles.completionDate, { fontSize: width * 0.019 }]}
+        numberOfLines={1}
+      >
         {formatCertificateDate(completionDate)}
       </Text>
 
-      <Text style={[styles.detail, styles.duration]} numberOfLines={1}>
+      <Text
+        style={[styles.detail, styles.duration, { fontSize: width * 0.019 }]}
+        numberOfLines={1}
+      >
         {certificateText(duration, '12 Months')}
       </Text>
 
-      <Text style={[styles.detail, styles.certificateId]} numberOfLines={1}>
+      <Text
+        style={[styles.detail, styles.certificateId, { fontSize: width * 0.015 }]}
+        numberOfLines={1}
+      >
         {certificateText(certificateId)}
       </Text>
 
-      <Text style={[styles.detail, styles.status]} numberOfLines={1}>
+      <Text
+        style={[styles.detail, styles.status, { fontSize: width * 0.019 }]}
+        numberOfLines={1}
+      >
         Completed
       </Text>
     </View>
   );
-}
+});
+
+export default CertificatePreview;
 
 const styles = StyleSheet.create({
   container: {
@@ -74,7 +98,6 @@ const styles = StyleSheet.create({
     color: '#082d72',
     fontFamily: 'Georgia',
     fontWeight: '700',
-    fontSize: 11,
   },
   detail: {
     position: 'absolute',
@@ -83,7 +106,6 @@ const styles = StyleSheet.create({
     color: '#082d72',
     fontFamily: 'Georgia',
     fontWeight: '600',
-    fontSize: 6,
   },
   completionDate: {
     left: '18.5%',
@@ -96,7 +118,6 @@ const styles = StyleSheet.create({
   certificateId: {
     left: '58%',
     width: '15%',
-    fontSize: 5,
   },
   status: {
     left: '74%',

@@ -16,7 +16,6 @@ import CertificatePreviewModal from '@/components/certificate/CertificatePreview
 import { usePastorCertificate } from '@/hooks/pastor/usePastorCertificate';
 import { certificatesService } from '@/services/certificates.service';
 import {
-  downloadCertificatePreviewPdf,
   toCertificatePreviewData,
 } from '@/utils/certificateDownload';
 import type { CertificatePreviewData } from '@/utils/certificateTemplate';
@@ -53,6 +52,8 @@ export default function Certificate() {
   const [showCertificatePreview, setShowCertificatePreview] = useState(false);
   const [certificatePreviewData, setCertificatePreviewData] =
     useState<CertificatePreviewData | null>(null);
+  const [certificateFileName, setCertificateFileName] = useState('certificate.pdf');
+  const [autoDownloadCertificate, setAutoDownloadCertificate] = useState(false);
 
   
   const [isEditMode, setIsEditMode] = useState(false);
@@ -267,49 +268,26 @@ export default function Certificate() {
 
       if (!loadedCertificate?.certificateId) {
         Alert.alert('Certificate', 'No certificate is available to download yet.');
+        setIsDownloadingCertificate(false);
         return;
       }
 
       const previewData = toCertificatePreviewData(loadedCertificate, pastorName);
       setCertificatePreviewData(previewData);
+      setCertificateFileName(`${loadedCertificate.certificateId}.pdf`);
+      setAutoDownloadCertificate(true);
       setShowCertificatePreview(true);
-
-      await downloadCertificatePreviewPdf(
-        previewData,
-        `${loadedCertificate.certificateId}.pdf`,
-      );
     } catch (error: any) {
       console.error('Failed to download certificate:', error);
+      setIsDownloadingCertificate(false);
       Alert.alert(
         'Download Failed',
         error?.response?.data?.message ||
           error?.message ||
           'Unable to download certificate. Please try again.',
       );
-    } finally {
-      setIsDownloadingCertificate(false);
     }
   }, [certificate, profileData?.user, user?.id]);
-
-  const handleDownloadFromPreview = useCallback(async () => {
-    if (!certificatePreviewData?.certificateId) return;
-
-    try {
-      setIsDownloadingCertificate(true);
-      await downloadCertificatePreviewPdf(
-        certificatePreviewData,
-        `${certificatePreviewData.certificateId}.pdf`,
-      );
-    } catch (error: any) {
-      console.error('Failed to download certificate:', error);
-      Alert.alert(
-        'Download Failed',
-        error?.message || 'Unable to download certificate. Please try again.',
-      );
-    } finally {
-      setIsDownloadingCertificate(false);
-    }
-  }, [certificatePreviewData]);
 
   
   if (isLoading) {
@@ -586,9 +564,12 @@ export default function Certificate() {
           <CertificatePreviewModal
             visible={showCertificatePreview}
             data={certificatePreviewData}
+            fileName={certificateFileName}
             isDownloading={isDownloadingCertificate}
+            autoDownload={autoDownloadCertificate}
             onClose={() => setShowCertificatePreview(false)}
-            onDownload={handleDownloadFromPreview}
+            onDownloadingChange={setIsDownloadingCertificate}
+            onAutoDownloadComplete={() => setAutoDownloadCertificate(false)}
           />
         ) : null}
       </AppGradientBackground>

@@ -1,4 +1,3 @@
-import { API_CONFIG } from '@/constants/config/api';
 import type { CertificateRecord } from '@/services/certificates.service';
 import { getCertificateTemplateBase64 } from '@/utils/certificateAsset';
 import {
@@ -6,9 +5,17 @@ import {
   type CertificatePreviewData,
 } from '@/utils/certificateTemplate';
 import * as FileSystem from 'expo-file-system/legacy';
+import {
+  CERTIFICATE_PDF_HEIGHT,
+  CERTIFICATE_PDF_WIDTH,
+  sharePdfFromCapturedImage,
+  sharePdfFromHtml,
+} from '@/utils/pdf';
 import * as Sharing from 'expo-sharing';
-import { Alert, Linking } from 'react-native';
-import { sharePdfFromHtml } from './pdf';
+import { Alert, Linking, type View } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import type { RefObject } from 'react';
+import { API_CONFIG } from '@/constants/config/api';
 
 const API_PUBLIC_ORIGIN =
   process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '') ||
@@ -39,7 +46,7 @@ export function toCertificatePreviewData(
 
 async function downloadAndShareRemotePdf(url: string, fileName: string) {
   const safeName = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`;
-  const baseDir = (FileSystem as any).documentDirectory as string | null | undefined;
+  const baseDir = FileSystem.documentDirectory;
 
   if (!baseDir) {
     await Linking.openURL(url);
@@ -61,7 +68,39 @@ async function downloadAndShareRemotePdf(url: string, fileName: string) {
   await Linking.openURL(download.uri);
 }
 
-export async function downloadCertificatePreviewPdf(
+async function waitForLayout() {
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      setTimeout(resolve, 150);
+    });
+  });
+}
+
+export async function downloadCertificatePreviewPdfFromView(
+  viewRef: RefObject<View | null>,
+  fileName: string,
+) {
+  if (!viewRef.current) {
+    throw new Error('Certificate preview is not ready.');
+  }
+
+  await waitForLayout();
+
+  const capturedUri = await captureRef(viewRef, {
+    format: 'png',
+    quality: 1,
+    width: CERTIFICATE_PDF_WIDTH,
+    height: CERTIFICATE_PDF_HEIGHT,
+  });
+
+  const imageBase64 = await FileSystem.readAsStringAsync(capturedUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
+  await sharePdfFromCapturedImage(imageBase64, fileName);
+}
+
+async function downloadCertificatePreviewPdfFromHtml(
   data: CertificatePreviewData,
   fileName: string,
 ) {
@@ -71,18 +110,38 @@ export async function downloadCertificatePreviewPdf(
   await sharePdfFromHtml({
     html,
     fileName,
+    width: CERTIFICATE_PDF_WIDTH,
+    height: CERTIFICATE_PDF_HEIGHT,
   });
+}
+
+export async function downloadCertificatePreviewPdf(
+  data: CertificatePreviewData,
+  fileName: string,
+  viewRef?: RefObject<View | null>,
+) {
+  if (viewRef?.current) {
+    try {
+      await downloadCertificatePreviewPdfFromView(viewRef, fileName);
+      return;
+    } catch (error) {
+      console.error('Failed to capture certificate preview', error);
+    }
+  }
+
+  await downloadCertificatePreviewPdfFromHtml(data, fileName);
 }
 
 export async function downloadCertificate(
   certificate: CertificateRecord,
   pastorName: string,
+  viewRef?: RefObject<View | null>,
 ) {
   const fileName = `${String(certificate.certificateId || 'certificate').trim()}.pdf`;
   const previewData = toCertificatePreviewData(certificate, pastorName);
 
   try {
-    await downloadCertificatePreviewPdf(previewData, fileName);
+    await downloadCertificatePreviewPdf(previewData, fileName, viewRef);
     return;
   } catch (error) {
     console.error('Failed to generate certificate preview PDF', error);
@@ -106,6 +165,7 @@ export async function downloadPastorCertificate(options: {
   userId: string;
   pastorName: string;
   fetchCertificate: (userId: string) => Promise<CertificateRecord | null>;
+  viewRef?: RefObject<View | null>;
 }) {
   const certificate = await options.fetchCertificate(options.userId);
 
@@ -114,6 +174,6 @@ export async function downloadPastorCertificate(options: {
     return null;
   }
 
-  await downloadCertificate(certificate, options.pastorName);
+  await downloadCertificate(certificate, options.pastorName, options.viewRef);
   return toCertificatePreviewData(certificate, options.pastorName);
 }

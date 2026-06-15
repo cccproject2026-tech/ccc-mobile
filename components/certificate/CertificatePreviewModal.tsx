@@ -1,8 +1,10 @@
 import CertificatePreview from '@/components/certificate/CertificatePreview';
+import { downloadCertificatePreviewPdfFromView } from '@/utils/certificateDownload';
 import type { CertificatePreviewData } from '@/utils/certificateTemplate';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -15,18 +17,53 @@ import {
 type Props = {
   visible: boolean;
   data: CertificatePreviewData;
+  fileName: string;
   isDownloading?: boolean;
+  autoDownload?: boolean;
   onClose: () => void;
-  onDownload: () => void;
+  onDownloadingChange?: (downloading: boolean) => void;
+  onAutoDownloadComplete?: () => void;
 };
 
 export default function CertificatePreviewModal({
   visible,
   data,
+  fileName,
   isDownloading = false,
+  autoDownload = false,
   onClose,
-  onDownload,
+  onDownloadingChange,
+  onAutoDownloadComplete,
 }: Props) {
+  const previewRef = useRef<View>(null);
+
+  const handleDownload = useCallback(async () => {
+    try {
+      onDownloadingChange?.(true);
+      await downloadCertificatePreviewPdfFromView(previewRef, fileName);
+    } catch (error: any) {
+      console.error('Failed to download certificate:', error);
+      Alert.alert(
+        'Download Failed',
+        error?.message || 'Unable to download certificate. Please try again.',
+      );
+    } finally {
+      onDownloadingChange?.(false);
+    }
+  }, [fileName, onDownloadingChange]);
+
+  useEffect(() => {
+    if (!visible || !autoDownload) return;
+
+    const timer = setTimeout(() => {
+      void handleDownload().finally(() => {
+        onAutoDownloadComplete?.();
+      });
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [autoDownload, handleDownload, onAutoDownloadComplete, visible]);
+
   return (
     <Modal
       visible={visible}
@@ -49,12 +86,12 @@ export default function CertificatePreviewModal({
             contentContainerStyle={styles.previewContent}
             showsVerticalScrollIndicator={false}
           >
-            <CertificatePreview {...data} width={320} />
+            <CertificatePreview ref={previewRef} {...data} width={320} />
           </ScrollView>
 
           <TouchableOpacity
             style={[styles.downloadButton, isDownloading && styles.downloadButtonDisabled]}
-            onPress={onDownload}
+            onPress={handleDownload}
             disabled={isDownloading}
             activeOpacity={0.85}
           >
