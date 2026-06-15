@@ -12,6 +12,14 @@ import { Colors } from '@/constants/Colors';
 import { customColors } from '@/constants/config/customColors';
 import { icons } from '@/constants/images';
 import { useProfile, useUpdateProfile } from '@/hooks/profile/useProfile';
+import CertificatePreviewModal from '@/components/certificate/CertificatePreviewModal';
+import { usePastorCertificate } from '@/hooks/pastor/usePastorCertificate';
+import { certificatesService } from '@/services/certificates.service';
+import {
+  downloadCertificatePreviewPdf,
+  toCertificatePreviewData,
+} from '@/utils/certificateDownload';
+import type { CertificatePreviewData } from '@/utils/certificateTemplate';
 import { UpdateProfileData } from '@/types';
 import { ChurchInfo } from '@/types/profile.types';
 import { getFontSize, getSpacing, isAndroid } from '@/utils/responsive';
@@ -19,8 +27,10 @@ import { Ionicons } from '@expo/vector-icons';
 import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
+import { useAuthStore } from '@/stores/auth.store';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -34,9 +44,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function Certificate() {
   const { bottom } = useSafeAreaInsets();
   const router = useRouter();
+  const { user } = useAuthStore();
   
   const { data: profileData, isLoading, isError } = useProfile();
+  const { data: certificate } = usePastorCertificate(user?.id);
   const updateProfile = useUpdateProfile();
+  const [isDownloadingCertificate, setIsDownloadingCertificate] = useState(false);
+  const [showCertificatePreview, setShowCertificatePreview] = useState(false);
+  const [certificatePreviewData, setCertificatePreviewData] =
+    useState<CertificatePreviewData | null>(null);
 
   
   const [isEditMode, setIsEditMode] = useState(false);
@@ -237,6 +253,64 @@ export default function Certificate() {
     [updateField]
   );
 
+  const handleDownloadCertificate = useCallback(async () => {
+    if (!user?.id || !profileData?.user) return;
+
+    const pastorName =
+      `${profileData.user.firstName || ''} ${profileData.user.lastName || ''}`.trim() ||
+      'Pastor';
+
+    try {
+      setIsDownloadingCertificate(true);
+      const loadedCertificate =
+        certificate ?? (await certificatesService.getUserCertificate(user.id));
+
+      if (!loadedCertificate?.certificateId) {
+        Alert.alert('Certificate', 'No certificate is available to download yet.');
+        return;
+      }
+
+      const previewData = toCertificatePreviewData(loadedCertificate, pastorName);
+      setCertificatePreviewData(previewData);
+      setShowCertificatePreview(true);
+
+      await downloadCertificatePreviewPdf(
+        previewData,
+        `${loadedCertificate.certificateId}.pdf`,
+      );
+    } catch (error: any) {
+      console.error('Failed to download certificate:', error);
+      Alert.alert(
+        'Download Failed',
+        error?.response?.data?.message ||
+          error?.message ||
+          'Unable to download certificate. Please try again.',
+      );
+    } finally {
+      setIsDownloadingCertificate(false);
+    }
+  }, [certificate, profileData?.user, user?.id]);
+
+  const handleDownloadFromPreview = useCallback(async () => {
+    if (!certificatePreviewData?.certificateId) return;
+
+    try {
+      setIsDownloadingCertificate(true);
+      await downloadCertificatePreviewPdf(
+        certificatePreviewData,
+        `${certificatePreviewData.certificateId}.pdf`,
+      );
+    } catch (error: any) {
+      console.error('Failed to download certificate:', error);
+      Alert.alert(
+        'Download Failed',
+        error?.message || 'Unable to download certificate. Please try again.',
+      );
+    } finally {
+      setIsDownloadingCertificate(false);
+    }
+  }, [certificatePreviewData]);
+
   
   if (isLoading) {
     return (
@@ -370,23 +444,33 @@ export default function Certificate() {
 
             {}
             {profileData.user.hasIssuedCertificate && (
-              <LinearGradient
-                colors={['#21B6E9', '#B83AF3']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.gradientButtonBorder}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                disabled={isDownloadingCertificate}
+                onPress={handleDownloadCertificate}
               >
-                <View style={styles.downloadButtonContainer}>
-                  <Image
-                    source={icons.gradientDownload}
-                    style={styles.buttonIcon}
-                  />
-                  <Text style={styles.downloadButtonText}>Download Certificate</Text>
-                  <View style={styles.badgeNumber}>
-                    <Text style={styles.badgeText}>1</Text>
+                <LinearGradient
+                  colors={['#21B6E9', '#B83AF3']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.gradientButtonBorder}
+                >
+                  <View style={styles.downloadButtonContainer}>
+                    {isDownloadingCertificate ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Image
+                        source={icons.gradientDownload}
+                        style={styles.buttonIcon}
+                      />
+                    )}
+                    <Text style={styles.downloadButtonText}>Download Certificate</Text>
+                    <View style={styles.badgeNumber}>
+                      <Text style={styles.badgeText}>1</Text>
+                    </View>
                   </View>
-                </View>
-              </LinearGradient>
+                </LinearGradient>
+              </TouchableOpacity>
             )}
             {}
             <LinearGradient
@@ -497,6 +581,16 @@ export default function Certificate() {
           message="Profile Updated Successfully"
           onClose={handleSuccessModalClose}
         />
+
+        {certificatePreviewData ? (
+          <CertificatePreviewModal
+            visible={showCertificatePreview}
+            data={certificatePreviewData}
+            isDownloading={isDownloadingCertificate}
+            onClose={() => setShowCertificatePreview(false)}
+            onDownload={handleDownloadFromPreview}
+          />
+        ) : null}
       </AppGradientBackground>
     </>
   );

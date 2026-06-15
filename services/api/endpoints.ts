@@ -184,4 +184,9 @@ export const ENDPOINTS = {
     GET_FINAL_COMMENTS: (userId: string) =>
       `/progress/${userId}/final-comments`,
   },
+
+  CERTIFICATES: {
+    GET_USER_CERTIFICATE: (userId: string) =>
+      `/certificates/user/${encodeURIComponent(userId)}`,
+  },
 } as const;
