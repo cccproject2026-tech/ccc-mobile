@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/stores/auth.store';
+import { isMentorRole } from '@/utils/userRole';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -29,7 +30,7 @@ export default function GetStartedScreen() {
                 router.push('/(pastor)/(tabs)');
                 return;
             }
-            if (role === 'mentor' && isAuthenticated && user?.role === 'mentor') {
+            if (role === 'mentor' && isAuthenticated && isMentorRole(user?.role)) {
                 router.push('/(mentor)/(tabs)');
                 return;
             }

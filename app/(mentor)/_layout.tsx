@@ -5,13 +5,14 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { Drawer } from 'expo-router/drawer';
 import { navigateToWelcomeCenter } from '@/utils/auth-navigation';
+import { getAuthenticatedHomeRoute, isMentorRole } from '@/utils/userRole';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 export default function MentorDrawerLayout() {
     const { setCurrentScreenState } = useData();
-    const { isAuthenticated, user } = useAuthStore();
+    const { isAuthenticated, user, hasHydrated, isInitialized } = useAuthStore();
     const { hasProfilePicture } = useOnboardingStore();
     const router = useRouter();
 
@@ -21,8 +22,23 @@ export default function MentorDrawerLayout() {
 
     // Redirect to welcome when not authenticated (e.g. after logout)
     useEffect(() => {
-        if (!isAuthenticated || user?.role !== 'mentor') {
+        if (!hasHydrated || !isInitialized) return;
+
+        if (!isAuthenticated) {
             navigateToWelcomeCenter();
+            return;
+        }
+
+        if (!isMentorRole(user?.role)) {
+            const homeRoute = getAuthenticatedHomeRoute(user?.role);
+            if (homeRoute) {
+                router.replace(homeRoute as any);
+            }
+            return;
+        }
+
+        if (!hasProfilePicture && user?.profilePicture) {
+            useOnboardingStore.getState().setHasProfilePicture(true);
             return;
         }
 
@@ -30,13 +46,21 @@ export default function MentorDrawerLayout() {
             const timeoutId = setTimeout(() => {
                 const { isAuthenticated: authed, user: currentUser } =
                     useAuthStore.getState();
-                if (authed && currentUser?.role === 'mentor') {
+                if (authed && isMentorRole(currentUser?.role) && !currentUser?.profilePicture) {
                     router.replace('/(mentor)/profile-setup');
                 }
             }, 100);
             return () => clearTimeout(timeoutId);
         }
-    }, [isAuthenticated, user?.role, router, hasProfilePicture]);
+    }, [
+        hasHydrated,
+        isInitialized,
+        isAuthenticated,
+        user?.role,
+        user?.profilePicture,
+        router,
+        hasProfilePicture,
+    ]);
 
     return (
         <Drawer

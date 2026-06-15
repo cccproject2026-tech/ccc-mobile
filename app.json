@@ -4,7 +4,7 @@
     "slug": "ccc-new-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/appicon2.png",
     "scheme": "cccpastormentor",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -26,7 +26,7 @@
 
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/appicon2.png",
         "backgroundColor": "#0F3D5E"
       },
       "edgeToEdgeEnabled": true,

@@ -40,6 +40,8 @@ export const ENDPOINTS = {
     NOTES: (userId: string) => `/users/${userId}/notes`,
     NOTE_BY_ID: (userId: string, noteId: string) =>
       `/users/${userId}/notes/${noteId}`,
+    ACCEPT_INVITATION: '/users/accept-invitation',
+    REJECT_INVITATION: '/users/reject-invitation',
   },
 
   // Pastor Onboarding (if separate from auth)

@@ -13,6 +13,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import Toast from 'react-native-toast-message';
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { AuthBootstrapSplash, useAuthBootstrap } from '@/components/auth/AuthBootstrap';
+import { isMentorRole, isPastorRole, normalizeUserRole } from '@/utils/userRole';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,18 +45,23 @@ function GoogleCalendarOAuthListener() {
 
 function RootLayoutNav() {
   const { isAuthenticated, user } = useAuthStore();
+  const { isReady } = useAuthBootstrap();
+  const role = normalizeUserRole(user?.role);
 
-  
-  const isPastor = isAuthenticated && (user?.role === 'pastor');
-  const isMentor = isAuthenticated && user?.role === 'mentor';
-  const isDirector = isAuthenticated && user?.role === 'director';
+  const isPastor = isAuthenticated && isPastorRole(role);
+  const isMentor = isAuthenticated && isMentorRole(role);
+  const isDirector = isAuthenticated && role === 'director';
   const showIndex = !isAuthenticated && !user;
   const isUnauthenticated = !isAuthenticated;
-  /** Full-screen scheduler lives at app/schedule-meeting — must be registered on the root Stack */
   const canUseScheduleMeeting =
     isAuthenticated &&
     !!user &&
-    (user.role === 'pastor' || user.role === 'mentor' || user.role === 'director');
+    (isPastorRole(role) || isMentorRole(role) || role === 'director');
+
+  if (!isReady) {
+    return <AuthBootstrapSplash />;
+  }
+
   return (
     <Stack
       screenOptions={{
@@ -93,7 +100,7 @@ function RootLayoutNav() {
       </Stack.Protected>
 
       <Stack.Screen
-        name="oauth/google-calendar"
+        name="oauth"
         options={{ headerShown: false, animation: "none" }}
       />
 

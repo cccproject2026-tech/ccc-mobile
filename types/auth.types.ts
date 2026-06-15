@@ -1,6 +1,14 @@
 
-export type UserRole = 'pastor' | 'mentor' | 'director' | 'pending';
+export type UserRole = 'pastor' | 'mentor' | 'director' | 'pending' | 'field-mentor';
 export type UserStatus = 'new' | 'pending' | 'accepted' | 'rejected';
+
+export interface FieldMentorInvitation {
+    _id?: string;
+    invitedBy?: string | { _id?: string };
+    invitedAt?: string;
+    token?: string;
+    expiresAt?: string;
+}
 
 export interface User {
     id: string;
@@ -16,6 +24,7 @@ export interface User {
     profilePicture?: string;
     hasCompleted?: boolean;
     hasIssuedCertificate?: boolean;
+    fieldMentorInvitation?: FieldMentorInvitation;
     createdAt?: string;
     updatedAt?: string;
 }

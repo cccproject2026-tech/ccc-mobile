@@ -17,6 +17,12 @@ export interface IssueCertificateRequest {
     issuedBy: string;
 }
 
+export interface InvitationActionResponse {
+    success: boolean;
+    message: string;
+    data?: User;
+}
+
 export const usersService = {
     getUsersByRole: async (role: UserRole, page: number = 1, limit: number = 10): Promise<GetUsersApiResponse['data']> => {
         const response = await apiClient.get<GetUsersApiResponse>(
@@ -36,5 +42,19 @@ export const usersService = {
             payload
         );
         return response.data.data;
+    },
+    acceptInvitation: async (token: string): Promise<InvitationActionResponse> => {
+        const response = await apiClient.post<InvitationActionResponse>(
+            ENDPOINTS.USERS.ACCEPT_INVITATION,
+            { token },
+        );
+        return response.data;
+    },
+    rejectInvitation: async (token: string): Promise<InvitationActionResponse> => {
+        const response = await apiClient.post<InvitationActionResponse>(
+            ENDPOINTS.USERS.REJECT_INVITATION,
+            { token },
+        );
+        return response.data;
     },
 };

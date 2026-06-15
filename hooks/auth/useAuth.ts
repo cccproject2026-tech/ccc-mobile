@@ -10,6 +10,10 @@ import {
     VerifyOtpRequest,
 } from "@/types/auth.types";
 import { navigateToWelcomeCenter } from "@/utils/auth-navigation";
+import {
+  getAuthenticatedHomeRoute,
+  normalizeApiUser,
+} from "@/utils/userRole";
 import { markPastorMentorIntroStart } from "@/utils/pastorMentorIntro";
 import { storage } from "@/utils/storage";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -43,18 +47,13 @@ export const useLogin = () => {
 
       try {
         
-        const { user, accessToken, refreshToken } = response.data;
+        const { user: rawUser, accessToken, refreshToken } = response.data;
+        const user = normalizeApiUser(rawUser);
 
-        
         await storage.setTokens(accessToken, refreshToken);
-
-        
         await storage.setUserData(user);
-
-        // Update auth store
         setUser(user);
 
-        
         if (user.profilePicture) {
           setHasProfilePicture(true);
           console.log("📷 User has profile picture");
@@ -63,7 +62,6 @@ export const useLogin = () => {
           console.log("❌ User missing profile picture");
         }
 
-        
         await queryClient.invalidateQueries({
           queryKey: authKeys.all,
         });
@@ -71,13 +69,11 @@ export const useLogin = () => {
         console.log("✅ Logged in as:", user.email);
         console.log("👤 User role:", user.role);
 
-        
-        if (user.role === "pastor") {
-          router.replace("/(pastor)/(tabs)");
-        } else if (user.role === "mentor") {
-          router.replace("/(mentor)/(tabs)");
-        } else if (user.role === "director") {
-          router.replace("/(director)/(tabs)");
+        const homeRoute = getAuthenticatedHomeRoute(user.role);
+        if (homeRoute) {
+          router.replace(homeRoute as any);
+        } else {
+          console.warn("⚠️ Unknown user role after login:", user.role);
         }
       } catch (error) {
         console.error("❌ Error in login onSuccess:", error);

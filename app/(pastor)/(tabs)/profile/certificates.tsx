@@ -14,6 +14,7 @@ import { icons } from '@/constants/images';
 import { useProfile, useUpdateProfile } from '@/hooks/profile/useProfile';
 import CertificatePreviewModal from '@/components/certificate/CertificatePreviewModal';
 import { usePastorCertificate } from '@/hooks/pastor/usePastorCertificate';
+import { useFieldMentorInvitationActions } from '@/hooks/pastor/useFieldMentorInvitation';
 import { certificatesService } from '@/services/certificates.service';
 import {
   toCertificatePreviewData,
@@ -27,7 +28,7 @@ import AppGradientBackground from '@/components/layout/AppGradientBackground';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -48,12 +49,31 @@ export default function Certificate() {
   const { data: profileData, isLoading, isError } = useProfile();
   const { data: certificate } = usePastorCertificate(user?.id);
   const updateProfile = useUpdateProfile();
+  const {
+    handleAccept,
+    handleReject,
+    isLoading: isInvitationLoading,
+  } = useFieldMentorInvitationActions();
   const [isDownloadingCertificate, setIsDownloadingCertificate] = useState(false);
   const [showCertificatePreview, setShowCertificatePreview] = useState(false);
   const [certificatePreviewData, setCertificatePreviewData] =
     useState<CertificatePreviewData | null>(null);
   const [certificateFileName, setCertificateFileName] = useState('certificate.pdf');
   const [autoDownloadCertificate, setAutoDownloadCertificate] = useState(false);
+
+  const fieldMentorInvitation = profileData?.user?.fieldMentorInvitation;
+  const hasFieldMentorInvitation = useMemo(
+    () => profileData?.user?.role === 'pastor' && Boolean(fieldMentorInvitation),
+    [fieldMentorInvitation, profileData?.user?.role],
+  );
+  const invitationExpired = useMemo(
+    () =>
+      Boolean(
+        fieldMentorInvitation?.expiresAt &&
+          new Date(fieldMentorInvitation.expiresAt) < new Date(),
+      ),
+    [fieldMentorInvitation?.expiresAt],
+  );
 
   
   const [isEditMode, setIsEditMode] = useState(false);
@@ -450,33 +470,42 @@ export default function Certificate() {
                 </LinearGradient>
               </TouchableOpacity>
             )}
-            {}
-            <LinearGradient
-              colors={['#21B6E9', '#B83AF3']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.gradientButtonBorder}
-            >
-              <View style={styles.invitationContainer}>
-                <Text style={styles.invitationText}>
-                  You have been invited as a Field Mentor.
-                </Text>
-                <View style={styles.invitationButtonsRow}>
-                  <Button
-                    title="Not Interested"
-                    type="cancel"
-                    style={{ width: '50%' }}
-                    onPress={() => { }}
-                  />
-                  <Button
-                    title="Accept"
-                    type="submit"
-                    style={{ width: '50%' }}
-                    onPress={() => { }}
-                  />
+            {hasFieldMentorInvitation && (
+              <LinearGradient
+                colors={['#21B6E9', '#B83AF3']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientButtonBorder}
+              >
+                <View style={styles.invitationContainer}>
+                  <Text style={styles.invitationText}>
+                    You have been invited as a Field Mentor.
+                  </Text>
+                  {invitationExpired ? (
+                    <Text style={styles.invitationExpiredText}>
+                      This invitation has expired.
+                    </Text>
+                  ) : (
+                    <View style={styles.invitationButtonsRow}>
+                      <Button
+                        title="Not Interested"
+                        type="cancel"
+                        style={{ width: '50%' }}
+                        disabled={isInvitationLoading}
+                        onPress={() => handleReject(fieldMentorInvitation?.token)}
+                      />
+                      <Button
+                        title={isInvitationLoading ? 'Accepting...' : 'Accept'}
+                        type="submit"
+                        style={{ width: '50%' }}
+                        disabled={isInvitationLoading}
+                        onPress={() => handleAccept(fieldMentorInvitation?.token)}
+                      />
+                    </View>
+                  )}
                 </View>
-              </View>
-            </LinearGradient>
+              </LinearGradient>
+            )}
 
             <View style={styles.divider} />
 
@@ -693,6 +722,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
     fontFamily: 'AlbertSans-Medium',
+  },
+  invitationExpiredText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.65)',
+    textAlign: 'center',
+    marginTop: 4,
   },
   invitationButtonsRow: {
     flexDirection: 'row',
