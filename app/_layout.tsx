@@ -8,13 +8,28 @@ import { useAuthStore } from '@/stores/auth.store';
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, usePathname, useSegments } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import Toast from 'react-native-toast-message';
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { AuthBootstrapSplash, useAuthBootstrap } from '@/components/auth/AuthBootstrap';
-import { isMentorRole, isPastorRole, normalizeUserRole } from '@/utils/userRole';
+import { useStartupRecovery } from '@/hooks/auth/useStartupRecovery';
+import {
+  getAuthStackGuardState,
+  logAuthNavigationState,
+} from '@/utils/auth-navigation-debug';
+import {
+  recoverStartupToWelcome,
+  resolveActiveStackGroup,
+} from '@/utils/startup-recovery';
+import {
+  getAuthenticatedHomeRoute,
+  isMentorRole,
+  isPastorRole,
+  normalizeUserRole,
+} from '@/utils/userRole';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +61,9 @@ function GoogleCalendarOAuthListener() {
 function RootLayoutNav() {
   const { isAuthenticated, user } = useAuthStore();
   const { isReady } = useAuthBootstrap();
+  const pathname = usePathname();
+  const segments = useSegments();
+  useStartupRecovery(isReady);
   const role = normalizeUserRole(user?.role);
 
   const isPastor = isAuthenticated && isPastorRole(role);
@@ -57,6 +75,38 @@ function RootLayoutNav() {
     isAuthenticated &&
     !!user &&
     (isPastorRole(role) || isMentorRole(role) || role === 'director');
+
+  const prevAuthRef = useRef(isAuthenticated);
+  useEffect(() => {
+    const authChanged = prevAuthRef.current !== isAuthenticated;
+    prevAuthRef.current = isAuthenticated;
+
+    if (authChanged || isAuthenticated) {
+      const guards = getAuthStackGuardState(isAuthenticated, user);
+      logAuthNavigationState({
+        source: authChanged
+          ? 'RootLayoutNav auth transition'
+          : 'RootLayoutNav route change',
+        pathname,
+        segments,
+        homeRoute: getAuthenticatedHomeRoute(user?.role),
+        mountedStackGroup: resolveActiveStackGroup(pathname, segments),
+      });
+
+      if (isAuthenticated && !guards.anyStackMounted) {
+        console.error(
+          '[AuthNav] Authenticated screen not mounted — no guard is true',
+          guards,
+        );
+        void recoverStartupToWelcome({
+          source: 'RootLayoutNav dead zone',
+          pathname,
+          segments,
+          reason: 'no Stack.Protected group mounted',
+        });
+      }
+    }
+  }, [isAuthenticated, user, user?.role, pathname, segments]);
 
   return (
     <>

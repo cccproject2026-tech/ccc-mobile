@@ -10,6 +10,7 @@ import {
     VerifyOtpRequest,
 } from "@/types/auth.types";
 import { navigateToWelcomeCenter } from "@/utils/auth-navigation";
+import { logAuthNavigationState } from "@/utils/auth-navigation-debug";
 import {
   getAuthenticatedHomeRoute,
   normalizeApiUser,
@@ -66,14 +67,38 @@ export const useLogin = () => {
           queryKey: authKeys.all,
         });
 
-        console.log("✅ Logged in as:", user.email);
-        console.log("👤 User role:", user.role);
-
         const homeRoute = getAuthenticatedHomeRoute(user.role);
+
+        logAuthNavigationState({
+          source: "useLogin.onSuccess (before navigate)",
+          homeRoute,
+          targetRoute: homeRoute,
+        });
+
         if (homeRoute) {
-          router.replace(homeRoute as any);
+          // Defer until Stack.Protected guards re-render after setUser().
+          requestAnimationFrame(() => {
+            logAuthNavigationState({
+              source: "useLogin.onSuccess (navigating)",
+              homeRoute,
+              targetRoute: homeRoute,
+            });
+            router.replace(homeRoute as any);
+
+            setTimeout(() => {
+              logAuthNavigationState({
+                source: "useLogin.onSuccess (after navigate)",
+                homeRoute,
+                targetRoute: homeRoute,
+              });
+            }, 300);
+          });
         } else {
           console.warn("⚠️ Unknown user role after login:", user.role);
+          logAuthNavigationState({
+            source: "useLogin.onSuccess (unknown role)",
+            homeRoute: null,
+          });
         }
       } catch (error) {
         console.error("❌ Error in login onSuccess:", error);

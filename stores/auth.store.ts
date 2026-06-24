@@ -23,6 +23,20 @@ interface AuthActions {
 
 type AuthStore = AuthState & AuthActions;
 
+function isValidSessionUser(user: User | null | undefined): user is User {
+    if (!user) return false;
+    const normalized = normalizeApiUser(user);
+    return Boolean(normalized.id && normalized.role);
+}
+
+function clearedAuthState(): Pick<AuthState, 'user' | 'isAuthenticated' | 'isInitialized'> {
+    return {
+        isInitialized: true,
+        user: null,
+        isAuthenticated: false,
+    };
+}
+
 export const useAuthStore = create<AuthStore>()(
     persist(
         (set, get) => ({
@@ -76,7 +90,7 @@ export const useAuthStore = create<AuthStore>()(
                     const tokens = await storage.getTokens();
                     const storedUser = await storage.getUserData();
 
-                    if (tokens?.accessToken && storedUser) {
+                    if (tokens?.accessToken && isValidSessionUser(storedUser)) {
                         const normalizedUser = normalizeApiUser(storedUser);
                         set({
                             isInitialized: true,
@@ -84,24 +98,21 @@ export const useAuthStore = create<AuthStore>()(
                             user: normalizedUser,
                         });
                         console.log('✅ Auth initialized with stored tokens and user');
-                    } else if (tokens?.accessToken) {
-                        set({ isInitialized: true, isAuthenticated: true });
-                        console.log('✅ Auth initialized with stored tokens');
-                    } else {
-                        set({
-                            isInitialized: true,
-                            user: null,
-                            isAuthenticated: false,
-                        });
-                        console.log('✅ Auth initialized - no stored tokens');
+                        return;
                     }
+
+                    if (tokens?.accessToken || storedUser) {
+                        console.warn(
+                            '⚠️ Stale or incomplete session — clearing SecureStore',
+                        );
+                        await storage.clearAll();
+                    }
+
+                    set(clearedAuthState());
+                    console.log('✅ Auth initialized - no valid session');
                 } catch (error) {
                     console.error('❌ Auth initialization failed:', error);
-                    set({
-                        isInitialized: true,
-                        user: null,
-                        isAuthenticated: false,
-                    });
+                    set(clearedAuthState());
                 }
             },
 
@@ -119,14 +130,34 @@ export const useAuthStore = create<AuthStore>()(
             storage: createJSONStorage(() => AsyncStorage),
             partialize: (state) => ({
                 user: state.user,
-                isAuthenticated: state.isAuthenticated,
+                isAuthenticated: state.isAuthenticated && !!state.user,
                 isInitialized: state.isInitialized,
             }),
             onRehydrateStorage: () => (state) => {
-                if (state?.user) {
+                if (!state) return;
+
+                if (state.user) {
                     state.user = normalizeApiUser(state.user);
                 }
-                state?.setHasHydrated();
+
+                if (state.isAuthenticated && !state.user) {
+                    console.warn(
+                        '⚠️ Sanitizing rehydrated auth: isAuthenticated without user',
+                    );
+                    state.isAuthenticated = false;
+                    state.user = null;
+                }
+
+                if (!state.isAuthenticated && state.user) {
+                    console.warn(
+                        '⚠️ Sanitizing rehydrated auth: user present without isAuthenticated',
+                    );
+                    state.user = null;
+                }
+
+                // Always re-validate SecureStore on cold start before routing.
+                state.isInitialized = false;
+                state.setHasHydrated();
             },
         }
     )
