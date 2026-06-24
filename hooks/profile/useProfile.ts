@@ -328,13 +328,13 @@ export const useDeleteDocument = () => {
   const { user } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (documentUrl: string) => {
+    mutationFn: async (docId: string) => {
       if (!user?.id) {
         throw new Error("User ID is required");
       }
 
       console.log("📤 Deleting document...");
-      return await profileService.deleteDocument(user.id, documentUrl);
+      return await profileService.deleteDocument(user.id, docId);
     },
     onSuccess: async () => {
       console.log("✅ Document deleted successfully, invalidating cache...");

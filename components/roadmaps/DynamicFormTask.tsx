@@ -600,6 +600,10 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                     ))}
 
                 {}
+                {!isMentorView && !hasServerFiles && !hasPendingFiles && (
+                    <Text style={styles.uploadHint}>Supported: PDF, images, videos, Word docs</Text>
+                )}
+
                 {(!isMentorView || hasServerFiles) && (
                     <Pressable
                         style={[
@@ -1356,6 +1360,13 @@ const styles = StyleSheet.create({
     },
     uploadButtonWhite: {
         backgroundColor: '#ffffff',
+    },
+    uploadHint: {
+        color: 'rgba(255,255,255,0.45)',
+        fontSize: 11,
+        textAlign: 'center',
+        marginTop: 6,
+        marginBottom: 4,
     },
     uploadButtonText: {
         color: '#2563eb',

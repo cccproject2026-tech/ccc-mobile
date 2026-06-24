@@ -54,7 +54,7 @@ export default function MentorDocumentsScreen() {
     // defined as uploaded in the last 7 days for example? Or just top 5?
     
     const recentUploads = sorted.slice(0, 5).map((doc, index) => ({
-      id: doc.id || index.toString(),
+      id: doc.docId || index.toString(),
       title: doc.fileName || "Document",
       time: formatDocumentDate(doc.uploadedAt),
       original: doc
@@ -62,7 +62,7 @@ export default function MentorDocumentsScreen() {
 
     
     const library = sorted.map((doc, index) => ({
-      id: doc.id || index.toString(),
+      id: doc.docId || index.toString(),
       title: doc.fileName || "Document",
       date: formatDocumentDate(doc.uploadedAt),
       original: doc

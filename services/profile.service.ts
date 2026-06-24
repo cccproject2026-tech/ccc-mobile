@@ -134,15 +134,12 @@ export const profileService = {
     },
 
     
-    deleteDocument: async (userId: string, documentUrl: string): Promise<void> => {
-        console.log('📤 Deleting document for user:', userId, documentUrl);
+    deleteDocument: async (userId: string, docId: string): Promise<void> => {
+        console.log('📤 Deleting document for user:', userId, docId);
 
-        await apiClient.delete(
-            ENDPOINTS.USERS.DELETE_DOCUMENT(userId),
-            {
-                data: { documentUrl },
-            }
-        );
+        await apiClient.delete(ENDPOINTS.USERS.DELETE_DOCUMENT(userId), {
+            data: { docId },
+        });
 
         console.log('✅ Document deleted successfully');
     },

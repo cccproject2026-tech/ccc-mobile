@@ -60,7 +60,7 @@ export interface ChurchFormData extends Omit<ChurchInfo, 'id'> {
 
 
 export interface Document {
-    id: string;
+    docId: string;
     fileName: string;
     fileUrl: string;
     fileType: string;

@@ -89,7 +89,7 @@ export default function MentorProfileSetup() {
             setDocumentLoading(true);
 
             const result = await DocumentPicker.getDocumentAsync({
-                type: ["application/pdf", "image/*"],
+                type: ["application/pdf", "image/*", "video/*"],
                 copyToCacheDirectory: true,
             });
 

@@ -38,6 +38,8 @@ interface UploadPDFButtonProps {
   icon?: ImageSourcePropType | "";
   style?: ViewStyle;
   textStyle?: TextStyle;
+  /** Accepted MIME types. Defaults to all files including videos. */
+  acceptedTypes?: string | string[];
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -204,11 +206,12 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
   icon = "",
   style,
   textStyle,
+  acceptedTypes,
 }) => {
   const pickDocument = async (): Promise<void> => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "application/pdf",
+        type: acceptedTypes ?? ["application/pdf", "image/*", "video/*", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
         copyToCacheDirectory: true,
       });
 
@@ -249,6 +252,7 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
           Selected: {selectedFile.assets?.[0]?.name || "Unknown file"}
         </Text>
       )}
+      <Text style={styles.hintText}>Supported: PDF, images, videos, Word docs</Text>
     </View>
   );
 };
@@ -316,6 +320,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 12,
     color: "#666",
+    textAlign: "center",
+  },
+  hintText: {
+    marginTop: 4,
+    fontSize: 11,
+    color: "rgba(255,255,255,0.5)",
     textAlign: "center",
   },
 });

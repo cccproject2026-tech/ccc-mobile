@@ -64,14 +64,14 @@ export default function MenteeDocumentsScreen() {
 
     
     const recentUploads = sorted.slice(0, 5).map((doc, index) => ({
-      id: doc.id || index.toString(),
+      id: doc.docId || index.toString(),
       title: doc.fileName || "Document",
       time: formatDocumentDate(doc.uploadedAt),
     }))
 
     
     const library = sorted.map((doc, index) => ({
-      id: doc.id || index.toString(),
+      id: doc.docId || index.toString(),
       title: doc.fileName || "Document",
       date: formatDocumentDate(doc.uploadedAt),
     }))

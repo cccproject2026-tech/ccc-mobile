@@ -35,7 +35,13 @@ export default function PastorDocumentsScreen() {
             console.log('📄 Starting document picker...');
 
             const result = await DocumentPicker.getDocumentAsync({
-                type: ['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+                type: [
+                    'application/pdf',
+                    'image/*',
+                    'video/*',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                ],
                 copyToCacheDirectory: true,
             });
 
@@ -64,7 +70,7 @@ export default function PastorDocumentsScreen() {
         }
     };
 
-    const handleDeleteDocument = (documentUrl: string, fileName: string) => {
+    const handleDeleteDocument = (docId: string, fileName: string) => {
         Alert.alert(
             'Delete Document',
             `Are you sure you want to delete "${fileName}"?`,
@@ -75,8 +81,8 @@ export default function PastorDocumentsScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            console.log('🗑️ Deleting document:', documentUrl);
-                            await deleteDocument.mutateAsync(documentUrl);
+                            console.log('🗑️ Deleting document:', docId);
+                            await deleteDocument.mutateAsync(docId);
                             Alert.alert('Success', 'Document deleted successfully!');
                             console.log('✅ Document deleted successfully');
                         } catch (error) {
@@ -93,6 +99,10 @@ export default function PastorDocumentsScreen() {
         return mimeType?.startsWith('image/');
     };
 
+    const isVideo = (mimeType: string) => {
+        return mimeType?.startsWith('video/');
+    };
+
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-GB', {
@@ -107,6 +117,8 @@ export default function PastorDocumentsScreen() {
             <View style={styles.documentIcon}>
                 {isImage(item.fileType) && item.fileUrl ? (
                     <Image source={{ uri: item.fileUrl }} style={styles.documentThumbnail} />
+                ) : isVideo(item.fileType) ? (
+                    <Ionicons name="videocam" size={32} color="#1E3A5F" />
                 ) : (
                     <Image source={icons.certificateImage} style={styles.pdfIcon} />
                 )}
@@ -121,7 +133,7 @@ export default function PastorDocumentsScreen() {
             </View>
             <TouchableOpacity
                 style={styles.deleteButton}
-                onPress={() => handleDeleteDocument(item.fileUrl, item.fileName)}
+                onPress={() => handleDeleteDocument(item.docId, item.fileName)}
                 disabled={deleteDocument.isPending}
             >
                 <Ionicons
@@ -177,7 +189,7 @@ export default function PastorDocumentsScreen() {
                 <FlatList
                     data={documents}
                     renderItem={renderDocument}
-                    keyExtractor={(item) => item.id || item.fileUrl}
+                    keyExtractor={(item) => item.docId || item.fileUrl}
                     contentContainerStyle={[
                         styles.listContent,
                         { paddingBottom: bottom + 20 },
