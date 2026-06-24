@@ -428,21 +428,29 @@ export default function MenteeCard({
                             </View>
 
                             {!hasFinalComment && onAddFinalComments ? (
-                                <LinearGradient colors={['#7C3AED', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientBorder}>
-                                    <TouchableOpacity style={styles.completeButton} onPress={(e) => { e.stopPropagation(); onAddFinalComments(); }}>
-                                        <Text style={styles.completeButtonText}>Add Final Comments</Text>
-                                        <Ionicons name="chevron-forward" size={getIconSize(18)} color="#FFC107" />
-                                    </TouchableOpacity>
-                                </LinearGradient>
+                                <TouchableOpacity
+                                    style={styles.mentorSecondaryAction}
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        onAddFinalComments();
+                                    }}
+                                >
+                                    <Ionicons name="chatbubble-ellipses-outline" size={getIconSize(18)} color="#6FD4BE" />
+                                    <Text style={styles.mentorSecondaryActionText}>Add Final Comments</Text>
+                                </TouchableOpacity>
                             ) : null}
 
                             {hasFinalComment && onMarkComplete ? (
-                                <LinearGradient colors={['#7C3AED', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientBorder}>
-                                    <TouchableOpacity style={styles.completeButton} onPress={(e) => { e.stopPropagation(); onMarkComplete(); }}>
-                                        <Text style={styles.completeButtonText}>Mark as Complete</Text>
-                                        <Ionicons name="chevron-forward" size={getIconSize(18)} color="#FFC107" />
-                                    </TouchableOpacity>
-                                </LinearGradient>
+                                <TouchableOpacity
+                                    style={styles.mentorPrimaryAction}
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        onMarkComplete();
+                                    }}
+                                >
+                                    <Ionicons name="checkmark-circle-outline" size={getIconSize(18)} color="#0B3D5C" />
+                                    <Text style={styles.mentorPrimaryActionText}>Mark as Complete</Text>
+                                </TouchableOpacity>
                             ) : null}
 
                             {!hasFinalComment && !onAddFinalComments ? (
@@ -500,8 +508,10 @@ export default function MenteeCard({
                 if (data.hasCompleted) {
                     return (
                         <View style={styles.programCompletedBadge}>
-                            <Ionicons name="checkmark-circle" size={getIconSize(18)} color="#6FD4BE" />
-                            <Text style={styles.programCompletedText}>Programme Completed</Text>
+                            <Ionicons name="checkmark-circle" size={getIconSize(20)} color="#6FD4BE" />
+                            <Text style={styles.programCompletedText}>
+                                {isMentorWorkflow ? 'Marked as completed' : 'Programme Completed'}
+                            </Text>
                         </View>
                     );
                 }
@@ -844,10 +854,49 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: getSpacing(8),
-        marginTop: getSpacing(4),
-        paddingVertical: getSpacing(10),
+        marginTop: getSpacing(8),
+        paddingVertical: getSpacing(12),
+        paddingHorizontal: getSpacing(14),
+        borderRadius: getSpacing(12),
+        backgroundColor: 'rgba(111, 212, 190, 0.12)',
+        borderWidth: 1,
+        borderColor: 'rgba(111, 212, 190, 0.35)',
     },
     programCompletedText: {
+        fontSize: getFontSize(14),
+        fontWeight: '700',
+        color: '#6FD4BE',
+    },
+    mentorPrimaryAction: {
+        marginTop: getSpacing(10),
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: getSpacing(8),
+        backgroundColor: '#6FD4BE',
+        borderRadius: getSpacing(12),
+        paddingVertical: getSpacing(13),
+        paddingHorizontal: getSpacing(16),
+    },
+    mentorPrimaryActionText: {
+        fontSize: getFontSize(14),
+        fontWeight: '700',
+        color: '#0B3D5C',
+    },
+    mentorSecondaryAction: {
+        marginTop: getSpacing(10),
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: getSpacing(8),
+        borderRadius: getSpacing(12),
+        paddingVertical: getSpacing(12),
+        paddingHorizontal: getSpacing(16),
+        borderWidth: 1,
+        borderColor: 'rgba(111, 212, 190, 0.55)',
+        backgroundColor: 'rgba(111, 212, 190, 0.08)',
+    },
+    mentorSecondaryActionText: {
         fontSize: getFontSize(14),
         fontWeight: '600',
         color: '#6FD4BE',

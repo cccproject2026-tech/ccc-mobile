@@ -2,7 +2,7 @@ import { ProgressAssessmentCard } from "@/components/director/ProgressAssessment
 import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarChart";
 import { ProgressPieChart } from "@/components/director/ProgressPieChart";
 import { RoadmapCard } from "@/components/director/ProgressRoadmapCard";
-import CommentBottomSheet from "@/components/director/CommentBottomSheet";
+import CommentBottomSheet, { CommentModalRef } from "@/components/director/CommentBottomSheet";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
@@ -22,7 +22,7 @@ import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { useAuthStore } from "@/stores";
 import { RoadmapTabStrip } from "@/components/ui/design-system";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
-import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -57,7 +57,7 @@ export default function MenteeProgressScreen() {
   const { menteeId, openComments } = useLocalSearchParams<{ menteeId?: string; openComments?: string }>();
   const { user } = useAuthStore();
   const { bottom } = useSafeAreaInsets();
-  const commentsSheetRef = useRef<BottomSheetModal>(null);
+  const commentsSheetRef = useRef<CommentModalRef>(null);
 
   const [roadmapTabs, setRoadmapTabs] = useState<TabKey>("All");
   const [assessmentTabs, setAssessmentTabs] = useState<TabKey>("All");
@@ -97,6 +97,11 @@ export default function MenteeProgressScreen() {
     return allMentees.find((item) => item.id === menteeId);
   }, [menteeId, menteesData]);
 
+  const isProgrammeCompleted = Boolean(
+    mentee?.hasCompleted ||
+      (markCompleteMutation.isSuccess && markCompleteMutation.variables === menteeId),
+  );
+
   const menteeName = useMemo(() => {
     if (!mentee) return "Mentee Progress";
     return `${mentee.firstName ?? ""}${mentee.lastName ? ` ${mentee.lastName}` : ""}`.trim() || "Mentee Progress";
@@ -114,7 +119,7 @@ export default function MenteeProgressScreen() {
   const canMarkComplete = canMentorMarkProgramComplete({
     overallProgress: overallProgress.completedPercentage,
     hasFinalComment,
-    hasCompleted: mentee?.hasCompleted,
+    hasCompleted: isProgrammeCompleted,
   });
 
   const formattedComments = useMemo(
@@ -290,13 +295,13 @@ export default function MenteeProgressScreen() {
       userId: menteeId,
       overallProgress: overallProgress.completedPercentage,
       hasFinalComment,
-      hasCompleted: mentee?.hasCompleted,
+      hasCompleted: isProgrammeCompleted,
       menteeName: mentee?.firstName,
     });
   }, [
     hasFinalComment,
+    isProgrammeCompleted,
     mentee?.firstName,
-    mentee?.hasCompleted,
     menteeId,
     overallProgress.completedPercentage,
     requestMarkComplete,
@@ -431,12 +436,6 @@ export default function MenteeProgressScreen() {
                 </Text>
               </View>
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.commentsHeaderButton} onPress={openCommentsSheet}>
-              <Text style={styles.commentsHeaderButtonText}>
-                {hasFinalComment ? "View Final Comments" : "Add Final Comments"}
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -543,21 +542,43 @@ export default function MenteeProgressScreen() {
           </View>
 
           <View style={styles.completionSection}>
-            {mentee.hasCompleted ? (
+            <Text style={styles.completionSectionTitle}>Programme completion</Text>
+
+            {isProgrammeCompleted ? (
               <View style={styles.completedBanner}>
-                <Text style={styles.completedBannerTitle}>Programme Completed</Text>
+                <View style={styles.completedBannerHeader}>
+                  <Ionicons name="checkmark-circle" size={22} color="#6FD4BE" />
+                  <Text style={styles.completedBannerTitle}>Marked as completed</Text>
+                </View>
                 <Text style={styles.completedBannerText}>
-                  This pastor has been marked as completed. Certificate and field mentor steps are handled by the director.
+                  You have marked this pastor as programme complete. Certificate and field mentor steps are handled by the director.
                 </Text>
+                {hasFinalComment ? (
+                  <TouchableOpacity style={styles.commentsActionButton} onPress={openCommentsSheet}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={18} color="#6FD4BE" />
+                    <Text style={styles.commentsActionButtonText}>View Final Comments</Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             ) : isProgramProgressComplete ? (
               <>
-                <Text style={styles.completionSectionTitle}>Programme completion</Text>
+                <TouchableOpacity style={styles.commentsActionButton} onPress={openCommentsSheet}>
+                  <Ionicons
+                    name={hasFinalComment ? "chatbubble-ellipses-outline" : "create-outline"}
+                    size={18}
+                    color="#6FD4BE"
+                  />
+                  <Text style={styles.commentsActionButtonText}>
+                    {hasFinalComment ? "View Final Comments" : "Add Final Comments"}
+                  </Text>
+                </TouchableOpacity>
+
                 {!hasFinalComment ? (
                   <Text style={styles.completionHint}>
-                    Please add final comments before marking the programme as completed.
+                    Add final comments before marking the programme as completed.
                   </Text>
                 ) : null}
+
                 <TouchableOpacity
                   style={[
                     styles.markCompleteButton,
@@ -566,12 +587,21 @@ export default function MenteeProgressScreen() {
                   disabled={!canMarkComplete || markCompleteMutation.isPending}
                   onPress={handleMarkProgramComplete}
                 >
+                  {markCompleteMutation.isPending ? (
+                    <ActivityIndicator size="small" color="#0B3D5C" />
+                  ) : (
+                    <Ionicons name="checkmark-circle-outline" size={18} color="#0B3D5C" />
+                  )}
                   <Text style={styles.markCompleteButtonText}>
-                    {markCompleteMutation.isPending ? "Marking..." : "Mark programme as completed"}
+                    {markCompleteMutation.isPending ? "Marking as completed..." : "Mark programme as completed"}
                   </Text>
                 </TouchableOpacity>
               </>
-            ) : null}
+            ) : (
+              <Text style={styles.completionHint}>
+                Programme completion unlocks when roadmaps and assessments reach 100%.
+              </Text>
+            )}
           </View>
 
         </ScrollView>
@@ -592,6 +622,7 @@ export default function MenteeProgressScreen() {
         onEdit={handleEditComment}
         maxCommentsReached={finalComments.length >= 2}
         submitButtonText={editingCommentId ? "Update" : "Submit"}
+        readOnly={isProgrammeCompleted}
       />
     </AppGradientBackground>
   );
@@ -603,7 +634,7 @@ const styles = StyleSheet.create({
   headerContent: {
     width: "100%",
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -623,20 +654,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  commentsHeaderButton: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.35)",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    maxWidth: "42%",
-  },
-  commentsHeaderButtonText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "center",
-  },
   completionSection: {
     marginHorizontal: 16,
     marginTop: 8,
@@ -646,34 +663,64 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.25)",
     borderRadius: 12,
     backgroundColor: "rgba(255,255,255,0.06)",
+    gap: 12,
   },
   completionSectionTitle: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 8,
   },
-  completionHint: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  markCompleteButton: {
-    backgroundColor: "#8ec5eb",
+  commentsActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "rgba(111, 212, 190, 0.55)",
+    backgroundColor: "rgba(111, 212, 190, 0.08)",
     borderRadius: 10,
     paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  commentsActionButtonText: {
+    color: "#6FD4BE",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  completionHint: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  markCompleteButton: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#6FD4BE",
+    borderRadius: 10,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
   },
   markCompleteButtonDisabled: {
     opacity: 0.45,
   },
   markCompleteButtonText: {
-    color: "#062946",
+    color: "#0B3D5C",
     fontSize: 14,
     fontWeight: "700",
   },
   completedBanner: {
+    gap: 10,
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: "rgba(111, 212, 190, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(111, 212, 190, 0.3)",
+  },
+  completedBannerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   completedBannerTitle: {

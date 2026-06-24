@@ -2,6 +2,7 @@ import {
     canMentorMarkProgramComplete,
     MENTOR_FINAL_COMMENT_REQUIRED_MESSAGE,
 } from '@/lib/progress/deriveOverallProgressPercent';
+import { patchMenteeHasCompleted } from '@/lib/progress/patchMenteeCompletionInCache';
 import { usersService } from '@/services/users.service';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
@@ -20,8 +21,15 @@ export function useMentorProgramCompletion() {
 
     const markCompleteMutation = useMutation({
         mutationFn: (userId: string) => usersService.markUserCompleted(userId),
-        onSuccess: async () => {
-            await Promise.all([
+        onSuccess: (user, userId) => {
+            patchMenteeHasCompleted(
+                queryClient,
+                userId,
+                true,
+                user.updatedAt,
+            );
+
+            void Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['mentees'] }),
                 queryClient.invalidateQueries({ queryKey: ['progress'] }),
                 queryClient.invalidateQueries({ queryKey: ['profile'] }),
@@ -39,6 +47,13 @@ export function useMentorProgramCompletion() {
         }: MarkCompleteParams) => {
             if (!userId) return;
 
+            if (markCompleteMutation.isPending) return;
+
+            if (hasCompleted) {
+                Alert.alert('Already completed', 'This programme has already been marked as completed.');
+                return;
+            }
+
             if (overallProgress < 100) {
                 Alert.alert(
                     'Not ready',
@@ -49,11 +64,6 @@ export function useMentorProgramCompletion() {
 
             if (!hasFinalComment) {
                 Alert.alert('Final comments required', MENTOR_FINAL_COMMENT_REQUIRED_MESSAGE);
-                return;
-            }
-
-            if (hasCompleted) {
-                Alert.alert('Already completed', 'This programme has already been marked as completed.');
                 return;
             }
 

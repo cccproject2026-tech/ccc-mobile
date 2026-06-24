@@ -1,4 +1,4 @@
-import CommentBottomSheet from '@/components/director/CommentBottomSheet';
+import CommentBottomSheet, { CommentModalRef } from '@/components/director/CommentBottomSheet';
 import PMPBottomSheet from '@/components/director/PMPBottomSheet';
 import ProgressAssessmentCard from '@/components/director/ProgressAssessmentCard';
 import { ChartData, ProgressBarChart } from '@/components/director/ProgressBarChart';
@@ -41,7 +41,7 @@ export default function ProgressDetails() {
 
     const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
 
-    const commentSheetRef = useRef<BottomSheetModal | null>(null);
+    const commentSheetRef = useRef<CommentModalRef | null>(null);
 
     const pmpSheetRef = useRef<BottomSheetModal>(null);
 
