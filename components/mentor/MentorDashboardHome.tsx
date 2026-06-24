@@ -4,7 +4,7 @@ import WelcomeCard from "@/components/director/WelcomeCard";
 import { PastorFocusBottomSheet, type PastorFocusItem } from "@/components/sheets/PastorFocusBottomSheet";
 import { icons } from "@/constants/images";
 import { useMentorFocusItems } from "@/hooks/mentors/useMentorFocusItems";
-import { useReviewCenterV2 } from "@/hooks/mentors/useReviewCenterV2";
+import { useReviewCenterPendingCount } from "@/hooks/mentors/useReviewCenterPendingCount";
 import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
@@ -104,7 +104,7 @@ export default function MentorDashboardHome() {
   }, [greetingPeriod]);
 
   const { sections, isLoading } = useMentorFocusItems();
-  const { pendingActionCount } = useReviewCenterV2();
+  const { pendingActionCount } = useReviewCenterPendingCount();
 
   const heroHeight = Math.min(210, Math.max(162, Math.round(windowHeight * 0.22)));
 

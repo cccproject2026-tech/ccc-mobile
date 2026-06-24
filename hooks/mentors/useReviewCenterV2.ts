@@ -2,79 +2,35 @@ import { useMentees } from "@/hooks/mentees/useMentees";
 import { useAllRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useAssessments } from "@/hooks/assessments/useAssessments";
 import {
+  syncReviewCenterPendingCount,
+} from "@/hooks/mentors/useReviewCenterPendingCount";
+import {
+  fetchMentorReviewCenterItems,
+  isReviewCenterTooManyRequestsError,
+  REVIEW_CENTER_MAX_MENTEES,
+} from "@/lib/mentor/fetchMentorReviewCenterItems";
+import {
+  mentorReviewCenterKeys,
+  REVIEW_CENTER_GC_MS,
+  REVIEW_CENTER_STALE_MS,
+} from "@/lib/mentor/reviewCenterQueryKeys";
+import {
   type ReviewBadgeCounts,
   type ReviewCategoryCounts,
   type ReviewDashboardCounts,
   type ReviewFilterTab,
-  type ReviewItem,
   REVIEW_PRIORITY,
   buildPastorGroups,
   computeDashboardCounts,
   computePendingActionCount,
-  getReviewCategory,
-  mapSubmissionStatusToReview,
   type ReviewPastorGroup,
 } from "@/lib/mentor/reviewCenter.types";
-import { assessmentService } from "@/services/assessment.service";
-import { roadmapService } from "@/services/roadmap.service";
 import { useAuthStore } from "@/stores";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { mapWithConcurrency } from "@/utils/apiConcurrency";
-import type { TaskSubmission } from "@/lib/roadmap/types";
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const SEEN_STORAGE_KEY = "mentor_review_center_seen";
-const MAX_MENTEES = 20;
-const MAX_ROADMAPS_PER_MENTEE = 6;
-const LEGACY_EXTRAS_CONCURRENCY = 2;
-const LEGACY_EXTRAS_MAX_RETRIES = 2;
-const LEGACY_EXTRAS_RETRY_BASE_MS = 450;
-
-const isMongoObjectIdLike = (id: string | undefined | null): id is string => {
-  return (
-    !!id &&
-    typeof id === "string" &&
-    id.trim().length === 24 &&
-    /^[0-9a-fA-F]{24}$/.test(id.trim())
-  );
-};
-
-function buildLatestLegacyRoadmapSubmission(
-  extras: any,
-): { status: "SUBMITTED" | "RESUBMITTED"; category: "pending_review" | "resubmitted"; resubmissionCount: number; submittedAt: string } | null {
-  const allExtras: any[] = (extras?.extras ?? []).filter(
-    (e: any) => e?.name && e?.type !== "JUMPSTART_COMPLETE",
-  );
-
-  if (allExtras.length === 0) return null;
-
-  
-  const byName = new Map<string, any[]>();
-  for (const e of allExtras) {
-    const key = String(e.name);
-    if (!byName.has(key)) byName.set(key, []);
-    byName.get(key)!.push(e);
-  }
-
-  const maxVersions = Math.max(
-    ...Array.from(byName.values()).map((arr) => arr.length),
-  );
-
-  if (!Number.isFinite(maxVersions) || maxVersions <= 0) return null;
-
-  const status = maxVersions > 1 ? "RESUBMITTED" : "SUBMITTED";
-  const category = maxVersions > 1 ? "resubmitted" : "pending_review";
-  const resubmissionCount = Math.max(0, maxVersions - 1);
-
-  // Latest version is the one at maxVersions - 1, so submittedAt ~ updatedAt.
-  const submittedAtDate = new Date(String(extras.updatedAt ?? extras.createdAt ?? ""));
-  const submittedAt = Number.isNaN(submittedAtDate.getTime())
-    ? new Date(String(extras.createdAt ?? "")).toISOString()
-    : submittedAtDate.toISOString();
-
-  return { status, category, resubmissionCount, submittedAt };
-}
 
 async function loadSeenIds(): Promise<Set<string>> {
   try {
@@ -90,7 +46,7 @@ async function persistSeenIds(ids: Set<string>): Promise<void> {
   try {
     await AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify([...ids]));
   } catch {
-    
+    // ignore
   }
 }
 
@@ -98,53 +54,17 @@ function uniqueNonEmpty(values: Array<string | undefined | null>): string[] {
   return [...new Set(values.map((v) => String(v ?? "").trim()).filter(Boolean))];
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+export type UseReviewCenterV2Options = {
+  /** When false, skips the expensive review scan (default: true). */
+  scanEnabled?: boolean;
+};
 
-function isTooManyRequestsError(error: unknown): boolean {
-  if (!error || typeof error !== "object") return false;
-  const maybeError = error as { statusCode?: number; message?: string };
-  if (maybeError.statusCode === 429) return true;
-  const message = String(maybeError.message ?? "");
-  return message.includes("429") || message.includes("Too Many Requests");
-}
-
-function isNotFoundError(error: unknown): boolean {
-  if (!error || typeof error !== "object") return false;
-  const maybeError = error as { statusCode?: number; message?: string };
-  if (maybeError.statusCode === 404) return true;
-  const message = String(maybeError.message ?? "");
-  return message.includes("404") || message.includes("Cannot GET");
-}
-
-async function getRoadmapExtrasWithRetry(
-  roadmapId: string,
-  nestedRoadMapItemId: string,
-  userId: string,
-): Promise<any> {
-  let attempt = 0;
-  while (true) {
-    try {
-      return await roadmapService.getRoadmapExtras(
-        roadmapId,
-        nestedRoadMapItemId,
-        userId,
-      );
-    } catch (error) {
-      if (!isTooManyRequestsError(error) || attempt >= LEGACY_EXTRAS_MAX_RETRIES) {
-        throw error;
-      }
-      const backoffMs =
-        LEGACY_EXTRAS_RETRY_BASE_MS * Math.pow(2, attempt) +
-        Math.floor(Math.random() * 150);
-      attempt += 1;
-      await sleep(backoffMs);
-    }
-  }
-}
-
-export function useReviewCenterV2() {
+/**
+ * Full Review Center data — intended for Review Center screens only.
+ * Pass `scanEnabled: false` only if you need derived state from an existing cache.
+ */
+export function useReviewCenterV2(options?: UseReviewCenterV2Options) {
+  const scanEnabled = options?.scanEnabled ?? true;
   const { user } = useAuthStore();
   const mentorId = user?.id;
   const queryClient = useQueryClient();
@@ -152,7 +72,7 @@ export function useReviewCenterV2() {
   const [activeFilter, setActiveFilter] = useState<ReviewFilterTab>("all");
 
   const { data: menteesData, isLoading: isLoadingMentees } = useMentees(
-    MAX_MENTEES,
+    REVIEW_CENTER_MAX_MENTEES,
     mentorId,
   );
   const { data: allRoadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
@@ -224,352 +144,34 @@ export function useReviewCenterV2() {
   }, [mentees]);
 
   const { data: reviewData, isLoading: isLoadingReview } = useQuery({
-    queryKey: ["mentor-review-center", mentorId ?? "", menteeIdsKey],
+    queryKey: mentorReviewCenterKeys.scan(mentorId ?? "", menteeIdsKey),
     enabled:
+      scanEnabled &&
       !!mentorId &&
       !isLoadingMentees &&
       !isLoadingRoadmaps &&
       !isLoadingAssessments,
-    staleTime: 60_000,
-    retry: 2,
-    queryFn: async (): Promise<ReviewItem[]> => {
-      const seenIds = await loadSeenIds();
-      const items: ReviewItem[] = [];
-      const extrasRequestCache = new Map<string, Promise<any>>();
-      const blockedExtrasByRoadmapUser = new Set<string>();
-
-      const getCachedExtras = (
-        roadmapId: string,
-        nestedRoadMapItemId: string,
-        userId: string,
-      ): Promise<any> => {
-        const key = `${roadmapId}:${nestedRoadMapItemId}:${userId}`;
-        const existing = extrasRequestCache.get(key);
-        if (existing) return existing;
-        const req = getRoadmapExtrasWithRetry(roadmapId, nestedRoadMapItemId, userId);
-        extrasRequestCache.set(key, req);
-        return req;
-      };
-
-      await mapWithConcurrency(mentees as any[], 2, async (mentee: any) => {
-        // Router/UI should keep the app's canonical id, but APIs can be inconsistent.
-        const pastorId = String(mentee?.id ?? mentee?._id ?? "");
-        if (!pastorId) return;
-        const pastorName = menteeNameById.get(pastorId) ?? "Pastor";
-        const pastorIdCandidates = uniqueNonEmpty([
-          mentee?.id,
-          mentee?._id,
-          pastorId,
-        ]);
-
-        
-        const roadmapIds: string[] = (mentee.assignedRoadmapIds ?? [])
-          .map((x: any) => String(x))
-          .filter(Boolean)
-          .slice(0, MAX_ROADMAPS_PER_MENTEE);
-
-        for (const rid of roadmapIds) {
-          try {
-            const roadmapName = roadmapNameById.get(rid) ?? "Roadmap";
-            const tasks = roadmapTasksById.get(rid) ?? [];
-            let submissions: TaskSubmission[] = [];
-
-            // Prefer roadmap-level listing. If backend doesn't support it (or errors),
-            
-            for (const candidateUserId of pastorIdCandidates) {
-              try {
-                const allSubs = await roadmapService.getAllSubmissionsForUser(
-                  rid,
-                  candidateUserId,
-                );
-                if (allSubs.length > 0) {
-                  submissions = allSubs;
-                  break;
-                }
-              } catch {
-                
-              }
-            }
-
-            if (submissions.length === 0) {
-              for (const candidateUserId of pastorIdCandidates) {
-                let taskSubmissionsEndpointMissing = false;
-                await mapWithConcurrency(tasks, LEGACY_EXTRAS_CONCURRENCY, async (task) => {
-                  if (taskSubmissionsEndpointMissing) return;
-                  try {
-                    const subs = await roadmapService.getTaskSubmissions(
-                      rid,
-                      task.id,
-                      candidateUserId,
-                    );
-                    submissions.push(...subs);
-                  } catch (error) {
-                    if (isNotFoundError(error)) {
-                      // Endpoint not supported for this roadmap/user.
-                      // Stop making further per-task submissions calls in this cycle.
-                      taskSubmissionsEndpointMissing = true;
-                    }
-                  }
-                });
-                if (submissions.length > 0) break;
-              }
-            }
-
-            if (submissions.length > 0) {
-              const latestByTask = new Map<string, TaskSubmission>();
-              for (const sub of submissions) {
-                const taskId = String(sub.nestedRoadMapItemId ?? "unknown");
-                const existing = latestByTask.get(taskId);
-                if (
-                  !existing ||
-                  sub.submissionNumber > existing.submissionNumber
-                ) {
-                  latestByTask.set(taskId, sub);
-                }
-              }
-
-              for (const [taskId, sub] of latestByTask) {
-                const taskMeta = tasks.find((t) => t.id === taskId);
-                const reviewStatus = mapSubmissionStatusToReview(sub.status);
-                const category = getReviewCategory(reviewStatus);
-                const itemId = `roadmap-${rid}-${taskId}-${pastorId}`;
-
-                items.push({
-                  id: itemId,
-                  type: "roadmap",
-                  pastorId,
-                  pastorName,
-                  title: taskMeta?.name ?? "Task",
-                  status: reviewStatus,
-                  category,
-                  submittedAt: sub.submittedAt ?? sub.createdAt,
-                  resubmissionCount: Math.max(0, sub.submissionNumber - 1),
-                  isSeen: seenIds.has(itemId),
-                  roadmapId: rid,
-                  roadmapName,
-                  nestedRoadMapItemId: taskId,
-                  taskName: taskMeta?.name,
-                });
-              }
-            } else {
-              // Submissions APIs returned none for this roadmap+pastor.
-              // Fallback to legacy extras so we still show "submitted/resubmitted".
-              const legacyUserIdCandidates = pastorIdCandidates.filter((u) =>
-                isMongoObjectIdLike(u),
-              );
-              const legacyUserIdForItems =
-                legacyUserIdCandidates[0] ?? pastorId;
-              const canUseLegacy = isMongoObjectIdLike(legacyUserIdForItems);
-
-              await mapWithConcurrency(tasks, LEGACY_EXTRAS_CONCURRENCY, async (task) => {
-                const itemId = `roadmap-${rid}-${task.id}-${legacyUserIdForItems}`;
-                const roadmapUserKey = `${rid}:${legacyUserIdForItems}`;
-
-                if (!canUseLegacy) {
-                  items.push({
-                    id: itemId,
-                    type: "roadmap",
-                    pastorId: legacyUserIdForItems,
-                    pastorName,
-                    title: task.name,
-                    status: "NOT_STARTED",
-                    category: "not_started",
-                    submittedAt: null,
-                    resubmissionCount: 0,
-                    isSeen: seenIds.has(itemId),
-                    roadmapId: rid,
-                    roadmapName,
-                    nestedRoadMapItemId: task.id,
-                    taskName: task.name,
-                  });
-                  return;
-                }
-
-                if (blockedExtrasByRoadmapUser.has(roadmapUserKey)) {
-                  items.push({
-                    id: itemId,
-                    type: "roadmap",
-                    pastorId: legacyUserIdForItems,
-                    pastorName,
-                    title: task.name,
-                    status: "NOT_STARTED",
-                    category: "not_started",
-                    submittedAt: null,
-                    resubmissionCount: 0,
-                    isSeen: seenIds.has(itemId),
-                    roadmapId: rid,
-                    roadmapName,
-                    nestedRoadMapItemId: task.id,
-                    taskName: task.name,
-                  });
-                  return;
-                }
-
-                try {
-                  const extrasResp = await getCachedExtras(
-                    rid,
-                    task.id,
-                    legacyUserIdForItems,
-                  );
-
-                  const synthetic = buildLatestLegacyRoadmapSubmission(extrasResp);
-                  if (!synthetic) {
-                    items.push({
-                      id: itemId,
-                      type: "roadmap",
-                      pastorId: legacyUserIdForItems,
-                      pastorName,
-                      title: task.name,
-                      status: "NOT_STARTED",
-                      category: "not_started",
-                      submittedAt: null,
-                      resubmissionCount: 0,
-                      isSeen: seenIds.has(itemId),
-                      roadmapId: rid,
-                      roadmapName,
-                      nestedRoadMapItemId: task.id,
-                      taskName: task.name,
-                    });
-                    return;
-                  }
-
-                  items.push({
-                    id: itemId,
-                    type: "roadmap",
-                    pastorId: legacyUserIdForItems,
-                    pastorName,
-                    title: task.name,
-                    status: synthetic.status,
-                    category: synthetic.category,
-                    submittedAt: synthetic.submittedAt,
-                    resubmissionCount: synthetic.resubmissionCount,
-                    isSeen: seenIds.has(itemId),
-                    roadmapId: rid,
-                    roadmapName,
-                    nestedRoadMapItemId: task.id,
-                    taskName: task.name,
-                  });
-                } catch (error) {
-                  // If the backend rate-limits this roadmap+user, skip further extras
-                  
-                  if (isTooManyRequestsError(error)) {
-                    blockedExtrasByRoadmapUser.add(roadmapUserKey);
-                  }
-                  items.push({
-                    id: itemId,
-                    type: "roadmap",
-                    pastorId: legacyUserIdForItems,
-                    pastorName,
-                    title: task.name,
-                    status: "NOT_STARTED",
-                    category: "not_started",
-                    submittedAt: null,
-                    resubmissionCount: 0,
-                    isSeen: seenIds.has(itemId),
-                    roadmapId: rid,
-                    roadmapName,
-                    nestedRoadMapItemId: task.id,
-                    taskName: task.name,
-                  });
-                }
-              });
-            }
-          } catch {
-            
-            continue;
-          }
-        }
-
-        
-        const assessmentIds: string[] = (mentee.assignedAssessmentIds ?? [])
-          .map((x: any) => String(x))
-          .filter(Boolean)
-          .slice(0, 5);
-
-        for (const aid of assessmentIds) {
-          const itemId = `assessment-${aid}-${pastorId}`;
-          try {
-            const res = await assessmentService.fetchAnswers(aid, pastorId);
-            if (!res?.success || !res?.data) {
-              items.push({
-                id: itemId,
-                type: "assessment",
-                pastorId,
-                pastorName,
-                title: assessmentNameById.get(aid) ?? "Assessment",
-                status: "NOT_STARTED",
-                category: "not_started",
-                submittedAt: null,
-                resubmissionCount: 0,
-                isSeen: seenIds.has(itemId),
-                assessmentId: aid,
-              });
-              continue;
-            }
-
-            const answers = res.data;
-            const hasSections =
-              Array.isArray(answers.sections) && answers.sections.length > 0;
-            const hasPreSurvey = !!answers.preSurveySubmittedAt;
-
-            if (!hasSections && !hasPreSurvey) {
-              items.push({
-                id: itemId,
-                type: "assessment",
-                pastorId,
-                pastorName,
-                title: assessmentNameById.get(aid) ?? "Assessment",
-                status: "NOT_STARTED",
-                category: "not_started",
-                submittedAt: null,
-                resubmissionCount: 0,
-                isSeen: seenIds.has(itemId),
-                assessmentId: aid,
-              });
-              continue;
-            }
-
-            const submittedAt =
-              answers.preSurveySubmittedAt ?? answers.createdAt;
-            const isReviewed =
-              answers.recommendationsSentByMentor === true;
-            const reviewStatus = isReviewed ? "REVIEWED" : "SUBMITTED";
-            const category = getReviewCategory(reviewStatus);
-
-            items.push({
-              id: itemId,
-              type: "assessment",
-              pastorId,
-              pastorName,
-              title: assessmentNameById.get(aid) ?? "Assessment",
-              status: reviewStatus,
-              category,
-              submittedAt,
-              resubmissionCount: 0,
-              isSeen: seenIds.has(itemId),
-              assessmentId: aid,
-            });
-          } catch {
-            items.push({
-              id: itemId,
-              type: "assessment",
-              pastorId,
-              pastorName,
-              title: assessmentNameById.get(aid) ?? "Assessment",
-              status: "NOT_STARTED",
-              category: "not_started",
-              submittedAt: null,
-              resubmissionCount: 0,
-              isSeen: seenIds.has(itemId),
-              assessmentId: aid,
-            });
-          }
-        }
-      });
-
-      return items;
+    staleTime: REVIEW_CENTER_STALE_MS,
+    gcTime: REVIEW_CENTER_GC_MS,
+    refetchOnWindowFocus: false,
+    retry: (failureCount, error) => {
+      if (isReviewCenterTooManyRequestsError(error)) return false;
+      return failureCount < 2;
     },
+    queryFn: () =>
+      fetchMentorReviewCenterItems({
+        mentees: mentees as any[],
+        menteeNameById,
+        roadmapNameById,
+        roadmapTasksById,
+        assessmentNameById,
+      }),
   });
+
+  useEffect(() => {
+    if (!mentorId || !reviewData) return;
+    syncReviewCenterPendingCount(queryClient, mentorId, reviewData);
+  }, [mentorId, reviewData, queryClient]);
 
   const allItems = reviewData ?? [];
 
@@ -628,6 +230,7 @@ export function useReviewCenterV2() {
       return avatar ? { ...group, ...avatar } : group;
     });
   }, [allItems, menteeAvatarById]);
+
   const badgeCounts = useMemo((): ReviewBadgeCounts => {
     const counts: ReviewBadgeCounts = { roadmaps: 0, assessments: 0 };
     for (const item of allItems) {
@@ -647,13 +250,14 @@ export function useReviewCenterV2() {
       if (seenIds.has(itemId)) return;
       seenIds.add(itemId);
       await persistSeenIds(seenIds);
-      queryClient.invalidateQueries({ queryKey: ["mentor-review-center"] });
+      queryClient.invalidateQueries({ queryKey: mentorReviewCenterKeys.all });
     },
     [queryClient],
   );
 
   const isLoading =
-    isLoadingMentees || isLoadingRoadmaps || isLoadingAssessments || isLoadingReview;
+    scanEnabled &&
+    (isLoadingMentees || isLoadingRoadmaps || isLoadingAssessments || isLoadingReview);
 
   return {
     items: filteredItems,
@@ -670,4 +274,3 @@ export function useReviewCenterV2() {
     isLoading,
   };
 }
-
