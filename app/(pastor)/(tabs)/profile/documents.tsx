@@ -6,13 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import {
     ActivityIndicator,
     Alert,
     FlatList,
     Image,
-    Pressable,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -30,8 +29,6 @@ export default function PastorDocumentsScreen() {
     const { data: documents = [], isLoading, refetch } = useDocuments();
     const uploadDocument = useUploadDocument();
     const deleteDocument = useDeleteDocument();
-
-    const [activeTab, setActiveTab] = useState<'myDocuments' | 'mentors'>('myDocuments');
 
     const pickDocument = async () => {
         try {
@@ -171,81 +168,37 @@ export default function PastorDocumentsScreen() {
                 </TouchableOpacity>
             </View>
 
-            {}
-            <View style={styles.tabContainer}>
-                <Pressable
-                    style={[
-                        styles.tab,
-                        activeTab === 'myDocuments' && styles.activeTab,
-                    ]}
-                    onPress={() => setActiveTab('myDocuments')}
-                >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            activeTab === 'myDocuments' && styles.activeTabText,
-                        ]}
-                    >
-                        My Documents
-                    </Text>
-                </Pressable>
-                <Pressable
-                    style={[
-                        styles.tab,
-                        activeTab === 'mentors' && styles.activeTab,
-                    ]}
-                    onPress={() => setActiveTab('mentors')}
-                >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            activeTab === 'mentors' && styles.activeTabText,
-                        ]}
-                    >
-                        Mentors
-                    </Text>
-                </Pressable>
-            </View>
-
-            {}
-            {activeTab === 'myDocuments' ? (
-                isLoading ? (
-                    <View style={styles.emptyContainer}>
-                        <ActivityIndicator size="large" color="#fff" />
-                        <Text style={styles.emptyText}>Loading documents...</Text>
-                    </View>
-                ) : (
-                    <FlatList
-                        data={documents}
-                        renderItem={renderDocument}
-                        keyExtractor={(item) => item.id || item.fileUrl}
-                        contentContainerStyle={[
-                            styles.listContent,
-                            { paddingBottom: bottom + 20 },
-                        ]}
-                        showsVerticalScrollIndicator={false}
-                        refreshing={isLoading}
-                        onRefresh={refetch}
-                        ListEmptyComponent={
-                            <View style={styles.emptyContainer}>
-                                <Ionicons name="document-outline" size={64} color="rgba(255,255,255,0.3)" />
-                                <Text style={styles.emptyText}>No documents uploaded yet</Text>
-                                <TouchableOpacity
-                                    style={styles.emptyButton}
-                                    onPress={pickDocument}
-                                    disabled={uploadDocument.isPending}
-                                >
-                                    <Text style={styles.emptyButtonText}>Upload Document</Text>
-                                </TouchableOpacity>
-                            </View>
-                        }
-                    />
-                )
-            ) : (
+            {isLoading ? (
                 <View style={styles.emptyContainer}>
-                    <Ionicons name="people-outline" size={64} color="rgba(255,255,255,0.3)" />
-                    <Text style={styles.emptyText}>No mentors documents</Text>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={styles.emptyText}>Loading documents...</Text>
                 </View>
+            ) : (
+                <FlatList
+                    data={documents}
+                    renderItem={renderDocument}
+                    keyExtractor={(item) => item.id || item.fileUrl}
+                    contentContainerStyle={[
+                        styles.listContent,
+                        { paddingBottom: bottom + 20 },
+                    ]}
+                    showsVerticalScrollIndicator={false}
+                    refreshing={isLoading}
+                    onRefresh={refetch}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="document-outline" size={64} color="rgba(255,255,255,0.3)" />
+                            <Text style={styles.emptyText}>No documents uploaded yet</Text>
+                            <TouchableOpacity
+                                style={styles.emptyButton}
+                                onPress={pickDocument}
+                                disabled={uploadDocument.isPending}
+                            >
+                                <Text style={styles.emptyButtonText}>Upload Document</Text>
+                            </TouchableOpacity>
+                        </View>
+                    }
+                />
             )}
         </LinearGradient>
     );
@@ -292,33 +245,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        marginHorizontal: 16,
-        marginBottom: 20,
-        backgroundColor: 'transparent',
-        borderRadius: 25,
-        padding: 4,
-        borderWidth: 2,
-        borderColor: 'rgba(255,255,255,0.6)',
-    },
-    tab: {
-        flex: 1,
-        paddingVertical: 12,
-        alignItems: 'center',
-        borderRadius: 20,
-    },
-    activeTab: {
-        backgroundColor: '#fff',
-    },
-    tabText: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: '#fff',
-    },
-    activeTabText: {
-        color: '#1E3A5F',
     },
     listContent: {
         paddingHorizontal: 16,
