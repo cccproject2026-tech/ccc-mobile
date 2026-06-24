@@ -21,7 +21,7 @@ export default function NotificationScreen() {
   const { mutateAsync: markNotificationAsRead } = useMarkNotificationAsRead();
 
   const handleNotificationPress = useCallback(async (notification: Notification) => {
-    await markNotificationAsRead(notification);
+    try { await markNotificationAsRead(notification); } catch (_) {}
     router.push(getNotificationRoute(notification.module) as any);
   }, [markNotificationAsRead]);
 

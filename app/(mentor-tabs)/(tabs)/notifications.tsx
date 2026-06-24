@@ -3,6 +3,7 @@ import { PastorNavigationHeader } from "@/components/pastor/Header"
 import { Stack } from "expo-router"
 import React from "react"
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -76,17 +77,16 @@ export default function NotificationScreen({
                 </CommonCard>
               ) : (
                 dummyNotifications.map((e, i) => (
-                  <View key={i} style={styles.itemWrap}>
+                  <Pressable
+                    key={i}
+                    style={({ pressed }) => [styles.itemWrap, pressed && { opacity: 0.85 }]}
+                    onPress={() => console.log("notification pressed", e.title)}
+                  >
                     <NotificationMentorCard
                       data={e}
-                      // @ts-ignore - legacy prop used elsewhere
-                      type="mentor"
-                      iconsStyles={{
-                        padding: 0,
-                        alignItems: "flex-start",
-                      }}
+                      iconsStyles={{ padding: 0, alignItems: "flex-start" }}
                     />
-                  </View>
+                  </Pressable>
                 ))
               )}
             </ScrollView>
