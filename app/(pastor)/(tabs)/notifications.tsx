@@ -37,6 +37,7 @@ export default function NotificationScreen() {
             title="Notifications"
             subtitle="Updates, reminders, and activity across your journey."
             showBackButton
+            alwaysShowBack
           />
 
           {isLoading ? (

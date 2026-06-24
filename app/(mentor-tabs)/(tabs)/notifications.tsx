@@ -62,7 +62,7 @@ export default function NotificationScreen({
             }}
           >
             {}
-            <SectionHeader title="Notifications" subtitle="Updates and reminders." showBackButton style={{ width: "100%" }} />
+            <SectionHeader title="Notifications" subtitle="Updates and reminders." showBackButton alwaysShowBack style={{ width: "100%" }} />
             <ScrollView
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
