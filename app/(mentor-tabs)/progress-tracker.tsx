@@ -6,6 +6,7 @@ import { TabSwitcher } from "@/components/director/TabSwitcher";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { useMentees } from "@/hooks/mentees/useMentees";
+import { useMentorProgramCompletion } from "@/hooks/mentor/useMentorProgramCompletion";
 import { useAuthStore } from "@/stores";
 import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +26,7 @@ export default function ProgressTracker() {
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const { user } = useAuthStore();
+  const { requestMarkComplete } = useMentorProgramCompletion();
   const { data, isLoading, isError } = useMentees(100, user?.id);
 
   const allMentees = useMemo(() => {
@@ -121,6 +123,25 @@ export default function ProgressTracker() {
     Linking.openURL(`https://wa.me/${mentee.phoneNumber}`);
   };
 
+  const handleMarkComplete = (mentee: Mentee) => {
+    if (!mentee.id) return;
+    requestMarkComplete({
+      userId: mentee.id,
+      overallProgress: mentee.progress ?? 0,
+      hasFinalComment: (mentee.finalCommentCount ?? 0) > 0,
+      hasCompleted: mentee.hasCompleted,
+      menteeName: mentee.firstName,
+    });
+  };
+
+  const handleAddFinalComments = (mentee: Mentee) => {
+    if (!mentee.id) return;
+    router.push({
+      pathname: "/(mentor-tabs)/mentee-progress",
+      params: { menteeId: mentee.id, openComments: "1" },
+    });
+  };
+
   return (
     <AppGradientBackground style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -184,6 +205,7 @@ export default function ProgressTracker() {
                   <MenteeCard
                     key={mentee.id}
                     data={mentee}
+                    workflow="mentor"
                     layout={viewMode}
                     onPress={() => {
                       router.push({ pathname: "/(mentor-tabs)/mentee-progress", params: { menteeId: mapMenteeToProfileId(mentee) } });
@@ -196,7 +218,10 @@ export default function ProgressTracker() {
                       handleMenuPress(mentee);
                     }}
                     onMarkComplete={() => {
-                      handleMenuPress(mentee);
+                      handleMarkComplete(mentee);
+                    }}
+                    onAddFinalComments={() => {
+                      handleAddFinalComments(mentee);
                     }}
                   />
                 ))}

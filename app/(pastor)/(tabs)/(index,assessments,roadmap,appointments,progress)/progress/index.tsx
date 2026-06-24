@@ -9,6 +9,7 @@ import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useProgress } from '@/hooks/progress/useProgress';
+import { useProfile } from '@/hooks/profile/useProfile';
 import { useRoadmaps } from '@/hooks/roadmaps/useRoadmaps';
 import { getRoadmapCard } from '@/lib/roadmap/mappers';
 import { Ionicons } from "@expo/vector-icons";
@@ -57,6 +58,7 @@ export default function ProgressScreen() {
   const pagePadding = windowWidth >= 430 ? 24 : 16;
 
   // Fetch all backend data
+  const { data: profileData } = useProfile();
   const { data: progressData, isLoading: isProgressLoading, error: progressError } = useProgress();
   const { data: roadmaps, isLoading: isRoadmapsLoading, refetch: refetchRoadmaps, isRefetching: isRoadmapsRefetching } = useRoadmaps('pastor');
   const { data: assessments } = useAssignedAssessments();
@@ -67,6 +69,8 @@ export default function ProgressScreen() {
     const remainingPercentage = round1(100 - completedPercentage);
     return { completedPercentage, remainingPercentage };
   }, [progressData]);
+
+  const programmeCompleted = profileData?.user?.hasCompleted === true;
 
   console.log('=======================')
   console.log("OverallProgress:", overallProgress);
@@ -247,8 +251,17 @@ export default function ProgressScreen() {
             </View>
           </View>
           <Text style={styles.heroSubtitle}>
-            Track your roadmap phases and assessments in one place.
+            {programmeCompleted
+              ? "You have completed the revitalization programme. Your director will follow up on certificate and next steps."
+              : "Track your roadmap phases and assessments in one place."}
           </Text>
+
+          {programmeCompleted ? (
+            <View style={styles.programmeCompletedBadge}>
+              <Ionicons name="checkmark-circle" size={18} color={accent.mint} />
+              <Text style={styles.programmeCompletedText}>Programme Completed</Text>
+            </View>
+          ) : null}
 
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
@@ -434,6 +447,24 @@ const styles = StyleSheet.create({
   heroLeftRow: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, minWidth: 0 },
   heroTitle: { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: -0.2 },
   heroSubtitle: { color: "rgba(255,255,255,0.72)", marginTop: 4, fontSize: 13, lineHeight: 18 },
+  programmeCompletedBadge: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: accent.mintSoft,
+    backgroundColor: "rgba(111, 212, 190, 0.12)",
+  },
+  programmeCompletedText: {
+    color: accent.mint,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 0 },
   dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.12)" },
   searchContainer: { marginHorizontal: 16, marginTop: 10 },

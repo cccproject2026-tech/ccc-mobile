@@ -1,6 +1,7 @@
 import { progressService } from "@/services/progress.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { AddFinalCommentRequest, DeleteFinalCommentRequest, ProgressData, UpdateFinalCommentRequest } from "@/types/progress.types";
+import { deriveOverallProgressPercent } from "@/lib/progress/deriveOverallProgressPercent";
 import { getHttpStatus } from "@/utils/apiConcurrency";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -60,7 +61,7 @@ export const useProgress = (userId?: string) => {
             const data = response.data;
 
             const progressData: ProgressData = {
-                overallProgress: data.overallProgress ?? data.overallRoadmapProgress ?? 0,
+                overallProgress: deriveOverallProgressPercent(data),
                 roadmaps: {
                     total: data.totalRoadmaps ?? 0,
                     completed: data.completedRoadmaps ?? 0,
@@ -236,7 +237,7 @@ export const useProgressByUserId = (userId: string | undefined) => {
             const data = response.data;
 
             const progressData: ProgressData = {
-                overallProgress: data.overallRoadmapProgress ?? 0,
+                overallProgress: deriveOverallProgressPercent(data),
                 roadmaps: {
                     total: data.totalRoadmaps ?? 0,
                     completed: data.completedRoadmaps ?? 0,

@@ -2,21 +2,30 @@ import { ProgressAssessmentCard } from "@/components/director/ProgressAssessment
 import { ChartData, ProgressBarChart } from "@/components/director/ProgressBarChart";
 import { ProgressPieChart } from "@/components/director/ProgressPieChart";
 import { RoadmapCard } from "@/components/director/ProgressRoadmapCard";
+import CommentBottomSheet from "@/components/director/CommentBottomSheet";
 import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useMentees } from "@/hooks/mentees/useMentees";
-import { useProgress } from "@/hooks/progress/useProgress";
+import { useMentorProgramCompletion } from "@/hooks/mentor/useMentorProgramCompletion";
+import {
+  useAddFinalComment,
+  useDeleteFinalComment,
+  useProgress,
+  useUpdateFinalComment,
+} from "@/hooks/progress/useProgress";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import { canMentorMarkProgramComplete, mentorHasFinalComments } from "@/lib/progress/deriveOverallProgressPercent";
 import { comparePastorPhasesForHome, getSingleNestedTaskId } from "@/lib/roadmap/helpers";
 import { getRoadmapCard } from "@/lib/roadmap/mappers";
 import { useAuthStore } from "@/stores";
 import { RoadmapTabStrip } from "@/components/ui/design-system";
 import AppGradientBackground from "@/components/layout/AppGradientBackground";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RefreshControl, ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -45,12 +54,19 @@ function getAssessmentActivityEpochMs(a: any): number {
 }
 
 export default function MenteeProgressScreen() {
-  const { menteeId } = useLocalSearchParams<{ menteeId?: string }>();
+  const { menteeId, openComments } = useLocalSearchParams<{ menteeId?: string; openComments?: string }>();
   const { user } = useAuthStore();
   const { bottom } = useSafeAreaInsets();
+  const commentsSheetRef = useRef<BottomSheetModal>(null);
 
   const [roadmapTabs, setRoadmapTabs] = useState<TabKey>("All");
   const [assessmentTabs, setAssessmentTabs] = useState<TabKey>("All");
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+
+  const addFinalCommentMutation = useAddFinalComment();
+  const updateFinalCommentMutation = useUpdateFinalComment();
+  const deleteFinalCommentMutation = useDeleteFinalComment();
+  const { requestMarkComplete, markCompleteMutation } = useMentorProgramCompletion();
 
   const {
     data: menteesData,
@@ -91,6 +107,37 @@ export default function MenteeProgressScreen() {
     const remainingPercentage = round1(Math.max(0, 100 - completedPercentage));
     return { completedPercentage, remainingPercentage };
   }, [progressData]);
+
+  const finalComments = progressData?.finalComments ?? [];
+  const hasFinalComment = mentorHasFinalComments(finalComments.length, finalComments);
+  const isProgramProgressComplete = overallProgress.completedPercentage >= 100;
+  const canMarkComplete = canMentorMarkProgramComplete({
+    overallProgress: overallProgress.completedPercentage,
+    hasFinalComment,
+    hasCompleted: mentee?.hasCompleted,
+  });
+
+  const formattedComments = useMemo(
+    () =>
+      finalComments.map((comment) => ({
+        id: comment._id,
+        text: comment.comment,
+        author: comment.commentorName || "Mentor",
+        role: "Mentor",
+        timestamp: new Date(comment.createdAt),
+      })),
+    [finalComments],
+  );
+
+  const openCommentsSheet = useCallback(() => {
+    setTimeout(() => commentsSheetRef.current?.present(), 0);
+  }, []);
+
+  useEffect(() => {
+    if (openComments === "1" && mentee && progressData) {
+      openCommentsSheet();
+    }
+  }, [openComments, mentee, progressData, openCommentsSheet]);
 
   const availableTabs = [
     { key: "All", label: "All" },
@@ -156,6 +203,104 @@ export default function MenteeProgressScreen() {
       refetchAssessments(),
     ]);
   }, [refetchAssessments, refetchProgress, refetchRoadmaps]);
+
+  const handleSubmitComment = useCallback(
+    (text: string) => {
+      if (!user?.id || !menteeId || !text.trim()) return;
+
+      if (editingCommentId) {
+        updateFinalCommentMutation.mutate(
+          {
+            userId: menteeId,
+            commentId: editingCommentId,
+            comment: text.trim(),
+          },
+          {
+            onSuccess: () => {
+              setEditingCommentId(null);
+              commentsSheetRef.current?.dismiss();
+            },
+            onError: () => {
+              Alert.alert("Error", "Failed to update final comment.");
+            },
+          },
+        );
+        return;
+      }
+
+      addFinalCommentMutation.mutate(
+        {
+          userId: menteeId,
+          commentorId: user.id,
+          comment: text.trim(),
+        },
+        {
+          onSuccess: () => {
+            commentsSheetRef.current?.dismiss();
+          },
+          onError: () => {
+            Alert.alert("Error", "Failed to submit final comment.");
+          },
+        },
+      );
+    },
+    [
+      addFinalCommentMutation,
+      editingCommentId,
+      menteeId,
+      updateFinalCommentMutation,
+      user?.id,
+    ],
+  );
+
+  const handleDeleteComment = useCallback(
+    (commentId: string) => {
+      if (!menteeId) return;
+
+      Alert.alert("Delete comment", "Remove this final comment?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteFinalCommentMutation.mutate(
+              { userId: menteeId, commentId },
+              {
+                onError: () => {
+                  Alert.alert("Error", "Failed to delete final comment.");
+                },
+              },
+            );
+          },
+        },
+      ]);
+    },
+    [deleteFinalCommentMutation, menteeId],
+  );
+
+  const handleEditComment = useCallback((commentId: string) => {
+    setEditingCommentId(commentId);
+    openCommentsSheet();
+  }, [openCommentsSheet]);
+
+  const handleMarkProgramComplete = useCallback(() => {
+    if (!menteeId) return;
+
+    requestMarkComplete({
+      userId: menteeId,
+      overallProgress: overallProgress.completedPercentage,
+      hasFinalComment,
+      hasCompleted: mentee?.hasCompleted,
+      menteeName: mentee?.firstName,
+    });
+  }, [
+    hasFinalComment,
+    mentee?.firstName,
+    mentee?.hasCompleted,
+    menteeId,
+    overallProgress.completedPercentage,
+    requestMarkComplete,
+  ]);
 
   const handleAssessmentCdpPress = useCallback((assessment: any) => {
     const assessmentId = assessment?.id || assessment?.assessmentId || assessment?._id;
@@ -287,6 +432,11 @@ export default function MenteeProgressScreen() {
               </View>
             </TouchableOpacity>
 
+            <TouchableOpacity style={styles.commentsHeaderButton} onPress={openCommentsSheet}>
+              <Text style={styles.commentsHeaderButtonText}>
+                {hasFinalComment ? "View Final Comments" : "Add Final Comments"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -392,8 +542,57 @@ export default function MenteeProgressScreen() {
             </View>
           </View>
 
+          <View style={styles.completionSection}>
+            {mentee.hasCompleted ? (
+              <View style={styles.completedBanner}>
+                <Text style={styles.completedBannerTitle}>Programme Completed</Text>
+                <Text style={styles.completedBannerText}>
+                  This pastor has been marked as completed. Certificate and field mentor steps are handled by the director.
+                </Text>
+              </View>
+            ) : isProgramProgressComplete ? (
+              <>
+                <Text style={styles.completionSectionTitle}>Programme completion</Text>
+                {!hasFinalComment ? (
+                  <Text style={styles.completionHint}>
+                    Please add final comments before marking the programme as completed.
+                  </Text>
+                ) : null}
+                <TouchableOpacity
+                  style={[
+                    styles.markCompleteButton,
+                    (!canMarkComplete || markCompleteMutation.isPending) && styles.markCompleteButtonDisabled,
+                  ]}
+                  disabled={!canMarkComplete || markCompleteMutation.isPending}
+                  onPress={handleMarkProgramComplete}
+                >
+                  <Text style={styles.markCompleteButtonText}>
+                    {markCompleteMutation.isPending ? "Marking..." : "Mark programme as completed"}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
+          </View>
+
         </ScrollView>
       </View>
+
+      <CommentBottomSheet
+        ref={commentsSheetRef}
+        title={menteeName}
+        subtitle="Final Comments"
+        comments={formattedComments}
+        editingCommentId={editingCommentId}
+        onClose={() => {
+          setEditingCommentId(null);
+          commentsSheetRef.current?.dismiss();
+        }}
+        onSubmit={handleSubmitComment}
+        onDelete={handleDeleteComment}
+        onEdit={handleEditComment}
+        maxCommentsReached={finalComments.length >= 2}
+        submitButtonText={editingCommentId ? "Update" : "Submit"}
+      />
     </AppGradientBackground>
   );
 }
@@ -423,6 +622,69 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.72)",
     fontSize: 13,
     marginTop: 2,
+  },
+  commentsHeaderButton: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxWidth: "42%",
+  },
+  commentsHeaderButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  completionSection: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  completionSectionTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  completionHint: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  markCompleteButton: {
+    backgroundColor: "#8ec5eb",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  markCompleteButtonDisabled: {
+    opacity: 0.45,
+  },
+  markCompleteButtonText: {
+    color: "#062946",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  completedBanner: {
+    gap: 8,
+  },
+  completedBannerTitle: {
+    color: "#6FD4BE",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  completedBannerText: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 13,
+    lineHeight: 18,
   },
   section: { marginHorizontal: 16, marginBottom: 20 },
   sectionTitle: {

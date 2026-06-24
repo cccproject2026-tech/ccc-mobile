@@ -9,6 +9,7 @@ export interface Mentee extends User {
 
     // Derived UI fields (from progress API)
     progress?: number;
+    finalCommentCount?: number;
     phase?: string;
     phaseNumber?: number;
 

@@ -3,6 +3,7 @@ import { ENDPOINTS } from '@/services/api/endpoints';
 import { menteesService } from '@/services/mentees.service';
 import { Mentee } from '@/types/mentee.types';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { deriveOverallProgressPercent } from '@/lib/progress/deriveOverallProgressPercent';
 import { mapWithConcurrency, withRetry } from '@/utils/apiConcurrency';
 
 export type UseMenteesOptions = {
@@ -180,6 +181,11 @@ export const useMentees = (
                           ? m.completedOn ?? m.updatedAt
                           : undefined;
 
+                const finalCommentsRaw = progress?.finalComments;
+                const finalCommentCount = Array.isArray(finalCommentsRaw)
+                    ? finalCommentsRaw.length
+                    : m.finalCommentCount;
+
                 return {
                     ...m,
                     ...profile,
@@ -190,8 +196,9 @@ export const useMentees = (
                     phoneNumber: profile?.phoneNumber ?? interest?.phoneNumber ?? m.phoneNumber,
                     description,
                     progress: includeProgress
-                        ? (progress?.overallRoadmapProgress ?? 0)
+                        ? deriveOverallProgressPercent(progress ?? undefined)
                         : m.progress,
+                    finalCommentCount,
                     phase: includeProgress ? phaseSource?.phase : m.phase,
                     phaseNumber: includeProgress ? phaseSource?.phaseNumber : m.phaseNumber,
                     completedOn,

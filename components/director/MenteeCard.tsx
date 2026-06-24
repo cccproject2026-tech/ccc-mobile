@@ -11,11 +11,14 @@ Dimensions.get('window');
 
 /** `roadmap`: mentor “Pastor roadmaps” list — frosted card, email-first subtext, consistent % */
 export type MenteeCardVariant = 'default' | 'roadmap';
+export type MenteeCardWorkflow = 'mentor' | 'director';
 
 interface MenteeCardProps {
     data: Mentee;
     /** Use on revitalization mentor landing for consistent layout with roadmap cards */
     variant?: MenteeCardVariant;
+    /** Mentor: review + final comments + mark complete only. Director: full cert/FM workflow. */
+    workflow?: MenteeCardWorkflow;
     layout?: 'card' | 'list' | 'full';
     isSelected?: boolean;
     disabled?: boolean;
@@ -27,6 +30,7 @@ interface MenteeCardProps {
     onWhatsApp?: () => void;
     onMenuPress?: () => void;
     onMarkComplete?: () => void;
+    onAddFinalComments?: () => void;
     onIssueCertificate?: () => void;
     onInviteAsFieldMentor?: () => void;
 }
@@ -44,6 +48,7 @@ function formatMenteeProgressPercent(p: number | undefined): string {
 export default function MenteeCard({
     data,
     variant = 'default',
+    workflow = 'director',
     layout = 'full',
     isSelected = false,
     disabled = false,
@@ -55,9 +60,14 @@ export default function MenteeCard({
     onWhatsApp,
     onMenuPress,
     onMarkComplete,
+    onAddFinalComments,
     onIssueCertificate,
     onInviteAsFieldMentor,
 }: MenteeCardProps) {
+    const isMentorWorkflow = workflow === 'mentor';
+    const hasFinalComment = (data.finalCommentCount ?? 0) > 0;
+    const progressPct = Math.max(0, Math.min(100, data.progress ?? 0));
+    const isProgramProgressComplete = progressPct >= 100;
     const isSelectionMode = onToggleSelect !== undefined;
     const displayName = data.username || data.firstName + (data.lastName ? ` ${data.lastName}` : '');
     const emailRaw = typeof (data as any).email === 'string' ? (data as any).email.trim() : '';
@@ -93,19 +103,19 @@ export default function MenteeCard({
                     </Text>
                 </View>
 
-                {(data.hasCompleted || data.hasIssuedCertificate || data.isFieldMentor) && (
+                {(data.hasCompleted || (!isMentorWorkflow && (data.hasIssuedCertificate || data.isFieldMentor))) && (
                     <View style={styles.listBadges}>
                         {data.hasCompleted && (
                             <View style={styles.listBadgeIcon}>
                                 <Image source={icons.fieldMentorIcon} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                             </View>
                         )}
-                        {data.hasIssuedCertificate && (
+                        {!isMentorWorkflow && data.hasIssuedCertificate && (
                             <View style={styles.listBadgeIcon}>
                                 <Image source={icons.certificateBadge} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                             </View>
                         )}
-                        {!data.hasCompleted && data.isFieldMentor && (
+                        {!isMentorWorkflow && !data.hasCompleted && data.isFieldMentor && (
                             <View style={styles.listBadgeIcon}>
                                 <Image source={icons.fieldMentorIcon} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                             </View>
@@ -265,19 +275,19 @@ export default function MenteeCard({
             )}
 
             {}
-            {(data.hasCompleted || data.hasIssuedCertificate || data.isFieldMentor) && (
+            {(data.hasCompleted || (!isMentorWorkflow && (data.hasIssuedCertificate || data.isFieldMentor))) && (
                 <View style={styles.topBadges}>
                     {data.hasCompleted && (
                         <View style={styles.badgeIcon}>
                             <Image source={icons.fieldMentorIcon} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                         </View>
                     )}
-                    {data.hasIssuedCertificate && (
+                    {!isMentorWorkflow && data.hasIssuedCertificate && (
                         <View style={styles.badgeIcon}>
                             <Image source={icons.certificateBadge} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                         </View>
                     )}
-                    {!data.hasCompleted && data.isFieldMentor && (
+                    {!isMentorWorkflow && !data.hasCompleted && data.isFieldMentor && (
                         <View style={styles.badgeIcon}>
                             <Image source={icons.fieldMentorIcon} style={{ width: getIconSize(18), height: getIconSize(18) }} resizeMode="contain" />
                         </View>
@@ -390,13 +400,12 @@ export default function MenteeCard({
 
             {}
             {(() => {
-                if (!data.hasCompleted && data.progress !== undefined && data.progress < 100) {
-                    const pct = Math.max(0, Math.min(100, data.progress));
+                if (!data.hasCompleted && !isProgramProgressComplete) {
                     return (
                         <View style={[styles.progressSection, isRoadmapVariant && styles.progressSectionRoadmap]}>
                             <Text style={[styles.progressLabel, isRoadmapVariant && styles.progressLabelRoadmap]}>Progress</Text>
                             <View style={[styles.progressBar, isRoadmapVariant && styles.progressBarRoadmap]}>
-                                <View style={[styles.progressFill, isRoadmapVariant && styles.progressFillRoadmap, { width: `${pct}%` }]} />
+                                <View style={[styles.progressFill, isRoadmapVariant && styles.progressFillRoadmap, { width: `${progressPct}%` }]} />
                             </View>
                             <Text style={[styles.progressPercent, isRoadmapVariant && styles.progressPercentRoadmap]}>
                                 {formatMenteeProgressPercent(data.progress)}
@@ -405,7 +414,47 @@ export default function MenteeCard({
                     );
                 }
 
-                if (!data.hasCompleted && data.progress === 100 && onMarkComplete) {
+                if (isMentorWorkflow && !data.hasCompleted && isProgramProgressComplete) {
+                    return (
+                        <>
+                            <View style={[styles.progressSection, isRoadmapVariant && styles.progressSectionRoadmap]}>
+                                <Text style={[styles.progressLabel, isRoadmapVariant && styles.progressLabelRoadmap]}>Progress</Text>
+                                <View style={[styles.progressBar, isRoadmapVariant && styles.progressBarRoadmap]}>
+                                    <View style={[styles.progressFill, isRoadmapVariant && styles.progressFillRoadmap, { width: '100%' }]} />
+                                </View>
+                                <Text style={[styles.progressPercent, isRoadmapVariant && styles.progressPercentRoadmap]}>
+                                    {formatMenteeProgressPercent(100)}
+                                </Text>
+                            </View>
+
+                            {!hasFinalComment && onAddFinalComments ? (
+                                <LinearGradient colors={['#7C3AED', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientBorder}>
+                                    <TouchableOpacity style={styles.completeButton} onPress={(e) => { e.stopPropagation(); onAddFinalComments(); }}>
+                                        <Text style={styles.completeButtonText}>Add Final Comments</Text>
+                                        <Ionicons name="chevron-forward" size={getIconSize(18)} color="#FFC107" />
+                                    </TouchableOpacity>
+                                </LinearGradient>
+                            ) : null}
+
+                            {hasFinalComment && onMarkComplete ? (
+                                <LinearGradient colors={['#7C3AED', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientBorder}>
+                                    <TouchableOpacity style={styles.completeButton} onPress={(e) => { e.stopPropagation(); onMarkComplete(); }}>
+                                        <Text style={styles.completeButtonText}>Mark as Complete</Text>
+                                        <Ionicons name="chevron-forward" size={getIconSize(18)} color="#FFC107" />
+                                    </TouchableOpacity>
+                                </LinearGradient>
+                            ) : null}
+
+                            {!hasFinalComment && !onAddFinalComments ? (
+                                <Text style={styles.mentorHintText}>
+                                    Add final comments from the progress detail screen before marking complete.
+                                </Text>
+                            ) : null}
+                        </>
+                    );
+                }
+
+                if (!isMentorWorkflow && !data.hasCompleted && isProgramProgressComplete && onMarkComplete) {
                     return (
                         <>
                             <View style={[styles.progressSection, isRoadmapVariant && styles.progressSectionRoadmap]}>
@@ -428,7 +477,7 @@ export default function MenteeCard({
                     );
                 }
 
-                if (data.hasCompleted && !data.hasIssuedCertificate && onIssueCertificate) {
+                if (!isMentorWorkflow && data.hasCompleted && !data.hasIssuedCertificate && onIssueCertificate) {
                     return (
                         <LinearGradient colors={['#7C3AED', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientBorder}>
                             <TouchableOpacity style={styles.actionButton} onPress={(e) => { e.stopPropagation(); onIssueCertificate(); }}>
@@ -438,13 +487,22 @@ export default function MenteeCard({
                     );
                 }
 
-                if (data.hasCompleted && data.hasIssuedCertificate && !data.isFieldMentor && onInviteAsFieldMentor) {
+                if (!isMentorWorkflow && data.hasCompleted && data.hasIssuedCertificate && !data.isFieldMentor && onInviteAsFieldMentor) {
                     return (
                         <LinearGradient colors={['#7C3AED', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientBorder}>
                             <TouchableOpacity style={styles.actionButton} onPress={(e) => { e.stopPropagation(); onInviteAsFieldMentor(); }}>
                                 <Text style={styles.actionButtonText}>Invite as Field Mentor</Text>
                             </TouchableOpacity>
                         </LinearGradient>
+                    );
+                }
+
+                if (data.hasCompleted) {
+                    return (
+                        <View style={styles.programCompletedBadge}>
+                            <Ionicons name="checkmark-circle" size={getIconSize(18)} color="#6FD4BE" />
+                            <Text style={styles.programCompletedText}>Programme Completed</Text>
+                        </View>
                     );
                 }
 
@@ -773,6 +831,26 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(14),
         fontWeight: '600',
         color: '#FFC107',
+    },
+    mentorHintText: {
+        marginTop: getSpacing(8),
+        fontSize: getFontSize(12),
+        color: 'rgba(255,255,255,0.75)',
+        textAlign: 'center',
+        lineHeight: getFontSize(17),
+    },
+    programCompletedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: getSpacing(8),
+        marginTop: getSpacing(4),
+        paddingVertical: getSpacing(10),
+    },
+    programCompletedText: {
+        fontSize: getFontSize(14),
+        fontWeight: '600',
+        color: '#6FD4BE',
     },
     actionButton: {
         backgroundColor: '#1A4882',

@@ -595,6 +595,17 @@ export default function PastorDashboard() {
           </HeaderHero>
 
           <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.scrollBodyStack}>
+          {data?.user?.hasCompleted ? (
+            <Animated.View entering={FadeInDown.delay(120).springify()} style={styles.programmeCompletedCard}>
+              <Ionicons name="checkmark-circle" size={20} color="#6FD4BE" />
+              <View style={styles.programmeCompletedCopy}>
+                <Text style={styles.programmeCompletedTitle}>Programme Completed</Text>
+                <Text style={styles.programmeCompletedSubtitle}>
+                  You have finished the revitalization programme. Your director will contact you about next steps.
+                </Text>
+              </View>
+            </Animated.View>
+          ) : null}
           {!showProgressInWelcome && (
             <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.infoCard}>
               <View style={styles.infoCardRow}>
@@ -881,6 +892,32 @@ const styles = StyleSheet.create({
   },
 
   // ── Info card (getting started) ───────────────────────────────────────────
+  programmeCompletedCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 14,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(111, 212, 190, 0.35)",
+    backgroundColor: "rgba(111, 212, 190, 0.12)",
+  },
+  programmeCompletedCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  programmeCompletedTitle: {
+    color: "#6FD4BE",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  programmeCompletedSubtitle: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 13,
+    lineHeight: 18,
+  },
   infoCard: {
     borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.08)",

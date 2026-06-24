@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/design-system";
 import { Colors } from "@/constants/Colors";
 import { useMentees } from "@/hooks/mentees/useMentees";
-import { usersService } from "@/services/users.service";
+import { useMentorProgramCompletion } from "@/hooks/mentor/useMentorProgramCompletion";
 import { useAuthStore } from "@/stores";
 import { Mentee } from "@/types/mentee.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,7 +21,6 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { router, Stack } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const MENTEE_PROGRESS_ROUTE =
   "/(mentor)/mentees/mentee-progress";
@@ -49,7 +48,7 @@ const compareMentees = (a: Mentee, b: Mentee) => {
 
 export default function ProgressTracker() {
   const { user } = useAuthStore();
-  const queryClient = useQueryClient();
+  const { requestMarkComplete } = useMentorProgramCompletion();
 
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "in-progress" | "completed">("all");
@@ -60,25 +59,6 @@ export default function ProgressTracker() {
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const { data, isLoading, isError } = useMentees(100, user?.id);
-  const markCompleteMutation = useMutation({
-    mutationFn: (userId: string) => usersService.markUserCompleted(userId),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["mentees"] }),
-        queryClient.invalidateQueries({ queryKey: ["progress"] }),
-      ]);
-    },
-  });
-  const issueCertificateMutation = useMutation({
-    mutationFn: ({ userId, issuedBy }: { userId: string; issuedBy: string }) =>
-      usersService.issueCertificate(userId, { issuedBy }),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["mentees"] }),
-        queryClient.invalidateQueries({ queryKey: ["progress"] }),
-      ]);
-    },
-  });
 
   const allMentees = useMemo(() => {
     return data?.pages.flatMap((p) => p.mentees) ?? [];
@@ -197,58 +177,22 @@ export default function ProgressTracker() {
   const handleMarkComplete = useCallback((mentee: Mentee) => {
     if (!mentee.id) return;
 
-    Alert.alert(
-      "Mark as Complete",
-      `Mark ${mentee.firstName ?? "this mentee"} as completed?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Confirm",
-          onPress: () => {
-            markCompleteMutation.mutate(mentee.id, {
-              onSuccess: () => {
-                Alert.alert("Updated", "Mentee marked as complete.");
-              },
-              onError: () => {
-                Alert.alert("Error", "Failed to mark mentee as complete. Please try again.");
-              },
-            });
-          },
-        },
-      ]
-    );
-  }, [markCompleteMutation]);
+    requestMarkComplete({
+      userId: mentee.id,
+      overallProgress: mentee.progress ?? 0,
+      hasFinalComment: (mentee.finalCommentCount ?? 0) > 0,
+      hasCompleted: mentee.hasCompleted,
+      menteeName: mentee.firstName,
+    });
+  }, [requestMarkComplete]);
 
-  const handleIssueCertificate = useCallback((mentee: Mentee) => {
-    if (!mentee.id || !user?.id) return;
-
-    Alert.alert(
-      "Issue Certificate",
-      `Issue certificate for ${mentee.firstName ?? "this mentee"}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Confirm",
-          onPress: () => {
-            issueCertificateMutation.mutate(
-              {
-                userId: mentee.id,
-                issuedBy: user.id,
-              },
-              {
-                onSuccess: () => {
-                  Alert.alert("Updated", "Certificate issued successfully.");
-                },
-                onError: () => {
-                  Alert.alert("Error", "Failed to issue certificate. Please try again.");
-                },
-              }
-            );
-          },
-        },
-      ]
-    );
-  }, [issueCertificateMutation, user?.id]);
+  const handleAddFinalComments = useCallback((mentee: Mentee) => {
+    if (!mentee.id) return;
+    router.push({
+      pathname: MENTEE_PROGRESS_ROUTE as any,
+      params: { menteeId: mentee.id, openComments: "1" },
+    });
+  }, []);
 
   const menuItems = [
     {
@@ -392,6 +336,7 @@ export default function ProgressTracker() {
                   <MenteeCard
                     data={mentee}
                     variant="roadmap"
+                    workflow="mentor"
                     layout={viewMode === "card" ? "full" : "list"}
                     onPress={() => {
                       router.push({ pathname: MENTEE_PROGRESS_ROUTE as any, params: { menteeId: mapMenteeToProfileId(mentee) } });
@@ -406,8 +351,8 @@ export default function ProgressTracker() {
                     onMarkComplete={() => {
                       handleMarkComplete(mentee);
                     }}
-                    onIssueCertificate={() => {
-                      handleIssueCertificate(mentee);
+                    onAddFinalComments={() => {
+                      handleAddFinalComments(mentee);
                     }}
                   />
                 </View>
