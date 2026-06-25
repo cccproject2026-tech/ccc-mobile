@@ -103,11 +103,7 @@ export default function MentorSubmissionHistoryScreen() {
                             userId={userId}
                             onSelectSubmission={handleSelectSubmission}
                             latestSubmissionId={latestSubmission?._id}
-                            legacyExtras={
-                                !latestSubmission && existingExtras
-                                    ? existingExtras
-                                    : undefined
-                            }
+                            legacyExtras={existingExtras ?? undefined}
                         />
                     )
                 )}

@@ -2,7 +2,7 @@
 import { API_CONFIG } from '@/constants/config/api';
 import { taskCompletionMapKey } from '@/lib/roadmap/taskCompletionTimestamps';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
-import { Extra, NestedRoadmap, Roadmap, RoadmapCardStatus } from './types';
+import { Extra, NestedRoadmap, Roadmap, RoadmapCardStatus, TaskSubmission } from './types';
 
 const FORM_EXTRA_TYPES = new Set<Extra['type']>([
     'TEXT_AREA',
@@ -686,6 +686,249 @@ export function formatDate(dateString: string): string {
         month: 'short',
         day: 'numeric'
     });
+}
+
+export type FlattenedRoadmapDocument = {
+    _id: string;
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    extraName?: string;
+    uploadBatchId?: string;
+};
+
+/** Flatten submission-scoped uploadedDocuments (immutable per submission snapshot). */
+export function flattenSubmissionUploadedDocuments(
+    uploadedDocuments?: any[] | null,
+    extraName?: string,
+): FlattenedRoadmapDocument[] {
+    if (!uploadedDocuments?.length) return [];
+
+    const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
+    const wanted = extraName ? norm(extraName) : null;
+
+    const flatFiles = uploadedDocuments.flatMap((batch: any, batchIndex: number) => {
+        const batchExtraName = batch.name ?? batch.extraName ?? batch.fieldName;
+        const files = Array.isArray(batch.files) ? batch.files : null;
+
+        if (files) {
+            return files.map((f: any, fileIndex: number) => {
+                const rawUrl =
+                    f.fileUrl ?? f.url ?? f.path ?? f.location ?? f.secureUrl ?? "";
+                return {
+                    ...f,
+                    _id: String(
+                        f._id ??
+                            f.id ??
+                            `${batch.uploadBatchId ?? batch._id ?? "batch"}-${batchIndex}-${fileIndex}-${f.fileName ?? f.name ?? "file"}`,
+                    ),
+                    fileName: f.fileName ?? f.name ?? "File",
+                    fileUrl: resolveRoadmapDocumentUrl(rawUrl),
+                    fileType: f.fileType ?? f.mimeType ?? f.type ?? "",
+                    extraName: batchExtraName ?? f.extraName ?? f.name,
+                    uploadBatchId:
+                        batch.uploadBatchId ??
+                        batch._id ??
+                        batch.id ??
+                        f.uploadBatchId,
+                };
+            });
+        }
+
+        const rawUrl =
+            batch.fileUrl ?? batch.url ?? batch.path ?? batch.location ?? batch.secureUrl ?? "";
+        if (!rawUrl) return [];
+
+        return [
+            {
+                ...batch,
+                _id: String(batch._id ?? batch.id ?? `submission-doc-${batchIndex}`),
+                fileName: batch.fileName ?? batch.name ?? "File",
+                fileUrl: resolveRoadmapDocumentUrl(rawUrl),
+                fileType: batch.fileType ?? batch.mimeType ?? batch.type ?? "",
+                extraName: batchExtraName ?? batch.extraName,
+                uploadBatchId: batch.uploadBatchId ?? batch._id ?? batch.id,
+            },
+        ];
+    });
+
+    if (!wanted) return flatFiles;
+    return flatFiles.filter((f) => norm(f.extraName) === wanted);
+}
+
+export function isLegacySubmissionId(id?: string | null): boolean {
+    return String(id ?? "").startsWith("legacy-");
+}
+
+export function isSyntheticSubmissionId(id?: string | null): boolean {
+    const value = String(id ?? "").trim();
+    return isLegacySubmissionId(value) || /-v\d+$/.test(value);
+}
+
+export type RoadmapDocumentBatch = {
+    _id?: string;
+    name?: string;
+    extraName?: string;
+    uploadBatchId?: string;
+    uploadedAt?: string;
+    historyVersion?: number;
+    files?: any[];
+};
+
+export function normalizeRoadmapDocumentBatches(rawBatches?: any[] | null): RoadmapDocumentBatch[] {
+    return (rawBatches ?? []).map((batch) => ({
+        ...batch,
+        name: batch.name ?? batch.extraName,
+        uploadBatchId: batch.uploadBatchId ?? batch._id ?? batch.id,
+        uploadedAt: batch.uploadedAt ?? batch.createdAt,
+        historyVersion: batch.historyVersion,
+    }));
+}
+
+const SKIP_EXTRA_TYPES = new Set(["JUMPSTART_COMPLETE"]);
+
+/** Count submission versions from duplicate field entries in extras[]. */
+export function computeHistoryVersionCount(extras?: any[] | null): number {
+    const allExtras = (extras ?? []).filter(
+        (entry) => entry?.name && !SKIP_EXTRA_TYPES.has(entry.type),
+    );
+    if (allExtras.length === 0) return 1;
+
+    const byName = new Map<string, number>();
+    for (const entry of allExtras) {
+        const key = String(entry.name);
+        byName.set(key, (byName.get(key) ?? 0) + 1);
+    }
+
+    return Math.max(1, ...Array.from(byName.values()));
+}
+
+export function getTaskDocumentVersionNumber(
+    latestSubmission?: { submissionNumber?: number } | null,
+    extrasList?: any[] | null,
+    batches?: RoadmapDocumentBatch[] | null,
+): number {
+    if (latestSubmission?.submissionNumber && latestSubmission.submissionNumber > 0) {
+        return latestSubmission.submissionNumber;
+    }
+
+    if ((extrasList?.length ?? 0) > 0) {
+        return computeHistoryVersionCount(extrasList);
+    }
+
+    const stamped = (batches ?? [])
+        .map((batch) => Number(batch.historyVersion))
+        .filter((value) => Number.isFinite(value) && value > 0);
+    if (stamped.length > 0) return Math.max(...stamped);
+
+    return 1;
+}
+
+function sortBatchesChronologically(batches: RoadmapDocumentBatch[]): RoadmapDocumentBatch[] {
+    return [...batches].sort((a, b) => {
+        const aMs = new Date(String(a.uploadedAt ?? "")).getTime();
+        const bMs = new Date(String(b.uploadedAt ?? "")).getTime();
+        if (Number.isFinite(aMs) && Number.isFinite(bMs) && aMs !== bMs) {
+            return aMs - bMs;
+        }
+        return String(a.uploadBatchId ?? "").localeCompare(String(b.uploadBatchId ?? ""));
+    });
+}
+
+/** Latest upload batch per field — used for the active task screen (not history). */
+export function getLatestBatchesPerField(
+    uploadedDocuments: RoadmapDocumentBatch[] | undefined | null,
+): RoadmapDocumentBatch[] {
+    const batches = uploadedDocuments ?? [];
+    if (batches.length === 0) return [];
+
+    const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
+    const byField = new Map<string, RoadmapDocumentBatch[]>();
+
+    for (const batch of batches) {
+        const key = norm(batch.name ?? batch.extraName);
+        if (!key) continue;
+        if (!byField.has(key)) byField.set(key, []);
+        byField.get(key)!.push(batch);
+    }
+
+    const resolved: RoadmapDocumentBatch[] = [];
+    for (const fieldBatches of byField.values()) {
+        const sorted = sortBatchesChronologically(fieldBatches);
+        const latest = sorted[sorted.length - 1];
+        if (latest) resolved.push(latest);
+    }
+
+    return sortBatchesChronologically(resolved);
+}
+
+/** Documents that belong to a specific history version (immutable snapshot). */
+export function resolveUploadedDocumentsForVersion(
+    uploadedDocuments: RoadmapDocumentBatch[] | undefined | null,
+    versionNumber: number,
+): RoadmapDocumentBatch[] {
+    const batches = uploadedDocuments ?? [];
+    if (batches.length === 0) return [];
+
+    const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
+
+    const stamped = batches.filter(
+        (batch) => Number(batch.historyVersion) === versionNumber,
+    );
+    if (stamped.length > 0) return sortBatchesChronologically(stamped);
+
+    // Legacy batches (no historyVersion) keep their original index per field.
+    const legacyBatches = batches.filter(
+        (batch) => batch.historyVersion == null || batch.historyVersion === undefined,
+    );
+
+    const byField = new Map<string, RoadmapDocumentBatch[]>();
+    for (const batch of legacyBatches) {
+        const key = norm(batch.name ?? batch.extraName);
+        if (!key) continue;
+        if (!byField.has(key)) byField.set(key, []);
+        byField.get(key)!.push(batch);
+    }
+
+    const resolved: RoadmapDocumentBatch[] = [];
+    for (const fieldBatches of byField.values()) {
+        const sorted = sortBatchesChronologically(fieldBatches);
+        const batch = sorted[versionNumber - 1];
+        if (batch) resolved.push(batch);
+    }
+
+    return sortBatchesChronologically(resolved);
+}
+
+/** Resolve upload-field media for a specific submission snapshot. */
+export function getSubmissionUploadDocuments(
+    submission: Pick<TaskSubmission, "_id" | "submissionNumber" | "uploadedDocuments">,
+    fieldName: string,
+    documentBatches: RoadmapDocumentBatch[] = [],
+): FlattenedRoadmapDocument[] {
+    const fromSubmission = flattenSubmissionUploadedDocuments(
+        submission.uploadedDocuments,
+        fieldName,
+    );
+    if (fromSubmission.length > 0) {
+        return fromSubmission;
+    }
+
+    if (!isLegacySubmissionId(submission._id) && submission.uploadedDocuments !== undefined) {
+        return [];
+    }
+
+    const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
+    const wanted = norm(fieldName);
+    const versionDocs = resolveUploadedDocumentsForVersion(
+        documentBatches,
+        submission.submissionNumber,
+    );
+
+    return flattenSubmissionUploadedDocuments(
+        versionDocs.filter((batch) => norm(batch.name ?? batch.extraName) === wanted),
+        fieldName,
+    );
 }
 
 /** Absolute URL for roadmap upload files (API often returns relative paths). */

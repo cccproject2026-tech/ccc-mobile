@@ -3,7 +3,7 @@ import { SignatureModal } from "@/components/forms/SignatureModal";
 import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
-    useRoadmapDocuments,
+    useTaskCurrentDocuments,
     useRoadmapExtrasWithFallback,
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
@@ -414,11 +414,15 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
     /** ───────────────────── UPLOAD FIELD ───────────────────── */
 
     const UploadField = ({ extraName, isEditable = true }: { extraName: string, isEditable?: boolean }) => {
-        const { data: docs = [], isLoading } = useRoadmapDocuments(
+        const { data: docs = [], isLoading } = useTaskCurrentDocuments(
             roadmapId!,
             itemId!,
             targetUserId!,
-            extraName
+            extraName,
+            {
+                latestSubmission,
+                extras: existingExtras ?? undefined,
+            },
         );
 
         

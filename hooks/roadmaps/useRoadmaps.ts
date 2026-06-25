@@ -7,7 +7,9 @@ import {
     Roadmap,
     RoadmapCommentsThread,
     SubmitQueryRequest,
-    UpdateExtrasDto
+    UpdateExtrasDto,
+    TaskSubmission,
+    ExtrasResponseDto,
 } from "@/lib/roadmap/types";
 import { apiClient } from "@/services/api/client";
 import { ENDPOINTS } from "@/services/api/endpoints";
@@ -21,7 +23,12 @@ import {
     isSingleOnboardingRoadmap,
     normalizeMongoId,
     normalizeNestedTaskStatus,
+    normalizeRoadmapDocumentBatches,
     resolveRoadmapDocumentUrl,
+    flattenSubmissionUploadedDocuments,
+    resolveUploadedDocumentsForVersion,
+    getLatestBatchesPerField,
+    getTaskDocumentVersionNumber,
 } from '@/lib/roadmap/helpers';
 import { assessmentService } from '@/services/assessment.service';
 import { roadmapService } from '@/services/roadmap.service';
@@ -811,6 +818,30 @@ export function useUploadRoadmapDocument() {
     });
 }
 
+export const useRoadmapDocumentBatches = (
+    roadMapId?: string,
+    nestedId?: string,
+    userId?: string,
+) => {
+    return useQuery({
+        queryKey: ["roadmap-document-batches", roadMapId, nestedId, userId],
+        queryFn: async () => {
+            if (!roadMapId || !nestedId || !userId) return [];
+
+            const res = await roadmapService.getRoadmapDocuments(
+                roadMapId,
+                userId,
+                nestedId,
+            );
+
+            const allBatches = res.data ?? res.documents ?? [];
+            return normalizeRoadmapDocumentBatches(allBatches);
+        },
+        enabled: !!roadMapId && !!nestedId && !!userId,
+        staleTime: 0,
+    });
+};
+
 export const useRoadmapDocuments = (
     roadMapId?: string,
     nestedId?: string,
@@ -874,6 +905,64 @@ export const useRoadmapDocuments = (
     });
 };
 
+/** Documents for the active task view — latest submission only, not full upload history. */
+export const useTaskCurrentDocuments = (
+    roadMapId?: string,
+    nestedId?: string,
+    userId?: string,
+    extraName?: string,
+    options?: {
+        latestSubmission?: TaskSubmission | null;
+        extras?: ExtrasResponseDto | null;
+        /** When true (resubmit draft), hide prior server uploads. */
+        isDraftingNewVersion?: boolean;
+    },
+) => {
+    const { data: batches = [], isLoading, isFetching, refetch } = useRoadmapDocumentBatches(
+        roadMapId,
+        nestedId,
+        userId,
+    );
+
+    const versionNumber = useMemo(
+        () => getTaskDocumentVersionNumber(
+            options?.latestSubmission,
+            options?.extras?.extras,
+            batches,
+        ),
+        [options?.latestSubmission, options?.extras?.extras, batches],
+    );
+
+    const data = useMemo(() => {
+        if (options?.isDraftingNewVersion) return [];
+
+        // Task detail always shows the newest upload per field (current state).
+        const latestBatches = getLatestBatchesPerField(batches);
+        const latestDocs = flattenSubmissionUploadedDocuments(latestBatches, extraName);
+        if (latestDocs.length > 0) {
+            return latestDocs;
+        }
+
+        if (options?.latestSubmission?.uploadedDocuments?.length) {
+            return flattenSubmissionUploadedDocuments(
+                options.latestSubmission.uploadedDocuments,
+                extraName,
+            );
+        }
+
+        const versionDocs = resolveUploadedDocumentsForVersion(batches, versionNumber);
+        return flattenSubmissionUploadedDocuments(versionDocs, extraName);
+    }, [
+        batches,
+        extraName,
+        options?.isDraftingNewVersion,
+        options?.latestSubmission,
+        versionNumber,
+    ]);
+
+    return { data, isLoading, isFetching, refetch, versionNumber };
+};
+
 export const useDeleteRoadmapDocument = () => {
     const queryClient = useQueryClient();
 
@@ -903,6 +992,10 @@ export const useDeleteRoadmapDocument = () => {
             queryClient.invalidateQueries({
                 queryKey: ["roadmap-documents", vars.roadMapId],
             });
+            queryClient.invalidateQueries({
+                queryKey: ["roadmap-document-batches", vars.roadMapId],
+            });
+            queryClient.invalidateQueries({ queryKey: ["task-submissions"] });
         },
     });
 };

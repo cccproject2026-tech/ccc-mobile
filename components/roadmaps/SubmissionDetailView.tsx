@@ -11,8 +11,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { TaskSubmission } from "@/lib/roadmap/types";
+import {
+    getSubmissionUploadDocuments,
+    isLegacySubmissionId,
+} from "@/lib/roadmap/helpers";
 import { useSubmissionDetail } from "@/hooks/roadmap/useTaskSubmissions";
-import { useRoadmapDocuments } from "@/hooks/roadmaps/useRoadmaps";
+import { useRoadmapDocumentBatches } from "@/hooks/roadmaps/useRoadmaps";
 
 interface Props {
     /** Pass the full submission object for inline display, or submissionId for lazy loading. */
@@ -56,21 +60,17 @@ function formatReadOnlyValue(value: unknown): string {
 function UploadResponseField({
     name,
     value,
-    roadmapId,
-    nestedRoadMapItemId,
-    userId,
+    submission,
+    documentBatches,
 }: {
     name: string;
     value: any;
-    roadmapId?: string;
-    nestedRoadMapItemId?: string;
-    userId?: string;
+    submission: Pick<TaskSubmission, "_id" | "submissionNumber" | "uploadedDocuments">;
+    documentBatches: ReturnType<typeof useRoadmapDocumentBatches>["data"];
 }) {
-    const { data: docs = [] } = useRoadmapDocuments(
-        roadmapId,
-        nestedRoadMapItemId,
-        userId,
-        name,
+    const docs = useMemo(
+        () => getSubmissionUploadDocuments(submission, name, documentBatches ?? []),
+        [submission, name, documentBatches],
     );
 
     if (!value && docs.length === 0) {
@@ -135,14 +135,12 @@ function UploadResponseField({
 
 const ResponseField = memo(function ResponseField({
     response,
-    roadmapId,
-    nestedRoadMapItemId,
-    userId,
+    submission,
+    documentBatches,
 }: {
     response: { type?: string; name: string; value?: any; signatureData?: string };
-    roadmapId?: string;
-    nestedRoadMapItemId?: string;
-    userId?: string;
+    submission: Pick<TaskSubmission, "_id" | "submissionNumber" | "uploadedDocuments">;
+    documentBatches: ReturnType<typeof useRoadmapDocumentBatches>["data"];
 }) {
     const type = response.type ?? "TEXT_FIELD";
     const value = type === "SIGNATURE" ? response.signatureData : response.value;
@@ -173,9 +171,8 @@ const ResponseField = memo(function ResponseField({
             <UploadResponseField
                 name={response.name}
                 value={value}
-                roadmapId={roadmapId}
-                nestedRoadMapItemId={nestedRoadMapItemId}
-                userId={userId}
+                submission={submission}
+                documentBatches={documentBatches}
             />
         );
     }
@@ -228,18 +225,29 @@ export const SubmissionDetailView = memo(function SubmissionDetailView({
     nestedRoadMapItemId,
     userId,
 }: Props) {
+    const resolvedSubmissionId = submissionProp?._id ?? submissionId;
+    const isLegacy = isLegacySubmissionId(resolvedSubmissionId);
     const { data: fetchedSubmission, isLoading } = useSubmissionDetail(
-        !submissionProp ? submissionId : undefined,
+        isLegacy ? undefined : resolvedSubmissionId,
     );
 
-    const submission = submissionProp ?? fetchedSubmission;
+    const submission = fetchedSubmission ?? submissionProp;
+
+    const roadMapId = submission?.roadMapId ?? roadmapId;
+    const nestedId = submission?.nestedRoadMapItemId ?? nestedRoadMapItemId;
+    const ownerId = submission?.submittedBy ?? userId;
+    const { data: documentBatches = [] } = useRoadmapDocumentBatches(
+        roadMapId,
+        nestedId,
+        ownerId,
+    );
 
     const cfg = useMemo(() => {
         if (!submission) return STATUS_CONFIG.submitted;
         return STATUS_CONFIG[submission.status] ?? STATUS_CONFIG.submitted;
     }, [submission]);
 
-    if (isLoading) {
+    if (isLoading && !submission) {
         return (
             <View style={styles.center}>
                 <ActivityIndicator color="#fff" />
@@ -314,9 +322,8 @@ export const SubmissionDetailView = memo(function SubmissionDetailView({
                 <ResponseField
                     key={`${response.name}-${index}`}
                     response={response}
-                    roadmapId={roadmapId ?? submission.roadMapId}
-                    nestedRoadMapItemId={nestedRoadMapItemId ?? submission.nestedRoadMapItemId}
-                    userId={userId ?? submission.submittedBy}
+                    submission={submission}
+                    documentBatches={documentBatches}
                 />
             ))}
         </View>

@@ -290,15 +290,13 @@ export const roadmapService = {
             const pastorNote = item?.pastorNote ? String(item.pastorNote) : undefined;
             const embeddedAppointment =
                 item?.appointment && typeof item.appointment === "object"
-                    ? (item.appointment as Appointment)
+                    ? (item.appointment as Appointment & { _id?: string })
                     : undefined;
             const appointmentId = item?.appointmentId
                 ? String(item.appointmentId)
-                : embeddedAppointment?._id
-                  ? String(embeddedAppointment._id)
-                  : embeddedAppointment?.id
-                    ? String(embeddedAppointment.id)
-                    : undefined;
+                : embeddedAppointment?._id ?? embeddedAppointment?.id
+                  ? String(embeddedAppointment._id ?? embeddedAppointment.id)
+                  : undefined;
 
             const meetingLink =
                 getAppointmentJoinUrl(embeddedAppointment) ??
@@ -935,6 +933,13 @@ export const roadmapService = {
             throw new Error(response.data.message || 'Failed to fetch submission');
         }
         return response.data.data;
+    },
+
+    async getSubmissionDocuments(submissionId: string) {
+        const response = await apiClient.get(
+            `/roadmaps/submissions/${submissionId}/documents`,
+        );
+        return response.data;
     },
 
     async createSubmission(payload: CreateSubmissionDto): Promise<TaskSubmission> {

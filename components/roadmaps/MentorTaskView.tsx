@@ -9,6 +9,7 @@ import {
     useCreateRoadmapExtras,
     useDeleteRoadmapDocument,
     useRoadmapDocuments,
+    useTaskCurrentDocuments,
     useRoadmapExtrasWithFallback,
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
@@ -661,11 +662,16 @@ export function MentorTaskView({
 
     /** ───────────────────── UPLOAD FIELD ───────────────────── */
     const UploadField = ({ extraName }: { extraName: string }) => {
-        const { data: docs = [], isLoading } = useRoadmapDocuments(
+        const { data: docs = [], isLoading } = useTaskCurrentDocuments(
             roadmapId!,
             itemId!,
             targetUserId!,
-            extraName
+            extraName,
+            {
+                latestSubmission,
+                extras: existingExtras ?? undefined,
+                isDraftingNewVersion: isResubmitting,
+            },
         );
 
         const isVideoFile = (name: string) =>
@@ -786,7 +792,7 @@ export function MentorTaskView({
                     hasServerFiles && (
                         <View style={[styles.uploadedFilesContainer]}>
                             <Text style={styles.uploadedFilesLabel}>
-                                {isResubmitting ? "Previously uploaded :" : "Uploaded :"}
+                                {isResubmitting ? "New upload (not saved yet)" : "Uploaded :"}
                             </Text>
                             {docs.map((doc: any) => {
                                 const fileType = String(doc.fileType ?? doc.type ?? "").toLowerCase();

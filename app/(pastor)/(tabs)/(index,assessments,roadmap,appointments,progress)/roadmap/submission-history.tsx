@@ -101,11 +101,7 @@ export default function SubmissionHistoryScreen() {
                             userId={userId}
                             onSelectSubmission={handleSelectSubmission}
                             latestSubmissionId={latestSubmission?._id}
-                            legacyExtras={
-                                !latestSubmission && existingExtras
-                                    ? existingExtras
-                                    : undefined
-                            }
+                            legacyExtras={existingExtras ?? undefined}
                         />
                     )
                 )}

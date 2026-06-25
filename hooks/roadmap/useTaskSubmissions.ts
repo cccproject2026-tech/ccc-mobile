@@ -1,5 +1,6 @@
 import { roadmapService } from "@/services/roadmap.service";
 import type { CreateSubmissionDto, TaskSubmission } from "@/lib/roadmap/types";
+import { isLegacySubmissionId } from "@/lib/roadmap/helpers";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { roadmapKeys } from "../roadmaps/useRoadmaps";
 import { progressKeys } from "../progress/useProgress";
@@ -76,8 +77,25 @@ export function useLatestSubmission(
 export function useSubmissionDetail(submissionId?: string) {
     return useQuery<TaskSubmission>({
         queryKey: submissionKeys.detail(submissionId ?? ""),
-        queryFn: () => roadmapService.getSubmissionById(submissionId!),
-        enabled: !!submissionId,
+        queryFn: async () => {
+            const submission = await roadmapService.getSubmissionById(submissionId!);
+            if (submission.uploadedDocuments?.length) {
+                return submission;
+            }
+
+            try {
+                const docsResponse = await roadmapService.getSubmissionDocuments(submissionId!);
+                const docs = docsResponse.data ?? docsResponse.documents ?? docsResponse.uploadedDocuments;
+                if (Array.isArray(docs) && docs.length > 0) {
+                    return { ...submission, uploadedDocuments: docs };
+                }
+            } catch {
+                // Documents endpoint may not exist on older backends.
+            }
+
+            return submission;
+        },
+        enabled: !!submissionId && !isLegacySubmissionId(submissionId),
         staleTime: 0,
     });
 }
@@ -132,6 +150,7 @@ export function useUploadSubmissionDocument() {
             queryClient.invalidateQueries({
                 queryKey: submissionKeys.detail(vars.submissionId),
             });
+            queryClient.invalidateQueries({ queryKey: submissionKeys.all });
         },
     });
 }

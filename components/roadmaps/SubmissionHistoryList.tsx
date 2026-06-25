@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { ExtrasResponseDto, TaskSubmission } from "@/lib/roadmap/types";
+import { resolveUploadedDocumentsForVersion } from "@/lib/roadmap/helpers";
 import { useTaskSubmissions } from "@/hooks/roadmap/useTaskSubmissions";
 
 interface Props {
@@ -113,7 +114,10 @@ function buildLegacySubmissions(extras: ExtrasResponseDto): TaskSubmission[] {
             submissionNumber: i + 1,
             status: isLatest && maxVersions > 1 ? "resubmitted" : "submitted",
             responses,
-            uploadedDocuments: isLatest ? extras.uploadedDocuments : undefined,
+            uploadedDocuments: resolveUploadedDocumentsForVersion(
+                extras.uploadedDocuments,
+                i + 1,
+            ),
             resubmittedFromSubmissionId: isOriginal ? null : `legacy-${extras.id ?? "1"}-v${i}`,
             submittedAt,
             createdAt: String(extras.createdAt ?? ""),
