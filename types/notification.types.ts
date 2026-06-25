@@ -5,6 +5,8 @@ export interface Notification {
     name: string;
     details: string;
     module: string;
+    /** Entity id for deep links (e.g. appointment id when module is APPOINTMENT). */
+    referenceId?: string;
     read?: boolean;
     createdAt?: string;
     updatedAt?: string;

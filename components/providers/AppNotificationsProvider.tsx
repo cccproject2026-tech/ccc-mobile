@@ -1,7 +1,11 @@
 import { isWebBrowserGoogleCalendarOAuthActive } from '@/hooks/googleCalendar/useGoogleCalendarOAuthReturn';
 import { useAuthStore } from '@/stores';
 import { UserRole } from '@/types';
-import { getNotificationRoute, getRoleNotificationRoute } from '@/utils/notifications';
+import {
+    getRoleNotificationRoute,
+    resolveNotificationNavigation,
+    type NotificationPushData,
+} from '@/utils/notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
@@ -13,13 +17,15 @@ const TAG = '[notifications]';
 
 const navigateFromNotification = (
     role: UserRole | string | undefined,
-    moduleName?: string | null
+    moduleName?: string | null,
+    pushData?: NotificationPushData | null,
 ) => {
-    const route = role === 'director'
-        ? getRoleNotificationRoute(role)
-        : getNotificationRoute(moduleName);
+    if (role === 'director') {
+        router.push(getRoleNotificationRoute(role) as any);
+        return;
+    }
 
-    router.push(route as any);
+    router.push(resolveNotificationNavigation(moduleName, pushData) as any);
 };
 
 export default function AppNotificationsProvider({
@@ -82,8 +88,9 @@ export default function AppNotificationsProvider({
 
                 const responseId =
                     lastResponse?.notification.request.identifier ?? null;
-                const moduleName =
-                    lastResponse?.notification.request.content.data?.module;
+                const pushData = lastResponse?.notification.request.content
+                    .data as NotificationPushData | undefined;
+                const moduleName = pushData?.module;
 
                 if (
                     isMounted &&
@@ -94,7 +101,7 @@ export default function AppNotificationsProvider({
                 ) {
                     lastHandledResponseId.current = responseId;
                     try {
-                        navigateFromNotification(user.role, String(moduleName));
+                        navigateFromNotification(user.role, String(moduleName), pushData);
                     } catch (error) {
                         console.warn(`${TAG} navigation from last response failed`, error);
                     }
@@ -137,12 +144,14 @@ export default function AppNotificationsProvider({
                         await invalidateNotifications();
                         lastHandledResponseId.current =
                             response.notification.request.identifier;
-                        const moduleName =
-                            response.notification.request.content.data?.module;
+                        const pushData = response.notification.request.content
+                            .data as NotificationPushData | undefined;
+                        const moduleName = pushData?.module;
                         try {
                             navigateFromNotification(
                                 user.role,
-                                String(moduleName || 'notifications')
+                                String(moduleName || 'notifications'),
+                                pushData,
                             );
                         } catch (error) {
                             console.warn(`${TAG} navigation from response failed`, error);

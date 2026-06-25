@@ -3,7 +3,7 @@ import { GroupedNotificationList } from "@/components/notifications/GroupedNotif
 import { useMarkNotificationAsRead, useNotifications } from "@/hooks/profile/useProfile";
 import { useAuthStore } from "@/stores";
 import { Notification } from "@/types";
-import { getNotificationRoute } from "@/utils/notifications";
+import { resolveNotificationNavigation } from "@/utils/notifications";
 import { router, Stack } from "expo-router";
 import React, { useCallback } from "react";
 import {
@@ -22,7 +22,7 @@ export default function NotificationScreen() {
 
   const handleNotificationPress = useCallback(async (notification: Notification) => {
     try { await markNotificationAsRead(notification); } catch (_) {}
-    router.push(getNotificationRoute(notification.module) as any);
+    router.push(resolveNotificationNavigation(notification) as any);
   }, [markNotificationAsRead]);
 
   return (

@@ -1,9 +1,60 @@
 import { UserRole } from '@/types';
 import { Notification } from '@/types';
+import type { Href } from 'expo-router';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 
 const ISO_DATE_REGEX =
     /\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\b/g;
+
+export type NotificationPushData = {
+    module?: string | null;
+    referenceId?: string | null;
+    appointmentId?: string | null;
+};
+
+const normalizeNotificationModule = (moduleName?: string | null) =>
+    String(moduleName || '')
+        .trim()
+        .toLowerCase();
+
+export const isAppointmentNotificationModule = (moduleName?: string | null) => {
+    const normalizedModule = normalizeNotificationModule(moduleName);
+    return normalizedModule === 'appointment' || normalizedModule === 'appointments';
+};
+
+export const getAppointmentIdFromNotification = (
+    notification: Partial<Notification>,
+    pushData?: NotificationPushData | null,
+): string | undefined => {
+    const fromNotification = notification.referenceId?.trim();
+    if (fromNotification) return fromNotification;
+
+    const fromPush = String(pushData?.referenceId || pushData?.appointmentId || '').trim();
+    return fromPush || undefined;
+};
+
+export const resolveNotificationNavigation = (
+    notificationOrModule: Partial<Notification> | string | null | undefined,
+    pushData?: NotificationPushData | null,
+    fallback: string = '/notifications',
+): Href => {
+    const notification =
+        typeof notificationOrModule === 'string'
+            ? { module: notificationOrModule }
+            : notificationOrModule ?? {};
+
+    const moduleName = notification.module ?? pushData?.module ?? undefined;
+    const appointmentId = getAppointmentIdFromNotification(notification, pushData);
+
+    if (isAppointmentNotificationModule(moduleName) && appointmentId) {
+        return {
+            pathname: '/appointments/meeting-details',
+            params: { appointmentId },
+        };
+    }
+
+    return getNotificationRoute(moduleName, fallback) as Href;
+};
 
 export const getNotificationRoute = (
     moduleName?: string | null,
