@@ -1,5 +1,12 @@
 
-export type UserRole = 'pastor' | 'mentor' | 'director' | 'pending' | 'field-mentor';
+export type UserRole =
+  | 'pastor'
+  | 'lay-leader'
+  | 'seminarian'
+  | 'mentor'
+  | 'director'
+  | 'pending'
+  | 'field-mentor';
 export type UserStatus = 'new' | 'pending' | 'accepted' | 'rejected';
 
 export interface FieldMentorInvitation {

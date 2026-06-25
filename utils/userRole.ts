@@ -1,6 +1,7 @@
 import { User, UserRole } from '@/types/auth.types';
 
 const MENTOR_ROLES: UserRole[] = ['mentor', 'field-mentor'];
+const PASTOR_STACK_ROLES: UserRole[] = ['pastor', 'lay-leader', 'seminarian'];
 
 export function normalizeUserRole(role?: string | null): UserRole | string {
   const value = String(role ?? '')
@@ -17,6 +18,12 @@ export function normalizeUserRole(role?: string | null): UserRole | string {
   ) {
     return 'field-mentor';
   }
+  if (value === 'layleader' || value === 'lay-leader' || value === 'lay-leaders') {
+    return 'lay-leader';
+  }
+  if (value === 'seminarian' || value === 'seminarians') {
+    return 'seminarian';
+  }
   if (value === 'mentor') return 'mentor';
   if (value === 'pastor') return 'pastor';
   if (value === 'director') return 'director';
@@ -29,7 +36,7 @@ export function isMentorRole(role?: string | null): boolean {
 }
 
 export function isPastorRole(role?: string | null): boolean {
-  return normalizeUserRole(role) === 'pastor';
+  return PASTOR_STACK_ROLES.includes(normalizeUserRole(role) as UserRole);
 }
 
 export function normalizeApiUser(raw: Record<string, unknown> | User): User {
@@ -48,7 +55,7 @@ export function normalizeApiUser(raw: Record<string, unknown> | User): User {
 export function getAuthenticatedHomeRoute(role?: string | null): string | null {
   const normalized = normalizeUserRole(role);
 
-  if (normalized === 'pastor') return '/(pastor)/(tabs)';
+  if (isPastorRole(normalized)) return '/(pastor)/(tabs)';
   if (isMentorRole(normalized)) return '/(mentor)/(tabs)';
   if (normalized === 'director') return '/(director)/(tabs)';
 
