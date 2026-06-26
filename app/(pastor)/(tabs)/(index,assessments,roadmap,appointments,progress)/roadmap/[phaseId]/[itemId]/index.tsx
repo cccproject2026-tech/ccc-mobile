@@ -116,6 +116,7 @@ export default function PastorRoadmapItemDetail() {
     handleBackToPhase,
     handleStartNextPhase,
     handleBackToJourney,
+    dismissCelebration,
   } = useCompletionCelebration();
 
   const handleSaveSuccess = useCallback(async () => {
@@ -483,6 +484,7 @@ export default function PastorRoadmapItemDetail() {
         totalCount={celebration.totalCount}
         onContinueJourney={handleContinueJourney}
         onBackToPhase={handleBackToPhase}
+        onClose={dismissCelebration}
       />
 
       <PhaseCompletionModal

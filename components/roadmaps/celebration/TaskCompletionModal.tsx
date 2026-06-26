@@ -26,6 +26,7 @@ export interface TaskCompletionModalProps {
   totalCount: number;
   onContinueJourney: () => void;
   onBackToPhase: () => void;
+  onClose: () => void;
 }
 
 export function TaskCompletionModal({
@@ -36,6 +37,7 @@ export function TaskCompletionModal({
   totalCount,
   onContinueJourney,
   onBackToPhase,
+  onClose,
 }: TaskCompletionModalProps) {
   const checkScale = useSharedValue(0);
   const progressWidth = useSharedValue(0);
@@ -63,13 +65,29 @@ export function TaskCompletionModal({
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <Animated.View entering={FadeInUp.duration(300)} style={styles.card}>
           <LinearGradient
             colors={["#0B2E4D", "#0F3B5C", "#164B72"]}
             style={styles.cardGradient}
           >
+            <Pressable
+              onPress={onClose}
+              style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={22} color="rgba(255,255,255,0.85)" />
+            </Pressable>
+
             <Animated.View style={[styles.iconCircle, checkStyle]}>
               <LinearGradient
                 colors={["#34D399", "#10B981"]}
@@ -161,6 +179,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
     borderRadius: 24,
+    position: "relative",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    zIndex: 2,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
   },
   iconCircle: {
     marginBottom: 4,
