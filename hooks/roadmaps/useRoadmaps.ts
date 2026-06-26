@@ -142,14 +142,17 @@ export function mergeRoadmapWithProgress(
             ? parentStepsComplete && nestedStepsComplete
             : nestedStepsComplete;
         const mappedStatus = mapProgressStatus(nestedProgress.status);
-        const resolvedStatus: 'not started' | 'in-progress' | 'completed' | 'submitted' =
-            stepsComplete
-                ? 'completed'
-                : mappedStatus === 'submitted'
-                  ? 'submitted'
-                  : nestedProgress.completedSteps > 0 || !parentStepsComplete
-                    ? 'in-progress'
-                    : mappedStatus;
+        const hasStartedWork =
+            nestedProgress.completedSteps > 0 ||
+            mappedStatus === 'in-progress' ||
+            mappedStatus === 'submitted';
+        const resolvedStatus: NestedRoadmap['status'] = stepsComplete
+            ? 'completed'
+            : mappedStatus === 'submitted'
+              ? 'submitted'
+              : hasStartedWork
+                ? 'in-progress'
+                : 'not started';
 
         return {
             ...nestedRoadmap,

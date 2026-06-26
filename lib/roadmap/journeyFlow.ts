@@ -116,27 +116,14 @@ export function buildJourneyFlowSteps(roadmaps: Roadmap[]): JourneyFlowStep[] {
     const done = total > 0 && completed === total;
     const hasActiveWork = getTasks(roadmap).some((t) => {
       const s = normalizeNestedTaskStatus(t?.status);
-      return s === "in-progress" || s === "completed" || s === "blocked";
+      return s === "in-progress" || s === "blocked" || s === "submitted";
     });
     const hasProgress = completed > 0 || hasActiveWork;
     return { step, roadmap, completed, total, done, hasProgress };
   });
 
-  let primaryCurrentIndex = -1;
-  for (let i = 0; i < stepStats.length; i++) {
-    if (!stepStats[i].done && stepStats[i].hasProgress) {
-      primaryCurrentIndex = i;
-      break;
-    }
-  }
-  if (primaryCurrentIndex === -1) {
-    for (let i = 0; i < stepStats.length; i++) {
-      if (!stepStats[i].done) {
-        primaryCurrentIndex = i;
-        break;
-      }
-    }
-  }
+  // Sequential journey: highlight the first incomplete assigned phase.
+  const primaryCurrentIndex = stepStats.findIndex((s) => !s.done);
 
   return stepStats.map(({ step, roadmap, done, hasProgress }, index) => {
     if (done) {
