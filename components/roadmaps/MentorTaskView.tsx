@@ -31,6 +31,14 @@ import {
     seedDefaultFormValues,
 } from "@/lib/roadmap/extraFieldKeys";
 import {
+    coerceDatePickerValue,
+    collectPastDateFieldErrors,
+    getStartOfTodayLocal,
+    isBeforeTodayLocal,
+    parseRoadmapDateValue,
+    PAST_DATE_VALIDATION_MESSAGE,
+} from "@/lib/dates/pastorDateSelection";
+import {
     isJumpstartBlockingError,
     presentJumpstartBlockingError,
 } from "@/lib/roadmap/jumpstartErrors";
@@ -47,7 +55,7 @@ import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { format, isValid, parse } from "date-fns";
+import { format } from "date-fns";
 import { pickUploadFiles } from "@/lib/media/pickUploadFiles";
 import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
@@ -107,6 +115,7 @@ export function MentorTaskView({
     const [pendingFiles, setPendingFiles] = useState<Record<string, { id: string; uri: string; name: string; type: string }[]>>({});
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [activeDateField, setActiveDateField] = useState<string | null>(null);
+    const [dateFieldErrors, setDateFieldErrors] = useState<Record<string, string>>({});
     const [signaturePreview, setSignaturePreview] = useState<{ visible: boolean; uri: string | null }>({
         visible: false,
         uri: null,
@@ -118,22 +127,7 @@ export function MentorTaskView({
 
     const isValidObjectId = (id: string | undefined) => !!id;
 
-    const parseAnyDate = (raw?: string): Date | null => {
-        const v = String(raw ?? "").trim();
-        if (!v) return null;
-
-        
-        const iso = parse(v, "yyyy-MM-dd", new Date());
-        if (isValid(iso) && v.length >= 10 && v[4] === "-" && v[7] === "-") return iso;
-
-        
-        const legacy = parse(v, "dd / MM / yy", new Date());
-        if (isValid(legacy)) return legacy;
-
-        // 3) Fallback to Date parsing (API may return full ISO)
-        const d = new Date(v);
-        return isValid(d) ? d : null;
-    };
+    const parseAnyDate = (raw?: string): Date | null => parseRoadmapDateValue(raw);
 
     const formatForApi = (d: Date) => format(d, "yyyy-MM-dd");
     const formatForUi = (d: Date) => format(d, "dd MMM yyyy");
@@ -256,6 +250,9 @@ export function MentorTaskView({
      */
     const isReadOnly =
         isPreviewMode || (hasSubmission && !isResubmitting);
+
+    const isPastorEditor =
+        String(currentUser?.role ?? "").toLowerCase() === "pastor" && !isReadOnly;
 
     const confirmDiscardResubmit = useCallback(() => {
         Alert.alert(
@@ -533,6 +530,16 @@ export function MentorTaskView({
         if (!currentUser?.id) {
             Alert.alert("Error", "User not authenticated");
             return;
+        }
+
+        if (isPastorEditor) {
+            const pastDateErrors = collectPastDateFieldErrors(effectiveExtras, formData);
+            if (Object.keys(pastDateErrors).length > 0) {
+                setDateFieldErrors(pastDateErrors);
+                Alert.alert("Invalid date", PAST_DATE_VALIDATION_MESSAGE);
+                return;
+            }
+            setDateFieldErrors({});
         }
 
         try {
@@ -1063,20 +1070,55 @@ export function MentorTaskView({
 
                         {!isReadOnly && activeDateField === fieldKey ? (
                             <DateTimePicker
-                                value={parseAnyDate(formData[fieldKey] ?? extra.date) ?? new Date()}
+                                value={
+                                    isPastorEditor
+                                        ? coerceDatePickerValue(
+                                              parseAnyDate(formData[fieldKey] ?? extra.date),
+                                          )
+                                        : parseAnyDate(formData[fieldKey] ?? extra.date) ??
+                                          new Date()
+                                }
                                 mode="date"
                                 display="default"
+                                minimumDate={
+                                    isPastorEditor ? getStartOfTodayLocal() : undefined
+                                }
                                 onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
                                     if (event.type === "dismissed") {
                                         setActiveDateField(null);
                                         return;
                                     }
                                     if (selectedDate) {
+                                        if (
+                                            isPastorEditor &&
+                                            isBeforeTodayLocal(selectedDate)
+                                        ) {
+                                            setDateFieldErrors((prev) => ({
+                                                ...prev,
+                                                [fieldKey]: PAST_DATE_VALIDATION_MESSAGE,
+                                            }));
+                                            Alert.alert(
+                                                "Invalid date",
+                                                PAST_DATE_VALIDATION_MESSAGE,
+                                            );
+                                            setActiveDateField(null);
+                                            return;
+                                        }
                                         handleChange(fieldKey, formatForApi(selectedDate));
+                                        setDateFieldErrors((prev) => {
+                                            const next = { ...prev };
+                                            delete next[fieldKey];
+                                            return next;
+                                        });
                                     }
                                     setActiveDateField(null);
                                 }}
                             />
+                        ) : null}
+                        {dateFieldErrors[fieldKey] ? (
+                            <Text style={styles.fieldError}>
+                                {dateFieldErrors[fieldKey]}
+                            </Text>
                         ) : null}
                     </View>
                 );
@@ -1606,6 +1648,7 @@ const styles = StyleSheet.create({
         borderColor: "rgba(255,255,255,0.12)",
     },
     fieldContainer: { marginBottom: 10 },
+    fieldError: { color: "#fecaca", fontSize: 13, marginTop: 6 },
     fieldLabel: {
         color: "rgba(255,255,255,0.90)",
         fontSize: 13,
