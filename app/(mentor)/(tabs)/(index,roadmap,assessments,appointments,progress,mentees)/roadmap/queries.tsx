@@ -1,14 +1,16 @@
 import { Button } from "@/components/build-components";
 import TextAreaField from "@/components/build-components/text-area";
 import TopBar from "@/components/director/TopBar";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import {
   GradientBackground,
   RoadmapNavRow,
   SectionHeader,
 } from "@/components/ui/design-system/index";
 import { roadmapTheme } from "@/components/ui/design-system/roadmapTheme";
-import { icons } from "@/constants/images";
 import { useReplyRoadmapQuery, useRoadmapQueries, useRoadmap } from "@/hooks/roadmaps/useRoadmaps";
+import { formatQuerySubmittedDate, resolvePastorDisplayName } from "@/lib/roadmap/queryHelpers";
+import { profileService } from "@/services/profile.service";
 import { resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
 import { paramToString } from "@/utils/routerParams";
 import { RoadmapQuery } from "@/lib/roadmap/types";
@@ -16,10 +18,10 @@ import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -55,6 +57,23 @@ export default function QueriesScreen() {
   const { data: allQueries = [], isLoading } = useRoadmapQueries(
     finalRoadmapId,
     menteeId
+  );
+
+  const { data: pastorProfile } = useQuery({
+    queryKey: ["profile", "user", menteeId],
+    queryFn: () => profileService.getUserById(String(menteeId)),
+    enabled: !!menteeId,
+    staleTime: 60_000,
+  });
+
+  const resolvedPastorName = useMemo(
+    () =>
+      resolvePastorDisplayName({
+        menteeNameParam: paramToString(menteeName),
+        legacyDataName: data?.menteeName,
+        profile: pastorProfile,
+      }),
+    [menteeName, data?.menteeName, pastorProfile],
   );
 
   const [activeTab, setActiveTab] = useState<"pending" | "answered">("pending");
@@ -106,40 +125,28 @@ export default function QueriesScreen() {
     }
   };
 
-  const formatDate = (timestamp: string): string => {
-    return new Date(timestamp).toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  const getMenteeName = (query: RoadmapQuery): string => {
-    // Since queries are fetched for a specific userId, we can get the name from data or use a default
-    return data?.menteeName || "Mentee";
-  };
+  const formatDate = formatQuerySubmittedDate;
 
   const renderQueryCard = (query: RoadmapQuery) => {
     const isExpanded = expandedQueryId === query._id;
     const isSubmitting = replyQueryMutation.isPending && expandedQueryId === query._id;
-    const menteeName = getMenteeName(query);
     const repliedMentor = typeof query.repliedMentorId === "object" 
       ? query.repliedMentorId 
       : null;
+    const mentorAvatar = repliedMentor ?? user;
 
     return (
       <View key={query._id} style={styles.queryCard}>
         {}
         <View style={styles.queryHeader}>
           <View style={styles.queryHeaderLeft}>
-            <Image 
-              source={icons.myProfile} 
-              style={styles.avatar} 
-            />
+            <UserAvatar user={pastorProfile ?? undefined} size={48} />
             <View style={styles.queryInfo}>
-              <Text style={styles.queryName}>{menteeName}</Text>
+              <Text style={styles.queryName}>{resolvedPastorName}</Text>
               <Text style={styles.queryRole}>Pastor</Text>
-              <Text style={styles.queryDate}>{formatDate(query.createdDate)}</Text>
+              <Text style={styles.queryDate}>
+                Submitted: {formatDate(query.createdDate)}
+              </Text>
             </View>
           </View>
           <Pressable
@@ -202,20 +209,23 @@ export default function QueriesScreen() {
               </>
             ) : (
               <View style={styles.responseContainer}>
-                <View style={styles.responseHeader}>
-                  <Text style={styles.responseLabel}>Response:</Text>
-                  {repliedMentor && (
-                    <Text style={styles.mentorName}>
-                      by {repliedMentor.firstName} {repliedMentor.lastName}
-                    </Text>
-                  )}
+                <View style={styles.responseHeaderRow}>
+                  <UserAvatar user={mentorAvatar} size={40} />
+                  <View style={styles.responseHeaderCopy}>
+                    <Text style={styles.responseLabel}>Response</Text>
+                    {repliedMentor ? (
+                      <Text style={styles.mentorName}>
+                        by {repliedMentor.firstName} {repliedMentor.lastName}
+                      </Text>
+                    ) : null}
+                    {query.repliedDate ? (
+                      <Text style={styles.responseDate}>
+                        Answered: {formatDate(query.repliedDate)}
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
                 <Text style={styles.responseText}>{query.repliedAnswer}</Text>
-                {query.repliedDate && (
-                  <Text style={styles.responseDate}>
-                    {formatDate(query.repliedDate)}
-                  </Text>
-                )}
               </View>
             )}
           </View>
@@ -226,8 +236,7 @@ export default function QueriesScreen() {
 
   
 
-  const menteeTitle =
-    typeof menteeName === "string" && menteeName.length > 0 ? menteeName : "Mentee";
+  const menteeTitle = resolvedPastorName;
 
   return (
     <GradientBackground decorativeOrbs style={styles.root}>
@@ -235,7 +244,7 @@ export default function QueriesScreen() {
         <TopBar
           role="mentor"
           showUserName
-          customTitle={typeof menteeName === "string" ? menteeName : undefined}
+          customTitle={resolvedPastorName !== "Pastor" ? resolvedPastorName : undefined}
         />
       </View>
 
@@ -486,6 +495,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
+  },
+  responseHeaderRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 10,
+  },
+  responseHeaderCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   responseHeader: {
     flexDirection: "row",

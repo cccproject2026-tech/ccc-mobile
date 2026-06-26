@@ -168,6 +168,10 @@ export const ENDPOINTS = {
       `/roadmaps/${roadmapId}/queries?userId=${userId}`,
     REPLY_QUERY: (roadmapId: string, queryId: string) =>
       `/roadmaps/${roadmapId}/queries/${queryId}/reply`,
+    UPDATE_QUERY: (roadmapId: string, queryId: string) =>
+      `/roadmaps/${roadmapId}/queries/${queryId}`,
+    DELETE_QUERY: (roadmapId: string, queryId: string, userId: string) =>
+      `/roadmaps/${roadmapId}/queries/${queryId}?userId=${userId}`,
     CREATE_NESTED: (roadmapId: string) => `/roadmaps/${roadmapId}/nested`,
   },
 

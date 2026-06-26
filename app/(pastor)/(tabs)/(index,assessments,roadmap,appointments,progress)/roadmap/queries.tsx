@@ -1,15 +1,27 @@
 import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 import TopBar from '@/components/director/TopBar';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import {
     GradientBackground,
     RoadmapNavRow,
     SectionHeader,
 } from '@/components/ui/design-system/index';
 import { roadmapTheme } from '@/components/ui/design-system/roadmapTheme';
+import { useUserProfile } from '@/hooks/profile/useProfile';
+import {
+    useDeleteRoadmapQuery,
+    useRoadmapQueries,
+    useSubmitRoadmapQuery,
+    useUpdateRoadmapQuery,
+} from '@/hooks/roadmaps/useRoadmaps';
 import { resolveRoadmapThreadId } from '@/lib/roadmap/helpers';
-import { useRoadmapQueries, useSubmitRoadmapQuery } from '@/hooks/roadmaps/useRoadmaps';
-import { paramToString } from '@/utils/routerParams';
+import {
+    formatQuerySubmittedDate,
+    type NormalizedRoadmapQuery,
+} from '@/lib/roadmap/queryHelpers';
+import type { MentorInfo } from '@/lib/roadmap/types';
 import { useAuthStore } from '@/stores/auth.store';
+import { paramToString } from '@/utils/routerParams';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
@@ -22,11 +34,18 @@ import {
     Text,
     TextInput,
     useWindowDimensions,
-    View
+    View,
 } from 'react-native';
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const PASTOR_QUERY_TABS = ["NEW", "ANSWERED", "PENDING"] as const;
+const PASTOR_QUERY_TABS = ['NEW', 'ANSWERED', 'PENDING'] as const;
+
+function getMentorInfo(
+    value: MentorInfo | string | undefined,
+): MentorInfo | null {
+    if (!value || typeof value === 'string') return null;
+    return value;
+}
 
 export default function QueriesScreen() {
     const router = useRouter();
@@ -41,14 +60,17 @@ export default function QueriesScreen() {
         paramToString(params.phaseId),
     );
     const { user } = useAuthStore();
+    const { data: profileUser } = useUserProfile();
     const { bottom } = useSafeAreaInsets();
     const { width } = useWindowDimensions();
 
     const submitQuery = useSubmitRoadmapQuery();
+    const updateQuery = useUpdateRoadmapQuery();
+    const deleteQuery = useDeleteRoadmapQuery();
 
-    const { data: allQueries = [] } = useRoadmapQueries(
+    const { data: allQueries = [], isLoading, refetch, isFetching } = useRoadmapQueries(
         threadRoadmapId,
-        user?.id
+        user?.id,
     );
 
     const initialTabParam = paramToString(params.tab)?.toUpperCase();
@@ -59,14 +81,30 @@ export default function QueriesScreen() {
         return 'NEW';
     });
     const [queryText, setQueryText] = useState('');
+    const [editingQueryId, setEditingQueryId] = useState<string | null>(null);
+    const [editText, setEditText] = useState('');
 
     const horizontalPadding = Math.max(16, Math.min(24, Math.round(width * 0.05)));
     const maxWidth = width >= 520 ? 520 : undefined;
 
+    const pastorDisplayName = useMemo(() => {
+        const first = profileUser?.firstName ?? user?.firstName;
+        const last = profileUser?.lastName ?? user?.lastName;
+        const full = [first, last].filter(Boolean).join(' ').trim();
+        return full || 'Me';
+    }, [profileUser?.firstName, profileUser?.lastName, user?.firstName, user?.lastName]);
+
+    const pastorAvatarFields = useMemo(
+        () => ({
+            profilePicture:
+                profileUser?.profilePicture ?? user?.profilePicture ?? undefined,
+        }),
+        [profileUser?.profilePicture, user?.profilePicture],
+    );
+
     const displayQueries = useMemo(() => {
         if (selectedTab === 'NEW') return [];
-
-        return allQueries.filter(q => q.status === selectedTab.toLowerCase());
+        return allQueries.filter((q) => q.status === selectedTab.toLowerCase());
     }, [selectedTab, allQueries]);
 
     const handleSubmitQuery = async () => {
@@ -82,8 +120,8 @@ export default function QueriesScreen() {
                 roadmapId: threadRoadmapId,
                 payload: {
                     actualQueryText: queryText.trim(),
-                    userId: user.id
-                }
+                    userId: user.id,
+                },
             });
 
             setQueryText('');
@@ -93,62 +131,180 @@ export default function QueriesScreen() {
         }
     };
 
-    const formatDate = (timestamp: string): string => {
-        return new Date(timestamp).toLocaleDateString('en-US', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
+    const startEditing = (item: NormalizedRoadmapQuery) => {
+        setEditingQueryId(item._id);
+        setEditText(item.actualQueryText);
     };
 
-    const renderQuery = ({ item }: { item: any }) => (
-        <View style={styles.queryCard}>
-            {}
-            <View style={styles.questionSection}>
-                <View style={styles.queryHeader}>
-                    <Ionicons name="person-circle-outline" size={40} color="#FFFFFF" />
+    const cancelEditing = () => {
+        setEditingQueryId(null);
+        setEditText('');
+    };
 
-                    <View style={styles.queryInfo}>
-                        <Text style={styles.authorName}>Me</Text>
-                        <Text style={styles.queryDate}>{formatDate(item.createdDate)}</Text>
-                    </View>
-                </View>
+    const handleSaveEdit = async (item: NormalizedRoadmapQuery) => {
+        if (!editText.trim() || !threadRoadmapId || !user?.id) return;
 
-                <Text style={styles.queryText}>{item.actualQueryText}</Text>
-            </View>
+        try {
+            await updateQuery.mutateAsync({
+                roadmapId: threadRoadmapId,
+                queryId: item._id,
+                payload: {
+                    userId: user.id,
+                    actualQueryText: editText.trim(),
+                },
+            });
+            cancelEditing();
+        } catch (err: any) {
+            Alert.alert('Update Failed', err?.message || 'Could not update query.');
+        }
+    };
 
-            {}
-            {item.status === "answered" ? (
-                <View style={styles.responseSection}>
+    const handleDelete = (item: NormalizedRoadmapQuery) => {
+        if (!threadRoadmapId || !user?.id) return;
+
+        Alert.alert(
+            'Delete query?',
+            'This question will be removed permanently.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deleteQuery.mutateAsync({
+                                roadmapId: threadRoadmapId,
+                                queryId: item._id,
+                                userId: user.id,
+                            });
+                            if (editingQueryId === item._id) {
+                                cancelEditing();
+                            }
+                        } catch (err: any) {
+                            Alert.alert(
+                                'Delete Failed',
+                                err?.message || 'Could not delete query.',
+                            );
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
+    const renderQuery = ({ item }: { item: NormalizedRoadmapQuery }) => {
+        const isPending = item.status === 'pending';
+        const isEditing = editingQueryId === item._id;
+        const mentor = getMentorInfo(item.repliedMentorId);
+        const submittedLabel = formatQuerySubmittedDate(item.createdDate);
+
+        return (
+            <View style={styles.queryCard}>
+                <View style={styles.questionSection}>
                     <View style={styles.queryHeader}>
-                        <Ionicons
-                            name="person-circle-outline"
-                            size={40}
-                            color="#FFFFFF"
-                        />
-
+                        <UserAvatar user={pastorAvatarFields} size={44} />
                         <View style={styles.queryInfo}>
-                            <Text style={styles.authorName}>
-                                {item.repliedMentorId?.firstName} {item.repliedMentorId?.lastName}
-                            </Text>
-                            <Text style={styles.roleText}>
-                                {item.repliedMentorId?.role || "Mentor"}
+                            <Text style={styles.authorName}>{pastorDisplayName}</Text>
+                            <Text style={styles.roleText}>Pastor</Text>
+                            <Text style={styles.submittedDate}>
+                                Submitted: {submittedLabel}
                             </Text>
                         </View>
 
-                        <Text style={styles.queryDate}>{formatDate(item.repliedDate)}</Text>
+                        {isPending && !isEditing ? (
+                            <View style={styles.actionRow}>
+                                <Pressable
+                                    onPress={() => startEditing(item)}
+                                    hitSlop={8}
+                                    style={styles.iconButton}
+                                    accessibilityLabel="Edit query"
+                                >
+                                    <Ionicons name="pencil-outline" size={18} color="#FFFFFF" />
+                                </Pressable>
+                                <Pressable
+                                    onPress={() => handleDelete(item)}
+                                    hitSlop={8}
+                                    style={styles.iconButton}
+                                    accessibilityLabel="Delete query"
+                                >
+                                    <Ionicons name="trash-outline" size={18} color="#fecaca" />
+                                </Pressable>
+                            </View>
+                        ) : null}
                     </View>
 
-                    <Text style={styles.responseText}>{item.repliedAnswer}</Text>
+                    {isEditing ? (
+                        <View style={styles.editBlock}>
+                            <TextInput
+                                style={styles.editInput}
+                                multiline
+                                value={editText}
+                                onChangeText={setEditText}
+                                maxLength={250}
+                                placeholderTextColor="rgba(255,255,255,0.5)"
+                            />
+                            <View style={styles.editActions}>
+                                <Pressable
+                                    onPress={cancelEditing}
+                                    style={[styles.editButton, styles.editButtonGhost]}
+                                >
+                                    <Text style={styles.editButtonGhostText}>Cancel</Text>
+                                </Pressable>
+                                <Pressable
+                                    onPress={() => handleSaveEdit(item)}
+                                    disabled={!editText.trim() || updateQuery.isPending}
+                                    style={[
+                                        styles.editButton,
+                                        styles.editButtonPrimary,
+                                        (!editText.trim() || updateQuery.isPending) &&
+                                            styles.editButtonDisabled,
+                                    ]}
+                                >
+                                    {updateQuery.isPending ? (
+                                        <ActivityIndicator size="small" color={roadmapTheme.tealDeep} />
+                                    ) : (
+                                        <Text style={styles.editButtonPrimaryText}>Save</Text>
+                                    )}
+                                </Pressable>
+                            </View>
+                        </View>
+                    ) : (
+                        <Text style={styles.queryText}>{item.actualQueryText}</Text>
+                    )}
                 </View>
-            ) : (
-                <View style={styles.waitingBadge}>
-                    <Ionicons name="time-outline" size={16} color="#FFFFFF" />
-                    <Text style={styles.waitingText}>Waiting for response</Text>
-                </View>
-            )}
-        </View>
-    );
+
+                {item.status === 'answered' ? (
+                    <View style={styles.responseSection}>
+                        <View style={styles.queryHeader}>
+                            <UserAvatar user={mentor} size={44} />
+                            <View style={styles.queryInfo}>
+                                <Text style={styles.authorName}>
+                                    {mentor
+                                        ? `${mentor.firstName ?? ''} ${mentor.lastName ?? ''}`.trim() ||
+                                          'Mentor'
+                                        : 'Mentor'}
+                                </Text>
+                                <Text style={styles.roleText}>
+                                    {mentor?.role || 'Mentor'}
+                                </Text>
+                                {item.repliedDate ? (
+                                    <Text style={styles.submittedDate}>
+                                        Answered: {formatQuerySubmittedDate(item.repliedDate)}
+                                    </Text>
+                                ) : null}
+                            </View>
+                        </View>
+                        <Text style={styles.responseText}>{item.repliedAnswer}</Text>
+                    </View>
+                ) : (
+                    <View style={styles.waitingBadge}>
+                        <Ionicons name="time-outline" size={16} color="#FFFFFF" />
+                        <Text style={styles.waitingText}>Waiting for response</Text>
+                    </View>
+                )}
+            </View>
+        );
+    };
 
     return (
         <GradientBackground decorativeOrbs style={styles.container}>
@@ -157,113 +313,131 @@ export default function QueriesScreen() {
             </View>
 
             <KeyboardSafeContainer mode="avoid" style={styles.keyboardAvoid}>
-            <View style={[styles.content, { maxWidth: maxWidth ?? undefined }]}>
-            <View style={{ paddingHorizontal: horizontalPadding, width: "100%" }}>
-                <RoadmapNavRow onBack={() => router.back()} pillLabel="Queries" />
-                <SectionHeader
-                    title="Your questions"
-                    subtitle="Revitalization Roadmap"
-                    showDivider
-                />
-            </View>
-
-            <View style={[styles.tabRow, { paddingHorizontal: horizontalPadding }]}>
-                {PASTOR_QUERY_TABS.map((tab) => {
-                    const label = tab === 'NEW' ? 'New' : tab === 'ANSWERED' ? 'Answered' : 'Pending';
-                    const active = selectedTab === tab;
-                    return (
-                        <Pressable
-                            key={tab}
-                            onPress={() => setSelectedTab(tab)}
-                            style={[
-                                styles.tabPill,
-                                active ? styles.tabPillActive : styles.tabPillInactive,
-                            ]}
-                        >
-                            <Text
-                                style={[styles.tabPillText, active ? styles.tabPillTextActive : styles.tabPillTextInactive]}
-                                numberOfLines={1}
-                            >
-                                {label}
-                            </Text>
-                        </Pressable>
-                    );
-                })}
-            </View>
-
-            {}
-            {selectedTab === 'NEW' ? (
-                <KeyboardSafeContainer
-                    style={styles.scrollArea}
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        paddingHorizontal: horizontalPadding,
-                        paddingBottom: bottom + 20,
-                    }}
-                    extraScrollHeight={24}
-                    dismissKeyboardOnTap
-                >
-                <View style={styles.inputSection}>
-                    <Text style={styles.inputLabel}>Submit your question here.</Text>
-
-                    <TextInput
-                        style={styles.textInput}
-                        multiline
-                        value={queryText}
-                        maxLength={250}
-                        onChangeText={setQueryText}
-                        placeholder=""
-                        placeholderTextColor="rgba(255,255,255,0.5)"
-                    />
-
-                    <View style={styles.inputFooter}>
-                        <Text style={styles.wordCount}>({queryText.length} Words)</Text>
-                        <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
+                <View style={[styles.content, { maxWidth: maxWidth ?? undefined }]}>
+                    <View style={{ paddingHorizontal: horizontalPadding, width: '100%' }}>
+                        <RoadmapNavRow onBack={() => router.back()} pillLabel="Queries" />
+                        <SectionHeader
+                            title="Your questions"
+                            subtitle="Revitalization Roadmap"
+                            showDivider
+                        />
                     </View>
 
-                    <Pressable
-                        onPress={handleSubmitQuery}
-                        disabled={!queryText.trim() || submitQuery.isPending}
-                        style={[
-                            styles.submitButton,
-                            (!queryText.trim() || submitQuery.isPending) && styles.submitButtonDisabled
-                        ]}
-                    >
-                        {submitQuery.isPending ? (
-                            <ActivityIndicator size="small" color={roadmapTheme.tealDeep} />
-                        ) : (
-                            <Text style={styles.submitButtonText}>Submit</Text>
-                        )}
-                    </Pressable>
+                    <View style={[styles.tabRow, { paddingHorizontal: horizontalPadding }]}>
+                        {PASTOR_QUERY_TABS.map((tab) => {
+                            const label =
+                                tab === 'NEW'
+                                    ? 'New'
+                                    : tab === 'ANSWERED'
+                                      ? 'Answered'
+                                      : 'Pending';
+                            const active = selectedTab === tab;
+                            return (
+                                <Pressable
+                                    key={tab}
+                                    onPress={() => setSelectedTab(tab)}
+                                    style={[
+                                        styles.tabPill,
+                                        active ? styles.tabPillActive : styles.tabPillInactive,
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.tabPillText,
+                                            active
+                                                ? styles.tabPillTextActive
+                                                : styles.tabPillTextInactive,
+                                        ]}
+                                        numberOfLines={1}
+                                    >
+                                        {label}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+
+                    {selectedTab === 'NEW' ? (
+                        <KeyboardSafeContainer
+                            style={styles.scrollArea}
+                            contentContainerStyle={{
+                                flexGrow: 1,
+                                paddingHorizontal: horizontalPadding,
+                                paddingBottom: bottom + 20,
+                            }}
+                            extraScrollHeight={24}
+                            dismissKeyboardOnTap
+                        >
+                            <View style={styles.inputSection}>
+                                <Text style={styles.inputLabel}>Submit your question here.</Text>
+
+                                <TextInput
+                                    style={styles.textInput}
+                                    multiline
+                                    value={queryText}
+                                    maxLength={250}
+                                    onChangeText={setQueryText}
+                                    placeholder=""
+                                    placeholderTextColor="rgba(255,255,255,0.5)"
+                                />
+
+                                <View style={styles.inputFooter}>
+                                    <Text style={styles.wordCount}>
+                                        ({queryText.length} characters)
+                                    </Text>
+                                    <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
+                                </View>
+
+                                <Pressable
+                                    onPress={handleSubmitQuery}
+                                    disabled={!queryText.trim() || submitQuery.isPending}
+                                    style={[
+                                        styles.submitButton,
+                                        (!queryText.trim() || submitQuery.isPending) &&
+                                            styles.submitButtonDisabled,
+                                    ]}
+                                >
+                                    {submitQuery.isPending ? (
+                                        <ActivityIndicator size="small" color={roadmapTheme.tealDeep} />
+                                    ) : (
+                                        <Text style={styles.submitButtonText}>Submit</Text>
+                                    )}
+                                </Pressable>
+                            </View>
+                        </KeyboardSafeContainer>
+                    ) : (
+                        <FlatList
+                            style={styles.scrollArea}
+                            keyboardShouldPersistTaps="handled"
+                            data={displayQueries}
+                            renderItem={renderQuery}
+                            keyExtractor={(item) => item._id}
+                            showsVerticalScrollIndicator={false}
+                            refreshing={isFetching}
+                            onRefresh={() => refetch()}
+                            contentContainerStyle={[
+                                styles.listContainer,
+                                {
+                                    paddingHorizontal: horizontalPadding,
+                                    paddingBottom: bottom + 20,
+                                },
+                            ]}
+                            ListEmptyComponent={
+                                <View style={styles.emptyContainer}>
+                                    {isLoading ? (
+                                        <ActivityIndicator size="large" color="#fff" />
+                                    ) : (
+                                        <Text style={styles.emptyText}>
+                                            {selectedTab === 'PENDING'
+                                                ? 'No pending queries'
+                                                : 'No answered queries yet'}
+                                        </Text>
+                                    )}
+                                </View>
+                            }
+                        />
+                    )}
                 </View>
-                </KeyboardSafeContainer>
-            ) : (
-                <FlatList
-                    style={styles.scrollArea}
-                    keyboardShouldPersistTaps="handled"
-                    data={displayQueries}
-                    renderItem={renderQuery}
-                    keyExtractor={item => item._id}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={[
-                        styles.listContainer,
-                        {
-                            paddingHorizontal: horizontalPadding,
-                            paddingBottom: bottom + 20,
-                        },
-                    ]}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>
-                                {selectedTab === "PENDING"
-                                    ? "No pending queries"
-                                    : "No answered queries yet"}
-                            </Text>
-                        </View>
-                    }
-                />
-            )}
-            </View>
             </KeyboardSafeContainer>
         </GradientBackground>
     );
@@ -278,30 +452,11 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        width: "100%",
-        alignSelf: "center",
+        width: '100%',
+        alignSelf: 'center',
     },
     scrollArea: {
         flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-    },
-    headerTextContainer: {
-        marginLeft: 8,
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-    },
-    breadcrumb: {
-        fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.8)',
-        marginTop: 4,
     },
     tabRow: {
         flexDirection: 'row',
@@ -400,18 +555,23 @@ const styles = StyleSheet.create({
     },
     queryHeader: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: 12,
-    },
-    avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#E0E0E0',
-        marginRight: 12,
+        gap: 12,
     },
     queryInfo: {
         flex: 1,
+        minWidth: 0,
+    },
+    actionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    iconButton: {
+        padding: 6,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255,255,255,0.08)',
     },
     authorName: {
         fontSize: 16,
@@ -423,14 +583,62 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.7)',
         marginTop: 2,
     },
-    queryDate: {
+    submittedDate: {
         fontSize: 12,
-        color: 'rgba(255, 255, 255, 0.7)',
+        color: 'rgba(255, 255, 255, 0.65)',
+        marginTop: 4,
+        fontWeight: '600',
     },
     queryText: {
         fontSize: 15,
         color: '#FFFFFF',
         lineHeight: 22,
+    },
+    editBlock: {
+        gap: 10,
+    },
+    editInput: {
+        backgroundColor: 'rgba(0,0,0,0.15)',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.18)',
+        padding: 12,
+        minHeight: 100,
+        color: '#FFFFFF',
+        fontSize: 15,
+        textAlignVertical: 'top',
+    },
+    editActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 10,
+    },
+    editButton: {
+        minWidth: 88,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    editButtonGhost: {
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.25)',
+    },
+    editButtonGhostText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: 14,
+    },
+    editButtonPrimary: {
+        backgroundColor: '#FFFFFF',
+    },
+    editButtonPrimaryText: {
+        color: roadmapTheme.tealDeep,
+        fontWeight: '700',
+        fontSize: 14,
+    },
+    editButtonDisabled: {
+        opacity: 0.5,
     },
     responseSection: {
         backgroundColor: 'rgba(255, 255, 255, 0.06)',

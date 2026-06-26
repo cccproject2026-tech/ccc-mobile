@@ -10,6 +10,9 @@ import {
     LatestSubmissionApiResponse,
     ReplyQueryRequest,
     ReplyQueryResponse,
+    UpdateQueryRequest,
+    UpdateQueryResponse,
+    DeleteQueryResponse,
     Roadmap,
     RoadmapComment,
     RoadmapCommentsThread,
@@ -800,6 +803,31 @@ export const roadmapService = {
             throw new Error(response.data.message || 'Failed to reply to query');
         }
         console.log('📥 Query reply submitted successfully:', response.data);
+        return response.data;
+    },
+
+    async updateRoadmapQuery(
+        roadmapId: string,
+        queryId: string,
+        payload: UpdateQueryRequest,
+    ) {
+        const response = await apiClient.patch<UpdateQueryResponse>(
+            ENDPOINTS.ROADMAPS.UPDATE_QUERY(roadmapId, queryId),
+            payload,
+        );
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to update query');
+        }
+        return response.data;
+    },
+
+    async deleteRoadmapQuery(roadmapId: string, queryId: string, userId: string) {
+        const response = await apiClient.delete<DeleteQueryResponse>(
+            ENDPOINTS.ROADMAPS.DELETE_QUERY(roadmapId, queryId, userId),
+        );
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to delete query');
+        }
         return response.data;
     },
 

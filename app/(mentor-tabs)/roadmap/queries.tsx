@@ -1,19 +1,24 @@
 import { Button, ScreenLayout } from "@/components/build-components";
 import TextAreaField from "@/components/build-components/text-area";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { primary_color } from "@/constants/Colors";
-import { icons } from "@/constants/images";
 import { useReplyRoadmapQuery, useRoadmapQueries } from "@/hooks/roadmaps/useRoadmaps";
+import {
+  formatQuerySubmittedDate,
+  resolvePastorDisplayName,
+} from "@/lib/roadmap/queryHelpers";
 import { resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
+import { profileService } from "@/services/profile.service";
 import { paramToString } from "@/utils/routerParams";
 import { RoadmapQuery } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -21,10 +26,11 @@ import {
 } from "react-native";
 
 export default function QueriesScreen() {
-  const { data: dataParam, roadmapId, userId, taskId, phaseId } = useLocalSearchParams<{
+  const { data: dataParam, roadmapId, userId, menteeName, taskId, phaseId } = useLocalSearchParams<{
     data?: string;
     roadmapId?: string;
     userId?: string;
+    menteeName?: string;
     taskId?: string;
     phaseId?: string;
   }>();
@@ -42,6 +48,23 @@ export default function QueriesScreen() {
   const { data: allQueries = [], isLoading } = useRoadmapQueries(
     finalRoadmapId,
     menteeId
+  );
+
+  const { data: pastorProfile } = useQuery({
+    queryKey: ["profile", "user", menteeId],
+    queryFn: () => profileService.getUserById(String(menteeId)),
+    enabled: !!menteeId,
+    staleTime: 60_000,
+  });
+
+  const resolvedPastorName = useMemo(
+    () =>
+      resolvePastorDisplayName({
+        menteeNameParam: paramToString(menteeName),
+        legacyDataName: data?.menteeName,
+        profile: pastorProfile,
+      }),
+    [menteeName, data?.menteeName, pastorProfile],
   );
 
   const [activeTab, setActiveTab] = useState<"pending" | "answered">("pending");
@@ -93,18 +116,7 @@ export default function QueriesScreen() {
     }
   };
 
-  const formatDate = (timestamp: string): string => {
-    return new Date(timestamp).toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  const getMenteeName = (query: RoadmapQuery): string => {
-    // Since queries are fetched for a specific userId, we can get the name from data or use a default
-    return data?.menteeName || "Mentee";
-  };
+  const formatDate = formatQuerySubmittedDate;
 
   const renderTab = (
     tabName: "pending" | "answered",
@@ -141,7 +153,6 @@ export default function QueriesScreen() {
   const renderQueryCard = (query: RoadmapQuery) => {
     const isExpanded = expandedQueryId === query._id;
     const isSubmitting = replyQueryMutation.isPending && expandedQueryId === query._id;
-    const menteeName = getMenteeName(query);
     const repliedMentor = typeof query.repliedMentorId === "object" 
       ? query.repliedMentorId 
       : null;
@@ -151,14 +162,13 @@ export default function QueriesScreen() {
         {}
         <View style={styles.queryHeader}>
           <View style={styles.queryHeaderLeft}>
-            <Image 
-              source={icons.myProfile} 
-              style={styles.avatar} 
-            />
+            <UserAvatar user={pastorProfile ?? undefined} size={48} />
             <View style={styles.queryInfo}>
-              <Text style={styles.queryName}>{menteeName}</Text>
+              <Text style={styles.queryName}>{resolvedPastorName}</Text>
               <Text style={styles.queryRole}>Pastor</Text>
-              <Text style={styles.queryDate}>{formatDate(query.createdDate)}</Text>
+              <Text style={styles.queryDate}>
+                Submitted: {formatDate(query.createdDate)}
+              </Text>
             </View>
           </View>
           <Pressable

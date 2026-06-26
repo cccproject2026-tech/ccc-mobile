@@ -4,6 +4,7 @@ import {
     CreateExtrasDto,
     NestedRoadmap,
     ReplyQueryRequest,
+    UpdateQueryRequest,
     Roadmap,
     RoadmapCommentsThread,
     SubmitQueryRequest,
@@ -35,6 +36,7 @@ import { roadmapService } from '@/services/roadmap.service';
 import { useAuthStore } from "@/stores";
 import { UserRole } from "@/types";
 import { RoadmapProgress } from "@/types/progress.types";
+import { normalizeRoadmapQueryItem } from '@/lib/roadmap/queryHelpers';
 import { useMutation, useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { progressKeys, useProgress } from "../progress/useProgress";
@@ -1176,6 +1178,75 @@ export function useReplyRoadmapQuery() {
     });
 }
 
+export function useUpdateRoadmapQuery() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            roadmapId,
+            queryId,
+            payload,
+        }: {
+            roadmapId: string;
+            queryId: string;
+            payload: UpdateQueryRequest;
+        }) => roadmapService.updateRoadmapQuery(roadmapId, queryId, payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.detail(variables.roadmapId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.all,
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["pastor-focus-feedback"],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [...roadmapKeys.all, "queries", variables.roadmapId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.queries(
+                    variables.roadmapId,
+                    variables.payload.userId,
+                ),
+            });
+        },
+    });
+}
+
+export function useDeleteRoadmapQuery() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            roadmapId,
+            queryId,
+            userId,
+        }: {
+            roadmapId: string;
+            queryId: string;
+            userId: string;
+        }) => roadmapService.deleteRoadmapQuery(roadmapId, queryId, userId),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.detail(variables.roadmapId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.all,
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["pastor-focus-feedback"],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [...roadmapKeys.all, "queries", variables.roadmapId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: roadmapKeys.queries(variables.roadmapId, variables.userId),
+            });
+        },
+    });
+}
+
 export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
     return useQuery({
         queryKey: roadmapKeys.queries(roadmapId!, userId!),
@@ -1186,12 +1257,12 @@ export const useRoadmapQueries = (roadmapId?: string, userId?: string) => {
 
             
             const flat = threads.flatMap(t =>
-                t.queries.map(q => ({
-                    ...q,
-                    // Backend sometimes varies casing ("PENDING"/"Answered"); normalize so UI filtering is stable.
-                    status: String((q as any)?.status ?? "").toLowerCase(),
-                    threadId: t._id
-                }))
+                t.queries.map(q =>
+                    normalizeRoadmapQueryItem(
+                        q as Record<string, unknown>,
+                        t._id,
+                    ),
+                ),
             );
 
             return flat;

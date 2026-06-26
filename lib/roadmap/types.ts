@@ -432,6 +432,33 @@ export interface GetQueriesResponse {
     data: RoadmapQueryThread[];
 }
 
+export interface UpdateQueryRequest {
+    userId: string;
+    actualQueryText: string;
+}
+
+export interface UpdateQueryResponse {
+    success: boolean;
+    message: string;
+    data: {
+        _id: string;
+        userId: string;
+        roadMapId: string;
+        queries: RoadmapQuery[];
+    };
+}
+
+export interface DeleteQueryResponse {
+    success: boolean;
+    message: string;
+    data: {
+        _id: string;
+        userId: string;
+        roadMapId: string;
+        queries: RoadmapQuery[];
+    };
+}
+
 export interface ReplyQueryRequest {
     repliedAnswer: string;
     repliedMentorId: string;
