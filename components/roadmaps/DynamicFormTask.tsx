@@ -25,6 +25,12 @@ import {
     shouldUpdateTaskExtras,
 } from "@/lib/roadmap/helpers";
 import {
+    buildExtraFieldKey,
+    buildSectionCheckboxKey,
+    findExtraByFieldKey,
+    seedDefaultFormValues,
+} from "@/lib/roadmap/extraFieldKeys";
+import {
     isJumpstartBlockingError,
     presentJumpstartBlockingError,
 } from "@/lib/roadmap/jumpstartErrors";
@@ -200,14 +206,13 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         
 
         const init: Record<string, any> = {};
-        
-        
-        effectiveExtras.forEach((extra) => {
-            if (extra.date) init[extra.name] = extra.date;
-        });
 
-        Object.assign(init, savedExtrasToFormValues(existingExtras?.extras));
-        
+        Object.assign(init, seedDefaultFormValues(effectiveExtras));
+        Object.assign(
+            init,
+            savedExtrasToFormValues(existingExtras?.extras, effectiveExtras),
+        );
+
         setFormData(init);
         setErrors({});
     }, [existingExtras, effectiveExtras]);
@@ -221,7 +226,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
 
     /** Infer extra type – used when building payload */
     const getExtraType = (fieldName: string, value: any): string => {
-        const extraDef = effectiveExtras.find((e) => e.name === fieldName);
+        const extraDef = findExtraByFieldKey(effectiveExtras, fieldName);
         if (extraDef) return extraDef.type;
 
         if (typeof value === "boolean") return "CHECKBOX";
@@ -231,21 +236,31 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         return "TEXT_FIELD";
     };
 
-    const collectSignatureErrors = (extras?: Extra[]): Record<string, string> => {
+    const collectSignatureErrors = (
+        extras?: Extra[],
+        fieldPath: string[] = [],
+    ): Record<string, string> => {
         const fieldErrors: Record<string, string> = {};
 
         if (!extras) return fieldErrors;
 
         for (const extra of extras) {
-            if (extra.type === "SIGNATURE" && extra.required) {
-                const value = formData[extra.name];
-                if (!value) {
-                    fieldErrors[extra.name] = "Signature is required.";
+            if (extra.type === "SECTION") {
+                if (extra.sections?.length) {
+                    Object.assign(
+                        fieldErrors,
+                        collectSignatureErrors(extra.sections, [...fieldPath, extra.name]),
+                    );
                 }
+                continue;
             }
 
-            if (extra.sections && extra.sections.length > 0) {
-                Object.assign(fieldErrors, collectSignatureErrors(extra.sections));
+            if (extra.type === "SIGNATURE" && extra.required) {
+                const fieldKey = buildExtraFieldKey(fieldPath, extra.name);
+                const value = formData[fieldKey];
+                if (!value) {
+                    fieldErrors[fieldKey] = "Signature is required.";
+                }
             }
         }
 
@@ -647,14 +662,19 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
 
     /** ───────────────────── RENDER FIELDS ───────────────────── */
 
-    const renderExtra = (extra: Extra, index: number): JSX.Element | null => {
-        const id = `${extra.name}-${index}`;
+    const renderExtra = (
+        extra: Extra,
+        index: number,
+        fieldPath: string[] = [],
+    ): JSX.Element | null => {
+        const fieldKey = buildExtraFieldKey(fieldPath, extra.name);
+        const id = `${fieldKey}-${index}`;
 
         switch (extra.type) {
             case "UPLOAD":
                 return (
                     <View key={id} style={styles.fieldContainer}>
-                        <UploadField extraName={extra.name} isEditable={(extra as any).editable !== false} />
+                        <UploadField extraName={fieldKey} isEditable={(extra as any).editable !== false} />
                     </View>
                 );
 
@@ -666,8 +686,8 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                             style={[styles.textInput, isMentorView && styles.textInputDisabled]}
                             placeholder={extra.placeHolder}
                             placeholderTextColor="#9cc2ff"
-                            value={formData[extra.name] || ""}
-                            onChangeText={v => handleChange(extra.name, v)}
+                            value={formData[fieldKey] || ""}
+                            onChangeText={(v) => handleChange(fieldKey, v)}
                             editable={!isMentorView}
                         />
                     </View>
@@ -683,8 +703,8 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                             placeholderTextColor="#9cc2ff"
                             multiline
                             numberOfLines={4}
-                            value={formData[extra.name] || ""}
-                            onChangeText={v => handleChange(extra.name, v)}
+                            value={formData[fieldKey] || ""}
+                            onChangeText={(v) => handleChange(fieldKey, v)}
                             editable={!isMentorView}
                         />
                     </View>
@@ -703,18 +723,18 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                     <View key={id} style={styles.fieldContainer}>
                         {}
                         <Pressable
-                            onPress={() => checkboxEditable && handleChange(extra.name, !formData[extra.name])}
+                            onPress={() => checkboxEditable && handleChange(fieldKey, !formData[fieldKey])}
                             style={styles.checkboxRow}
                             disabled={!checkboxEditable}
                         >
                             <View
                                 style={[
                                     styles.checkbox,
-                                    formData[extra.name] && styles.checkboxChecked,
+                                    formData[fieldKey] && styles.checkboxChecked,
                                     !checkboxEditable && styles.checkboxDisabled,
                                 ]}
                             >
-                                {formData[extra.name] && (
+                                {formData[fieldKey] && (
                                     <Text style={styles.checkmark}>✓</Text>
                                 )}
                             </View>
@@ -725,7 +745,10 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginLeft: 36, marginTop: 8 }}>
                                 {extra.checkboxes.map((checkbox, cbIndex) => {
-                                    const cbId = `${extra.name}-cb-${checkbox.name}`;
+                                    const cbId = buildExtraFieldKey(
+                                        fieldPath,
+                                        `${extra.name}-cb-${checkbox.name}`,
+                                    );
                                     const isChecked = !!formData[cbId];
 
                                     return (
@@ -813,7 +836,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                                     style={styles.dateInput}
                                     placeholder="DD / MM / YY"
                                     placeholderTextColor="#9cc2ff"
-                                    value={formData[extra.name] !== undefined ? formData[extra.name] : (extra.date || "")}
+                                    value={formData[fieldKey] !== undefined ? formData[fieldKey] : (extra.date || "")}
                                     keyboardType="number-pad"
                                     maxLength={12}
                                     editable={isDateEditable}
@@ -840,7 +863,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                                         // However, the above logic re-calculates based on raw digits.
                                         // If they delete ' / ', raw length decreases, and formatted is correct.
                                         
-                                        handleChange(extra.name, formatted);
+                                        handleChange(fieldKey, formatted);
                                     }}
                                 />
                             </View>
@@ -852,7 +875,10 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                                 {extra.checkboxes
                                     .filter(cb => cb.name !== 'Allow pastor to select Date' && cb.name !== 'Show date on info card')
                                     .map((checkbox, cbIndex) => {
-                                    const cbId = `${extra.name}-cb-${checkbox.name}`;
+                                    const cbId = buildExtraFieldKey(
+                                        fieldPath,
+                                        `${extra.name}-cb-${checkbox.name}`,
+                                    );
                                     const checked = !!formData[cbId];
                                     const checkboxEnabled = !isMentorView;
 
@@ -930,7 +956,11 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginTop: 8 }}>
                                 {extra.checkboxes.map((checkbox, cbIndex) => {
-                                    const cbId = `${extra.name}-cb-${checkbox.name}`;
+                                    const cbId = buildSectionCheckboxKey(
+                                        fieldPath,
+                                        extra.name,
+                                        checkbox.name,
+                                    );
                                     const checked = !!formData[cbId];
 
                                     return (
@@ -984,7 +1014,10 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                         {extra.sections && extra.sections.length > 0 && (
                             <View style={{ marginTop: 8 }}>
                                 {extra.sections.map((section, sectionIndex) =>
-                                    renderExtra(section, sectionIndex)
+                                    renderExtra(section, sectionIndex, [
+                                        ...fieldPath,
+                                        extra.name,
+                                    ])
                                 )}
                             </View>
                         )}
@@ -1128,7 +1161,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
             }
 
             case "SIGNATURE": {
-                const signatureValue = formData[extra.name] || null;
+                const signatureValue = formData[fieldKey] || null;
                 const isMentorReadOnly = isMentorView;
                 return (
                     <View key={id} style={styles.fieldContainer}>
@@ -1164,7 +1197,7 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                                         ]
                                     );
                                 } else {
-                                    setOpenSignatureField(extra.name);
+                                    setOpenSignatureField(fieldKey);
                                 }
                             }}
                             disabled={isMentorReadOnly && !signatureValue}
@@ -1185,8 +1218,8 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                                 </Text>
                             )}
                         </Pressable>
-                        {errors[extra.name] && (
-                            <Text style={styles.fieldError}>{errors[extra.name]}</Text>
+                        {errors[fieldKey] && (
+                            <Text style={styles.fieldError}>{errors[fieldKey]}</Text>
                         )}
                     </View>
                 );

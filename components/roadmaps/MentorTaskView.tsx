@@ -25,6 +25,12 @@ import {
     shouldUpdateTaskExtras,
 } from "@/lib/roadmap/helpers";
 import {
+    buildExtraFieldKey,
+    buildSectionCheckboxKey,
+    findExtraByFieldKey,
+    seedDefaultFormValues,
+} from "@/lib/roadmap/extraFieldKeys";
+import {
     isJumpstartBlockingError,
     presentJumpstartBlockingError,
 } from "@/lib/roadmap/jumpstartErrors";
@@ -335,12 +341,11 @@ export function MentorTaskView({
     useEffect(() => {
         const init: Record<string, any> = {};
         
-        
-        effectiveExtras.forEach((extra) => {
-            if (extra.date) init[extra.name] = extra.date;
-        });
-
-        Object.assign(init, savedExtrasToFormValues(existingExtras?.extras));
+        Object.assign(init, seedDefaultFormValues(effectiveExtras));
+        Object.assign(
+            init,
+            savedExtrasToFormValues(existingExtras?.extras, effectiveExtras),
+        );
         
         setFormData(init);
     }, [existingExtras, effectiveExtras]);
@@ -431,7 +436,7 @@ export function MentorTaskView({
 
     /** Infer extra type – used when building payload */
     const getExtraType = (fieldName: string, value: any): string => {
-        const extraDef = effectiveExtras.find((e) => e.name === fieldName);
+        const extraDef = findExtraByFieldKey(effectiveExtras, fieldName);
         if (extraDef) return extraDef.type;
 
         if (typeof value === "boolean") return "CHECKBOX";
@@ -870,15 +875,20 @@ export function MentorTaskView({
 
     /** ───────────────────── RENDER FIELDS ───────────────────── */
 
-    const renderExtra = (extra: Extra, index: number): JSX.Element | null => {
-        const id = `${extra.name}-${index}`;
+    const renderExtra = (
+        extra: Extra,
+        index: number,
+        fieldPath: string[] = [],
+    ): JSX.Element | null => {
+        const fieldKey = buildExtraFieldKey(fieldPath, extra.name);
+        const id = `${fieldKey}-${index}`;
 
         switch (extra.type) {
             case "UPLOAD":
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         {renderFieldLabel(extra.name)}
-                        <UploadField extraName={extra.name} />
+                        <UploadField extraName={fieldKey} />
                     </View>
                 );
 
@@ -889,15 +899,15 @@ export function MentorTaskView({
                         {isReadOnly ? (
                             <View style={styles.readOnlyValue}>
                                 <Text style={styles.readOnlyValueText}>
-                                    {formatReadOnlyText(formData[extra.name])}
+                                    {formatReadOnlyText(formData[fieldKey])}
                                 </Text>
                             </View>
                         ) : (
                             <TextInput
                                 style={styles.textInput}
-                                value={formData[extra.name] || ""}
+                                value={formData[fieldKey] || ""}
                                 editable
-                                onChangeText={(v) => handleChange(extra.name, v)}
+                                onChangeText={(v) => handleChange(fieldKey, v)}
                                 placeholder={extra.placeHolder}
                                 placeholderTextColor="#9cc2ff"
                             />
@@ -912,7 +922,7 @@ export function MentorTaskView({
                         {isReadOnly ? (
                             <View style={[styles.readOnlyValue, styles.readOnlyValueMultiline]}>
                                 <Text style={styles.readOnlyValueText}>
-                                    {formatReadOnlyText(formData[extra.name])}
+                                    {formatReadOnlyText(formData[fieldKey])}
                                 </Text>
                             </View>
                         ) : (
@@ -921,9 +931,9 @@ export function MentorTaskView({
                                 multiline
                                 scrollEnabled={false}
                                 numberOfLines={4}
-                                value={formData[extra.name] || ""}
+                                value={formData[fieldKey] || ""}
                                 editable
-                                onChangeText={(v) => handleChange(extra.name, v)}
+                                onChangeText={(v) => handleChange(fieldKey, v)}
                                 placeholder={extra.placeHolder}
                                 placeholderTextColor="#9cc2ff"
                             />
@@ -942,7 +952,7 @@ export function MentorTaskView({
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         <Pressable
-                            onPress={() => handleChange(extra.name, !formData[extra.name])}
+                            onPress={() => handleChange(fieldKey, !formData[fieldKey])}
                             style={styles.checkboxRow}
                             hitSlop={isReadOnly ? 0 : 8}
                             disabled={isReadOnly}
@@ -950,11 +960,11 @@ export function MentorTaskView({
                             <View
                                 style={[
                                     styles.checkbox,
-                                    formData[extra.name] && styles.checkboxChecked,
+                                    formData[fieldKey] && styles.checkboxChecked,
                                     isReadOnly && styles.checkboxReadOnly,
                                 ]}
                             >
-                                {formData[extra.name] && <Text style={styles.checkmark}>✓</Text>}
+                                {formData[fieldKey] && <Text style={styles.checkmark}>✓</Text>}
                             </View>
                             <Text
                                 style={[
@@ -968,7 +978,10 @@ export function MentorTaskView({
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginLeft: 36, marginTop: 8 }}>
                                 {extra.checkboxes.map((checkbox) => {
-                                    const cbId = `${extra.name}-cb-${checkbox.name}`;
+                                    const cbId = buildExtraFieldKey(
+                                        fieldPath,
+                                        `${extra.name}-cb-${checkbox.name}`,
+                                    );
                                     const isChecked = !!formData[cbId];
                                     return (
                                         <View key={cbId} style={{ marginBottom: 6 }}>
@@ -1013,8 +1026,8 @@ export function MentorTaskView({
                                 <Text style={styles.readOnlyValueText}>
                                     {(() => {
                                         const currentRaw =
-                                            formData[extra.name] !== undefined
-                                                ? formData[extra.name]
+                                            formData[fieldKey] !== undefined
+                                                ? formData[fieldKey]
                                                 : extra.date || "";
                                         const parsed = parseAnyDate(currentRaw);
                                         return parsed ? formatForUi(parsed) : "No date provided";
@@ -1023,14 +1036,14 @@ export function MentorTaskView({
                             </View>
                         ) : (
                             <Pressable
-                                onPress={() => setActiveDateField(extra.name)}
+                                onPress={() => setActiveDateField(fieldKey)}
                                 style={styles.dateInputContainer}
                                 hitSlop={8}
                             >
                                 {(() => {
                                     const currentRaw =
-                                        formData[extra.name] !== undefined
-                                            ? formData[extra.name]
+                                        formData[fieldKey] !== undefined
+                                            ? formData[fieldKey]
                                             : extra.date || "";
                                     const parsed = parseAnyDate(currentRaw);
                                     return (
@@ -1048,9 +1061,9 @@ export function MentorTaskView({
                             </Pressable>
                         )}
 
-                        {!isReadOnly && activeDateField === extra.name ? (
+                        {!isReadOnly && activeDateField === fieldKey ? (
                             <DateTimePicker
-                                value={parseAnyDate(formData[extra.name] ?? extra.date) ?? new Date()}
+                                value={parseAnyDate(formData[fieldKey] ?? extra.date) ?? new Date()}
                                 mode="date"
                                 display="default"
                                 onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -1059,7 +1072,7 @@ export function MentorTaskView({
                                         return;
                                     }
                                     if (selectedDate) {
-                                        handleChange(extra.name, formatForApi(selectedDate));
+                                        handleChange(fieldKey, formatForApi(selectedDate));
                                     }
                                     setActiveDateField(null);
                                 }}
@@ -1078,7 +1091,11 @@ export function MentorTaskView({
                         {extra.checkboxes && extra.checkboxes.length > 0 && (
                             <View style={{ marginTop: 8 }}>
                                 {extra.checkboxes.map((checkbox) => {
-                                    const cbId = `${extra.name}-cb-${checkbox.name}`;
+                                    const cbId = buildSectionCheckboxKey(
+                                        fieldPath,
+                                        extra.name,
+                                        checkbox.name,
+                                    );
                                     const checked = !!formData[cbId];
                                     return (
                                         <View key={cbId} style={{ marginBottom: 6 }}>
@@ -1109,7 +1126,10 @@ export function MentorTaskView({
                         {extra.sections && extra.sections.length > 0 && (
                             <View style={{ marginTop: 8 }}>
                                 {extra.sections.map((section, sectionIndex) =>
-                                    renderExtra(section, sectionIndex)
+                                    renderExtra(section, sectionIndex, [
+                                        ...fieldPath,
+                                        extra.name,
+                                    ])
                                 )}
                             </View>
                         )}
@@ -1227,7 +1247,7 @@ export function MentorTaskView({
             }
 
             case "SIGNATURE": {
-                const signatureValue = formData[extra.name] || null;
+                const signatureValue = formData[fieldKey] || null;
                 return (
                     <View key={id} style={styles.fieldContainer}>
                         {renderFieldLabel(extra.name)}
@@ -1239,7 +1259,7 @@ export function MentorTaskView({
                             onPress={() => {
                                 if (!signatureValue) {
                                     if (!isReadOnly) {
-                                        setSignatureEditor({ visible: true, fieldName: extra.name });
+                                        setSignatureEditor({ visible: true, fieldName: fieldKey });
                                     }
                                     return;
                                 }
@@ -1287,7 +1307,7 @@ export function MentorTaskView({
                                     {
                                         text: "Edit",
                                         onPress: () =>
-                                            setSignatureEditor({ visible: true, fieldName: extra.name }),
+                                            setSignatureEditor({ visible: true, fieldName: fieldKey }),
                                     },
                                     {
                                         text: "Download",

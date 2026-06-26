@@ -2,7 +2,11 @@
 import { API_CONFIG } from '@/constants/config/api';
 import { taskCompletionMapKey } from '@/lib/roadmap/taskCompletionTimestamps';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
-import { Extra, NestedRoadmap, Roadmap, RoadmapCardStatus, TaskSubmission } from './types';
+import type { Extra } from './types';
+import {
+    EXTRA_FIELD_KEY_SEP,
+    mapSavedExtrasToFormValues,
+} from './extraFieldKeys';
 
 const FORM_EXTRA_TYPES = new Set<Extra['type']>([
     'TEXT_AREA',
@@ -326,7 +330,14 @@ export function applyLocalTaskCompletionOverrides(
 }
 
 /** Last saved value per field name (ignores duplicate rows from repeated saves). */
-export function savedExtrasToFormValues(savedItems?: any[] | null): Record<string, any> {
+export function savedExtrasToFormValues(
+    savedItems?: any[] | null,
+    templateExtras?: Extra[] | null,
+): Record<string, any> {
+    if (templateExtras?.length) {
+        return mapSavedExtrasToFormValues(savedItems, templateExtras) as Record<string, any>;
+    }
+
     const values: Record<string, any> = {};
     if (!Array.isArray(savedItems)) return values;
 
@@ -342,6 +353,8 @@ export function savedExtrasToFormValues(savedItems?: any[] | null): Record<strin
     }
     return values;
 }
+
+export { EXTRA_FIELD_KEY_SEP } from './extraFieldKeys';
 
 /** True when `id` is a 24-char hex MongoDB ObjectId. */
 export function isMongoObjectId(id: string | undefined | null): id is string {
