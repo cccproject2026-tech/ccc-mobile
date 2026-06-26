@@ -42,7 +42,7 @@ import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { format, isValid, parse } from "date-fns";
-import * as DocumentPicker from "expo-document-picker";
+import { pickUploadFiles } from "@/lib/media/pickUploadFiles";
 import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
 import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -679,17 +679,14 @@ export function MentorTaskView({
 
         const pickFile = async () => {
             if (isReadOnly) return;
-            const res = await DocumentPicker.getDocumentAsync({
-                type: "*/*",
-                multiple: true,
-            });
-            if (res.canceled) return;
+            const picked = await pickUploadFiles({ multiple: true, includeVideos: true });
+            if (!picked.length) return;
 
-            const newFiles = res.assets.map((a) => ({
-                id: `${a.name}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-                uri: a.uri,
-                name: a.name,
-                type: a.mimeType || "application/octet-stream",
+            const newFiles = picked.map((file) => ({
+                id: file.id,
+                uri: file.uri,
+                name: file.name,
+                type: file.type || "application/octet-stream",
             }));
 
             setPendingFiles((prev) => ({

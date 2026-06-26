@@ -14,8 +14,9 @@
      "bundleIdentifier": "com.georgejose.cccnewapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library so you can select a profile picture.",
-        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save photos to your library.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library so you can upload images and videos for roadmap tasks, profile photos, and documents.",
+        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save photos and signatures to your library.",
+        "NSCameraUsageDescription": "This app needs access to your camera so you can take photos for uploads and your profile.",
         "NSMicrophoneUsageDescription": "This app needs access to your microphone to record voice notes for AI transcription and summary.",
         "UISupportsDocumentBrowser": true,
         "NSAppTransportSecurity": {
@@ -78,7 +79,16 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app needs access to your photos so you can select a profile picture."
+          "photosPermission": "The app needs access to your photos so you can upload images and videos.",
+          "cameraPermission": "The app needs access to your camera so you can take photos for uploads."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "The app needs access to your photo library to save signatures and media.",
+          "savePhotosPermission": "The app needs permission to save photos to your library.",
+          "isAccessMediaLocationEnabled": false
         }
       ],
       [

@@ -16,7 +16,7 @@ import { useProfile, useUpdateProfile, useUploadProfilePicture } from '@/hooks/p
 import { UpdateProfileData } from '@/types';
 import { ChurchInfo } from '@/types/profile.types';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import { pickImagesFromLibrary } from '@/lib/media/pickUploadFiles';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
@@ -149,51 +149,24 @@ export default function ProfileScreen() {
 
   const pickImage = useCallback(async () => {
     try {
-      console.log('📸 Starting image picker...');
-
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (status !== 'granted') {
-        console.log('❌ Permission denied');
-        Alert.alert(
-          'Permission Required',
-          'Please grant permission to access your photo library to upload a profile picture.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      console.log('✅ Permission granted, launching picker...');
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+      const picked = await pickImagesFromLibrary({
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
       });
 
-      console.log('📷 Image picker result:', result);
+      const asset = picked[0];
+      if (!asset) return;
 
-      if (!result.canceled && result.assets?.[0]) {
-        const asset = result.assets[0];
-        console.log('✅ Image selected:', asset.uri);
-
-        setProfileImage(asset.uri);
-
-        const fileObj = {
-          uri: asset.uri,
-          type: asset.mimeType || 'image/jpeg',
-          fileName: asset.fileName || `profile-${Date.now()}.jpg`,
-        };
-
-        console.log('💾 File object created:', fileObj);
-        setSelectedImageFile(fileObj);
-      } else {
-        console.log('ℹ️ Image selection cancelled');
-      }
+      setProfileImage(asset.uri);
+      setSelectedImageFile({
+        uri: asset.uri,
+        type: asset.type || "image/jpeg",
+        fileName: asset.name || `profile-${Date.now()}.jpg`,
+      });
     } catch (error) {
-      console.error('❌ Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image. Please try again.");
     }
   }, []);
 

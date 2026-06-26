@@ -17,6 +17,7 @@ import {
   useRoadmapQueries,
 } from "@/hooks/roadmaps/useRoadmaps";
 import { useCompletionCelebration } from "@/hooks/roadmap/useCompletionCelebration";
+import { useNavigationBack } from "@/hooks/navigation/useNavigationBack";
 import { useRoadmapMeta } from "@/hooks/roadmap/useRoadmapMeta";
 import { resolveRoadmapDetailTask, resolveRoadmapThreadId } from "@/lib/roadmap/helpers";
 import {
@@ -28,7 +29,7 @@ import type { NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useStableFocusRefetch } from "@/hooks/roadmaps/useStableFocusRefetch";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -52,8 +53,12 @@ const accent = {
 export default function PastorRoadmapItemDetail() {
   const { bottom } = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const router = useRouter();
   const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string }>();
+  const { handleBack } = useNavigationBack(
+    phaseId
+      ? (`/(pastor)/(tabs)/roadmap/${phaseId}` as const)
+      : ("/(pastor)/(tabs)/roadmap" as const),
+  );
 
   const { user } = useAuthStore();
   const targetUserId = user?.id;
@@ -134,7 +139,7 @@ export default function PastorRoadmapItemDetail() {
     );
     const triggered = triggerCelebration(phase, itemId, taskName, phases);
     if (!triggered) {
-      router.back();
+      handleBack();
     }
   }, [
     task,
@@ -143,7 +148,7 @@ export default function PastorRoadmapItemDetail() {
     baseSortedRoadmaps,
     targetUserId,
     triggerCelebration,
-    router,
+    handleBack,
     reloadTimestamps,
   ]);
 
@@ -257,7 +262,7 @@ export default function PastorRoadmapItemDetail() {
             },
           ]}
         >
-          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+          <Pressable onPress={handleBack} hitSlop={10} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.92)" />
           </Pressable>
           <View style={styles.headerPillWrap}>

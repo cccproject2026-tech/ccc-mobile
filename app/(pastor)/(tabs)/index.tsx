@@ -30,6 +30,7 @@ import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation"
 import { useAuthStore } from "@/stores";
 import { AppointmentPlatform } from "@/types/appointment.types";
 import { isPastorMentorIntroActive } from "@/utils/pastorMentorIntro";
+import { appendReturnTo } from "@/utils/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -498,7 +499,7 @@ export default function PastorDashboard() {
       setTimeout(() => {
         router.push({
           pathname: item.route.pathname as any,
-          params: item.route.params ?? {},
+          params: appendReturnTo(item.route.params ?? {}, "/(pastor)/(tabs)"),
         });
       }, 220);
     },

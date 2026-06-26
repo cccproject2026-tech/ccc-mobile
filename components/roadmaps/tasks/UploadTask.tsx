@@ -2,7 +2,7 @@
 import { useRoadmapProgress } from '@/context/RoadmapProgressContext';
 import { Task, UploadSchema } from '@/lib/roadmap/types';
 import { Ionicons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
+import { pickUploadFiles } from '@/lib/media/pickUploadFiles';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface Props {
@@ -16,16 +16,17 @@ export function UploadTask({ item }: Props) {
     const attachments = p?.attachments || [];
 
     async function handleUpload() {
-        const res = await DocumentPicker.getDocumentAsync({
-            type: schema.accept || '*/*',
-            multiple: (schema.maxFiles ?? 1) > 1
+        const picked = await pickUploadFiles({
+            multiple: (schema.maxFiles ?? 1) > 1,
+            includeVideos: true,
+            documentTypes: schema.accept || '*/*',
         });
 
-        if (!res.canceled) {
-            const newFiles = res.assets.map(a => ({
-                id: `${a.name}-${Date.now()}`,
-                uri: a.uri,
-                name: a.name
+        if (picked.length) {
+            const newFiles = picked.map((file) => ({
+                id: file.id,
+                uri: file.uri,
+                name: file.name,
             }));
             updateItem(item.id, {
                 attachments: [...attachments, ...newFiles].slice(0, schema.maxFiles),

@@ -33,7 +33,7 @@ import { extractApiErrorMessage } from "@/utils/availability/api-error";
 import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
+import { pickUploadFiles } from "@/lib/media/pickUploadFiles";
 import RNFS from "react-native-fs";
 import * as MediaLibrary from "expo-media-library";
 import { useRouter } from "expo-router";
@@ -466,18 +466,18 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
 
         const pickFile = async () => {
             if (!fieldEditable) return;
-            const res = await DocumentPicker.getDocumentAsync({
-                type: "*/*",
+            const picked = await pickUploadFiles({
                 multiple: true,
+                includeVideos: isMediaUpload,
             });
-            if (res.canceled) return;
+            if (!picked.length) return;
 
-            const newFiles = res.assets.map(a => ({
-                id: `${a.name}-${Date.now()}`,
-                uri: a.uri,
-                name: a.name,
-                type: a.mimeType,
-                size: a.size,
+            const newFiles = picked.map((file) => ({
+                id: file.id,
+                uri: file.uri,
+                name: file.name,
+                type: file.type,
+                size: file.size,
             }));
 
             setPendingFiles(prev => ({

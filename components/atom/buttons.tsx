@@ -1,4 +1,5 @@
 import * as DocumentPicker from "expo-document-picker";
+import { pickUploadFiles } from "@/lib/media/pickUploadFiles";
 import React from "react";
 import {
   Image,
@@ -210,21 +211,37 @@ export const UploadPDFButton: React.FC<UploadPDFButtonProps> = ({
 }) => {
   const pickDocument = async (): Promise<void> => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: acceptedTypes ?? ["application/pdf", "image/*", "video/*", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-        copyToCacheDirectory: true,
+      const picked = await pickUploadFiles({
+        multiple: false,
+        includeVideos: true,
+        documentTypes:
+          acceptedTypes ??
+          [
+            "application/pdf",
+            "image/*",
+            "video/*",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          ],
       });
 
-      // Handle the result properly based on DocumentPicker's updated API
-      if (!result.canceled) {
-        setSelectedFile(result);
-        console.log("Selected PDF:", result);
+      if (!picked.length) return;
 
-        
-        if (onPress) {
-          onPress();
-        }
-      }
+      const asset = picked[0];
+      const result = {
+        canceled: false as const,
+        assets: [
+          {
+            uri: asset.uri,
+            name: asset.name,
+            mimeType: asset.type ?? undefined,
+            size: asset.size ?? undefined,
+          },
+        ],
+      };
+
+      setSelectedFile(result);
+      onPress?.();
     } catch (error) {
       console.error("Error picking document:", error);
     }

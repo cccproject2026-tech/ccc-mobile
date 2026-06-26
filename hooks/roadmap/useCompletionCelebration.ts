@@ -1,10 +1,12 @@
 import { useCallback, useRef, useState } from "react";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   getCompletionStats,
   getNextIncompleteNestedTaskId,
 } from "@/lib/roadmap/helpers";
 import type { Roadmap } from "@/lib/roadmap/types";
+import { getReturnToParam, safeGoBack } from "@/utils/navigation";
+import type { Href } from "expo-router";
 
 export type CelebrationKind = "task" | "phase" | null;
 
@@ -95,10 +97,19 @@ function findNextAfterCurrentTask(
 
 export function useCompletionCelebration() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const returnTo = getReturnToParam(params as { returnTo?: string | string[] });
   const [celebration, setCelebration] = useState<CelebrationState>(INITIAL);
 
   /** Ref mirrors the latest celebration so handlers always read fresh values. */
   const stateRef = useRef<CelebrationState>(INITIAL);
+
+  const goBackOrFallback = useCallback(
+    (fallback?: Href) => {
+      safeGoBack(router, { returnTo, fallback, role: "pastor" });
+    },
+    [router, returnTo],
+  );
 
   const triggerCelebration = useCallback(
     (
@@ -182,41 +193,62 @@ export function useCompletionCelebration() {
     dismissCelebration();
 
     if (nextTaskId && phaseRoadmapId) {
-      router.back();
-      setTimeout(() => {
-        router.push(`/roadmap/${phaseRoadmapId}/${nextTaskId}` as any);
-      }, 300);
-    } else if (phaseRoadmapId) {
-      router.back();
-    } else {
-      router.back();
+      const nextHref = `/roadmap/${phaseRoadmapId}/${nextTaskId}` as Href;
+      if (router.canGoBack()) {
+        router.back();
+        setTimeout(() => {
+          router.push(nextHref);
+        }, 300);
+      } else {
+        router.replace(nextHref);
+      }
+      return;
     }
-  }, [dismissCelebration, router]);
+
+    goBackOrFallback(
+      phaseRoadmapId
+        ? (`/(pastor)/(tabs)/roadmap/${phaseRoadmapId}` as const)
+        : ("/(pastor)/(tabs)/roadmap" as const),
+    );
+  }, [dismissCelebration, goBackOrFallback, router]);
 
   const handleBackToPhase = useCallback(() => {
     const { phaseRoadmapId } = stateRef.current;
     dismissCelebration();
 
-    if (phaseRoadmapId) {
-      router.back();
-    } else {
-      router.back();
-    }
-  }, [dismissCelebration, router]);
+    goBackOrFallback(
+      phaseRoadmapId
+        ? (`/(pastor)/(tabs)/roadmap/${phaseRoadmapId}` as const)
+        : ("/(pastor)/(tabs)/roadmap" as const),
+    );
+  }, [dismissCelebration, goBackOrFallback]);
 
   const handleStartNextPhase = useCallback(() => {
     const { nextPhaseRoadmapId, nextTaskId } = stateRef.current;
     dismissCelebration();
 
-    router.back();
-    setTimeout(() => {
+    const navigateToNextPhase = () => {
       if (nextPhaseRoadmapId && nextTaskId) {
         router.push(`/roadmap/${nextPhaseRoadmapId}/${nextTaskId}` as any);
       } else if (nextPhaseRoadmapId) {
         router.push(`/roadmap/${nextPhaseRoadmapId}` as any);
       }
-    }, 300);
-  }, [dismissCelebration, router]);
+    };
+
+    if (router.canGoBack()) {
+      router.back();
+      setTimeout(navigateToNextPhase, 300);
+      return;
+    }
+
+    if (nextPhaseRoadmapId && nextTaskId) {
+      router.replace(`/roadmap/${nextPhaseRoadmapId}/${nextTaskId}` as any);
+    } else if (nextPhaseRoadmapId) {
+      router.replace(`/roadmap/${nextPhaseRoadmapId}` as any);
+    } else {
+      goBackOrFallback("/(pastor)/(tabs)/roadmap" as const);
+    }
+  }, [dismissCelebration, goBackOrFallback, router]);
 
   const handleBackToJourney = useCallback(() => {
     dismissCelebration();
