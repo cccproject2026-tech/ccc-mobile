@@ -29,7 +29,7 @@ import type { NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
 import { useAuthStore } from "@/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useStableFocusRefetch } from "@/hooks/roadmaps/useStableFocusRefetch";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -51,6 +51,7 @@ const accent = {
 };
 
 export default function PastorRoadmapItemDetail() {
+  const router = useRouter();
   const { bottom } = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { phaseId, itemId } = useLocalSearchParams<{ phaseId: string; itemId: string }>();
