@@ -177,9 +177,59 @@ export default function ProfileScreen() {
     { label: "Seminarian", value: "seminarian" },
   ];
 
-  const handleEditPress = () => {
+  const handleEditPress = useCallback(() => {
     setIsEditMode(true);
-  };
+  }, []);
+
+  const profileActions = useMemo(
+    () => [
+      {
+        key: 'documents',
+        label: 'Documents',
+        icon: 'document-text-outline' as const,
+        onPress: () =>
+          router.push({
+            pathname: '/(mentor)/(tabs)/profile/documents' as any,
+          }),
+      },
+      {
+        key: 'notes',
+        label: 'Notes',
+        icon: 'create-outline' as const,
+        onPress: () =>
+          router.push({
+            pathname: '/(mentor)/(tabs)/profile/notes' as any,
+          }),
+      },
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: 'pencil-outline' as const,
+        onPress: handleEditPress,
+      },
+    ],
+    [handleEditPress, router],
+  );
+
+  const renderActionButtons = () => (
+    <View style={styles.actionButtons}>
+      {profileActions.map((action) => (
+        <TouchableOpacity
+          key={action.key}
+          style={styles.actionTile}
+          activeOpacity={0.85}
+          onPress={action.onPress}
+          accessibilityRole="button"
+          accessibilityLabel={action.label}
+        >
+          <View style={styles.actionIconWrap}>
+            <Ionicons name={action.icon} size={22} color="#FFFFFF" />
+          </View>
+          <Text style={styles.actionLabel}>{action.label}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 
   const handleInputChange = (
     field: keyof UpdateProfileData,
@@ -381,30 +431,9 @@ export default function ProfileScreen() {
           </CommonCard>
 
           {!isEditMode && (
-            <View style={styles.actionRow}>
-              <View style={styles.actionCell}>
-                <PrimaryButton
-                  label="Documents"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(mentor)/(tabs)/profile/documents" as any,
-                    })
-                  }
-                  leftIcon={<Ionicons name="document-text-outline" size={18} color="#FFFFFF" />}
-                  textColor="#FFFFFF"
-                  style={styles.actionPrimary}
-                />
-              </View>
-              <View style={styles.actionCell}>
-                <PrimaryButton
-                  label="Edit Profile"
-                  onPress={handleEditPress}
-                  leftIcon={<Ionicons name="create-outline" size={18} color="#FFFFFF" />}
-                  textColor="#FFFFFF"
-                  style={styles.actionSecondary}
-                />
-              </View>
-            </View>
+            <CommonCard style={styles.actionCard}>
+              {renderActionButtons()}
+            </CommonCard>
           )}
 
           <View style={styles.contentStack}>
@@ -963,26 +992,40 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
 
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    width: '100%',
+    paddingVertical: 4,
   },
-  actionCell: { flex: 1 },
-  actionPrimary: {
-    backgroundColor: roadmapTheme.frostedSurfaceStrong,
-    borderColor: roadmapTheme.frostedBorderStrong,
-    borderRadius: 14,
-    elevation: 0,
-    shadowOpacity: 0,
+  actionCard: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
   },
-  actionSecondary: {
-    backgroundColor: roadmapTheme.frostedSurfaceStrong,
-    borderColor: roadmapTheme.frostedBorderStrong,
+  actionTile: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minWidth: 0,
+    paddingHorizontal: 4,
+  },
+  actionIconWrap: {
+    width: 48,
+    height: 48,
     borderRadius: 14,
-    elevation: 0,
-    shadowOpacity: 0,
+    backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderWidth: 1,
+    borderColor: roadmapTheme.frostedBorderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: roadmapTheme.textPrimary,
+    textAlign: 'center',
   },
 
   editActionsRow: {
@@ -1033,19 +1076,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: roadmapTheme.frostedBorderStrong,
-  },
-  profileInformationIcon: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    backgroundColor: "rgba(0, 75, 135, 0.8)",
-    borderRadius: 9,
-    width: 42,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#233A6F",
   },
   addChurchButton: {
     alignSelf: "center",

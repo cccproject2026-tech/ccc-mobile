@@ -6,10 +6,8 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
-    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { icons } from '@/constants/images';
 import { UpdateProfileData } from '@/types';
 import { ChurchInfo } from '@/types/profile.types';
 import { TITLE_OPTIONS } from '@/lib/profile/mock';
@@ -35,8 +33,6 @@ export const ProfileInfoSection = ({
     profileData,
     formData,
     onUpdateField,
-    onPickImage,
-    profileImage,
 }: ProfileSectionsProps) => {
     if (isEditing) {
         return (
@@ -46,9 +42,6 @@ export const ProfileInfoSection = ({
                 </View>
                 <View style={styles.profileInputContainer}>
                     <Text style={styles.fieldLabel}>Profile :</Text>
-                    <TouchableOpacity style={styles.absoluteEditIcon} onPress={onPickImage}>
-                        <Image source={icons.edit} style={styles.editIcon} />
-                    </TouchableOpacity>
                     <TextInput
                         style={styles.profileTextArea}
                         value={formData.bio || ''}
@@ -631,24 +624,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         minHeight: 80,
         textAlignVertical: 'top',
-    },
-    absoluteEditIcon: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        zIndex: 10,
-        width: 40,
-        height: 36,
-        backgroundColor: roadmapTheme.frostedSurfaceStrong,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderColor: roadmapTheme.frostedBorderStrong,
-        borderWidth: 1,
-    },
-    editIcon: {
-        width: 18,
-        height: 18,
     },
     dropdownInput: {
         flexDirection: 'row',

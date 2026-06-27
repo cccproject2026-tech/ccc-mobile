@@ -372,35 +372,47 @@ export default function ProfileScreen() {
     </View>
   );
 
+  const profileActions = useMemo(
+    () => [
+      {
+        key: 'documents',
+        label: 'Documents',
+        icon: 'document-text-outline' as const,
+        onPress: () => router.push('/(pastor)/(tabs)/profile/documents' as any),
+      },
+      {
+        key: 'notes',
+        label: 'Notes',
+        icon: 'create-outline' as const,
+        onPress: () => router.push('/(pastor)/(tabs)/profile/notes' as any),
+      },
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: 'pencil-outline' as const,
+        onPress: handleEditPress,
+      },
+    ],
+    [handleEditPress, router],
+  );
+
   const renderActionButtons = () => (
     <View style={styles.actionButtons}>
-      <View style={styles.actionButtonCell}>
-        <PrimaryButton
-          label="Documents"
-          style={styles.actionButton}
-          onPress={() => router.push('/(pastor)/(tabs)/profile/documents' as any)}
-          textColor="#FFFFFF"
-          leftIcon={<Ionicons name="document-text-outline" size={18} color="#FFFFFF" />}
-        />
-      </View>
-      <View style={styles.actionButtonCell}>
-        <PrimaryButton
-          label="Notes"
-          style={styles.actionButton}
-          onPress={() => router.push('/(pastor)/(tabs)/profile/notes' as any)}
-          textColor="#FFFFFF"
-          leftIcon={<Ionicons name="create-outline" size={18} color="#FFFFFF" />}
-        />
-      </View>
-      <View style={styles.actionButtonCell}>
-        <PrimaryButton
-          label="Edit"
-          style={styles.actionButton}
-          onPress={handleEditPress}
-          textColor="#FFFFFF"
-          leftIcon={<Ionicons name="person-circle-outline" size={18} color="#FFFFFF" />}
-        />
-      </View>
+      {profileActions.map((action) => (
+        <TouchableOpacity
+          key={action.key}
+          style={styles.actionTile}
+          activeOpacity={0.85}
+          onPress={action.onPress}
+          accessibilityRole="button"
+          accessibilityLabel={action.label}
+        >
+          <View style={styles.actionIconWrap}>
+            <Ionicons name={action.icon} size={22} color="#FFFFFF" />
+          </View>
+          <Text style={styles.actionLabel}>{action.label}</Text>
+        </TouchableOpacity>
+      ))}
     </View>
   );
 
@@ -765,24 +777,38 @@ const styles = StyleSheet.create({
   
   actionButtons: {
     flexDirection: 'row',
-    gap: 10,
     alignItems: 'center',
+    justifyContent: 'space-evenly',
+    width: '100%',
+    paddingVertical: 4,
   },
   actionCard: {
-    padding: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
   },
-  actionButtonCell: {
+  actionTile: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     minWidth: 0,
+    paddingHorizontal: 4,
   },
-  actionButton: {
-    minHeight: 46,
-    paddingHorizontal: 6,
+  actionIconWrap: {
+    width: 48,
+    height: 48,
     borderRadius: 14,
     backgroundColor: roadmapTheme.frostedSurfaceStrong,
+    borderWidth: 1,
     borderColor: roadmapTheme.frostedBorderStrong,
-    elevation: 0,
-    shadowOpacity: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: roadmapTheme.textPrimary,
+    textAlign: 'center',
   },
 
   
