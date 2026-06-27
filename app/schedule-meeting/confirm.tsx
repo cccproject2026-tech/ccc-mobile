@@ -23,16 +23,15 @@ import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
+import { formatDisplayDate } from "@/utils/date";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatMeetingDateLabel(dateString: string): string {
-  const date = new Date(dateString);
-  const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
-  const year = date.getFullYear().toString().slice(-2);
-  return `${date.getDate()} ${monthNames[date.getMonth()]} ${year}`;
+  const normalized = String(dateString || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return formatDisplayDate(dateString);
+  }
+  return formatDisplayDate(`${normalized}T12:00:00`);
 }
 
 export default function ScheduleMeetingConfirmScreen() {
@@ -159,7 +158,7 @@ export default function ScheduleMeetingConfirmScreen() {
           <View style={styles.card}>
             <Row label="Person" value={draft.person?.name} icon="person-outline" />
             <Divider />
-            <Row label="Date" value={draft.selectedDayYmd} icon="calendar-outline" />
+            <Row label="Date" value={formatMeetingDateLabel(draft.selectedDayYmd)} icon="calendar-outline" />
             <Divider />
             <Row
               label="Time"
