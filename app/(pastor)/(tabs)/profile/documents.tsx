@@ -2,11 +2,18 @@ import TopBar from '@/components/director/TopBar';
 import { icons } from '@/constants/images';
 import { useDeleteDocument, useDocuments, useUploadDocument } from '@/hooks/profile/useProfile';
 import { useAuthStore } from '@/stores';
+import type { Document } from '@/types/profile.types';
+import {
+    isUserDocumentImage,
+    isUserDocumentVideo,
+    openUserDocument,
+    resolveUserDocumentUrl,
+} from '@/utils/openUserDocument';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -29,6 +36,17 @@ export default function PastorDocumentsScreen() {
     const { data: documents = [], isLoading, refetch } = useDocuments();
     const uploadDocument = useUploadDocument();
     const deleteDocument = useDeleteDocument();
+    const [openingDocId, setOpeningDocId] = useState<string | null>(null);
+
+    const handleOpenDocument = async (item: Document) => {
+        if (openingDocId) return;
+        setOpeningDocId(item.docId);
+        try {
+            await openUserDocument(item);
+        } finally {
+            setOpeningDocId(null);
+        }
+    };
 
     const pickDocument = async () => {
         try {
@@ -95,14 +113,6 @@ export default function PastorDocumentsScreen() {
         );
     };
 
-    const isImage = (mimeType: string) => {
-        return mimeType?.startsWith('image/');
-    };
-
-    const isVideo = (mimeType: string) => {
-        return mimeType?.startsWith('video/');
-    };
-
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-GB', {
@@ -112,38 +122,56 @@ export default function PastorDocumentsScreen() {
         }).replace(/\//g, ' / ');
     };
 
-    const renderDocument = ({ item }: { item: any }) => (
-        <View style={styles.documentItem}>
-            <View style={styles.documentIcon}>
-                {isImage(item.fileType) && item.fileUrl ? (
-                    <Image source={{ uri: item.fileUrl }} style={styles.documentThumbnail} />
-                ) : isVideo(item.fileType) ? (
-                    <Ionicons name="videocam" size={32} color="#1E3A5F" />
-                ) : (
-                    <Image source={icons.certificateImage} style={styles.pdfIcon} />
-                )}
+    const renderDocument = ({ item }: { item: Document }) => {
+        const resolvedUrl = resolveUserDocumentUrl(item.fileUrl);
+        const isOpening = openingDocId === item.docId;
+
+        return (
+            <View style={styles.documentItem}>
+                <TouchableOpacity
+                    style={styles.documentMain}
+                    activeOpacity={0.85}
+                    onPress={() => handleOpenDocument(item)}
+                    disabled={isOpening}
+                >
+                    <View style={styles.documentIcon}>
+                        {isUserDocumentImage(item) && resolvedUrl ? (
+                            <Image source={{ uri: resolvedUrl }} style={styles.documentThumbnail} />
+                        ) : isUserDocumentVideo(item) ? (
+                            <Ionicons name="videocam" size={32} color="#1E3A5F" />
+                        ) : (
+                            <Image source={icons.certificateImage} style={styles.pdfIcon} />
+                        )}
+                    </View>
+                    <View style={styles.documentInfo}>
+                        <Text style={styles.documentName} numberOfLines={1}>
+                            {item.fileName}
+                        </Text>
+                        <Text style={styles.documentDate}>
+                            {formatDate(item.uploadedAt)}
+                        </Text>
+                        <Text style={styles.openHint}>Tap to view</Text>
+                    </View>
+                    {isOpening ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <Ionicons name="open-outline" size={22} color="rgba(255,255,255,0.85)" />
+                    )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteDocument(item.docId, item.fileName)}
+                    disabled={deleteDocument.isPending}
+                >
+                    <Ionicons
+                        name="trash-outline"
+                        size={24}
+                        color={deleteDocument.isPending ? "rgba(255,255,255,0.5)" : "#fff"}
+                    />
+                </TouchableOpacity>
             </View>
-            <View style={styles.documentInfo}>
-                <Text style={styles.documentName} numberOfLines={1}>
-                    {item.fileName}
-                </Text>
-                <Text style={styles.documentDate}>
-                    {formatDate(item.uploadedAt)}
-                </Text>
-            </View>
-            <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDeleteDocument(item.docId, item.fileName)}
-                disabled={deleteDocument.isPending}
-            >
-                <Ionicons
-                    name="trash-outline"
-                    size={24}
-                    color={deleteDocument.isPending ? "rgba(255,255,255,0.5)" : "#fff"}
-                />
-            </TouchableOpacity>
-        </View>
-    );
+        );
+    };
 
     return (
         <LinearGradient
@@ -268,8 +296,14 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.3)',
         borderRadius: 12,
-        padding: 16,
+        padding: 12,
         marginBottom: 12,
+    },
+    documentMain: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        minWidth: 0,
     },
     documentIcon: {
         width: 56,
@@ -304,8 +338,15 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: 'rgba(255,255,255,0.7)',
     },
+    openHint: {
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.55)',
+        marginTop: 4,
+        fontWeight: '600',
+    },
     deleteButton: {
         padding: 8,
+        marginLeft: 4,
     },
     emptyContainer: {
         flex: 1,

@@ -1,10 +1,12 @@
 import { SquircleIconButton } from "@/components/ui/design-system/SquircleIconButton"
 import { useMentees } from "@/hooks/mentees/useMentees"
 import { useDocumentsByUserId } from "@/hooks/profile/useProfile"
+import type { Document } from "@/types/profile.types"
+import { openUserDocument } from "@/utils/openUserDocument"
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { router, Stack, useLocalSearchParams } from "expo-router"
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import {
   ActivityIndicator,
   Image,
@@ -32,6 +34,17 @@ export default function MenteeDocumentsScreen() {
 
   
   const { data: documents, isLoading: isLoadingDocuments } = useDocumentsByUserId(id)
+  const [openingDocId, setOpeningDocId] = useState<string | null>(null)
+
+  const handleOpenDocument = async (doc: Document) => {
+    if (openingDocId) return
+    setOpeningDocId(doc.docId)
+    try {
+      await openUserDocument(doc)
+    } finally {
+      setOpeningDocId(null)
+    }
+  }
 
   
   const formatDocumentDate = React.useCallback((dateString?: string): string => {
@@ -62,6 +75,7 @@ export default function MenteeDocumentsScreen() {
       id: doc.docId || index.toString(),
       title: doc.fileName || "Document",
       time: formatDocumentDate(doc.uploadedAt),
+      original: doc,
     }))
 
     
@@ -69,6 +83,7 @@ export default function MenteeDocumentsScreen() {
       id: doc.docId || index.toString(),
       title: doc.fileName || "Document",
       date: formatDocumentDate(doc.uploadedAt),
+      original: doc,
     }))
 
     return { recentUploads, library }
@@ -184,7 +199,13 @@ export default function MenteeDocumentsScreen() {
           {formattedDocuments.recentUploads.length > 0 && (
             <View style={styles.recentUploadsSection}>
               {formattedDocuments.recentUploads.map((doc) => (
-                <View key={doc.id} style={styles.documentRow}>
+                <TouchableOpacity
+                  key={doc.id}
+                  style={styles.documentRow}
+                  activeOpacity={0.85}
+                  onPress={() => handleOpenDocument(doc.original)}
+                  disabled={openingDocId === doc.original.docId}
+                >
                   <View style={styles.documentThumb}>
                     <Image
                       source={icons.document}
@@ -196,10 +217,12 @@ export default function MenteeDocumentsScreen() {
                     <Text style={styles.documentTitle}>{doc.title}</Text>
                     <Text style={styles.documentMeta}>{doc.time}</Text>
                   </View>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Ionicons name="download-outline" size={22} color="#FFFFFF" />
-                  </TouchableOpacity>
-                </View>
+                  {openingDocId === doc.original.docId ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Ionicons name="open-outline" size={22} color="#FFFFFF" />
+                  )}
+                </TouchableOpacity>
               ))}
             </View>
           )}
@@ -215,7 +238,13 @@ export default function MenteeDocumentsScreen() {
           <View style={styles.librarySection}>
             {formattedDocuments.library.length > 0 ? (
               formattedDocuments.library.map((doc) => (
-                <View key={doc.id} style={styles.libraryRow}>
+                <TouchableOpacity
+                  key={doc.id}
+                  style={styles.libraryRow}
+                  activeOpacity={0.85}
+                  onPress={() => handleOpenDocument(doc.original)}
+                  disabled={openingDocId === doc.original.docId}
+                >
                   <View style={styles.libraryThumb}>
                     <Image
                       source={icons.document}
@@ -227,10 +256,12 @@ export default function MenteeDocumentsScreen() {
                     <Text style={styles.libraryTitle}>{doc.title}</Text>
                     <Text style={styles.libraryMeta}>{doc.date}</Text>
                   </View>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-                  </TouchableOpacity>
-                </View>
+                  {openingDocId === doc.original.docId ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+                  )}
+                </TouchableOpacity>
               ))
             ) : (
               <View style={{ paddingVertical: 20, alignItems: "center" }}>

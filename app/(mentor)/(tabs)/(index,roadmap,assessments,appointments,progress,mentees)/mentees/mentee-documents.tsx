@@ -1,9 +1,11 @@
 import { icons } from "@/constants/images"
 import { useMentees } from "@/hooks/mentees/useMentees"
 import { useDocumentsByUserId } from "@/hooks/profile/useProfile"
+import type { Document } from "@/types/profile.types"
+import { openUserDocument } from "@/utils/openUserDocument"
 import { Ionicons } from "@expo/vector-icons"
 import { router, Stack, useLocalSearchParams } from "expo-router"
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import {
   ActivityIndicator,
   Image,
@@ -37,6 +39,17 @@ export default function MenteeDocumentsScreen() {
 
   
   const { data: documents, isLoading: isLoadingDocuments } = useDocumentsByUserId(id)
+  const [openingDocId, setOpeningDocId] = useState<string | null>(null)
+
+  const handleOpenDocument = async (doc: Document) => {
+    if (openingDocId) return
+    setOpeningDocId(doc.docId)
+    try {
+      await openUserDocument(doc)
+    } finally {
+      setOpeningDocId(null)
+    }
+  }
 
   
   const formatDocumentDate = React.useCallback((dateString?: string): string => {
@@ -67,6 +80,7 @@ export default function MenteeDocumentsScreen() {
       id: doc.docId || index.toString(),
       title: doc.fileName || "Document",
       time: formatDocumentDate(doc.uploadedAt),
+      original: doc,
     }))
 
     
@@ -74,6 +88,7 @@ export default function MenteeDocumentsScreen() {
       id: doc.docId || index.toString(),
       title: doc.fileName || "Document",
       date: formatDocumentDate(doc.uploadedAt),
+      original: doc,
     }))
 
     return { recentUploads, library }
@@ -170,9 +185,15 @@ export default function MenteeDocumentsScreen() {
               <CommonCard>
                 <View style={styles.list}>
                   {formattedDocuments.recentUploads.map((doc, idx) => (
-                    <View
+                    <Pressable
                       key={doc.id}
-                      style={[styles.row, idx > 0 && styles.rowBorder]}
+                      onPress={() => handleOpenDocument(doc.original)}
+                      disabled={openingDocId === doc.original.docId}
+                      style={({ pressed }) => [
+                        styles.row,
+                        idx > 0 && styles.rowBorder,
+                        pressed && styles.pressed,
+                      ]}
                     >
                       <View style={styles.rowLeft}>
                         <View style={styles.docThumb}>
@@ -183,10 +204,12 @@ export default function MenteeDocumentsScreen() {
                           <Text style={styles.rowMeta} numberOfLines={1}>{doc.time}</Text>
                         </View>
                       </View>
-                      <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
-                        <Ionicons name="download-outline" size={20} color="rgba(255,255,255,0.9)" />
-                      </Pressable>
-                    </View>
+                      {openingDocId === doc.original.docId ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Ionicons name="open-outline" size={20} color="rgba(255,255,255,0.9)" />
+                      )}
+                    </Pressable>
                   ))}
                 </View>
               </CommonCard>
@@ -199,9 +222,15 @@ export default function MenteeDocumentsScreen() {
               {formattedDocuments.library.length > 0 ? (
                 <View style={styles.list}>
                   {formattedDocuments.library.map((doc, idx) => (
-                    <View
+                    <Pressable
                       key={doc.id}
-                      style={[styles.row, idx > 0 && styles.rowBorder]}
+                      onPress={() => handleOpenDocument(doc.original)}
+                      disabled={openingDocId === doc.original.docId}
+                      style={({ pressed }) => [
+                        styles.row,
+                        idx > 0 && styles.rowBorder,
+                        pressed && styles.pressed,
+                      ]}
                     >
                       <View style={styles.rowLeft}>
                         <View style={styles.docThumb}>
@@ -212,10 +241,12 @@ export default function MenteeDocumentsScreen() {
                           <Text style={styles.rowMeta} numberOfLines={1}>{doc.date}</Text>
                         </View>
                       </View>
-                      <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
-                        <Ionicons name="trash-outline" size={18} color="rgba(255,255,255,0.82)" />
-                      </Pressable>
-                    </View>
+                      {openingDocId === doc.original.docId ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+                      )}
+                    </Pressable>
                   ))}
                 </View>
               ) : (

@@ -1,8 +1,10 @@
 import { icons } from "@/constants/images"
 import { useDocuments, useProfile } from "@/hooks/profile/useProfile"
+import type { Document } from "@/types/profile.types"
+import { openUserDocument } from "@/utils/openUserDocument"
 import { Ionicons } from "@expo/vector-icons"
 import { Stack } from "expo-router"
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import {
     ActivityIndicator,
   FlatList,
@@ -25,6 +27,17 @@ export default function MentorDocumentsScreen() {
 
   
   const { data: documents, isLoading, refetch } = useDocuments()
+  const [openingDocId, setOpeningDocId] = useState<string | null>(null)
+
+  const handleOpenDocument = async (doc: Document) => {
+    if (openingDocId) return
+    setOpeningDocId(doc.docId)
+    try {
+      await openUserDocument(doc)
+    } finally {
+      setOpeningDocId(null)
+    }
+  }
 
   
   const formatDocumentDate = React.useCallback((dateString?: string): string => {
@@ -93,9 +106,15 @@ export default function MentorDocumentsScreen() {
               <CommonCard style={styles.rowCard}>
                 <View>
                   {formattedDocuments.recentUploads.map((doc, idx) => (
-                    <View
+                    <Pressable
                       key={doc.id}
-                      style={[styles.row, idx > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: roadmapTheme.divider } : null]}
+                      onPress={() => handleOpenDocument(doc.original)}
+                      disabled={openingDocId === doc.original.docId}
+                      style={({ pressed }) => [
+                        styles.row,
+                        idx > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: roadmapTheme.divider } : null,
+                        pressed && styles.pressed,
+                      ]}
                     >
                       <View style={styles.rowLeft}>
                         <View style={styles.docThumb}>
@@ -110,10 +129,18 @@ export default function MentorDocumentsScreen() {
                           <Text style={styles.rowMeta} numberOfLines={1}>{doc.time}</Text>
                         </View>
                       </View>
-                      <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
-                        <Ionicons name="download-outline" size={20} color="rgba(255,255,255,0.9)" />
+                      <Pressable
+                        style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
+                        onPress={() => handleOpenDocument(doc.original)}
+                        disabled={openingDocId === doc.original.docId}
+                      >
+                        {openingDocId === doc.original.docId ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <Ionicons name="open-outline" size={20} color="rgba(255,255,255,0.9)" />
+                        )}
                       </Pressable>
-                    </View>
+                    </Pressable>
                   ))}
                 </View>
               </CommonCard>
@@ -162,7 +189,11 @@ export default function MentorDocumentsScreen() {
           }
           renderItem={({ item: doc, index }) => (
             <CommonCard style={[styles.rowCard, index === 0 ? null : styles.rowCardSpacing]}>
-              <View style={styles.row}>
+              <Pressable
+                style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+                onPress={() => handleOpenDocument(doc.original)}
+                disabled={openingDocId === doc.original.docId}
+              >
                 <View style={styles.rowLeft}>
                   <View style={styles.docThumb}>
                     <Image
@@ -174,12 +205,15 @@ export default function MentorDocumentsScreen() {
                   <View style={styles.rowText}>
                     <Text style={styles.rowTitle} numberOfLines={1}>{doc.title}</Text>
                     <Text style={styles.rowMeta} numberOfLines={1}>{doc.date}</Text>
+                    <Text style={styles.openHint}>Tap to view</Text>
                   </View>
                 </View>
-                <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
-                  <Ionicons name="trash-outline" size={18} color="rgba(255,255,255,0.82)" />
-                </Pressable>
-              </View>
+                {openingDocId === doc.original.docId ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+                )}
+              </Pressable>
             </CommonCard>
           )}
         />
@@ -259,6 +293,12 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, minWidth: 0, gap: 2 },
   rowTitle: { color: roadmapTheme.textPrimary, fontSize: 14, fontWeight: "700" },
   rowMeta: { color: roadmapTheme.textMuted, fontSize: 12.5, fontWeight: "500" },
+  openHint: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 2,
+  },
   iconBtn: {
     width: 40,
     height: 40,
