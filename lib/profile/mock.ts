@@ -1,11 +1,9 @@
 import { ProfileData } from "./types";
 
 export const TITLE_OPTIONS = [
+    'Seminarian',
     'Pastor',
-    'Associate Pastor',
-    'Youth Pastor',
-    'Senior Pastor',
-    'Elder'
+    'Lay Leader',
 ];
 
 export const INITIAL_PROFILE_DATA: ProfileData = {
