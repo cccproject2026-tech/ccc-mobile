@@ -21,6 +21,7 @@ import {
 } from "../types/appointment.types";
 import { apiClient } from "./api/client";
 import { ENDPOINTS } from "./api/endpoints";
+import { formatMeetingDateDisplay } from "@/utils/date";
 
 export const appointmentService = {
   /**
@@ -491,18 +492,8 @@ export const appointmentService = {
   /**
    * Format appointment date for display
    */
-  formatAppointmentDate: (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC",
-    });
-  },
+  formatAppointmentDate: (dateString: string): string =>
+    formatMeetingDateDisplay(dateString),
 
   /**
    * Check if appointment is upcoming

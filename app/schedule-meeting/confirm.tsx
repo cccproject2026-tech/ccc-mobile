@@ -23,15 +23,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
-import { formatDisplayDate } from "@/utils/date";
+import { formatMeetingDateDisplay } from "@/utils/date";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatMeetingDateLabel(dateString: string): string {
-  const normalized = String(dateString || "").trim().slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
-    return formatDisplayDate(dateString);
-  }
-  return formatDisplayDate(`${normalized}T12:00:00`);
+  return formatMeetingDateDisplay(dateString);
 }
 
 export default function ScheduleMeetingConfirmScreen() {
@@ -217,25 +213,27 @@ export default function ScheduleMeetingConfirmScreen() {
                       : undefined;
 
                   if (isAssessmentFlow && assessmentId) {
-                    let link = result.meetingLink;
-                    if (!link) {
-                      try {
-                        const apt = await appointmentService.getAppointmentById(
-                          result.appointmentId,
-                        );
-                        link = getAppointmentJoinUrl(apt) ?? undefined;
-                      } catch {
-                        // Link may appear on the guidelines screen after refresh.
+                    void (async () => {
+                      let link = result.meetingLink;
+                      if (!link) {
+                        try {
+                          const apt = await appointmentService.getAppointmentById(
+                            result.appointmentId,
+                          );
+                          link = getAppointmentJoinUrl(apt) ?? undefined;
+                        } catch {
+                          // Link may appear on the guidelines screen after refresh.
+                        }
                       }
-                    }
-                    await saveAssessmentMeetingLink(assessmentId, {
-                      appointmentId: result.appointmentId,
-                      meetingDate: result.meetingDate,
-                      meetingLink: link,
-                    });
-                    await queryClient.invalidateQueries({
-                      queryKey: appointmentKeys.all,
-                    });
+                      await saveAssessmentMeetingLink(assessmentId, {
+                        appointmentId: result.appointmentId,
+                        meetingDate: result.meetingDate,
+                        meetingLink: link,
+                      });
+                      void queryClient.invalidateQueries({
+                        queryKey: appointmentKeys.all,
+                      });
+                    })();
                   }
 
                   Toast.show({

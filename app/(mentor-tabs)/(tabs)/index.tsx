@@ -27,7 +27,7 @@ import Animated, {
   useAnimatedRef,
   useScrollViewOffset,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatMeetingDateDisplay } from "@/utils/date";
 
 export default function MentorDashboard() {
   const [searchText, setSearchText] = useState("");
@@ -115,27 +115,10 @@ export default function MentorDashboard() {
   const { data: roadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
 
   
-  const formatDate = useCallback((dateString: string): string => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    const month = monthNames[date.getMonth()];
-    const year = date.getFullYear().toString().slice(-2);
-    return `${day.toString().padStart(2, "0")} ${month} ${year}`;
-  }, []);
+  const formatDate = useCallback(
+    (dateString: string): string => formatMeetingDateDisplay(dateString),
+    [],
+  );
 
   
   const formatTime = useCallback((dateString: string): string => {

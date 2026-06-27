@@ -36,6 +36,8 @@ import type {
   PastorFocusSection,
 } from "@/components/sheets/PastorFocusBottomSheet";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { formatMeetingDateDisplay } from "@/utils/date";
+import { formatTimeLocal } from "@/utils/appointments/timezone";
 
 const UPCOMING_DUE_WINDOW_DAYS = 7;
 const MAX_ITEMS_PER_SECTION = 3;
@@ -448,7 +450,7 @@ export const usePastorFocusItems = () => {
         return {
           id: `other-meeting-${appointment.id}`,
           title: mentorName ? `Meeting with ${mentorName}` : "Upcoming meeting",
-          description: `Starts ${formatDateTime(appointment.meetingDate)}.`,
+          description: `Starts ${formatMeetingDateDisplay(appointment.meetingDate)} at ${formatTimeLocal(appointment.meetingDate)}.`,
           meta: `${scheduler} • ${withWhom}`,
           accentColor: "#22C55E",
           route: {

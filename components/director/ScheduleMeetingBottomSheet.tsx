@@ -11,7 +11,7 @@ import {
   useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
 import { appointmentService } from "@/services/appointments.service";
-import { formatDisplayDate } from "@/utils/date";
+import { formatMeetingDateDisplay } from "@/utils/date";
 import { useUsersByRole } from "@/hooks/useUsersByRole";
 import { useAuthStore } from "@/stores";
 import {
@@ -1198,7 +1198,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={styles.reviewLabel}>When</Text>
                         <Text style={styles.reviewValue} numberOfLines={1}>
-                          {formatDisplayDate(`${selectedDate}T12:00:00`)} · {selectedTime?.label}
+                          {formatMeetingDateDisplay(selectedDate)} · {selectedTime?.label}
                         </Text>
                       </View>
                     </View>

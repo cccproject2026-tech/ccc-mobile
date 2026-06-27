@@ -28,7 +28,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatMeetingDateDisplay } from "@/utils/date";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 } as const;
@@ -76,11 +76,7 @@ function formatTime(iso: string) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  return formatMeetingDateDisplay(iso);
 }
 
 function formatDayOfWeek(iso: string) {

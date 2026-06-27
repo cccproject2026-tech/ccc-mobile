@@ -1,6 +1,9 @@
 import { appointmentService } from "@/services/appointments.service";
-import type { TimeSlot } from "@/types/appointment.types";
+import type { AvailableSlotsResponse, TimeSlot } from "@/types/appointment.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+/** Reuse time-screen slot data when still fresh — avoids a duplicate API round-trip on confirm. */
+const SLOT_PREFETCH_MAX_AGE_MS = 45_000;
 
 export const availableMeetingSlotsKeys = {
   all: ["available-meeting-slots"] as const,
@@ -87,6 +90,33 @@ export async function refetchAvailableMeetingSlots(
     queryFn: () => appointmentService.getAvailableSlots(params),
     staleTime: 0,
   });
+}
+
+/**
+ * Prefer a fresh React Query cache entry (from the time picker) before hitting
+ * GET /appointments/available-slots again. POST /appointments still validates server-side.
+ */
+export async function resolveLatestAvailableSlots(
+  queryClient: ReturnType<typeof useQueryClient>,
+  params: {
+    mentorId: string;
+    date: string;
+    participantUserId?: string;
+    excludeAppointmentId?: string;
+  },
+): Promise<AvailableSlotsResponse> {
+  const queryKey = availableMeetingSlotsKeys.day(
+    params.mentorId,
+    params.date,
+    params.participantUserId,
+    params.excludeAppointmentId,
+  );
+  const state = queryClient.getQueryState<AvailableSlotsResponse>(queryKey);
+  const ageMs = state?.dataUpdatedAt ? Date.now() - state.dataUpdatedAt : Infinity;
+  if (state?.data && ageMs < SLOT_PREFETCH_MAX_AGE_MS) {
+    return state.data;
+  }
+  return refetchAvailableMeetingSlots(queryClient, params);
 }
 
 export function isSelectedSlotStillAvailable(

@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { formatMeetingDateDisplay } from "@/utils/date";
 import {
   Ionicons,
   MaterialCommunityIcons,
@@ -85,6 +86,11 @@ const AppointmentCard: React.FC<Props> = ({
     return "globe-outline" as const;
   }, [mode]);
 
+  const displayDate = React.useMemo(
+    () => formatMeetingDateDisplay(date),
+    [date],
+  );
+
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
@@ -106,7 +112,7 @@ const AppointmentCard: React.FC<Props> = ({
             {time}
           </Text>
           <Text style={styles.metaText} numberOfLines={1}>
-            {date} · {tz}
+            {displayDate} · {tz}
           </Text>
         </View>
 

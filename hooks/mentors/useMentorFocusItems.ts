@@ -10,6 +10,8 @@ import { roadmapService } from "@/services/roadmap.service";
 import type { Appointment } from "@/types/appointment.types";
 import { formatSessionDate } from "@/utils/date";
 import { sessionOrdinalLabel, sessionTopicLine } from "@/constants/sessionTitles";
+import { formatMeetingDateDisplay } from "@/utils/date";
+import { formatTimeLocal } from "@/utils/appointments/timezone";
 import { format } from "date-fns";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -230,7 +232,7 @@ export const useMentorFocusItems = () => {
         return {
           id: `mentor-other-meeting-${apt.id}`,
           title: "Upcoming meeting",
-          description: `Meeting starts ${formatDateTime(apt.meetingDate)}.`,
+          description: `Meeting starts ${formatMeetingDateDisplay(apt.meetingDate)} at ${formatTimeLocal(apt.meetingDate)}.`,
           meta: `${pastorName} • ${apt.platform}`,
           accentColor: "#22C55E",
           route: {

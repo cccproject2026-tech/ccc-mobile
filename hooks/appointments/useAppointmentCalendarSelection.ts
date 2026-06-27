@@ -1,8 +1,8 @@
 import {
   appointmentCalendarDayVariant,
-  formatYmdShortLabel,
   normalizeYmd,
 } from "@/components/calendar/ScheduleMonthCalendar";
+import { formatMeetingDateDisplay } from "@/utils/date";
 import { localCalendarYmd } from "@/utils/availability/availability-recurring-utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -57,11 +57,12 @@ export function useAppointmentCalendarSelection() {
   );
 
   const selectedDateLabel = useMemo(() => {
-    return formatYmdShortLabel(normalizedSelected) || formatYmdShortLabel(today);
+    return formatMeetingDateDisplay(normalizedSelected) || formatMeetingDateDisplay(today);
   }, [normalizedSelected, today]);
 
   const formatDisplayDate = useCallback(
-    (dateString: string) => formatYmdShortLabel(dateString) || formatYmdShortLabel(today),
+    (dateString: string) =>
+      formatMeetingDateDisplay(dateString) || formatMeetingDateDisplay(today),
     [today],
   );
 

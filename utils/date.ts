@@ -41,7 +41,7 @@ function safeParse(value: string | null | undefined): Date | null {
     return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** "May 24, 2026" — human-friendly display for assignment/due dates. */
+/** "Jul 3, 2026" — human-friendly display for assignment/due dates. */
 export function formatDisplayDate(
     value: string | null | undefined,
     fallback = "—",
@@ -53,6 +53,20 @@ export function formatDisplayDate(
         day: "numeric",
         year: "numeric",
     });
+}
+
+/** American display for appointment `meetingDate` values (ISO datetime or YYYY-MM-DD). */
+export function formatMeetingDateDisplay(
+    value: string | null | undefined,
+    fallback = "—",
+): string {
+    const raw = String(value ?? "").trim();
+    if (!raw) return fallback;
+    const ymd = raw.includes("T") ? raw.split("T")[0] : raw.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+        return formatDisplayDate(`${ymd}T12:00:00`, fallback);
+    }
+    return formatDisplayDate(raw, fallback);
 }
 
 export type DueDateStatus = "upcoming" | "due-soon" | "overdue" | "none";

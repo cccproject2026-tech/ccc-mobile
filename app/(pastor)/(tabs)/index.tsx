@@ -27,6 +27,7 @@ import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
 import { useCurrentUserAvatar } from "@/hooks/useCurrentUserAvatar";
 import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
+import { formatMeetingDateDisplay } from "@/utils/date";
 import { useAuthStore } from "@/stores";
 import { AppointmentPlatform } from "@/types/appointment.types";
 import { isPastorMentorIntroActive } from "@/utils/pastorMentorIntro";
@@ -326,7 +327,7 @@ export default function PastorDashboard() {
       const mentor = mentors.find((m) => m.id === apt.mentorId);
       return {
         id: apt.id,
-        date: apt.meetingDate.split("T")[0],
+        date: formatMeetingDateDisplay(apt.meetingDate),
         time: formatTimeIST(apt.meetingDate),
         tz: "EST",
         person: mentor?.name || "Mentor",

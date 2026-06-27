@@ -20,7 +20,7 @@ import { labelToPlatform } from '@/utils/appointments/platform';
 import { validateSchedule } from '@/utils/appointments/validation';
 import {
   isSelectedSlotStillAvailable,
-  refetchAvailableMeetingSlots,
+  resolveLatestAvailableSlots,
 } from '@/hooks/appointments/useAvailableMeetingSlots';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -95,6 +95,15 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
 
   const isSubmitting = isBooking || isReschedulingAppointment || isReschedulingMentorship;
 
+  function refreshBookingCaches() {
+    void queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    void queryClient.invalidateQueries({ queryKey: ['weekly-availability'] });
+    void queryClient.invalidateQueries({ queryKey: ['monthly-availability'] });
+    void queryClient.invalidateQueries({ queryKey: ['available-meeting-slots'] });
+    void queryClient.invalidateQueries({ queryKey: mentorshipSessionKeys.all });
+    void queryClient.invalidateQueries({ queryKey: pastorSessionKeys.all });
+  }
+
   async function submit(): Promise<MeetingSchedulerSubmitResult> {
     if (
       !currentUserId ||
@@ -139,120 +148,117 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
     const payloadMentorId = isMentorUser ? currentUserId : selectedPerson.id;
     const payloadUserId = isMentorUser ? selectedPerson.id : currentUserId;
 
-    if (mode !== 'reschedule') {
-      const latestSlots = await refetchAvailableMeetingSlots(queryClient, {
-        mentorId: payloadMentorId,
-        date: selectedDayYmd,
-        participantUserId: payloadUserId,
-      });
-      if (!isSelectedSlotStillAvailable(latestSlots.slots, selectedSlot)) {
-        const err = new Error(
-          'This slot is no longer available. Please choose another time.',
-        );
-        (err as any).title = 'Slot unavailable';
-        (err as any).code = 'slot_unavailable';
-        throw err;
-      }
-    }
-
-    const platform = labelToPlatform(meetingOptionLabel);
-
-    const normalizedRole = normalizeUserRole(currentUserRole);
-    const initiatorRole =
-      normalizedRole === 'mentor' ||
-      normalizedRole === 'field-mentor' ||
-      normalizedRole === 'director' ||
-      normalizedRole === 'pastor'
-        ? normalizedRole === 'field-mentor'
-          ? 'mentor'
-          : normalizedRole
-        : undefined;
-
-    if (mode === 'reschedule') {
-      if (!resolvedRescheduleId) {
-        throw new Error('Missing appointment to reschedule.');
-      }
-
-      if (rescheduleContext === 'mentorship') {
-        if (!currentUserId) {
-          throw new Error('Missing mentor id.');
-        }
-
-        let appointmentForMentor = existingAppointment ?? null;
-        if (!getAppointmentMentorId(appointmentForMentor) && resolvedRescheduleId) {
-          appointmentForMentor = await appointmentService.getAppointmentById(
-            resolvedRescheduleId,
-          );
-        }
-
-        const payloadMentorId = getAppointmentMentorId(appointmentForMentor);
-        if (!payloadMentorId) {
-          throw new Error('Could not determine the assigned mentor for this session.');
-        }
-        if (String(payloadMentorId) !== String(currentUserId)) {
-          throw new Error('Only the assigned mentor may reschedule this session.');
-        }
-
-        const data = await rescheduleMentorshipSessionAsync({
-          sessionId: resolvedRescheduleId,
+    setIsBooking(true);
+    try {
+      if (mode !== 'reschedule') {
+        const latestSlots = await resolveLatestAvailableSlots(queryClient, {
           mentorId: payloadMentorId,
-          newMeetingDate: meetingDateIso,
+          date: selectedDayYmd,
+          participantUserId: payloadUserId,
         });
-        const updatedSession = data.session;
-        const meetingLink =
-          typeof updatedSession?.meetingLink === 'string'
-            ? updatedSession.meetingLink.trim() || undefined
-            : undefined;
+        if (!isSelectedSlotStillAvailable(latestSlots.slots, selectedSlot)) {
+          const err = new Error(
+            'This slot is no longer available. Please choose another time.',
+          );
+          (err as any).title = 'Slot unavailable';
+          (err as any).code = 'slot_unavailable';
+          throw err;
+        }
+      }
+
+      const platform = labelToPlatform(meetingOptionLabel);
+
+      const normalizedRole = normalizeUserRole(currentUserRole);
+      const initiatorRole =
+        normalizedRole === 'mentor' ||
+        normalizedRole === 'field-mentor' ||
+        normalizedRole === 'director' ||
+        normalizedRole === 'pastor'
+          ? normalizedRole === 'field-mentor'
+            ? 'mentor'
+            : normalizedRole
+          : undefined;
+
+      if (mode === 'reschedule') {
+        if (!resolvedRescheduleId) {
+          throw new Error('Missing appointment to reschedule.');
+        }
+
+        if (rescheduleContext === 'mentorship') {
+          if (!currentUserId) {
+            throw new Error('Missing mentor id.');
+          }
+
+          let appointmentForMentor = existingAppointment ?? null;
+          if (!getAppointmentMentorId(appointmentForMentor) && resolvedRescheduleId) {
+            appointmentForMentor = await appointmentService.getAppointmentById(
+              resolvedRescheduleId,
+            );
+          }
+
+          const rescheduleMentorId = getAppointmentMentorId(appointmentForMentor);
+          if (!rescheduleMentorId) {
+            throw new Error('Could not determine the assigned mentor for this session.');
+          }
+          if (String(rescheduleMentorId) !== String(currentUserId)) {
+            throw new Error('Only the assigned mentor may reschedule this session.');
+          }
+
+          const data = await rescheduleMentorshipSessionAsync({
+            sessionId: resolvedRescheduleId,
+            mentorId: rescheduleMentorId,
+            newMeetingDate: meetingDateIso,
+          });
+          const updatedSession = data.session;
+          const meetingLink =
+            typeof updatedSession?.meetingLink === 'string'
+              ? updatedSession.meetingLink.trim() || undefined
+              : undefined;
+          refreshBookingCaches();
+          return {
+            appointmentId: String(
+              updatedSession?.appointmentId ?? resolvedRescheduleId,
+            ),
+            meetingDate: meetingDateIso,
+            meetingLink,
+            googleCalendarSyncWarnings: [],
+          };
+        }
+
+        const res = await rescheduleAppointmentAsync({
+          appointmentId: resolvedRescheduleId,
+          newDate: meetingDateIso,
+          startTime: selectedSlot.startTime,
+          startPeriod: selectedSlot.startPeriod as any,
+        });
+        refreshBookingCaches();
         return {
-          appointmentId: String(
-            updatedSession?.appointmentId ?? resolvedRescheduleId,
-          ),
+          appointmentId: res.id,
           meetingDate: meetingDateIso,
-          meetingLink,
+          meetingLink: getAppointmentJoinUrl(res) ?? undefined,
           googleCalendarSyncWarnings: [],
         };
       }
 
-      const res = await rescheduleAppointmentAsync({
-        appointmentId: resolvedRescheduleId,
-        newDate: meetingDateIso,
-        startTime: selectedSlot.startTime,
-        startPeriod: selectedSlot.startPeriod as any,
-      });
-      return {
-        appointmentId: res.id,
+      const notes = assessmentId
+        ? assessmentMeetingNote(assessmentId)
+        : `Meeting with ${selectedPerson.name}`;
+
+      const createPayload = {
+        userId: payloadUserId,
+        mentorId: payloadMentorId,
         meetingDate: meetingDateIso,
-        meetingLink: getAppointmentJoinUrl(res) ?? undefined,
-        googleCalendarSyncWarnings: [],
+        platform,
+        meetingLink: undefined,
+        notes,
+        ...(initiatorRole ? { initiatorRole } : {}),
       };
-    }
 
-    const notes = assessmentId
-      ? assessmentMeetingNote(assessmentId)
-      : `Meeting with ${selectedPerson.name}`;
-
-    const createPayload = {
-      userId: payloadUserId,
-      mentorId: payloadMentorId,
-      meetingDate: meetingDateIso,
-      platform,
-      meetingLink: undefined,
-      notes,
-      ...(initiatorRole ? { initiatorRole } : {}),
-    };
-
-    setIsBooking(true);
-    try {
       const rawResponse = await appointmentService.createAppointmentRaw(createPayload);
       const outcome = extractGoogleCalendarCreateOutcome(rawResponse);
       const gHint = googleCalendarSuccessHintFromCreateResponse(rawResponse);
 
-      await queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      await queryClient.invalidateQueries({ queryKey: ['weekly-availability'] });
-      await queryClient.invalidateQueries({ queryKey: ['monthly-availability'] });
-      await queryClient.invalidateQueries({ queryKey: ['available-meeting-slots'] });
-      await queryClient.invalidateQueries({ queryKey: mentorshipSessionKeys.all });
-      await queryClient.invalidateQueries({ queryKey: pastorSessionKeys.all });
+      refreshBookingCaches();
 
       const data = rawResponse.data;
       const created = (Array.isArray(data) ? data[0] : data) as Appointment;

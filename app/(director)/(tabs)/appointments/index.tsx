@@ -31,7 +31,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { formatMeetingDateDisplay } from "@/utils/date";
 
 interface ResponseModalState {
   visible: boolean;
@@ -114,28 +114,8 @@ const Appointments: React.FC = () => {
   ];
 
   
-  const formatDisplayDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    const month = monthNames[date.getMonth()];
-    const year = date.getFullYear().toString().slice(-2);
-
-    return `${day} ${month} ${year}`;
-  };
+  const formatDisplayDate = (dateString: string) =>
+    formatMeetingDateDisplay(dateString);
 
   
   const isToday = (dateString: string) => {

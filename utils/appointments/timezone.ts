@@ -21,9 +21,9 @@ export function getDeviceTimezone(): TimezoneDisplay {
 export function formatDateLocal(iso: string, opts?: { timeZone?: string }): string {
   const d = new Date(iso);
   const timeZone = opts?.timeZone;
-  return d.toLocaleDateString("en-IN", {
-    day: "2-digit",
+  return d.toLocaleDateString("en-US", {
     month: "short",
+    day: "numeric",
     year: "numeric",
     ...(timeZone ? { timeZone } : {}),
   });
