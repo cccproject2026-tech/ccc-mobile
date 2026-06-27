@@ -530,34 +530,6 @@ export default function ScheduleMeetingTimeScreen() {
 
   const displayTimeSlots = googleFilteredSlots ?? timeSlots;
 
-  const bookingConflictStrippedCount = useMemo(() => {
-    if (!draft.selectedDayYmd || !mergedAvailability?.length) return 0;
-    const dayData = (mergedAvailability as any[]).find(
-      (d) => toDateString(String(d?.date ?? "")) === draft.selectedDayYmd,
-    ) as any;
-    const raw: APITimeSlot[] = dayData ? slotsFromWeeklyOrMonthlyDay(dayData) : [];
-    const afterNotice = filterSlotsByMinNotice(
-      draft.selectedDayYmd,
-      raw,
-      schedulingSettings,
-    );
-    const afterBookings = filterSlotsByExistingBookings(
-      draft.selectedDayYmd,
-      afterNotice,
-      userAppointments,
-      mentorAppointments,
-      excludeAppointmentId,
-    );
-    return afterNotice.length - afterBookings.length;
-  }, [
-    draft.selectedDayYmd,
-    excludeAppointmentId,
-    mergedAvailability,
-    mentorAppointments,
-    schedulingSettings,
-    userAppointments,
-  ]);
-
   useEffect(() => {
     if (!draft.selectedDayYmd || !draft.selectedSlot) return;
     if (
@@ -761,11 +733,6 @@ export default function ScheduleMeetingTimeScreen() {
           ) : null}
           {calendarBusyStripped > 0 ? (
             <Text style={styles.calendarBanner}>{GOOGLE_CALENDAR_COPY.busyHidden}</Text>
-          ) : null}
-          {bookingConflictStrippedCount > 0 ? (
-            <Text style={styles.calendarBanner}>
-              Some times are hidden because they are already booked on your or the mentor&apos;s calendar.
-            </Text>
           ) : null}
           {minNoticeHours > 0 ? (
             <Text style={styles.noticeHint}>
