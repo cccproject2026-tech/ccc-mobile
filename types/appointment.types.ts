@@ -101,7 +101,7 @@ export interface TimeSlot {
     startPeriod: 'AM' | 'PM';
     endTime: string;
     endPeriod: 'AM' | 'PM';
-    _id: string;
+    _id?: string;
 }
 
 export interface MonthlyAvailabilityDay {
@@ -134,6 +134,19 @@ export interface GetMonthlyAvailabilityApiResponse {
     success: boolean;
     message: string;
     data: MonthlyAvailabilityDay[];
+}
+
+export interface AvailableSlotsResponse {
+    mentorId: string;
+    date: string;
+    slots: TimeSlot[];
+    meetingDurationMinutes: number;
+}
+
+export interface GetAvailableSlotsApiResponse {
+    success: boolean;
+    message: string;
+    data: AvailableSlotsResponse;
 }
 
 export interface WeeklySlotInput {

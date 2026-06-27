@@ -1,11 +1,17 @@
 import { useAppointments } from "@/hooks/appointments/useAppointments";
+import {
+  isSelectedSlotStillAvailable,
+  useAvailableMeetingSlots,
+} from "@/hooks/appointments/useAvailableMeetingSlots";
 import { useMeetingScheduler } from "../../hooks/appointments/useMeetingScheduler";
 import {
-    formatTimeSlot,
-    useMonthlyAvailability,
-    useWeeklyAvailability,
+  formatTimeSlot,
+  normalizeAvailabilityDateString,
+  useMonthlyAvailability,
+  useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
 import { appointmentService } from "@/services/appointments.service";
+import { formatDisplayDate } from "@/utils/date";
 import { useUsersByRole } from "@/hooks/useUsersByRole";
 import { useAuthStore } from "@/stores";
 import {
@@ -295,10 +301,17 @@ const ScheduleMeetingBottomSheet = forwardRef<
       return (selectedMentor?.role as UserRole) || selectedRole;
     }, [mode, currentUserRole, selectedMentor?.role, selectedRole]);
 
+    const overlapUserId =
+      currentUserRole === "mentor"
+        ? selectedMentor?.id
+        : currentUser?.id;
+
+    const excludeAppointmentId =
+      mode === "reschedule" ? existingAppointment?.id : undefined;
+
     // Fetch availability for selected mentor (only when mentorId is defined)
     const {
       availability: monthlyAvailability,
-      isLoading: isLoadingAvailability,
     } = useMonthlyAvailability(
       {
         mentorId: shouldFetchAvailability
@@ -307,6 +320,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
         month: currentMonth,
         year: currentYear,
         role: availabilityOwnerRole,
+        participantUserId: overlapUserId || undefined,
       },
       {
         enabled: shouldFetchAvailability,
@@ -320,20 +334,33 @@ const ScheduleMeetingBottomSheet = forwardRef<
       { role: availabilityOwnerRole, enabled: shouldFetchAvailability },
     );
 
-    // Fetch mentor appointments to check max bookings (availability owner)
+    // Fetch appointments for client-side pre-checks in useMeetingScheduler.
     const { appointments: mentorAppointments } = useAppointments(
-      mentorIdForAvailability ? { mentorId: mentorIdForAvailability } : {},
+      mentorIdForAvailability ? { mentorId: mentorIdForAvailability, futureOnly: false } : {},
     );
-
-    // Fetch appointments for the "mentee/user" participant to check overlaps.
-    // When a mentor schedules with a pastor/director, the mentee is the selected user.
-    const overlapUserId =
-      currentUserRole === "mentor"
-        ? selectedMentor?.id
-        : currentUser?.id;
     const { appointments: userAppointments } = useAppointments({
       userId: overlapUserId || undefined,
+      futureOnly: false,
     });
+
+    const {
+      data: availableSlotsData,
+      isLoading: isLoadingAvailableSlots,
+      isFetching: isFetchingAvailableSlots,
+      isError: isAvailableSlotsError,
+      refetch: refetchAvailableSlots,
+    } = useAvailableMeetingSlots({
+      mentorId: mentorIdForAvailability || undefined,
+      date: selectedDate,
+      participantUserId: overlapUserId || undefined,
+      excludeAppointmentId,
+      enabled:
+        shouldFetchAvailability &&
+        Boolean(selectedDate) &&
+        currentStep === 2,
+    });
+
+    const slotsLoading = isLoadingAvailableSlots || isFetchingAvailableSlots;
 
     const { submit, isSubmitting: isSchedulerSubmitting } = useMeetingScheduler({
       mode,
@@ -352,39 +379,6 @@ const ScheduleMeetingBottomSheet = forwardRef<
       assessmentId,
     });
 
-    
-    useEffect(() => {
-      if (!mentorIdForAvailability) return;
-      console.log("🔍 Reschedule Debug:", {
-        mode,
-        mentorId: mentorIdForAvailability,
-        enabled: shouldFetchAvailability,
-        hasAvailability: !!monthlyAvailability,
-        availabilityLength: monthlyAvailability?.length || 0,
-      });
-    }, [mode, mentorIdForAvailability, shouldFetchAvailability, monthlyAvailability]);
-
-    // Transform API availability to available dates
-    const availableDates = useMemo(() => {
-      if (!shouldFetchAvailability || !monthlyAvailability) {
-        return [];
-      }
-      const dates = monthlyAvailability
-        .filter((day: any) => {
-          const raw = Array.isArray(day.rawSlots) ? day.rawSlots : [];
-          const slots = Array.isArray(day.slots) ? day.slots : [];
-          return raw.length > 0 || slots.length > 0;
-        })
-        .map((day: any) => {
-          const dateValue = day.date;
-          if (typeof dateValue === "string" && dateValue.includes("T")) {
-            return dateValue.split("T")[0];
-          }
-          return dateValue;
-        });
-      return dates;
-    }, [shouldFetchAvailability, monthlyAvailability]);
-
     const ymdToday = useMemo(() => {
       const d = new Date();
       const yyyy = d.getFullYear();
@@ -401,6 +395,40 @@ const ScheduleMeetingBottomSheet = forwardRef<
       const dd = String(d.getDate()).padStart(2, "0");
       return `${yyyy}-${mm}-${dd}`;
     }, []);
+
+    useEffect(() => {
+      if (!shouldFetchAvailability || !selectedDate || currentStep !== 2) return;
+      void refetchAvailableSlots();
+    }, [currentStep, refetchAvailableSlots, selectedDate, shouldFetchAvailability]);
+
+    useEffect(() => {
+      setSelectedTime(null);
+    }, [selectedDate]);
+
+    useEffect(() => {
+      if (slotsLoading || !selectedDate || !selectedTime) return;
+      if (!isSelectedSlotStillAvailable(availableSlotsData?.slots ?? [], selectedTime.apiSlot)) {
+        setSelectedTime(null);
+      }
+    }, [availableSlotsData?.slots, selectedDate, selectedTime, slotsLoading]);
+
+    // Calendar highlights: server-filtered monthly availability (includes participant conflicts).
+    const availableDates = useMemo(() => {
+      if (!shouldFetchAvailability || !monthlyAvailability) {
+        return [];
+      }
+      const todayYmd = ymdToday;
+      return monthlyAvailability
+        .filter((day: any) => {
+          const key = normalizeAvailabilityDateString(String(day?.date ?? ""));
+          if (!key || key < todayYmd) return false;
+          if ((day as { unavailable?: boolean }).unavailable) return false;
+          return (day.slots?.length ?? 0) > 0;
+        })
+        .map((day: any) => normalizeAvailabilityDateString(String(day.date)))
+        .filter(Boolean)
+        .sort();
+    }, [monthlyAvailability, shouldFetchAvailability, ymdToday]);
 
     const hasDate = useCallback((ymd: string) => {
       return availableDates.includes(ymd);
@@ -423,57 +451,22 @@ const ScheduleMeetingBottomSheet = forwardRef<
       if (!shouldFetchAvailability || !monthlyAvailability) return [];
       const daysSet = new Set(
         monthlyAvailability
-          .filter((day: any) => {
-            const raw = Array.isArray(day.rawSlots) ? day.rawSlots : [];
-            const slots = Array.isArray(day.slots) ? day.slots : [];
-            return raw.length > 0 || slots.length > 0;
-          })
+          .filter((day: any) => (day.slots?.length ?? 0) > 0 && !(day as { unavailable?: boolean }).unavailable)
           .map((day: any) => day.day),
       );
       return Array.from(daysSet);
     }, [shouldFetchAvailability, monthlyAvailability]);
 
-    // Transform API slots for selected date
-    const getTimeSlotsForDate = useCallback(
-      (dateString: string): TimeSlot[] => {
-        if (!shouldFetchAvailability || !dateString || !monthlyAvailability)
-          return [];
-
-        const dayData = monthlyAvailability.find((day: any) => {
-          const dateValue = day.date;
-          if (typeof dateValue === "string" && dateValue.includes("T")) {
-            return dateValue.split("T")[0] === dateString;
-          }
-          return dateValue === dateString;
-        }) as any;
-
-        if (!dayData) return [];
-
-        const rawSlots = Array.isArray(dayData.rawSlots)
-          ? (dayData.rawSlots as APITimeSlot[])
-          : [];
-        const slotsFromApi = Array.isArray(dayData.slots)
-          ? (dayData.slots as APITimeSlot[])
-          : [];
-        const slots = rawSlots.length > 0 ? rawSlots : slotsFromApi;
-
-        if (!slots || slots.length === 0) return [];
-
-        return slots.map((slot, index) => ({
-          id: slot._id || `${dateString}-${index}`,
-          startTime: `${slot.startTime} ${slot.startPeriod}`,
-          endTime: `${slot.endTime} ${slot.endPeriod}`,
-          label: formatTimeSlot(slot),
-          apiSlot: slot,
-        }));
-      },
-      [monthlyAvailability, shouldFetchAvailability],
-    );
-
-    const timeSlots = useMemo(
-      () => getTimeSlotsForDate(selectedDate),
-      [selectedDate, getTimeSlotsForDate],
-    );
+    const timeSlots = useMemo((): TimeSlot[] => {
+      if (!selectedDate || !availableSlotsData?.slots?.length) return [];
+      return availableSlotsData.slots.map((slot, index) => ({
+        id: slot._id || `${selectedDate}-${slot.startTime}-${slot.startPeriod}-${index}`,
+        startTime: `${slot.startTime} ${slot.startPeriod}`,
+        endTime: `${slot.endTime} ${slot.endPeriod}`,
+        label: formatTimeSlot(slot),
+        apiSlot: slot,
+      }));
+    }, [availableSlotsData?.slots, selectedDate]);
 
     const meetingOptions = [
       { id: "zoom", label: "Zoom", icon: "videocam-outline" },
@@ -963,26 +956,50 @@ const ScheduleMeetingBottomSheet = forwardRef<
                         Choose a Time
                       </Text>
 
-                      {isLoadingAvailability ? (
+                      {slotsLoading ? (
                         <View style={styles.noTimeSlotsContainer}>
                           <ActivityIndicator color={colorScheme.text} />
+                          <Text
+                            style={[
+                              styles.noTimeSlotsText,
+                              { color: `${colorScheme.text}80`, marginTop: 8 },
+                            ]}
+                          >
+                            Loading available times…
+                          </Text>
+                        </View>
+                      ) : isAvailableSlotsError ? (
+                        <View style={styles.noTimeSlotsContainer}>
+                          <Text
+                            style={[
+                              styles.noTimeSlotsText,
+                              { color: `${colorScheme.text}80` },
+                            ]}
+                          >
+                            Could not load available times. Pick another date or try again.
+                          </Text>
                         </View>
                       ) : timeSlots.length > 0 ? (
                         <FlatList
                           horizontal
                           data={timeSlots}
                           keyExtractor={(item) => item?.id}
-                          renderItem={({ item }) => (
+                          renderItem={({ item }) => {
+                            const selected =
+                              selectedTime != null &&
+                              selectedTime.apiSlot.startTime === item.apiSlot.startTime &&
+                              selectedTime.apiSlot.startPeriod === item.apiSlot.startPeriod;
+                            return (
                             <Pressable
                               style={[
                                 styles.timeSlotGridItem,
                                 {
                                   backgroundColor:
-                                    selectedTime?.id === item.id
+                                    selected
                                       ? "#FFFFFF"
                                       : "transparent",
                                   borderColor:
-                                    selectedTime?.id === item.id
+                                    selected
                                       ? "#FFFFFF"
                                       : "rgba(255, 255, 255, 0.6)",
                                 },
@@ -994,7 +1011,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
                                   styles.timeSlotText,
                                   {
                                     color:
-                                      selectedTime?.id === item.id
+                                      selected
                                         ? colorScheme.background
                                         : colorScheme.text,
                                   },
@@ -1003,7 +1020,8 @@ const ScheduleMeetingBottomSheet = forwardRef<
                                 {item.label}
                               </Text>
                             </Pressable>
-                          )}
+                            );
+                          }}
                           contentContainerStyle={{ gap: 10 }}
                           showsHorizontalScrollIndicator={false}
                         />
@@ -1180,7 +1198,7 @@ const ScheduleMeetingBottomSheet = forwardRef<
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={styles.reviewLabel}>When</Text>
                         <Text style={styles.reviewValue} numberOfLines={1}>
-                          {selectedDate} · {selectedTime?.label}
+                          {formatDisplayDate(`${selectedDate}T12:00:00`)} · {selectedTime?.label}
                         </Text>
                       </View>
                     </View>

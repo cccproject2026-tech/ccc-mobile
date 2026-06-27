@@ -119,6 +119,7 @@ export const ENDPOINTS = {
       `/appointments/availability/${mentorId}`,
     GET_MONTHLY_AVAILABILITY: (mentorId: string, month: number, year: number) =>
       `/appointments/availability/${mentorId}/month?month=${month}&year=${year}`,
+    AVAILABLE_SLOTS: "/appointments/available-slots",
     SET_AVAILABILITY: "/appointments/availability",
     CREATE_RECURRING_AVAILABILITY: "/appointments/availability/recurring",
     PATCH_AVAILABILITY_DAY: (mentorId: string) =>

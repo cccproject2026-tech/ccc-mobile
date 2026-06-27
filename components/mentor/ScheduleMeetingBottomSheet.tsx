@@ -1,7 +1,13 @@
 import GradientCalendar from "@/components/atom/calendar"
+import { useAppointments } from "@/hooks/appointments/useAppointments"
+import {
+  isSelectedSlotStillAvailable,
+  useAvailableMeetingSlots,
+} from "@/hooks/appointments/useAvailableMeetingSlots"
+import { useMeetingScheduler } from "@/hooks/appointments/useMeetingScheduler"
 import {
   formatTimeSlot,
-  mergeMonthlyAvailabilityWithWeeklySlotDates,
+  normalizeAvailabilityDateString,
   useMonthlyAvailability,
   useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability"
@@ -15,7 +21,15 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet"
 import { LinearGradient } from "expo-linear-gradient"
-import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import {
   ActivityIndicator,
   Alert,
@@ -46,6 +60,7 @@ interface ScheduleMeetingBottomSheetProps {
 const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, ScheduleMeetingBottomSheetProps>(
   ({ mentee, onClose, onSchedule, onSetAvailabilityPress }, ref) => {
     const bottomSheetRef = useRef<BottomSheetModal>(null)
+    const submitGuardRef = useRef(false)
     const { bottom } = useSafeAreaInsets()
     const { user } = useAuthStore()
     const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -53,126 +68,155 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
     const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1)
     const [currentYear, setCurrentYear] = useState(now.getFullYear())
     const [selectedDate, setSelectedDate] = useState<string>("")
-    const [selectedTime, setSelectedTime] = useState<string | null>(null)
     const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
     const [selectedOption, setSelectedOption] = useState<string | null>(null)
     const [showMeetingOptions, setShowMeetingOptions] = useState(false)
 
+    const mentorId = user?.id ?? null
+    const participantUserId = mentee?.id
+    const shouldFetchAvailability = Boolean(mentorId) && isSheetOpen
+
+    const ymdToday = useMemo(() => {
+      const d = new Date()
+      const yyyy = d.getFullYear()
+      const mm = String(d.getMonth() + 1).padStart(2, "0")
+      const dd = String(d.getDate()).padStart(2, "0")
+      return `${yyyy}-${mm}-${dd}`
+    }, [])
+
     const {
-      availability,
-      isLoading: isLoadingAvailability,
+      availability: monthlyAvailability,
+      isLoading: isLoadingMonthly,
+      isError: isMonthlyError,
     } = useMonthlyAvailability(
       {
-        mentorId: user?.id ?? null,
+        mentorId,
         month: currentMonth,
         year: currentYear,
         role: "mentor",
+        participantUserId: participantUserId || undefined,
       },
-      { enabled: !!user?.id && isSheetOpen, allowDefaultForMentee: false },
+      { enabled: shouldFetchAvailability, allowDefaultForMentee: false },
     )
 
-    const { weeklySlots, isLoading: isLoadingWeekly } = useWeeklyAvailability(
-      user?.id ?? null,
-      { enabled: !!user?.id && isSheetOpen, role: "mentor" },
+    const {
+      availability: weeklyAvailability,
+      isLoading: isLoadingWeekly,
+    } = useWeeklyAvailability(mentorId, {
+      enabled: shouldFetchAvailability,
+      role: "mentor",
+    })
+
+    const {
+      data: availableSlotsData,
+      isLoading: isLoadingAvailableSlots,
+      isFetching: isFetchingAvailableSlots,
+      isError: isAvailableSlotsError,
+      refetch: refetchAvailableSlots,
+    } = useAvailableMeetingSlots({
+      mentorId: mentorId || undefined,
+      date: selectedDate,
+      participantUserId: participantUserId || undefined,
+      enabled: shouldFetchAvailability && Boolean(selectedDate),
+    })
+
+    const slotsLoading = isLoadingAvailableSlots || isFetchingAvailableSlots
+
+    const { appointments: mentorAppointments } = useAppointments(
+      mentorId ? { mentorId, futureOnly: false } : {},
+    )
+    const { appointments: userAppointments } = useAppointments({
+      userId: participantUserId || undefined,
+      futureOnly: false,
+    })
+
+    const meetingOptions = useMemo(
+      () => [
+        { id: "zoom", label: "Zoom Meeting", icon: "videocam" },
+        { id: "google-meet", label: "Google Meet", icon: "logo-google" },
+        { id: "teams", label: "Microsoft Teams", icon: "people" },
+        { id: "in-person", label: "In Person", icon: "person" },
+      ],
+      [],
     )
 
-    const generatedMonthlyFromWeeklyPattern = useMemo(() => {
-      if (!weeklySlots?.length) return []
+    const meetingOptionLabel =
+      meetingOptions.find((opt) => opt.id === selectedOption)?.label ?? "Zoom Meeting"
 
-      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate()
-      const byDayOfWeek = new Map<number, TimeSlot[]>()
+    const selectedPerson = useMemo(() => {
+      if (!mentee?.id) return null
+      const name =
+        [mentee.firstName, mentee.lastName].filter(Boolean).join(" ").trim() ||
+        mentee.email ||
+        "Participant"
+      return { id: mentee.id, name, role: mentee.role }
+    }, [mentee])
 
-      weeklySlots.forEach((ws: any) => {
-        const dayNum =
-          typeof ws?.day === "number"
-            ? ws.day
-            : typeof ws?.date === "string"
-              ? new Date(ws.date).getDay()
-              : null
-        if (dayNum === null || Number.isNaN(dayNum)) return
+    const { submit, isSubmitting } = useMeetingScheduler({
+      mode: "schedule",
+      currentUserId: user?.id,
+      currentUserRole: user?.role ?? "mentor",
+      selectedPerson,
+      selectedDayYmd: selectedDate,
+      selectedSlot,
+      meetingOptionLabel,
+      settings: weeklyAvailability ?? null,
+      mentorAppointments,
+      userAppointments,
+    })
 
-        const slotsCandidate = ws?.rawSlots ?? ws?.slots
-        const slots = Array.isArray(slotsCandidate) ? slotsCandidate : []
-        if (slots.length === 0) return
+    useEffect(() => {
+      if (!shouldFetchAvailability || !selectedDate) return
+      void refetchAvailableSlots()
+    }, [refetchAvailableSlots, selectedDate, shouldFetchAvailability])
 
-        byDayOfWeek.set(dayNum, slots)
-      })
+    useEffect(() => {
+      setSelectedSlot(null)
+    }, [selectedDate])
 
-      if (byDayOfWeek.size === 0) return []
-
-      const out: any[] = []
-      for (let day = 1; day <= daysInMonth; day++) {
-        const d = new Date(currentYear, currentMonth - 1, day)
-        const dow = d.getDay()
-        const slots = byDayOfWeek.get(dow)
-        if (!slots || slots.length === 0) continue
-
-        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-        out.push({
-          date: dateStr,
-          day: dow,
-          rawSlots: slots,
-          slots,
-        })
+    useEffect(() => {
+      if (slotsLoading || !selectedDate || !selectedSlot) return
+      if (!isSelectedSlotStillAvailable(availableSlotsData?.slots ?? [], selectedSlot)) {
+        setSelectedSlot(null)
       }
-
-      return out
-    }, [weeklySlots, currentMonth, currentYear])
-
-    const mergedMonthlyAndWeekly = useMemo(
-      () =>
-        mergeMonthlyAvailabilityWithWeeklySlotDates(
-          currentMonth,
-          currentYear,
-          availability,
-          weeklySlots,
-        ),
-      [availability, weeklySlots, currentMonth, currentYear],
-    )
-
-    const effectiveAvailability = useMemo(() => {
-      if (mergedMonthlyAndWeekly.length > 0) return mergedMonthlyAndWeekly
-      return generatedMonthlyFromWeeklyPattern
-    }, [mergedMonthlyAndWeekly, generatedMonthlyFromWeeklyPattern])
+    }, [availableSlotsData?.slots, selectedDate, selectedSlot, slotsLoading])
 
     const availableDates = useMemo(() => {
-      if (!effectiveAvailability?.length) return []
-      return effectiveAvailability
+      if (!monthlyAvailability?.length) return []
+      return monthlyAvailability
         .filter((day) => {
-          const slots = (day as any).rawSlots ?? day.slots
-          return (slots?.length ?? 0) > 0
+          const key = normalizeAvailabilityDateString(String(day?.date ?? ""))
+          if (!key || key < ymdToday) return false
+          if ((day as { unavailable?: boolean }).unavailable) return false
+          return (day.slots?.length ?? 0) > 0
         })
-        .map((day) => {
-          const d = day.date
-          return typeof d === "string" && d.includes("T") ? d.split("T")[0] : d
-        })
-    }, [effectiveAvailability])
+        .map((day) => normalizeAvailabilityDateString(String(day.date)))
+        .filter(Boolean)
+        .sort()
+    }, [monthlyAvailability, ymdToday])
 
-    const hasAnyAvailability = availableDates.length > 0
+    const displayTimeSlots = useMemo(() => {
+      if (!selectedDate || !availableSlotsData?.slots?.length) return []
+      return availableSlotsData.slots.map((slot, index) => ({
+        slot,
+        label: formatTimeSlot(slot),
+        key: slot._id || `${selectedDate}-${slot.startTime}-${slot.startPeriod}-${index}`,
+      }))
+    }, [availableSlotsData?.slots, selectedDate])
 
-    const selectedDateAvailability = useMemo(() => {
-      if (!selectedDate || !effectiveAvailability?.length) return null
-      const day = effectiveAvailability.find((dayItem: any) => {
-        const d = dayItem.date
-        const dateStr = typeof d === "string" && d.includes("T") ? d.split("T")[0] : d
-        return dateStr === selectedDate
-      })
-      return day ?? null
-    }, [effectiveAvailability, selectedDate])
+    const mentorHasNoAvailability = useMemo(() => {
+      if (isLoadingWeekly || isLoadingMonthly) return false
+      const weeklyCount = weeklyAvailability?.weeklySlots?.length ?? 0
+      return weeklyCount === 0 && availableDates.length === 0
+    }, [availableDates.length, isLoadingMonthly, isLoadingWeekly, weeklyAvailability?.weeklySlots?.length])
 
-    const availableSlots: TimeSlot[] = useMemo(() => {
-      if (!selectedDateAvailability) return []
-      const raw = (selectedDateAvailability as any).rawSlots ?? selectedDateAvailability.slots
-      return Array.isArray(raw) ? raw : []
-    }, [selectedDateAvailability])
+    const hasAnyAvailability = !mentorHasNoAvailability
 
     const snapPoints = useMemo(() => ["90%"], [])
 
     useImperativeHandle(ref, () => ({
       present: () => {
-        
         setSelectedDate("")
-        setSelectedTime(null)
         setSelectedSlot(null)
         setSelectedOption(null)
         setShowMeetingOptions(false)
@@ -191,71 +235,61 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
           pressBehavior="close"
         />
       ),
-      []
+      [],
     )
 
     const handleDismiss = () => {
       setSelectedDate("")
-      setSelectedTime(null)
       setSelectedSlot(null)
       setSelectedOption(null)
       setShowMeetingOptions(false)
       onClose?.()
     }
 
-    const meetingOptions = [
-      { id: "zoom", label: "Zoom Meeting", icon: "videocam" },
-      { id: "google-meet", label: "Google Meet", icon: "logo-google" },
-      { id: "teams", label: "Microsoft Teams", icon: "people" },
-      { id: "in-person", label: "In Person", icon: "person" },
-    ]
+    const handleSchedule = async () => {
+      if (submitGuardRef.current) return
+      if (!selectedDate || !selectedOption || !selectedSlot) return
 
-    const handleSchedule = () => {
-      if (!onSchedule || !selectedDate || !selectedOption) return
       if (!hasAnyAvailability) {
         Alert.alert(
           "Set Availability First",
-          "You don’t have any availability set yet. Please set your availability, then schedule a meeting.",
+          "You don't have any availability set yet. Please set your availability, then schedule a meeting.",
         )
         return
       }
-      if (!selectedDateAvailability) {
-        Alert.alert(
-          "Invalid Date",
-          "No availability for selected date.",
-        )
-        return
-      }
-      const isValidSlot =
-        selectedSlot &&
-        availableSlots.some(
-          (s) =>
-            s.startTime === selectedSlot.startTime &&
-            s.startPeriod === selectedSlot.startPeriod,
-        )
-      if (!isValidSlot) {
-        Alert.alert(
-          "Invalid Time",
-          "Selected time is not available.",
-        )
-        return
-      }
-      if (!selectedSlot) return
-      const platformMap: Record<string, AppointmentPlatform> = {
-        zoom: "zoom",
-        "google-meet": "google_meet",
-        teams: "teams",
-        "in-person": "in_person",
-      }
-      const platform = platformMap[selectedOption.toLowerCase()] ?? "zoom"
 
-      onSchedule({
-        selectedDate,
-        selectedSlot,
-        optionId: selectedOption,
-        platform,
-      })
-      bottomSheetRef.current?.dismiss()
+      if (!selectedPerson) {
+        Alert.alert("Missing participant", "Please select a mentee before scheduling.")
+        return
+      }
+
+      submitGuardRef.current = true
+      try {
+        await submit()
+
+        const platformMap: Record<string, AppointmentPlatform> = {
+          zoom: "zoom",
+          "google-meet": "google_meet",
+          teams: "teams",
+          "in-person": "in_person",
+        }
+        const platform = platformMap[selectedOption.toLowerCase()] ?? "zoom"
+
+        onSchedule?.({
+          selectedDate,
+          selectedSlot,
+          optionId: selectedOption,
+          platform,
+        })
+        bottomSheetRef.current?.dismiss()
+      } catch (e: any) {
+        const title = e?.title || "Booking failed"
+        const message =
+          e?.message || "Failed to schedule meeting. Please try again."
+        Alert.alert(title, message)
+      } finally {
+        submitGuardRef.current = false
+      }
     }
 
     return (
@@ -282,7 +316,6 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
           >
-            {}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
                 <Ionicons name="calendar" size={28} color="#FFFFFF" />
@@ -297,15 +330,14 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
               </TouchableOpacity>
             </View>
 
-            {}
             <View style={styles.section}>
-              {isLoadingAvailability ? (
+              {isLoadingMonthly && !monthlyAvailability?.length ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator size="small" color="#FFFFFF" />
                   <Text style={styles.loadingText}>Loading availability…</Text>
                 </View>
               ) : null}
-              {!isLoadingAvailability && !hasAnyAvailability ? (
+              {!isLoadingMonthly && !isLoadingWeekly && mentorHasNoAvailability ? (
                 <View style={styles.warningBox}>
                   <Ionicons name="alert-circle-outline" size={18} color="#FFD166" />
                   <View style={{ flex: 1 }}>
@@ -324,21 +356,21 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
                   </View>
                 </View>
               ) : null}
+              {isMonthlyError ? (
+                <Text style={styles.errorText}>
+                  Could not refresh this month from the server. Please try again.
+                </Text>
+              ) : null}
               <GradientCalendar
                 selected={selectedDate}
                 setSelected={(dateStr) => {
                   setSelectedDate(dateStr)
-                  setSelectedTime(null)
                   setSelectedSlot(null)
                 }}
                 showHeader={true}
                 disablePastDates={true}
                 markToday={true}
-                // While loading, pass [] so users can't select random dates.
-                
-                availableDates={
-                  isLoadingAvailability || isLoadingWeekly ? [] : availableDates
-                }
+                availableDates={isLoadingMonthly ? [] : availableDates}
                 onMonthChange={(month, year) => {
                   setCurrentMonth(month)
                   setCurrentYear(year)
@@ -347,54 +379,53 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
               />
             </View>
 
-            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Choose a Time</Text>
-              {selectedDate ? (
-                availableSlots.length === 0 ? (
-                  <Text style={styles.noSlotsText}>
-                    No slots available for this date.
-                  </Text>
-                ) : (
-                  <View style={styles.timeGrid}>
-                    {availableSlots.map((slot) => {
-                      const label = formatTimeSlot(slot)
-                      const isSelected =
-                        selectedSlot?.startTime === slot.startTime &&
-                        selectedSlot?.startPeriod === slot.startPeriod
-                      return (
-                        <TouchableOpacity
-                          key={slot._id ?? label}
-                          style={[
-                            styles.timeSlot,
-                            isSelected && styles.selectedTimeSlot,
-                          ]}
-                          onPress={() => {
-                            setSelectedSlot(slot)
-                            setSelectedTime(label)
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.timeText,
-                              isSelected && styles.selectedTimeText,
-                            ]}
-                          >
-                            {label}
-                          </Text>
-                        </TouchableOpacity>
-                      )
-                    })}
-                  </View>
-                )
-              ) : (
-                <Text style={styles.noSlotsText}>
-                  Select a date first.
+              {!selectedDate ? (
+                <Text style={styles.noSlotsText}>Select a date first.</Text>
+              ) : slotsLoading ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.loadingText}>Loading available times…</Text>
+                </View>
+              ) : isAvailableSlotsError ? (
+                <Text style={styles.errorText}>
+                  Could not load available times. Pick another date or try again.
                 </Text>
+              ) : displayTimeSlots.length === 0 ? (
+                <Text style={styles.noSlotsText}>
+                  No slots available for this date.
+                </Text>
+              ) : (
+                <View style={styles.timeGrid}>
+                  {displayTimeSlots.map(({ slot, label, key }) => {
+                    const isSelected =
+                      selectedSlot?.startTime === slot.startTime &&
+                      selectedSlot?.startPeriod === slot.startPeriod
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        style={[
+                          styles.timeSlot,
+                          isSelected && styles.selectedTimeSlot,
+                        ]}
+                        onPress={() => setSelectedSlot(slot)}
+                      >
+                        <Text
+                          style={[
+                            styles.timeText,
+                            isSelected && styles.selectedTimeText,
+                          ]}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  })}
+                </View>
               )}
             </View>
 
-            {}
             <View style={styles.section}>
               <TouchableOpacity
                 style={styles.dropdownTrigger}
@@ -402,8 +433,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
               >
                 <Text style={styles.dropdownText}>
                   {selectedOption
-                    ? meetingOptions.find((opt) => opt.id === selectedOption)
-                        ?.label
+                    ? meetingOptions.find((opt) => opt.id === selectedOption)?.label
                     : "Choose your meeting option"}
                 </Text>
                 <Ionicons
@@ -420,8 +450,7 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
                       key={option.id}
                       style={[
                         styles.dropdownItem,
-                        selectedOption === option.id &&
-                          styles.selectedDropdownItem,
+                        selectedOption === option.id && styles.selectedDropdownItem,
                       ]}
                       onPress={() => {
                         setSelectedOption(option.id)
@@ -433,28 +462,21 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
                         size={20}
                         color="#FFFFFF"
                       />
-                      <Text style={styles.dropdownItemText}>
-                        {option.label}
-                      </Text>
+                      <Text style={styles.dropdownItemText}>{option.label}</Text>
                       {selectedOption === option.id && (
-                        <Ionicons
-                          name="checkmark"
-                          size={20}
-                          color="#4CAF50"
-                        />
+                        <Ionicons name="checkmark" size={20} color="#4CAF50" />
                       )}
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
             </View>
-              {}
 
-            {}
             <View style={styles.actionButtons}>
               <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => bottomSheetRef.current?.dismiss()}
+                disabled={isSubmitting}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -464,23 +486,31 @@ const ScheduleMeetingBottomSheet = forwardRef<ScheduleMeetingBottomSheetRef, Sch
                   (!hasAnyAvailability ||
                     !selectedDate ||
                     !selectedSlot ||
-                    !selectedOption) &&
+                    !selectedOption ||
+                    isSubmitting) &&
                     styles.disabledButton,
                 ]}
                 onPress={handleSchedule}
-                disabled={!hasAnyAvailability || !selectedDate || !selectedSlot || !selectedOption}
+                disabled={
+                  !hasAnyAvailability ||
+                  !selectedDate ||
+                  !selectedSlot ||
+                  !selectedOption ||
+                  isSubmitting
+                }
               >
-                <Text style={styles.scheduleButtonText}>Schedule</Text>
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.scheduleButtonText}>Schedule</Text>
+                )}
               </TouchableOpacity>
             </View>
-            {}
-            {}
           </BottomSheetScrollView>
-            {}
         </LinearGradient>
       </BottomSheetModal>
     )
-  }
+  },
 )
 
 export default ScheduleMeetingBottomSheet
@@ -492,9 +522,8 @@ const styles = StyleSheet.create({
     height: 4,
   },
   sheetGradient: {
-  
     paddingTop: 20,
-      },
+  },
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 20,
@@ -533,6 +562,12 @@ const styles = StyleSheet.create({
   loadingText: {
     color: "rgba(255,255,255,0.8)",
     fontSize: 14,
+  },
+  errorText: {
+    color: "rgba(255, 180, 180, 0.95)",
+    fontSize: 13,
+    marginBottom: 12,
+    lineHeight: 18,
   },
   warningBox: {
     flexDirection: "row",
@@ -669,6 +704,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#4A5D9E",
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
   },
   disabledButton: {
     backgroundColor: "rgba(74, 93, 158, 0.4)",
@@ -679,4 +716,3 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 })
-

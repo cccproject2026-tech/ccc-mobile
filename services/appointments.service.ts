@@ -5,6 +5,7 @@ import {
   AppointmentResponse,
   CreateAppointmentPayload,
   CreateRecurringAvailabilityPayload,
+  GetAvailableSlotsApiResponse,
   GetMonthlyAvailabilityApiResponse,
   GetWeeklyAvailabilityApiResponse,
   MentorAvailabilityDocument,
@@ -105,6 +106,7 @@ export const appointmentService = {
     mentorId: string,
     month: number,
     year: number,
+    participantUserId?: string,
   ): Promise<MonthlyAvailabilityDay[]> => {
     if (!mentorId) {
       throw new Error("mentorId is required for getMonthlyAvailability");
@@ -112,17 +114,48 @@ export const appointmentService = {
 
     const response = await apiClient.get<GetMonthlyAvailabilityApiResponse>(
       ENDPOINTS.APPOINTMENTS.GET_MONTHLY_AVAILABILITY(mentorId, month, year),
+      {
+        params: participantUserId ? { participantUserId } : undefined,
+      },
     );
     console.log(
       "Monthly availability params:",
       mentorId,
       month,
       year,
+      participantUserId,
       " raw response:",
       response.data,
     );
 
     return response.data.data ?? [];
+  },
+
+  /**
+   * Authoritative bookable slots for one day (same rules as POST /appointments).
+   */
+  getAvailableSlots: async (params: {
+    mentorId: string;
+    date: string;
+    participantUserId?: string;
+    excludeAppointmentId?: string;
+  }) => {
+    const response = await apiClient.get<GetAvailableSlotsApiResponse>(
+      ENDPOINTS.APPOINTMENTS.AVAILABLE_SLOTS,
+      {
+        params: {
+          mentorId: params.mentorId,
+          date: params.date.slice(0, 10),
+          ...(params.participantUserId
+            ? { participantUserId: params.participantUserId }
+            : {}),
+          ...(params.excludeAppointmentId
+            ? { excludeAppointmentId: params.excludeAppointmentId }
+            : {}),
+        },
+      },
+    );
+    return response.data.data;
   },
 
   /**

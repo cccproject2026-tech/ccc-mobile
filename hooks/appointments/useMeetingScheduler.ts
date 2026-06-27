@@ -18,6 +18,10 @@ import { isMentorRole, normalizeUserRole } from '@/utils/userRole';
 import { getAppointmentJoinUrl } from '@/utils/meetingLinkDetails';
 import { labelToPlatform } from '@/utils/appointments/platform';
 import { validateSchedule } from '@/utils/appointments/validation';
+import {
+  isSelectedSlotStillAvailable,
+  refetchAvailableMeetingSlots,
+} from '@/hooks/appointments/useAvailableMeetingSlots';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useCreateAppointment } from './useCreateAppointment';
@@ -106,6 +110,12 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       selectedSlot,
     );
 
+    if (__DEV__) {
+      console.log('[ScheduleMeeting] selectedDate', selectedDayYmd);
+      console.log('[ScheduleMeeting] selectedTime', `${selectedSlot.startTime} ${selectedSlot.startPeriod}`);
+      console.log('[ScheduleMeeting] meetingDateIso', meetingDateIso);
+    }
+
     const resolvedRescheduleId =
       existingAppointment?.id ?? rescheduleAppointmentId;
 
@@ -125,12 +135,27 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       throw err;
     }
 
-    const platform = labelToPlatform(meetingOptionLabel);
-
     const isMentorUser = isMentorRole(currentUserRole);
-
     const payloadMentorId = isMentorUser ? currentUserId : selectedPerson.id;
     const payloadUserId = isMentorUser ? selectedPerson.id : currentUserId;
+
+    if (mode !== 'reschedule') {
+      const latestSlots = await refetchAvailableMeetingSlots(queryClient, {
+        mentorId: payloadMentorId,
+        date: selectedDayYmd,
+        participantUserId: payloadUserId,
+      });
+      if (!isSelectedSlotStillAvailable(latestSlots.slots, selectedSlot)) {
+        const err = new Error(
+          'This slot is no longer available. Please choose another time.',
+        );
+        (err as any).title = 'Slot unavailable';
+        (err as any).code = 'slot_unavailable';
+        throw err;
+      }
+    }
+
+    const platform = labelToPlatform(meetingOptionLabel);
 
     const normalizedRole = normalizeUserRole(currentUserRole);
     const initiatorRole =
@@ -225,6 +250,7 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       await queryClient.invalidateQueries({ queryKey: ['appointments'] });
       await queryClient.invalidateQueries({ queryKey: ['weekly-availability'] });
       await queryClient.invalidateQueries({ queryKey: ['monthly-availability'] });
+      await queryClient.invalidateQueries({ queryKey: ['available-meeting-slots'] });
       await queryClient.invalidateQueries({ queryKey: mentorshipSessionKeys.all });
       await queryClient.invalidateQueries({ queryKey: pastorSessionKeys.all });
 

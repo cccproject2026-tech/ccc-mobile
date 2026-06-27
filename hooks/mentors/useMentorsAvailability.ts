@@ -322,6 +322,7 @@ interface UseMonthlyAvailabilityParams {
   month: number;
   year: number;
   role?: string;
+  participantUserId?: string;
 }
 
 interface UseMonthlyAvailabilityOptions {
@@ -342,10 +343,10 @@ export const useMonthlyAvailability = (
   params: UseMonthlyAvailabilityParams,
   options?: UseMonthlyAvailabilityOptions,
 ) => {
-  const { mentorId, month, year, role } = params;
+  const { mentorId, month, year, role, participantUserId } = params;
 
   const query = useQuery({
-    queryKey: ["monthly-availability", mentorId, month, year],
+    queryKey: ["monthly-availability", mentorId, month, year, participantUserId ?? ""],
     queryFn: async () => {
       if (!mentorId) {
         throw new Error("mentorId is required for monthly availability");
@@ -355,6 +356,7 @@ export const useMonthlyAvailability = (
         mentorId!,
         month,
         year,
+        participantUserId,
       );
 
       // If it's a pastor/mentee and they have no availability set, return defaults

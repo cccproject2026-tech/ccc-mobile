@@ -5,40 +5,27 @@ import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import {
   calendarYearMonthFromYmd,
   formatTimeSlot,
-  mergeMonthlyAvailabilityWithWeeklySlotDates,
   normalizeAvailabilityDateString,
-  slotsFromWeeklyOrMonthlyDay,
   useMonthlyAvailability,
   useWeeklyAvailability,
 } from "@/hooks/mentors/useMentorsAvailability";
-import { useAppointments } from "@/hooks/appointments/useAppointments";
+import {
+  isSelectedSlotStillAvailable,
+  useAvailableMeetingSlots,
+} from "@/hooks/appointments/useAvailableMeetingSlots";
 import {
   buildScheduleFlowParams,
   exitScheduleMeetingFlow,
   getScheduleMeetingBase,
 } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { getReturnToParam } from "@/utils/navigation";
-import { appointmentService } from "@/services/appointments.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
 import type { TimeSlot as APITimeSlot, WeeklyAvailability } from "@/types/appointment.types";
-import {
-  GOOGLE_CALENDAR_COPY,
-  shortenGoogleCalendarMessage,
-} from "@/utils/google-calendar/display-messages";
-import {
-  clearMergedAvailabilityCache,
-  filterTimeSlotsAgainstGoogleCalendar,
-} from "@/utils/google-calendar/google-calendar-scheduling";
-import {
-  filterSlotsByExistingBookings,
-  filterSlotsByMinNotice,
-  isMentorSlotTaken,
-  isUserBookedAtSlot,
-  resolveMinSchedulingNoticeHours,
-} from "@/utils/appointments/validation";
+import { resolveMinSchedulingNoticeHours } from "@/utils/appointments/validation";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -178,29 +165,11 @@ export default function ScheduleMeetingTimeScreen() {
   
   const participantUserId = isMentor ? draft.person?.id : user?.id;
 
-  // Booker whose existing appointments block duplicate slot picks.
-  const overlapUserId = isMentor ? draft.person?.id : user?.id;
-  const { appointments: userAppointments } = useAppointments({
-    userId: overlapUserId || undefined,
-    futureOnly: false,
-  });
-  const { appointments: mentorAppointments } = useAppointments(
-    availabilityOwnerId
-      ? { mentorId: availabilityOwnerId, futureOnly: false }
-      : {},
-  );
-
   const excludeAppointmentId =
     draft.mode === "reschedule" ? draft.appointmentId : undefined;
 
+  const queryClient = useQueryClient();
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
-  const [calendarSlotSyncLoading, setCalendarSlotSyncLoading] = useState(false);
-  const [calendarSlotSyncError, setCalendarSlotSyncError] = useState<string | null>(null);
-  const [calendarConnectBanners, setCalendarConnectBanners] = useState<string[]>([]);
-  const [calendarBusyStripped, setCalendarBusyStripped] = useState(0);
-  const [googleFilteredSlots, setGoogleFilteredSlots] = useState<
-    { id: string; label: string; apiSlot: APITimeSlot }[] | null
-  >(null);
 
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
@@ -239,8 +208,9 @@ export default function ScheduleMeetingTimeScreen() {
   );
 
   const handleGoogleCalendarConnectionSynced = useCallback(() => {
-    clearMergedAvailabilityCache();
-  }, []);
+    void queryClient.invalidateQueries({ queryKey: ["monthly-availability"] });
+    void queryClient.invalidateQueries({ queryKey: ["available-meeting-slots"] });
+  }, [queryClient]);
 
   // New person / second booking in a row — drop stale month + slot sync from the prior session.
   useEffect(() => {
@@ -250,9 +220,6 @@ export default function ScheduleMeetingTimeScreen() {
     if (!ownerChanged) return;
 
     prevSelectedDayRef.current = undefined;
-    setGoogleFilteredSlots(null);
-    setCalendarSlotSyncLoading(false);
-    setCalendarSlotSyncError(null);
     monthScanAttemptsRef.current = 0;
     lastSlotSyncSkipRef.current = null;
     setScanningForBookableMonth(false);
@@ -285,8 +252,8 @@ export default function ScheduleMeetingTimeScreen() {
       mentorId: availabilityOwnerId || null,
       month: currentMonth,
       year: currentYear,
-      
       role: "mentor",
+      participantUserId: participantUserId || undefined,
     },
     {
       enabled: Boolean(availabilityOwnerId),
@@ -297,26 +264,61 @@ export default function ScheduleMeetingTimeScreen() {
   );
 
   const settings = weeklyAvailability;
-  const weeklySlots = weeklyAvailability?.weeklySlots ?? [];
-
   const toDateString = (value: string) => normalizeAvailabilityDateString(value);
 
-  const mergedAvailability = useMemo(() => {
-    // Merge the backend month view with the saved weekly slots.
-    // We prefer the "richer" representation (more segments) per day.
-    return mergeMonthlyAvailabilityWithWeeklySlotDates(
-      currentMonth,
-      currentYear,
-      monthlyAvailability,
-      weeklySlots,
-    );
-  }, [currentMonth, currentYear, monthlyAvailability, weeklySlots]);
+  const {
+    data: availableSlotsData,
+    isLoading: isLoadingAvailableSlots,
+    isFetching: isFetchingAvailableSlots,
+    isError: isAvailableSlotsError,
+    refetch: refetchAvailableSlots,
+  } = useAvailableMeetingSlots({
+    mentorId: availabilityOwnerId || undefined,
+    date: draft.selectedDayYmd,
+    participantUserId: participantUserId || undefined,
+    excludeAppointmentId,
+    enabled: Boolean(availabilityOwnerId && draft.selectedDayYmd),
+  });
 
-  /** True when mentor has no bookable schedule after both weekly + monthly have loaded. */
+  useFocusEffect(
+    useCallback(() => {
+      if (!availabilityOwnerId || !draft.selectedDayYmd) return;
+      void refetchAvailableSlots();
+    }, [availabilityOwnerId, draft.selectedDayYmd, refetchAvailableSlots]),
+  );
+
+  /** Dates with at least one server-filtered slot this month (calendar highlights). */
+  const availableDates = useMemo(() => {
+    if (!monthlyAvailability?.length) return [];
+    const todayYmd = ymdToday();
+    const set = new Set<string>();
+    for (const day of monthlyAvailability) {
+      const key = toDateString(String(day?.date ?? ""));
+      if (!key || key < todayYmd) continue;
+      if ((day as { unavailable?: boolean }).unavailable) continue;
+      if ((day.slots?.length ?? 0) > 0) set.add(key);
+    }
+    return Array.from(set).sort();
+  }, [monthlyAvailability]);
+
+  /** Authoritative slots for the selected day — same rules as POST /appointments. */
+  const displayTimeSlots = useMemo(() => {
+    const dateStr = draft.selectedDayYmd;
+    if (!dateStr || !availableSlotsData?.slots?.length) return [];
+    return availableSlotsData.slots.map((slot: APITimeSlot, idx: number) => ({
+      id: slot._id || `${dateStr}-${slot.startTime}-${slot.startPeriod}-${idx}`,
+      label: formatTimeSlot(slot),
+      apiSlot: slot,
+    }));
+  }, [availableSlotsData?.slots, draft.selectedDayYmd]);
+
+  const slotsLoading = isLoadingAvailableSlots || isFetchingAvailableSlots;
+
   const mentorHasNoAvailability = useMemo(() => {
     if (isLoadingWeekly || isLoadingMonthly) return false;
-    return mergedAvailability.length === 0;
-  }, [isLoadingWeekly, isLoadingMonthly, mergedAvailability.length]);
+    const weeklyCount = weeklyAvailability?.weeklySlots?.length ?? 0;
+    return weeklyCount === 0 && availableDates.length === 0;
+  }, [availableDates.length, isLoadingMonthly, isLoadingWeekly, weeklyAvailability?.weeklySlots?.length]);
 
   /** Only block the calendar when the user picks a month — not during background auto-scan. */
   const showMonthLoadingOverlay = isLoadingMonthly && !isScanningForBookableMonth;
@@ -326,63 +328,23 @@ export default function ScheduleMeetingTimeScreen() {
     return weeklyAvailability as WeeklyAvailability;
   }, [weeklyAvailability]);
 
-  const availableDates = useMemo(() => {
-    if (!mergedAvailability?.length) return [];
-    const todayYmd = ymdToday();
-    const set = new Set<string>();
-    for (const day of mergedAvailability as any[]) {
-      const key = toDateString(String(day?.date ?? ""));
-      if (!key || key < todayYmd) continue;
-      const slots = slotsFromWeeklyOrMonthlyDay(day);
-      const afterNotice = filterSlotsByMinNotice(key, slots, schedulingSettings);
-      const bookable = filterSlotsByExistingBookings(
-        key,
-        afterNotice,
-        userAppointments,
-        mentorAppointments,
-        excludeAppointmentId,
-      );
-      if (bookable.length > 0) set.add(key);
-    }
-    return Array.from(set).sort();
-  }, [mergedAvailability, schedulingSettings, userAppointments, mentorAppointments, excludeAppointmentId]);
-
   const minNoticeHours = resolveMinSchedulingNoticeHours(schedulingSettings);
 
-  const getTimeSlotsForDate = useCallback(
-    (dateString: string) => {
-      if (!mergedAvailability?.length) {
-        return [] as { id: string; label: string; apiSlot: APITimeSlot }[];
-      }
-      const dayData = (mergedAvailability as any[]).find(
-        (d) => toDateString(String(d?.date ?? "")) === dateString,
-      ) as any;
-      const raw: APITimeSlot[] = dayData ? slotsFromWeeklyOrMonthlyDay(dayData) : [];
-      const afterNotice = filterSlotsByMinNotice(dateString, raw, schedulingSettings);
-      const slots = filterSlotsByExistingBookings(
-        dateString,
-        afterNotice,
-        userAppointments,
-        mentorAppointments,
-        excludeAppointmentId,
+  const hasBookableSlotsOnDate = useCallback(
+    (ymd: string) => {
+      if (!monthlyAvailability?.length) return false;
+      const day = monthlyAvailability.find(
+        (d) => toDateString(String(d?.date ?? "")) === ymd,
       );
-      return slots.map((slot: APITimeSlot, idx: number) => ({
-        id: slot._id || `${dateString}-${idx}`,
-        label: formatTimeSlot(slot),
-        apiSlot: slot,
-      }));
+      return (day?.slots?.length ?? 0) > 0 && !(day as { unavailable?: boolean }).unavailable;
     },
-    [mergedAvailability, schedulingSettings, userAppointments, mentorAppointments, excludeAppointmentId],
+    [monthlyAvailability],
   );
 
   const selectNearestBookableDay = useCallback(
     (skipYmd?: string) => {
       if (availableDates.length === 0) return;
-      const next = pickNearestBookableDay(
-        availableDates,
-        (ymd) => getTimeSlotsForDate(ymd).length > 0,
-        skipYmd,
-      );
+      const next = pickNearestBookableDay(availableDates, hasBookableSlotsOnDate, skipYmd);
       if (!next || next === draft.selectedDayYmd) return;
       setDay(next);
       const cal = calendarYearMonthFromYmd(next);
@@ -391,7 +353,7 @@ export default function ScheduleMeetingTimeScreen() {
         setCurrentYear(cal.year);
       }
     },
-    [availableDates, draft.selectedDayYmd, getTimeSlotsForDate, setDay],
+    [availableDates, draft.selectedDayYmd, hasBookableSlotsOnDate, setDay],
   );
 
   // If this month has no bookable days, try a few months ahead — but stop immediately
@@ -452,114 +414,23 @@ export default function ScheduleMeetingTimeScreen() {
     }
   }, [draft.selectedDayYmd, setSlot]);
 
-  const timeSlots = useMemo(
-    () => (draft.selectedDayYmd ? getTimeSlotsForDate(draft.selectedDayYmd) : []),
-    [draft.selectedDayYmd, getTimeSlotsForDate],
-  );
-
-  const meetingDurationMinutes = schedulingSettings?.meetingDuration ?? 60;
-
+  // Clear selected slot when server says it is no longer bookable.
   useEffect(() => {
-    if (!availabilityOwnerId || !draft.selectedDayYmd || timeSlots.length === 0) {
-      setGoogleFilteredSlots((prev) => (prev === null ? prev : null));
-      setCalendarConnectBanners((prev) => (prev.length === 0 ? prev : []));
-      setCalendarBusyStripped((prev) => (prev === 0 ? prev : 0));
-      setCalendarSlotSyncError((prev) => (prev === null ? prev : null));
-      return;
-    }
-
-    let cancelled = false;
-    setCalendarSlotSyncLoading(true);
-    setCalendarSlotSyncError(null);
-
-    void (async () => {
-      const rawApiSlots = timeSlots.map((s) => s.apiSlot);
-      const result = await filterTimeSlotsAgainstGoogleCalendar({
-        meetingDateYmd: draft.selectedDayYmd,
-        rawSlots: rawApiSlots,
-        availabilityMentorUserId: availabilityOwnerId,
-        availabilityParticipantUserId: participantUserId,
-        meetingDurationMinutes,
-        fetchMergedAvailability: (mentorUserId, params) =>
-          appointmentService.getMergedAvailability(mentorUserId, params),
-      });
-
-      if (cancelled) return;
-
-      const filtered = timeSlots.filter((row) =>
-        result.slots.some((slot) => slot._id === row.apiSlot._id || (
-          slot.startTime === row.apiSlot.startTime &&
-          slot.startPeriod === row.apiSlot.startPeriod
-        )),
-      );
-
-      setGoogleFilteredSlots(filtered);
-      setCalendarConnectBanners(
-        googleCalendarConnected
-          ? result.connectGoogleBanners.filter(
-              (msg) => !/link google calendar|reconnect google calendar/i.test(msg),
-            )
-          : result.connectGoogleBanners,
-      );
-      setCalendarBusyStripped(result.strippedCount);
-      setCalendarSlotSyncError(result.error ?? null);
-      setCalendarSlotSyncLoading(false);
-
-      const selectedSlot = useScheduleMeetingStore.getState().draft.selectedSlot;
-      if (
-        selectedSlot &&
-        !filtered.some((s) => s.apiSlot._id === selectedSlot._id)
-      ) {
-        setSlot(null);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      setCalendarSlotSyncLoading(false);
-    };
-  }, [
-    availabilityOwnerId,
-    draft.selectedDayYmd,
-    googleCalendarConnected,
-    meetingDurationMinutes,
-    participantUserId,
-    setSlot,
-    timeSlots,
-  ]);
-
-  const displayTimeSlots = googleFilteredSlots ?? timeSlots;
-
-  useEffect(() => {
-    if (!draft.selectedDayYmd || !draft.selectedSlot) return;
-    if (
-      isUserBookedAtSlot(
-        draft.selectedDayYmd,
-        draft.selectedSlot,
-        userAppointments,
-        excludeAppointmentId,
-      ) ||
-      isMentorSlotTaken(
-        draft.selectedDayYmd,
-        draft.selectedSlot,
-        mentorAppointments,
-        excludeAppointmentId,
-      )
-    ) {
+    if (slotsLoading || !draft.selectedDayYmd || !draft.selectedSlot) return;
+    if (!isSelectedSlotStillAvailable(availableSlotsData?.slots ?? [], draft.selectedSlot)) {
       setSlot(null);
     }
   }, [
+    availableSlotsData?.slots,
     draft.selectedDayYmd,
     draft.selectedSlot,
-    excludeAppointmentId,
-    mentorAppointments,
     setSlot,
-    userAppointments,
+    slotsLoading,
   ]);
 
-  // Selected day had slots locally but none remain after sync — try the next bookable date.
+  // Selected day had no bookable slots from server — try the next highlighted date.
   useEffect(() => {
-    if (calendarSlotSyncLoading || availableDates.length === 0) return;
+    if (slotsLoading || availableDates.length === 0) return;
 
     if (displayTimeSlots.length > 0) {
       lastSlotSyncSkipRef.current = null;
@@ -572,16 +443,16 @@ export default function ScheduleMeetingTimeScreen() {
       return;
     }
 
-    if (timeSlots.length === 0) {
-      const todayYmd = ymdToday();
-      const invalid = current < todayYmd || !availableDates.includes(current);
-      if (invalid) selectNearestBookableDay();
+    const todayYmd = ymdToday();
+    const invalid = current < todayYmd || !availableDates.includes(current);
+    if (invalid) {
+      selectNearestBookableDay();
       return;
     }
 
     const next = pickNearestBookableDay(
       availableDates,
-      (ymd) => getTimeSlotsForDate(ymd).length > 0,
+      hasBookableSlotsOnDate,
       current,
     );
     if (!next || next === current || next === lastSlotSyncSkipRef.current) {
@@ -597,13 +468,12 @@ export default function ScheduleMeetingTimeScreen() {
     }
   }, [
     availableDates,
-    calendarSlotSyncLoading,
     displayTimeSlots.length,
     draft.selectedDayYmd,
-    getTimeSlotsForDate,
+    hasBookableSlotsOnDate,
     selectNearestBookableDay,
     setDay,
-    timeSlots.length,
+    slotsLoading,
   ]);
 
   const canContinue = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
@@ -670,12 +540,6 @@ export default function ScheduleMeetingTimeScreen() {
             />
           </View>
 
-          {calendarConnectBanners.map((msg) => (
-            <Text key={msg.slice(0, 80)} style={styles.calendarBanner}>
-              {msg}
-            </Text>
-          ))}
-
           <View style={styles.calendarCard}>
             <GradientCalendar
               selected={draft.selectedDayYmd}
@@ -714,41 +578,41 @@ export default function ScheduleMeetingTimeScreen() {
 
           {isMonthlyError ? (
             <Text style={styles.monthlyWarning}>
-              Could not refresh this month from the server; showing saved weekly slots only.
+              Could not refresh this month from the server. Please try again.
             </Text>
           ) : null}
 
           <Text style={styles.sectionTitle}>Available times</Text>
-          {calendarSlotSyncLoading ? (
+          {slotsLoading ? (
             <View style={styles.syncRow}>
               <ActivityIndicator color="#8ec5eb" size="small" />
-              <Text style={styles.syncText}>{GOOGLE_CALENDAR_COPY.syncing}</Text>
+              <Text style={styles.syncText}>Loading available times…</Text>
             </View>
           ) : null}
-          {calendarSlotSyncError ? (
+          {isAvailableSlotsError ? (
             <Text style={styles.calendarError}>
-              {shortenGoogleCalendarMessage(calendarSlotSyncError) ||
-                GOOGLE_CALENDAR_COPY.slotValidationFailed}
+              Could not load available times. Pick another date or try again.
             </Text>
           ) : null}
-          {calendarBusyStripped > 0 ? (
-            <Text style={styles.calendarBanner}>{GOOGLE_CALENDAR_COPY.busyHidden}</Text>
-          ) : null}
-          {minNoticeHours > 0 ? (
+          {minNoticeHours > 0 && !slotsLoading ? (
             <Text style={styles.noticeHint}>
               Slots must start at least {minNoticeHours} hour{minNoticeHours === 1 ? "" : "s"} from now.
             </Text>
           ) : null}
-          {displayTimeSlots.length === 0 ? (
+          {!slotsLoading && displayTimeSlots.length === 0 ? (
             <Text style={styles.subtle}>
               {minNoticeHours > 0
                 ? "No bookable slots for this date (notice period, availability, or calendar conflicts)."
                 : "No slots for this date."}
             </Text>
-          ) : (
+          ) : null}
+          {!slotsLoading && displayTimeSlots.length > 0 ? (
             <View style={styles.slotGrid}>
               {displayTimeSlots.map((s) => {
-                const selected = draft.selectedSlot?._id === s.apiSlot._id;
+                const selected =
+                  draft.selectedSlot != null &&
+                  draft.selectedSlot.startTime === s.apiSlot.startTime &&
+                  draft.selectedSlot.startPeriod === s.apiSlot.startPeriod;
                 return (
                   <Pressable
                     key={s.id}
@@ -762,7 +626,7 @@ export default function ScheduleMeetingTimeScreen() {
                 );
               })}
             </View>
-          )}
+          ) : null}
 
           <Text style={styles.sectionTitle}>Platform</Text>
           <View style={styles.platformRow}>
