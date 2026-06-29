@@ -13,6 +13,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 
@@ -107,6 +108,7 @@ export default function AssessmentQuestionsSection({
     >([]);
     const [showCdpModal, setShowCdpModal] = useState(false);
     const sectionScrollRef = useRef<KeyboardAwareScrollView | null>(null);
+    const insets = useSafeAreaInsets();
 
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
@@ -543,6 +545,7 @@ export default function AssessmentQuestionsSection({
                 </View>
             )}
 
+            <View style={styles.pageContainer}>
             <KeyboardSafeContainer
                 innerRef={sectionScrollRef}
                 style={styles.scrollView}
@@ -616,27 +619,33 @@ export default function AssessmentQuestionsSection({
 
                 
                 {currentSection.questionGroups.map(renderQuestionGroup)}
+            </KeyboardSafeContainer>
 
-                
-                <View style={styles.buttonContainer}>
+            <View
+                style={[
+                    styles.footerOuter,
+                    { paddingBottom: Math.max(insets.bottom, 12) },
+                ]}
+            >
+                <View style={styles.footerBar}>
                     {isViewMode ? (
                         <>
                             <TouchableOpacity
-                                style={[styles.clearButton, currentSectionIndex === 0 && styles.buttonDisabled]}
+                                style={[styles.footerButton, styles.secondaryButton, currentSectionIndex === 0 && styles.buttonDisabled]}
                                 onPress={handlePreviousSection}
                                 activeOpacity={0.8}
                                 disabled={currentSectionIndex === 0}
                             >
-                                <Text style={styles.clearButtonText}>
-                                    <Ionicons name="chevron-back" size={16} /> Previous
+                                <Text style={styles.secondaryButtonText}>
+                                    <Ionicons name="chevron-back" size={16} /> Back
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={styles.nextButton}
+                                style={[styles.footerButton, styles.primaryButton]}
                                 onPress={handleNextSection}
                                 activeOpacity={0.8}
                             >
-                                <Text style={styles.nextButtonText}>
+                                <Text style={styles.primaryButtonText}>
                                     {currentSectionIndex < totalSections - 1 ? 'Next >>' : 'Close'}
                                 </Text>
                             </TouchableOpacity>
@@ -644,26 +653,42 @@ export default function AssessmentQuestionsSection({
                     ) : (
                         <>
                             <TouchableOpacity
-                                style={styles.clearButton}
+                                style={[
+                                    styles.footerButton,
+                                    styles.secondaryButton,
+                                    currentSectionIndex === 0 && styles.buttonDisabled,
+                                ]}
+                                onPress={handlePreviousSection}
+                                activeOpacity={0.8}
+                                disabled={currentSectionIndex === 0}
+                            >
+                                <Text style={styles.secondaryButtonText}>
+                                    <Ionicons name="chevron-back" size={16} /> Back
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.footerButton, styles.secondaryButton]}
                                 onPress={handleClearResponses}
                                 activeOpacity={0.8}
                             >
-                                <Text style={styles.clearButtonText}>Clear Responses</Text>
+                                <Text style={styles.secondaryButtonText}>Clear Responses</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={styles.nextButton}
+                                style={[styles.footerButton, styles.primaryButton]}
                                 onPress={handleNextSection}
                                 activeOpacity={0.8}
                             >
-                                <Text style={styles.nextButtonText}>
+                                <Text style={styles.primaryButtonText}>
                                     {currentSectionIndex < totalSections - 1 ? 'Next Section >>' : 'Submit Survey'}
                                 </Text>
                             </TouchableOpacity>
                         </>
                     )}
                 </View>
+            </View>
+            </View>
 
-                <CdpPlansModal
+            <CdpPlansModal
                     visible={showCdpModal}
                     onClose={() => setShowCdpModal(false)}
                     assessmentTitle={assessment.title}
@@ -703,7 +728,6 @@ export default function AssessmentQuestionsSection({
                     }
                     onDownloadCdp={!reviewMode ? handleDownloadCdp : undefined}
                 />
-            </KeyboardSafeContainer>
         </>
     );
 }
@@ -838,11 +862,14 @@ const styles = StyleSheet.create({
         marginBottom: getSpacing(20),
         lineHeight: getFontSize(21),
     },
+    pageContainer: {
+        flex: 1,
+    },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: getSpacing(100),
+        paddingBottom: getSpacing(24),
     },
     questionGroupCard: {
         marginHorizontal: getSpacing(20),
@@ -927,40 +954,45 @@ const styles = StyleSheet.create({
     required: {
         color: '#EF4444',
     },
-    buttonContainer: {
+    footerOuter: {
+        paddingHorizontal: getSpacing(16),
+        paddingTop: getSpacing(12),
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.15)',
+        backgroundColor: 'rgba(13, 51, 81, 0.85)',
+    },
+    footerBar: {
         flexDirection: 'row',
-        justifyContent: 'center',
-        paddingHorizontal: getSpacing(20),
-        paddingTop: getSpacing(32),
-        gap: getSpacing(16),
-    },
-    clearButton: {
-        flex: 1,
-        backgroundColor: '#fff',
-        borderRadius: 25,
-        paddingVertical: getSpacing(16),
         alignItems: 'center',
-        maxWidth: 180,
+        gap: getSpacing(12),
     },
-    clearButtonText: {
-        fontSize: getFontSize(15),
+    footerButton: {
+        flex: 1,
+        borderRadius: 25,
+        paddingVertical: getSpacing(14),
+        paddingHorizontal: getSpacing(8),
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    secondaryButton: {
+        backgroundColor: '#fff',
+    },
+    secondaryButtonText: {
+        fontSize: getFontSize(14),
         fontWeight: '600',
         color: '#3D5A8C',
+        textAlign: 'center',
     },
-    nextButton: {
-        flex: 1,
-        backgroundColor: 'rgba(60, 85, 130, 0.8)',
-        borderRadius: 25,
-        paddingVertical: getSpacing(16),
-        alignItems: 'center',
+    primaryButton: {
+        backgroundColor: 'rgba(60, 85, 130, 0.95)',
         borderWidth: 1.5,
         borderColor: 'rgba(255, 255, 255, 0.4)',
-        maxWidth: 180,
     },
-    nextButtonText: {
-        fontSize: getFontSize(15),
+    primaryButtonText: {
+        fontSize: getFontSize(14),
         fontWeight: '600',
         color: '#fff',
+        textAlign: 'center',
     },
     buttonDisabled: {
         opacity: 0.5,
