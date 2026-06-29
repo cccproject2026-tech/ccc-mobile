@@ -113,7 +113,7 @@ export const ENDPOINTS = {
     GET: (userId: string) => `/appointments/user/${userId}`,
     CREATE: "/appointments",
     GET_BY_MENTOR: (mentorId: string) => `/appointments/mentor/${mentorId}`,
-    GET_BY_ID: (appointmentId: string) => `/appointments/${appointmentId}`,
+    GET_BY_ID: (appointmentId: string) => `/appointments/detail/${appointmentId}`,
     UPDATE: (appointmentId: string) => `/appointments/${appointmentId}`,
     GET_WEEKLY_AVAILABILITY: (mentorId: string) =>
       `/appointments/availability/${mentorId}`,

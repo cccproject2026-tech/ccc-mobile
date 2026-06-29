@@ -27,7 +27,7 @@ import {
     sessionOrdinalLabel,
     sessionTopicSubtitle,
 } from "@/constants/sessionTitles";
-import { useAppointments } from "@/hooks/appointments/useAppointments";
+import { appointmentKeys, useAppointments } from "@/hooks/appointments/useAppointments";
 import {
   useUpdateSessionMode,
   useUploadSessionRecording,
@@ -37,7 +37,12 @@ import { useMentorshipSessions } from "@/hooks/roadmaps/useMentorshipSessions";
 import { useRedoSession } from "@/hooks/roadmaps/useRedoSession";
 import { openMentorshipSessionReschedule } from "@/lib/scheduling/openMentorshipSessionReschedule";
 import { prefetchScheduleMeetingData } from "@/lib/scheduling/prefetchScheduleMeetingData";
-import { canRescheduleMentorshipSession } from "@/utils/mentorshipSessionReschedule";
+import {
+  canRescheduleMentorshipSession,
+  logRescheduleEligibility,
+} from "@/utils/mentorshipSessionReschedule";
+import { getAppointmentMentorId } from "@/utils/appointmentMentorId";
+import { appointmentService } from "@/services/appointments.service";
 import apiClient from "@/services/api";
 import { useAuthStore } from "@/stores";
 import type { AppointmentPlatform } from "@/types/appointment.types";
@@ -66,7 +71,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
 import {
@@ -427,11 +432,32 @@ export default function SessionDetailsScreen() {
   const [showRecordingSheet, setShowRecordingSheet] = useState(false);
   const [isPickingRecordingFile, setIsPickingRecordingFile] = useState(false);
 
-  const appointment = useMemo(() => {
+  const cachedAppointment = useMemo(() => {
     if (!session?.appointmentId) return undefined;
     const id = String(session.appointmentId);
     return mentorAppointments.find((a) => String(a.id) === id) ?? menteeAppointments.find((a) => String(a.id) === id);
   }, [session?.appointmentId, mentorAppointments, menteeAppointments]);
+
+  const needsAppointmentDetail =
+    !!session?.appointmentId &&
+    (!cachedAppointment || !getAppointmentMentorId(cachedAppointment));
+
+  const { data: fetchedAppointment } = useQuery({
+    queryKey: [...appointmentKeys.all, "by-id", session?.appointmentId ?? ""] as const,
+    queryFn: async () => {
+      const apt = await appointmentService.getAppointmentById(
+        String(session!.appointmentId!),
+      );
+      return apt ?? null;
+    },
+    enabled: needsAppointmentDetail,
+    staleTime: 20_000,
+  });
+
+  const appointment =
+    (getAppointmentMentorId(cachedAppointment)
+      ? cachedAppointment
+      : fetchedAppointment ?? cachedAppointment) ?? undefined;
 
   const appointmentId = session?.appointmentId ? String(session.appointmentId) : undefined;
   const [transcript, setTranscript] = useState<string>("");
@@ -649,6 +675,10 @@ export default function SessionDetailsScreen() {
     appointment,
     user?.id,
   );
+
+  useEffect(() => {
+    logRescheduleEligibility(session, appointment, user?.id, canReschedule);
+  }, [session, appointment, user?.id, canReschedule]);
   const pendingRescheduleRequest =
     session?.rescheduleRequest?.status === "pending"
       ? session.rescheduleRequest

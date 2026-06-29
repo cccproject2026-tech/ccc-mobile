@@ -180,6 +180,9 @@ export function validateSchedule(
   
   if (settings?.maxBookingsPerDay) {
     const bookingsOnDate = mentorAppointments.filter((apt) => {
+      if (excludeAppointmentId && String(apt.id) === String(excludeAppointmentId)) {
+        return false;
+      }
       if (isCancelledStatus(apt.status)) return false;
       const day = String(apt.meetingDate).split("T")[0];
       return day === meetingDayYmd;

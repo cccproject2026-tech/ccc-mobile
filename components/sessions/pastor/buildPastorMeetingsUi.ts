@@ -1,6 +1,7 @@
 import { sessionOrdinalLabel } from "@/constants/sessionTitles";
 import { Appointment } from "@/types/appointment.types";
 import { MentorshipSession } from "@/types/session.types";
+import { normalizeAppointmentStatus } from "@/utils/appointmentStatus";
 import {
   MeetingStatusUi,
   PastorMeetingUi,
@@ -10,7 +11,7 @@ function mapAppointmentStatus(
   session: MentorshipSession,
   appointment?: Appointment,
 ): MeetingStatusUi {
-  const raw = String(appointment?.status ?? "").toLowerCase();
+  const raw = normalizeAppointmentStatus(appointment?.status);
   if (raw === "cancelled") return "CANCELLED";
   if (raw === "rescheduled") return "RESCHEDULED";
   if (raw === "completed") return "COMPLETED";

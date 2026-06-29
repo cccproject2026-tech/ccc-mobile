@@ -18,6 +18,7 @@ import { menteesService } from "@/services/mentees.service";
 import { useAuthStore } from "@/stores";
 import { MentorshipSession } from "@/types/session.types";
 import { formatSessionDate } from "@/utils/date";
+import { filterDuplicateCompletedSessions } from "@/utils/mentorshipSessionReschedule";
 import {
   sessionOrdinalLabel,
   sessionTopicSubtitle,
@@ -575,7 +576,10 @@ export default function SessionsScreen() {
     selectedPastorId ? (pastorGroups.find((g) => g.pastorId === selectedPastorId) ?? null) : null,
     [pastorGroups, selectedPastorId],
   );
-  const sessionsForPastor = activeGroup?.sessions ?? [];
+  const sessionsForPastor = useMemo(() => {
+    const raw = activeGroup?.sessions ?? [];
+    return filterDuplicateCompletedSessions(raw);
+  }, [activeGroup?.sessions]);
   const nextSessionId     = useMemo(() => getNextSessionId(sessionsForPastor), [sessionsForPastor]);
 
   const getFriendlyError = useCallback((error: unknown, fallback: string) => {

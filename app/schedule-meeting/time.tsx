@@ -11,8 +11,16 @@ import {
 } from "@/hooks/mentors/useMentorsAvailability";
 import {
   isSelectedSlotStillAvailable,
+  slotStartKeysMatch,
   useAvailableMeetingSlots,
 } from "@/hooks/appointments/useAvailableMeetingSlots";
+import { appointmentKeys } from "@/hooks/appointments/useAppointments";
+import { appointmentService } from "@/services/appointments.service";
+import {
+  isSameSlotAsMeetingDate,
+  meetingDateToDayYmd,
+  parseSlotFromMeetingDateIso,
+} from "@/utils/appointments/appointmentSlot";
 import {
   buildScheduleFlowParams,
   exitScheduleMeetingFlow,
@@ -25,7 +33,7 @@ import type { TimeSlot as APITimeSlot, WeeklyAvailability } from "@/types/appoin
 import { resolveMinSchedulingNoticeHours } from "@/utils/appointments/validation";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -168,6 +176,26 @@ export default function ScheduleMeetingTimeScreen() {
   const excludeAppointmentId =
     draft.mode === "reschedule" ? draft.appointmentId : undefined;
 
+  const { data: rescheduleAppointment } = useQuery({
+    queryKey: [...appointmentKeys.all, "by-id", excludeAppointmentId ?? ""] as const,
+    queryFn: async () => {
+      const apt = await appointmentService.getAppointmentById(String(excludeAppointmentId!));
+      return apt ?? null;
+    },
+    enabled: Boolean(excludeAppointmentId),
+    staleTime: 60_000,
+  });
+
+  const currentBookingDayYmd = useMemo(() => {
+    if (!rescheduleAppointment?.meetingDate) return undefined;
+    return meetingDateToDayYmd(rescheduleAppointment.meetingDate);
+  }, [rescheduleAppointment?.meetingDate]);
+
+  const currentBookingSlot = useMemo(() => {
+    if (!rescheduleAppointment?.meetingDate) return null;
+    return parseSlotFromMeetingDateIso(rescheduleAppointment.meetingDate);
+  }, [rescheduleAppointment?.meetingDate]);
+
   const queryClient = useQueryClient();
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
 
@@ -254,6 +282,7 @@ export default function ScheduleMeetingTimeScreen() {
       year: currentYear,
       role: "mentor",
       participantUserId: participantUserId || undefined,
+      excludeAppointmentId,
     },
     {
       enabled: Boolean(availabilityOwnerId),
@@ -271,7 +300,6 @@ export default function ScheduleMeetingTimeScreen() {
     isLoading: isLoadingAvailableSlots,
     isFetching: isFetchingAvailableSlots,
     isError: isAvailableSlotsError,
-    refetch: refetchAvailableSlots,
   } = useAvailableMeetingSlots({
     mentorId: availabilityOwnerId || undefined,
     date: draft.selectedDayYmd,
@@ -280,14 +308,7 @@ export default function ScheduleMeetingTimeScreen() {
     enabled: Boolean(availabilityOwnerId && draft.selectedDayYmd),
   });
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!availabilityOwnerId || !draft.selectedDayYmd) return;
-      void refetchAvailableSlots();
-    }, [availabilityOwnerId, draft.selectedDayYmd, refetchAvailableSlots]),
-  );
-
-  /** Dates with at least one server-filtered slot this month (calendar highlights). */
+  const slotsLoading = isLoadingAvailableSlots;
   const availableDates = useMemo(() => {
     if (!monthlyAvailability?.length) return [];
     const todayYmd = ymdToday();
@@ -305,14 +326,43 @@ export default function ScheduleMeetingTimeScreen() {
   const displayTimeSlots = useMemo(() => {
     const dateStr = draft.selectedDayYmd;
     if (!dateStr || !availableSlotsData?.slots?.length) return [];
-    return availableSlotsData.slots.map((slot: APITimeSlot, idx: number) => ({
+    let slots = availableSlotsData.slots;
+    if (
+      excludeAppointmentId &&
+      currentBookingDayYmd === dateStr &&
+      currentBookingSlot
+    ) {
+      slots = slots.filter(
+        (slot) => !slotStartKeysMatch(slot, currentBookingSlot),
+      );
+    }
+    return slots.map((slot: APITimeSlot, idx: number) => ({
       id: slot._id || `${dateStr}-${slot.startTime}-${slot.startPeriod}-${idx}`,
       label: formatTimeSlot(slot),
       apiSlot: slot,
     }));
-  }, [availableSlotsData?.slots, draft.selectedDayYmd]);
+  }, [
+    availableSlotsData?.slots,
+    currentBookingDayYmd,
+    currentBookingSlot,
+    draft.selectedDayYmd,
+    excludeAppointmentId,
+  ]);
 
-  const slotsLoading = isLoadingAvailableSlots || isFetchingAvailableSlots;
+  const canKeepCurrentTime = Boolean(
+    excludeAppointmentId &&
+      currentBookingDayYmd &&
+      currentBookingSlot &&
+      draft.selectedDayYmd === currentBookingDayYmd,
+  );
+
+  const isKeepingCurrentTime = Boolean(
+    canKeepCurrentTime &&
+      draft.selectedSlot &&
+      isSameSlotAsMeetingDate(draft.selectedSlot, rescheduleAppointment!.meetingDate),
+  );
+
+  /** Dates with at least one server-filtered slot this month (calendar highlights). */
 
   const mentorHasNoAvailability = useMemo(() => {
     if (isLoadingWeekly || isLoadingMonthly) return false;
@@ -430,7 +480,7 @@ export default function ScheduleMeetingTimeScreen() {
 
   // Selected day had no bookable slots from server — try the next highlighted date.
   useEffect(() => {
-    if (slotsLoading || availableDates.length === 0) return;
+    if (slotsLoading || isFetchingAvailableSlots || availableDates.length === 0) return;
 
     if (displayTimeSlots.length > 0) {
       lastSlotSyncSkipRef.current = null;
@@ -474,6 +524,7 @@ export default function ScheduleMeetingTimeScreen() {
     selectNearestBookableDay,
     setDay,
     slotsLoading,
+    isFetchingAvailableSlots,
   ]);
 
   const canContinue = Boolean(draft.person?.id && draft.selectedDayYmd && draft.selectedSlot);
@@ -583,6 +634,37 @@ export default function ScheduleMeetingTimeScreen() {
           ) : null}
 
           <Text style={styles.sectionTitle}>Available times</Text>
+          {canKeepCurrentTime ? (
+            <Pressable
+              style={[styles.keepCurrentBtn, isKeepingCurrentTime && styles.keepCurrentBtnSelected]}
+              onPress={() => {
+                if (currentBookingSlot) {
+                  setSlot({
+                    ...currentBookingSlot,
+                    endTime: currentBookingSlot.startTime,
+                    endPeriod: currentBookingSlot.startPeriod,
+                  } as APITimeSlot);
+                }
+              }}
+            >
+              <Ionicons
+                name="time-outline"
+                size={16}
+                color={isKeepingCurrentTime ? "#1E3A6F" : "#FFFFFF"}
+              />
+              <Text
+                style={[
+                  styles.keepCurrentText,
+                  isKeepingCurrentTime && styles.keepCurrentTextSelected,
+                ]}
+              >
+                Keep current time ({formatTimeSlot(currentBookingSlot!)})
+              </Text>
+            </Pressable>
+          ) : null}
+          {isFetchingAvailableSlots && !slotsLoading ? (
+            <Text style={styles.syncText}>Updating times…</Text>
+          ) : null}
           {slotsLoading ? (
             <View style={styles.syncRow}>
               <ActivityIndicator color="#8ec5eb" size="small" />
@@ -753,6 +835,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionTitle: { marginTop: 14, color: "#FFFFFF", fontWeight: "900" },
+  keepCurrentBtn: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "flex-start",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  keepCurrentBtnSelected: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FFFFFF",
+  },
+  keepCurrentText: { color: "#FFFFFF", fontWeight: "800", fontSize: 12 },
+  keepCurrentTextSelected: { color: "#1E3A6F" },
   noticeHint: {
     marginTop: 6,
     color: "rgba(255,255,255,0.65)",

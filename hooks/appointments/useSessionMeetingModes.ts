@@ -54,7 +54,10 @@ export function useAppointmentRecordingPolling(
   const canRun = !!appointmentId && enabled;
   return useQuery({
     queryKey: [...appointmentKeys.all, "recording", appointmentId ?? "__none__"],
-    queryFn: () => appointmentService.getAppointmentById(appointmentId!),
+    queryFn: async () => {
+      const apt = await appointmentService.getAppointmentById(appointmentId!);
+      return apt ?? null;
+    },
     enabled: canRun,
     staleTime: 0,
     refetchInterval: (query) => {

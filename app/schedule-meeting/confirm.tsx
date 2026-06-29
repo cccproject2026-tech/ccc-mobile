@@ -16,10 +16,11 @@ import { appointmentService } from "@/services/appointments.service";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
 import { getScheduleMeetingCalendarNote } from "@/utils/google-calendar/display-messages";
 import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
+import { getAppointmentMentorId } from "@/utils/appointmentMentorId";
 import { isMentorRole } from "@/utils/userRole";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
@@ -47,8 +48,10 @@ export default function ScheduleMeetingConfirmScreen() {
   const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
   const isAssessmentFlow = Boolean(assessmentId);
   const rescheduleAppointmentId = draft.appointmentId ?? routeAppointmentId;
+  const isSubmittingRef = React.useRef(false);
 
   const handleBack = useCallback(() => {
+    if (isSubmittingRef.current) return;
     router.replace({
       pathname: `${scheduleBase}/time` as any,
       params: {
@@ -109,7 +112,7 @@ export default function ScheduleMeetingConfirmScreen() {
     },
   );
 
-  const existingAppointment = useMemo(() => {
+  const cachedAppointment = useMemo(() => {
     if (!rescheduleAppointmentId) return null;
 
     const all = [...mentorAppointments, ...userAppointments];
@@ -117,6 +120,28 @@ export default function ScheduleMeetingConfirmScreen() {
       all.find((a) => String(a.id) === String(rescheduleAppointmentId)) ?? null
     );
   }, [rescheduleAppointmentId, mentorAppointments, userAppointments]);
+
+  const needsAppointmentDetail =
+    draft.mode === "reschedule" &&
+    !!rescheduleAppointmentId &&
+    (!cachedAppointment || !getAppointmentMentorId(cachedAppointment));
+
+  const { data: fetchedAppointment } = useQuery({
+    queryKey: [...appointmentKeys.all, "by-id", rescheduleAppointmentId ?? ""] as const,
+    queryFn: async () => {
+      const apt = await appointmentService.getAppointmentById(
+        String(rescheduleAppointmentId!),
+      );
+      return apt ?? null;
+    },
+    enabled: needsAppointmentDetail,
+    staleTime: 20_000,
+  });
+
+  const existingAppointment =
+    (getAppointmentMentorId(cachedAppointment)
+      ? cachedAppointment
+      : fetchedAppointment ?? cachedAppointment) ?? null;
 
   const { submit, isSubmitting } = useMeetingScheduler({
     mode: draft.mode,
@@ -135,7 +160,60 @@ export default function ScheduleMeetingConfirmScreen() {
     rescheduleContext: draft.rescheduleContext,
   });
 
-  if (!canSubmit) return null;
+  isSubmittingRef.current = isSubmitting;
+
+  useEffect(() => {
+    if (__DEV__) {
+      console.log("[ScheduleMeetingConfirm] state", {
+        isSubmitting,
+        isDone,
+        canSubmit,
+        mode: draft.mode,
+        rescheduleContext: draft.rescheduleContext,
+      });
+    }
+  }, [canSubmit, draft.mode, draft.rescheduleContext, isDone, isSubmitting]);
+
+  useEffect(() => {
+    if (canSubmit) return;
+    const t = setTimeout(() => {
+      const d = useScheduleMeetingStore.getState().draft;
+      const stillInvalid =
+        !d.person?.id || !d.selectedDayYmd || !d.selectedSlot;
+      if (!stillInvalid) return;
+      Toast.show({
+        type: "info",
+        text1: "Missing meeting details",
+        text2: "Please pick a date and time again.",
+      });
+      router.replace({
+        pathname: `${scheduleBase}/time` as any,
+        params: {
+          drawerContext,
+          ...(assessmentId ? { assessmentId } : {}),
+        },
+      });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [assessmentId, canSubmit, drawerContext, scheduleBase]);
+
+  if (!canSubmit) {
+    return (
+      <AppGradientBackground style={{ flex: 1 }}>
+        <TopBar
+          role={String(user?.role || "pastor")}
+          showUserName
+          showDrawer={false}
+          showBackButton
+          onPressBack={handleBack}
+        />
+        <View style={styles.center}>
+          <ActivityIndicator color="#FFFFFF" />
+          <Text style={styles.subtle}>Loading meeting details…</Text>
+        </View>
+      </AppGradientBackground>
+    );
+  }
 
   return (
     <AppGradientBackground style={{ flex: 1 }}>
@@ -282,6 +360,12 @@ export default function ScheduleMeetingConfirmScreen() {
           </View>
         </View>
       </View>
+      {isSubmitting ? (
+        <View style={styles.submitOverlay} pointerEvents="auto">
+          <ActivityIndicator color="#FFFFFF" size="large" />
+          <Text style={styles.submitOverlayText}>Saving…</Text>
+        </View>
+      ) : null}
     </AppGradientBackground>
   );
 }
@@ -316,8 +400,10 @@ function Row({
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
   title: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
   subtitle: { marginTop: 6, color: "rgba(255,255,255,0.7)", fontWeight: "600" },
+  subtle: { color: "rgba(255,255,255,0.75)", fontWeight: "600" },
   card: {
     marginTop: 14,
     borderWidth: 1,
@@ -347,5 +433,13 @@ const styles = StyleSheet.create({
   primaryBtn: { flex: 1, backgroundColor: "rgba(30, 54, 111, 1)", borderRadius: 14, paddingVertical: 12, alignItems: "center", borderWidth: 1, borderColor: "#FFFFFF" },
   primaryBtnDisabled: { opacity: 0.7 },
   primaryText: { color: "#FFFFFF", fontWeight: "900" },
+  submitOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(13, 51, 81, 0.72)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    zIndex: 100,
+  },
+  submitOverlayText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
 });
-

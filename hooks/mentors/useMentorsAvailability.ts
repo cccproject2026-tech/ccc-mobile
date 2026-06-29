@@ -323,6 +323,8 @@ interface UseMonthlyAvailabilityParams {
   year: number;
   role?: string;
   participantUserId?: string;
+  /** Reschedule: ignore the appointment being moved when counting daily bookings. */
+  excludeAppointmentId?: string;
 }
 
 interface UseMonthlyAvailabilityOptions {
@@ -343,10 +345,17 @@ export const useMonthlyAvailability = (
   params: UseMonthlyAvailabilityParams,
   options?: UseMonthlyAvailabilityOptions,
 ) => {
-  const { mentorId, month, year, role, participantUserId } = params;
+  const { mentorId, month, year, role, participantUserId, excludeAppointmentId } = params;
 
   const query = useQuery({
-    queryKey: ["monthly-availability", mentorId, month, year, participantUserId ?? ""],
+    queryKey: [
+      "monthly-availability",
+      mentorId,
+      month,
+      year,
+      participantUserId ?? "",
+      excludeAppointmentId ?? "",
+    ],
     queryFn: async () => {
       if (!mentorId) {
         throw new Error("mentorId is required for monthly availability");
@@ -357,6 +366,7 @@ export const useMonthlyAvailability = (
         month,
         year,
         participantUserId,
+        excludeAppointmentId,
       );
 
       // If it's a pastor/mentee and they have no availability set, return defaults

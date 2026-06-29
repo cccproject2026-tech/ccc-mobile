@@ -64,10 +64,10 @@ export function useAvailableMeetingSlots(params: {
         excludeAppointmentId: params.excludeAppointmentId,
       }),
     enabled: Boolean(mentorId && date && params.enabled !== false),
-    staleTime: 0,
+    staleTime: 30_000,
     gcTime: 60_000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 

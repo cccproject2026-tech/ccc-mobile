@@ -19,6 +19,10 @@ import {
   UpdateMentorAvailabilitySettingsPayload,
   WeeklyAvailability,
 } from "../types/appointment.types";
+import {
+  getAppointmentMentorId,
+  getAppointmentUserId,
+} from "@/utils/appointmentMentorId";
 import { apiClient } from "./api/client";
 import { ENDPOINTS } from "./api/endpoints";
 import { formatMeetingDateDisplay } from "@/utils/date";
@@ -76,13 +80,29 @@ export const appointmentService = {
     }
   },
 
-  getAppointmentById: async (appointmentId: string): Promise<Appointment> => {
+  getAppointmentById: async (appointmentId: string): Promise<Appointment | null> => {
     const response = await apiClient.get<AppointmentResponse>(
       ENDPOINTS.APPOINTMENTS.GET_BY_ID(appointmentId),
     );
-    return Array.isArray(response.data.data)
-      ? response.data.data[0]
-      : response.data.data;
+    const raw = response.data?.data;
+    const appointment = Array.isArray(raw) ? raw[0] : raw;
+    if (!appointment || typeof appointment !== "object") {
+      return null;
+    }
+    const id =
+      (appointment as Appointment).id ??
+      (appointment as { _id?: string })._id;
+    if (!id) {
+      return null;
+    }
+    const mentorId = getAppointmentMentorId(appointment);
+    const userId = getAppointmentUserId(appointment);
+    return {
+      ...(appointment as Appointment),
+      id: String(id),
+      ...(mentorId ? { mentorId } : {}),
+      ...(userId ? { userId } : {}),
+    };
   },
 
   /**
@@ -108,6 +128,7 @@ export const appointmentService = {
     month: number,
     year: number,
     participantUserId?: string,
+    excludeAppointmentId?: string,
   ): Promise<MonthlyAvailabilityDay[]> => {
     if (!mentorId) {
       throw new Error("mentorId is required for getMonthlyAvailability");
@@ -116,7 +137,10 @@ export const appointmentService = {
     const response = await apiClient.get<GetMonthlyAvailabilityApiResponse>(
       ENDPOINTS.APPOINTMENTS.GET_MONTHLY_AVAILABILITY(mentorId, month, year),
       {
-        params: participantUserId ? { participantUserId } : undefined,
+        params: {
+          ...(participantUserId ? { participantUserId } : {}),
+          ...(excludeAppointmentId ? { excludeAppointmentId } : {}),
+        },
       },
     );
     console.log(

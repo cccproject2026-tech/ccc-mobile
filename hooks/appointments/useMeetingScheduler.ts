@@ -13,7 +13,7 @@ import {
   extractGoogleCalendarCreateOutcome,
   googleCalendarSuccessHintFromCreateResponse,
 } from '@/utils/google-calendar/google-calendar-scheduling';
-import { getAppointmentMentorId } from '@/utils/appointmentMentorId';
+import { getAppointmentMentorId, getAppointmentUserId } from '@/utils/appointmentMentorId';
 import { isMentorRole, normalizeUserRole } from '@/utils/userRole';
 import { getAppointmentJoinUrl } from '@/utils/meetingLinkDetails';
 import { labelToPlatform } from '@/utils/appointments/platform';
@@ -22,6 +22,7 @@ import {
   isSelectedSlotStillAvailable,
   resolveLatestAvailableSlots,
 } from '@/hooks/appointments/useAvailableMeetingSlots';
+import { isSameSlotAsMeetingDate } from '@/utils/appointments/appointmentSlot';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useCreateAppointment } from './useCreateAppointment';
@@ -144,13 +145,34 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
       throw err;
     }
 
-    const isMentorUser = isMentorRole(currentUserRole);
-    const payloadMentorId = isMentorUser ? currentUserId : selectedPerson.id;
-    const payloadUserId = isMentorUser ? selectedPerson.id : currentUserId;
-
     setIsBooking(true);
     try {
-      if (mode !== 'reschedule') {
+      const isMentorUser = isMentorRole(currentUserRole);
+      const payloadMentorId = isMentorUser ? currentUserId : selectedPerson.id;
+      const payloadUserId = isMentorUser ? selectedPerson.id : currentUserId;
+
+      if (mode === 'reschedule') {
+        const latestSlots = await resolveLatestAvailableSlots(queryClient, {
+          mentorId: payloadMentorId,
+          date: selectedDayYmd,
+          participantUserId: payloadUserId,
+          excludeAppointmentId: resolvedRescheduleId,
+        });
+        const keepingCurrentTime =
+          !!existingAppointment?.meetingDate &&
+          isSameSlotAsMeetingDate(selectedSlot, existingAppointment.meetingDate);
+        if (
+          !keepingCurrentTime &&
+          !isSelectedSlotStillAvailable(latestSlots.slots, selectedSlot)
+        ) {
+          const err = new Error(
+            'This slot is no longer available. Please choose another time.',
+          );
+          (err as any).title = 'Slot unavailable';
+          (err as any).code = 'slot_unavailable';
+          throw err;
+        }
+      } else {
         const latestSlots = await resolveLatestAvailableSlots(queryClient, {
           mentorId: payloadMentorId,
           date: selectedDayYmd,
@@ -190,25 +212,62 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
           }
 
           let appointmentForMentor = existingAppointment ?? null;
-          if (!getAppointmentMentorId(appointmentForMentor) && resolvedRescheduleId) {
-            appointmentForMentor = await appointmentService.getAppointmentById(
-              resolvedRescheduleId,
-            );
+          const fetched = await appointmentService.getAppointmentById(
+            resolvedRescheduleId,
+          );
+          if (fetched) {
+            appointmentForMentor = fetched;
           }
 
-          const rescheduleMentorId = getAppointmentMentorId(appointmentForMentor);
-          if (!rescheduleMentorId) {
-            throw new Error('Could not determine the assigned mentor for this session.');
+          const appointmentMentorId = getAppointmentMentorId(appointmentForMentor);
+          const appointmentUserId = getAppointmentUserId(appointmentForMentor);
+          if (__DEV__) {
+            console.log('[MentorshipReschedule] ownership', {
+              sessionAppointmentId: resolvedRescheduleId,
+              appointmentId: appointmentForMentor?.id,
+              appointmentMentorId,
+              appointmentUserId,
+              currentUserId,
+              pastorPersonId: selectedPerson.id,
+              appointmentMeetingDate: appointmentForMentor?.meetingDate,
+            });
           }
-          if (String(rescheduleMentorId) !== String(currentUserId)) {
-            throw new Error('Only the assigned mentor may reschedule this session.');
+          if (!isMentorRole(currentUserRole)) {
+            throw new Error('Only mentors may reschedule mentorship sessions.');
           }
 
-          const data = await rescheduleMentorshipSessionAsync({
-            sessionId: resolvedRescheduleId,
-            mentorId: rescheduleMentorId,
-            newMeetingDate: meetingDateIso,
-          });
+          let data;
+          try {
+            data = await rescheduleMentorshipSessionAsync({
+              sessionId: resolvedRescheduleId,
+              mentorId: currentUserId,
+              newMeetingDate: meetingDateIso,
+            });
+          } catch (mentorshipErr: unknown) {
+            const statusCode = (mentorshipErr as { statusCode?: number })?.statusCode;
+            if (statusCode !== 403) {
+              throw mentorshipErr;
+            }
+            if (__DEV__) {
+              console.warn(
+                '[MentorshipReschedule] mentorship PATCH returned 403; falling back to appointment reschedule',
+                mentorshipErr,
+              );
+            }
+            const res = await rescheduleAppointmentAsync({
+              appointmentId: resolvedRescheduleId,
+              newDate: meetingDateIso,
+              startTime: selectedSlot.startTime,
+              startPeriod: selectedSlot.startPeriod as 'AM' | 'PM',
+            });
+            refreshBookingCaches();
+            return {
+              appointmentId: res.id,
+              meetingDate: meetingDateIso,
+              meetingLink: getAppointmentJoinUrl(res) ?? undefined,
+              googleCalendarSyncWarnings: [],
+            };
+          }
           const updatedSession = data.session;
           const meetingLink =
             typeof updatedSession?.meetingLink === 'string'
