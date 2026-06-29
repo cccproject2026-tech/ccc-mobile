@@ -2,8 +2,10 @@ import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { Colors } from "@/constants/Colors";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
+import { appointmentsRouteForRole } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores";
 import type { AppointmentPlatform } from "@/types/appointment.types";
+import { formatMeetingDateDisplay } from "@/utils/date";
 import {
   appointmentPlatformLabel,
   formatMeetingIdForDisplay,
@@ -13,6 +15,7 @@ import {
   truncateMiddle,
   zoomUrlHasPasscodeQuery,
 } from "@/utils/meetingLinkDetails";
+import { safeGoBack } from "@/utils/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
@@ -30,9 +33,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatMeetingDateDisplay } from "@/utils/date";
-import { safeGoBack } from "@/utils/navigation";
-import { appointmentsRouteForRole } from "@/lib/scheduling/scheduleMeetingNavigation";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 } as const;
@@ -427,36 +427,32 @@ export default function MeetingDetailsScreen() {
     <AppGradientBackground style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {}
-      <View style={[s.header, { paddingTop: insets.top + 6 }]}>
-        <Pressable
-          style={({ pressed }) => [s.headerBtn, pressed && { opacity: 0.7 }]}
-          onPress={handleBack}
+      <View style={s.screen}>
+        <View style={[s.header, { paddingTop: insets.top + 6 }]}>
+          <Pressable
+            style={({ pressed }) => [s.headerBtn, pressed && { opacity: 0.7 }]}
+            onPress={handleBack}
+          >
+            <Ionicons name="chevron-back" size={20} color={COLORS.whiteHigh} />
+            <Text style={s.headerBtnText}>Back</Text>
+          </Pressable>
+
+          <Text style={s.headerTitle}>Meeting Details</Text>
+
+          <Pressable
+            style={({ pressed }) => [s.refreshBtn, pressed && { opacity: 0.7 }]}
+            onPress={onRefresh}
+            hitSlop={10}
+          >
+            <Ionicons name="refresh-outline" size={18} color={COLORS.accent} />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          style={s.scrollView}
+          contentContainerStyle={s.scroll}
+          showsVerticalScrollIndicator={false}
         >
-          <Ionicons name="chevron-back" size={20} color={COLORS.whiteHigh} />
-          <Text style={s.headerBtnText}>Back</Text>
-        </Pressable>
-
-        <Text style={s.headerTitle}>Meeting Details</Text>
-
-        <Pressable
-          style={({ pressed }) => [s.refreshBtn, pressed && { opacity: 0.7 }]}
-          onPress={onRefresh}
-          hitSlop={10}
-        >
-          <Ionicons name="refresh-outline" size={18} color={COLORS.accent} />
-        </Pressable>
-      </View>
-
-      {}
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[
-          s.scroll,
-          { paddingBottom: insets.bottom + 32 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
         {!appointmentId ? (
           <EmptyState
             icon="calendar-clear-outline"
@@ -560,7 +556,22 @@ export default function MeetingDetailsScreen() {
             </View>
           </>
         )}
-      </ScrollView>
+        </ScrollView>
+
+        <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
+          <Pressable
+            style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.85 }]}
+            onPress={handleBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <View style={s.backBtnInner}>
+              <Ionicons name="chevron-back" size={18} color={COLORS.navy} />
+              <Text style={s.backBtnText}>Back</Text>
+            </View>
+          </Pressable>
+        </View>
+      </View>
     </AppGradientBackground>
   );
 }
@@ -600,7 +611,10 @@ const emptyStyles = StyleSheet.create({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  
+  screen: {
+    flex: 1,
+  },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -642,9 +656,13 @@ const s = StyleSheet.create({
   },
 
   
+  scrollView: {
+    flex: 1,
+  },
   scroll: {
     paddingHorizontal: 16,
     paddingTop: 4,
+    paddingBottom: 16,
     gap: 24,
   },
 
@@ -825,5 +843,36 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     lineHeight: 20,
+  },
+
+  footer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    zIndex: 10,
+    elevation: 10,
+    // borderTopWidth: 1,
+    // borderTopColor: COLORS.border,
+    // backgroundColor: "rgba(15, 59, 92, 0.92)",
+  },
+  backBtn: {
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  backBtnInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 14,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.75)",
+    borderRadius: 14,
+  },
+  backBtnText: {
+    color: COLORS.navy,
+    fontWeight: "800",
+    fontSize: 15,
+    letterSpacing: 0.1,
   },
 });
