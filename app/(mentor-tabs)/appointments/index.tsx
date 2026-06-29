@@ -1,13 +1,13 @@
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
+import { ScheduleMonthCalendarFromSelection } from "@/components/calendar/ScheduleMonthCalendar";
 import AppointmentCard from "@/components/director/AppointmentCard";
 import ScheduleMeetingBottomSheet from "@/components/director/ScheduleMeetingBottomSheet";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
-import { ScheduleMonthCalendarFromSelection } from "@/components/calendar/ScheduleMonthCalendar";
-import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { Mentor } from "@/hooks/mentors/useMentors";
@@ -18,16 +18,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

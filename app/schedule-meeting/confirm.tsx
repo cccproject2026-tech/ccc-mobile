@@ -42,7 +42,7 @@ export default function ScheduleMeetingConfirmScreen() {
   }>();
   const returnTo = getReturnToParam({ returnTo: returnToParam });
   const deviceTz = useMemo(() => getDeviceTimezone(), []);
-  const { draft, setAppointmentId, isExitingFlow } = useScheduleMeetingStore();
+  const { draft, setAppointmentId, isExitingFlow, beginExitFlow } = useScheduleMeetingStore();
   const [isDone, setIsDone] = useState(false);
   const insets = useSafeAreaInsets();
   const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
@@ -262,6 +262,7 @@ export default function ScheduleMeetingConfirmScreen() {
               onPress={async () => {
                 try {
                   const result = await submit();
+                  beginExitFlow();
                   setIsDone(true);
                   const isMentorshipReschedule =
                     draft.mode === "reschedule" &&
@@ -279,7 +280,9 @@ export default function ScheduleMeetingConfirmScreen() {
                     ? "Returning to assessment…"
                     : isMentorshipReschedule && returnTo
                       ? "Returning to session…"
-                      : "Returning to appointments…";
+                      : result.appointmentId
+                        ? "Opening meeting details…"
+                        : "Returning to appointments…";
                   const text2 = calendarNote
                     ? `${calendarNote} · ${returningText}`
                     : returningText;
@@ -327,6 +330,10 @@ export default function ScheduleMeetingConfirmScreen() {
                       message: meetingMessage,
                       returnTo:
                         isMentorshipReschedule && returnTo ? returnTo : undefined,
+                      appointmentId:
+                        !isAssessmentFlow && !(isMentorshipReschedule && returnTo)
+                          ? result.appointmentId
+                          : undefined,
                     });
                   }, 400);
                 } catch (e: any) {

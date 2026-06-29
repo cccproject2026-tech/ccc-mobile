@@ -1,37 +1,37 @@
 import GradientCalendar from "@/components/atom/calendar";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
-import GoogleCalendarScheduleBanner from "@/components/GoogleCalendarScheduleBanner";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
 import ScheduleMeetingBottomSheet, {
-  Mentor,
+    Mentor,
 } from "@/components/director/ScheduleMeetingBottomSheet";
 import SearchBar from "@/components/director/SearchBar";
 import TopBar from "@/components/director/TopBar";
+import GoogleCalendarScheduleBanner from "@/components/GoogleCalendarScheduleBanner";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
 import { appointments } from "@/constants/mockData";
+import { formatMeetingDateDisplay } from "@/utils/date";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import {
-  Stack,
-  useFocusEffect,
-  useLocalSearchParams,
-  useRouter,
+    Stack,
+    useFocusEffect,
+    useLocalSearchParams,
+    useRouter,
 } from "expo-router";
 import React, { useCallback } from "react";
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
-import { formatMeetingDateDisplay } from "@/utils/date";
 
 interface ResponseModalState {
   visible: boolean;

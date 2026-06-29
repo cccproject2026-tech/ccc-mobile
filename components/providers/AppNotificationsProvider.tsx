@@ -1,4 +1,5 @@
 import { isWebBrowserGoogleCalendarOAuthActive } from '@/hooks/googleCalendar/useGoogleCalendarOAuthReturn';
+import { setupNotifications } from '@/services/notifications';
 import { useAuthStore } from '@/stores';
 import { UserRole } from '@/types';
 import {
@@ -11,7 +12,6 @@ import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import React, { PropsWithChildren, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
-import { setupNotifications } from '@/services/notifications';
 
 const TAG = '[notifications]';
 

@@ -1,42 +1,41 @@
-import { ScheduleMonthCalendarFromSelection } from "@/components/calendar/ScheduleMonthCalendar";
-import GoogleCalendarScheduleBanner from "@/components/GoogleCalendarScheduleBanner";
-import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
 import { Header } from "@/components/build-components";
+import { ScheduleMonthCalendarFromSelection } from "@/components/calendar/ScheduleMonthCalendar";
 import AppointmentCard, { MenuItem } from "@/components/director/AppointmentCard";
+import GoogleCalendarScheduleBanner from "@/components/GoogleCalendarScheduleBanner";
+import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
 // Scheduling now uses full-screen pages under /schedule-meeting
 import TopBar from "@/components/director/TopBar";
-import { Colors } from "@/constants/Colors";
+import AppGradientBackground from "@/components/layout/AppGradientBackground";
 import { icons } from "@/constants/images";
 import {
-  useAppointments,
-  useCancelAppointment,
+    useAppointments,
+    useCancelAppointment,
 } from "@/hooks/appointments/useAppointments";
 import { useMentees } from "@/hooks/mentees/useMentees";
 import { Mentor } from "@/hooks/mentors/useMentors";
 import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores/auth.store";
-import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AppGradientBackground from "@/components/layout/AppGradientBackground";
 
 interface ResponseModalState {
   visible: boolean;

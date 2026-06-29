@@ -1,25 +1,24 @@
 import SimpleSuccessModal from "@/components/atom/SimpleSuccessModal";
-import GoogleCalendarScheduleBanner from "@/components/GoogleCalendarScheduleBanner";
 import { Header } from "@/components/build-components";
 import AppointmentCard from "@/components/director/AppointmentCard";
+import GoogleCalendarScheduleBanner from "@/components/GoogleCalendarScheduleBanner";
 // Scheduling now uses full-screen pages under /schedule-meeting
-import SearchBar from "@/components/director/SearchBar";
-import TopBar from "@/components/director/TopBar";
 import { ScheduleMonthCalendarFromSelection } from "@/components/calendar/ScheduleMonthCalendar";
-import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
+import TopBar from "@/components/director/TopBar";
 import { Colors } from "@/constants/Colors";
 import { icons } from "@/constants/images";
+import { useAppointmentCalendarSelection } from "@/hooks/appointments/useAppointmentCalendarSelection";
 import {
   useAppointments,
   useCancelAppointment,
 } from "@/hooks/appointments/useAppointments";
 import { useUpdateAppointment } from "@/hooks/appointments/useUpadteAppointment";
 import { Mentor, useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
+import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { useAuthStore } from "@/stores";
 import { Appointment, AppointmentPlatform } from "@/types/appointment.types";
-import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
-import { openScheduleMeeting } from "@/lib/scheduling/scheduleMeetingNavigation";
 import { getDeviceTimezone } from "@/utils/appointments/timezone";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";

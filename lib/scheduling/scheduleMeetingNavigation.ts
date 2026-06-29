@@ -5,11 +5,19 @@ import { buildReturnTo, normalizeReturnToHref, safeGoBack } from "@/utils/naviga
 
 export type ScheduleMeetingMode = "schedule" | "reschedule";
 
-function appointmentsRouteForRole(role: string | undefined): Href {
+export function appointmentsRouteForRole(role: string | undefined): Href {
   const r = String(role ?? "").toLowerCase();
   if (r === "mentor") return "/(mentor)/(tabs)/appointments";
   if (r === "director") return "/(director)/(tabs)/appointments";
   return "/(pastor)/(tabs)/appointments";
+}
+
+/** Full appointment view — shown after a successful schedule or reschedule. */
+export function meetingDetailsHref(appointmentId: string): Href {
+  return {
+    pathname: "/appointments/meeting-details",
+    params: { appointmentId: String(appointmentId) },
+  } as Href;
 }
 
 /** Base path for in-drawer scheduler stacks (pastor / mentor). Director uses root `/schedule-meeting`. */
@@ -80,6 +88,8 @@ export function openScheduleMeeting(
   });
   if (options?.personData) params.personData = options.personData;
 
+  useScheduleMeetingStore.getState().reset();
+
   router.push({
     pathname: `${base}/person`,
     params,
@@ -100,14 +110,19 @@ export function leaveScheduleMeetingPersonStep(
   } else {
     safeGoBack(router, { fallback: appointmentsRouteForRole(role), returnTo, role });
   }
-  setTimeout(() => store.reset(), 0);
+  setTimeout(() => store.clearDraft(), 0);
 }
 
-/** Leave the scheduler after booking — appointments list, assessment guidelines, or custom returnTo. */
+/** Leave the scheduler after booking — meeting details, assessment guidelines, or custom returnTo. */
 export function exitScheduleMeetingFlow(
   router: Router,
   role: string | undefined,
-  options?: { assessmentId?: string; message?: string; returnTo?: string },
+  options?: {
+    assessmentId?: string;
+    message?: string;
+    returnTo?: string;
+    appointmentId?: string;
+  },
 ): void {
   const store = useScheduleMeetingStore.getState();
   store.beginExitFlow();
@@ -124,8 +139,10 @@ export function exitScheduleMeetingFlow(
     router.replace(href as never);
   } else if (options?.returnTo) {
     router.replace(normalizeReturnToHref(options.returnTo, role) as Href);
+  } else if (options?.appointmentId) {
+    router.replace(meetingDetailsHref(options.appointmentId));
   } else {
     router.replace(appointmentsRouteForRole(role));
   }
-  setTimeout(() => store.reset(), 0);
+  setTimeout(() => store.clearDraft(), 0);
 }

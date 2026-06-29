@@ -49,6 +49,7 @@ export function resolveActiveStackGroup(
   if (root === '(director)') return 'director';
   if (root === 'oauth' || pathname?.startsWith('/oauth')) return 'oauth';
   if (root === 'schedule-meeting') return 'schedule-meeting';
+  if (root === 'appointments') return 'appointments';
   if (pathname === '/+not-found') return 'not-found';
 
   const normalizedPath = pathname ?? '';
@@ -84,7 +85,7 @@ export function isValidStartupRoute(
     };
   }
 
-  if (activeGroup === 'oauth' || activeGroup === 'schedule-meeting') {
+  if (activeGroup === 'oauth' || activeGroup === 'schedule-meeting' || activeGroup === 'appointments') {
     return { valid: true, reason: null, mountedGroups, activeGroup };
   }
 

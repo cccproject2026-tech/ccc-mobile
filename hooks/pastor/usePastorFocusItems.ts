@@ -1,6 +1,10 @@
+import type {
+    PastorFocusItem,
+    PastorFocusSection,
+} from "@/components/sheets/PastorFocusBottomSheet";
 import {
-  sessionOrdinalLabel,
-  sessionTopicLine,
+    sessionOrdinalLabel,
+    sessionTopicLine,
 } from "@/constants/sessionTitles";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
 import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
@@ -8,36 +12,31 @@ import { useAssignedMentors } from "@/hooks/mentors/useGetAssignedMentors";
 import { usePastorNewAssignmentsHome } from "@/hooks/pastor/usePastorNewAssignmentsHome";
 import { usePastorSessions } from "@/hooks/roadmaps/usePastorSessions";
 import { useRoadmaps } from "@/hooks/roadmaps/useRoadmaps";
+import {
+    comparePastorPhasesForHome,
+    getCompletionStats,
+    getNestedTaskTitleById,
+    getNextIncompleteNestedTaskId,
+    isPastorPhaseInFocus,
+    resolveRoadmapThreadId,
+} from "@/lib/roadmap/helpers";
+import {
+    MentorInfo,
+    RoadmapComment,
+    RoadmapCommentAuthor,
+    RoadmapQuery
+} from "@/lib/roadmap/types";
 import { appointmentService } from "@/services/appointments.service";
 import { roadmapService } from "@/services/roadmap.service";
 import { useAuthStore } from "@/stores";
-import { Assessment } from "@/types/assessment.types";
 import { Appointment } from "@/types/appointment.types";
+import { Assessment } from "@/types/assessment.types";
+import { formatTimeLocal } from "@/utils/appointments/timezone";
+import { formatMeetingDateDisplay } from "@/utils/date";
+import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useCallback, useMemo } from "react";
-import {
-  comparePastorPhasesForHome,
-  getCompletionStats,
-  getNestedTaskTitleById,
-  getNextIncompleteNestedTaskId,
-  isPastorPhaseInFocus,
-  resolveRoadmapThreadId,
-} from "@/lib/roadmap/helpers";
-import {
-  MentorInfo,
-  Roadmap,
-  RoadmapComment,
-  RoadmapCommentAuthor,
-  RoadmapQuery,
-} from "@/lib/roadmap/types";
-import type {
-  PastorFocusItem,
-  PastorFocusSection,
-} from "@/components/sheets/PastorFocusBottomSheet";
-import { getAppointmentJoinUrl } from "@/utils/meetingLinkDetails";
-import { formatMeetingDateDisplay } from "@/utils/date";
-import { formatTimeLocal } from "@/utils/appointments/timezone";
 
 const UPCOMING_DUE_WINDOW_DAYS = 7;
 const MAX_ITEMS_PER_SECTION = 3;

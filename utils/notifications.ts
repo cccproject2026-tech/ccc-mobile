@@ -1,7 +1,6 @@
-import { UserRole } from '@/types';
-import { Notification } from '@/types';
-import type { Href } from 'expo-router';
+import { Notification, UserRole } from '@/types';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
+import type { Href } from 'expo-router';
 
 const ISO_DATE_REGEX =
     /\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\b/g;

@@ -17,6 +17,7 @@ export type MountedStackGroup =
   | 'director'
   | 'oauth'
   | 'schedule-meeting'
+  | 'appointments'
   | 'not-found'
   | 'none';
 

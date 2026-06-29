@@ -38,6 +38,8 @@ type ScheduleMeetingStore = {
   setPlatformLabel: (label: string) => void;
   setAppointmentId: (id?: string) => void;
   setRescheduleContext: (context: RescheduleContext) => void;
+  /** Clear draft only — keeps {@link isExitingFlow} so stacked time/confirm screens stay idle. */
+  clearDraft: () => void;
   reset: () => void;
 };
 
@@ -70,6 +72,7 @@ export const useScheduleMeetingStore = create<ScheduleMeetingStore>((set) => ({
     ),
   setRescheduleContext: (rescheduleContext) =>
     set((s) => ({ draft: { ...s.draft, rescheduleContext } })),
+  clearDraft: () => set((s) => ({ draft: initialDraft, isExitingFlow: s.isExitingFlow })),
   reset: () => set({ draft: initialDraft, isExitingFlow: false }),
 }));
 

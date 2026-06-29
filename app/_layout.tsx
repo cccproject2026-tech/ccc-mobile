@@ -146,6 +146,10 @@ function RootLayoutNav() {
         <Stack.Screen name="schedule-meeting" />
       </Stack.Protected>
 
+      <Stack.Protected guard={canUseScheduleMeeting}>
+        <Stack.Screen name="appointments" />
+      </Stack.Protected>
+
       <Stack.Screen
         name="oauth"
         options={{ headerShown: false, animation: "none" }}

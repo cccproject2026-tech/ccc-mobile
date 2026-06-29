@@ -1,5 +1,7 @@
 import TopBar from "@/components/director/TopBar";
 import { GroupedNotificationList } from "@/components/notifications/GroupedNotificationList";
+import { GradientBackground } from "@/components/ui/design-system/GradientBackground";
+import { SectionHeader } from "@/components/ui/design-system/SectionHeader";
 import { useMarkNotificationAsRead, useNotifications } from "@/hooks/profile/useProfile";
 import { useAuthStore } from "@/stores";
 import { Notification } from "@/types";
@@ -12,8 +14,6 @@ import {
     StyleSheet,
     View
 } from "react-native";
-import { GradientBackground } from "@/components/ui/design-system/GradientBackground";
-import { SectionHeader } from "@/components/ui/design-system/SectionHeader";
 
 export default function NotificationScreen() {
   const { user } = useAuthStore();

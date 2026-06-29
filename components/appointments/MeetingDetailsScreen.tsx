@@ -14,11 +14,12 @@ import {
   zoomUrlHasPasscodeQuery,
 } from "@/utils/meetingLinkDetails";
 import { Ionicons } from "@expo/vector-icons";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   Linking,
   Platform,
   Pressable,
@@ -28,7 +29,10 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatMeetingDateDisplay } from "@/utils/date";
+import { safeGoBack } from "@/utils/navigation";
+import { appointmentsRouteForRole } from "@/lib/scheduling/scheduleMeetingNavigation";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 } as const;
@@ -393,6 +397,24 @@ export default function MeetingDetailsScreen() {
     await refetch();
   }, [refetch]);
 
+  const handleBack = useCallback(() => {
+    safeGoBack(router, {
+      fallback: appointmentsRouteForRole(user?.role),
+      role: user?.role,
+    });
+  }, [router, user?.role]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android") return;
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        handleBack();
+        return true;
+      });
+      return () => sub.remove();
+    }, [handleBack]),
+  );
+
   
   const initials = mentorName
     .split(" ")
@@ -409,7 +431,7 @@ export default function MeetingDetailsScreen() {
       <View style={[s.header, { paddingTop: insets.top + 6 }]}>
         <Pressable
           style={({ pressed }) => [s.headerBtn, pressed && { opacity: 0.7 }]}
-          onPress={() => router.back()}
+          onPress={handleBack}
         >
           <Ionicons name="chevron-back" size={20} color={COLORS.whiteHigh} />
           <Text style={s.headerBtnText}>Back</Text>

@@ -2,30 +2,29 @@ import { AssessmentCard } from "@/components/build-components";
 import PMPBottomSheet from "@/components/director/PMPBottomSheet";
 import TopBar from "@/components/director/TopBar";
 import {
-  GradientBackground,
-  RoadmapSearchField,
-  RoadmapTabStrip,
-  SectionHeader,
+    GradientBackground,
+    RoadmapSearchField,
+    RoadmapTabStrip,
+    SectionHeader,
 } from "@/components/ui/design-system";
 import { useAppointments } from "@/hooks/appointments/useAppointments";
-import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useAssessmentMeetingMap } from "@/hooks/assessments/useAssessmentMeetingMap";
+import { useAssignedAssessments } from "@/hooks/assessments/useAssignedAssessments";
 import { useAuthStore } from "@/stores";
 import type { Assessment } from "@/types/assessment.types";
 import { sharePdfFromHtml } from "@/utils/pdf";
-import { getFontSize, getIconSize, getSpacing } from "@/utils/responsive";
+import { getFontSize } from "@/utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
