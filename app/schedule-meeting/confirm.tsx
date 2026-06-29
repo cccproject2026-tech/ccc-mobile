@@ -42,7 +42,7 @@ export default function ScheduleMeetingConfirmScreen() {
   }>();
   const returnTo = getReturnToParam({ returnTo: returnToParam });
   const deviceTz = useMemo(() => getDeviceTimezone(), []);
-  const { draft, setAppointmentId } = useScheduleMeetingStore();
+  const { draft, setAppointmentId, isExitingFlow } = useScheduleMeetingStore();
   const [isDone, setIsDone] = useState(false);
   const insets = useSafeAreaInsets();
   const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
@@ -175,9 +175,10 @@ export default function ScheduleMeetingConfirmScreen() {
   }, [canSubmit, draft.mode, draft.rescheduleContext, isDone, isSubmitting]);
 
   useEffect(() => {
-    if (canSubmit) return;
+    if (isExitingFlow || isDone || canSubmit) return;
     const t = setTimeout(() => {
       const d = useScheduleMeetingStore.getState().draft;
+      if (useScheduleMeetingStore.getState().isExitingFlow) return;
       const stillInvalid =
         !d.person?.id || !d.selectedDayYmd || !d.selectedSlot;
       if (!stillInvalid) return;
@@ -195,7 +196,7 @@ export default function ScheduleMeetingConfirmScreen() {
       });
     }, 300);
     return () => clearTimeout(t);
-  }, [assessmentId, canSubmit, drawerContext, scheduleBase]);
+  }, [assessmentId, canSubmit, drawerContext, isDone, isExitingFlow, scheduleBase]);
 
   if (!canSubmit) {
     return (

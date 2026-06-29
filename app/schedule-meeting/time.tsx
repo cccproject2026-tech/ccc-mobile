@@ -73,7 +73,7 @@ export default function ScheduleMeetingTimeScreen() {
   }>();
   const { drawerContext, assessmentId, rescheduleContext, appointmentId: routeAppointmentId } =
     routeParams;
-  const { draft, setDay, setSlot, setPlatformLabel, setAppointmentId, setRescheduleContext, setMode } =
+  const { draft, setDay, setSlot, setPlatformLabel, setAppointmentId, setRescheduleContext, setMode, isExitingFlow } =
     useScheduleMeetingStore();
   const insets = useSafeAreaInsets();
   const scheduleBase = getScheduleMeetingBase(drawerContext, user?.role);
@@ -159,12 +159,19 @@ export default function ScheduleMeetingTimeScreen() {
   const hasPerson = Boolean(draft.person?.id);
 
   useEffect(() => {
-    if (hasPerson) return;
+    if (isExitingFlow || hasPerson) return;
+    if (rescheduleContext === "mentorship") {
+      const returnTo = getReturnToParam(routeParams);
+      if (returnTo) {
+        exitScheduleMeetingFlow(router, user?.role, { returnTo });
+      }
+      return;
+    }
     router.replace({
       pathname: `${scheduleBase}/person` as any,
       params: flowParams,
     });
-  }, [flowParams, hasPerson, scheduleBase]);
+  }, [flowParams, hasPerson, isExitingFlow, rescheduleContext, routeParams, scheduleBase, user?.role]);
 
   const isMentor = String(user?.role || "").toLowerCase() === "mentor";
 

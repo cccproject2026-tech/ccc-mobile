@@ -1,7 +1,7 @@
 import type { Href, Router } from "expo-router";
 import type { RescheduleContext } from "@/stores/scheduleMeeting.store";
 import { useScheduleMeetingStore } from "@/stores/scheduleMeeting.store";
-import { buildReturnTo, safeGoBack } from "@/utils/navigation";
+import { buildReturnTo, normalizeReturnToHref, safeGoBack } from "@/utils/navigation";
 
 export type ScheduleMeetingMode = "schedule" | "reschedule";
 
@@ -92,9 +92,15 @@ export function leaveScheduleMeetingPersonStep(
   role: string | undefined,
   returnTo?: string,
 ): void {
-  safeGoBack(router, { fallback: appointmentsRouteForRole(role), returnTo, role });
-  // Reset after leaving so confirm/time screens don't react to an empty draft while still mounted.
-  setTimeout(() => useScheduleMeetingStore.getState().reset(), 0);
+  const store = useScheduleMeetingStore.getState();
+  store.beginExitFlow();
+  const normalizedReturnTo = normalizeReturnToHref(returnTo, role);
+  if (normalizedReturnTo) {
+    router.replace(normalizedReturnTo as Href);
+  } else {
+    safeGoBack(router, { fallback: appointmentsRouteForRole(role), returnTo, role });
+  }
+  setTimeout(() => store.reset(), 0);
 }
 
 /** Leave the scheduler after booking — appointments list, assessment guidelines, or custom returnTo. */
@@ -103,6 +109,9 @@ export function exitScheduleMeetingFlow(
   role: string | undefined,
   options?: { assessmentId?: string; message?: string; returnTo?: string },
 ): void {
+  const store = useScheduleMeetingStore.getState();
+  store.beginExitFlow();
+
   if (options?.assessmentId) {
     const href = buildReturnTo(
       "/assessments/survey-guidelines",
@@ -114,10 +123,9 @@ export function exitScheduleMeetingFlow(
     );
     router.replace(href as never);
   } else if (options?.returnTo) {
-    router.replace(options.returnTo as Href);
+    router.replace(normalizeReturnToHref(options.returnTo, role) as Href);
   } else {
     router.replace(appointmentsRouteForRole(role));
   }
-  // Reset after leaving so confirm/time screens don't react to an empty draft while still mounted.
-  setTimeout(() => useScheduleMeetingStore.getState().reset(), 0);
+  setTimeout(() => store.reset(), 0);
 }

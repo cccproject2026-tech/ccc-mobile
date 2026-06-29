@@ -28,6 +28,9 @@ export type ScheduleMeetingDraft = {
 
 type ScheduleMeetingStore = {
   draft: ScheduleMeetingDraft;
+  /** True while leaving the flow — prevents time/confirm guards from re-opening person. */
+  isExitingFlow: boolean;
+  beginExitFlow: () => void;
   setMode: (mode: ScheduleMeetingMode) => void;
   setPerson: (person: SchedulePerson | null) => void;
   setDay: (ymd: string) => void;
@@ -50,6 +53,8 @@ const initialDraft: ScheduleMeetingDraft = {
 
 export const useScheduleMeetingStore = create<ScheduleMeetingStore>((set) => ({
   draft: initialDraft,
+  isExitingFlow: false,
+  beginExitFlow: () => set({ isExitingFlow: true }),
   setMode: (mode) => set((s) => ({ draft: { ...s.draft, mode } })),
   setPerson: (person) => set((s) => ({ draft: { ...s.draft, person } })),
   setDay: (selectedDayYmd) =>
@@ -65,6 +70,6 @@ export const useScheduleMeetingStore = create<ScheduleMeetingStore>((set) => ({
     ),
   setRescheduleContext: (rescheduleContext) =>
     set((s) => ({ draft: { ...s.draft, rescheduleContext } })),
-  reset: () => set({ draft: initialDraft }),
+  reset: () => set({ draft: initialDraft, isExitingFlow: false }),
 }));
 

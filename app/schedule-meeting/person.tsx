@@ -61,6 +61,7 @@ export default function ScheduleMeetingPersonScreen() {
     setPerson,
     setRescheduleContext,
     reset,
+    isExitingFlow,
   } = useScheduleMeetingStore();
 
   const [search, setSearch] = useState("");
@@ -68,6 +69,7 @@ export default function ScheduleMeetingPersonScreen() {
   // Drawer screens are frozen between visits — reset when starting a new flow (not when backing from time).
   useFocusEffect(
     useCallback(() => {
+      if (isExitingFlow) return;
       const keepDraft = String(params.preserveDraft ?? "") === "1";
       if (!keepDraft) {
         reset();
@@ -102,6 +104,7 @@ export default function ScheduleMeetingPersonScreen() {
     }, [
       appointmentId,
       flowParams,
+      isExitingFlow,
       mode,
       params.drawerContext,
       params.preserveDraft,
