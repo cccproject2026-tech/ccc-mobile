@@ -13,7 +13,6 @@ import {
     useCreateSubmission,
     useUploadSubmissionDocument,
 } from "@/hooks/roadmap/useTaskSubmissions";
-import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import { useAssessmentProgress } from "@/hooks/progress/useProgress";
 
 import {
@@ -31,9 +30,13 @@ import {
     seedDefaultFormValues,
 } from "@/lib/roadmap/extraFieldKeys";
 import {
+    withJumpstartCompleteExtra,
+} from "@/lib/roadmap/ensureJumpstartPastorSubmit";
+import {
     isJumpstartBlockingError,
     presentJumpstartBlockingError,
 } from "@/lib/roadmap/jumpstartErrors";
+import { isJumpStartRoadmap } from "@/lib/roadmap/journeyFlow";
 import { saveTaskRoadmapExtras } from "@/lib/roadmap/saveTaskExtras";
 import { extractApiErrorMessage } from "@/utils/availability/api-error";
 import { Extra, NestedRoadmap, Roadmap } from "@/lib/roadmap/types";
@@ -178,12 +181,14 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
     const updateExtras = useUpdateRoadmapExtras();
     const uploadDocument = useUploadRoadmapDocument();
     const deleteDocument = useDeleteRoadmapDocument();
-    const {
-        mutateAsync: triggerJumpstartAsync,
-        isPending: isTriggeringJumpstart,
-    } = useTriggerJumpstart();
-    const jumpstartTriggeredUsersRef = useRef<Set<string>>(new Set());
     const { data: assessmentProgress } = useAssessmentProgress(targetUserId);
+    const isPastorEditor =
+        String(currentUser?.role ?? "").toLowerCase() === "pastor" && !isMentorView;
+
+    const isJumpStartPhase = useMemo(
+        () => isJumpStartRoadmap(parentRoadmap ?? null),
+        [parentRoadmap],
+    );
     const hasNestedTaskId = isMongoObjectId(itemId);
     const isUpdateMode = shouldUpdateTaskExtras(
         hasNestedTaskId,
@@ -267,55 +272,6 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         return fieldErrors;
     };
 
-    const ensureJumpstartTriggered = async (): Promise<boolean> => {
-        const user = currentUser;
-        // Must match GET/PATCH/create: same `roadmapId` as route `phaseId`, not a different "Jumpstart" roadmap from assigned list.
-        const extrasRoadmapId = isMongoObjectId(roadmapId) ? roadmapId : undefined;
-        const nestedForExtras = isMongoObjectId(itemId) ? itemId : undefined;
-
-        if (!extrasRoadmapId || !user?.id) {
-            console.error("❌ Missing required data for jumpstart POST", {
-                extrasRoadmapId,
-                userId: user?.id,
-            });
-            return true;
-        }
-
-        if (jumpstartTriggeredUsersRef.current.has(user.id)) {
-            return true;
-        }
-
-        console.log("STEP 1: Jumpstart trigger (POST)", {
-            roadmapId: extrasRoadmapId,
-            userId: user.id,
-            nestedRoadMapItemId: nestedForExtras,
-        });
-
-        try {
-            const response = await triggerJumpstartAsync({
-                roadmapId: extrasRoadmapId,
-                userId: user.id,
-                nestedRoadMapItemId: nestedForExtras,
-            });
-            console.log("Jumpstart API response:", response);
-
-            if (response?.success || response?.alreadyExists) {
-                jumpstartTriggeredUsersRef.current.add(user.id);
-            }
-            return true;
-        } catch (error) {
-            if (isJumpstartBlockingError(error)) {
-                presentJumpstartBlockingError(error);
-                return false;
-            }
-            console.warn(
-                "[Jumpstart Trigger] Failed (non-blocking). Continuing extras flow.",
-                error,
-            );
-            return true;
-        }
-    };
-
     /** Save progress – always creates a NEW submission record + extras for backward compat */
     const handleSubmit = async () => {
         const signatureErrors = collectSignatureErrors(effectiveExtras);
@@ -335,15 +291,14 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         }
 
         try {
-            const jumpstartOk = await ensureJumpstartTriggered();
-            if (!jumpstartOk) return;
+            const isPastorJumpstartSubmit =
+                isPastorEditor &&
+                isJumpStartPhase &&
+                isMongoObjectId(roadmapId) &&
+                currentUser.id;
 
-            const usePatchForExtras =
-                isUpdateMode ||
-                roadmapLevelExtrasExist ||
-                jumpstartTriggeredUsersRef.current.has(currentUser.id);
+            const usePatchForExtras = isUpdateMode || roadmapLevelExtrasExist;
 
-            
             const responsesArray = Object.entries(formData).map(([name, value]) => {
                 const type = getExtraType(name, value);
                 if (type === "SIGNATURE") {
@@ -358,8 +313,35 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
 
             const nestedExtraId = isMongoObjectId(itemId) ? itemId : undefined;
             const pendingFilesSnapshot = { ...pendingFiles };
+            const extrasArray = withJumpstartCompleteExtra(responsesArray, {
+                isPastorJumpstartSubmit: Boolean(isPastorJumpstartSubmit),
+                existingExtras: existingExtras?.extras,
+            });
 
-            // 1️⃣ Create a new submission record (immutable) when API exists
+            await saveTaskRoadmapExtras({
+                isUpdateMode: usePatchForExtras,
+                roadMapId: roadmapId!,
+                userId: currentUser.id,
+                nestedRoadMapItemId: nestedExtraId,
+                extras: extrasArray,
+                createExtras: (payload) => createExtras.mutateAsync(payload),
+                updateExtras: (vars) => updateExtras.mutateAsync(vars),
+            });
+
+            setPendingFiles({});
+
+            for (const [extraName, files] of Object.entries(pendingFilesSnapshot)) {
+                for (const file of files) {
+                    await uploadDocument.mutateAsync({
+                        roadMapId: roadmapId!,
+                        userId: currentUser.id,
+                        nestedRoadMapItemId: itemId!,
+                        extraName,
+                        file,
+                    }).catch(() => {});
+                }
+            }
+
             try {
                 const newSubmission = await createSubmission.mutateAsync({
                     roadMapId: roadmapId!,
@@ -380,32 +362,6 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
                 }
             } catch {
                 // Submission API not yet available — continue with extras fallback
-            }
-
-            // 2️⃣ Save extras for backward compatibility with progress tracking
-            await saveTaskRoadmapExtras({
-                isUpdateMode: usePatchForExtras,
-                roadMapId: roadmapId!,
-                userId: currentUser.id,
-                nestedRoadMapItemId: nestedExtraId,
-                extras: responsesArray,
-                createExtras: (payload) => createExtras.mutateAsync(payload),
-                updateExtras: (vars) => updateExtras.mutateAsync(vars),
-            });
-
-            setPendingFiles({});
-
-            // 3️⃣ Upload files to legacy extras endpoint too (backward compat)
-            for (const [extraName, files] of Object.entries(pendingFilesSnapshot)) {
-                for (const file of files) {
-                    await uploadDocument.mutateAsync({
-                        roadMapId: roadmapId!,
-                        userId: currentUser.id,
-                        nestedRoadMapItemId: itemId!,
-                        extraName,
-                        file,
-                    }).catch(() => {});
-                }
             }
 
             setShowSuccessModal(true);
@@ -1238,7 +1194,6 @@ export function DynamicFormTask({ task, parentRoadmap, phaseId: roadmapId, itemI
         createExtras.isPending ||
         updateExtras.isPending ||
         uploadDocument.isPending ||
-        isTriggeringJumpstart ||
         createSubmission.isPending;
 
     const scheduledMeeting = task.meetings?.find(

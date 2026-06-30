@@ -30,7 +30,8 @@ function normalizePhaseName(value: string): string {
   return value.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-function isJumpStartRoadmap(roadmap: Roadmap): boolean {
+export function isJumpStartRoadmap(roadmap: Roadmap | undefined | null): boolean {
+  if (!roadmap) return false;
   const name = normalizePhaseName(String(roadmap.name ?? roadmap.phase ?? ""));
   return name.includes("jump") || name.includes("jump-start") || name.includes("jumpstart");
 }

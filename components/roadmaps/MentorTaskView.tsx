@@ -14,7 +14,6 @@ import {
     useUpdateRoadmapExtras,
     useUploadRoadmapDocument,
 } from "@/hooks/roadmaps/useRoadmaps";
-import { useTriggerJumpstart } from "@/hooks/roadmaps/useTriggerJumpstart";
 import {
     getEffectiveTaskExtras,
     isAssessmentOnlyTask,
@@ -39,9 +38,13 @@ import {
     PAST_DATE_VALIDATION_MESSAGE,
 } from "@/lib/dates/pastorDateSelection";
 import {
+    withJumpstartCompleteExtra,
+} from "@/lib/roadmap/ensureJumpstartPastorSubmit";
+import {
     isJumpstartBlockingError,
     presentJumpstartBlockingError,
 } from "@/lib/roadmap/jumpstartErrors";
+import { isJumpStartRoadmap } from "@/lib/roadmap/journeyFlow";
 import { saveTaskRoadmapExtras } from "@/lib/roadmap/saveTaskExtras";
 import { extractApiErrorMessage } from "@/utils/availability/api-error";
 import {
@@ -214,11 +217,6 @@ export function MentorTaskView({
     );
     const createSubmission = useCreateSubmission();
     const uploadSubmissionDoc = useUploadSubmissionDocument();
-    const {
-        mutateAsync: triggerJumpstartAsync,
-        isPending: isTriggeringJumpstart,
-    } = useTriggerJumpstart();
-    const jumpstartTriggeredUsersRef = useRef<Set<string>>(new Set());
 
     const hasNestedTaskId = isValidObjectId(itemId);
     const isUpdateMode = shouldUpdateTaskExtras(
@@ -253,6 +251,11 @@ export function MentorTaskView({
 
     const isPastorEditor =
         String(currentUser?.role ?? "").toLowerCase() === "pastor" && !isReadOnly;
+
+    const isJumpStartPhase = useMemo(
+        () => isJumpStartRoadmap(parentRoadmap ?? null),
+        [parentRoadmap],
+    );
 
     const confirmDiscardResubmit = useCallback(() => {
         Alert.alert(
@@ -543,40 +546,10 @@ export function MentorTaskView({
         }
 
         try {
-            // Trigger session creation on jump-start completion before save flow.
-            if (
-                roadmapId &&
-                targetUserId &&
-                !isUpdateMode &&
-                !roadmapLevelExtrasExist &&
-                !jumpstartTriggeredUsersRef.current.has(targetUserId)
-            ) {
-                try {
-                    const response = await triggerJumpstartAsync({
-                        roadmapId,
-                        userId: targetUserId,
-                        nestedRoadMapItemId: itemId,
-                    });
-                    if (response?.success || response?.alreadyExists) {
-                        jumpstartTriggeredUsersRef.current.add(targetUserId);
-                    }
-                } catch (error) {
-                    if (isJumpstartBlockingError(error)) {
-                        presentJumpstartBlockingError(error);
-                        return;
-                    }
-                    console.warn(
-                        "[Jumpstart Trigger] Failed (non-blocking). Continuing save flow.",
-                        error,
-                    );
-                }
-            }
+            const isPastorJumpstartSubmit =
+                isPastorEditor && isJumpStartPhase && roadmapId && targetUserId;
 
-            // Jumpstart POST in this same submit (or prior roadmap-level extras) → must PATCH form data.
-            const usePatchForExtras =
-                isUpdateMode ||
-                roadmapLevelExtrasExist ||
-                jumpstartTriggeredUsersRef.current.has(targetUserId);
+            const usePatchForExtras = isUpdateMode || roadmapLevelExtrasExist;
 
             const responsesArray = Object.entries(formData).map(([name, value]) => {
                 const type = getExtraType(name, value);
@@ -590,37 +563,14 @@ export function MentorTaskView({
                 };
             });
 
-            
-            let newSubmissionId: string | undefined;
-            try {
-                const newSubmission = await createSubmission.mutateAsync({
-                    roadMapId: roadmapId!,
-                    nestedRoadMapItemId: itemId,
-                    submittedBy: targetUserId!,
-                    responses: responsesArray,
-                    resubmittedFromSubmissionId: latestSubmission?._id ?? null,
-                });
-                newSubmissionId = newSubmission._id;
-
-                
-                for (const [extraName, files] of Object.entries(pendingFiles)) {
-                    for (const file of files) {
-                        await uploadSubmissionDoc.mutateAsync({
-                            submissionId: newSubmission._id,
-                            extraName,
-                            file,
-                        });
-                    }
-                }
-            } catch {
-                // Submission API not yet available — continue with extras fallback
-            }
-
             const pendingFilesSnapshot = { ...pendingFiles };
-            setPendingFiles({});
+            const extrasArray = withJumpstartCompleteExtra(responsesArray, {
+                isPastorJumpstartSubmit: Boolean(isPastorJumpstartSubmit),
+                existingExtras: existingExtras?.extras,
+            });
 
-            // Also create/update extras for backward compatibility with progress tracking
-            const extrasArray = responsesArray;
+            // Single atomic extras save (form fields + JUMPSTART_COMPLETE). Backend validates mentor
+            // before any progress write; no separate JUMPSTART POST afterward.
             await saveTaskRoadmapExtras({
                 isUpdateMode: usePatchForExtras,
                 roadMapId: roadmapId!,
@@ -631,9 +581,7 @@ export function MentorTaskView({
                 updateExtras: (vars) => updateExtras.mutateAsync(vars),
             });
 
-            if (roadmapId && itemId && targetUserId) {
-                await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, Date.now());
-            }
+            setPendingFiles({});
 
             // Upload files to legacy extras endpoint too
             for (const [extraName, files] of Object.entries(pendingFilesSnapshot)) {
@@ -646,6 +594,32 @@ export function MentorTaskView({
                         file,
                     }).catch(() => {});
                 }
+            }
+
+            try {
+                const newSubmission = await createSubmission.mutateAsync({
+                    roadMapId: roadmapId!,
+                    nestedRoadMapItemId: itemId,
+                    submittedBy: targetUserId!,
+                    responses: responsesArray,
+                    resubmittedFromSubmissionId: latestSubmission?._id ?? null,
+                });
+
+                for (const [extraName, files] of Object.entries(pendingFilesSnapshot)) {
+                    for (const file of files) {
+                        await uploadSubmissionDoc.mutateAsync({
+                            submissionId: newSubmission._id,
+                            extraName,
+                            file,
+                        });
+                    }
+                }
+            } catch {
+                // Submission API not yet available — continue with extras fallback
+            }
+
+            if (roadmapId && itemId && targetUserId) {
+                await recordTaskCompletionTimestamp(targetUserId, roadmapId, itemId, Date.now());
             }
 
             if (isResubmitting) {
@@ -1397,8 +1371,7 @@ export function MentorTaskView({
     const isSaving =
         createExtras.isPending ||
         updateExtras.isPending ||
-        createSubmission.isPending ||
-        isTriggeringJumpstart;
+        createSubmission.isPending;
 
     const isTaskCompleted =
         normalizeNestedTaskStatus(task.status) === "completed";
