@@ -115,8 +115,6 @@ export default function PastorTabLayout() {
     }, [pathname]);
 
     const HIDDEN_ROUTES = [
-        'profile/documents', 'profile/notes',   'profile/new-note',
-        'profile/note-detail','profile/certificates','profile/grant',
         '(index)',          '(assessments)',
         '(roadmap)',         '(appointments)',   'mentors',
         '(progress)',        'my-mentors',
@@ -186,7 +184,7 @@ export default function PastorTabLayout() {
 
                     {}
                     <Tabs.Screen
-                        name="profile/index"
+                        name="profile"
                         options={{
                             title: 'Profile',
                             tabBarIcon: ({ focused }) => (
