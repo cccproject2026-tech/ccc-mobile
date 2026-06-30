@@ -6,6 +6,7 @@ import { appointmentService } from '@/services/appointments.service';
 import type { RescheduleContext } from '@/stores/scheduleMeeting.store';
 import type {
   Appointment,
+  AvailableSlotsResponse,
   TimeSlot as APITimeSlot,
   WeeklyAvailability,
 } from '@/types/appointment.types';
@@ -19,6 +20,7 @@ import { getAppointmentJoinUrl } from '@/utils/meetingLinkDetails';
 import { labelToPlatform } from '@/utils/appointments/platform';
 import { validateSchedule } from '@/utils/appointments/validation';
 import {
+  availableMeetingSlotsKeys,
   isSelectedSlotStillAvailable,
   resolveLatestAvailableSlots,
 } from '@/hooks/appointments/useAvailableMeetingSlots';
@@ -173,12 +175,18 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
           throw err;
         }
       } else {
-        const latestSlots = await resolveLatestAvailableSlots(queryClient, {
-          mentorId: payloadMentorId,
-          date: selectedDayYmd,
-          participantUserId: payloadUserId,
-        });
-        if (!isSelectedSlotStillAvailable(latestSlots.slots, selectedSlot)) {
+        const queryKey = availableMeetingSlotsKeys.day(
+          payloadMentorId,
+          selectedDayYmd,
+          payloadUserId,
+        );
+        const cachedSlots = queryClient.getQueryState<AvailableSlotsResponse>(
+          queryKey,
+        )?.data;
+        if (
+          cachedSlots &&
+          !isSelectedSlotStillAvailable(cachedSlots.slots, selectedSlot)
+        ) {
           const err = new Error(
             'This slot is no longer available. Please choose another time.',
           );
@@ -186,6 +194,7 @@ export function useMeetingScheduler(params: UseMeetingSchedulerParams) {
           (err as any).code = 'slot_unavailable';
           throw err;
         }
+        // POST /appointments re-validates server-side; skip blocking GET available-slots here.
       }
 
       const platform = labelToPlatform(meetingOptionLabel);
