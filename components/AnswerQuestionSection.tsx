@@ -13,7 +13,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import KeyboardSafeContainer from '@/components/layout/KeyboardSafeContainer';
 
@@ -108,7 +107,6 @@ export default function AssessmentQuestionsSection({
     >([]);
     const [showCdpModal, setShowCdpModal] = useState(false);
     const sectionScrollRef = useRef<KeyboardAwareScrollView | null>(null);
-    const insets = useSafeAreaInsets();
 
     const totalSections = assessment.sections.length;
     const currentSection = assessment.sections[currentSectionIndex];
@@ -621,12 +619,7 @@ export default function AssessmentQuestionsSection({
                 {currentSection.questionGroups.map(renderQuestionGroup)}
             </KeyboardSafeContainer>
 
-            <View
-                style={[
-                    styles.footerOuter,
-                    { paddingBottom: Math.max(insets.bottom, 12) },
-                ]}
-            >
+            <View style={styles.footerOuter}>
                 <View style={styles.footerBar}>
                     {isViewMode ? (
                         <>
@@ -957,9 +950,7 @@ const styles = StyleSheet.create({
     footerOuter: {
         paddingHorizontal: getSpacing(16),
         paddingTop: getSpacing(12),
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.15)',
-        backgroundColor: 'rgba(13, 51, 81, 0.85)',
+        paddingBottom: getSpacing(12),
     },
     footerBar: {
         flexDirection: 'row',

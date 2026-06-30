@@ -182,6 +182,8 @@ export interface GetProgressResponse {
     totalAssessments: number;
     completedAssessments: number;
     overallAssessmentProgress: number;
+    totalItems?: number;
+    completedItems?: number;
     finalComments?: FinalComment[];
 }
 

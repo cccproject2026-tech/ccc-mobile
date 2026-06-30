@@ -1,38 +1,72 @@
-import type { ProgressResponse } from '@/types/progress.types';
+import type { GetProgressResponse } from '@/types/progress.types';
+
+type ProgressInput = Partial<
+    GetProgressResponse & { totalItems?: number; completedItems?: number }
+>;
+
+function round1(value: number): number {
+    return Math.round(value * 10) / 10;
+}
+
+function clampPercent(value: number): number {
+    return Math.min(100, Math.max(0, round1(value)));
+}
+
+function resolveAssignedCounts(progress: ProgressInput): {
+    roadmapCount: number;
+    assessmentCount: number;
+} {
+    const totalRoadmaps = Number(progress.totalRoadmaps ?? 0);
+    const totalAssessments = Number(progress.totalAssessments ?? 0);
+    const roadmapItems = Array.isArray(progress.roadmaps) ? progress.roadmaps.length : 0;
+    const assessmentItems = Array.isArray(progress.assessments) ? progress.assessments.length : 0;
+
+    return {
+        roadmapCount: Math.max(totalRoadmaps, roadmapItems),
+        assessmentCount: Math.max(totalAssessments, assessmentItems),
+    };
+}
 
 /**
- * Prefer API `overallProgress`; fall back to completed/total items or roadmap aggregate.
- * When all assigned roadmaps and assessments are completed, return 100%.
+ * Derive overall programme progress from assigned roadmaps and assessments.
+ * Weights each category by how many items are assigned so a completed roadmap
+ * does not show 100% while assessments remain open.
  */
 export function deriveOverallProgressPercent(
-    progress: Partial<ProgressResponse> | null | undefined,
+    progress: ProgressInput | null | undefined,
 ): number {
     if (!progress) return 0;
 
-    const totalRoadmaps = Number(progress.totalRoadmaps ?? 0);
     const completedRoadmaps = Number(progress.completedRoadmaps ?? 0);
-    const totalAssessments = Number(progress.totalAssessments ?? 0);
     const completedAssessments = Number(progress.completedAssessments ?? 0);
+    const { roadmapCount, assessmentCount } = resolveAssignedCounts(progress);
 
     if (
-        (totalRoadmaps > 0 || totalAssessments > 0) &&
-        completedRoadmaps === totalRoadmaps &&
-        completedAssessments === totalAssessments
+        (roadmapCount > 0 || assessmentCount > 0) &&
+        completedRoadmaps === roadmapCount &&
+        completedAssessments === assessmentCount &&
+        roadmapCount + assessmentCount > 0
     ) {
         return 100;
     }
 
-    const raw = Number(progress.overallProgress ?? progress.overallRoadmapProgress);
-    if (Number.isFinite(raw)) return Math.min(100, Math.max(0, raw));
-
-    const total = Number(progress.totalItems);
-    const done = Number(progress.completedItems);
-    if (total > 0 && Number.isFinite(done)) {
-        return Math.min(100, Math.round((done / total) * 1000) / 10);
+    const totalWeight = roadmapCount + assessmentCount;
+    if (totalWeight > 0) {
+        const roadmapPct = Math.max(0, Number(progress.overallRoadmapProgress ?? 0));
+        const assessmentPct = Math.max(0, Number(progress.overallAssessmentProgress ?? 0));
+        const weighted =
+            (roadmapPct * roadmapCount + assessmentPct * assessmentCount) / totalWeight;
+        return clampPercent(weighted);
     }
 
-    const rp = Number(progress.overallRoadmapProgress);
-    if (Number.isFinite(rp)) return Math.min(100, Math.max(0, rp));
+    const totalFromApi = Number(progress.totalItems);
+    const doneFromApi = Number(progress.completedItems);
+    if (totalFromApi > 0 && Number.isFinite(doneFromApi)) {
+        return clampPercent((doneFromApi / totalFromApi) * 100);
+    }
+
+    const raw = Number(progress.overallProgress);
+    if (Number.isFinite(raw)) return clampPercent(raw);
 
     return 0;
 }
