@@ -107,6 +107,7 @@ export default function PastorCertificatesScreen() {
     isLoading: isInvitationLoading,
   } = useFieldMentorInvitationActions();
 
+  const [isOpeningPreview, setIsOpeningPreview] = useState(false);
   const [isDownloadingCertificate, setIsDownloadingCertificate] = useState(false);
   const [showCertificatePreview, setShowCertificatePreview] = useState(false);
   const [certificatePreviewData, setCertificatePreviewData] =
@@ -142,13 +143,12 @@ export default function PastorCertificatesScreen() {
       if (!user?.id) return;
 
       try {
-        setIsDownloadingCertificate(true);
+        setIsOpeningPreview(true);
         const loadedCertificate =
           certificate ?? (await certificatesService.getUserCertificate(user.id));
 
         if (!loadedCertificate?.certificateId) {
           Alert.alert('Certificate', 'No certificate is available to download yet.');
-          setIsDownloadingCertificate(false);
           return;
         }
 
@@ -159,17 +159,27 @@ export default function PastorCertificatesScreen() {
         setShowCertificatePreview(true);
       } catch (error: any) {
         console.error('Failed to open certificate:', error);
-        setIsDownloadingCertificate(false);
         Alert.alert(
           'Certificate',
           error?.response?.data?.message ||
             error?.message ||
             'Unable to load certificate. Please try again.',
         );
+      } finally {
+        setIsOpeningPreview(false);
       }
     },
     [certificate, pastorName, user?.id],
   );
+
+  const closeCertificatePreview = useCallback(() => {
+    setShowCertificatePreview(false);
+    setIsDownloadingCertificate(false);
+    setAutoDownloadCertificate(false);
+  }, []);
+
+  const isCertificateActionBusy = isOpeningPreview || isDownloadingCertificate;
+
 
   const isLoading = isProfileLoading || (hasIssuedCertificate && isCertificateLoading);
 
@@ -264,15 +274,16 @@ export default function PastorCertificatesScreen() {
                 <CertificateActionButton
                   label="View"
                   variant="light"
-                  disabled={isDownloadingCertificate}
-                  loading={isDownloadingCertificate}
+                  disabled={isCertificateActionBusy}
+                  loading={isOpeningPreview}
                   onPress={() => openCertificatePreview(false)}
                   icon={<Ionicons name="eye-outline" size={17} color="#1E366F" />}
                 />
                 <CertificateActionButton
                   label="Download"
                   variant="dark"
-                  disabled={isDownloadingCertificate}
+                  disabled={isCertificateActionBusy}
+                  loading={isOpeningPreview || isDownloadingCertificate}
                   onPress={() => openCertificatePreview(true)}
                   icon={<Ionicons name="download-outline" size={17} color="#FFFFFF" />}
                 />
@@ -348,7 +359,7 @@ export default function PastorCertificatesScreen() {
             fileName={certificateFileName}
             isDownloading={isDownloadingCertificate}
             autoDownload={autoDownloadCertificate}
-            onClose={() => setShowCertificatePreview(false)}
+            onClose={closeCertificatePreview}
             onDownloadingChange={setIsDownloadingCertificate}
             onAutoDownloadComplete={() => setAutoDownloadCertificate(false)}
           />
