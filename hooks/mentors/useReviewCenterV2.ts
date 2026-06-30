@@ -26,6 +26,8 @@ import {
   type ReviewPastorGroup,
 } from "@/lib/mentor/reviewCenter.types";
 import { useAuthStore } from "@/stores";
+import { USE_AGGREGATED_REVIEW_CENTER } from "@/constants/config/features";
+import { fetchAggregatedReviewCenterItems } from "@/lib/mentor/fetchAggregatedReviewCenterItems";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -65,15 +67,19 @@ export type UseReviewCenterV2Options = {
  */
 export function useReviewCenterV2(options?: UseReviewCenterV2Options) {
   const scanEnabled = options?.scanEnabled ?? true;
+  const useAggregated = USE_AGGREGATED_REVIEW_CENTER;
   const { user } = useAuthStore();
   const mentorId = user?.id;
   const queryClient = useQueryClient();
 
   const [activeFilter, setActiveFilter] = useState<ReviewFilterTab>("all");
 
+  // In aggregated mode the backend resolves mentees/roadmaps/assessments, so we
+  // skip the expensive per-mentee progress fan-out entirely.
   const { data: menteesData, isLoading: isLoadingMentees } = useMentees(
     REVIEW_CENTER_MAX_MENTEES,
     mentorId,
+    useAggregated ? { enabled: false } : undefined,
   );
   const { data: allRoadmaps, isLoading: isLoadingRoadmaps } = useAllRoadmaps();
   const {
@@ -143,10 +149,11 @@ export function useReviewCenterV2(options?: UseReviewCenterV2Options) {
       .join(",");
   }, [mentees]);
 
-  const { data: reviewData, isLoading: isLoadingReview } = useQuery({
+  const { data: legacyReviewData, isLoading: isLoadingLegacyReview } = useQuery({
     queryKey: mentorReviewCenterKeys.scan(mentorId ?? "", menteeIdsKey),
     enabled:
       scanEnabled &&
+      !useAggregated &&
       !!mentorId &&
       !isLoadingMentees &&
       !isLoadingRoadmaps &&
@@ -167,6 +174,25 @@ export function useReviewCenterV2(options?: UseReviewCenterV2Options) {
         assessmentNameById,
       }),
   });
+
+  // Aggregated path: a single backend request returns all review items + pastor meta.
+  const { data: aggregatedData, isLoading: isLoadingAggregated } = useQuery({
+    queryKey: mentorReviewCenterKeys.scan(mentorId ?? "", "aggregated"),
+    enabled: scanEnabled && useAggregated && !!mentorId,
+    staleTime: REVIEW_CENTER_STALE_MS,
+    gcTime: REVIEW_CENTER_GC_MS,
+    refetchOnWindowFocus: false,
+    retry: (failureCount, error) => {
+      if (isReviewCenterTooManyRequestsError(error)) return false;
+      return failureCount < 2;
+    },
+    queryFn: () => fetchAggregatedReviewCenterItems(mentorId!),
+  });
+
+  const reviewData = useAggregated ? aggregatedData?.items : legacyReviewData;
+  const isLoadingReview = useAggregated
+    ? isLoadingAggregated
+    : isLoadingLegacyReview;
 
   useEffect(() => {
     if (!mentorId || !reviewData) return;
@@ -212,6 +238,14 @@ export function useReviewCenterV2(options?: UseReviewCenterV2Options) {
 
   const menteeAvatarById = useMemo(() => {
     const map = new Map<string, { profilePicture?: string | null; profileImage?: string | null }>();
+    // Aggregated mode: avatars come from the endpoint's pastor metadata.
+    for (const p of aggregatedData?.pastors ?? []) {
+      if (!p?.pastorId) continue;
+      map.set(String(p.pastorId), {
+        profilePicture: p.profilePicture ?? null,
+        profileImage: null,
+      });
+    }
     for (const m of mentees as any[]) {
       const ids = uniqueNonEmpty([m?.id, m?._id]);
       if (ids.length === 0) continue;
@@ -222,7 +256,7 @@ export function useReviewCenterV2(options?: UseReviewCenterV2Options) {
       for (const id of ids) map.set(String(id), avatar);
     }
     return map;
-  }, [mentees]);
+  }, [mentees, aggregatedData]);
 
   const pastorGroups = useMemo((): ReviewPastorGroup[] => {
     return buildPastorGroups(allItems).map((group) => {
@@ -255,9 +289,13 @@ export function useReviewCenterV2(options?: UseReviewCenterV2Options) {
     [queryClient],
   );
 
-  const isLoading =
-    scanEnabled &&
-    (isLoadingMentees || isLoadingRoadmaps || isLoadingAssessments || isLoadingReview);
+  const isLoading = useAggregated
+    ? scanEnabled && isLoadingReview
+    : scanEnabled &&
+      (isLoadingMentees ||
+        isLoadingRoadmaps ||
+        isLoadingAssessments ||
+        isLoadingReview);
 
   return {
     items: filteredItems,

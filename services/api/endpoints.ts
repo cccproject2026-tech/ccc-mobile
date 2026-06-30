@@ -58,6 +58,11 @@ export const ENDPOINTS = {
     GET_ASSIGNED_MENTEES: (mentorId: string) => `/users/${mentorId}/assigned`,
     GET_ALL_MENTEES: "/users?role=pastor",
   },
+
+  MENTOR: {
+    REVIEW_CENTER: (mentorId: string) =>
+      `/mentor/review-center?mentorId=${encodeURIComponent(mentorId)}`,
+  },
   
   HOME: {
     MENTEES: "/home/mentees",
