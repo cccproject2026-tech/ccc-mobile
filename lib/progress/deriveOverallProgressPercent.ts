@@ -1,4 +1,4 @@
-import type { GetProgressResponse } from '@/types/progress.types';
+import type { AssessmentProgress, GetProgressResponse } from '@/types/progress.types';
 
 type ProgressInput = Partial<
     GetProgressResponse & { totalItems?: number; completedItems?: number }
@@ -27,8 +27,28 @@ function resolveAssignedCounts(progress: ProgressInput): {
     };
 }
 
-/** Submitted assessments await mentor CDP — they do not count as 100% until completed. */
-function deriveAssessmentBucketPercent(progress: ProgressInput): number {
+/** Credit toward overall % for one assessment row. Submitted ≠ 100%. */
+export function assessmentItemCreditPercent(item: AssessmentProgress): number {
+    const status = item.status?.toLowerCase();
+
+    if (status === 'completed') {
+        return 100;
+    }
+
+    if (status === 'submitted') {
+        return 0;
+    }
+
+    const total = Number(item.totalSections ?? 0);
+    const completed = Number(item.completedSections ?? 0);
+    if (total > 0 && completed >= total) {
+        return 0;
+    }
+
+    return Math.max(0, Math.min(Number(item.progressPercentage ?? 0), 99));
+}
+
+export function deriveAssessmentBucketPercent(progress: ProgressInput): number {
     const items = progress.assessments;
     if (!Array.isArray(items) || items.length === 0) {
         return Math.max(0, Number(progress.overallAssessmentProgress ?? 0));
@@ -36,52 +56,24 @@ function deriveAssessmentBucketPercent(progress: ProgressInput): number {
 
     let sum = 0;
     for (const item of items) {
-        const status = item.status?.toLowerCase();
-        if (status === 'completed') {
-            sum += 100;
-        } else if (status === 'submitted') {
-            sum += 0;
-        } else {
-            sum += Math.max(0, Number(item.progressPercentage ?? 0));
-        }
+        sum += assessmentItemCreditPercent(item);
     }
 
     return sum / items.length;
 }
 
-function countCompletedAssessments(progress: ProgressInput): number {
-    const items = progress.assessments;
-    if (!Array.isArray(items) || items.length === 0) {
-        return Number(progress.completedAssessments ?? 0);
-    }
-
-    return items.filter((item) => item.status?.toLowerCase() === 'completed').length;
-}
-
 /**
  * Derive overall programme progress from assigned roadmaps and assessments.
- * Weights each category by how many items are assigned so a completed roadmap
- * does not show 100% while assessments remain open.
+ * Pastor submit does not count as 100%; mentor CDP marks assessment completed.
  */
 export function deriveOverallProgressPercent(
     progress: ProgressInput | null | undefined,
 ): number {
     if (!progress) return 0;
 
-    const completedRoadmaps = Number(progress.completedRoadmaps ?? 0);
     const { roadmapCount, assessmentCount } = resolveAssignedCounts(progress);
-    const completedAssessments = countCompletedAssessments(progress);
-
-    if (
-        (roadmapCount > 0 || assessmentCount > 0) &&
-        completedRoadmaps === roadmapCount &&
-        completedAssessments === assessmentCount &&
-        roadmapCount + assessmentCount > 0
-    ) {
-        return 100;
-    }
-
     const totalWeight = roadmapCount + assessmentCount;
+
     if (totalWeight > 0) {
         const roadmapPct = Math.max(0, Number(progress.overallRoadmapProgress ?? 0));
         const assessmentPct = deriveAssessmentBucketPercent(progress);

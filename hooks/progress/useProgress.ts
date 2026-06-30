@@ -1,9 +1,34 @@
 import { progressService } from "@/services/progress.service";
+import { assessmentService } from "@/services/assessment.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { AddFinalCommentRequest, DeleteFinalCommentRequest, ProgressData, UpdateFinalCommentRequest } from "@/types/progress.types";
-import { deriveOverallProgressPercent } from "@/lib/progress/deriveOverallProgressPercent";
+import { applyAssessmentAnswerOverlayToProgress } from "@/lib/progress/applyAssessmentAnswerOverlay";
+import { deriveOverallProgressPercent, deriveAssessmentBucketPercent } from "@/lib/progress/deriveOverallProgressPercent";
+import type { AssessmentAnswerSectionSlice } from "@/lib/roadmap/helpers";
 import { getHttpStatus } from "@/utils/apiConcurrency";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+async function fetchAssessmentAnswersMap(
+    assessmentIds: string[],
+    userId: string,
+): Promise<Map<string, AssessmentAnswerSectionSlice[] | undefined>> {
+    const answersByAssessmentId = new Map<string, AssessmentAnswerSectionSlice[] | undefined>();
+
+    await Promise.all(
+        assessmentIds.map(async (assessmentId) => {
+            try {
+                const response = await assessmentService.fetchAnswers(assessmentId, userId);
+                if (response?.data?.sections?.length) {
+                    answersByAssessmentId.set(assessmentId, response.data.sections);
+                }
+            } catch {
+                // No saved answers for this assessment yet.
+            }
+        }),
+    );
+
+    return answersByAssessmentId;
+}
 
 // PROGRESS QUERY KEYS
 
@@ -22,10 +47,41 @@ const shouldRetryProgressQuery = (failureCount: number, error: unknown) => {
 };
 
 const sharedProgressQueryOptions = {
-    staleTime: 60_000,
+    staleTime: 0,
     retry: shouldRetryProgressQuery,
     refetchOnWindowFocus: false,
 } as const;
+
+async function buildProgressDataFromResponse(
+    data: NonNullable<Awaited<ReturnType<typeof progressService.getProgress>>['data']>,
+    userId: string,
+): Promise<ProgressData> {
+    const assessmentIds = (data.assessments || [])
+        .map((item) => item.assessmentId)
+        .filter(Boolean);
+    const answersByAssessmentId = await fetchAssessmentAnswersMap(assessmentIds, userId);
+    const adjustedData = applyAssessmentAnswerOverlayToProgress(data, answersByAssessmentId);
+
+    return {
+        overallProgress: deriveOverallProgressPercent(adjustedData),
+        roadmaps: {
+            total: adjustedData.totalRoadmaps ?? 0,
+            completed: adjustedData.completedRoadmaps ?? 0,
+            percentage: adjustedData.overallRoadmapProgress ?? 0,
+            items: adjustedData.roadmaps || [],
+        },
+        assessments: {
+            total: adjustedData.totalAssessments ?? 0,
+            completed:
+                adjustedData.assessments?.filter(
+                    (item) => item.status?.toLowerCase() === 'completed',
+                ).length ?? 0,
+            percentage: deriveAssessmentBucketPercent(adjustedData),
+            items: adjustedData.assessments || [],
+        },
+        finalComments: adjustedData.finalComments || [],
+    };
+}
 
 export const useProgress = (userId?: string) => {
     const { user } = useAuthStore();
@@ -59,25 +115,7 @@ export const useProgress = (userId?: string) => {
             }
 
             const data = response.data;
-
-            const progressData: ProgressData = {
-                overallProgress: deriveOverallProgressPercent(data),
-                roadmaps: {
-                    total: data.totalRoadmaps ?? 0,
-                    completed: data.completedRoadmaps ?? 0,
-                    percentage: data.overallRoadmapProgress ?? 0,
-                    items: data.roadmaps || []
-                },
-                assessments: {
-                    total: data.totalAssessments ?? 0,
-                    completed: data.completedAssessments ?? 0,
-                    percentage: data.overallAssessmentProgress ?? 0,
-                    items: data.assessments || []
-                },
-                finalComments: data.finalComments || []
-            };
-
-            return progressData;
+            return buildProgressDataFromResponse(data, targetUserId);
         },
         enabled: !!targetUserId,
         ...sharedProgressQueryOptions,
@@ -235,25 +273,7 @@ export const useProgressByUserId = (userId: string | undefined) => {
             }
 
             const data = response.data;
-
-            const progressData: ProgressData = {
-                overallProgress: deriveOverallProgressPercent(data),
-                roadmaps: {
-                    total: data.totalRoadmaps ?? 0,
-                    completed: data.completedRoadmaps ?? 0,
-                    percentage: data.overallRoadmapProgress ?? 0,
-                    items: data.roadmaps || []
-                },
-                assessments: {
-                    total: data.totalAssessments ?? 0,
-                    completed: data.completedAssessments ?? 0,
-                    percentage: data.overallAssessmentProgress ?? 0,
-                    items: data.assessments || []
-                },
-                finalComments: data.finalComments || []
-            };
-
-            return progressData;
+            return buildProgressDataFromResponse(data, userId);
         },
         enabled: !!userId,
         ...sharedProgressQueryOptions,
